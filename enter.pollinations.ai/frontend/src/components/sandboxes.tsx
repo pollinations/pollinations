@@ -21,6 +21,7 @@ import {
     PlusIcon,
     RefreshIcon,
     Section,
+    SparklesIcon,
     Surface,
     TabButton,
     TerminalIcon,
@@ -34,6 +35,7 @@ import {
     SANDBOX_PROVIDERS,
     sandboxTemplate,
 } from "@shared/registry/sandbox.ts";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
@@ -44,7 +46,11 @@ import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
-import { SandboxTemplates } from "./sandbox-templates.tsx";
+import {
+    CHEAPEST_HOURLY,
+    LAUNCH_DISCOUNT,
+    SandboxTemplateList,
+} from "./sandbox-templates.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -133,14 +139,6 @@ const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
     `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
-
-// The cheapest size's hourly price, for the card's footnote.
-const cheapestHourly = (pricing: Pricing) =>
-    Math.min(
-        ...Object.entries(pricing.templates).map(
-            ([template, size]) => perSecond(pricing, template, size) * 3600,
-        ),
-    );
 
 const templateLabel = (id: string) => {
     const template = sandboxTemplate(id);
@@ -424,7 +422,10 @@ export function SidebarSandboxes() {
     );
 }
 
-export function Sandboxes() {
+// Your sandboxes, then the templates you start new ones from. Signed out
+// only the templates show, and Create asks you to sign in.
+export function Sandboxes({ signedIn }: { signedIn: boolean }) {
+    const navigate = useNavigate();
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -457,8 +458,8 @@ export function Sandboxes() {
     }, []);
 
     useEffect(() => {
-        void load();
-    }, [load]);
+        if (signedIn) void load();
+    }, [load, signedIn]);
 
     async function run(id: string, action: () => Promise<unknown>) {
         setBusyId(id);
@@ -495,7 +496,7 @@ export function Sandboxes() {
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
-    const loading = !pricing && !loadError;
+    const loading = signedIn && !pricing && !loadError;
     const running = sandboxes.filter((s) => s.state === "running").length;
     const full = !!pricing && running >= pricing.maxRunning;
     const spends = pending && pending.action !== "kill";
@@ -552,82 +553,59 @@ export function Sandboxes() {
         );
     }
 
-    const createAction = (
-        <Button
-            intent="commit"
-            type="button"
-            icon={<TerminalIcon />}
-            aria-busy={creating}
-            aria-haspopup="dialog"
-            disabled={full || creating}
-            onClick={() =>
-                setPending({
-                    action: "create",
-                    name: generateFunName(),
-                    template: "pollinations",
-                })
-            }
-        >
-            {creating ? "Creating…" : "Create"}
-        </Button>
-    );
+    function startCreate(template: string) {
+        if (!signedIn) {
+            void navigate({ to: "/sign-in", search: { next: "/sandboxes" } });
+            return;
+        }
+        setPending({ action: "create", name: generateFunName(), template });
+    }
 
     return (
-        <>
-            <Section
-                title="Sandboxes"
-                action={
-                    <ButtonGroup>
-                        <IconButton
-                            size="md"
-                            variant="ghost"
-                            title="Refresh"
-                            disabled={loading}
-                            onClick={() => void load()}
-                        >
-                            <RefreshIcon className="h-4 w-4" />
-                        </IconButton>
-                        {sandboxes.length > 0 && createAction}
-                    </ButtonGroup>
-                }
-            >
-                {loadError && (
-                    <LoadError
-                        onRetry={load}
-                        paths={[
-                            "/alpha/e2b/pricing",
-                            "/alpha/e2b/v2/sandboxes",
-                        ]}
+        <Section
+            title="Sandboxes"
+            action={
+                signedIn && (
+                    <IconButton
+                        size="md"
+                        variant="ghost"
+                        title="Refresh"
+                        disabled={loading}
+                        onClick={() => void load()}
                     >
-                        {loadError}
-                    </LoadError>
-                )}
-                {actionError && (
-                    <Alert intent="danger">
-                        {actionError}
-                        {actionError === NO_POLLEN && (
-                            <>
-                                {" "}
-                                <InlineLink href="/pollen">
-                                    Go to Pollen
-                                </InlineLink>
-                            </>
-                        )}
-                    </Alert>
-                )}
-                <SectionContent loading={loading}>
-                    {pricing && (
-                        <div className="flex flex-col gap-3">
-                            {sandboxes.length > 0 && (
-                                <Text
-                                    size="sm"
-                                    tone={full ? "strong" : "muted"}
-                                >
-                                    {running} of {pricing.maxRunning} running.
-                                    {full &&
-                                        " Pause or kill one to start or resume another."}
-                                </Text>
-                            )}
+                        <RefreshIcon className="h-4 w-4" />
+                    </IconButton>
+                )
+            }
+        >
+            {loadError && (
+                <LoadError
+                    onRetry={load}
+                    paths={["/alpha/e2b/pricing", "/alpha/e2b/v2/sandboxes"]}
+                >
+                    {loadError}
+                </LoadError>
+            )}
+            {actionError && (
+                <Alert intent="danger">
+                    {actionError}
+                    {actionError === NO_POLLEN && (
+                        <>
+                            {" "}
+                            <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                        </>
+                    )}
+                </Alert>
+            )}
+            <SectionContent loading={loading}>
+                <div className="flex flex-col gap-3">
+                    {pricing && sandboxes.length > 0 && (
+                        <>
+                            <Text size="sm" tone={full ? "strong" : "muted"}>
+                                {running} of {pricing.maxRunning} running.
+                                {full &&
+                                    " Pause or kill one to start or resume another."}
+                            </Text>
                             <div
                                 className="flex flex-col gap-2"
                                 aria-live="polite"
@@ -667,432 +645,414 @@ export function Sandboxes() {
                                         }
                                     />
                                 ))}
-                                {!sandboxes.length && (
-                                    <Surface className="p-6 text-center">
-                                        <div className="mb-2">
-                                            {createAction}
-                                        </div>
-                                        <p className="text-sm text-theme-text-muted">
-                                            A Linux computer in the cloud. Open
-                                            it with ssh or VS Code.
-                                        </p>
-                                    </Surface>
-                                )}
                             </div>
-                        </div>
+                            {/* Your sandboxes above, new ones below. */}
+                            <h3 className="pt-2 font-body text-sm font-bold uppercase tracking-wide text-theme-text-muted">
+                                New sandbox
+                            </h3>
+                        </>
                     )}
-                </SectionContent>
-                {/* The dashboard's footnote block: 8px between lines, as on every
-                other page. */}
-                <Footnotes>
-                    <p className="flex items-start gap-1.5">
-                        <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Pay with{" "}
-                            <span className="whitespace-nowrap">
-                                <WalletKindIcon
-                                    kind="tier"
-                                    className="mr-1 inline align-[-2px]"
-                                />
-                                Quest Pollen
-                            </span>{" "}
-                            or{" "}
-                            <span className="whitespace-nowrap">
-                                <WalletKindIcon
-                                    kind="paid"
-                                    className="mr-1 inline align-[-2px]"
-                                />
-                                Paid Pollen
-                            </span>{" "}
-                            in 10-minute steps
-                            {pricing && (
-                                <>
-                                    , from {pollen(cheapestHourly(pricing))} an
-                                    hour
-                                </>
-                            )}
-                            .
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            A paused sandbox costs nothing and keeps its files.
-                            Sandboxes pause when their time runs out
-                            {pricing && (
-                                <>; up to {pricing.maxRunning} run at once</>
-                            )}
-                            .
-                        </span>
-                    </p>
-                    <div className="flex items-start gap-1.5">
-                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <p>
-                                Connect to your sandbox with SSH: run this once,
-                                then use the ssh command on its card. A paused
-                                sandbox resumes, and it keeps running while
-                                you’re connected, paid 10 minutes at a time.
-                            </p>
-                            <CopyField
-                                label="Copy the polli setup command"
-                                value={SSH_SETUP}
-                            />
-                        </div>
-                    </div>
-                </Footnotes>
-
-                <ConfirmationDialog
-                    open={pending?.action === "kill"}
-                    title="Kill sandbox?"
-                    confirmLabel="Kill"
-                    onConfirm={confirm}
-                    onCancel={() => setPending(null)}
-                >
-                    <ResourceConfirmationContent
-                        resource={
-                            pending?.action === "kill"
-                                ? pending.sandbox.sandboxID
-                                : ""
-                        }
-                    >
-                        This deletes the sandbox and its files and can’t be
-                        undone. Unused time isn’t refunded.
-                    </ResourceConfirmationContent>
-                </ConfirmationDialog>
-                <ResourceDialog
-                    open={!!spends}
-                    onOpenChange={(open) =>
-                        !open && !creating && setPending(null)
-                    }
-                    size="lg"
-                >
-                    <form
-                        className="flex min-h-0 flex-1 flex-col"
-                        noValidate
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            confirm();
-                        }}
-                    >
-                        <DialogBody
-                            actions={
-                                <>
-                                    <Button
-                                        type="button"
-                                        intent="neutral"
-                                        icon={<XIcon />}
-                                        disabled={creating}
-                                        onClick={() => setPending(null)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        intent="commit"
-                                        icon={
-                                            pending?.action === "create" ? (
-                                                <TerminalIcon />
-                                            ) : (
-                                                <PlayIcon />
-                                            )
-                                        }
-                                        aria-busy={creating}
-                                        disabled={!canConfirm}
-                                    >
-                                        {!pending
-                                            ? ""
-                                            : pending.action === "create"
-                                              ? "Create"
-                                              : pending.action === "limit"
-                                                ? "Set time limit"
-                                                : addTo
-                                                  ? "Add time"
-                                                  : "Resume"}
-                                    </Button>
-                                </>
+                    {(pricing || !signedIn) && (
+                        <SandboxTemplateList
+                            createLabel={
+                                !signedIn
+                                    ? "Sign in to create"
+                                    : creating
+                                      ? "Creating…"
+                                      : "Create"
                             }
-                        >
-                            <DialogHeader
-                                inBody
-                                title={
-                                    !pending
+                            disabled={signedIn && (full || creating)}
+                            onCreate={startCreate}
+                        />
+                    )}
+                </div>
+            </SectionContent>
+            {/* The dashboard's footnote block: 8px between lines, as on every
+                other page. */}
+            <Footnotes>
+                <p className="flex items-start gap-1.5">
+                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Pay with{" "}
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="tier"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Quest Pollen
+                        </span>{" "}
+                        or{" "}
+                        <span className="whitespace-nowrap">
+                            <WalletKindIcon
+                                kind="paid"
+                                className="mr-1 inline align-[-2px]"
+                            />
+                            Paid Pollen
+                        </span>{" "}
+                        in 10-minute steps, from {pollen(CHEAPEST_HOURLY)} an
+                        hour.
+                    </span>
+                </p>
+                {LAUNCH_DISCOUNT > 0 && (
+                    <p className="flex items-start gap-1.5">
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>Launch price: {LAUNCH_DISCOUNT}% off.</span>
+                    </p>
+                )}
+                <p className="flex items-start gap-1.5">
+                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        A paused sandbox costs nothing and keeps its files.
+                        Sandboxes pause when their time runs out
+                        {pricing && (
+                            <>; up to {pricing.maxRunning} run at once</>
+                        )}
+                        .
+                    </span>
+                </p>
+                <div className="flex items-start gap-1.5">
+                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <p>
+                            A Linux computer in the cloud. Connect with SSH or
+                            VS Code: run this once, then use the ssh command on
+                            its card. A paused sandbox resumes, and it keeps
+                            running while you’re connected, paid 10 minutes at a
+                            time. See the{" "}
+                            <InlineLink href={genDocsUrl("#tag/sandboxes")}>
+                                Sandboxes docs
+                            </InlineLink>
+                            .
+                        </p>
+                        <CopyField
+                            label="Copy the polli setup command"
+                            value={SSH_SETUP}
+                        />
+                    </div>
+                </div>
+            </Footnotes>
+
+            <ConfirmationDialog
+                open={pending?.action === "kill"}
+                title="Kill sandbox?"
+                confirmLabel="Kill"
+                onConfirm={confirm}
+                onCancel={() => setPending(null)}
+            >
+                <ResourceConfirmationContent
+                    resource={
+                        pending?.action === "kill"
+                            ? pending.sandbox.sandboxID
+                            : ""
+                    }
+                >
+                    This deletes the sandbox and its files and can’t be undone.
+                    Unused time isn’t refunded.
+                </ResourceConfirmationContent>
+            </ConfirmationDialog>
+            <ResourceDialog
+                open={!!spends}
+                onOpenChange={(open) => !open && !creating && setPending(null)}
+                size="lg"
+            >
+                <form
+                    className="flex min-h-0 flex-1 flex-col"
+                    noValidate
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        confirm();
+                    }}
+                >
+                    <DialogBody
+                        actions={
+                            <>
+                                <Button
+                                    type="button"
+                                    intent="neutral"
+                                    icon={<XIcon />}
+                                    disabled={creating}
+                                    onClick={() => setPending(null)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    intent="commit"
+                                    icon={
+                                        pending?.action === "create" ? (
+                                            <TerminalIcon />
+                                        ) : (
+                                            <PlayIcon />
+                                        )
+                                    }
+                                    aria-busy={creating}
+                                    disabled={!canConfirm}
+                                >
+                                    {!pending
                                         ? ""
                                         : pending.action === "create"
-                                          ? "Create sandbox"
+                                          ? "Create"
                                           : pending.action === "limit"
-                                            ? "Set a time limit"
+                                            ? "Set time limit"
                                             : addTo
                                               ? "Add time"
-                                              : "Resume sandbox"
-                                }
-                                description={
-                                    pending?.action === "create" && (
+                                              : "Resume"}
+                                </Button>
+                            </>
+                        }
+                    >
+                        <DialogHeader
+                            inBody
+                            title={
+                                !pending
+                                    ? ""
+                                    : pending.action === "create"
+                                      ? "Create sandbox"
+                                      : pending.action === "limit"
+                                        ? "Set a time limit"
+                                        : addTo
+                                          ? "Add time"
+                                          : "Resume sandbox"
+                            }
+                            description={
+                                pending?.action === "create" && (
+                                    <>
+                                        Choose a template and how long to run
+                                        it.{" "}
+                                        <InlineLink
+                                            href={genDocsUrl("#tag/sandboxes")}
+                                        >
+                                            Read the guide
+                                        </InlineLink>
+                                    </>
+                                )
+                            }
+                        />
+                        {spends && pending.action !== "create" && (
+                            <Surface>
+                                <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_minmax(0,1fr)]">
+                                    {pending.sandbox.metadata?.name && (
                                         <>
-                                            Choose a template and how long to
-                                            run it.{" "}
-                                            <InlineLink
-                                                href={genDocsUrl(
-                                                    "#tag/sandboxes",
-                                                )}
-                                            >
-                                                Read the guide
-                                            </InlineLink>
+                                            <dt className="font-semibold text-theme-text-strong">
+                                                Name
+                                            </dt>
+                                            <dd className="break-all">
+                                                {pending.sandbox.metadata.name}
+                                            </dd>
                                         </>
-                                    )
-                                }
-                            />
-                            {spends && pending.action !== "create" && (
-                                <Surface>
-                                    <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_minmax(0,1fr)]">
-                                        {pending.sandbox.metadata?.name && (
-                                            <>
-                                                <dt className="font-semibold text-theme-text-strong">
-                                                    Name
-                                                </dt>
-                                                <dd className="break-all">
-                                                    {
-                                                        pending.sandbox.metadata
-                                                            .name
-                                                    }
-                                                </dd>
-                                            </>
-                                        )}
-                                        <dt className="font-semibold text-theme-text-strong">
-                                            ID
-                                        </dt>
-                                        <dd className="break-all font-mono">
-                                            {pending.sandbox.sandboxID}
-                                        </dd>
-                                        <dt className="font-semibold text-theme-text-strong">
-                                            Status
-                                        </dt>
-                                        <dd>
-                                            <Chip
-                                                size="sm"
-                                                intent={
-                                                    pending.sandbox.state ===
-                                                    "running"
-                                                        ? "success"
-                                                        : "neutral"
-                                                }
-                                            >
-                                                {pending.sandbox.state ===
+                                    )}
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        ID
+                                    </dt>
+                                    <dd className="break-all font-mono">
+                                        {pending.sandbox.sandboxID}
+                                    </dd>
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        Status
+                                    </dt>
+                                    <dd>
+                                        <Chip
+                                            size="sm"
+                                            intent={
+                                                pending.sandbox.state ===
                                                 "running"
-                                                    ? "Running"
-                                                    : "Paused"}
-                                            </Chip>
-                                        </dd>
-                                        <dt className="font-semibold text-theme-text-strong">
-                                            Template
-                                        </dt>
-                                        <dd>
-                                            {templateLabel(
-                                                templateOf(pending.sandbox),
-                                            )}
-                                            <span className="text-theme-text-muted">
-                                                {" "}
-                                                · {sizeLabel(pending.sandbox)}
-                                            </span>
-                                        </dd>
-                                        {pricing && (
-                                            <>
-                                                <dt className="font-semibold text-theme-text-strong">
-                                                    Hourly cost
-                                                </dt>
-                                                <dd>
-                                                    {pollen(
-                                                        perSecond(
-                                                            pricing,
-                                                            templateOf(
-                                                                pending.sandbox,
-                                                            ),
-                                                            pending.sandbox,
-                                                        ) * 3600,
-                                                    )}
-                                                </dd>
-                                            </>
-                                        )}
-                                    </dl>
-                                </Surface>
-                            )}
-                            {spends && pricing && (
-                                <>
-                                    <Surface className="space-y-4">
-                                        {pending.action === "create" && (
-                                            <>
-                                                <ModelFormRow
-                                                    label="Name"
-                                                    help="Shown in your sandbox list. It can’t be changed later."
-                                                >
-                                                    <Field.Input asChild>
-                                                        <Input
-                                                            className="w-full"
-                                                            value={pending.name}
-                                                            onChange={(event) =>
-                                                                setPending({
-                                                                    ...pending,
-                                                                    name: event
-                                                                        .currentTarget
-                                                                        .value,
-                                                                })
-                                                            }
-                                                        />
-                                                    </Field.Input>
-                                                </ModelFormRow>
-                                                <TemplatePicker
-                                                    pricing={pricing}
-                                                    template={template}
-                                                    custom={!!pending.custom}
-                                                    error={templateError}
-                                                    onChange={(
-                                                        template,
-                                                        custom,
-                                                    ) =>
-                                                        setPending({
-                                                            action: "create",
-                                                            name: pending.name,
-                                                            template,
-                                                            custom,
-                                                        })
-                                                    }
-                                                />
-                                            </>
-                                        )}
-                                        <ModelFormRow
-                                            label={
-                                                addTo
-                                                    ? "Add time"
-                                                    : "Run it for"
-                                            }
-                                            help={
-                                                pending.action === "limit"
-                                                    ? "At least 10 minutes. The sandbox pauses when time runs out."
-                                                    : "At least 10 minutes. Choose Until I stop it to keep running until you pause or kill it."
-                                            }
-                                            note={
-                                                <Chip
-                                                    id="sandbox-duration-status"
-                                                    size="sm"
-                                                    intent={
-                                                        durationError
-                                                            ? "danger"
-                                                            : "info"
-                                                    }
-                                                    className="polli:h-auto polli:max-w-full polli:py-1 polli:leading-snug"
-                                                >
-                                                    <ClockIcon className="h-3 w-3 shrink-0" />
-                                                    {durationError ||
-                                                        (timeout === FOREVER
-                                                            ? "Will run until you pause or kill it"
-                                                            : `Will run until ${new Date(now + timeout * 1000).toLocaleString()}`)}
-                                                </Chip>
+                                                    ? "success"
+                                                    : "neutral"
                                             }
                                         >
-                                            <div className="flex flex-wrap items-center gap-2">
+                                            {pending.sandbox.state === "running"
+                                                ? "Running"
+                                                : "Paused"}
+                                        </Chip>
+                                    </dd>
+                                    <dt className="font-semibold text-theme-text-strong">
+                                        Template
+                                    </dt>
+                                    <dd>
+                                        {templateLabel(
+                                            templateOf(pending.sandbox),
+                                        )}
+                                        <span className="text-theme-text-muted">
+                                            {" "}
+                                            · {sizeLabel(pending.sandbox)}
+                                        </span>
+                                    </dd>
+                                    {pricing && (
+                                        <>
+                                            <dt className="font-semibold text-theme-text-strong">
+                                                Hourly cost
+                                            </dt>
+                                            <dd>
+                                                {pollen(
+                                                    perSecond(
+                                                        pricing,
+                                                        templateOf(
+                                                            pending.sandbox,
+                                                        ),
+                                                        pending.sandbox,
+                                                    ) * 3600,
+                                                )}
+                                            </dd>
+                                        </>
+                                    )}
+                                </dl>
+                            </Surface>
+                        )}
+                        {spends && pricing && (
+                            <>
+                                <Surface className="space-y-4">
+                                    {pending.action === "create" && (
+                                        <>
+                                            <ModelFormRow
+                                                label="Name"
+                                                help="Shown in your sandbox list. It can’t be changed later."
+                                            >
                                                 <Field.Input asChild>
                                                     <Input
-                                                        type="number"
-                                                        min="0"
-                                                        step="any"
-                                                        inputMode="decimal"
-                                                        aria-label="How long"
-                                                        aria-describedby="sandbox-duration-status"
-                                                        value={amount}
-                                                        error={!!durationError}
-                                                        className="w-20"
-                                                        onFocus={() =>
-                                                            setUntilStopped(
-                                                                false,
-                                                            )
-                                                        }
+                                                        className="w-full"
+                                                        value={pending.name}
                                                         onChange={(event) =>
-                                                            setAmount(
-                                                                event
+                                                            setPending({
+                                                                ...pending,
+                                                                name: event
                                                                     .currentTarget
                                                                     .value,
-                                                            )
+                                                            })
                                                         }
                                                     />
                                                 </Field.Input>
-                                                <ButtonGroup aria-label="Duration unit">
-                                                    {UNITS.map((option) => (
-                                                        <TabButton
-                                                            key={option.seconds}
-                                                            size="sm"
-                                                            active={
-                                                                !untilStopped &&
-                                                                unit ===
-                                                                    option.seconds
-                                                            }
-                                                            onClick={() => {
-                                                                setUnit(
-                                                                    option.seconds,
-                                                                );
-                                                                setUntilStopped(
-                                                                    false,
-                                                                );
-                                                            }}
-                                                        >
-                                                            {option.label}
-                                                        </TabButton>
-                                                    ))}
-                                                    {pending.action !==
-                                                        "limit" && (
-                                                        <TabButton
-                                                            size="sm"
-                                                            active={
-                                                                untilStopped
-                                                            }
-                                                            onClick={() =>
-                                                                setUntilStopped(
-                                                                    true,
-                                                                )
-                                                            }
-                                                        >
-                                                            Until I stop it
-                                                        </TabButton>
-                                                    )}
-                                                </ButtonGroup>
-                                            </div>
-                                        </ModelFormRow>
-                                    </Surface>
-                                    {pending.action === "create" && (
-                                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                                            <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                            {/* E2B tells only the team that built a
+                                            </ModelFormRow>
+                                            <TemplatePicker
+                                                pricing={pricing}
+                                                template={template}
+                                                custom={!!pending.custom}
+                                                error={templateError}
+                                                onChange={(template, custom) =>
+                                                    setPending({
+                                                        action: "create",
+                                                        name: pending.name,
+                                                        template,
+                                                        custom,
+                                                    })
+                                                }
+                                            />
+                                        </>
+                                    )}
+                                    <ModelFormRow
+                                        label={
+                                            addTo ? "Add time" : "Run it for"
+                                        }
+                                        help={
+                                            pending.action === "limit"
+                                                ? "At least 10 minutes. The sandbox pauses when time runs out."
+                                                : "At least 10 minutes. Choose Until I stop it to keep running until you pause or kill it."
+                                        }
+                                        note={
+                                            <Chip
+                                                id="sandbox-duration-status"
+                                                size="sm"
+                                                intent={
+                                                    durationError
+                                                        ? "danger"
+                                                        : "info"
+                                                }
+                                                className="polli:h-auto polli:max-w-full polli:py-1 polli:leading-snug"
+                                            >
+                                                <ClockIcon className="h-3 w-3 shrink-0" />
+                                                {durationError ||
+                                                    (timeout === FOREVER
+                                                        ? "Will run until you pause or kill it"
+                                                        : `Will run until ${new Date(now + timeout * 1000).toLocaleString()}`)}
+                                            </Chip>
+                                        }
+                                    >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Field.Input asChild>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="any"
+                                                    inputMode="decimal"
+                                                    aria-label="How long"
+                                                    aria-describedby="sandbox-duration-status"
+                                                    value={amount}
+                                                    error={!!durationError}
+                                                    className="w-20"
+                                                    onFocus={() =>
+                                                        setUntilStopped(false)
+                                                    }
+                                                    onChange={(event) =>
+                                                        setAmount(
+                                                            event.currentTarget
+                                                                .value,
+                                                        )
+                                                    }
+                                                />
+                                            </Field.Input>
+                                            <ButtonGroup aria-label="Duration unit">
+                                                {UNITS.map((option) => (
+                                                    <TabButton
+                                                        key={option.seconds}
+                                                        size="sm"
+                                                        active={
+                                                            !untilStopped &&
+                                                            unit ===
+                                                                option.seconds
+                                                        }
+                                                        onClick={() => {
+                                                            setUnit(
+                                                                option.seconds,
+                                                            );
+                                                            setUntilStopped(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        {option.label}
+                                                    </TabButton>
+                                                ))}
+                                                {pending.action !== "limit" && (
+                                                    <TabButton
+                                                        size="sm"
+                                                        active={untilStopped}
+                                                        onClick={() =>
+                                                            setUntilStopped(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        Until I stop it
+                                                    </TabButton>
+                                                )}
+                                            </ButtonGroup>
+                                        </div>
+                                    </ModelFormRow>
+                                </Surface>
+                                {pending.action === "create" && (
+                                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        {/* E2B tells only the team that built a
                                             template its size, so another team's
                                             template is priced once it runs. */}
-                                            <span>
-                                                Pollinations templates include
-                                                the{" "}
-                                                <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
-                                                    polli CLI
-                                                </InlineLink>
-                                                , already signed in. Any other{" "}
-                                                <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
-                                                    public E2B template
-                                                </InlineLink>{" "}
-                                                works too; its hourly cost shows
-                                                on its card once it starts.
-                                            </span>
-                                        </p>
-                                    )}
-                                </>
-                            )}
-                        </DialogBody>
-                    </form>
-                </ResourceDialog>
-            </Section>
-            <SandboxTemplates
-                onCreate={(template) =>
-                    setPending({
-                        action: "create",
-                        name: generateFunName(),
-                        template,
-                    })
-                }
-            />
-        </>
+                                        <span>
+                                            Pollinations templates include the{" "}
+                                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
+                                                polli CLI
+                                            </InlineLink>
+                                            , already signed in. Any other{" "}
+                                            <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
+                                                public E2B template
+                                            </InlineLink>{" "}
+                                            works too; its hourly cost shows on
+                                            its card once it starts.
+                                        </span>
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </DialogBody>
+                </form>
+            </ResourceDialog>
+        </Section>
     );
 }

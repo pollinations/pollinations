@@ -450,7 +450,7 @@ export function SidebarSandboxes() {
             {counts.paused > 0 && (
                 <>
                     <PauseIcon
-                        className={`h-3 w-3 shrink-0 text-intent-danger-text ${counts.running > 0 ? "ml-1" : ""}`}
+                        className={`h-3 w-3 shrink-0 text-theme-text-muted ${counts.running > 0 ? "ml-1" : ""}`}
                     />
                     {counts.paused}
                     <span className="sr-only"> paused</span>

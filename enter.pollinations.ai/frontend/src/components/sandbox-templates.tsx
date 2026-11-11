@@ -109,12 +109,12 @@ export const SandboxTemplateList: FC<{
             const perHour = prices[template.id];
             return (
                 // From half a screen, two rows: the size and the price, then
-                // the command and Create. The price block is 14rem wide, so
-                // when wide Create's 14rem slot starts at the price's icons;
+                // the command and Create. The price block is 12rem wide, so
+                // when wide Create's 12rem slot starts at the price's icons;
                 // at half a screen it sits flush right to leave the command
                 // room. Stacked on phones.
                 <Surface key={template.id} className="flex flex-col gap-3">
-                    <div className="grid gap-3 @lg:grid-cols-[minmax(0,1fr)_14rem] @lg:items-center @lg:gap-x-6">
+                    <div className="grid gap-3 @lg:grid-cols-[minmax(0,1fr)_12rem] @lg:items-center @lg:gap-x-6">
                         <div className="flex min-w-0 items-center gap-2.5">
                             <ProviderLogo provider={template.provider} />
                             <span
@@ -123,7 +123,7 @@ export const SandboxTemplateList: FC<{
                             />
                             <SizeStats {...template} />
                         </div>
-                        <div className="grid w-56 grid-cols-[6.5rem_3.5rem_3.5rem] gap-x-1">
+                        <div className="grid w-48 grid-cols-[4.5rem_3.5rem_3.5rem] gap-x-1">
                             <LedgerRow Icon={WalletIcon} label="Pollen">
                                 <div className="col-span-2 flex">
                                     <BalanceAccessChip access="quest" />
@@ -150,7 +150,7 @@ export const SandboxTemplateList: FC<{
                                     value={`polli sandbox create ${template.id}`}
                                 />
                             </div>
-                            <div className="shrink-0 @lg:ml-auto @2xl:w-56">
+                            <div className="shrink-0 @lg:ml-auto @2xl:w-48">
                                 <Button
                                     type="button"
                                     intent="commit"

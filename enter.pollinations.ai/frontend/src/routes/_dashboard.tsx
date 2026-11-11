@@ -10,6 +10,7 @@ import {
     Await,
     createFileRoute,
     Outlet,
+    useMatch,
     useRouter,
     useRouterState,
 } from "@tanstack/react-router";
@@ -167,6 +168,12 @@ function DashboardLayout() {
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
     const pathname = useRouterState({ select: (s) => s.location.pathname });
+    // The buy page itself needs no pointer to the buy page. Matched by route:
+    // the router also serves it as /pollen/ and /Pollen.
+    const onPollenPage = useMatch({
+        from: "/_dashboard/pollen",
+        shouldThrow: false,
+    });
     // Pages that need the account wait out the outage; public pages still load.
     const outagePageTitle =
         data.sessionUnavailable && !PUBLIC_PATHS.has(pathname)
@@ -247,8 +254,7 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
-            {/* The buy page itself needs no pointer to the buy page. */}
-            {data.user && pathname !== "/pollen" && (
+            {data.user && !onPollenPage && (
                 <Suspense fallback={null}>
                     <Await promise={data.balance}>
                         {(balance) =>

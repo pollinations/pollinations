@@ -358,16 +358,17 @@ describe("out-of-pollen banner", () => {
             { tierBalance: 0, packBalance: 0 },
             [buy, "/quests"],
         ],
-        [
-            "dust below the shown precision",
-            { tierBalance: 0.00004, packBalance: 0 },
-            [buy, "/quests"],
-        ],
         // Locked Quest pollen cannot be spent, and quests would only add to it.
         [
             "only locked Quest pollen",
             { tierBalance: 35.54, packBalance: 0, questPollenRestricted: true },
             [buy],
+        ],
+        // The wallet shows this as 0, but the API still accepts a request.
+        [
+            "a remainder too small to show",
+            { tierBalance: 0.00004, packBalance: 0 },
+            [],
         ],
         ["Quest pollen left", { tierBalance: 0.5, packBalance: 0 }, []],
         [
@@ -393,6 +394,8 @@ describe("out-of-pollen banner", () => {
         expect(
             [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]),
         ).toEqual(links);
+        // A wallet with pollen renders nothing, not a banner without links.
+        expect(html === "").toBe(links.length === 0);
     });
 });
 

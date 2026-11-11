@@ -300,55 +300,61 @@ describe("Flash Lite Vercel routing", () => {
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
         });
     });
-    it("converts audio and video to Vercel files while preserving images and text", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
-        if (!transform) throw new Error("gemini-fast transform missing");
-        const image = {
-            type: "image_url",
-            image_url: { url: "data:image/png;base64,aW1hZ2U=" },
-        };
-        const text = { type: "text", text: "Describe these inputs" };
-        const { messages } = await transform(
-            [
-                {
-                    role: "user",
-                    content: [
-                        text,
-                        image,
-                        {
-                            type: "input_audio",
-                            input_audio: { format: "wav", data: "YXVkaW8=" },
-                        },
-                        {
-                            type: "video_url",
-                            video_url: {
-                                url: "data:video/mp4;base64,dmlkZW8=",
+    it.each(["gemini-fast", "google/gemini-4-carbon:vercel"])(
+        "converts audio and video to Vercel files for %s while preserving images and text",
+        async (model) => {
+            const transform = findModelByName(model)?.transform;
+            if (!transform) throw new Error(`${model} transform missing`);
+            const image = {
+                type: "image_url",
+                image_url: { url: "data:image/png;base64,aW1hZ2U=" },
+            };
+            const text = { type: "text", text: "Describe these inputs" };
+            const { messages } = await transform(
+                [
+                    {
+                        role: "user",
+                        content: [
+                            text,
+                            image,
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    format: "wav",
+                                    data: "YXVkaW8=",
+                                },
                             },
-                        },
-                    ],
+                            {
+                                type: "video_url",
+                                video_url: {
+                                    url: "data:video/mp4;base64,dmlkZW8=",
+                                },
+                            },
+                        ],
+                    },
+                ],
+                {},
+            );
+            expect(messages[0].content).toEqual([
+                text,
+                image,
+                {
+                    type: "file",
+                    file: {
+                        filename: "audio.wav",
+                        file_data: "data:audio/wav;base64,YXVkaW8=",
+                    },
                 },
-            ],
-            {},
-        );
-        expect(messages[0].content).toEqual([
-            text,
-            image,
-            {
-                type: "file",
-                file: {
-                    filename: "audio.wav",
-                    file_data: "data:audio/wav;base64,YXVkaW8=",
+                {
+                    type: "file",
+                    file: {
+                        filename: "video.mp4",
+                        file_data: "data:video/mp4;base64,dmlkZW8=",
+                    },
                 },
-            },
-            {
-                type: "file",
-                file: {
-                    filename: "video.mp4",
-                    file_data: "data:video/mp4;base64,dmlkZW8=",
-                },
-            },
-        ]);
-    });
+            ]);
+        },
+    );
     it("preserves the existing public endpoint capabilities", () => {
         expect(supportsDirectResponses("google/gemini-2.5-flash-lite")).toBe(
             false,

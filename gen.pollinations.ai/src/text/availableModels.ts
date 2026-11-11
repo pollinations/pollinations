@@ -873,6 +873,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-4-carbon:vercel"],
         transform: pipe(
             sanitizeToolSchemas,
+            mediaToVercelFiles,
             adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v3-pro"),
         ),

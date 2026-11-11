@@ -731,7 +731,7 @@ function paymentRows(rows) {
                 "",
                 `$${(r.amount_cents / 100).toFixed(2)} ${r.ref ? "auto top-up" : "pack"}, ${minute(r.at)}`,
             ],
-            ["", r.reason || "no credit recorded"],
+            ["", "no credit recorded"],
         ]),
         ...(unpaid.length > shown.length
             ? [["", `+${unpaid.length - shown.length} more payments`]]

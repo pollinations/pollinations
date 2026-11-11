@@ -17,14 +17,6 @@ PIXEL_MULTIPLE = 65536
 SIDE_MULTIPLE = 8
 
 
-def is_valid_dimensions(width: int, height: int) -> bool:
-    return (
-        width % SIDE_MULTIPLE == 0
-        and height % SIDE_MULTIPLE == 0
-        and (width * height) % PIXEL_MULTIPLE == 0
-    )
-
-
 def _height_step(width: int) -> int:
     """Smallest height step that makes width * height divisible by 65536."""
     return PIXEL_MULTIPLE // gcd(width, PIXEL_MULTIPLE)
@@ -56,43 +48,35 @@ def nearest_valid_dimensions(
 
     ratio = target_w / target_h
     target_pixels = target_w * target_h
-    best: tuple[float, float, int, int] | None = None
+    best: tuple[float, int, int, int, int] | None = None
 
-    low = SIDE_MULTIPLE
-    high = MAX_DIMENSION
-    for candidate_w in range(low, high + 1, SIDE_MULTIPLE):
+    # The loop only builds valid sizes: the width is a multiple of 8 and the
+    # height is a multiple of _height_step, so width * height is always a
+    # multiple of 65536.
+    for candidate_w in range(MIN_DIMENSION, MAX_DIMENSION + 1, SIDE_MULTIPLE):
         step = _height_step(candidate_w)
         ideal_h = candidate_w / ratio
         candidate_h = max(step, round(ideal_h / step) * step)
-        if candidate_h > MAX_DIMENSION:
+        if candidate_h < MIN_DIMENSION or candidate_h > MAX_DIMENSION:
             continue
-        if candidate_w * candidate_h > max_pixels:
-            continue
-        if not is_valid_dimensions(candidate_w, candidate_h):
+        pixels = candidate_w * candidate_h
+        if pixels > max_pixels:
             continue
         aspect_error = abs(candidate_w / candidate_h - ratio) / ratio
-        pixel_error = abs(candidate_w * candidate_h - target_pixels) / target_pixels
-        score = (aspect_error, pixel_error, candidate_w, candidate_h)
+        # Keep the detail the caller asked for: among equally good ratios a
+        # size at or above the requested pixel count wins, and the smallest
+        # such size wins so the result does not balloon. Only when nothing
+        # that large fits the cap do we take the largest size below it.
+        size_error = (
+            (0, pixels - target_pixels)
+            if pixels >= target_pixels
+            else (1, target_pixels - pixels)
+        )
+        score = (aspect_error, *size_error, candidate_w, candidate_h)
         if best is None or score < best:
             best = score
 
     if best is None:
-        # No aspect-preserving size fits the caps: fall back to the largest
-        # valid size under the cap closest to the request.
-        candidate_w = max(
-            SIDE_MULTIPLE, (target_w // SIDE_MULTIPLE) * SIDE_MULTIPLE
-        )
-        while candidate_w > SIDE_MULTIPLE:
-            step = _height_step(candidate_w)
-            candidate_h = max(
-                step, (max_pixels // candidate_w) // step * step
-            )
-            if (
-                candidate_h >= MIN_DIMENSION
-                and is_valid_dimensions(candidate_w, candidate_h)
-            ):
-                return candidate_w, candidate_h
-            candidate_w -= SIDE_MULTIPLE
         raise ValueError(f"No valid size for {width}x{height}")
 
-    return best[2], best[3]
+    return best[3], best[4]

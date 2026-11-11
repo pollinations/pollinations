@@ -45,6 +45,22 @@ class AspectRatioTest(unittest.TestCase):
     def test_small_squares_grow_to_the_smallest_valid_square(self):
         self.assert_size((64, 64), (256, 256))
 
+    def test_keeps_common_sizes_large_instead_of_shrinking_them(self):
+        # 800x600 fits 4:3 at 1024x768 under the cap; the old score preferred
+        # the smaller 512x384 and threw away 59% of the pixels.
+        self.assert_size((800, 600), (1024, 768))
+        # 1280x720 is above the cap, so it takes the largest valid 16:9 size.
+        self.assert_size((1280, 720), (1024, 576))
+
+    def test_never_returns_a_side_below_the_minimum(self):
+        # A narrow request used to snap to 48x4096, below MIN_DIMENSION.
+        for requested in [(64, 5461), (5461, 64), (64, 8192), (8192, 64)]:
+            width, height = dimensions.nearest_valid_dimensions(
+                *requested, MAX_PIXELS
+            )
+            self.assertGreaterEqual(width, dimensions.MIN_DIMENSION)
+            self.assertGreaterEqual(height, dimensions.MIN_DIMENSION)
+
     def test_result_always_satisfies_the_backend_invariant(self):
         for requested in [
             (256, 128),
@@ -56,6 +72,9 @@ class AspectRatioTest(unittest.TestCase):
             (64, 64),
             (1024, 512),
             (800, 600),
+            (1280, 720),
+            (64, 5461),
+            (5461, 64),
         ]:
             width, height = dimensions.nearest_valid_dimensions(*requested, MAX_PIXELS)
             self.assertEqual(width % 8, 0)

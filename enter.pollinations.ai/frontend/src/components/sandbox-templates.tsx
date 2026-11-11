@@ -33,9 +33,7 @@ const PROVIDER_LOGOS: Record<SandboxProvider, string> = {
     azure: "/brand-logos/microsoft.svg",
 };
 
-export const ProviderLogo: FC<{ provider: SandboxProvider }> = ({
-    provider,
-}) => {
+const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
     const logo = PROVIDER_LOGOS[provider];
     const className = "h-8 w-8 shrink-0 text-ink-900 opacity-55";
     return (
@@ -60,7 +58,7 @@ export const ProviderLogo: FC<{ provider: SandboxProvider }> = ({
 };
 
 // A size as three figures: cores, memory and, when known, disk.
-export const SizeStats: FC<{
+const SizeStats: FC<{
     cpuCount: number;
     memoryMB: number;
     diskSizeMB?: number;
@@ -82,7 +80,7 @@ export const SizeStats: FC<{
 );
 
 // One price row, laid out like the Models list's ledger: label, value, unit.
-export const LedgerRow: FC<{
+const LedgerRow: FC<{
     Icon: FC<{ className?: string }>;
     label: string;
     children: ReactNode;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { hashTools } from "./tools/hash.js";
+import { identityTools } from "./tools/identity.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
         for (const [name, description, shape, run] of [
             ...timeTools,
             ...contrastTools,
+            ...identityTools,
             ...unicodeTools,
             ...qrTools,
             ...currencyTools,

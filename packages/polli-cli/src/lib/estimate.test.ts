@@ -187,10 +187,12 @@ describe("--estimate", () => {
         args: string[],
     ) => {
         const urls: string[] = [];
+        const headers: Headers[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (url: string) => {
+            vi.fn(async (url: string, init?: RequestInit) => {
                 urls.push(String(url));
+                headers.push(new Headers(init?.headers));
                 return new Response(JSON.stringify(models), { status: 200 });
             }),
         );
@@ -201,7 +203,7 @@ describe("--estimate", () => {
         });
         setOutputMode("json");
         await command.parseAsync(args, { from: "user" });
-        return { urls, result: JSON.parse(out.join("")) };
+        return { urls, headers, result: JSON.parse(out.join("")) };
     };
 
     it("only reads the model list for gen image", async () => {
@@ -224,5 +226,21 @@ describe("--estimate", () => {
         expect(urls.map((u) => new URL(u).pathname)).toEqual(["/image/models"]);
         expect(result.model).toBe("google/veo-3.1-fast");
         expect(result.pollen).toBeCloseTo(0.48);
+    });
+
+    it("reads public pricing even when a key is configured", async () => {
+        process.env.POLLINATIONS_API_KEY = "sk_test";
+        try {
+            const { headers, result } = await run(createVideoCommand(), [
+                "--model",
+                "google/veo-3.1-fast",
+                "--estimate",
+                "a waterfall",
+            ]);
+            expect(headers[0]?.has("authorization")).toBe(false);
+            expect(result.model).toBe("google/veo-3.1-fast");
+        } finally {
+            delete process.env.POLLINATIONS_API_KEY;
+        }
     });
 });

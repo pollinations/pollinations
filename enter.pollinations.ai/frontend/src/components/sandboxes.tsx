@@ -433,7 +433,11 @@ function SandboxCard({
 export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
+    // The prices' error, shown with the templates, and your list's, shown
+    // only with the sandboxes you already see: a list that never loaded
+    // says nothing, as you may have none.
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [listError, setListError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
@@ -442,25 +446,23 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const [untilStopped, setUntilStopped] = useState(false);
 
     const load = useCallback(async () => {
-        setLoadError(null);
         // The pricing is public and loads on its own, so the templates show
         // even when your sandboxes can't load; those need you signed in.
         const [prices, list] = await Promise.allSettled([
             e2b<Pricing>("/pricing"),
             signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
         ]);
+        const message = (reason: unknown) =>
+            reason instanceof Error
+                ? reason.message
+                : "Couldn’t load sandboxes.";
         if (prices.status === "fulfilled") setPricing(prices.value);
-        if (list.status === "fulfilled") setSandboxes(list.value);
-        const failed = [prices, list].find(
-            (result) => result.status === "rejected",
+        setLoadError(
+            prices.status === "rejected" ? message(prices.reason) : null,
         );
-        if (failed) {
-            setLoadError(
-                failed.reason instanceof Error
-                    ? failed.reason.message
-                    : "Couldn’t load sandboxes.",
-            );
-        }
+        // A failed reload keeps the last list it had.
+        if (list.status === "fulfilled") setSandboxes(list.value);
+        setListError(list.status === "rejected" ? message(list.reason) : null);
     }, [signedIn]);
 
     // No refresh button: the list reloads after every action and whenever
@@ -568,16 +570,8 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     }
 
     const hasSandboxes = !!pricing && sandboxes.length > 0;
-    const alerts = (
+    const actionAlert = (
         <>
-            {loadError && (
-                <LoadError
-                    onRetry={load}
-                    paths={["/alpha/e2b/pricing", "/alpha/e2b/v2/sandboxes"]}
-                >
-                    {loadError}
-                </LoadError>
-            )}
             {actionError && (
                 <Alert intent="danger">
                     {actionError}
@@ -598,7 +592,15 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         <>
             {hasSandboxes && (
                 <Section title="Your sandboxes">
-                    {alerts}
+                    {listError && (
+                        <LoadError
+                            onRetry={load}
+                            paths={["/alpha/e2b/v2/sandboxes"]}
+                        >
+                            {listError}
+                        </LoadError>
+                    )}
+                    {actionAlert}
                     {/* The limit shows only once it's reached; the footnote
                         below the templates names it otherwise. */}
                     {full && (
@@ -662,7 +664,13 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                 </Section>
             )}
             <Section title="New sandbox">
-                {!hasSandboxes && alerts}
+                {loadError && (
+                    <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
+                        {loadError}
+                    </LoadError>
+                )}
+                {/* A create that fails before you have any sandbox. */}
+                {!hasSandboxes && actionAlert}
                 <SectionContent loading={loading}>
                     {/* Gen's pricing lists the templates that can start, so
                         the cards and the create picker always agree. */}

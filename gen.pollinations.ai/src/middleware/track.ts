@@ -1026,13 +1026,15 @@ function isImplausibleProxyUsage(
     let prompt = 0;
     let completion = 0;
     for (const [type, amount] of Object.entries(usage)) {
+        // A negative count would cancel a large one in the sum. Negated, so
+        // a count that is not a number is implausible too.
+        if (!(amount >= 0)) return true;
         if (type.startsWith("prompt")) prompt += amount;
         else completion += amount;
     }
-    // Negated, so a count that is not a number is implausible too.
-    return !(
-        prompt <= MAX_PROXY_PROMPT_TOKENS &&
-        completion <= MAX_PROXY_COMPLETION_TOKENS
+    return (
+        prompt > MAX_PROXY_PROMPT_TOKENS ||
+        completion > MAX_PROXY_COMPLETION_TOKENS
     );
 }
 

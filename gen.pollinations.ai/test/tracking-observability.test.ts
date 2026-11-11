@@ -4074,6 +4074,26 @@ describe("trackResponse community proxy usage", () => {
             headers: { "content-type": "text/event-stream" },
         });
     const overCompletion = { "x-usage-completion-text-tokens": "200001" };
+    // A field the Responses usage schema does not check.
+    const cacheWrites = (count: unknown) => () =>
+        stream(
+            `event: response.completed\ndata: ${JSON.stringify({
+                type: "response.completed",
+                response: {
+                    object: "response",
+                    model: "upstream-test-model",
+                    status: "completed",
+                    usage: {
+                        input_tokens: 1,
+                        output_tokens: 1,
+                        total_tokens: 2,
+                        input_tokens_details: {
+                            cache_creation_input_tokens: count,
+                        },
+                    },
+                },
+            })}\n\n`,
+        );
 
     it.each([
         ["Chat JSON completion tokens", () => json(overCompletion)],
@@ -4128,28 +4148,10 @@ describe("trackResponse community proxy usage", () => {
                 ),
         ],
         // A counter that is not a number is not within the ceiling either.
-        [
-            "a count that is not a number",
-            () =>
-                stream(
-                    `event: response.completed\ndata: ${JSON.stringify({
-                        type: "response.completed",
-                        response: {
-                            object: "response",
-                            model: "upstream-test-model",
-                            status: "completed",
-                            usage: {
-                                input_tokens: 1,
-                                output_tokens: 1,
-                                total_tokens: 2,
-                                input_tokens_details: {
-                                    cache_creation_input_tokens: "bad",
-                                },
-                            },
-                        },
-                    })}\n\n`,
-                ),
-        ],
+        ["a count that is not a number", cacheWrites("bad")],
+        // Read as 2,000,001 prompt tokens less 2,000,000 cache writes: a sum
+        // of 1, billed as the 2,000,001.
+        ["a negative count that cancels the rest", cacheWrites(-2_000_000)],
     ])(
         "does not bill a proxy past the ceiling: %s",
         async (_name, response) => {
@@ -4239,6 +4241,20 @@ describe("trackResponse community proxy usage", () => {
             });
         },
     );
+
+    // A stream's usage names every bucket, most of them zero.
+    it("still bills a proxy's streamed answer with zero counts", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            cacheWrites(0)(),
+            served(proxy),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
+    });
 });
 
 function makeAdjustment(

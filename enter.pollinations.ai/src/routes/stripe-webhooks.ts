@@ -558,6 +558,22 @@ const handleCheckoutSessionCompleted = async (
     };
 };
 
+/**
+ * Whether handleCheckoutSessionCompleted would credit this paid session: it
+ * names a buyer who still has an account, and a pack.
+ */
+async function canStillBeCredited(
+    env: CloudflareBindings,
+    session: Stripe.Checkout.Session,
+): Promise<boolean> {
+    const { userId, packKey } = session.metadata ?? {};
+    if (!userId || !packKey || !getPollenPackByKey(packKey)) return false;
+    const buyer = await env.DB.prepare("SELECT 1 FROM user WHERE id = ?")
+        .bind(userId)
+        .first();
+    return buyer !== null;
+}
+
 // A full refund of a pack bought at checkout is recorded as a negative credit
 // row keyed by the refunded session, so a repeated event hits the primary key
 // and changes nothing. Partial refunds, failed refunds and refunded automatic
@@ -584,7 +600,8 @@ async function reversePollenForRefund(
               limit: 1,
           })
         : null;
-    const sessionId = sessions?.data[0]?.id;
+    const session = sessions?.data[0];
+    const sessionId = session?.id;
     const credit = sessionId
         ? await env.DB.prepare(
               "SELECT user_id AS userId, pollen_credited AS pollen, created_at AS createdAt FROM stripe_checkout_credits WHERE session_id = ?",
@@ -593,15 +610,16 @@ async function reversePollenForRefund(
               .first<{ userId: string; pollen: number; createdAt: number }>()
         : null;
     if (!credit) {
-        // Stripe does not order its events: the purchase is credited when
-        // its own event arrives. Failing makes Stripe send the refund again.
-        if (sessionId) {
+        // Stripe does not order its events: a purchase that can still be
+        // credited is credited when its own event arrives. Failing makes
+        // Stripe send the refund again.
+        if (session && (await canStillBeCredited(env, session))) {
             throw new Error(
                 `Stripe refund: checkout session ${sessionId} is not credited yet`,
             );
         }
         console.warn(
-            `Stripe refund: no checkout session for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
+            `Stripe refund: no credited checkout for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
         );
         return;
     }

@@ -41,7 +41,7 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "my-models",
         to: "/my-models",
-        label: "My Listings",
+        label: "My listings",
         icon: CloudUploadIcon,
         group: "yours",
     },

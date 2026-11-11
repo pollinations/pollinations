@@ -262,7 +262,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
 /**
  * What your listings earned in the last 7 days, paid and Quest together, on
- * the drawer's My Listings row: the same chip as Quests' "claimable", only
+ * the drawer's My listings row: the same chip as Quests' "claimable", only
  * when it is above zero.
  */
 export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({

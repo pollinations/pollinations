@@ -16,8 +16,8 @@ afterAll(() => {
 });
 
 describe("My Apps", () => {
-    it("is reached through My Listings by every signed-in account", () => {
-        // My Apps is the Apps tab of My Listings (/my-models?tab=apps).
+    it("is reached through My listings by every signed-in account", () => {
+        // My Apps is the Apps tab of My listings (/my-models?tab=apps).
         expect(
             DASHBOARD_NAV_ITEMS.some((item) => item.to === "/my-models"),
         ).toBe(true);

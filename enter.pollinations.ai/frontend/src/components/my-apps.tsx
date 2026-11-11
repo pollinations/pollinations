@@ -214,7 +214,7 @@ export function SubmitAppButton() {
     );
 }
 
-/** Your apps in the community catalog: the My Listings card's Apps tab. */
+/** Your apps in the community catalog: the My listings card's Apps tab. */
 export function MyApps({
     apps,
     githubConnected,

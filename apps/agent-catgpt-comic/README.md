@@ -39,7 +39,7 @@ npx @pollinations/cli agents create \
   --title "CatGPT Comic"
 ```
 
-The dashboard route is **My Listings → Create → paste `agent.json`**.
+The dashboard route is **My listings → Create → paste `agent.json`**.
 
 ## Call it
 

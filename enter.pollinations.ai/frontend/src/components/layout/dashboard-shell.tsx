@@ -57,7 +57,7 @@ type DashboardNavItem = {
 
 // Two parts: the platform at the top (News & FAQ, models, agents, MCP,
 // sandboxes, Docs), and everything about you as one block at the bottom:
-// Credits and Quests with their balances, what you build (My Listings, Keys),
+// Credits and Quests with their balances, what you build (My listings, Keys),
 // Activity, then your name, the way to Settings. A thin line opens each part. Signed out, the bottom holds the sign-in
 // buttons.
 const NAV_LINE_CLASS = "border-theme-text-strong/10";
@@ -488,7 +488,7 @@ const DocsRow: FC = () => (
 // room for it above your section, so the guides never make it scroll.
 const DOC_GUIDES = [
     {
-        label: "Quick Start",
+        label: "Quick start",
         tag: "quick-start",
         icon: RocketIcon,
         show: "[@container(min-height:14.8125rem)]:flex",
@@ -500,13 +500,13 @@ const DOC_GUIDES = [
         show: "[@container(min-height:16.0625rem)]:flex",
     },
     {
-        label: "Publish an Agent",
+        label: "Publish an agent",
         tag: "publish-an-agent",
         icon: BotIcon,
         show: "[@container(min-height:17.3125rem)]:flex",
     },
     {
-        label: "Publish a Model",
+        label: "Publish a model",
         tag: "publish-a-model",
         icon: BeakerIcon,
         show: "[@container(min-height:18.5625rem)]:flex",

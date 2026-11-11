@@ -614,7 +614,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     return (
         <>
             {hasSandboxes && (
-                <Section title="Your sandboxes">
+                <Section title="My sandboxes">
                     {listError && (
                         <LoadError
                             onRetry={load}

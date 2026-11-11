@@ -112,9 +112,9 @@ export function DeploymentsPlaceholder({
     error?: string | null;
     onRetry?: () => void;
 }) {
-    if (!error) return <PageLoading titles={["My Listings"]} />;
+    if (!error) return <PageLoading titles={["My listings"]} />;
     return (
-        <Section title="My Listings">
+        <Section title="My listings">
             <LoadError
                 onRetry={onRetry}
                 paths={["/account/my-models", "/account/agents"]}
@@ -457,7 +457,7 @@ export function CommunityEndpoints({
             {error && <Alert intent="danger">{error}</Alert>}
             {/* One card: agents, models and apps behind tab buttons, then the
                 tab's note. The open tab's Create sits on the tab row. */}
-            <Section title="My Listings" id="listings">
+            <Section title="My listings" id="listings">
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap gap-1.5">
                         {LISTING_TABS.map(({ value, label }) => (

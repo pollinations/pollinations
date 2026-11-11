@@ -74,7 +74,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 ## Register in the Dashboard
 
-1. Open [My Listings](https://enter.pollinations.ai/my-models?tab=models).
+1. Open [My listings](https://enter.pollinations.ai/my-models?tab=models).
 2. On the **Models** tab, choose **Create**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.

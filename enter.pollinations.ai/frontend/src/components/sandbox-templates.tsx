@@ -1,4 +1,10 @@
-import { Button, ClockIcon, Surface, TerminalIcon } from "@pollinations/ui";
+import {
+    Button,
+    ClockIcon,
+    CopyField,
+    Surface,
+    TerminalIcon,
+} from "@pollinations/ui";
 import {
     callerRates,
     perSecond,
@@ -6,7 +12,6 @@ import {
     SANDBOX_TEMPLATES,
 } from "@shared/registry/sandbox.ts";
 import type { FC } from "react";
-import { CopyValue } from "./models/copy-value.tsx";
 
 // An always-on sandbox runs about 720 hours a month.
 const HOURS_PER_MONTH = 720;
@@ -32,70 +37,48 @@ export const SandboxTemplateList: FC<{
     <div className="@container flex flex-col gap-3">
         {SANDBOX_TEMPLATES.map((template) => {
             const perHour = hourly(template);
-            const rows = [
-                ["Per hour", pollen(perHour)],
-                ["Always on", `${pollen(perHour * HOURS_PER_MONTH)}/month`],
-            ];
             return (
+                // Wide: Create beside the size, the command under both.
+                // Narrow: size, price, command, then Create.
                 <Surface
                     key={template.id}
-                    className="[--sandbox-card-gap:0.625rem] transition-colors hover:bg-surface-opaque/90 @2xl:flex @2xl:items-center"
+                    className="grid gap-3 @md:grid-cols-[minmax(0,1fr)_auto]"
                 >
-                    <div className="flex items-center gap-[var(--sandbox-card-gap)] @2xl:min-w-0 @2xl:flex-1">
-                        <TerminalIcon className="h-8 w-8 shrink-0 text-ink-900 opacity-55" />
-                        <span
-                            aria-hidden="true"
-                            className="h-10 w-px shrink-0 bg-divider"
-                        />
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <span className="text-sm font-medium leading-tight text-theme-text-strong @2xl:text-base">
-                                {template.name}{" "}
-                                <span className="font-normal text-theme-text-muted">
-                                    on{" "}
-                                    {SANDBOX_PROVIDERS[template.provider].name}
-                                </span>
+                    <div className="flex min-w-0 flex-col gap-1">
+                        {/* The size is the title: it is what people
+                            compare, and it tells every template apart. */}
+                        <span className="font-medium leading-tight text-theme-text-strong">
+                            {template.cpuCount} vCPU ·{" "}
+                            {template.memoryMB / 1024} GB memory ·{" "}
+                            {gb(template.diskSizeMB)} GB disk
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm text-theme-text-muted">
+                            <ClockIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong className="font-semibold text-theme-text-strong">
+                                    {pollen(perHour)}
+                                </strong>
+                                /hour · {pollen(perHour * HOURS_PER_MONTH)}
+                                /month always on
                             </span>
-                            <p className="text-sm text-theme-text-muted">
-                                {template.cpuCount} vCPU ·{" "}
-                                {template.memoryMB / 1024} GB memory ·{" "}
-                                {gb(template.diskSizeMB)} GB disk
-                            </p>
-                            <CopyValue
-                                value={`polli sandbox create ${template.id}`}
-                                label={`Copy the command that creates a ${template.id} sandbox`}
-                            />
-                        </div>
+                        </span>
                     </div>
-                    <div className="mt-3 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-2 @2xl:mt-0 @2xl:w-[clamp(240px,calc(28%_-_8px),300px)] @2xl:shrink-0 @2xl:pl-3">
-                        {rows.map(([label, value]) => (
-                            <div
-                                key={label}
-                                className="col-span-full grid grid-cols-subgrid items-center py-0.5"
-                            >
-                                <span className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1.5 text-xs text-theme-text-muted">
-                                    <ClockIcon className="h-3.5 w-3.5 shrink-0" />
-                                    <span className="truncate whitespace-nowrap">
-                                        {label}
-                                    </span>
-                                </span>
-                                <span className="whitespace-nowrap text-sm font-semibold text-theme-text-strong">
-                                    {value}
-                                </span>
-                            </div>
-                        ))}
-                        <Button
-                            type="button"
-                            intent="commit"
-                            size="sm"
-                            icon={<TerminalIcon />}
-                            aria-haspopup={disabled ? undefined : "dialog"}
-                            disabled={disabled}
-                            className="col-span-full mt-2 justify-self-start"
-                            onClick={() => onCreate(template.id)}
-                        >
-                            {createLabel}
-                        </Button>
-                    </div>
+                    <CopyField
+                        label={`Copy the command that creates a ${template.id} sandbox`}
+                        value={`polli sandbox create ${template.id}`}
+                        className="@md:col-span-2 @md:row-start-2"
+                    />
+                    <Button
+                        type="button"
+                        intent="commit"
+                        icon={<TerminalIcon />}
+                        aria-haspopup={disabled ? undefined : "dialog"}
+                        disabled={disabled}
+                        className="justify-self-start @md:col-start-2 @md:row-start-1"
+                        onClick={() => onCreate(template.id)}
+                    >
+                        {createLabel}
+                    </Button>
                 </Surface>
             );
         })}

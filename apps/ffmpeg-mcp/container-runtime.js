@@ -19,14 +19,8 @@ async function decodeStream(stream, maxLength = MAX_ERROR_LENGTH) {
     return (text + decoder.decode()).slice(-maxLength);
 }
 
-export async function runFfmpeg(
-    runtime,
-    waitUntil,
-    inputs,
-    args,
-    outputExtension,
-    deadlineMs,
-) {
+// Saves the sources as input0, input1, and so on; returns the error if one fails.
+async function saveInputs(runtime, inputs) {
     for (const [index, input] of inputs.entries()) {
         const write = await runtime.exec(["tee", `${WORK_DIR}/input${index}`], {
             stdin: input,
@@ -37,12 +31,21 @@ export async function runFfmpeg(
             decodeStream(write.stderr),
         ]);
         if (writeExitCode !== 0) {
-            return {
-                ok: false,
-                stderr: writeError || "FFmpeg input could not be saved",
-            };
+            return writeError || "FFmpeg input could not be saved";
         }
     }
+}
+
+export async function runFfmpeg(
+    runtime,
+    waitUntil,
+    inputs,
+    args,
+    outputExtension,
+    deadlineMs,
+) {
+    const saveError = await saveInputs(runtime, inputs);
+    if (saveError) return { ok: false, stderr: saveError };
 
     const remainingMs = deadlineMs - Date.now();
     if (remainingMs <= 0) {
@@ -93,20 +96,8 @@ export async function runFfmpeg(
 }
 
 export async function runFfprobe(runtime, input, deadlineMs) {
-    const write = await runtime.exec(["tee", `${WORK_DIR}/input0`], {
-        stdin: input,
-        stdout: "ignore",
-    });
-    const [writeExitCode, writeError] = await Promise.all([
-        write.exitCode,
-        decodeStream(write.stderr),
-    ]);
-    if (writeExitCode !== 0) {
-        return {
-            ok: false,
-            stderr: writeError || "ffprobe input could not be saved",
-        };
-    }
+    const saveError = await saveInputs(runtime, [input]);
+    if (saveError) return { ok: false, stderr: saveError };
 
     const remainingMs = deadlineMs - Date.now();
     if (remainingMs <= 0) {

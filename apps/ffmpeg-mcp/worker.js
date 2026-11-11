@@ -33,6 +33,11 @@ class ToolFailure extends Error {
     }
 }
 
+const sourceUrl = z.url().refine((value) => {
+    const validation = validateUserMediaUrl(value);
+    return validation.ok && validation.url.protocol === "https:";
+}, "sources must be public HTTPS URLs without credentials");
+
 function validateSourceUrl(value) {
     const validation = validateUserMediaUrl(value);
     if (!validation.ok || validation.url.protocol !== "https:") {
@@ -81,45 +86,43 @@ async function fetchSource(source, fetchImpl, createFixedLengthStream) {
     return input.readable;
 }
 
-async function probeTool(params, env, dependencies, reportUsage) {
-    const [input] = await Promise.all([
-        fetchSource(
-            params.source,
-            dependencies.fetchImpl,
-            dependencies.createFixedLengthStreamImpl,
-        ),
-    ]);
+// Runs one container call, destroys the container, and bills its active time.
+// `finish` turns the result into the tool's value while the container is alive.
+async function inContainer(
+    tool,
+    env,
+    dependencies,
+    reportUsage,
+    call,
+    finish = (result) => result,
+) {
     const requestId = crypto.randomUUID();
     const startedAt = Date.now();
     const container = dependencies.getContainerImpl(
         env.FFMPEG,
-        `ffprobe-${requestId}`,
+        `ffmpeg-${requestId}`,
     );
     let responseStatus = 200;
     let errorMessage;
-    let info;
+    let value;
 
     try {
         let result;
         try {
-            result = await container.probe(
-                input,
-                startedAt + FFMPEG_MAX_RUN_MS,
-            );
+            result = await call(container, startedAt + FFMPEG_MAX_RUN_MS);
         } catch (error) {
             throw new ToolFailure(
                 502,
-                `ffprobe container failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                `FFmpeg container failed: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         }
         if (!result.ok) {
-            throw new ToolFailure(422, result.stderr || "ffprobe failed");
+            throw new ToolFailure(422, result.stderr || "FFmpeg failed");
         }
-        info = result.info;
+        value = await finish(result);
     } catch (error) {
         responseStatus = error instanceof ToolFailure ? error.status : 502;
-        errorMessage =
-            error instanceof Error ? error.message : "ffprobe failed";
+        errorMessage = error instanceof Error ? error.message : "FFmpeg failed";
     } finally {
         await container.destroy().catch(() => undefined);
     }
@@ -127,7 +130,7 @@ async function probeTool(params, env, dependencies, reportUsage) {
     const durationMs = Date.now() - startedAt;
     reportUsage({
         cost: calculateFfmpegCharge(durationMs),
-        tool: "probeMedia",
+        tool,
         status: responseStatus,
         adjustmentId: ADJUSTMENT_ID,
         adjustmentUnits: durationMs / 1000,
@@ -136,6 +139,22 @@ async function probeTool(params, env, dependencies, reportUsage) {
     if (errorMessage) {
         throw new ToolFailure(responseStatus, errorMessage);
     }
+    return value;
+}
+
+async function probeTool(params, env, dependencies, reportUsage) {
+    const input = await fetchSource(
+        params.source,
+        dependencies.fetchImpl,
+        dependencies.createFixedLengthStreamImpl,
+    );
+    const { info } = await inContainer(
+        "probeMedia",
+        env,
+        dependencies,
+        reportUsage,
+        (container, deadlineMs) => container.probe(input, deadlineMs),
+    );
 
     return {
         content: [
@@ -157,72 +176,40 @@ async function runTool(params, env, dependencies, reportUsage) {
             ),
         ),
     );
-    const requestId = crypto.randomUUID();
-    const startedAt = Date.now();
-    const container = dependencies.getContainerImpl(
-        env.FFMPEG,
-        `ffmpeg-${requestId}`,
-    );
-    let responseStatus = 200;
-    let errorMessage;
-    let output;
-
-    try {
-        let result;
-        try {
-            result = await container.run(
+    const output = await inContainer(
+        "runFfmpeg",
+        env,
+        dependencies,
+        reportUsage,
+        (container, deadlineMs) =>
+            container.run(
                 inputs,
                 params.args,
                 params.outputExtension,
-                startedAt + FFMPEG_MAX_RUN_MS,
+                deadlineMs,
+            ),
+        async (result) => {
+            const contentType =
+                MIME_TYPES[params.outputExtension.toLowerCase()] ??
+                "application/octet-stream";
+            const mediaBody = dependencies.createFixedLengthStreamImpl(
+                result.bytes,
             );
-        } catch (error) {
-            throw new ToolFailure(
-                502,
-                `FFmpeg container failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-        }
-        if (!result.ok) {
-            throw new ToolFailure(422, result.stderr || "FFmpeg failed");
-        }
-        const contentType =
-            MIME_TYPES[params.outputExtension.toLowerCase()] ??
-            "application/octet-stream";
-        const mediaBody = dependencies.createFixedLengthStreamImpl(
-            result.bytes,
-        );
-        result.output.pipeTo(mediaBody.writable).catch(() => undefined);
-        try {
-            output = await env.MEDIA.upload(mediaBody.readable, {
-                contentType,
-                fileName: `ffmpeg.${params.outputExtension}`,
-                size: result.bytes,
-            });
-        } catch (error) {
-            throw new ToolFailure(
-                502,
-                `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-        }
-    } catch (error) {
-        responseStatus = error instanceof ToolFailure ? error.status : 502;
-        errorMessage = error instanceof Error ? error.message : "FFmpeg failed";
-    } finally {
-        await container.destroy().catch(() => undefined);
-    }
-
-    const durationMs = Date.now() - startedAt;
-    reportUsage({
-        cost: calculateFfmpegCharge(durationMs),
-        tool: "runFfmpeg",
-        status: responseStatus,
-        adjustmentId: ADJUSTMENT_ID,
-        adjustmentUnits: durationMs / 1000,
-        error: errorMessage,
-    });
-    if (errorMessage) {
-        throw new ToolFailure(responseStatus, errorMessage);
-    }
+            result.output.pipeTo(mediaBody.writable).catch(() => undefined);
+            try {
+                return await env.MEDIA.upload(mediaBody.readable, {
+                    contentType,
+                    fileName: `ffmpeg.${params.outputExtension}`,
+                    size: result.bytes,
+                });
+            } catch (error) {
+                throw new ToolFailure(
+                    502,
+                    `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                );
+            }
+        },
+    );
 
     return {
         content: [
@@ -261,15 +248,7 @@ function buildServer(env, dependencies, reportUsage) {
             description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Reference those exact names, include each needed -i argument, and omit ffmpeg, source URLs, and the output path. Example: ["-i", "input0", "-vf", "scale=1280:-2"]. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
                 sources: z
-                    .array(
-                        z.url().refine((value) => {
-                            const validation = validateUserMediaUrl(value);
-                            return (
-                                validation.ok &&
-                                validation.url.protocol === "https:"
-                            );
-                        }, "sources must be public HTTPS URLs without credentials"),
-                    )
+                    .array(sourceUrl)
                     .min(1)
                     .describe(
                         "Ordered source URLs, saved as input0, input1, and so on.",
@@ -297,19 +276,11 @@ function buildServer(env, dependencies, reportUsage) {
     server.registerTool(
         "probeMedia",
         {
-            description:
-                "Inspect public HTTPS media with ffprobe and return its format and stream metadata (duration, codec, resolution, bitrate, frame rate) as JSON, without downloading, encoding, or hosting any output. Use before runFfmpeg to confirm duration or dimensions instead of guessing them.",
+            description: `Inspect public HTTPS media with ffprobe and return its format and stream metadata (duration, codec, resolution, bitrate, frame rate) as JSON. Use before runFfmpeg to confirm duration or dimensions instead of guessing them. Maximum input size is 100 MB. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
-                source: z
-                    .url()
-                    .refine((value) => {
-                        const validation = validateUserMediaUrl(value);
-                        return (
-                            validation.ok &&
-                            validation.url.protocol === "https:"
-                        );
-                    }, "source must be a public HTTPS URL without credentials")
-                    .describe("Public HTTPS URL of the media to inspect."),
+                source: sourceUrl.describe(
+                    "Public HTTPS URL of the media to inspect.",
+                ),
             }),
         },
         (params) => probeTool(params, env, dependencies, reportUsage),

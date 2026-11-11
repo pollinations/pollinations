@@ -154,7 +154,7 @@ Omit the `ffmpeg` executable, source URLs, and output path.
 `probeMedia` accepts one public HTTPS media URL and returns its `ffprobe`
 format and stream metadata (duration, codec, resolution, bitrate, frame rate)
 as JSON. Use it before `runFfmpeg` to confirm duration or dimensions instead
-of guessing them; it does not download, encode, or host any output.
+of guessing them.
 
 ### Exa Search MCP
 

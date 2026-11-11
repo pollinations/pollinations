@@ -270,6 +270,29 @@ describe("shared agent Responses adapter", () => {
         },
     );
 
+    it("accepts caller tools with the SDK's null description and parameters", async () => {
+        const response = await handleAgentResponsesRequest(
+            request({
+                tools: [
+                    {
+                        type: "function",
+                        name: "lookup",
+                        description: null,
+                        parameters: null,
+                    },
+                ],
+            }),
+            new AbortController().signal,
+            async ({ tools, onPart }) => {
+                expect(tools.lookup.description).toBeUndefined();
+                onPart({ type: "text-delta", text: "done" });
+                return output;
+            },
+        );
+        expect(response.status).toBe(200);
+        await response.text();
+    });
+
     it.each([null, ["one", 2], "plain text", 42])(
         "preserves a JSON tool result %j",
         async (toolOutput) => {

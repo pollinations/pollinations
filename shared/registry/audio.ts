@@ -641,6 +641,22 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         allowedDurations: [30],
     },
+    "elevenlabs/eleven-text-to-sound-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-11-10").getTime(),
+        priceMultiplier: 1,
+        // Workspace analytics: $0.002/submitted second; auto-duration costs $0.01.
+        cost: { completionAudioSeconds: 0.002 },
+        title: "Eleven Text to Sound v3",
+        description:
+            "Prompt-following sound effects, vocals and loops from text",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
         provider: "elevenlabs",
@@ -719,6 +735,23 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "elevenlabs/scribe-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-11-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // https://elevenlabs.io/pricing/api — base transcription, no paid extras.
+        cost: { promptAudioSeconds: 0.2 / 3600 },
+        title: "Scribe v3",
+        description:
+            "Accurate multilingual transcription with speaker labels and word timestamps",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "elevenlabs/scribe-v2": {
         aliases: ["scribe_v2", "scribe-v2", "scribe"],
         provider: "elevenlabs",
@@ -728,8 +761,8 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scale plan: Scribe batch $0.22/hour
-            promptAudioSeconds: 0.22 / 3600,
+            // ElevenLabs Scale API plan: Scribe batch $0.20/hour (2026-11-10)
+            promptAudioSeconds: 0.2 / 3600,
         },
         title: "Scribe v2",
         description: "Transcription in 90+ languages with speaker labels",

@@ -8,12 +8,13 @@ import {
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { apikey, user } from "@shared/db/better-auth.ts";
-import { sandboxKeep } from "@shared/db/sandbox.ts";
+import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 import worker from "../src/index.ts";
+import { sandboxPortHost } from "../src/routes/e2b.ts";
 
 const E2B = "https://api.e2b.app";
 // The fake's 2 vCPU, 512 MiB sandbox for 300 s, at E2B's list rates.
@@ -31,6 +32,17 @@ type Sandbox = {
     metadata: Record<string, string>;
     secure?: boolean;
     autoPause?: boolean;
+    // What the fake's metrics report.
+    cpuUsedPct?: number;
+};
+
+type PortRequest = {
+    host: string;
+    method: string;
+    path: string;
+    trafficToken: string | null;
+    body: string;
+    sandboxID?: string | null;
 };
 
 type WrittenFile = {
@@ -54,6 +66,7 @@ function stubE2b() {
     const sandboxes: Sandbox[] = [];
     const events: Record<string, unknown>[] = [];
     const files: WrittenFile[] = [];
+    const portRequests: PortRequest[] = [];
     let created = 0;
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
@@ -74,6 +87,44 @@ function stubE2b() {
                 content: await file.text(),
             });
             return Response.json([{ type: "file" }]);
+        }
+        // E2B's proxy in front of each sandbox port answers only while the
+        // sandbox runs; the fake's server echoes what reached it.
+        const port = url.hostname.match(/^(\d+)-(\w+)\.e2b\.app$/);
+        if (port) {
+            const sandbox = sandboxes.find((s) => s.sandboxID === port[2]);
+            if (sandbox?.state !== "running") {
+                return Response.json(
+                    {
+                        sandboxId: port[2],
+                        message: "The sandbox was not found",
+                        code: 502,
+                    },
+                    { status: 502 },
+                );
+            }
+            portRequests.push({
+                host: url.host,
+                method: request.method,
+                path: url.pathname + url.search,
+                trafficToken: request.headers.get("e2b-traffic-access-token"),
+                body: await request.text(),
+                ...(request.headers.has("e2b-sandbox-id") && {
+                    sandboxID: request.headers.get("e2b-sandbox-id"),
+                }),
+            });
+            // Like polli's websocat in front of sshd, but an echo.
+            if (request.headers.get("upgrade") === "websocket") {
+                const [client, server] = Object.values(new WebSocketPair());
+                server.accept();
+                server.addEventListener("message", (event) =>
+                    server.send(`echo ${event.data}`),
+                );
+                return new Response(null, { status: 101, webSocket: client });
+            }
+            return new Response(`port ${port[1]} says hi`, {
+                headers: { "x-app": "echo" },
+            });
         }
         if (url.origin !== E2B) return realFetch(input, init);
         // The team key replaces the caller's key.
@@ -170,6 +221,20 @@ function stubE2b() {
             ).toISOString();
             return new Response(null, { status: 204 });
         }
+        if (call === "GET /metrics") {
+            const start = Number(url.searchParams.get("start"));
+            expect(Date.now() / 1000 - start).toBeCloseTo(300, -1);
+            return Response.json(
+                sandbox.cpuUsedPct === undefined
+                    ? []
+                    : [
+                          {
+                              timestampUnix: start,
+                              cpuUsedPct: sandbox.cpuUsedPct,
+                          },
+                      ],
+            );
+        }
         if (call === "GET /logs") {
             const start = url.searchParams.get("start");
             return Response.json({ logs: [{ line: `since ${start}` }] });
@@ -188,13 +253,17 @@ function stubE2b() {
             sandbox.state = "running";
             sandbox.endAt =
                 resumed || endAt > sandbox.endAt ? endAt : sandbox.endAt;
-            return Response.json(sandbox, { status: resumed ? 201 : 200 });
+            return Response.json(
+                { ...sandbox, trafficAccessToken: "traffic" },
+                { status: resumed ? 201 : 200 },
+            );
         }
         return new Response("unexpected", { status: 500 });
     });
     return {
         sandboxes,
         files,
+        portRequests,
         leases: () => events.filter((e) => e.eventType === "sandbox.lease"),
     };
 }
@@ -241,7 +310,12 @@ test("create pays the lease up front and hides the sandbox from other users", as
         metadata: { app: "demo", pollinations_user: other.userId },
     });
     expect(created.status).toBe(201);
-    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    // E2B's SDKs then reach the sandbox through gen.
+    const { sandboxID, domain } = await created.json<{
+        sandboxID: string;
+        domain: string;
+    }>();
+    expect(domain).toBe("pollinations.app");
     expect(e2b.sandboxes[0].metadata).toEqual({
         app: "demo",
         pollinations_user: owner.userId,
@@ -281,7 +355,9 @@ test("create pays the lease up front and hides the sandbox from other users", as
     });
 
     const own = await call(owner.key, "/v2/sandboxes");
-    expect(await own.json()).toMatchObject([{ sandboxID }]);
+    expect(await own.json()).toMatchObject([
+        { sandboxID, domain: "pollinations.app" },
+    ]);
     const killed = await call(owner.key, `/sandboxes/${sandboxID}`, {
         method: "DELETE",
     });
@@ -518,7 +594,12 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
     expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
         590_000,
     );
-    expect((await connect(300)).status).toBe(200);
+    const connected = await connect(300);
+    expect(connected.status).toBe(200);
+    expect(await connected.json()).toMatchObject({
+        sandboxID,
+        domain: "pollinations.app",
+    });
     expect(await keeps()).toHaveLength(1);
     expect((await timeout(300)).status).toBe(204);
     expect(await keeps()).toHaveLength(0);
@@ -635,7 +716,11 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), env, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        env,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     const [due, old, , ending, paused, dashboard] = e2b.sandboxes;
@@ -653,7 +738,8 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(6)]).toEqual(untouched);
 
     // Kept on: the renewed, the waiting; ended: the expired, the gone, those
-    // whose key cannot pay, is revoked or is an App Key, and the banned owner's.
+    // whose key cannot pay, is revoked or is an App Key, and the banned owner's,
+    // with or without a key.
     expect((await keeps()).map((keep) => keep.sandboxId).sort()).toEqual([
         "dashboard",
         "due",
@@ -738,6 +824,66 @@ test("the cron keeps a keep whose key D1 fails to read, and renews it next time"
     expect(await keeps()).toHaveLength(1);
 });
 
+test("the cron keeps the keeps while E2B blocks our team, and renews them after", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    e2b.sandboxes.push(
+        {
+            sandboxID: "due",
+            startedAt: inSeconds(0),
+            endAt: inSeconds(300),
+            cpuCount: 2,
+            memoryMB: 512,
+            state: "running",
+            metadata: { pollinations_user: owner.userId },
+        },
+        {
+            sandboxID: "paused",
+            startedAt: inSeconds(-600),
+            endAt: inSeconds(-60),
+            cpuCount: 2,
+            memoryMB: 512,
+            state: "paused",
+            metadata: { pollinations_user: owner.userId },
+        },
+    );
+    const month = new Date(Date.now() + 30 * 86_400_000);
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values([
+            { sandboxId: "due", apiKeyId: owner.id, until: month },
+            { sandboxId: "paused", apiKeyId: owner.id, until: month },
+        ]);
+    const cron = async () => {
+        const ctx = createExecutionContext();
+        await worker.scheduled(createScheduledController(), env, ctx);
+        await waitOnExecutionContext(ctx);
+    };
+
+    // Like E2B for a blocked team: reads still work, changes are refused.
+    const stubbed = globalThis.fetch;
+    vi.stubGlobal("fetch", (input: RequestInfo, init?: RequestInit) => {
+        const request = new Request(input, init);
+        return new URL(request.url).origin === E2B && request.method === "POST"
+            ? Response.json(
+                  { code: 403, message: "team is blocked" },
+                  { status: 403 },
+              )
+            : stubbed(input, init);
+    });
+    await cron();
+    expect(await keeps()).toHaveLength(2);
+    expect(e2b.leases()).toEqual([]);
+
+    vi.stubGlobal("fetch", stubbed);
+    await cron();
+    expect(await keeps()).toHaveLength(2);
+    for (const sandbox of e2b.sandboxes) {
+        expect(sandbox.state).toBe("running");
+        expect(Date.parse(sandbox.endAt) - Date.now()).toBeGreaterThan(590_000);
+    }
+});
+
 test("the account owner's session token runs sandboxes without a key scope", async () => {
     stubE2b();
     const { userId } = await createTestApiKey({ user: { tierBalance: 10 } });
@@ -764,7 +910,13 @@ test("anyone can read the prices, and they match what gen charges", async () => 
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 8,
-        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+        templates: {
+            "pollinations-large": {
+                provider: "e2b",
+                cpuCount: 4,
+                memoryMB: 8192,
+            },
+        },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
     expect(
@@ -815,4 +967,986 @@ test("the pollinations templates come logged in with a key from enter's key API"
         sandboxID,
         largeID,
     ]);
+});
+
+const SECRET = "a-webhook-secret-of-32-characters";
+
+// A shared port's own host, as a webhook would reach it.
+const visit = (
+    host: string,
+    path = "/",
+    init: RequestInit & { headers?: Record<string, string> } = {},
+) =>
+    SELF.fetch(`https://${host}${path}`, {
+        ...init,
+        headers: { "x-pollinations-secret": SECRET, ...init.headers },
+    });
+
+const sharePort = (
+    key: string,
+    sandboxID: string,
+    port: number,
+    body: Record<string, unknown> = { secret: SECRET },
+) =>
+    call(key, `/sandboxes/${sandboxID}/ports/${port}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+    });
+
+test("only hosts of the form <port>-<sandbox id> under the sandbox domain name a port", () => {
+    expect(sandboxPortHost(env, "8080-ixyz123.pollinations.app")).toEqual({
+        port: 8080,
+        sandboxID: "ixyz123",
+    });
+    const azure = "70989a85-0e4f-4b6e-9a1c-2f3d4e5f6a7b";
+    expect(sandboxPortHost(env, `8022-${azure}.pollinations.app`)).toEqual({
+        port: 8022,
+        sandboxID: azure,
+    });
+    for (const host of [
+        "gen.pollinations.ai",
+        "pollinations.app",
+        "8080-ixyz123--staging.pollinations.app",
+        "ixyz123.pollinations.app",
+        "0-ixyz123.pollinations.app",
+        "65536-ixyz123.pollinations.app",
+        "8080-ixyz123.a.pollinations.app",
+        "8080-ixyz123.pollinations.app.evil",
+        "8080-ixyz-123.pollinations.app",
+        "8080-ixyz123.notpollinations.app",
+    ]) {
+        expect(sandboxPortHost(env, host), host).toBeNull();
+    }
+    const staging = { ...env, ENVIRONMENT: "staging" as const };
+    for (const sandboxID of ["ixyz123", azure]) {
+        expect(
+            sandboxPortHost(
+                staging,
+                `8080-${sandboxID}--staging.pollinations.app`,
+            ),
+        ).toEqual({ port: 8080, sandboxID });
+        expect(
+            sandboxPortHost(staging, `8080-${sandboxID}.pollinations.app`),
+        ).toBeNull();
+    }
+    expect(
+        sandboxPortHost(staging, "8080-ixyz123.staging.pollinations.app"),
+    ).toBeNull();
+});
+
+test("staging SDK IDs route single-level hosts while provider, keep and port IDs stay raw", async () => {
+    const e2b = stubE2b();
+    const ownerEmail = "sandbox-staging-owner@test.local";
+    const otherEmail = "sandbox-staging-other@test.local";
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines"],
+        user: { tierBalance: 10, email: ownerEmail },
+    });
+    const other = await createTestApiKey({
+        accountPermissions: ["machines"],
+        user: { tierBalance: 10, email: otherEmail },
+    });
+    const staging = {
+        ...env,
+        ENVIRONMENT: "staging" as const,
+        STAGING_ALLOWED_EMAILS: `${ownerEmail},${otherEmail}`,
+    };
+    const fetchStaging = async (url: string, init: RequestInit = {}) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, init),
+            staging,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+    const api = (
+        path: string,
+        body?: unknown,
+        key = owner.key,
+        method = "POST",
+    ) =>
+        fetchStaging(`https://staging.gen.pollinations.ai/alpha/e2b${path}`, {
+            method,
+            headers: { "x-api-key": key, "content-type": "application/json" },
+            ...(body !== undefined && { body: JSON.stringify(body) }),
+        });
+    const created = await api("/v2/sandboxes", {
+        templateID: "base",
+        timeout: 1800,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID, domain } = await created.json<{
+        sandboxID: string;
+        domain: string;
+    }>();
+    const rawID = e2b.sandboxes[0].sandboxID;
+    expect(sandboxID).toBe(`${rawID}--staging`);
+    expect(domain).toBe("pollinations.app");
+    expect(await keeps()).toMatchObject([{ sandboxId: rawID }]);
+    const path = `/sandboxes/${sandboxID}`;
+    expect(
+        await (await api(path, undefined, owner.key, "GET")).json(),
+    ).toMatchObject({ sandboxID, domain });
+    expect(
+        await (await api("/v2/sandboxes", undefined, owner.key, "GET")).json(),
+    ).toMatchObject([{ sandboxID, domain }]);
+    expect((await api(path, undefined, other.key, "GET")).status).toBe(404);
+    const share = await api(
+        `${path}/ports/8080`,
+        { secret: SECRET },
+        owner.key,
+        "PUT",
+    );
+    expect(await share.json()).toEqual({
+        url: `https://8080-${sandboxID}.${domain}`,
+    });
+    expect(await drizzle(env.DB).select().from(sandboxPort)).toMatchObject([
+        { sandboxId: rawID },
+    ]);
+    expect((await api(`${path}/pause`)).status).toBe(204);
+    expect(await keeps()).toEqual([]);
+
+    const url = `https://8080-${sandboxID}.${domain}/hello`;
+    expect((await fetchStaging(url)).status).toBe(403);
+    expect(e2b.sandboxes[0].state).toBe("paused");
+    expect(e2b.portRequests).toEqual([]);
+    const awake = await fetchStaging(url, {
+        headers: {
+            "x-pollinations-secret": SECRET,
+            "e2b-sandbox-id": sandboxID,
+        },
+    });
+    expect(await awake.text()).toBe("port 8080 says hi");
+    expect(e2b.portRequests).toMatchObject([
+        { host: `8080-${rawID}.e2b.app`, sandboxID: rawID },
+    ]);
+    const connected = await api(`/v2/sandboxes/${sandboxID}/connect`, {
+        timeout: 1800,
+    });
+    expect(await connected.json()).toMatchObject({ sandboxID, domain });
+    expect(await keeps()).toMatchObject([{ sandboxId: rawID }]);
+    expect((await api(`${path}/timeout`, { timeout: 900 })).status).toBe(204);
+    expect(
+        await (
+            await api(`/sandboxes/${rawID}`, undefined, owner.key, "GET")
+        ).json(),
+    ).toMatchObject({ sandboxID });
+    expect(
+        (await api(`${path}/ports/8080`, undefined, owner.key, "DELETE"))
+            .status,
+    ).toBe(204);
+    expect(await drizzle(env.DB).select().from(sandboxPort)).toEqual([]);
+    expect((await api(`${path}/pause`)).status).toBe(204);
+    expect(await keeps()).toEqual([]);
+    expect((await api(path, undefined, owner.key, "DELETE")).status).toBe(204);
+    expect(e2b.sandboxes).toEqual([]);
+});
+
+test("a shared port wakes its paused sandbox, paid in advance by the key that shared it", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const other = await sandboxKey();
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+
+    // Only the owner can share it, and only with a secret.
+    expect((await sharePort(other.key, sandboxID, 3000)).status).toBe(404);
+    for (const body of [
+        {},
+        { secret: "too-short" },
+        { secret: SECRET, header: "Authorization" },
+    ]) {
+        const refused = await sharePort(owner.key, sandboxID, 3000, body);
+        expect(refused.status, JSON.stringify(body)).toBe(400);
+    }
+    const shared = await sharePort(owner.key, sandboxID, 3000);
+    expect(shared.status).toBe(200);
+    expect(await shared.json()).toEqual({
+        url: `https://3000-${sandboxID}.pollinations.app`,
+    });
+
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    const host = `3000-${sandboxID}.pollinations.app`;
+    // Without the secret, a request wakes nothing and costs nothing.
+    for (const secret of ["", "a-wrong-secret-of-32-characters!"]) {
+        const refused = await visit(host, "/", {
+            headers: { "x-pollinations-secret": secret },
+        });
+        expect(refused.status).toBe(403);
+        expect(await refused.text()).toBe(
+            "This port needs the secret it was shared with in x-pollinations-secret.\n",
+        );
+    }
+    expect(e2b.sandboxes[0].state).toBe("paused");
+    expect(e2b.portRequests).toEqual([]);
+    const response = await visit(host, "/hello?x=1", {
+        method: "POST",
+        body: "hi",
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-app")).toBe("echo");
+    expect(await response.text()).toBe("port 3000 says hi");
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests).toEqual([
+        {
+            host: `3000-${sandboxID}.e2b.app`,
+            method: "POST",
+            path: "/hello?x=1",
+            trafficToken: "traffic",
+            body: "hi",
+        },
+    ]);
+
+    // The wake is a connect, paid like the owner's own; requests inside the
+    // lease pay nothing more, and still need the secret.
+    await (await visit(host, "/again")).text();
+    expect(e2b.portRequests).toHaveLength(2);
+    const unsigned = await visit(host, "/", {
+        headers: { "x-pollinations-secret": "" },
+    });
+    expect(unsigned.status).toBe(403);
+    expect(e2b.portRequests).toHaveLength(2);
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(2));
+    const wake = e2b.leases()[1];
+    expect(wake).toMatchObject({
+        requestPath: `/alpha/e2b/sandboxes/${sandboxID}/connect`,
+        userId: owner.userId,
+        apiKeyId: owner.id,
+    });
+    expect(wake.totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 5);
+
+    // A sandbox its owner paused inside the cached lease wakes again, and
+    // still gets the request.
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    const again = await visit(host, "/update", {
+        method: "POST",
+        body: "again",
+    });
+    expect(await again.text()).toBe("port 3000 says hi");
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests.at(-1)).toMatchObject({
+        path: "/update",
+        body: "again",
+    });
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+});
+
+test("a WebSocket to a shared port wakes the sandbox and passes through", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    await sharePort(owner.key, sandboxID, 8022);
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+
+    const response = await visit(`8022-${sandboxID}.pollinations.app`, "/", {
+        headers: { upgrade: "websocket" },
+    });
+    expect(response.status).toBe(101);
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests).toMatchObject([{ trafficToken: "traffic" }]);
+    const socket = response.webSocket;
+    if (!socket) throw new Error("no WebSocket");
+    socket.accept();
+    const reply = new Promise((resolve) =>
+        socket.addEventListener("message", (event) => resolve(event.data)),
+    );
+    socket.send("SSH-2.0-OpenSSH_9.6");
+    expect(await reply).toBe("echo SSH-2.0-OpenSSH_9.6");
+    socket.close();
+});
+
+test("a cold shared-port cache does not buy more time before the lease is nearly over", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    try {
+        const endAt = new Date(now + 180_000).toISOString();
+        e2b.sandboxes.push(keptSandbox("coldlease", owner.userId, { endAt }));
+        await sharePort(owner.key, "coldlease", 8080);
+        const balance = await questPollen(owner.userId);
+
+        expect(
+            await (await visit("8080-coldlease.pollinations.app")).text(),
+        ).toBe("port 8080 says hi");
+        expect(e2b.sandboxes[0].endAt).toBe(endAt);
+        expect(await questPollen(owner.userId)).toBe(balance);
+        expect(e2b.leases()).toEqual([]);
+
+        // The cached lease must end at the time already paid, not at now + 300s.
+        vi.setSystemTime(now + 121_000);
+        expect((await visit("8080-coldlease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(Date.parse(e2b.sandboxes[0].endAt)).toBe(now + 421_000);
+        await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
+        expect(await questPollen(owner.userId)).toBeLessThan(balance);
+
+        // A longer upstream lease must not turn this token-only connect into
+        // a new keep paid by the key that shared the port.
+        const portPayer = await createTestApiKey({
+            userId: owner.userId,
+            accountPermissions: ["machines"],
+        });
+        const longEndAt = inSeconds(610);
+        const until = new Date(
+            Math.floor(Date.now() / 1000) * 1000 + 86_400_000,
+        );
+        e2b.sandboxes.push(
+            keptSandbox("longlease", owner.userId, { endAt: longEndAt }),
+        );
+        await drizzle(env.DB).insert(sandboxKeep).values({
+            sandboxId: "longlease",
+            apiKeyId: owner.id,
+            until,
+            idleTimeout: 900,
+        });
+        await sharePort(portPayer.key, "longlease", 8080);
+        const beforeLongVisit = await questPollen(owner.userId);
+        expect((await visit("8080-longlease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(e2b.sandboxes[1].endAt).toBe(longEndAt);
+        expect(await questPollen(owner.userId)).toBe(beforeLongVisit);
+        expect(e2b.leases()).toHaveLength(1);
+        expect(
+            (await keeps()).find((keep) => keep.sandboxId === "longlease"),
+        ).toMatchObject({
+            apiKeyId: owner.id,
+            until,
+            idleTimeout: 900,
+        });
+
+        // Reading the sandbox again inside connect can take time. The
+        // token-only connect must not turn that delay into a lease charge.
+        const delayedEndAt = inSeconds(120.5);
+        e2b.sandboxes.push(
+            keptSandbox("latencylease", owner.userId, { endAt: delayedEndAt }),
+        );
+        await sharePort(owner.key, "latencylease", 8080);
+        const beforeDelayedVisit = await questPollen(owner.userId);
+        const providerFetch = globalThis.fetch;
+        let reads = 0;
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    request.method === "GET" &&
+                    request.url === `${E2B}/sandboxes/latencylease`
+                ) {
+                    if (++reads === 2) vi.setSystemTime(Date.now() + 1000);
+                }
+                return providerFetch(request);
+            },
+        );
+        expect((await visit("8080-latencylease.pollinations.app")).status).toBe(
+            200,
+        );
+        expect(reads).toBe(2);
+        expect(e2b.sandboxes[2].endAt).toBe(delayedEndAt);
+        expect(await questPollen(owner.userId)).toBe(beforeDelayedVisit);
+        expect(e2b.leases()).toHaveLength(1);
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test("an idle pause racing a shared-port connect gets a full resumed lease and discards the old expiry", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    try {
+        const sandbox = keptSandbox("racedlease", owner.userId, {
+            endAt: inSeconds(610),
+        });
+        e2b.sandboxes.push(sandbox);
+        await sharePort(owner.key, sandbox.sandboxID, 8080);
+        const balance = await questPollen(owner.userId);
+        const providerFetch = globalThis.fetch;
+        let reads = 0;
+        let pausedBetweenReads = false;
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    request.method === "GET" &&
+                    request.url === `${E2B}/sandboxes/racedlease` &&
+                    ++reads === 2
+                ) {
+                    sandbox.state = "paused";
+                    sandbox.endAt = inSeconds(0);
+                    pausedBetweenReads = true;
+                }
+                return providerFetch(request);
+            },
+        );
+
+        const host = "8080-racedlease.pollinations.app";
+        expect(await (await visit(host)).text()).toBe("port 8080 says hi");
+        expect(pausedBetweenReads).toBe(true);
+        expect(sandbox.state).toBe("running");
+        expect(Date.parse(sandbox.startedAt)).toBe(now);
+        expect(Date.parse(sandbox.endAt)).toBe(now + 300_000);
+        expect(await questPollen(owner.userId)).toBeCloseTo(
+            balance - LEASE_300S,
+            7,
+        );
+
+        // The 610s lease was given up by the pause. The new 300s lease needs
+        // renewing when only 59s remain, even though the old expiry is far away.
+        vi.setSystemTime(now + 241_000);
+        expect(await (await visit(host)).text()).toBe("port 8080 says hi");
+        expect(Date.parse(sandbox.endAt)).toBe(now + 541_000);
+        const price = LEASE_300S * (1 + 241 / 300);
+        expect(await questPollen(owner.userId)).toBeCloseTo(balance - price, 7);
+        await vi.waitFor(() =>
+            expect(
+                e2b
+                    .leases()
+                    .reduce((sum, event) => sum + Number(event.totalPrice), 0),
+            ).toBeCloseTo(price, 7),
+        );
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test("ports of team sandboxes without a Pollinations owner are not forwarded", async () => {
+    const e2b = stubE2b();
+    e2b.sandboxes.push(
+        keptSandbox("teamonly", "", { metadata: {} }),
+        keptSandbox("emptyowner", ""),
+    );
+    for (const id of ["teamonly", "emptyowner"]) {
+        for (const port of [8080, 49983]) {
+            expect((await visit(`${port}-${id}.pollinations.app`)).status).toBe(
+                404,
+            );
+        }
+    }
+    expect(e2b.portRequests).toEqual([]);
+});
+
+test("an unshared port is served like E2B's own host and wakes nothing, nor do a gone sandbox or a payer who can't pay", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    const broke = await sandboxKey(0);
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const host = `4000-${sandboxID}.pollinations.app`;
+    const noSecret = { headers: { "x-pollinations-secret": "" } };
+
+    const unshared = await visit(host, "/", noSecret);
+    expect(await unshared.text()).toBe("port 4000 says hi");
+    // So is envd's, which checks its own token and can't be shared.
+    const envd = await visit(`49983-${sandboxID}.pollinations.app`, "/health");
+    expect(await envd.text()).toBe("port 49983 says hi");
+    expect((await sharePort(owner.key, sandboxID, 49983)).status).toBe(400);
+    // Only gen's sandboxes are served.
+    for (const port of [4000, 49983]) {
+        const elsewhere = await visit(`${port}-elsewhere.pollinations.app`);
+        expect(elsewhere.status).toBe(404);
+    }
+
+    // Unsharing ends the secret at once, also where an isolate served it.
+    await sharePort(owner.key, sandboxID, 4000);
+    expect(await (await visit(host)).text()).toBe("port 4000 says hi");
+    expect((await visit(host, "/", noSecret)).status).toBe(403);
+    await db.delete(sandboxPort);
+    expect((await visit(host, "/", noSecret)).status).toBe(200);
+
+    await sharePort(owner.key, sandboxID, 4000);
+    const unshare = await call(
+        owner.key,
+        `/sandboxes/${sandboxID}/ports/4000`,
+        {
+            method: "DELETE",
+        },
+    );
+    expect(unshare.status).toBe(204);
+    expect(await db.select().from(sandboxPort)).toEqual([]);
+    expect(e2b.portRequests.map((r) => [r.host, r.trafficToken])).toEqual([
+        [`4000-${sandboxID}.e2b.app`, null],
+        [`49983-${sandboxID}.e2b.app`, null],
+        [`4000-${sandboxID}.e2b.app`, "traffic"],
+        [`4000-${sandboxID}.e2b.app`, null],
+    ]);
+
+    // A paused sandbox's unshared port answers as E2B's does, and stays paused.
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    expect((await visit(host)).status).toBe(502);
+    expect(e2b.sandboxes[0].state).toBe("paused");
+
+    // A killed sandbox's port stops being shared.
+    await sharePort(owner.key, sandboxID, 4001);
+    await call(owner.key, `/sandboxes/${sandboxID}`, { method: "DELETE" });
+    expect((await visit(`4001-${sandboxID}.pollinations.app`)).status).toBe(
+        404,
+    );
+    expect(await db.select().from(sandboxPort)).toEqual([]);
+
+    e2b.sandboxes.push({
+        sandboxID: "asleep",
+        startedAt: inSeconds(-600),
+        endAt: inSeconds(-300),
+        cpuCount: 2,
+        memoryMB: 512,
+        state: "paused",
+        metadata: { pollinations_user: broke.userId },
+    });
+    expect((await sharePort(broke.key, "asleep", 4002)).status).toBe(200);
+    const refused = await visit("4002-asleep.pollinations.app");
+    expect(refused.status).toBe(402);
+    expect(await refused.text()).toMatch(
+        /^This sandbox is asleep and could not be woken: Insufficient balance\..*Top up at https:\/\//,
+    );
+    expect(e2b.sandboxes.at(-1)?.state).toBe("paused");
+    expect(e2b.portRequests).toHaveLength(4);
+    expect(await questPollen(broke.userId)).toBe(0);
+});
+
+test("an idle timeout is opt-in, needs a kept E2B sandbox, and stays until turned off", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const unkept = await createSandbox(owner.key, { idleTimeout: 900 });
+    expect(unkept.status).toBe(400);
+    expect(await unkept.json()).toEqual({
+        code: 400,
+        message: "idleTimeout needs a timeout longer than 600 seconds",
+    });
+    const short = await createSandbox(owner.key, {
+        timeout: 3600,
+        idleTimeout: 60,
+    });
+    expect(short.status).toBe(400);
+    const azure = await createSandbox(owner.key, {
+        templateID: "pollinations-azure",
+        timeout: 3600,
+        idleTimeout: 900,
+    });
+    expect(await azure.json()).toEqual({
+        code: 400,
+        message: "Azure sandboxes have no idleTimeout.",
+    });
+    expect(e2b.sandboxes).toEqual([]);
+
+    const created = await createSandbox(owner.key, {
+        timeout: 3600,
+        idleTimeout: 900,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const [keep] = await keeps();
+    expect(keep).toMatchObject({ sandboxId: sandboxID, idleTimeout: 900 });
+    expect(Date.now() - (keep.activeAt?.getTime() ?? 0)).toBeLessThan(10_000);
+
+    // E2B's SDKs know nothing of it: a later timeout without it keeps it,
+    // and 0 turns it off.
+    await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+        timeout: 7200,
+    });
+    expect(await keeps()).toMatchObject([
+        { sandboxId: sandboxID, idleTimeout: 900 },
+    ]);
+    await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+        timeout: 7200,
+        idleTimeout: 0,
+    });
+    expect(await keeps()).toMatchObject([
+        { sandboxId: sandboxID, idleTimeout: null },
+    ]);
+    // It comes with a timeout that keeps the sandbox, so a short connect
+    // can't seem to change it.
+    const connect = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        idleTimeout: 900,
+    });
+    expect(connect.status).toBe(400);
+    expect(await keeps()).toMatchObject([
+        { sandboxId: sandboxID, idleTimeout: null },
+    ]);
+});
+
+// A kept sandbox of `userId`'s that started an hour ago.
+const keptSandbox = (
+    sandboxID: string,
+    userId: string,
+    fields: Partial<Sandbox> = {},
+): Sandbox => ({
+    sandboxID,
+    startedAt: inSeconds(-3600),
+    endAt: inSeconds(300),
+    cpuCount: 2,
+    memoryMB: 512,
+    state: "running",
+    metadata: { pollinations_user: userId },
+    ...fields,
+});
+
+const runCron = async () => {
+    const ctx = createExecutionContext();
+    await worker.scheduled(createScheduledController(), env, ctx);
+    await waitOnExecutionContext(ctx);
+};
+
+test("the cron pauses a kept sandbox idle past its idle timeout, leaves it paused, and resumes one paused while active", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    // polli in a sandbox uses the sandbox's own key: a request with it is
+    // activity, but only for the owner's sandbox.
+    const ownKey = await createTestApiKey({
+        userId: owner.userId,
+        name: "polli-sandbox-agent",
+    });
+    const strangersKey = await createTestApiKey({
+        name: "polli-sandbox-idle",
+    });
+    await db
+        .update(apikey)
+        .set({ lastRequest: new Date(Date.now() - 60_000) })
+        .where(inArray(apikey.id, [ownKey.id, strangersKey.id]));
+    // An idle CPU, unless said otherwise.
+    const quiet = { cpuUsedPct: 2 };
+    e2b.sandboxes.push(
+        keptSandbox("idle", owner.userId, quiet),
+        keptSandbox("active", owner.userId, quiet),
+        keptSandbox("agent", owner.userId, quiet),
+        keptSandbox("busy", owner.userId, { cpuUsedPct: 80 }),
+        // Resumed a minute ago, by a wake.
+        keptSandbox("woken", owner.userId, {
+            ...quiet,
+            startedAt: inSeconds(-60),
+        }),
+        // No metrics yet: a job may run.
+        keptSandbox("unmeasured", owner.userId),
+        keptSandbox("asleep", owner.userId, {
+            state: "paused",
+            endAt: inSeconds(-600),
+        }),
+        // Paused without being idle, as by a failed restart.
+        keptSandbox("stalled", owner.userId, {
+            state: "paused",
+            endAt: inSeconds(-600),
+        }),
+    );
+    const month = new Date(Date.now() + 30 * 86_400_000);
+    const longAgo = new Date(Date.now() - 1000_000);
+    await db.insert(sandboxKeep).values(
+        e2b.sandboxes.map(({ sandboxID }) => ({
+            sandboxId: sandboxID,
+            apiKeyId: owner.id,
+            until: month,
+            idleTimeout: 900,
+            activeAt: ["active", "stalled"].includes(sandboxID)
+                ? new Date(Date.now() - 100_000)
+                : longAgo,
+        })),
+    );
+
+    await runCron();
+
+    const state = Object.fromEntries(
+        e2b.sandboxes.map((s) => [s.sandboxID, s.state]),
+    );
+    expect(state).toEqual({
+        idle: "paused",
+        active: "running",
+        agent: "running",
+        busy: "running",
+        woken: "running",
+        unmeasured: "running",
+        asleep: "paused",
+        stalled: "running",
+    });
+    const renewed = e2b.sandboxes.filter(
+        (s) => !["idle", "asleep"].includes(s.sandboxID),
+    );
+    for (const sandbox of renewed) {
+        expect(
+            Date.parse(sandbox.endAt) - Date.now(),
+            sandbox.sandboxID,
+        ).toBeGreaterThan(590_000);
+    }
+    // Pausing ends no keep; a busy CPU is activity from now on.
+    const kept = Object.fromEntries(
+        (await keeps()).map((keep) => [keep.sandboxId, keep]),
+    );
+    expect(Object.keys(kept).sort()).toEqual([
+        "active",
+        "agent",
+        "asleep",
+        "busy",
+        "idle",
+        "stalled",
+        "unmeasured",
+        "woken",
+    ]);
+    expect(Date.now() - (kept.busy.activeAt?.getTime() ?? 0)).toBeLessThan(
+        10_000,
+    );
+    // Only the renewals cost anything.
+    expect(e2b.leases()).toHaveLength(renewed.length);
+});
+
+test("a request to a shared port wakes a sandbox paused while idle, and a connect or envd call is activity", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    e2b.sandboxes.push(
+        keptSandbox("dozing", owner.userId, {
+            state: "paused",
+            endAt: inSeconds(-600),
+        }),
+        keptSandbox("sshed", owner.userId),
+        keptSandbox("scripted", owner.userId),
+    );
+    const longAgo = new Date(Date.now() - 1000_000);
+    await db.insert(sandboxKeep).values(
+        ["dozing", "sshed", "scripted"].map((sandboxId) => ({
+            sandboxId,
+            apiKeyId: owner.id,
+            until: new Date(Date.now() + 86_400_000),
+            idleTimeout: 900,
+            activeAt: longAgo,
+        })),
+    );
+    // Telegram sends a webhook's secret_token in its own header.
+    const header = "X-Telegram-Bot-Api-Secret-Token";
+    await sharePort(owner.key, "dozing", 8443, { secret: SECRET, header });
+
+    const response = await visit("8443-dozing.pollinations.app", "/telegram", {
+        method: "POST",
+        body: "{}",
+        headers: { "x-pollinations-secret": "", [header]: SECRET },
+    });
+    expect(await response.text()).toBe("port 8443 says hi");
+    // polli ssh renews its lease with a connect.
+    expect((await post(owner.key, "/sandboxes/sshed/connect", {})).status).toBe(
+        200,
+    );
+    // E2B's SDKs run commands through envd.
+    await visit("49983-scripted.pollinations.app", "/process.Process/Start", {
+        method: "POST",
+        body: "{}",
+        headers: { "x-access-token": "envd" },
+    });
+    await vi.waitFor(async () => {
+        const activeAt = Object.fromEntries(
+            (await keeps()).map((keep) => [keep.sandboxId, keep.activeAt]),
+        );
+        for (const id of ["dozing", "sshed", "scripted"]) {
+            expect(
+                Date.now() - (activeAt[id]?.getTime() ?? 0),
+                id,
+            ).toBeLessThan(10_000);
+        }
+    });
+
+    // The cron keeps all three running.
+    await runCron();
+    expect(e2b.sandboxes.map((s) => s.state)).toEqual([
+        "running",
+        "running",
+        "running",
+    ]);
+    expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
+        590_000,
+    );
+});
+
+test("failed or public envd requests do not keep an idle sandbox awake", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const longAgo = new Date(Math.floor((Date.now() - 1000_000) / 1000) * 1000);
+    const requests = [
+        {
+            id: "envdpaused",
+            path: "/process.Process/Start",
+            method: "POST",
+            token: "envd",
+            paused: true,
+        },
+        {
+            id: "envdunsigned",
+            path: "/process.Process/Start",
+            method: "POST",
+            token: "",
+        },
+        { id: "envdhealth", path: "/health", method: "GET", token: "garbage" },
+        {
+            id: "envdencodedhealth",
+            path: "/%68ealth",
+            method: "GET",
+            token: "garbage",
+        },
+        {
+            id: "envdoptions",
+            path: "/process.Process/Start",
+            method: "OPTIONS",
+            token: "envd",
+        },
+        { id: "envdinit", path: "/init", method: "POST", token: "envd" },
+    ];
+    for (const { id, paused } of requests) {
+        e2b.sandboxes.push(
+            keptSandbox(id, owner.userId, {
+                state: paused ? "paused" : "running",
+                ...(paused && { endAt: inSeconds(-600) }),
+                cpuUsedPct: 2,
+            }),
+        );
+    }
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values(
+            requests.map(({ id }) => ({
+                sandboxId: id,
+                apiKeyId: owner.id,
+                until: new Date(Date.now() + 86_400_000),
+                idleTimeout: 900,
+                activeAt: longAgo,
+            })),
+        );
+    for (const { id, path, method, token, paused } of requests) {
+        const response = await visit(`49983-${id}.pollinations.app`, path, {
+            method,
+            headers: { "x-access-token": token },
+        });
+        expect(response.status).toBe(paused ? 502 : 200);
+    }
+    await runCron();
+    expect(
+        (await keeps()).every(
+            (keep) => keep.activeAt?.getTime() === longAgo.getTime(),
+        ),
+    ).toBe(true);
+    expect(e2b.sandboxes.every((sandbox) => sandbox.state === "paused")).toBe(
+        true,
+    );
+    expect(e2b.leases()).toEqual([]);
+});
+
+test("provider-accepted signed file requests count as envd activity without a token header", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    e2b.sandboxes.push(keptSandbox("signedfiles", owner.userId));
+    const longAgo = new Date(Date.now() - 1000_000);
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values({
+            sandboxId: "signedfiles",
+            apiKeyId: owner.id,
+            until: new Date(Date.now() + 86_400_000),
+            idleTimeout: 900,
+            activeAt: longAgo,
+        });
+    const body = new FormData();
+    body.append("file", new File(["hello"], "hello.txt"));
+    const response = await visit(
+        "49983-signedfiles.pollinations.app",
+        "/files?signature=provider-accepted",
+        {
+            method: "POST",
+            body,
+        },
+    );
+    expect(response.status).toBe(200);
+    await vi.waitFor(async () =>
+        expect((await keeps())[0].activeAt?.getTime()).toBeGreaterThan(
+            longAgo.getTime(),
+        ),
+    );
+});
+
+test("failed activity writes do not hide paid connect or port responses and are retried", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    let failActivity = true;
+    let activityWrites = 0;
+    const DB = {
+        prepare: (sql: string) => {
+            if (sql.startsWith('update "sandbox_keep" set "active_at"')) {
+                activityWrites++;
+                if (failActivity)
+                    throw new Error("D1_ERROR: Activity write failed.");
+            }
+            return env.DB.prepare(sql);
+        },
+        batch: env.DB.batch.bind(env.DB),
+    } as D1Database;
+    for (const mode of ["connect", "port"]) {
+        const id = `activity${mode}`;
+        const longAgo = new Date(
+            Math.floor((Date.now() - 1000_000) / 1000) * 1000,
+        );
+        e2b.sandboxes.push(
+            keptSandbox(id, owner.userId, {
+                state: "paused",
+                endAt: inSeconds(-600),
+            }),
+        );
+        await drizzle(env.DB)
+            .insert(sandboxKeep)
+            .values({
+                sandboxId: id,
+                apiKeyId: owner.id,
+                until: new Date(Date.now() + 86_400_000),
+                idleTimeout: 900,
+                activeAt: longAgo,
+            });
+        if (mode === "port") await sharePort(owner.key, id, 8080);
+        const request = () =>
+            mode === "connect"
+                ? new Request(
+                      `https://gen.pollinations.ai/alpha/e2b/sandboxes/${id}/connect`,
+                      {
+                          method: "POST",
+                          headers: {
+                              "x-api-key": owner.key,
+                              "content-type": "application/json",
+                          },
+                          body: "{}",
+                      },
+                  )
+                : new Request(`https://8080-${id}.pollinations.app`, {
+                      headers: { "x-pollinations-secret": SECRET },
+                  });
+        const fetchWithActivityFailure = async () => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request(), { ...env, DB }, ctx);
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+        failActivity = true;
+        const before = activityWrites;
+        const response = await fetchWithActivityFailure();
+        expect(response.status).toBe(mode === "connect" ? 201 : 200);
+        if (mode === "port")
+            expect(await response.text()).toBe("port 8080 says hi");
+        expect(activityWrites).toBe(before + 1);
+        expect(
+            (await keeps())
+                .find((keep) => keep.sandboxId === id)
+                ?.activeAt?.getTime(),
+        ).toBe(longAgo.getTime());
+
+        failActivity = false;
+        expect((await fetchWithActivityFailure()).status).toBe(200);
+        expect(activityWrites).toBe(before + 2);
+        expect(
+            (await keeps())
+                .find((keep) => keep.sandboxId === id)
+                ?.activeAt?.getTime(),
+        ).toBeGreaterThan(longAgo.getTime());
+    }
 });

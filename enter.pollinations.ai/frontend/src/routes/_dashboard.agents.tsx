@@ -7,10 +7,11 @@ export const Route = createFileRoute("/_dashboard/agents")({
     component: AgentsPage,
 });
 
-// Agents or MCP servers, one list at a time; the drawer has a row for each.
+// Agents, MCP servers or sandbox templates, one list at a time; the drawer
+// has a row for each.
 function AgentsPage() {
     const { view } = Route.useSearch();
-    const kind = view === "mcp" ? "mcp" : "agent";
+    const kind = view ?? "agent";
     // Each list starts with its own fresh search.
     return <Models key={kind} kind={kind} />;
 }

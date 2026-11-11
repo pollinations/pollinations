@@ -167,8 +167,12 @@ export function parseApiError(status, errorText) {
     try {
         parsed = JSON.parse(errorText);
     } catch {}
+    const rawMessage =
+        parsed?.error?.message ?? parsed?.message ?? parsed?.error ?? errorText;
     const errorMessage =
-        parsed?.error?.message || parsed?.message || parsed?.error || errorText;
+        typeof rawMessage === "string"
+            ? rawMessage
+            : JSON.stringify(rawMessage);
     switch (status) {
         case 400:
             if (
@@ -186,6 +190,11 @@ export function parseApiError(status, errorText) {
             return (
                 errorMessage ||
                 "Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys"
+            );
+        case 402:
+            return (
+                errorMessage ||
+                "Insufficient pollen balance or API key budget exhausted."
             );
         case 403:
             return (

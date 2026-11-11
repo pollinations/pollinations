@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveCredentials, setKeyOverride } from "../lib/config.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
-import { authCommand, loginWithDeviceFlow } from "./auth.js";
+import { authCommand, loginWithDeviceFlow, showAuthStatus } from "./auth.js";
 
 vi.mock("../lib/config.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../lib/config.js")>();
@@ -144,6 +144,27 @@ describe("auth status", () => {
             key_budget: 4.4691,
         });
     });
+
+    it("shows the profile name when no GitHub account is linked", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            Response.json(
+                url.includes("/account/balance")
+                    ? { balance: 1, accountBalance: { total: 1 } }
+                    : { githubUsername: null, name: "Ada Lovelace" },
+            ),
+        );
+
+        await authCommand.parseAsync(["status"], { from: "user" });
+
+        expect(JSON.parse(String(stdout.mock.calls[0][0]))).toMatchObject({
+            name: "Ada Lovelace",
+        });
+    });
 });
 
 describe("auth login with a key", () => {
@@ -197,4 +218,20 @@ describe("auth login with a key", () => {
         expect(fetch).not.toHaveBeenCalled();
         expect(saveCredentials).not.toHaveBeenCalled();
     });
+});
+
+it("reports a revoked stored key as unauthenticated", async () => {
+    setKeyOverride("sk_revoked");
+    setOutputMode("json");
+    vi.stubGlobal("fetch", async () =>
+        Response.json({ error: "Invalid API key" }, { status: 401 }),
+    );
+    const stdout = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    await showAuthStatus();
+    expect(
+        JSON.parse(stdout.mock.calls.map(([text]) => String(text)).join("")),
+    ).toMatchObject({ authenticated: false });
+    expect(saveCredentials).not.toHaveBeenCalled();
 });

@@ -10,6 +10,7 @@ export const MODEL_CATEGORIES = [
     "embedding",
     "agent",
     "mcp",
+    "sandbox",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -36,9 +37,10 @@ export type ModelSearch = CatalogSearch & {
     category?: ModelCategory;
 };
 
-/** The /agents page shows agents, or MCP servers with ?view=mcp. */
+/** The /agents page shows agents, MCP servers with ?view=mcp, or sandbox
+ * templates with ?view=sandbox. */
 export type AgentsSearch = CatalogSearch & {
-    view?: "mcp";
+    view?: "mcp" | "sandbox";
 };
 
 function includes<T extends string>(
@@ -65,7 +67,10 @@ export function validateAgentsSearch(
 ): AgentsSearch {
     return {
         ...validateCatalogSearch(search),
-        view: search.view === "mcp" ? "mcp" : undefined,
+        view:
+            search.view === "mcp" || search.view === "sandbox"
+                ? search.view
+                : undefined,
     };
 }
 

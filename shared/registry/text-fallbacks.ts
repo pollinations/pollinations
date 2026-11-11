@@ -216,9 +216,9 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
-    "typesafe/jev-1.13": {
+    "typesafe/jev-1.14": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
-        "typesafe/jev-1.13:openrouter:typesafe": {
+        "typesafe/jev-1.14:openrouter:typesafe": {
             provider: "openrouter",
             priceMultiplier: 1,
             cost: {
@@ -343,11 +343,12 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-flash:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra current 35% discount verified 2026-10-24; callers keep the Novita quote.
+            // DeepInfra standard rates verified 2026-11-11; the 35% discount ended.
+            // Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.091),
-                promptCachedTokens: perMillion(0.00182),
-                completionTextTokens: perMillion(0.182),
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
             },
         },
     },
@@ -605,6 +606,22 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "moonshotai/kimi-k3.1-pro": {
+        "moonshotai/kimi-k3.1-pro:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+            provider: "vercel",
+            addedDate: new Date("2026-11-06").getTime(),
+            // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache
+            // writes bill at the input rate (Moonshot 5-minute TTL).
+            // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.2),
+                promptCacheWriteTokens: perMillion(2),
+                completionTextTokens: perMillion(10),
+            },
+        },
+    },
     "mistralai/mistral-large-4": {
         // Both routes use Mistral infrastructure; this covers gateway failures.
         "mistralai/mistral-large-4:vercel": {
@@ -833,6 +850,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-spark-open": {
+        // Same model on BaseTen through Vercel's AI Gateway, which adds no
+        // fee. Covers Fireworks failures.
+        "meta/muse-spark-open:vercel:baseten": {
+            // Vercel lists the same parameters as for Muse Wonder (2026-10-23).
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            // Vercel AI Gateway BaseTen rates (2026-10-23).
+            cost: {
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(4.25),
+            },
+        },
+    },
     "meta/muse-wonder-1.0": {
         "meta/muse-wonder-1.0:vercel": {
             supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
@@ -850,16 +882,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3.5-lightning": {
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
-            supportedParameters: CHAT_PARAMETERS.openRouterNemotron,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+        "nvidia/nemotron-3.5-lightning:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+            provider: "deepinfra",
+            addedDate: new Date("2026-11-09").getTime(),
             cost: {
-                // OpenRouter CoreWeave BF16 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.07) * 1.055,
-                promptCachedTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(0.2) * 1.055,
+                // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per million.
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.16),
             },
         },
     },
@@ -879,17 +910,22 @@ export const TEXT_FALLBACKS = {
     },
     "nvidia/nemotron-3-ultra": {
         "nvidia/nemotron-3-ultra:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
             provider: "deepinfra",
-            addedDate: new Date("2026-09-30").getTime(),
+            addedDate: new Date("2026-11-09").getTime(),
+            // DeepInfra NVFP4 standard-tier rates (2026-10-24).
             cost: {
-                // DeepInfra standard-tier rates (2026-09-30). Flex is
-                // deliberately excluded because requests may wait up to ten
-                // minutes.
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.2),
             },
+        },
+    },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Direct Anthropic standard rates match Bedrock global.
         },
     },
     "mistralai/mistral-small-4": {

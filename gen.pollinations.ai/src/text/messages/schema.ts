@@ -158,7 +158,7 @@ const MessageSchema = z
 
 export const CreateMessageRequestSchema = z
     .object({
-        model: z.string().meta({
+        model: z.string().min(1).meta({
             description:
                 "Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`.",
         }),
@@ -172,7 +172,11 @@ export const CreateMessageRequestSchema = z
         messages: z.array(MessageSchema).min(1),
         system: z.union([z.string(), z.array(TextBlockSchema)]).optional(),
         stream: z.boolean().optional(),
-        stop_sequences: z.array(z.string()).optional(),
+        stop_sequences: z
+            .array(z.string())
+            .max(4)
+            .optional()
+            .describe("Custom text sequences that stop generation (up to 4)."),
         temperature: z.number().optional(),
         top_p: z.number().optional(),
         tools: z.array(ToolSchema).optional(),
@@ -181,6 +185,16 @@ export const CreateMessageRequestSchema = z
                 type: z.enum(["auto", "any", "tool", "none"]),
                 name: z.string().optional(),
                 disable_parallel_tool_use: z.boolean().optional(),
+            })
+            .superRefine((choice, context) => {
+                if (choice.type === "tool" && !choice.name) {
+                    context.addIssue({
+                        code: "custom",
+                        path: ["name"],
+                        message:
+                            'tool_choice.name is required when type is "tool"',
+                    });
+                }
             })
             .optional(),
         thinking: z

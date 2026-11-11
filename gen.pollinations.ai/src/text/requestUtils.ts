@@ -21,6 +21,16 @@ export function getChatRequestData(
         jsonMode,
         thinking: _thinking,
         thinking_budget: _thinkingBudget,
+        // The route's config, processing tier, upstream routing, presets and
+        // plugins decide which provider runs the request and what it costs,
+        // so only the route and its transform set them.
+        modelConfig: _modelConfig,
+        service_tier: _serviceTier,
+        provider: _provider,
+        providerOptions: _providerOptions,
+        models: _models,
+        preset: _preset,
+        plugins: _plugins,
         ...requestData
     } = body;
     const messages = [

@@ -34,7 +34,7 @@ import {
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
 
-const REGISTRY_TTL_MS = 60_000;
+const REGISTRY_TTL_MS = 30_000;
 // A static-only registry is cached briefly so the community models come back
 // seconds after D1 recovers, instead of being missing for a full TTL.
 const DEGRADED_REGISTRY_TTL_MS = 5_000;

@@ -27,7 +27,7 @@ An agent combines catalog fields with its runtime configuration:
 | `visibility` | No | `private` by default, or `public` with publisher access. |
 | `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
 | `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
-| `mcpServers` | No | Any of `pollinations`, `ffmpeg`, `exa`, `composio`, `computer`. Details: [`GET /mcp`](https://gen.pollinations.ai/mcp). |
+| `mcpServers` | No | Server `id` values from the live [`GET /mcp`](https://gen.pollinations.ai/mcp) catalog, except `composio`: agents can't use Connectors. Read each server's description and pricing before enabling it. |
 
 Example `agent.json`:
 
@@ -39,16 +39,21 @@ Example `agent.json`:
 }
 ```
 
-Send only the fields to change; omitted fields keep their current values. You can also change the name, title, description, or visibility.
+List the servers without an API key:
 
-The `composio` server uses each caller's connections from [**Account → Connected apps**](https://enter.pollinations.ai/account#connectors). Public agents never receive or use the agent owner's app credentials.
+```bash
+curl https://gen.pollinations.ai/mcp
+```
+
+Use each `data` entry's `id`, such as `machines` for Linux sandboxes, not its display `name` or `url`.
+
+Send only the fields to change; omitted fields keep their current values. You can also change the name, title, description, or visibility.
 
 ### Tips
 
 - `computer` gives each caller a private, persistent filesystem under `/workspace`. `/tmp` is emptied after every call, so keep memory files under `/workspace`.
 - `computer` has a `bash` tool and a `javascript` tool. In `bash`, write literal commands, put file content in the tool's `stdin` field, and end each appended line with a newline. There is no nested `bash -c` and no Node.js, and each command stops after 60 seconds; use `javascript` for scripts.
 - `computer` can also clone and push [collective memory](https://github.com/pollinations/collective-memory), a public repository shared by all agents. Give your agent a reason to leave something there for others to find: a game move, a post, an answer.
-- To write to a caller's own GitHub repository, such as a fix on a new branch of their fork, enable `composio`. Once the caller connects GitHub, its tools can commit, for example `GITHUB_COMMIT_MULTIPLE_FILES` with `base_branch` set to create the branch. `computer` can push only to collective memory.
 - To read from GitHub, fetch files from `raw.githubusercontent.com` and pull requests as `https://github.com/<owner>/<repo>/pull/<n>.diff`. Anonymous `api.github.com` calls share one IP and often return `403 API rate limit exceeded`, and cloning a repository with symlinks, such as pollinations/pollinations, can fail.
 
 ## Code agent configuration
@@ -72,7 +77,7 @@ export default async function ({ model, respond, mcp }) {
 
 `model(id)` creates an SDK language model already connected to Pollinations; select IDs from [the model catalog](https://gen.pollinations.ai/v1/models). `respond(config)` runs the SDK tool loop and returns Responses JSON or SSE, including tool results and usage. It accepts SDK agent settings such as `instructions`, `tools`, and `stopWhen`, defaults to eight steps, and does not retry model requests. `mcp.tools(server)` provides executable SDK tools, limited to sixteen calls per request.
 
-The callback also receives `request`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` for direct request and tool handling. It must return a `Response`; ordinary Worker APIs, including timers and streams, remain available. Platform model and MCP helpers use the caller's Pollen and permissions without exposing a reusable API key; `mcp.tools("composio")` and `mcp("composio", …)` use the caller's connected apps, as in prompt agents. `request` carries only the `Content-Type` header, so never ask callers to paste tokens into messages. `respond` does not emit the Vercel UI protocol or introduce a separate endpoint.
+The callback also receives `request`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` for direct request and tool handling. It must return a `Response`; ordinary Worker APIs, including timers and streams, remain available. Platform model and MCP helpers use the caller's Pollen and permissions without exposing a reusable API key. `request` carries only the `Content-Type` header, so never ask callers to paste tokens into messages. `respond` does not emit the Vercel UI protocol or introduce a separate endpoint.
 
 Example `code-agent.json`:
 

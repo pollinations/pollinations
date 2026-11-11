@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import {
@@ -20,6 +21,7 @@ import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { balance } from "@/middleware/balance.ts";
 import { logger } from "@/middleware/logger.ts";
 import { handleChatCompletionLocal } from "@/text/handler.ts";
 import { isRetryableFallbackError } from "../src/fallback.ts";
@@ -69,6 +71,52 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
+    it("keeps the D1 balance failure in telemetry without exposing it to callers", async () => {
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                requests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.use("*", logger, balance);
+        app.get("/", async (c) => {
+            // A real D1 bind failure exercises Drizzle's error wrapper too.
+            await c.var.balance.getBalance({
+                invalid: true,
+            } as unknown as string);
+            return c.text("unexpected success");
+        });
+        app.onError(handleError);
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            },
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(503);
+        const body = await response.text();
+        expect(body).toContain(
+            "Unable to verify balance. Please try again shortly.",
+        );
+        expect(body).not.toContain("D1_TYPE_ERROR");
+        expect(body).not.toContain("Failed query");
+        expect(requests).toHaveLength(1);
+        const event = (await requests[0].json()) as { stack: string };
+        expect(event.stack).toContain("D1_TYPE_ERROR");
+        expect(event.stack).not.toContain("Failed query");
+    });
+
     it.each(["error", "string", "long"])(
         "logs a bounded %s cause only in internal telemetry",
         async (kind) => {
@@ -368,6 +416,46 @@ describe("error observability", () => {
         });
     });
 
+    it.each([
+        ["image", throwImageError],
+        ["3D", throw3dError],
+        ["text", throwTextError],
+    ] as const)(
+        "preserves a caller's payment refusal through the %s boundary",
+        async (_name, throwError) => {
+            const app = new Hono<Env>();
+            app.use("*", logger);
+            app.get("/", () =>
+                throwError(
+                    new PaymentRequiredError(
+                        "QUEST_POLLEN_ONLY",
+                        "Allow paid Pollen for the selected alternative.",
+                        "https://enter.test/edit-key?id=caller",
+                        true,
+                    ),
+                ),
+            );
+            app.onError(handleError);
+            const response = await app.fetch(
+                new Request("https://gen.test/"),
+                {
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "error",
+                    LOG_FORMAT: "text",
+                } as unknown as CloudflareBindings,
+                createExecutionContext(),
+            );
+            expect(response.status).toBe(402);
+            expect(await response.json()).toMatchObject({
+                error: {
+                    code: "QUEST_POLLEN_ONLY",
+                    message: "Allow paid Pollen for the selected alternative.",
+                    fixUrl: "https://enter.test/edit-key?id=caller",
+                },
+            });
+        },
+    );
+
     it.each(["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"] as const)(
         "preserves the payment reason %s and its fix link in the 402 envelope",
         async (code) => {
@@ -402,6 +490,24 @@ describe("error observability", () => {
             expect(getErrorCodesForStatus(402)).toContain(code);
         },
     );
+
+    it.each([
+        [400, "content_policy_violation"],
+        [400, "output_token_limit_exceeded"],
+        [400, "unsupported_parameter"],
+        [402, "QUEST_POLLEN_RESTRICTED"],
+        [429, "community_model_rate_limit"],
+        [502, "empty_response"],
+    ] as const)("publishes the %s %s error code", (status, code) => {
+        const body = {
+            status,
+            success: false,
+            error: { code, message: "documented", timestamp: "2026-11-02" },
+        };
+        expect(createErrorResponseSchema(status).safeParse(body).success).toBe(
+            true,
+        );
+    });
 
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];

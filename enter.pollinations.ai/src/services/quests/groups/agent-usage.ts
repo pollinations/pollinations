@@ -35,7 +35,7 @@ const useCommunityModelQuest: QuestDefinition = {
     id: "use_community_model",
     title: "Try a community model",
     description:
-        "Make one successful request to any [community model](https://gen.pollinations.ai/docs#tag/community-models). Agents have their own quest.",
+        "Make one successful request to a [community model](https://gen.pollinations.ai/docs#tag/community-models) that costs pollen. Free community models don't count. Agents have their own quest.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

@@ -6,6 +6,7 @@ import {
     BeakerIcon,
     BotIcon,
     CloudUploadIcon,
+    CubeIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
@@ -95,6 +96,14 @@ export const DASHBOARD_NAV_ITEMS = [
         search: { view: "mcp" },
         label: "MCP",
         icon: McpIcon,
+        group: "resources",
+    },
+    {
+        id: "sandbox-templates",
+        to: "/agents",
+        search: { view: "sandbox" },
+        label: "Sandbox templates",
+        icon: CubeIcon,
         group: "resources",
     },
 ] as const satisfies readonly {

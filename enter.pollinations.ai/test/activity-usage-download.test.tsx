@@ -9,6 +9,28 @@ import {
 } from "../frontend/src/components/activity/use-activity-data";
 
 const requests = vi.hoisted(() => [] as URL[]);
+const earnings = vi.hoisted(() =>
+    (
+        [
+            ["byop_markup", "app-a", "App A"],
+            ["community_model", "model-m", "Model M"],
+        ] as const
+    ).map(([source, entity_id, entity_name]) => ({
+        date: "2026-10-05",
+        source,
+        entity_id,
+        entity_name,
+        requests: 1,
+        paid_requests: 1,
+        tier_requests: 0,
+        baseline_price: 0,
+        pollen_earned: 1,
+        paid_earned: 1,
+        tier_earned: 0,
+        cost_usd: 0,
+        reward_rate: 0,
+    })),
+);
 vi.mock("../frontend/src/api.ts", async () => {
     const { hc } = await import("hono/client");
     return {
@@ -16,6 +38,8 @@ vi.mock("../frontend/src/api.ts", async () => {
             fetch: async (input: RequestInfo | URL) => {
                 const url = new URL(String(input));
                 requests.push(url);
+                if (url.pathname === "/account/earnings")
+                    return Response.json({ daily: earnings });
                 return url.pathname.endsWith("/daily")
                     ? Response.json({ usage: [] })
                     : new Response("timestamp\r\n");
@@ -33,6 +57,37 @@ vi.mock(
 afterEach(() => {
     requests.length = 0;
     vi.unstubAllGlobals();
+});
+
+it("downloads only the earnings rows the picks show", async () => {
+    const { saveBlob } = await import(
+        "../frontend/src/components/activity/activity-csv"
+    );
+    const query = {
+        granularity: "month",
+        period: "2026-10",
+        timezone: "UTC",
+    } as const;
+    const { download } = await ACTIVITY_SOURCES.earnings.load(
+        query,
+        new AbortController().signal,
+    );
+    async function exportCsv(picks: Picks) {
+        vi.mocked(saveBlob).mockClear();
+        await download?.(picks);
+        const [blob] = vi.mocked(saveBlob).mock.calls[0];
+        return blob.text();
+    }
+
+    const all = await exportCsv({ keys: [], models: [] });
+    expect(all).toContain("app-a");
+    expect(all).toContain("model-m");
+    const app = await exportCsv({ keys: ["app-a"], models: [] });
+    expect(app).toContain("app-a");
+    expect(app).not.toContain("model-m");
+    const either = await exportCsv({ keys: ["app-a"], models: ["model-m"] });
+    expect(either).toContain("app-a");
+    expect(either).toContain("model-m");
 });
 
 it("downloads the usage CSV for the period and picks the chart shows", async () => {

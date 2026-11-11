@@ -1,10 +1,4 @@
-import {
-    Button,
-    ClockIcon,
-    CopyField,
-    Surface,
-    TerminalIcon,
-} from "@pollinations/ui";
+import { Button, CopyField, Surface, TerminalIcon } from "@pollinations/ui";
 import {
     callerRates,
     perSecond,
@@ -68,17 +62,14 @@ export const SandboxTemplateList: FC<{
                         </dl>
                         {/* The hourly price, and under it, smaller, what
                             it comes to left on all month. */}
-                        <div className="flex items-start gap-1.5 text-theme-text-muted">
-                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-sm font-semibold text-theme-text-strong">
-                                    {pollen(perHour)}/hour
-                                </span>
-                                <span className="text-xs">
-                                    {pollen(perHour * HOURS_PER_MONTH)}/month
-                                    always on
-                                </span>
-                            </div>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-theme-text-strong">
+                                {pollen(perHour)}/hour
+                            </span>
+                            <span className="text-xs text-theme-text-muted">
+                                {pollen(perHour * HOURS_PER_MONTH)}/month always
+                                on
+                            </span>
                         </div>
                     </div>
                     <CopyField

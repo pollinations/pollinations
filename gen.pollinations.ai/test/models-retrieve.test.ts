@@ -241,39 +241,42 @@ test("community reliability is discovery-only and legacy hide metadata no longer
     await drizzle(env.DB)
         .insert(communityEndpoint)
         .values(
-            ["public", "passing", "private", "hidden"].map((name) => ({
-                id: crypto.randomUUID(),
-                ownerUserId,
-                name,
-                title: name,
-                type: "proxy" as const,
-                baseUrl: "https://provider.example/v1/chat/completions",
-                upstreamModel: "test",
-                visibility:
-                    name === "private"
-                        ? ("private" as const)
-                        : ("public" as const),
-                hiddenAt: name === "hidden" ? new Date() : null,
-                hiddenBy: name === "hidden" ? "owner" : null,
-                payload: JSON.stringify({
-                    paidOnly: false,
-                    bearerTokenCiphertext:
-                        "test-placeholder-not-used-for-generation",
-                    api: "chat_completions",
-                    modality: "text",
-                    imagePricing: "request",
-                    inputModalities: ["text"],
-                    perUserRpm: null,
-                    fallbacks: [],
-                    prices: {},
+            ["public", "passing", "private", "hidden", "few-requests"].map(
+                (name) => ({
+                    id: crypto.randomUUID(),
+                    ownerUserId,
+                    name,
+                    title: name,
+                    type: "proxy" as const,
+                    baseUrl: "https://provider.example/v1/chat/completions",
+                    upstreamModel: "test",
+                    visibility:
+                        name === "private"
+                            ? ("private" as const)
+                            : ("public" as const),
+                    hiddenAt: name === "hidden" ? new Date() : null,
+                    hiddenBy: name === "hidden" ? "owner" : null,
+                    payload: JSON.stringify({
+                        paidOnly: false,
+                        bearerTokenCiphertext:
+                            "test-placeholder-not-used-for-generation",
+                        api: "chat_completions",
+                        modality: "text",
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
                 }),
-            })),
+            ),
         );
     await resetGenerationModelRegistryCache(env);
     const id = `community/${owner}/public`;
     const passingId = `community/${owner}/passing`;
     const privateId = `community/${owner}/private`;
     const legacyHiddenId = `community/${owner}/hidden`;
+    const fewRequestsId = `community/${owner}/few-requests`;
     mockCatalogHealth([
         {
             model: id,
@@ -296,12 +299,22 @@ test("community reliability is discovery-only and legacy hide metadata no longer
             status_2xx: 0,
             errors_5xx: 10,
         },
+        {
+            model: fewRequestsId,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 2,
+            errors_5xx: 1,
+        },
     ]);
     const normal = await fetchWorker("/models?source=community");
     const normalModels = (await normal.json()) as { name: string }[];
     expect(normalModels.some((model) => model.name === id)).toBe(false);
     expect(normalModels.some((model) => model.name === passingId)).toBe(true);
     expect(normalModels.some((model) => model.name === legacyHiddenId)).toBe(
+        true,
+    );
+    expect(normalModels.some((model) => model.name === fewRequestsId)).toBe(
         true,
     );
     const ownerList = await fetchWorker("/models?source=community", {
@@ -320,7 +333,7 @@ test("community reliability is discovery-only and legacy hide metadata no longer
             .filter((model) => model.name.startsWith(`community/${owner}/`))
             .map((model) => model.name)
             .sort(),
-    ).toEqual([passingId, id, legacyHiddenId].sort());
+    ).toEqual([passingId, id, legacyHiddenId, fewRequestsId].sort());
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);

@@ -227,7 +227,8 @@ function HealthSummary({
     const listingRate = listing?.success_rate ?? null;
     const rate =
         listingRate ?? (calls ? (sum("succeeded") / calls) * 100 : null);
-    const reliable = isModelReliable(rate);
+    const requests = listingRate !== null ? (listing?.requests ?? null) : calls;
+    const reliable = isModelReliable(rate, requests);
     const Icon = reliable ? CheckIcon : XIcon;
     return (
         <>

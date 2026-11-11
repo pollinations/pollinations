@@ -120,7 +120,10 @@ export async function filterCatalogEntries(
                 reliability === "all" ||
                 !isCommunityProxy(entry) ||
                 entry.communityEndpoint?.visibility === "private" ||
-                isModelReliable(entry.info.health?.success_rate),
+                isModelReliable(
+                    entry.info.health?.success_rate,
+                    entry.info.health?.requests,
+                ),
         );
     return query.limit === undefined
         ? reliable

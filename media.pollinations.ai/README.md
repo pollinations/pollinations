@@ -124,6 +124,7 @@ Publishing requires a key attached to a user account.
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
 - `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
+- `429` - Too many requests from one key, IP or account
 
 ### `GET /:id`
 
@@ -212,15 +213,12 @@ curl -X POST https://media.pollinations.ai/upload \
 ## 🏗️ Development
 
 ```bash
-# Install dependencies
+# From the repository root (media is a root workspace)
 npm install
-
-# Run locally
-npm run dev
-
-# Deploy to production
-npm run deploy:production
+npm run dev --workspace media.pollinations.ai
 ```
+
+Production deploys run through the `Deploy / Cloudflare production` workflow.
 
 ## 📊 Limits
 
@@ -243,7 +241,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 ## 🔑 Authentication
 
-Uploads require a pollinations.ai API key (`pk_` or `sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Uploads require a secret pollinations.ai API key (`sk_`). Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 Pass the key via:
 - `Authorization: Bearer <key>` header (recommended)

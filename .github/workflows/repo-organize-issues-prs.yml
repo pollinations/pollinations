@@ -2,7 +2,7 @@ name: Repo / Organize issues and PRs
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
   pull_request_target:
     types: [opened]
   # Re-classify existing items: overwrites Area, Source and type; fills Priority only when empty (defaults to every open PR).
@@ -25,6 +25,8 @@ concurrency:
 
 jobs:
   organize:
+    # Labels only matter when they change the Source: APP-SUBMISSION and POLLEN-QUEST.
+    if: github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'POLLEN-QUEST'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -56,7 +58,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-        run: python operations/github/project_manager.py
+        run: python operations/infrastructure/project-manager/project_manager.py
 
       - name: Organize existing issues and PRs
         if: github.event_name == 'workflow_dispatch'
@@ -79,7 +81,7 @@ jobs:
               event=$(gh api "repos/$GITHUB_REPOSITORY/issues/$2" \
                 --jq 'if .pull_request then error("#\(.number) is a pull request") else {issue: .} end') || return 1
             fi
-            GITHUB_EVENT="$event" python operations/github/project_manager.py
+            GITHUB_EVENT="$event" python operations/infrastructure/project-manager/project_manager.py
           }
           prs="$PR_NUMBERS"
           if [ -z "$PR_NUMBERS$ISSUE_NUMBERS" ]; then

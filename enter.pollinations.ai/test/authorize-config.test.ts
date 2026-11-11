@@ -1,42 +1,106 @@
 import {
-    normalizeAllowedModelSelection,
-    setConsentModelGroup,
-    toggleConsentModel,
-    toggleConsentModelGroup,
-    withUncataloguedModels,
+    readModelSelection,
+    writeModelSelection,
 } from "@frontend/components/keys/model-selection.ts";
 import {
+    canGrantKeysByLink,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
+    getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
+    MAX_LINK_CONSENT_BUDGET,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 
-describe("normalizeAllowedModelSelection", () => {
-    it("collapses fully selected model lists back to null", () => {
-        const allModelIds = ["a", "b", "c"];
+describe("getConsentPermissionChoices", () => {
+    // A website never gets account admin; polli's device login and local MCP
+    // clients such as Claude Code still can.
+    const requested = new Set(["usage", "keys", "machines"]);
+    const withKeys = ["usage", "keys", "machines"];
+    const withoutKeys = ["usage", "machines"];
 
+    it.each([
+        {
+            flow: "device flow",
+            device: true,
+            redirect: null,
+            expected: withKeys,
+        },
+        {
+            flow: "localhost redirect",
+            device: false,
+            redirect: "http://localhost:3456/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "127.0.0.1 redirect",
+            device: false,
+            redirect: "http://127.0.0.1:53682/callback",
+            expected: withKeys,
+        },
+        {
+            flow: "website redirect",
+            device: false,
+            redirect: "https://example.com/callback",
+            expected: withoutKeys,
+        },
+        {
+            flow: "app scheme redirect",
+            device: false,
+            redirect: "myapp://localhost/callback",
+            expected: withoutKeys,
+        },
+    ])("$flow", ({ device, redirect, expected }) => {
         expect(
-            normalizeAllowedModelSelection(["a", "b", "c"], allModelIds),
-        ).toBeNull();
+            getConsentPermissionChoices(
+                requested,
+                device,
+                redirect ? new URL(redirect) : null,
+            ),
+        ).toEqual(expected);
     });
+});
 
-    it("keeps partial selections as explicit arrays", () => {
-        const allModelIds = ["a", "b", "c"];
+describe("canGrantKeysByLink", () => {
+    // A grant link follows the consent screen's rule, judged by where the
+    // key's consent redirected.
+    it.each([
+        { key: "device login, dashboard or API", origin: undefined, ok: true },
+        {
+            key: "localhost redirect",
+            origin: "http://localhost:3456",
+            ok: true,
+        },
+        {
+            key: "127.0.0.1 redirect",
+            origin: "http://127.0.0.1:53682",
+            ok: true,
+        },
+        { key: "website redirect", origin: "https://example.com", ok: false },
+        // An app scheme such as myapp://callback has the origin "null".
+        { key: "app scheme redirect", origin: "null", ok: false },
+    ])("$key", ({ origin, ok }) => {
+        expect(canGrantKeysByLink(origin)).toBe(ok);
+    });
+});
 
-        expect(normalizeAllowedModelSelection(["a", "b"], allModelIds)).toEqual(
-            ["a", "b"],
+describe("getGrantedOAuthScope", () => {
+    it.each([
+        [[], [], undefined],
+        [["generate"], [], "generate"],
+        [["generate", "usage", "keys"], ["usage"], "generate usage"],
+        [["usage"], [], ""],
+        [["unknown"], [], ""],
+    ])("echoes granted scopes for %j", (requested, granted, expected) => {
+        expect(getGrantedOAuthScope(new Set(requested), granted)).toBe(
+            expected,
         );
-    });
-
-    it("does not collapse to null when selections include stale model ids", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
-        ).toEqual(["a", "b", "x"]);
     });
 });
 
@@ -90,6 +154,36 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: null,
         });
+    });
+
+    // A link can ask for key management or sandboxes, but the user must tick
+    // them: people tend to click "Allow" without reading.
+    it("leaves keys and machines unticked when a link requests them", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                permissions: ["usage", "keys", "machines"],
+            }).accountPermissions,
+        ).toEqual(["usage"]);
+        expect(
+            getAuthorizeInitialPermissions({ permissions: ["keys"] })
+                .accountPermissions,
+        ).toBeNull();
+        expect(getPreselectedConsentPermissions(["machines"])).toBeNull();
+    });
+
+    it("caps the budget a link can pre-fill", () => {
+        expect(
+            getAuthorizeInitialPermissions({ budget: 100_000 }).pollenBudget,
+        ).toBe(MAX_LINK_CONSENT_BUDGET);
+        expect(getAuthorizeInitialPermissions({ budget: 2 }).pollenBudget).toBe(
+            2,
+        );
+    });
+
+    it("never pre-fills a negative budget", () => {
+        expect(
+            getAuthorizeInitialPermissions({ budget: -5 }).pollenBudget,
+        ).toBe(0);
     });
 
     it("preserves a zero budget instead of falling back to the default", () => {
@@ -162,71 +256,57 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
     });
 });
 
-describe("permission picker selections", () => {
-    it("keeps a finite consent grant finite when every offered model is reselected", () => {
-        const offered = ["a", "b"];
-        const narrowed = toggleConsentModel(null, offered, "a");
-        expect(narrowed).toEqual(["b"]);
-        expect(new Set(toggleConsentModel(narrowed, offered, "a"))).toEqual(
-            new Set(offered),
+describe("model category selection", () => {
+    it("keeps model IDs beside categories so a save never widens them", () => {
+        const selection = readModelSelection([
+            "flux-schnell",
+            "audio",
+            "community/alice/private",
+        ]);
+        expect([...selection.categories]).toEqual(["audio"]);
+        expect(selection.models).toEqual([
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+        selection.categories.add("text");
+        expect(writeModelSelection(selection)).toEqual([
+            "text",
+            "audio",
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+    });
+
+    it("stores every category as all models and keeps none distinct", () => {
+        const all = readModelSelection(null);
+        expect([...all.categories].sort()).toEqual(
+            [...MODEL_CATEGORIES].sort(),
         );
-        expect(toggleConsentModel(narrowed, offered, "unrequested")).toEqual([
-            "b",
-        ]);
-    });
-    it("changes only visible models and preserves selections outside the loaded catalog", () => {
+        expect(writeModelSelection(all)).toBeNull();
         expect(
-            setConsentModelGroup(
-                ["a", "b", "private"],
-                ["a", "b", "c"],
-                ["a"],
-                false,
-            ),
-        ).toEqual(["b", "private"]);
-        expect(
-            setConsentModelGroup(["b"], ["a", "b"], ["a", "unrequested"], true),
-        ).toEqual(["b", "a"]);
-    });
-    it("clears a full or partial category and fills an empty one", () => {
-        const offered = ["t1", "t2", "i1"];
-        const text = ["t1", "t2"];
-        expect(toggleConsentModelGroup(null, offered, text)).toEqual(["i1"]);
-        expect(toggleConsentModelGroup(["t1", "i1"], offered, text)).toEqual([
-            "i1",
-        ]);
-        expect(toggleConsentModelGroup(["i1"], offered, text)).toEqual([
-            "i1",
-            "t1",
-            "t2",
-        ]);
-    });
-    it("keeps a full selection finite until the catalog has loaded", () => {
-        expect(
-            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], false),
-        ).toEqual(["a", "b"]);
-        expect(
-            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], true),
-        ).toBeNull();
-    });
-    it("offers selected IDs the catalog lacks so bulk toggles reach them", () => {
-        const catalog = [{ id: "a", label: "A" }];
-        expect(withUncataloguedModels(catalog, ["a", "gone"])).toEqual([
-            { id: "a", label: "A" },
-            { id: "gone", label: "gone" },
-        ]);
-        expect(withUncataloguedModels(catalog, null)).toEqual(catalog);
-        const offered = withUncataloguedModels(catalog, ["gone"]).map(
-            ({ id }) => id,
-        );
-        expect(setConsentModelGroup(["gone"], offered, offered, false)).toEqual(
-            [],
-        );
-    });
-    it("preserves the difference between no models and all models", () => {
-        expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);
-        expect(normalizeAllowedModelSelection([], [])).toEqual([]);
-        expect(
-            setConsentModelGroup(null, ["a", "b"], ["a", "b"], false),
+            writeModelSelection({ categories: new Set(), models: [] }),
         ).toEqual([]);
+    });
+});
+
+describe("parseAuthorizeRedirectUrl", () => {
+    it.each([
+        "https://app.example/callback?x=1",
+        "http://localhost:5173/",
+        "http://127.0.0.1:8080/cb",
+        "http://[::1]:3000/cb",
+        "myapp://callback",
+    ])("accepts %s", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)?.href).toBe(new URL(url).href);
+    });
+
+    it.each([
+        " JavaScript:void(0)",
+        "java\tscript://app.example/%0avoid(0)",
+        "data:text/html,hello",
+        "file:///C:/app/index.html",
+        "not a url",
+    ])("rejects %j", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)).toBeNull();
     });
 });

@@ -1,28 +1,34 @@
 import {
-    AccountIcon,
+    Alert,
     ArrowLeftIcon,
     Button,
-    InfoTip,
     KeyIcon,
-    SproutIcon,
     Surface,
     Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
-    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getConsentPermissionChoices,
+    getGrantedOAuthScope,
+    getPreselectedConsentPermissions,
+    isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
-import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import {
+    isLoopbackHostname,
+    parseAuthorizeRedirectUrl,
+    redirectUriMatchesAllowlistExact,
+} from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
@@ -39,20 +45,14 @@ type Attribution = {
     userName?: string;
     githubUsername?: string;
     appName?: string;
+    /** Host serving a Client ID Metadata Document; set instead of a pk_ owner. */
+    clientHost?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
     return (await response.json()) as Attribution;
-}
-
-function safeParseUrl(url: string): URL | null {
-    try {
-        return new URL(url);
-    } catch {
-        return null;
-    }
 }
 
 export function Authorize() {
@@ -75,6 +75,8 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    // MCP clients identify with a metadata-document URL instead of a pk_.
+    const isMetadataClient = isCodeFlow && isClientMetadataUrl(app_key);
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -89,7 +91,9 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
 
-    const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
+    const parsedRedirectUrl = redirect_url
+        ? parseAuthorizeRedirectUrl(redirect_url)
+        : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
     const keyPermissions = useKeyPermissions(
@@ -108,8 +112,10 @@ export function Authorize() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
-        requestedScopes.has(p),
+    const visibleOptionalPermissions = getConsentPermissionChoices(
+        requestedScopes,
+        isDeviceMode,
+        parsedRedirectUrl,
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
@@ -152,7 +158,7 @@ export function Authorize() {
                                 .filter(Boolean);
                             setRequestedScopes(new Set(scopes));
                             setAccountPermissions(
-                                sanitizeAuthorizeAccountPermissions(scopes),
+                                getPreselectedConsentPermissions(scopes),
                             );
                         }
                     })
@@ -183,8 +189,10 @@ export function Authorize() {
                 setError("No redirect URL provided");
                 return;
             }
-            if (!safeParseUrl(redirect_url)) {
-                setError("Invalid redirect URL format");
+            if (!parseAuthorizeRedirectUrl(redirect_url)) {
+                setError(
+                    "Redirect URL must be a website or app address, such as https://… or myapp://…",
+                );
                 return;
             }
 
@@ -193,7 +201,7 @@ export function Authorize() {
             // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
             if (response_type && response_type !== "code") {
                 setError(
-                    'Unsupported response_type — only "code" is supported.',
+                    'Unsupported response_type. Only "code" is supported.',
                 );
                 return;
             }
@@ -309,19 +317,31 @@ export function Authorize() {
         setError(null);
 
         try {
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
+            const {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                questPollenOnly,
+            } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const grantedScope = getGrantedOAuthScope(
+                requestedScopes,
+                grantedAccountPermissions,
+            );
+            const appName = attribution?.clientHost
+                ? `${attribution.appName} (${attribution.clientHost})`
+                : attribution?.appName || redirectHostname;
             const { key, id, expiresIn } = await createKeyWithPermissions({
-                name: isDeviceMode
-                    ? `Device ${user_code}`
-                    : attribution?.appName || redirectHostname,
+                name: isDeviceMode ? `Device ${user_code}` : appName,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    // A metadata client has no pk_ to bind; POST
+                    // /api/oauth/code checks its redirect instead.
                     ...(app_key &&
+                        !isMetadataClient &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -335,6 +355,7 @@ export function Authorize() {
                     allowedModels,
                     pollenBudget,
                     accountPermissions: grantedAccountPermissions,
+                    questPollenOnly,
                 },
             });
 
@@ -348,12 +369,15 @@ export function Authorize() {
                         // Same convention as the code flow below: the token
                         // response must echo the granted scope when it
                         // differs from the requested one (RFC 6749 §5.1)
-                        scope: requestedScopes.size
-                            ? grantedAccountPermissions.join(" ")
-                            : undefined,
+                        scope: grantedScope,
                     },
                 });
                 if (!res.ok) {
+                    // As in the code flow: don't leave an undeliverable key
+                    // active in the account.
+                    accountClient.keys[":id"]
+                        .$delete({ param: { id } })
+                        .catch(() => {});
                     const data = await res.json().catch(() => null);
                     throw new Error(
                         (data as { message?: string })?.message ||
@@ -382,9 +406,7 @@ export function Authorize() {
                                 // distinct from undefined (nothing requested)
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
-                                scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
-                                    : undefined,
+                                scope: grantedScope,
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",
                                 expiresIn,
@@ -394,7 +416,9 @@ export function Authorize() {
                     if (!res || !res.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        accountClient.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
                         const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };
@@ -445,6 +469,16 @@ export function Authorize() {
                 url.hash = hash.toString();
             }
             window.location.href = url.toString();
+        } else if (window.history.length > 1) {
+            // Unvalidated redirect: return to the page that opened this one
+            // without sending anything to the redirect URL. history.length
+            // also counts forward entries, so open the dashboard if back()
+            // goes nowhere.
+            const fallback = setTimeout(() => navigate({ to: "/" }), 1000);
+            window.addEventListener("pagehide", () => clearTimeout(fallback), {
+                once: true,
+            });
+            window.history.back();
         } else {
             navigate({ to: "/" });
         }
@@ -493,6 +527,14 @@ export function Authorize() {
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect: ${error}`}
+                errorPaths={[
+                    "/api/app-lookup",
+                    "/api/device/info",
+                    // Allow access: create the key, then hand it over.
+                    "/account/keys",
+                    "/api/oauth/code",
+                    "/api/device/approve",
+                ]}
                 actions={
                     <Button
                         intent="neutral"
@@ -546,6 +588,15 @@ export function Authorize() {
                 </>
             }
         >
+            {isMetadataClient &&
+                parsedRedirectUrl &&
+                isLoopbackHostname(parsedRedirectUrl.hostname) && (
+                    <Alert intent="warning" className="mb-4">
+                        Access goes to a program on this computer, and any
+                        program can use this app's name. Only allow it if you
+                        just started this request yourself.
+                    </Alert>
+                )}
             <form
                 id="authorize-permissions"
                 className="space-y-4"
@@ -556,26 +607,12 @@ export function Authorize() {
             >
                 <KeyPermissionsInputs
                     value={keyPermissions}
-                    accessContext={isDeviceMode ? undefined : "app"}
+                    accessContext={isDeviceMode ? "device" : "app"}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
-                    lead={
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            <span className="inline-flex items-center">
-                                Username and picture
-                                <InfoTip
-                                    text="This app can also see this key’s budget and usage."
-                                    label="Username and picture information"
-                                />
-                            </span>
-                        </AuthAccessItem>
-                    }
-                    accountAfter={
+                    permissionsAfter={
                         attribution?.earningsEnabled ? (
-                            <AuthAccessItem icon={<SproutIcon />}>
-                                20% of the Pollen you spend in this app goes to
-                                its developer.
-                            </AuthAccessItem>
+                            <AppEarningsRow />
                         ) : undefined
                     }
                     disabled={isAuthorizing}

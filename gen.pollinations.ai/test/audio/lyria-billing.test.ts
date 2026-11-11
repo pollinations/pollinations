@@ -110,8 +110,11 @@ test.for([
             );
             await waitOnExecutionContext(ctx);
             expect(response.status).toBe(200);
-            // The coordinator also delivers the original result from durable cache.
-            expect(response.headers.get("x-cache")).toBe("HIT");
+            // The first request generates the file; the coordinator then
+            // delivers the original result from durable cache on the repeat.
+            expect(response.headers.get("x-cache")).toBe(
+                requestIndex === 0 ? "MISS" : "HIT",
+            );
             expect(audio).toBe("ID3test-song");
             expect(submissions).toBe(1);
         }

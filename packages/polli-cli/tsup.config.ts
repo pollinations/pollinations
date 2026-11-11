@@ -9,7 +9,7 @@ export default defineConfig({
     dts: true,
     sourcemap: true,
     splitting: false,
-    loader: { ".md": "text" },
+    loader: { ".md": "text", ".sh": "text" },
     noExternal: [],
     external: ["@modelcontextprotocol/sdk", "zod"],
 });

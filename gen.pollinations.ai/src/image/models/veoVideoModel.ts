@@ -11,7 +11,6 @@ import {
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 import type { TrackingData } from "../utils/trackingHeaders.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -36,6 +35,17 @@ async function processImageForVeo(
             message: `Failed to process ${label}: ${errorMessage}`,
         });
     }
+}
+
+// Explicit aspectRatio wins; otherwise only caller-set dimensions pick the
+// orientation, with square dimensions and omitted dimensions defaulting wide.
+function veoAspectRatio(params: ImageParams): "16:9" | "9:16" {
+    if (params.aspectRatio === "16:9" || params.aspectRatio === "9:16") {
+        return params.aspectRatio;
+    }
+    return params.dimensionsExplicit && params.height > params.width
+        ? "9:16"
+        : "16:9";
 }
 
 // Veo API constants
@@ -103,12 +113,7 @@ const generateVeoVideo = async (
     const durationSeconds = safeParams.duration || 4;
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
-
-    const { aspectRatio } = calculateVideoResolution({
-        width: safeParams.width,
-        height: safeParams.height,
-        aspectRatio: safeParams.aspectRatio,
-    });
+    const aspectRatio = veoAspectRatio(safeParams);
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -253,7 +258,7 @@ export async function callVeoReplicateAPI(
                     prompt,
                     duration: params.duration ?? 4,
                     resolution: params.resolution ?? "720p",
-                    aspect_ratio: calculateVideoResolution(params).aspectRatio,
+                    aspect_ratio: veoAspectRatio(params),
                     generate_audio: generateAudio,
                     ...(params.image[0]
                         ? { image: await toDataUri(params.image[0]) }

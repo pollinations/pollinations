@@ -104,7 +104,7 @@ function communityOpenAIEndpointUrl(baseUrl: string, suffix: string): string {
     return url.toString();
 }
 
-function isBlockedHostname(hostname: string): boolean {
+export function isBlockedHostname(hostname: string): boolean {
     const host = hostname
         .replace(/^\[|\]$/g, "")
         .replace(/\.$/, "")

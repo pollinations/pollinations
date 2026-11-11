@@ -11,6 +11,7 @@ import {
     Dropdown,
     DropdownItem,
     ExpandIcon,
+    formatCount,
     ImageIcon,
     McpIcon,
     MicIcon,
@@ -45,14 +46,6 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     audioOut: "audio",
 };
 
-const PRICE_UNIT_SUFFIX: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-};
-
 const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     text: { input: "Text in", output: "Text out" },
     image: { input: "Image in", output: "Image out" },
@@ -65,16 +58,30 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
-const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
+/** One price line as plain text, e.g. { label: "Text in", value: "$0.15/M" }. */
+export const formatPriceLine = ({
+    direction,
+    kind,
+    price,
+    unit,
+}: ModelPriceLine): { label: string; value: string } => {
+    const { value, suffix } = formatDisplayPrice(
+        price,
+        unit,
+        kind === "audioIn" || kind === "audioOut",
+    );
+    return {
+        label: PRICE_LINE_LABELS[kind][direction],
+        value: `$${value}${suffix}`,
+    };
+};
 
 const formatAdjustmentUnit = ({
     kind,
     quantity,
     unit,
 }: Pick<ModelPriceAdjustment, "kind" | "quantity" | "unit">): string => {
-    const quantityLabel = compactNumber
-        .format(quantity)
-        .replace(/^1(?=[A-Z])/, "");
+    const quantityLabel = formatCount(quantity).replace(/^1(?=[A-Z])/, "");
     if (kind === "search_request") {
         return quantity === 1 ? "req" : `${quantityLabel} req`;
     }
@@ -96,7 +103,11 @@ export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
 };
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
-    const displayedPrice = formatDisplayPrice(price, unit === "token");
+    const displayedPrice = formatDisplayPrice(
+        price,
+        unit,
+        subKinds.every((kind) => kind === "audioIn" || kind === "audioOut"),
+    );
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
@@ -118,10 +129,8 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
                 })}
             </span>
             <span>
-                {displayedPrice.value}
-                {unit === "token"
-                    ? `/${displayedPrice.tokenScale}`
-                    : PRICE_UNIT_SUFFIX[unit]}
+                ${displayedPrice.value}
+                {displayedPrice.suffix}
             </span>
         </Chip>
     );
@@ -329,7 +338,7 @@ const ModelPricingControls: FC<{
                                         type="button"
                                         size="xs"
                                         intent="neutral"
-                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` — ${modelName}` : ""}`}
+                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` (${modelName})` : ""}`}
                                         className="polli:w-full polli:min-w-0 polli:justify-between polli:gap-1 polli:px-1 polli:py-0 polli:text-xs polli:tabular-nums"
                                     >
                                         <span className="truncate">
@@ -474,7 +483,7 @@ export const UsagePriceRows: FC<{
                     }
                 />
                 <LedgerPriceValue
-                    value={formatDisplayPrice(adjustment.price).value}
+                    value={`$${formatDisplayPrice(adjustment.price).value}`}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -632,12 +641,10 @@ export const ModelPricingLedger: FC<{
         Number.isFinite(Number(cacheWritePrice.price)) &&
         Number.isFinite(Number(cacheStorageAdjustment.price));
     const combinedCacheWriteValue = canCombineCacheWrite
-        ? formatDisplayPrice(
-              String(
-                  Number(cacheWritePrice.price) +
-                      Number(cacheStorageAdjustment?.price),
-              ),
-          ).value
+        ? String(
+              Number(cacheWritePrice.price) +
+                  Number(cacheStorageAdjustment?.price),
+          )
         : undefined;
     const standaloneTokenAdjustments = tokenBasedAdjustments.filter(
         (adjustment) =>
@@ -646,21 +653,21 @@ export const ModelPricingLedger: FC<{
 
     const rateRows = pricing.prices.flatMap((price) => {
         const displayedPrice = formatDisplayPrice(
-            price.price,
-            price.unit === "token",
+            price === cacheWritePrice && combinedCacheWriteValue
+                ? combinedCacheWriteValue
+                : price.price,
+            price.unit,
+            price.kind === "audioIn" || price.kind === "audioOut",
         );
         const rows = [
             {
                 key: `${price.direction}-${price.kind}-${price.unit}`,
                 label: PRICE_LINE_LABELS[price.kind][price.direction],
-                value:
-                    price === cacheWritePrice && combinedCacheWriteValue
-                        ? combinedCacheWriteValue
-                        : displayedPrice.value,
+                value: displayedPrice.value,
                 unit:
                     price.unit === "token"
-                        ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_UNIT_SUFFIX[price.unit],
+                        ? `${displayedPrice.suffix} tokens`
+                        : displayedPrice.suffix,
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:
@@ -707,7 +714,7 @@ export const ModelPricingLedger: FC<{
                 >
                     {align === "right" && <span aria-hidden="true" />}
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
-                    <LedgerPriceValue value={row.value} />
+                    <LedgerPriceValue value={`$${row.value}`} />
                     <span
                         className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
@@ -742,7 +749,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
                     <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
-                        /pollen
+                        /$1
                     </span>
                     <span
                         aria-hidden="true"

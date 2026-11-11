@@ -33,11 +33,6 @@ this gains explicit workspace handling (tracked in #11127).
 replacement. It is not an Enter Worker secret and does not belong in Enter
 SOPS files.
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `operations/observability`)
-lives in the retired `pollinations_ai` workspace and has no rotation path —
-rotate manually or migrate observability off the legacy workspace and delete
-the token.
-
 ## Rotation mechanisms
 
 - **`PLN_ENTER_TOKEN`**, **`PLN_GPU_TOKEN`**: self-generated (`openssl rand
@@ -137,7 +132,7 @@ of truth. A `creation_rules` `path_regex` matches the file sops **reads**,
 not where the output goes: `sops -e plaintext.json > secrets/env.json` fails
 with "no matching creation rules found". Either copy to the final path first
 and encrypt in place (`sops -e -i secrets/env.json`), or pass
-`--filename-override <target-path>`. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
+`--filename-override <target-path>`. Economics secrets (`operations/dashboards/economics/**/secrets/*`) encrypt to
 a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
 `env.json`) encrypt to the team key set. Rotating a recipient means changing the
 `age:` list on the relevant `creation_rules` entry, as a two-phase,

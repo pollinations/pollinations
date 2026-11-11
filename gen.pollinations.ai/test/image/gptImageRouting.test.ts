@@ -1,6 +1,11 @@
 import { remapUpstreamStatus } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
+import {
+    calculateCost,
+    calculatePrice,
+    calculateUsageBilling,
+    getVisibleImageModels,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type AuthResult,
@@ -12,9 +17,12 @@ import type { ImageParams } from "../../src/image/params.ts";
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
+    AZURE_MYCELI_PROD_WESTUS3_API_KEY: "westus3-key",
+    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: "polandcentral-key",
     AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: "flare-sweden-key",
     AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: "sunburst-sweden-key",
     OPENAI_API_KEY: "openai-key",
+    FAL_KEY: "fal-key",
 } as const;
 
 const AZURE_KEY_NAMES = Object.keys(
@@ -24,6 +32,8 @@ const AZURE_KEY_NAMES = Object.keys(
 const EXPECTED_HOSTS = new Set([
     "myceli-prod-img-2-swedencentral.cognitiveservices.azure.com",
     "myceli-prod-img-2-eastus2.cognitiveservices.azure.com",
+    "westus3.api.cognitive.microsoft.com",
+    "polandcentral.api.cognitive.microsoft.com",
 ]);
 
 const params: ImageParams = {
@@ -56,11 +66,20 @@ function successResponse(): Response {
     });
 }
 
-/** Client error and a timeout that may already have been billed. */
-const UPSTREAM_FAILURES = [400, 524];
+/** The caller's own request errors: every region would reject them. */
+const CALLER_ERRORS = [400, 422];
 
-/** Rate limit and missing deployment: Azure generated nothing. */
-const AZURE_REFUSALS = [429, 404];
+/** Azure-side failures: bad key, quota, blocked resource, missing deployment, rate limit, timeout, server error. */
+const AZURE_FAILURES = [401, 402, 403, 404, 408, 429, 500, 503, 524];
+
+/** Azure's per-resource abuse block, which quotes content-policy wording. */
+const AZURE_RESOURCE_BLOCK = JSON.stringify({
+    error: {
+        code: "403",
+        message:
+            "Your resource has been temporarily blocked because we detected behavior that may violate our content policy.",
+    },
+});
 
 syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
 
@@ -86,9 +105,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
     });
 
-    // A second region would pay Azure for a second image, and a timeout is
-    // exactly the case where the first one may already have been generated.
-    for (const status of UPSTREAM_FAILURES) {
+    for (const status of CALLER_ERRORS) {
         it(`fails a ${status} to the caller instead of trying another region`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
@@ -106,7 +123,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         });
     }
 
-    for (const status of AZURE_REFUSALS) {
+    for (const status of AZURE_FAILURES) {
         it(`tries the other region after a ${status}`, async () => {
             const hosts: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -118,10 +135,11 @@ describe("openai/gpt-image-2 Azure routing", () => {
 
             await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 
-            expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
+            expect(new Set(hosts).size).toBe(2);
+            expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
         });
 
-        it(`fails a ${status} to the caller once every region refused`, async () => {
+        it(`fails a ${status} to the caller once every region failed`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
                 .mockImplementation(
@@ -134,15 +152,53 @@ describe("openai/gpt-image-2 Azure routing", () => {
             expect(fetchMock).toHaveBeenCalledTimes(EXPECTED_HOSTS.size);
         });
     }
+
+    it("tries the other region when Azure blocks one resource", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            hosts.push(new URL(String(input)).host);
+            return hosts.length === 1
+                ? new Response(AZURE_RESOURCE_BLOCK, { status: 403 })
+                : successResponse();
+        });
+
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+
+        expect(new Set(hosts).size).toBe(2);
+        expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
+    });
+
+    // Every region would refuse the same prompt, so a retry only adds a call.
+    it("fails a content-policy refusal without trying another region", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    error: {
+                        code: "content_policy_violation",
+                        message:
+                            "Your request was rejected as a result of our safety system.",
+                    },
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(
+            callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
+        ).rejects.toMatchObject({ upstreamStatus: 403 });
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
 });
 
-describe("GPT Image OpenAI fallback routing", () => {
+describe("GPT Image direct OpenAI routing", () => {
     const routes = [
         ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
         ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
         ["openai/gpt-image-2:openai", "gpt-image-2"],
         ["openai/gpt-image-2.5-flare:openai", "gpt-image-2.5-flare"],
         ["openai/gpt-image-2.5-sunburst:openai", "gpt-image-2.5-sunburst"],
+        ["openai/gpt-image-2.6-flare", "gpt-image-2.6-flare"],
+        ["openai/gpt-image-2.6-sunburst", "gpt-image-2.6-sunburst"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -188,7 +244,100 @@ describe("GPT Image OpenAI fallback routing", () => {
         const azureHosts = urls
             .map((url) => new URL(url).host)
             .filter((host) => host !== "api.openai.com");
-        expect(new Set(azureHosts)).toEqual(EXPECTED_HOSTS);
+        // The direct OpenAI call does not advance the Azure rotation.
+        expect(new Set(azureHosts).size).toBe(2);
+    });
+});
+
+describe("GPT Image 2.6 fal fallback", () => {
+    for (const variant of ["flare", "sunburst"] as const) {
+        const model = `openai/gpt-image-2.6-${variant}` as const;
+        const fallback = `${model}:fal` as const;
+
+        it(`${model} uses the paid-only primary price and keeps the fallback private`, () => {
+            const definition = IMAGE_SERVICES[model];
+            expect(definition).toMatchObject({
+                provider: "openai",
+                paidOnly: true,
+                priceMultiplier: 1,
+                aliases: [],
+                fallbacks: [fallback],
+            });
+            expect(getVisibleImageModels()).not.toContain(fallback);
+            expect(
+                calculatePrice(model, {
+                    promptTextTokens: 15,
+                    completionImageTokens: 824,
+                }).totalPrice,
+            ).toBeCloseTo(0.024795, 8);
+        });
+
+        it(`${fallback} preserves image parameters and bills the reported receipt without fabricated tokens`, async () => {
+            const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json(
+                    {
+                        images: [
+                            {
+                                url: "data:image/png;base64,AQID",
+                                content_type: "image/png",
+                            },
+                        ],
+                    },
+                    { headers: { "x-fal-billable-units": "0.0248" } },
+                ),
+            );
+            const result = await callGPTImage(
+                "test",
+                {
+                    ...params,
+                    model: fallback,
+                    width: 1536,
+                    height: 864,
+                    transparent: true,
+                },
+                userInfo,
+                fallback,
+            );
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(url).toBe(
+                `https://fal.run/openai/gpt-image-2.6/${variant}/text-to-image`,
+            );
+            expect(JSON.parse(String(init?.body))).toMatchObject({
+                prompt: "test",
+                quality: "low",
+                image_size: { width: 1536, height: 864 },
+                background: "transparent",
+                output_format: "png",
+                sync_mode: true,
+                enable_safety_checker: true,
+            });
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Key fal-key",
+            );
+            expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
+            expect(result.trackingData.usage).toEqual({});
+            const billing = calculateUsageBilling({
+                model,
+                usage: result.trackingData.usage,
+                servedBy: IMAGE_SERVICES[fallback],
+                quotedBy: IMAGE_SERVICES[model],
+                input: { providerBilling: result.trackingData.providerBilling },
+            });
+            expect(billing.cost.totalCost).toBe(0.0248);
+            expect(billing.price.totalPrice).toBe(0.0248);
+            expect(billing.adjustments).toHaveLength(1);
+        });
+    }
+
+    it("rejects a fal response without its billing receipt", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ images: [{ url: "data:image/png;base64,AQID" }] }),
+        );
+        const model = "openai/gpt-image-2.6-flare:fal";
+        await expect(
+            callGPTImage("test", { ...params, model }, userInfo, model),
+        ).rejects.toThrow("Fal response has no billable units");
     });
 });
 

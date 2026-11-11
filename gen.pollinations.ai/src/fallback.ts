@@ -3,8 +3,10 @@ import {
     isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    staticFallbackRejection,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import {
@@ -49,15 +51,28 @@ export const FALLBACK_ON_STATUS_CODES = [401, 402, 403, 404, 408, 429];
 
 /**
  * Network-level failures — unreachable host, expired cert, refused connection —
- * arrive as a TypeError with no status, and are the most likely hard failure for
- * a self-hosted endpoint. They must fail over, but the match is on the message
- * so that our own TypeErrors (a null dereference in a handler) are not mistaken
- * for one and silently blamed on the upstream.
+ * normally arrive as a TypeError with no status. Workerd instead throws a plain
+ * Error for a disconnected fetch (cloudflare/workerd#7195). Match that exact
+ * runtime error so application errors and provider HTTP errors stay distinct.
  */
 export function isNetworkFailure(error: unknown): boolean {
     return (
-        error instanceof TypeError &&
-        /fetch failed|network|connection|socket/i.test(error.message)
+        (error instanceof TypeError &&
+            /fetch failed|network|connection|socket/i.test(error.message)) ||
+        (error instanceof Error &&
+            error.constructor === Error &&
+            error.message === "Network connection lost." &&
+            // Text clients also use plain Error for classified provider failures.
+            ![
+                (error as UpstreamFailure).status,
+                (error as UpstreamFailure).upstreamStatus,
+            ].some(
+                (status) =>
+                    typeof status === "number" &&
+                    Number.isInteger(status) &&
+                    status >= 100 &&
+                    status <= 599,
+            ))
     );
 }
 
@@ -117,6 +132,21 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
     return false;
 }
 
+/**
+ * A provider refusing to serve the region our worker egresses from (Google's
+ * "User location is not supported for the API use"). It arrives as a 400, but
+ * it says nothing about the caller's request: the same request succeeds from
+ * another provider, so the next candidate is worth trying.
+ */
+const PROVIDER_REGION_BLOCK = /user location is not supported/i;
+
+function isProviderRegionBlock(failure: UpstreamFailure): boolean {
+    if (upstreamStatus(failure) !== 400) return false;
+    return upstreamFailureText(failure).some(
+        (text) => text !== undefined && PROVIDER_REGION_BLOCK.test(text),
+    );
+}
+
 function upstreamStatus(failure: UpstreamFailure): number | undefined {
     const upstream = failure.upstreamStatus;
     if (typeof upstream === "number" && (upstream < 200 || upstream >= 300)) {
@@ -127,23 +157,6 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
         : typeof upstream === "number"
           ? upstream
           : undefined;
-}
-
-/** The deadline we send to Portkey is the request's terminal time budget. */
-function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
-    if (upstreamStatus(failure) !== 408) return false;
-    const details = failure.details;
-    if (!details || typeof details !== "object") return false;
-    const error = (details as { error?: unknown }).error;
-    if (!error || typeof error !== "object") return false;
-    const timeoutError = error as { message?: unknown; type?: unknown };
-    return (
-        timeoutError.type === "timeout_error" &&
-        typeof timeoutError.message === "string" &&
-        timeoutError.message.startsWith(
-            "Request exceeded the timeout sent in the request:",
-        )
-    );
 }
 
 /**
@@ -198,10 +211,6 @@ export function isRetryableFallbackError(error: unknown): boolean {
         failure.status !== status
     )
         return false;
-    // A generic provider 408 can benefit from a fallback. Portkey's exact
-    // timeout envelope is our own total deadline and must not multiply across
-    // fallback candidates.
-    if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
     const gatewayRoutingFailure = isGatewayRoutingFailure(failure);
@@ -209,7 +218,8 @@ export function isRetryableFallbackError(error: unknown): boolean {
     if (
         !serverError &&
         !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !gatewayRoutingFailure
+        !gatewayRoutingFailure &&
+        !isProviderRegionBlock(failure)
     ) {
         return false;
     }
@@ -270,12 +280,7 @@ function isUsableCommunityFallback(
 ): target is GenerationModelEntry {
     if (target.eventType !== from.eventType) return false;
     const primary = from.communityEndpoint;
-    const candidate = target.communityEndpoint;
-    if (!primary || !candidate) return false;
-    if (primary.modality !== candidate.modality) return false;
-    if (usesAgentRunToken(candidate)) return false;
-    if (primary.imagePricing !== candidate.imagePricing) return false;
-    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (!primary) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),
@@ -283,6 +288,19 @@ function isUsableCommunityFallback(
     ) {
         return false;
     }
+    const candidate = target.communityEndpoint;
+    if (!candidate) {
+        return (
+            staticFallbackRejection(
+                { ...primary, prices: primary },
+                target.definition,
+            ) === null
+        );
+    }
+    if (primary.modality !== candidate.modality) return false;
+    if (usesAgentRunToken(candidate)) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -303,7 +321,6 @@ export function linkFallbackEntries(
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==
@@ -334,12 +351,10 @@ export type FallbackAttempt = {
 /**
  * Runs `attempt` against each candidate until one succeeds.
  *
- * Placed around the upstream call itself rather than around the request, so
- * authentication, balance and moderation run exactly once no matter how many
- * models are tried. A local per-candidate guard may run immediately before an
- * attempt. Every candidate is tried at most once: the dominant failure is an
- * exhausted quota, and asking the same endpoint again would only spend more of
- * a budget that is already gone.
+ * Authentication is reused across attempts. Each model in a caller's list
+ * checks its own balance rules immediately before its attempt, and one the
+ * caller can't afford is skipped like one their key may not use. Each list
+ * position is tried once; callers may explicitly repeat a model.
  *
  * Every upstream call is appended to `attempts`, including the one that serves
  * or ends the request. Recording is not the same as retrying: this loop decides
@@ -362,10 +377,19 @@ export async function withModelFallback<
         candidate: Candidate,
     ) => boolean = isRetryableFallbackError,
 ): Promise<{ result: T; candidate: Candidate; index: number }> {
+    let refusal: PaymentRequiredError | undefined;
+    let failure: FallbackAttempt | undefined;
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
-        // attributed to another fallback candidate.
-        await beforeAttempt?.(candidate);
+        // attributed to another fallback candidate. A payment refusal only
+        // skips its own model.
+        try {
+            await beforeAttempt?.(candidate);
+        } catch (error) {
+            if (!(error instanceof PaymentRequiredError)) throw error;
+            refusal ??= error;
+            continue;
+        }
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.
@@ -380,21 +404,25 @@ export async function withModelFallback<
             });
             return { result, candidate, index };
         } catch (error) {
-            const terminal =
-                index === candidates.length - 1 ||
-                !shouldFallback(error, candidate);
-            attempts?.push({
+            failure = {
                 candidate,
                 error,
                 startedAt,
                 endedAt: new Date(),
-                settled: terminal,
-            });
-            if (terminal) throw error;
+                settled: !shouldFallback(error, candidate),
+            };
+            attempts?.push(failure);
+            if (failure.settled) throw error;
         }
     }
-    // Unreachable: the loop either returns or rethrows for a non-empty list, and
-    // the primary is always the first candidate.
+    // The last model that ran ends the request. Only when every model was
+    // skipped does the first refusal answer.
+    if (failure) {
+        failure.settled = true;
+        throw failure.error;
+    }
+    if (refusal) throw refusal;
+    // Unreachable: the primary is always the first candidate.
     throw new Error("Model fallback needs at least one candidate");
 }
 

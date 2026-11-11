@@ -2,6 +2,7 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { getLogger } from "@logtape/logtape";
 import { safeMcpModelOutput } from "@shared/agents/mcp-output.ts";
 import {
+    awaitsCaller,
     createAgentModelProvider,
     openAIFinishReason,
     strictAgentUsage,
@@ -104,7 +105,18 @@ async function createAgent(
                 runtime.apiKey,
                 signal,
                 runtime.fetcher,
-            ),
+            ).catch((error) => {
+                log.warn("MCP_SERVER_FAILED: name={name} error={error}", {
+                    name: serverId,
+                    error,
+                });
+                // The caller sees which server broke the run; the text is that
+                // server's reply to the caller's own key.
+                throw new Error(
+                    `MCP server ${serverId} failed: ${error instanceof Error ? error.message : String(error)}`,
+                    { cause: error },
+                );
+            }),
         ),
     );
     const loadedServers = serverResults.flatMap((result) =>
@@ -181,12 +193,7 @@ function hitStepLimit(
     return (
         reason === "tool-calls" &&
         steps.length >= MAX_STEPS &&
-        !steps
-            .at(-1)
-            ?.toolCalls.some(
-                (call) =>
-                    !call.invalid && Object.hasOwn(callerTools, call.toolName),
-            )
+        !awaitsCaller(steps, callerTools)
     );
 }
 

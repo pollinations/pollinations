@@ -182,6 +182,21 @@ describe("pi harness", () => {
         expect(existsSync(modelsFile())).toBe(false);
     });
 
+    it("keeps edits made between repeated on runs", () => {
+        configurePi(ctx, settings);
+        const auth = readJson(authFile());
+        auth.anthropic = { type: "api_key", key: "sk-added" };
+        writeFileSync(authFile(), JSON.stringify(auth));
+        configurePi(ctx, { ...settings, model: "kimi" });
+        configurePi(ctx, settings);
+
+        expect(disablePi(ctx).outcome).toBe("stripped");
+        expect(readJson(authFile())).toEqual({
+            anthropic: { type: "api_key", key: "sk-added" },
+        });
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
     it("honors PI_CODING_AGENT_DIR", () => {
         const custom = join(home, "custom-pi-agent");
         configurePi({ home, env: { PI_CODING_AGENT_DIR: custom } }, settings);

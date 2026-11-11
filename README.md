@@ -8,88 +8,72 @@
 
 [![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=for-the-badge&logo=github)](https://github.com/pollinations/pollinations/stargazers)
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
-[![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
+[![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/k9F7SyTgqn)
 
-[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [Guides](#guides) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
 
 </div>
 
-> [!IMPORTANT]
-> **Model IDs are now standardized**
->
-> Model IDs now follow `publisher/model`—for example, `flux` → `black-forest-labs/flux.1-schnell`. The model catalog uses the new IDs. Existing IDs remain supported as aliases in API requests.
->
-> [Browse models and their aliases →](https://enter.pollinations.ai/models)
-
-<p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
+<p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace: robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 <!-- recent-apps:start -->
 ## 🆕 Recent Apps
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
-| [🎮 Pollinations for Godot 4](https://github.com/davealan74/godot-pollinations) | A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag | [@davealan74](https://github.com/davealan74) |
-| [🎬 STT](https://fantasyreincarnation1-bit.github.io/my-pollinations-ap) | Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri, | [@fantasyreincarnation1-bit](https://github.com/fantasyreincarnation1-bit) |
-| [🖼️ Mmm](https://dwakatmahmoud-cmd.github.io/Mahmoud) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@dwakatmahmoud-cmd](https://github.com/dwakatmahmoud-cmd) |
-| [🎬 Aizen](https://aizensuske718-ctrl.github.io/Aizen) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@aizensuske718-ctrl](https://github.com/aizensuske718-ctrl) |
-| [🖼️ Pollinations for Figma](https://github.com/xiaotian1171/pollinations-figma) | A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [✍️ Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) | An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [✍️ Pollinations for Obsidian](https://github.com/tomdacatto/pollinations-obsidian) | Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor. | [@tomdacatto](https://github.com/tomdacatto) |
-| [💬 Roleplay AI](https://arpitgoswami.github.io/roleplay-app) | Here is the complete, polished submission description tailored specifically for Roleplay App, ready to copy and paste for your submission! Roleplay App — Interactive AI Storytelling in Your Browser Br | [@arpitgoswami](https://github.com/arpitgoswami) |
-| [🎬 GAANA BANANA](https://gaana.namansoni.in) | # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🖼️ Pollinations Studio](https://pollinations-studio-1.vercel.app) | AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication. | [@lekezoa](https://github.com/lekezoa) |
+| [🖼️ Tomadix](https://tomadix.ibitweb.com.br) | Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai. | [@gereiz](https://github.com/gereiz) |
+| [💬 Parallel Voices](https://ezzelddin-abdallah.github.io/pollinations-parallel-voices) | Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen. | [@EzzElddin-AbdAllah](https://github.com/EzzElddin-AbdAllah) |
+| [💬 DynaSpark AI](https://dynaspark.th3.qzz.io) | DynaSpark AI is a versatile multimodal assistant for text, code, image and video generation, data analysis, and web and document processing, powered by Pollinations AI and BYOP models. | [@Th3-C0der](https://github.com/Th3-C0der) |
+| [🖼️ Pixelsprite ai](https://pixel-sprite-ai-1.vercel.app) | Create good images for game assets in pixels every images use game and created transformation for treding images and auto background transparent | [@ratherlive3-png](https://github.com/ratherlive3-png) |
+| [🖼️ ZEEK AI Girl Lab - BYOK Public Edition](https://hwoarangkang.github.io/zeek-ai-girl-lab) | ZEEK AI Girl Lab is a 100% client-side BYOK prompt forge for generating AI girl photos. Users bring their own Pollinations sk_... key (stored only in localStorage, zero server), expand prompts with QW | [@hwoarangkang](https://github.com/hwoarangkang) |
+| [💼 Jev AI - Chat with Jev](https://jev-ai.on.websim.com) | **Jev AI - Chat with Jev** is a lightweight browser-based interface for TypeSafe AI's Jev decision model through Pollinations. It allows users to define structured questions and application context, t | [@alexsasha2750](https://github.com/alexsasha2750) |
+| [🖼️ PIXOO64 Media Art](https://github.com/idodov/pixoo64_art) | Pixoo64 Media Album Art is a native Home Assistant custom integration that transforms the Divoom Pixoo64 64×64 LED matrix into an intelligent media and visual display hub. Beyond traditional cover art | [@idodov](https://github.com/idodov) |
+| [🎮 Prompt Brawl](https://lotxo1.github.io/prompt-brawl) | Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay with their own Pollen. | [@lotxo1](https://github.com/lotxo1) |
+| [🎮 Wanderpost](https://kreggscode.github.io/wanderpost) | **Explorable postcard worlds.** You type a scene, and the first postcard is painted from it. Then you click the doors, paths and windows **in the picture** to step into the next view — one painted pos | [@kreggscode](https://github.com/kreggscode) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
 
 ## 🚀 Unified API
 
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video, 3D, embeddings — all in one place.
+**https://gen.pollinations.ai** provides one API for text, images, audio, video, 3D, and embeddings.
 
 ### What's Included
 
-- **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
-- **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
-- **All models, one place** — Flux, GPT, Claude, Gemini, Seedream, and more
-- **API keys** — secret keys for model usage, app keys for tracking BYOP apps.
-- **CLI** — `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
+- **Unified endpoint**: single API at `gen.pollinations.ai` for all generation
+- **Pollen credits**: simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **All models, one place**: Flux, GPT, Claude, Gemini, Seedream, and more
+- **API keys**: secret keys for model usage, app keys for tracking BYOP apps.
+- **CLI**: `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
 ## 🆕 Latest News
 
-- **2026-09-30** – **🚀 GPT-6.1 Sol is here** Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-09-30** – **🎵 Audio tools in the SDK** Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-09-30** – **🎨 A new home for apps** The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters.
-- **2026-09-30** – **🎮 Pollinations for Godot 4** Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations) <!-- app -->
-- **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
-- **2026-09-29** – **🔗 Claude Code, meet Pollinations** The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`.
-- **2026-09-29** – **🎨 Lightning Image Turbo** Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-09-29** – **🎵 Audio gets more useful** Transcribe with Gemini 3.5 for word timestamps and speaker labels, or split a recording into two or six stems with ElevenLabs. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-09-29** – **🎵 More voices for speech** `openai/tts-1` and `openai/tts-1-hd` are now available through the existing speech endpoints. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-09-29** – **✨ Polli CLI grows a third dimension** Generate 3D files from text or images with `polli gen 3d`; the CLI also adds voice changing, audio isolation, and speech timestamps. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
+<!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
+<!-- news:start -->
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **ElevenLabs SFX v3**](https://enter.pollinations.ai/models?q=elevenlabs/eleven-text-to-sound-v3) <sub>Nov 10</sub><br>Generate MP3 sound effects from text with `elevenlabs/eleven-text-to-sound-v3`. Set duration, looping, and prompt influence. Paid access is required.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Scribe v3 batch transcription**](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3) <sub>Nov 10</sub><br>Transcribe audio with `elevenlabs/scribe-v3`, including word timestamps and speaker labels in supported response formats. Paid access is required.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Scribe v3 Live transcription**](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3-live) <sub>Nov 10</sub><br>Use `elevenlabs/scribe-v3-live` for realtime transcription sessions with incremental and final transcripts. Paid access is required.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Gemini Omni 1.2 Flash video**](https://enter.pollinations.ai/models?q=google/gemini-omni-1.2-flash) <sub>Nov 9</sub><br>Generate paid videos with `google/gemini-omni-1.2-flash` from text or up to two reference images. It supports start and end frames, synchronized audio, and 3 to 15 second output from 360p through 4K.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Longer Wan 3.0 videos**](https://enter.pollinations.ai/models) <sub>Nov 9</sub><br>Choose any duration from 2 to 15 seconds for Wan 3.0 videos made from text, frames, or reference media. The default stays at 5 seconds.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Claude Fable 5.2 added**](https://enter.pollinations.ai/models?q=anthropic/claude-fable-5.2) <sub>Nov 9</sub><br>Use paid-only `anthropic/claude-fable-5.2` for text and image input, tools, and adaptive reasoning. It has a 1M-token context window and accepts up to 20 reference images.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **More details in model listings**](https://gen.pollinations.ai/docs) <sub>Nov 9</sub><br>Check `/v1/models` for video controls and durations, preset audio voices, and declared reference image and video limits. Fields appear only where a model defines them.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Choose your model fallbacks**](https://enter.pollinations.ai/models) <sub>Nov 6</sub><br>Set `model` to up to four comma-separated model IDs or aliases. If an upstream attempt fails in a retryable way, the API tries the next eligible model in order. Entries must share a category and support the requested endpoint.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Compare sandbox templates**](https://enter.pollinations.ai/models) <sub>Nov 6</sub><br>The searchable Sandboxes tab shows five E2B and Azure templates, with sizes, hourly prices, 720-hour monthly estimates, the 75% launch discount, and a `polli sandbox create` command for each.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **More sandbox pricing details**](https://gen.pollinations.ai/docs) <sub>Nov 6</sub><br>`GET /alpha/e2b/pricing` now includes each template's name, provider, size, and `diskSizeMB` alongside its existing fields.
+<!-- news:end -->
+
+[More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
+
 ---
 
 ## 🌱 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, used by 500+ community projects. It provides APIs for text, image, video, audio, 3D, and embeddings generation. Our code and development discussions are public. Supporters help fund the project.
 
-## 🚀 Key Features
-
-- 🔓 **100% Open Source** — code, decisions, roadmap all public
-- 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Pollen Quests** — earn Pollen by completing Quests
-- 🖼️ **Image Generation** — Text-to-image and image editing
-- 📝 **Text Generation** — Chat, reasoning, vision, function calling, structured outputs 
-- 🎬 **Video Generation** — Text-to-video and image-to-video
-- 🎵 **Audio** — Text-to-speech and speech-to-text
-- 🧊 **3D Generation** — Text-to-3D and image-to-3D
-- 🎙️ **Real-time API** — OpenAI-compatible WebSocket for streaming conversations
-- 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
-- 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
-- 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
-
-<!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
+<!-- Updated daily by .github/workflows/repo-update-readme.yml.
      Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -100,19 +84,49 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
  </picture>
 </a>
 
+## 🚀 Key Features
+
+- 🔓 **100% Open Source**: code, decisions, roadmap all public
+- 🤝 **Community-Built**: 500+ projects already using our APIs
+- 🌱 **Pollen Quests**: earn Pollen by completing Quests
+- 🖼️ **Image Generation**: Text-to-image and image editing
+- 📝 **Text Generation**: Chat, reasoning, vision, function calling, structured outputs
+- 🎬 **Video Generation**: Text-to-video and image-to-video
+- 🎵 **Audio**: Text-to-speech and speech-to-text
+- 🧊 **3D Generation**: Text-to-3D and image-to-3D
+- 🎙️ **Real-time API**: OpenAI-compatible WebSocket for streaming conversations
+- 🔢 **Embeddings Creation**: Semantic search, retrieval, similarity matching
+- 🤖 **Managed Agents**: Turn a prompt, base model, and optional Pollinations tools into a reusable model
+- 📦 **Sandboxes**: Cloud Linux computers for you or your agents, opened with SSH or VS Code
+- 🌐 **Sites**: Free static hosting at `<name>.pollinations.app`
+- 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
+
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
+| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
+| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
+| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
+| [Sites](https://gen.pollinations.ai/docs#tag/sites) | Host a static site at <name>.pollinations.app |
+| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
+| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
+| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
+
 ## 🤖 Managed Agents
 
 Build a reusable text agent without hosting an agent server. Choose a system prompt and base model, optionally give it Pollinations tools, then call it through the same OpenAI-compatible API as any other model.
 
-- **Private or public** — keep an agent owner-only or publish it after receiving community publisher access.
-- **Normal model API** — call a registered agent by its `owner/agent-name` model ID.
-- **Dashboard, CLI, or API** — manage agents in [My Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
+- **Private or public**: keep an agent owner-only or publish it after receiving community publisher access.
+- **Normal model API**: call a registered agent by its `owner/agent-name` model ID.
+- **Dashboard, CLI, or API**: manage agents in [My Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
 
 See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior.
 
 ## 🛠️ Coding Harnesses
 
-Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, Mistral Vibe, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
@@ -124,11 +138,11 @@ See [Coding Harnesses](./CODING_HARNESSES.md) for supported harnesses and how to
 
 Community members connect their own OpenAI-compatible text, image, image-editing, and speech-to-text endpoints to Pollinations.
 
-- **Host your own model** — follow [Publish a Model](./BRING_YOUR_OWN_MODEL.md) to test and register an upstream endpoint, then keep it private or publish it to the catalog.
-- **Automatic fallback routing** — nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
-- **Discover and monitor** — browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+- **Host your own model**: follow [Publish a Model](./BRING_YOUR_OWN_MODEL.md) to test and register an upstream endpoint, then keep it private or publish it to the catalog.
+- **Automatic fallback routing**: nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
+- **Discover and monitor**: browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -179,7 +193,7 @@ curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&k
 curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
+  -d '{"model": "openai/tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
   -o speech.mp3
 ```
 
@@ -191,7 +205,7 @@ Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+
 curl 'https://gen.pollinations.ai/v1/audio/transcriptions' \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F file=@audio.mp3 \
-  -F model=whisper-large-v3
+  -F model=openai/whisper-large-v3
 ```
 
 ### Video Generation
@@ -205,7 +219,7 @@ Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]
 ### 3D Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
+curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=microsoft/trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
 ```
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models (put `image=` last in the URL, or URL-encode it). See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
@@ -216,7 +230,7 @@ Pass reference image URL(s) via the `image` parameter for image-to-3D models (pu
 curl 'https://gen.pollinations.ai/v1/embeddings' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "openai-3-small", "input": "Hello world!"}'
+  -d '{"model": "openai/text-embedding-3-small", "input": "Hello world!"}'
 ```
 
 Pass a string or an array of up to 32 strings (text or multimodal content parts). See available embedding models at [gen.pollinations.ai/embeddings/models](https://gen.pollinations.ai/embeddings/models).
@@ -226,7 +240,7 @@ Pass a string or an array of up to 32 strings (text or multimodal content parts)
 Generate text, images, audio, video, and more right from your terminal:
 
 ```bash
-npx @pollinations/cli gen image "cyberpunk city at night" --model flux --output city.png
+npx @pollinations/cli gen image "cyberpunk city at night" --model black-forest-labs/flux.1-schnell --output city.png
 npx @pollinations/cli gen text "Explain quantum tunneling in one sentence"
 npx @pollinations/cli gen audio "Hello world" --voice nova --output speech.mp3
 npx @pollinations/cli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
@@ -240,10 +254,10 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Pollinations Pay](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -265,19 +279,20 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Connect | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
 
 ### Model Restrictions
 
-Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
+Each API key can be scoped to model categories or specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
 
-- **Allow all models** — key works with any available model
-- **Restrict to specific models** — select exactly which models the key can access (e.g., only `flux` and `openai`, or just `gptimage-large`)
+- **Allow all models**: key works with any available model
+- **Restrict to categories**: e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later
+- **Restrict to specific models**: through the [API](APIDOCS.md) or `polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo`; a model ID allows only that model
 
 ### Usage
 
@@ -297,11 +312,11 @@ See [full API docs](APIDOCS.md) for detailed authentication information.
 
 ### Web Interface
 
-Our web interface is user-friendly and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating!
+Visit [the playground](https://pollinations.ai/play) to generate content in your browser.
 
 Here are some examples of what you can generate:
 
-<p align="center"><img src="https://media.pollinations.ai/9e0df3b04d27666c" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" width="800" /></p>
+<p align="center"><img src="https://media.pollinations.ai/9e0df3b04d27666c" alt="Pixel art robot and bee in a cozy digital garden: Stardew Valley style" width="800" /></p>
 
 <p align="center"><img src="https://media.pollinations.ai/ec34c8a3c45c42d9" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" width="800" /></p>
 
@@ -313,7 +328,7 @@ Check out our [Pollinations SDK](./packages/sdk/README.md) for Node.js, browser,
 
 ### OpenAI SDK Compatibility
 
-The API is OpenAI-compatible, so the official OpenAI SDKs work out of the box — just point them at `https://gen.pollinations.ai/v1`.
+The API is OpenAI-compatible. Set the base URL in an official OpenAI SDK to `https://gen.pollinations.ai/v1`.
 
 **Node.js:**
 
@@ -326,7 +341,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "openai",
+  model: "openai/gpt-5.4-nano",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);
@@ -340,13 +355,13 @@ from openai import OpenAI
 client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
 ```
 
-Other OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet), [Rust (async-openai, community)](https://github.com/64bit/async-openai) — plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
+Other OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](https://github.com/openai/openai-java), [.NET](https://github.com/openai/openai-dotnet), [Rust (async-openai, community)](https://github.com/64bit/async-openai), plus compatible frameworks like [Vercel AI SDK](https://ai-sdk.dev/).
 
 **Vercel AI SDK:**
 
@@ -361,7 +376,7 @@ const pollinations = createOpenAICompatible({
 });
 
 const { text } = await generateText({
-  model: pollinations.chatModel("openai"),
+  model: pollinations.chatModel("openai/gpt-5.4-nano"),
   prompt: "Hello!",
 });
 console.log(text);
@@ -391,14 +406,14 @@ graph LR
     R --> GEN
     MCP --> GEN
 
-    GEN["gen.pollinations.ai — Edge Router + Generation Worker"]:::cfWorker -->|auth and billing| ENTER["enter.pollinations.ai — Auth Gateway + Billing"]:::cfWorker
+    GEN["gen.pollinations.ai: Edge Router + Generation Worker"]:::cfWorker -->|auth and billing| ENTER["enter.pollinations.ai: Auth Gateway + Billing"]:::cfWorker
 
-    GEN --> IMG["Image — gen Worker dispatch to providers / GPU backends"]:::cfWorkerLight
-    IMG --> D["Flux, Z-Image, Seedream, ... — GPU VMs"]:::gpuNode
+    GEN --> IMG["Image: gen Worker dispatch to providers / GPU backends"]:::cfWorkerLight
+    IMG --> D["Flux, Z-Image, Seedream, ...: GPU VMs"]:::gpuNode
 
-    GEN --> TXT["Text — Portkey multi-provider"]:::provider
-    GEN --> VID["Video — Wan / Veo / Seedance"]:::provider
-    GEN --> AUD["Audio — ElevenLabs / OVH (Whisper)"]:::provider
+    GEN --> TXT["Text: Portkey multi-provider"]:::provider
+    GEN --> VID["Video: Wan / Veo / Seedance"]:::provider
+    GEN --> AUD["Audio: ElevenLabs / OVH (Whisper)"]:::provider
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
 
@@ -412,55 +427,53 @@ graph LR
 
 ## 🔮 Future Developments
 
-We're constantly exploring new ways to push the boundaries of AI-driven content creation. Some areas we're excited about include:
+We're exploring:
 
 - Digital Twins: Creating interactive AI-driven avatars
-- Music Video Generation: Combining AI-generated visuals with music for unique video experiences
-- Real-time AI-driven Visual Experiences: Projects like our Dreamachine, which create immersive, personalized visual journeys
+- Music Video Generation: Combining AI-generated visuals with music
+- Real-time AI-driven Visual Experiences: Projects like our Dreamachine
 
 ## 🌍 Our Vision
 
-pollinations.ai envisions a future where AI technology is:
+We want AI tools to be:
 
-- **Open & Accessible**: We believe AI should be available to everyone — earn Pollen by contributing, no credit card required
+- **Open & Accessible**: Earn Pollen by contributing, without a credit card
 
-- **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
+- **Transparent & Ethical**: Inspect our code and discuss how the platform works
 
-- **Community-Driven**: We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate
+- **Community-Driven**: Build tools with other developers, creators, and AI enthusiasts
 
-- **Interconnected**: We're creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability
+- **Interconnected**: Combine models and services through shared APIs
 
-- **Evolving**: We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility
-
-We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
+- **Evolving**: Add new capabilities while keeping the platform open and accessible
 
 ## 🤝 Community and Development
 
-We believe in community-driven development. You can contribute to pollinations.ai in several ways:
+You can contribute to pollinations.ai in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The Polli assistant will analyze and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: [Create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing a feature for the Polli assistant to work on. You can propose a change without writing code.
 
 2. **Project Submissions**: Have you built something with pollinations.ai? [Use our app submission template](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) to share it with the community and get it featured in our README.
 
 3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the Polli assistant will review it.
 
-4. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/pollinations-ai-885844321461485618) to:
+4. **Community Engagement**: Join our [Discord community](https://discord.gg/k9F7SyTgqn) to:
    - Share your creations
    - Get support and help others
    - Collaborate with fellow AI enthusiasts
    - Discuss feature ideas before creating issues
 
-For any questions or support, please visit our [Discord channel](https://discord.gg/pollinations-ai-885844321461485618) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
+For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 
 ## 🗂️ Project Structure
 
-Our codebase is organized into several key folders, each serving a specific purpose in the pollinations.ai ecosystem:
+The main folders are:
 
 - [`pollinations.ai/`](./pollinations.ai/): The main React application for the Pollinations.ai website.
 
 - [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
-- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing — API keys, Pollen credits, and pack checkout.
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, Pollen credits, and pack checkout.
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 
@@ -470,28 +483,25 @@ Our codebase is organized into several key folders, each serving a specific purp
   and infrastructure, including the
   [GPU fleet](./operations/infrastructure/gpu/GPU_INSTANCES.md).
 
-- [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service — upload files and get a URL to use with Pollinations models, with public tag galleries.
+- [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service: upload files and get a URL to use with Pollinations models, with public tag galleries.
 
-- [`operations/social/`](./operations/social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
+- [`operations/news/`](./operations/news/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
 
-- [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
+- [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI for people and AI agents.
 
 - [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
 
 - [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
-- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): This is `opencode-pollinations-plugin`, a plugin for OpenCode that integrates Pollinations.ai's inference capabilities directly into the OpenCode environment, built by our community member [@fkom13](https://github.com/fkom13).
-
-
-This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
+- [`opencode-pollinations-plugin`](https://github.com/fkom13/opencode-pollinations-plugin): A community plugin that connects OpenCode to Pollinations models, built by [@fkom13](https://github.com/fkom13).
 
 For development setup and environment management, see [DEVELOP.md](./DEVELOP.md).
 
 ## 🏢 Supported By
 
-> pollinations.ai is proud to be supported by:
+> pollinations.ai is supported by:
 
-<p align="center"><img src="https://media.pollinations.ai/3f7405eb2d6f57b7" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" width="800" /></p>
+<p align="center"><img src="https://media.pollinations.ai/3f7405eb2d6f57b7" alt="Pixel art garden shelf: supporter plants in labeled pots, robot watering, bee with watering can" width="800" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits

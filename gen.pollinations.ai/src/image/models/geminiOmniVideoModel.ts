@@ -9,8 +9,12 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:gemini-omni:ops");
 
-const MODEL_ID = "gemini-omni-1.1-flash-preview";
-const PUBLIC_MODEL_ID = "google/gemini-omni-1.1-flash";
+// Vertex model IDs, keyed by the public model ID.
+const UPSTREAM_MODEL_IDS = {
+    "google/gemini-omni-1.1-flash": "gemini-omni-1.1-flash-preview",
+    "google/gemini-omni-1.2-flash": "gemini-omni-1.2-flash",
+} as const;
+type GeminiOmniModel = keyof typeof UPSTREAM_MODEL_IDS;
 const RESOLUTIONS = ["360p", "720p", "1080p", "4k"] as const;
 
 type ModalityTokens = {
@@ -61,30 +65,17 @@ export async function callGeminiOmniAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
+    const publicModel = safeParams.model as GeminiOmniModel;
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 3 || duration > 10) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Gemini Omni 1.1 Flash supports whole-second durations from 3 to 10.",
-        });
-    }
     if (safeParams.fps !== undefined && safeParams.fps !== 24) {
         throw UpstreamError.fromProvider(400, {
-            message: "Gemini Omni 1.1 Flash outputs video at 24 FPS.",
+            message: `${publicModel} outputs video at 24 FPS.`,
         });
     }
 
-    const requestedResolution = safeParams.resolution ?? "720p";
-    if (
-        !RESOLUTIONS.includes(
-            requestedResolution as (typeof RESOLUTIONS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Gemini Omni 1.1 Flash does not support ${requestedResolution} resolution.`,
-        });
-    }
-    const resolution = requestedResolution as (typeof RESOLUTIONS)[number];
+    // params.ts limits resolution to the registry's list.
+    const resolution = (safeParams.resolution ??
+        "720p") as (typeof RESOLUTIONS)[number];
     const aspectRatio =
         safeParams.aspectRatio === "16:9" || safeParams.aspectRatio === "9:16"
             ? safeParams.aspectRatio
@@ -118,7 +109,7 @@ export async function callGeminiOmniAPI(
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model: MODEL_ID,
+            model: UPSTREAM_MODEL_IDS[publicModel],
             store: false,
             input,
             response_format: [
@@ -189,7 +180,7 @@ export async function callGeminiOmniAPI(
         mimeType: video.mime_type ?? "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: PUBLIC_MODEL_ID,
+            actualModel: publicModel,
             usage,
         },
     };

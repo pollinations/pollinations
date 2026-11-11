@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { requestedModelIds } from "../middleware/model.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
 import {
     type CreateMessageRequest,
@@ -32,6 +33,38 @@ function errorResponse(status: number, message: string, headers?: Headers) {
         status,
         headers: responseHeaders,
     });
+}
+
+/**
+ * Names an unknown block type the way Anthropic does. Claude Code turns off
+ * the feature that sent a block when the rejection names its tag (for
+ * example `Input tag 'tool_addition'`), but zod reports an unknown tag inside
+ * a string-or-blocks union only as "Invalid input".
+ */
+function unknownBlockType(
+    issues: readonly z.core.$ZodIssue[],
+    body: unknown,
+    prefix: PropertyKey[] = [],
+): string | undefined {
+    for (const issue of issues) {
+        if (issue.code !== "invalid_union") continue;
+        const path = [...prefix, ...issue.path];
+        if (issue.discriminator && "options" in issue) {
+            const tag = path.reduce<unknown>(
+                (value, key) => (value as Record<PropertyKey, unknown>)?.[key],
+                body,
+            );
+            if (typeof tag !== "string") continue;
+            const expected = issue.options?.map(
+                (option) => `'${String(option)}'`,
+            );
+            return `${path.slice(0, -1).join(".")}: Input tag '${tag}' found using '${issue.discriminator}' does not match any of the expected tags: ${expected?.join(", ")}`;
+        }
+        for (const option of issue.errors) {
+            const message = unknownBlockType(option, body, path);
+            if (message) return message;
+        }
+    }
 }
 
 async function upstreamErrorMessage(response: Response): Promise<string> {
@@ -64,8 +97,9 @@ export function createMessagesRoutes(dispatch: Dispatch) {
             summary: "Create Message (Anthropic-compatible)",
             description: [
                 "Anthropic Messages API for Claude Code, the Anthropic SDKs, and other Messages clients. Point the client's base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.",
+                "JSON request bodies may be up to 32 MiB, including inline images.",
                 "",
-                "Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.",
+                "Runs every model that lists `/v1/messages` in `supported_endpoints`. These are the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, PDF documents (base64), system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.",
                 "",
                 "Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools, and `x-api-key` auth are not supported.",
             ].join("\n"),
@@ -102,15 +136,20 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 const issue = result.error[0];
                 return errorResponse(
                     400,
-                    `${issue?.path?.join(".") || "body"}: ${issue?.message ?? "Invalid request"}`,
+                    unknownBlockType(
+                        result.error as z.core.$ZodIssue[],
+                        result.data,
+                    ) ??
+                        `${issue?.path?.join(".") || "body"}: ${issue?.message ?? "Invalid request"}`,
                 );
             }
         }),
         async (c) => {
             const request = c.req.valid("json") as CreateMessageRequest;
             // Media models also accept chat requests; they have no Messages form.
+            // A model list is one kind, so its first model stands for it.
             const entry = (await getGenerationModelRegistry(c.env)).resolve(
-                request.model,
+                requestedModelIds(request.model)[0],
             );
             if (
                 entry?.visible &&
@@ -123,7 +162,10 @@ export function createMessagesRoutes(dispatch: Dispatch) {
             }
             let chatRequest: ReturnType<typeof messagesToChatRequest>;
             try {
-                chatRequest = messagesToChatRequest(request);
+                chatRequest = messagesToChatRequest(
+                    request,
+                    entry?.definition.maxReferenceImages,
+                );
             } catch (error) {
                 if (error instanceof MessagesRequestError) {
                     return errorResponse(400, error.message);

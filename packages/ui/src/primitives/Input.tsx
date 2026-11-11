@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { Field } from "./Field.tsx";
 
 export type InputProps = React.ComponentPropsWithoutRef<"input"> & {
     error?: boolean;
@@ -8,8 +9,9 @@ export type InputProps = React.ComponentPropsWithoutRef<"input"> & {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ className, error, hideNumberSteppers, ...props }, ref) => (
-        <input
+        <Field.Input
             ref={ref}
+            aria-invalid={error || undefined}
             data-error={error ? "true" : undefined}
             className={cn(
                 "polli-input polli:px-3 polli:py-2 polli:border polli:rounded-lg",

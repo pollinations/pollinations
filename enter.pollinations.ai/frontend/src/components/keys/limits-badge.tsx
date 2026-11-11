@@ -59,17 +59,10 @@ export const LimitsBadge: FC<{
 function formatExpiry(expiresAt: Date | null | undefined): string {
     if (!expiresAt) return "∞";
 
-    const expiresDate = new Date(expiresAt);
-    const daysLeft = Math.ceil(
-        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-    );
+    const expiry = new Date(expiresAt);
+    if (expiry.getTime() <= Date.now()) return "expired";
 
-    if (daysLeft <= 0) return "expired";
-
-    return formatDistanceToNowStrict(expiresDate, {
-        addSuffix: false,
-        locale: shortLocale,
-    });
+    return formatDistanceToNowStrict(expiry, { locale: shortLocale });
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {

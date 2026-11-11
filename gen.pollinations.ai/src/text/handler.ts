@@ -1,6 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -20,9 +19,16 @@ import {
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    publicUsage,
+    withoutPayg,
+} from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -50,29 +56,6 @@ type TextContext = Context<Env>;
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function prepareRequestParameters(
-    requestParams: RequestData,
-    modelDefinition: ModelDefinition,
-): RequestData {
-    const isAudioModel =
-        modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
-
-    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
-
-    return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
-            ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
-              }
-            : { voice, format: audioFormat },
-    };
 }
 
 /**
@@ -106,6 +89,7 @@ async function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -133,6 +117,95 @@ async function gatewayContext(
             responsesEndpoint: client.target.endpoint,
         },
     };
+}
+
+/**
+ * Whether the request asked the provider to stop on a sequence. A completion
+ * truncated by one of these is valid even when no text survives.
+ */
+function hasStopSequences(stop: unknown): boolean {
+    if (typeof stop === "string") return stop.length > 0;
+    return Array.isArray(stop) && stop.length > 0;
+}
+
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // A stop sequence can truncate the answer to nothing. That is the
+        // completion the caller asked for, not a provider failure, so it must
+        // not be reported as an empty response.
+        const stopsOnRequest = hasStopSequences(attemptData.stop);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                !(stopsOnRequest && message && finish_reason === "stop") &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded" as const,
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response" as const,
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
+    return buffered ? completionToChatStream(result) : result;
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -180,29 +253,14 @@ function usageHeaders(
     return headers;
 }
 
-function publicCompletionUsage(
-    usage: ChatCompletion["usage"],
-): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
-}
-
 function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
-    const usage = publicCompletionUsage(completion.usage);
-    if (usage === completion.usage) return completion;
-
-    const publicCompletion = {
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const publicCompletion = withoutPayg({
         ...completion,
-        usage,
-    };
+        usage: publicUsage(completion.usage),
+        choices: publicChatChoices(completion.choices),
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -348,7 +406,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -364,21 +421,9 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!requestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -398,7 +443,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -435,11 +480,7 @@ export async function handleTextContentLocal(
     c: TextContext,
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
-        getChatRequestData(body),
-        c.var.model.definition,
-    );
-    return generateTextResponse(c, requestData, true);
+    return generateTextResponse(c, getChatRequestData(body), true);
 }
 
 export async function handleSimpleTextLocal(
@@ -448,9 +489,9 @@ export async function handleSimpleTextLocal(
     model: string,
     query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
+    return generateTextResponse(
+        c,
         getSimpleTextRequestData(prompt, model, query),
-        c.var.model.definition,
+        true,
     );
-    return generateTextResponse(c, requestData, true);
 }

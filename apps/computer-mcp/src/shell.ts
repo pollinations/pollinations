@@ -6,8 +6,10 @@ import coreModules from "@cloudflare/computer/shell/core";
 // them again, so every non-ASCII byte was stored as two or more. This patches
 // the bundled adapter until upstream honours the encoding. just-bash's `read`
 // and `mapfile` also store stdin's byte string in variables without decoding
-// it, so `echo "$line"` encoded each byte again. A patch that no longer
-// applies throws at startup; the byte tests in index.test.ts cover every path.
+// it, so `echo "$line"` encoded each byte again. `$(...)` did the same with
+// the output it captured, so `x=$(printf 'Época')` held 8 characters, not 6.
+// A patch that no longer applies throws at startup; the byte tests in
+// index.test.ts cover every path.
 const PATCHES: [string, string][] = [
     [
         "await this.#fs.writeFile(path, content);",
@@ -26,6 +28,16 @@ const PATCHES: [string, string][] = [
     [
         '"string_length");\n    f3.push(g);',
         '"string_length");\n    f3.push(textFromBytes(g));',
+    ],
+    // $(...): the captured output, before trailing newlines are stripped.
+    [
+        'let m4 = h5.stdout.replace(/\\n+$/, "");',
+        'let m4 = textFromBytes(h5.stdout).replace(/\\n+$/, "");',
+    ],
+    // $(...) whose last command exited through `exit` or `return`.
+    [
+        'let p3 = h5.stdout.replace(/\\n+$/, "");',
+        'let p3 = textFromBytes(h5.stdout).replace(/\\n+$/, "");',
     ],
 ];
 

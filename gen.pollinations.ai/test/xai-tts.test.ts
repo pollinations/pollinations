@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { XAI_TTS_VOICES } from "../../shared/registry/audio.ts";
+import { isRetryableFallbackError } from "../src/fallback.ts";
 import { generateXaiSpeech } from "../src/routes/audio.ts";
 
 const log = {
@@ -24,51 +25,51 @@ describe("generateXaiSpeech", () => {
         vi.clearAllMocks();
     });
 
-    it.each(
-        voiceFormatCases,
-    )("forwards voice=$voice format=$format with exact character billing", async ({
-        voice,
-        format,
-    }) => {
-        const fetchMock = vi.fn().mockResolvedValueOnce(
-            new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "Content-Type": contentTypes[format] },
-            }),
-        );
-        vi.stubGlobal("fetch", fetchMock);
+    it.each(voiceFormatCases)(
+        "forwards voice=$voice format=$format with exact character billing",
+        async ({ voice, format }) => {
+            const fetchMock = vi.fn().mockResolvedValueOnce(
+                new Response(new Uint8Array([1, 2, 3]), {
+                    headers: { "Content-Type": contentTypes[format] },
+                }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
 
-        const response = await generateXaiSpeech({
-            text: "Hi 🌻你好",
-            voice,
-            responseFormat: format,
-            apiKey: "test-key",
-            log,
-        });
-
-        expect(fetchMock).toHaveBeenCalledWith("https://api.x.ai/v1/tts", {
-            method: "POST",
-            headers: {
-                Authorization: "Bearer test-key",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+            const response = await generateXaiSpeech({
                 text: "Hi 🌻你好",
-                voice_id: voice,
-                language: "auto",
-                output_format: {
-                    codec: format,
-                    sample_rate: 24000,
-                    ...(format === "mp3" ? { bit_rate: 128000 } : {}),
+                voice,
+                responseFormat: format,
+                apiKey: "test-key",
+                log,
+            });
+
+            expect(fetchMock).toHaveBeenCalledWith("https://api.x.ai/v1/tts", {
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer test-key",
+                    "Content-Type": "application/json",
                 },
-            }),
-        });
-        expect(response.headers.get("content-type")).toBe(contentTypes[format]);
-        expect(response.headers.get("x-model-used")).toBe("x-ai/grok-tts");
-        expect(response.headers.get("x-tts-voice")).toBe(voice);
-        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "6",
-        );
-    });
+                body: JSON.stringify({
+                    text: "Hi 🌻你好",
+                    voice_id: voice,
+                    language: "auto",
+                    output_format: {
+                        codec: format,
+                        sample_rate: 24000,
+                        ...(format === "mp3" ? { bit_rate: 128000 } : {}),
+                    },
+                }),
+            });
+            expect(response.headers.get("content-type")).toBe(
+                contentTypes[format],
+            );
+            expect(response.headers.get("x-model-used")).toBe("x-ai/grok-tts");
+            expect(response.headers.get("x-tts-voice")).toBe(voice);
+            expect(
+                response.headers.get("x-usage-completion-audio-tokens"),
+            ).toBe("6");
+        },
+    );
 
     it("maps the existing default voice to Eve", async () => {
         const fetchMock = vi.fn().mockResolvedValueOnce(
@@ -92,18 +93,44 @@ describe("generateXaiSpeech", () => {
     });
 
     it.each([
-        ["voice", { voice: "unknown", responseFormat: "mp3" }],
-        ["format", { voice: "eve", responseFormat: "opus" }],
-    ])("rejects an unsupported %s", async (_field, params) => {
-        await expect(
-            generateXaiSpeech({
+        [404, "TTS synthesis failed: Voice 'nyra' not found", 400, false],
+        [404, "Model not found", 502, true],
+        [404, "Not Found", 502, true],
+        [404, "TTS synthesis failed: Voice 'eve' not found", 502, true],
+        [500, "TTS synthesis failed: Voice 'nyra' not found", 500, true],
+        [429, "Rate limit exceeded", 502, true],
+    ])(
+        "classifies upstream %s %s as %s without losing provider evidence",
+        async (upstreamStatus, message, status, retryable) => {
+            const responseBody = JSON.stringify({ error: message });
+            const fetchMock = vi.fn().mockResolvedValueOnce(
+                new Response(responseBody, {
+                    status: upstreamStatus as number,
+                    headers: { "x-request-id": "provider-request" },
+                }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
+            const error = await generateXaiSpeech({
                 text: "Hello",
-                ...params,
+                voice: "nyra",
+                responseFormat: "mp3",
                 apiKey: "test-key",
                 log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
+            }).catch((error: unknown) => error);
+
+            expect(error).toMatchObject({
+                status,
+                upstreamStatus,
+                message,
+                responseBody,
+                requestUrl: new URL("https://api.x.ai/v1/tts"),
+                upstreamHeaders: { "x-request-id": "provider-request" },
+            });
+            expect(isRetryableFallbackError(error)).toBe(retryable);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("rejects requests when xAI is not configured", async () => {
         await expect(

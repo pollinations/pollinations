@@ -5,7 +5,7 @@ import { parseBooleanLike } from "@/util.ts";
 
 // z.coerce.boolean() coerces the string "false" to true; parse boolean-ish
 // tokens instead and let unrecognized values fail validation.
-const BooleanQueryParamSchema = z.preprocess(
+export const BooleanQueryParamSchema = z.preprocess(
     (value) => parseBooleanLike(value) ?? value,
     z.boolean(),
 );

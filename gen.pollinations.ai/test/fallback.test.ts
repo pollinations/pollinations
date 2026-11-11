@@ -1,5 +1,7 @@
+import { env } from "cloudflare:test";
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
@@ -16,12 +18,20 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isNetworkFailure,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
-import type { GenerationModelEntry } from "../src/model-registry.ts";
+import {
+    requestedModelIds,
+    resolveModelDefinition,
+} from "../src/middleware/model.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../src/model-registry.ts";
 
 function registryEntry(
     id: string,
@@ -36,8 +46,11 @@ function registryEntry(
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
     };
     return {
         id,
@@ -63,10 +76,21 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        modality: "text",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -116,6 +140,26 @@ describe("registry fallback linking", () => {
             });
             expect(getVisibleImageModels()).not.toContain(fallback);
         }
+    });
+
+    it("isolates the wan-2.2-fast Replicate route as fallback-only behind Fal", () => {
+        // Replicate 일반 400/422는 terminal (~48% errors_4xx, 2026-10-21
+        // /models/status)이므로 failing route를 첫 시도에서 내리고 Fal이 base를 수행.
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast"]).toMatchObject({
+            provider: "fal",
+            fallbacks: ["alibaba/wan-2.2-fast:replicate"],
+        });
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast:replicate"]).toMatchObject({
+            aliases: [],
+            hidden: true,
+            fallbackOnly: true,
+            provider: "replicate",
+        });
+        // No same-endpoint auto-retry: primary is already Fal.
+        expect("alibaba/wan-2.2-fast:fal" in IMAGE_SERVICES).toBe(false);
+        expect(getVisibleImageModels()).not.toContain(
+            "alibaba/wan-2.2-fast:replicate",
+        );
     });
 
     it("uses registry declarations without applying community price rules", () => {
@@ -206,6 +250,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
@@ -320,6 +365,159 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    describe("community primary falling back to a static registry target", () => {
+        it("links a static target that costs no more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-cheap"],
+                20,
+            );
+            const target = registryEntry("static-cheap", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+                "static-cheap",
+            ]);
+        });
+
+        it("rejects a static target that costs more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-expensive"],
+                10,
+            );
+            const target = registryEntry("static-expensive", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a static target in a different category", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-image"],
+                10,
+            );
+            const target = registryEntry("static-image", [], 10);
+            target.definition.category = "image";
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a paid-only static target for a primary that takes Quest Pollen", () => {
+            const anyPollen = communityEntry(
+                "owner/any",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+            );
+            const paidPrimary = communityEntry(
+                "owner/paid",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+                true,
+            );
+            const staticPaid = registryEntry("static-paid", [], 10);
+            staticPaid.definition.paidOnly = true;
+            const entries = [anyPollen, paidPrimary, staticPaid];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(anyPollen.fallbackEntries).toBeUndefined();
+            expect(
+                paidPrimary.fallbackEntries?.map((entry) => entry.id),
+            ).toEqual(["static-paid"]);
+        });
+
+        it("rejects a static target that bills beyond its cheap base rate", () => {
+            // The caller pays the primary's rates for the target's usage, so a
+            // dearer variant, extra charges, other units or a cost above the
+            // discounted price cost us the gap.
+            const variant = registryEntry("static-variant", [], 5);
+            variant.definition.costVariants = {
+                long: { completionTextTokens: 20 },
+            };
+            const extras = registryEntry("static-extras", [], 5);
+            extras.definition.billing = { adjustments: [] };
+            const units = registryEntry("static-units", [], 1e-9);
+            units.definition.priceUnits = {
+                completionTextTokens: { unit: "megapixel", quantity: 1e6 },
+            };
+            const discounted = registryEntry("static-discounted", [], 12);
+            discounted.definition.priceMultiplier = 0.5;
+            // Enter must refuse what gen will not route, such as a model
+            // without the /text endpoints every community text model serves.
+            const chatOnly = registryEntry("static-chat-only", [], 5);
+            chatOnly.definition.supportedEndpoints = ["/v1/chat/completions"];
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-variant", "static-extras", "static-units"],
+                10,
+            );
+            const second = communityEntry(
+                "owner/second",
+                "owner",
+                "public",
+                null,
+                ["static-discounted", "static-chat-only"],
+                10,
+            );
+            const entries = [
+                primary,
+                second,
+                variant,
+                extras,
+                units,
+                discounted,
+                chatOnly,
+            ];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+            expect(second.fallbackEntries).toBeUndefined();
+        });
+    });
 });
 
 describe("formatFallbackTarget", () => {
@@ -332,7 +530,7 @@ describe("formatFallbackTarget", () => {
 
 describe("fallback response model attribution", () => {
     const publicId = "qwen/qwen-image-3";
-    const backupId = "qwen/qwen-image-3:replicate";
+    const backupId = "qwen/qwen-image-3:openrouter";
     const model = {
         resolved: publicId,
         definition: IMAGE_SERVICES[publicId],
@@ -438,6 +636,19 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
+    });
+
     it("uses the wrapper status for a malformed successful response", () => {
         expect(
             isRetryableFallbackError(
@@ -449,7 +660,7 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
-    it("does not multiply the owned Portkey timeout across fallbacks", () => {
+    it("falls back when Portkey's per-attempt timeout expires", () => {
         expect(
             isRetryableFallbackError(
                 textFailure(408, {
@@ -462,7 +673,7 @@ describe("isRetryableFallbackError", () => {
                     },
                 }),
             ),
-        ).toBe(false);
+        ).toBe(true);
         expect(isRetryableFallbackError(textFailure(408))).toBe(true);
     });
 
@@ -571,10 +782,58 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
+    it("recognizes Workerd failures without a valid HTTP status", () => {
+        for (const field of ["status", "upstreamStatus"]) {
+            for (const value of [
+                undefined,
+                null,
+                "400",
+                0,
+                NaN,
+                Infinity,
+                400.5,
+                600,
+            ]) {
+                expect(
+                    isNetworkFailure(
+                        Object.assign(new Error("Network connection lost."), {
+                            [field]: value,
+                        }),
+                    ),
+                ).toBe(true);
+            }
+            expect(
+                isNetworkFailure(
+                    Object.assign(new Error("Network connection lost."), {
+                        [field]: 400,
+                    }),
+                ),
+            ).toBe(false);
+        }
+    });
+
     it("fails over on a network-level failure but not on our own bugs", () => {
         expect(isRetryableFallbackError(new TypeError("fetch failed"))).toBe(
             true,
         );
+        expect(
+            isRetryableFallbackError(new Error("Network connection lost.")),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(new Error("connection handler failed")),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                new Error("Network connection lost. Invalid payload"),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, {
+                    message: "Network connection lost.",
+                }),
+            ),
+        ).toBe(false);
         expect(
             isRetryableFallbackError(
                 new TypeError("Cannot read properties of undefined"),
@@ -751,6 +1010,43 @@ describe("withModelFallback", () => {
         // own row; the local gate called no provider and is not added.
         expect(seen(attempts)).toEqual(["primary"]);
     });
+
+    it("skips a model the caller can't afford and ends on the last one that ran", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const attempt = vi.fn(async () => {
+            throw rateLimited();
+        });
+        const beforeAttempt = vi.fn(async (current: FallbackCandidate) => {
+            if (current.id !== "primary") {
+                throw new PaymentRequiredError(
+                    "INSUFFICIENT_BALANCE",
+                    `${current.id} costs too much`,
+                    "https://enter.pollinations.ai/top-up",
+                );
+            }
+        });
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second"), candidate("third")],
+                attempt,
+                attempts,
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("429 upstream");
+        expect(seen(attempts)).toEqual(["primary!"]);
+
+        // With nothing run, the first refusal answers.
+        await expect(
+            withModelFallback(
+                [candidate("second"), candidate("third")],
+                attempt,
+                [],
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("second costs too much");
+        expect(attempt).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe("withModelFallbackResponse", () => {
@@ -790,4 +1086,137 @@ describe("withModelFallbackResponse", () => {
         );
         await expect(response.json()).resolves.toEqual({ model: "target" });
     });
+});
+
+describe("caller-listed model chains", () => {
+    it("does not expand a listed alternative's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(fallbackCandidates(model).map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "perplexity/sonar",
+        ]);
+    });
+    it("splits and trims without removing repeats", () => {
+        expect(requestedModelIds("openai")).toEqual(["openai"]);
+        expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([
+            "openai",
+            "openai-fast",
+            "openai",
+        ]);
+    });
+
+    it("rejects a list longer than the attempt cap", () => {
+        expect(() => requestedModelIds("a,b,c,d,e")).toThrowError(
+            /at most 4 are tried/,
+        );
+    });
+
+    it("replaces the primary model's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("perplexity/sonar");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+        ]);
+    });
+
+    it("preserves repeated models even when named by different aliases", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,gpt-5-nano,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("openai/gpt-5-nano");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "openai/gpt-5.4-nano",
+        ]);
+    });
+
+    it("keeps configured fallbacks for a single-model request", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const entry = registry
+            .visibleEntries()
+            .find(
+                (entry) =>
+                    entry.eventType === "generate.text" &&
+                    !entry.definition.supportedEndpoints &&
+                    entry.fallbackEntries?.length,
+            );
+        expect(entry).toBeDefined();
+        if (!entry) throw new Error("Missing model with configured fallbacks");
+        const model = await resolveModelDefinition(
+            entry.id,
+            "generate.text",
+            env,
+        );
+        expect(model.fallbackEntries).toEqual(entry.fallbackEntries);
+    });
+
+    it("tries repeated entries separately without inserting configured routes", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+        const attempted: string[] = [];
+        const { index } = await withModelFallback(
+            fallbackCandidates(model),
+            async (candidate) => {
+                attempted.push(candidate.id);
+                if (attempted.length < 3)
+                    throw Object.assign(new Error("Unavailable"), {
+                        status: 503,
+                    });
+                return "ok";
+            },
+        );
+        expect(attempted).toEqual([
+            "perplexity/sonar",
+            "perplexity/sonar",
+            "openai/gpt-5-nano",
+        ]);
+        expect(index).toBe(2);
+    });
+
+    it("keeps the string the caller sent so a chain gets its own cache key", async () => {
+        const chain = await resolveModelDefinition(
+            "openai-fast,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(chain.requested).toBe("openai-fast,openai");
+        expect(chain.resolved).toBe("openai/gpt-5-nano");
+    });
+
+    it("holds every listed model to the endpoint it was called on", async () => {
+        await expect(
+            resolveModelDefinition("openai-fast,flux", "generate.text", env),
+        ).rejects.toThrowError(/is a image model/);
+    });
+
+    it.each(["flux,hyper3d/rodin-2.5", "hyper3d/rodin-2.5,flux"])(
+        "rejects mixed output categories in %s",
+        async (models) => {
+            await expect(
+                resolveModelDefinition(
+                    models,
+                    "generate.image",
+                    env,
+                    undefined,
+                    "/v1/responses",
+                ),
+            ).rejects.toThrowError(/same model category/);
+        },
+    );
 });

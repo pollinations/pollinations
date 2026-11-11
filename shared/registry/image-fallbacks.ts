@@ -9,6 +9,26 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedream-5.0-pro": {
+        "bytedance/seedream-5.0-pro:replicate": {
+            provider: "replicate",
+            cost: { completionImageTokens: 0.09 },
+        },
+    },
+    "google/gemini-nano-banana-2.1": {
+        "google/gemini-nano-banana-2.1:vercel": {
+            provider: "vercel",
+            // Pinned to Google. Gateway cached-input rate verified 2026-11-11.
+            // Record the reported charge and keep the caller's Vertex price.
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptImageTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(7.5),
+                completionImageTokens: perMillion(30),
+            },
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },
@@ -43,7 +63,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-1.5": {
@@ -51,7 +71,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-2": {
@@ -72,6 +92,12 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-14").getTime(),
         },
     },
+    "openai/gpt-image-2.6-flare": {
+        "openai/gpt-image-2.6-flare:fal": { provider: "fal", cost: {} },
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        "openai/gpt-image-2.6-sunburst:fal": { provider: "fal", cost: {} },
+    },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",
@@ -81,6 +107,11 @@ export const IMAGE_FALLBACKS = {
     "black-forest-labs/flux.1.1-pro": {
         "black-forest-labs/flux.1.1-pro:azure:sweden": {
             provider: "azure",
+        },
+        // Replicate's official model: $0.04 per output image (model page, 2026-10-24).
+        "black-forest-labs/flux.1.1-pro:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "black-forest-labs/flux.2-pro": {
@@ -126,20 +157,42 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "qwen/qwen-image-3": {
-        "qwen/qwen-image-3:fal": { provider: "fal" },
-        "qwen/qwen-image-3:replicate": {
-            provider: "replicate",
-            addedDate: new Date("2026-09-01").getTime(),
+        "qwen/qwen-image-3:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-14").getTime(),
+            // OpenRouter's qwen/qwen-image-3-pro on Alibaba: the primary's
+            // exact checkpoint. The handler records OpenRouter's reported
+            // usage.cost plus the 5.5% credit fee; these rates describe the
+            // route at 1K.
             cost: {
-                promptImageTokens: 0,
-                completionImageTokens: 0.03,
+                promptImageTokens: 0.003 * 1.055,
+                completionImageTokens: 0.04 * 1.055,
             },
             costVariants: {
                 "2k": {
-                    promptImageTokens: 0,
-                    completionImageTokens: 0.03,
+                    promptImageTokens: 0.003 * 1.055,
+                    completionImageTokens: 0.075 * 1.055,
                 },
             },
+        },
+    },
+    "qwen/qwen-image-2.1-pro": {
+        "qwen/qwen-image-2.1-pro:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-18").getTime(),
+            // OpenRouter's Alibaba endpoint. Maintainer probe (2026-10-18):
+            // usage.cost is $0.046 per image before the 5.5% credit fee, so this
+            // route is above the $0.04 primary price. Up to 4 references.
+            cost: {
+                completionImageTokens: 0.046 * 1.055,
+            },
+        },
+    },
+    "prunaai/p-image": {
+        // Replicate's official model: flat $0.005 per output image (model page, 2026-10-24).
+        "prunaai/p-image:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "prunaai/p-image-edit": {
@@ -148,13 +201,25 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
+    "microsoft/mai-image-2.6-flash": {
+        "microsoft/mai-image-2.6-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's only endpoint is Azure, at our deployment's rates.
+            cost: {
+                promptTextTokens: perMillion(1.75) * 1.055,
+                promptImageTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(19) * 1.055,
+            },
+        },
+    },
     "google/gemini-2.5-flash-image": {
         "google/gemini-2.5-flash-image:openrouter:vertex-global": {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            retirementDate: new Date("2027-03-15").getTime(),
+            // Provider retires this route on 2027-03-15.
             cost: {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptImageTokens: perMillion(0.3) * 1.055,
@@ -206,6 +271,8 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.1-schnell:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
+            // Per 1024² image; the handler records DeepInfra's reported
+            // charge, which scales with image area.
             cost: { completionImageTokens: 0.0005 },
         },
     },
@@ -222,13 +289,34 @@ export const IMAGE_FALLBACKS = {
             maxReferenceImages: 10,
         },
     },
-    "x-ai/grok-imagine-video": {
-        "x-ai/grok-imagine-video:openrouter": {
+    "heygen/heygen-video-1": {
+        "heygen/heygen-video-1:openrouter": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter HeyGen rates with its 50% launch discount (list
+            // $0.02/s at 480p, $0.036/s at 768p), plus the 5.5% credit fee.
+            // The handler bills OpenRouter's reported cost.
+            cost: { completionVideoSeconds: 0.01 * 1.055 },
+            ...defineCostVariants(
+                { "768p": { completionVideoSeconds: 0.018 * 1.055 } },
+                matchResolution("768p"),
+                {
+                    "768p": {
+                        label: "768p",
+                        description:
+                            "Applies when the requested video resolution is 768p.",
+                    },
+                },
+                "480p",
+            ),
+        },
+    },
+    "x-ai/grok-imagine-video": {
+        "x-ai/grok-imagine-video:fal": {
+            provider: "fal",
             cost: {
-                promptImageTokens: 0.002 * 1.055, // per start-frame image
-                completionVideoSeconds: 0.07 * 1.055, // per sec at 720p
+                promptImageTokens: 0.002,
+                completionVideoSeconds: 0.07,
             },
         },
     },
@@ -250,6 +338,48 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "x-ai/grok-imagine-image-2.0": {
+        "x-ai/grok-imagine-image-2.0:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055,
+                completionImageTokens: 0.06 * 1.055, // medium, 1K
+            },
+            costVariants: {
+                low_1k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.04 * 1.055,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.08 * 1.055,
+                },
+            },
+        },
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
+                },
+            },
+        },
+    },
     "alibaba/wan-2.6": {
         "alibaba/wan-2.6:replicate": { provider: "replicate" },
         "alibaba/wan-2.6:fal": {
@@ -258,23 +388,22 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "alibaba/wan-2.2-fast": {
-        "alibaba/wan-2.2-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-02").getTime(),
-            // Fal charges $0.05 per fixed 5-second 480p generation. The
-            // inherited $0.01/second sheet bills the caller the same $0.05, so
-            // this fallback has no loss for either text-to-video or image-to-video.
-        },
+        // Replicate is fallback-only: its 4xx rate (~48%, 2026-10-21
+        // /models/status) is terminal (400/422 don't retry), so it must not
+        // be tried first. No :fal route: primary is already Fal, and a
+        // same-endpoint auto-retry would only regenerate on shared Fal faults.
+        "alibaba/wan-2.2-fast:replicate": { provider: "replicate" },
     },
     "bytedance/seedance-1-pro-fast": {
-        "bytedance/seedance-1-pro-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: { completionVideoSeconds: 0.0216 },
+        "bytedance/seedance-1-pro-fast:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+            // Replicate per-second rates by resolution (2026-10-24).
+            cost: { completionVideoSeconds: 0.025 },
             ...defineCostVariants(
                 {
-                    "480p": { completionVideoSeconds: 0.0096 },
-                    "1080p": { completionVideoSeconds: 0.0486 },
+                    "480p": { completionVideoSeconds: 0.015 },
+                    "1080p": { completionVideoSeconds: 0.06 },
                 },
                 matchResolution("480p", "1080p"),
                 {
@@ -291,6 +420,14 @@ export const IMAGE_FALLBACKS = {
                 },
                 "720p",
             ),
+        },
+    },
+    "recraft/recraft-v4.1-flash": {
+        "recraft/recraft-v4.1-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // $0.007 per image plus the 5.5% OpenRouter credit fee.
+            cost: { completionImageTokens: 0.007 * 1.055 },
         },
     },
     "tongyi-mai/z-image-turbo": {

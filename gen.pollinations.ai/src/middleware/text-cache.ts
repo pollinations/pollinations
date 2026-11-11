@@ -12,6 +12,7 @@ import {
 } from "@/utils/text-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -41,11 +42,17 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Caller-scoped models carry a scope; everything else stays shared.
+        if (variables.model?.requested?.includes(",")) {
+            c.set("generationCachePrivate", true);
+        }
+        // Agent runs are unique; caller lists are stable per key because their
+        // choices depend on that key's permissions and available budget.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
-            : undefined;
+            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
+            : variables.model?.requested?.includes(",")
+              ? `caller-list:${callerCacheScope(variables.auth)}`
+              : undefined;
         return generateCacheKey(
             c.req.raw,
             bodyText,
@@ -53,7 +60,13 @@ const textCacheAdapter: GenerationCacheAdapter = {
             getRequiredSafetyFeatures(variables.model),
         );
     },
-    get: getCachedResponse,
+    async get(c, cacheKey) {
+        const response = await getCachedResponse(c, cacheKey);
+        if (response && c.var.generationCachePrivate) {
+            response.headers.set("Cache-Control", "private, no-store");
+        }
+        return response;
+    },
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
@@ -66,7 +79,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
         });
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
-        captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+        captured.headers.set(
+            "Cache-Control",
+            c.var.generationCachePrivate
+                ? "private, no-store"
+                : IMMUTABLE_CACHE_CONTROL,
+        );
         return { response: captured, write: capture.write };
     },
 };

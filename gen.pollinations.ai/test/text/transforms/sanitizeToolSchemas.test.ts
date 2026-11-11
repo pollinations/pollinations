@@ -97,6 +97,29 @@ describe("sanitizeToolSchemas", () => {
         expect(params.properties.items.items.type).toBe("number");
     });
 
+    it("gives arrays without items an any-item schema Vertex accepts", async () => {
+        const result = await transform([], {
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "test",
+                        parameters: {
+                            type: "object",
+                            properties: { sheets: { type: "array" } },
+                        },
+                    },
+                },
+            ],
+        });
+
+        const tools = result.options.tools as FunctionTool[];
+        expect(tools[0].function?.parameters).toEqual({
+            type: "object",
+            properties: { sheets: { type: "array", items: {} } },
+        });
+    });
+
     it("removes unsupported schema properties", async () => {
         const result = await transform([], {
             tools: [

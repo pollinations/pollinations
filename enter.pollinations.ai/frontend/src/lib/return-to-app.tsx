@@ -18,13 +18,19 @@ export function parseAppUrl(value: unknown): string | null {
  * only the origin for cross-site links unless the app relaxes its referrer
  * policy (Open WebUI's worker does, so its chat URL comes through). Pages
  * store it in their own URL on first load, because after a Stripe round
- * trip the referrer is Stripe.
+ * trip the referrer is Stripe. Signing in comes back from GitHub or Google,
+ * which are never the app.
  */
 export function referrerAppUrl(): string | null {
     const referrer = parseAppUrl(document.referrer);
     if (!referrer) return null;
     const url = new URL(referrer);
-    if (url.origin === window.location.origin) return null;
+    if (
+        url.origin === window.location.origin ||
+        url.hostname === "github.com" ||
+        url.hostname === "accounts.google.com"
+    )
+        return null;
     url.hash = "";
     return url.href;
 }
@@ -33,8 +39,8 @@ export function referrerAppUrl(): string | null {
  * The URL to store as `redirect` on first load, or null to keep what we
  * have. The link usually carries the app's origin from the key's metadata;
  * the referrer wins when it is on that same origin, because it can name the
- * exact chat the user left. A referrer from elsewhere never overrides an
- * explicit redirect.
+ * exact chat the user left. An origin-only referrer or one from elsewhere
+ * never overrides an explicit redirect.
  */
 export function preferredReturnUrl(
     redirect: string | undefined,
@@ -42,9 +48,9 @@ export function preferredReturnUrl(
     const referrer = referrerAppUrl();
     if (!referrer || referrer === redirect) return null;
     if (!redirect) return referrer;
-    return new URL(referrer).origin === new URL(redirect).origin
-        ? referrer
-        : null;
+    const url = new URL(referrer);
+    if (url.pathname === "/" && !url.search) return null;
+    return url.origin === new URL(redirect).origin ? referrer : null;
 }
 
 /**

@@ -5,7 +5,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
-import { runFfmpeg } from "./container-runtime.js";
+import { runFfmpeg, runFfprobe } from "./container-runtime.js";
 import { createWorker } from "./worker.js";
 
 const SOURCE = "https://media.pollinations.ai/source";
@@ -14,6 +14,7 @@ const SECOND_SOURCE = "https://media.pollinations.ai/second-source";
 function createHarness(options = {}) {
     const calls = {
         run: [],
+        probe: [],
         upload: [],
         destroy: 0,
         responses: [],
@@ -39,6 +40,19 @@ function createHarness(options = {}) {
                     ok: true,
                     output: new Blob([new Uint8Array([4, 5, 6])]).stream(),
                     bytes: 3,
+                    stderr: "",
+                }
+            );
+        },
+        async probe(input, deadlineMs) {
+            calls.probe.push({
+                input: new Uint8Array(await new Response(input).arrayBuffer()),
+                deadlineMs,
+            });
+            return (
+                options.probeResult ?? {
+                    ok: true,
+                    info: { format: { duration: "1.5" }, streams: [] },
                     stderr: "",
                 }
             );
@@ -149,13 +163,90 @@ test("runs FFmpeg from the directory containing downloaded inputs", async () => 
     assert.equal(execCalls[1].options.cwd, "/work");
 });
 
+test("runs ffprobe against the downloaded input and parses its JSON output", async () => {
+    const execCalls = [];
+    const runtime = {
+        running: true,
+        async exec(command, options = {}) {
+            execCalls.push({ command, options });
+            if (command[0] === "tee") {
+                return {
+                    exitCode: Promise.resolve(0),
+                    stderr: new Blob([]).stream(),
+                };
+            }
+            if (command[0] === "ffprobe") {
+                return {
+                    exitCode: Promise.resolve(0),
+                    stdout: new Blob([
+                        JSON.stringify({
+                            format: { duration: "2.0" },
+                            streams: [{ codec_type: "video" }],
+                        }),
+                    ]).stream(),
+                    stderr: new Blob([]).stream(),
+                    kill() {},
+                };
+            }
+            assert.fail(`Unexpected command: ${command.join(" ")}`);
+        },
+    };
+
+    const result = await runFfprobe(
+        runtime,
+        new Blob([new Uint8Array([1, 2, 3])]).stream(),
+        Date.now() + 1_000,
+    );
+
+    assert.equal(execCalls[1].command[0], "ffprobe");
+    assert.equal(execCalls[1].options.cwd, "/work");
+    assert.deepEqual(result, {
+        ok: true,
+        info: {
+            format: { duration: "2.0" },
+            streams: [{ codec_type: "video" }],
+        },
+        stderr: "",
+    });
+});
+
+test("reports an ffprobe failure instead of throwing on bad input", async () => {
+    const runtime = {
+        running: true,
+        async exec(command) {
+            if (command[0] === "tee") {
+                return {
+                    exitCode: Promise.resolve(0),
+                    stderr: new Blob([]).stream(),
+                };
+            }
+            if (command[0] === "ffprobe") {
+                return {
+                    exitCode: Promise.resolve(1),
+                    stdout: new Blob([]).stream(),
+                    stderr: new Blob(["Invalid data found"]).stream(),
+                    kill() {},
+                };
+            }
+            assert.fail(`Unexpected command: ${command.join(" ")}`);
+        },
+    };
+
+    const result = await runFfprobe(
+        runtime,
+        new Blob([new Uint8Array([1, 2, 3])]).stream(),
+        Date.now() + 1_000,
+    );
+    assert.deepEqual(result, { ok: false, stderr: "Invalid data found" });
+});
+
 test("serves stateless MCP without caller credentials", async () => {
     const { calls, env, worker } = createHarness();
     const client = await connect(worker, env, calls);
     const tools = (await client.listTools()).tools;
     assert.deepEqual(
         tools.map(({ name }) => name),
-        ["runFfmpeg"],
+        ["runFfmpeg", "probeMedia"],
     );
     assert.match(
         tools[0].inputSchema.properties.args.description,
@@ -364,6 +455,68 @@ test("rejects source responses without a known size", async () => {
         calls.responses.at(-1).headers.has(MCP_USAGE_HEADERS.cost),
         false,
     );
+    await client.close();
+});
+
+test("probes public HTTPS media and returns ffprobe metadata", async () => {
+    const { calls, env, worker } = createHarness();
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "probeMedia",
+        arguments: { source: SOURCE },
+    });
+
+    assert.equal(result.isError, undefined);
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        source: SOURCE,
+        format: { duration: "1.5" },
+        streams: [],
+    });
+    assert.deepEqual(calls.probe[0].input, new Uint8Array([1, 2, 3]));
+    assert.equal(calls.destroy, 1);
+    assert.equal(calls.run.length, 0);
+    assert.equal(calls.upload.length, 0);
+
+    const response = calls.responses.at(-1);
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.tool), "probeMedia");
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "200");
+    assert.ok(Number(response.headers.get(MCP_USAGE_HEADERS.cost)) >= 0);
+    await client.close();
+});
+
+test("rejects unsafe source URLs for probeMedia before execution", async () => {
+    const { calls, env, worker } = createHarness();
+    const client = await connect(worker, env, calls);
+    for (const source of [
+        "http://example.com/source.mp4",
+        "https://localhost/source.mp4",
+        "https://127.0.0.1/source.mp4",
+        "https://user:secret@example.com/source.mp4",
+    ]) {
+        const result = await client.callTool({
+            name: "probeMedia",
+            arguments: { source },
+        });
+        assert.equal(result.isError, true);
+    }
+    assert.equal(calls.probe.length, 0);
+    await client.close();
+});
+
+test("reports a failure for probeMedia when ffprobe fails", async () => {
+    const { calls, env, worker } = createHarness({
+        probeResult: { ok: false, stderr: "invalid data" },
+    });
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "probeMedia",
+        arguments: { source: SOURCE },
+    });
+    assert.equal(result.isError, true);
+    const response = calls.responses.at(-1);
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "422");
+    assert.ok(response.headers.has(MCP_USAGE_HEADERS.cost));
+    assert.equal(calls.destroy, 1);
     await client.close();
 });
 

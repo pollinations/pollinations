@@ -293,6 +293,36 @@ describe("transcribeWithVertexGemini", () => {
             accessToken: "test-token",
         });
 
+    it("accepts a browser WebM recording uploaded without an explicit filename", async () => {
+        // WebM is supported; codecs is a MIME parameter, not part of its subtype.
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob(["recording"], { type: "audio/webm;codecs=opus" }),
+        );
+        const fetchMock = vi.fn().mockResolvedValue(Response.json(payload));
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = transcribeWithVertexGemini({
+            file: form.get("file") as File,
+            projectId: "test-project",
+            accessToken: "test-token",
+        });
+
+        await expect(
+            response.then((result) => result.json()),
+        ).resolves.toMatchObject({
+            text: "Hello. Yes.",
+        });
+        expect(sentBody(fetchMock)).toMatchObject({
+            contents: [
+                {
+                    parts: [{ inlineData: { mimeType: "audio/webm" } }],
+                },
+            ],
+        });
+    });
+
     it("maps Vertex speaker turns and preserves separate provider usage units", async () => {
         const fetchMock = vi.fn().mockResolvedValue(Response.json(payload));
         vi.stubGlobal("fetch", fetchMock);

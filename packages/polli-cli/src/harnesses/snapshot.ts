@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { lstatSync, readlinkSync, renameSync, symlinkSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
 import type { HarnessContext, OffOutcome } from "./types.js";
 
 interface FileSnapshot {
     /** Content before the first `on`; null when the file did not exist. */
     before: string | null;
+    /** Original link text, when the config was a symlink. */
+    symlink?: string;
     /** Digest after the last `on`, used to detect edits without copying secrets. */
     afterHash: string | null;
 }
@@ -44,13 +47,28 @@ const captureFiles = (paths: string[]) =>
     Object.fromEntries(
         paths.map((path) => [
             path,
-            { before: readTextIfExists(path), afterHash: null },
+            {
+                before: readTextIfExists(path),
+                symlink: lstatSync(path, {
+                    throwIfNoEntry: false,
+                })?.isSymbolicLink()
+                    ? readlinkSync(path)
+                    : undefined,
+                afterHash: null,
+            },
         ]),
     );
 
 const restoreFiles = (files: Record<string, FileSnapshot>) => {
     for (const [path, file] of Object.entries(files)) {
-        if (file.before === null) removeIfExists(path);
+        if (file.symlink !== undefined) {
+            const tmp = join(
+                dirname(path),
+                `.${basename(path)}.${process.pid}.tmp`,
+            );
+            symlinkSync(file.symlink, tmp, "file");
+            renameSync(tmp, path);
+        } else if (file.before === null) removeIfExists(path);
         else writeTextAtomic(path, file.before);
     }
 };
@@ -100,7 +118,14 @@ export const applyWithSnapshot = (
     }
 
     for (const path of paths) {
-        snapshot.files[path].afterHash = contentHash(readTextIfExists(path));
+        const file = snapshot.files[path];
+        // Keep the stale hash of a file edited since the last `on`, so `off`
+        // strips our entries instead of restoring the backup over the edit.
+        if (
+            !existing?.complete ||
+            contentHash(rollback[path].before) === file.afterHash
+        )
+            file.afterHash = contentHash(readTextIfExists(path));
     }
     snapshot.complete = true;
     writeSnapshot(ctx, id, paths, snapshot);

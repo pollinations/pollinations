@@ -9,6 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
 }
 
@@ -17,7 +18,10 @@ export interface ApiKeyUpdateParams {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    questPollenOnly?: boolean;
     expiresAt?: Date | null;
+    redirectUris?: string[];
+    earningsEnabled?: boolean;
 }
 
 export interface ApiKeyManagerProps {
@@ -25,6 +29,8 @@ export interface ApiKeyManagerProps {
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    /** Reload the keys; editing starts from the server's current values. */
+    onRefresh?: () => Promise<ApiKey[] | null | undefined>;
 }
 
 export type CreateApiKey = {
@@ -37,8 +43,10 @@ export type CreateApiKey = {
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
-    /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
+    /** Account permissions: ["profile", "usage", "keys", "machines"]. null = no permissions */
     accountPermissions?: string[] | null;
+    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    questPollenOnly?: boolean;
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
     /** Enable BYOP app earnings for publishable app keys */

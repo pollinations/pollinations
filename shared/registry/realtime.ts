@@ -29,25 +29,43 @@ const OPENAI_REALTIME_COST = {
 } satisfies ModelDefinition["cost"];
 
 export const REALTIME_SERVICES = {
+    "microsoft/mai-transcribe-2-streaming": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "realtime",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Introductory rate through 2026-12-31; subsequent rate is unpublished.
+        cost: { promptAudioSeconds: 0.54 / 3600 },
+        title: "MAI Transcribe 2 Streaming",
+        description:
+            "Live multilingual transcription with incremental finalized text; manual commits and 16/24 kHz PCM audio",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
         aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
         // Azure retirement schedule; the model catalog says 2027-07-31.
-        retirementDate: new Date("2027-06-25").getTime(),
+        // Provider retires this route on 2027-06-25.
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
         title: "GPT Realtime 2.1",
         description:
             "Live voice conversations with instant replies and solid noise handling",
         contextLength: 32000,
+        paidOnly: false,
     },
     "openai/gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,
         aliases: ["gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
         // Azure retirement schedule; the model catalog says 2027-07-31.
-        retirementDate: new Date("2027-06-25").getTime(),
+        // Provider retires this route on 2027-06-25.
         paidOnly: false,
         cost: {
             promptTextTokens: 0.0000006,
@@ -75,6 +93,23 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
+    "elevenlabs/scribe-v3-live": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "realtime",
+        addedDate: new Date("2026-11-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // https://elevenlabs.io/pricing/api — base transcription, no paid extras.
+        cost: { promptAudioSeconds: 0.22 / 3600 },
+        title: "Scribe v3 Live",
+        description:
+            "Accurate live multilingual transcription with incremental and final results",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
     "elevenlabs/scribe-v2-realtime": {
         aliases: ["scribe-realtime"],
         provider: "elevenlabs",
@@ -84,8 +119,8 @@ export const REALTIME_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scribe v2 Realtime: $0.39 per streamed audio hour.
-            promptAudioSeconds: 0.39 / 3600,
+            // ElevenLabs Scale API plan: $0.22 per streamed audio hour (2026-11-10).
+            promptAudioSeconds: 0.22 / 3600,
         },
         title: "Scribe v2 Realtime",
         description:
@@ -100,7 +135,7 @@ export const REALTIME_SERVICES = {
         publisher: "OpenAI",
         category: "realtime",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {

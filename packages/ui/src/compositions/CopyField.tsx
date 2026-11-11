@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton, type CopyButtonProps } from "./CopyButton.tsx";
+import {
+    CopyButton,
+    type CopyButtonProps,
+    CopyStateIcon,
+} from "./CopyButton.tsx";
 
 export type CopyFieldProps = Pick<
     CopyButtonProps,
@@ -9,7 +12,7 @@ export type CopyFieldProps = Pick<
 > & {
     /** Accessible name, e.g. "Copy secret key". */
     label: string;
-    /** What to show; defaults to the value itself (lists pass a truncated form). */
+    /** What to show; defaults to a string value or the label for lazy values. */
     display?: ReactNode;
     className?: string;
 };
@@ -44,13 +47,16 @@ export function CopyField({
             {(copied) => (
                 <>
                     <span className="polli:min-w-0 polli:flex-1 polli:select-all polli:break-all">
-                        {copied ? "Copied" : (display ?? String(value))}
+                        {copied
+                            ? "Copied"
+                            : (display ??
+                              (typeof value === "string" ? value : label))}
                     </span>
                     <span
                         aria-hidden="true"
                         className="polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
                     >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        <CopyStateIcon copied={copied} />
                     </span>
                 </>
             )}

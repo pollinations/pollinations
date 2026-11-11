@@ -1,0 +1,13 @@
+export type Env = {
+    Bindings: {
+        ECONOMICS_GOOGLE_DRIVE_CREDENTIALS?: string;
+        ASSETS: { fetch: typeof fetch };
+        POLLINATIONS_AUTH_BASE_URL?: string;
+        POLLINATIONS_OAUTH_CLIENT_ID: string;
+        POLLINATIONS_AUTH_SESSION_SECRET: string;
+        TINYBIRD_INGEST_URL: string;
+        TINYBIRD_ECONOMICS_READ_TOKEN: string;
+        TINYBIRD_POLLEN_PIPE: string;
+        TINYBIRD_DEPLOYMENT_ID?: string; // Local preview of an unpromoted staging endpoint.
+    };
+};

@@ -1,26 +1,44 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { findPublishableClientKey } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];
     Variables: Env["Variables"] & AuthVariables;
 }>;
 
-const KV_TTL = 600; // 10 minutes
+const KV_MIN_TTL = 60;
 const DEVICE_CODE_LENGTH = 40;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";
+
+/**
+ * Body sent by the consent page once it has minted the key. expiresIn is the
+ * key's lifetime and is echoed to the CLI as the token's expires_in, so it
+ * gets the same validation as key creation and the OAuth code grant.
+ */
+const ApproveDeviceSchema = z.object({
+    userCode: z.string().min(1),
+    apiKey: z.string().min(1),
+    apiKeyId: z.string().min(1),
+    expiresIn: apiKeyExpiresInSchema.nullish(),
+    scope: z.string().optional(),
+});
 
 function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
@@ -45,6 +63,24 @@ async function requirePendingDevice(
     return device;
 }
 
+/**
+ * Reject client ids that cannot be approved. Issuing a code for an unknown or
+ * revoked app key only fails later on the consent page with an opaque error,
+ * after the CLI has already told the user to approve it.
+ */
+async function isKnownDeviceClient(
+    c: Context<Env>,
+    clientId: string,
+): Promise<boolean> {
+    const db = drizzle(c.env.DB, { schema });
+    const key = await findPublishableClientKey(
+        createAuth(c.env, c.executionCtx),
+        db,
+        clientId,
+    );
+    return key !== null;
+}
+
 /** Generate a cryptographically random alphanumeric string. */
 export function generateCode(length: number): string {
     const chars =
@@ -65,13 +101,15 @@ function generateUserCode(length: number): string {
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
+export async function parseFormOrJsonBody<TEnv extends Env>(
+    c: Context<TEnv>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const body = contentType.includes("form")
         ? await c.req.parseBody().catch(() => ({}))
         : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    // Valid JSON can still be null, a primitive or an array: no fields.
+    if (!body || typeof body !== "object" || Array.isArray(body)) return {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -92,6 +130,15 @@ export async function parseFormOrJsonBody(
 export const deviceRoutes = new Hono<Env>()
     .post("/code", async (c) => {
         const body = await parseFormOrJsonBody(c);
+        if (body.client_id && !(await isKnownDeviceClient(c, body.client_id))) {
+            return c.json(
+                {
+                    error: "invalid_client",
+                    error_description: "Unknown or revoked client_id",
+                },
+                400,
+            );
+        }
 
         const deviceCode = generateCode(DEVICE_CODE_LENGTH);
         const userCode = generateUserCode(USER_CODE_LENGTH);
@@ -157,21 +204,10 @@ export const deviceRoutes = new Hono<Env>()
     .post(
         "/approve",
         auth({ allowApiKey: false, allowSessionCookie: true }),
+        validator("json", ApproveDeviceSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const body = await c.req.json<{
-                userCode: string;
-                apiKey: string;
-                apiKeyId: string;
-                expiresIn?: number;
-                scope?: string;
-            }>();
-
-            if (!body.userCode || !body.apiKey || !body.apiKeyId) {
-                throw new HTTPException(400, {
-                    message: "userCode, apiKey, and apiKeyId are required",
-                });
-            }
+            const body = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
             const device = await requirePendingDevice(db, body.userCode);
@@ -188,7 +224,17 @@ export const deviceRoutes = new Hono<Env>()
                         // stored at issuance ("" = narrowed to zero)
                         scope: body.scope ?? null,
                     }),
-                    { expirationTtl: KV_TTL },
+                    // Kept until the device code expires, so a CLI that
+                    // polls late still gets the key. KV's minimum is 60s.
+                    {
+                        expirationTtl: Math.max(
+                            KV_MIN_TTL,
+                            Math.ceil(
+                                (device.expiresAt.getTime() - Date.now()) /
+                                    1000,
+                            ),
+                        ),
+                    },
                 ),
                 db
                     .update(schema.deviceCode)
@@ -210,7 +256,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -234,8 +280,8 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
-        return await exchangeDeviceCode(c, body);
+        const body = await parseFormOrJsonBody(c);
+        return await exchangeDeviceCode(c, body as DeviceTokenRequest);
     })
     .get(
         "/userinfo",
@@ -320,6 +366,8 @@ export async function exchangeDeviceCode(
                 scope?: string | null;
             } | null;
 
+            // KV may not show a fresh write from another location yet, so
+            // keep polling; the key now lives until the code expires.
             if (!stored) {
                 return c.json({ error: "authorization_pending" }, 400);
             }

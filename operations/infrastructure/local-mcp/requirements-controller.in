@@ -1,0 +1,13 @@
+mcp==1.30.0
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.1
+PyYAML==6.0.3
+PyJWT==2.15.1
+httpx==0.28.1
+aiofiles==25.1.0
+python-multipart==0.0.32
+pathspec==1.1.1
+zstandard==0.25.0
+pillow==13.0.0

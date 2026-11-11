@@ -49,22 +49,24 @@ describe("shared link destinations", () => {
         expect(html).not.toContain('target="_blank"');
         expect(html).not.toContain("<svg");
     });
-    test.each([
-        Markdown,
-        Prose,
-    ])("uses the same behavior in Markdown", (Component) => {
-        vi.stubGlobal("location", { origin: "https://enter.pollinations.ai" });
-        const html = renderToStaticMarkup(
-            <Component>
-                {
-                    "[Keys](https://enter.pollinations.ai/keys) [Docs](https://example.com) [Email](mailto:billing@pollinations.ai)"
-                }
-            </Component>,
-        );
-        expect(html.match(/target="_blank"/g)).toHaveLength(1);
-        expect(html.match(/<svg/g)).toHaveLength(1);
-        expect(html.match(/class="polli-link"/g)).toHaveLength(3);
-    });
+    test.each([Markdown, Prose])(
+        "uses the same behavior in Markdown",
+        (Component) => {
+            vi.stubGlobal("location", {
+                origin: "https://enter.pollinations.ai",
+            });
+            const html = renderToStaticMarkup(
+                <Component>
+                    {
+                        "[Keys](https://enter.pollinations.ai/keys) [Docs](https://example.com) [Email](mailto:billing@pollinations.ai)"
+                    }
+                </Component>,
+            );
+            expect(html.match(/target="_blank"/g)).toHaveLength(1);
+            expect(html.match(/<svg/g)).toHaveLength(1);
+            expect(html.match(/class="polli-link"/g)).toHaveLength(3);
+        },
+    );
     test("supports async navigation without anchor attributes on a button", () => {
         const html = renderToStaticMarkup(
             <InlineLink as="button" type="button" external disabled>

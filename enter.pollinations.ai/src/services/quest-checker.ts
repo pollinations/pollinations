@@ -3,9 +3,8 @@ import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { ACCOUNT_SETUP_QUEST_GROUP, QUEST_GROUPS } from "./quests/index.ts";
+import { QUEST_GROUPS } from "./quests/index.ts";
 import {
-    type QuestDb,
     type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestGroup,
@@ -15,9 +14,13 @@ import {
 } from "./quests/types.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
-const AUTO_CLAIM_QUEST_ID = "first_api_key";
-/** Purchase rewards: the Stripe webhook credits them with the pack. */
-const TOP_UP_QUEST_IDS = ["top_up_since_launch", "top_up_100_since_launch"];
+// Credited when earned, with no claim on the Quests page: the first key, and
+// the top-up bonuses the Stripe webhook checks for after a purchase.
+const AUTO_CLAIM_QUEST_IDS = [
+    "first_api_key",
+    "top_up_since_launch",
+    "top_up_100_since_launch",
+];
 
 type QuestEvaluationSourceResult = QuestEvaluation & {
     error?: string;
@@ -59,10 +62,25 @@ export async function checkQuestsForUser(
     const sourceResults = await Promise.all(
         groups.map((group) => evaluateGroup(ctx, group, user)),
     );
-    const proposals = sourceResults.flatMap((entry) => entry.proposals);
-    const rewardInputs = proposals.map((proposal) =>
-        toReward(proposal, user.githubId),
+    // An account earns each per-user quest once, even when its reward
+    // identity changes (a Google user connecting GitHub).
+    const earned = new Set(
+        (
+            await db
+                .select({ questId: schema.rewards.questId })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).map((reward) => reward.questId),
     );
+    const proposals = sourceResults
+        .flatMap((entry) => entry.proposals)
+        .filter(
+            (proposal) =>
+                proposal.idempotencyKey ||
+                proposal.quest.scope === "once" ||
+                !earned.has(proposal.quest.id),
+        );
+    const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
         {
@@ -78,8 +96,20 @@ export async function checkQuestsForUser(
     );
 
     const recorded = await recordRewards(ctx.db, rewardInputs);
-    if (proposals.some(({ quest }) => quest.id === AUTO_CLAIM_QUEST_ID)) {
-        await claimPendingRewards(ctx.db, user.id, [AUTO_CLAIM_QUEST_ID]);
+    // Not only the rewards recorded just now: one earned before this rule, or
+    // whose claim failed, is credited by the next check.
+    const pending = await ctx.db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, user.id),
+                isNull(schema.rewards.claimedAt),
+                inArray(schema.rewards.questId, AUTO_CLAIM_QUEST_IDS),
+            ),
+        );
+    for (const reward of pending) {
+        await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
     }
 
     const result = {
@@ -96,53 +126,26 @@ export async function checkQuestsForUser(
     return result;
 }
 
-/**
- * Record and claim the top-up quest rewards right after a Stripe checkout
- * credit, so buyers get the bonus without opening Quests.
- */
-export async function creditTopUpQuestRewards(
-    env: CloudflareBindings,
-    userId: string,
-): Promise<void> {
-    await checkQuestsForUser(env, userId, [ACCOUNT_SETUP_QUEST_GROUP]);
-    await claimPendingRewards(
-        drizzle(env.DB, { schema }),
-        userId,
-        TOP_UP_QUEST_IDS,
-    );
-}
-
-async function claimPendingRewards(
-    db: QuestDb,
-    userId: string,
-    questIds: string[],
-): Promise<void> {
-    const pending = await db
-        .select({ id: schema.rewards.id })
-        .from(schema.rewards)
-        .where(
-            and(
-                eq(schema.rewards.userId, userId),
-                isNull(schema.rewards.claimedAt),
-                inArray(schema.rewards.questId, questIds),
-            ),
-        );
-    for (const reward of pending) {
-        await claimReward(db, { rewardId: reward.id, userId });
-    }
-}
-
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<QuestUser | null> {
+): Promise<(QuestUser & { email: string }) | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
+            googleId: schema.account.accountId,
+            email: schema.user.email,
         })
         .from(schema.user)
+        .leftJoin(
+            schema.account,
+            and(
+                eq(schema.account.userId, schema.user.id),
+                eq(schema.account.providerId, "google"),
+            ),
+        )
         .where(eq(schema.user.id, userId))
         .limit(1);
 

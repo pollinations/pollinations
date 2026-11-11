@@ -16,32 +16,9 @@ export function readRedirectUris(
     return [];
 }
 
-export function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
+/** Every pk_ key is an App Key: it only identifies an app. */
 export function isAppKey(apiKey: ApiKey): boolean {
-    return (
-        isPublishableKey(apiKey) &&
-        (readRedirectUris(apiKey.metadata).length > 0 ||
-            apiKey.metadata?.earningsEnabled === true)
-    );
-}
-
-// Must mirror isPublishableKey, the predicate that decides whether the
-// settings fields render — if this gate is narrower than that one, edits
-// to a visible field get silently dropped.
-export function shouldPostKeyMetadata(
-    apiKey: ApiKey,
-    next: { redirectUris: string[]; earningsEnabled: boolean },
-): boolean {
-    if (!isPublishableKey(apiKey)) return false;
-    const initialUris = readRedirectUris(apiKey.metadata);
-    return (
-        next.redirectUris.length !== initialUris.length ||
-        next.redirectUris.some((v, i) => v !== initialUris[i]) ||
-        next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true)
-    );
+    return apiKey.metadata?.keyType === "publishable";
 }
 
 /** Display context only; authorization remains enforced by the server. */

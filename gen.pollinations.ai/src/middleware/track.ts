@@ -1029,9 +1029,10 @@ function isImplausibleProxyUsage(
         if (type.startsWith("prompt")) prompt += amount;
         else completion += amount;
     }
-    return (
-        prompt > MAX_PROXY_PROMPT_TOKENS ||
-        completion > MAX_PROXY_COMPLETION_TOKENS
+    // Negated, so a count that is not a number is implausible too.
+    return !(
+        prompt <= MAX_PROXY_PROMPT_TOKENS &&
+        completion <= MAX_PROXY_COMPLETION_TOKENS
     );
 }
 

@@ -4127,6 +4127,29 @@ describe("trackResponse community proxy usage", () => {
                     })}\n\n`,
                 ),
         ],
+        // A counter that is not a number is not within the ceiling either.
+        [
+            "a count that is not a number",
+            () =>
+                stream(
+                    `event: response.completed\ndata: ${JSON.stringify({
+                        type: "response.completed",
+                        response: {
+                            object: "response",
+                            model: "upstream-test-model",
+                            status: "completed",
+                            usage: {
+                                input_tokens: 1,
+                                output_tokens: 1,
+                                total_tokens: 2,
+                                input_tokens_details: {
+                                    cache_creation_input_tokens: "bad",
+                                },
+                            },
+                        },
+                    })}\n\n`,
+                ),
+        ],
     ])(
         "does not bill a proxy past the ceiling: %s",
         async (_name, response) => {

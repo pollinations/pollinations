@@ -451,9 +451,9 @@ export function SidebarSandboxes() {
 export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
-    // The prices' error, shown with the templates, and your list's, shown
-    // only with the sandboxes you already see: a list that never loaded
-    // says nothing, as you may have none.
+    // The prices' error, shown with the templates, and your list's, shown in
+    // My sandboxes even before any loaded: sandboxes you can't see may still
+    // be running and costing pollen.
     const [loadError, setLoadError] = useState<string | null>(null);
     const [listError, setListError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
@@ -609,11 +609,11 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         </>
     );
 
-    // Two cards: yours (only when you have some, running or paused), then
-    // the templates you start new ones from. With none, just the second.
+    // Two cards: yours (when you have some, running or paused, or they failed
+    // to load), then the templates you start new ones from.
     return (
         <>
-            {hasSandboxes && (
+            {(hasSandboxes || listError) && (
                 <Section title="My sandboxes">
                     {listError && (
                         <LoadError
@@ -633,41 +633,42 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                         </Text>
                     )}
                     <div className="flex flex-col gap-3" aria-live="polite">
-                        {sandboxes.map((sandbox) => (
-                            <SandboxCard
-                                key={sandbox.sandboxID}
-                                sandbox={sandbox}
-                                pricing={pricing}
-                                busy={busyId === sandbox.sandboxID}
-                                onConnect={() =>
-                                    setPending({
-                                        action: "connect",
-                                        sandbox,
-                                    })
-                                }
-                                onLimit={() => {
-                                    setUntilStopped(false);
-                                    setPending({
-                                        action: "limit",
-                                        sandbox,
-                                    });
-                                }}
-                                onPause={() =>
-                                    void run(sandbox.sandboxID, () =>
-                                        e2b(
-                                            `/sandboxes/${sandbox.sandboxID}/pause`,
-                                            "POST",
-                                        ),
-                                    )
-                                }
-                                onKill={() =>
-                                    setPending({
-                                        action: "kill",
-                                        sandbox,
-                                    })
-                                }
-                            />
-                        ))}
+                        {pricing &&
+                            sandboxes.map((sandbox) => (
+                                <SandboxCard
+                                    key={sandbox.sandboxID}
+                                    sandbox={sandbox}
+                                    pricing={pricing}
+                                    busy={busyId === sandbox.sandboxID}
+                                    onConnect={() =>
+                                        setPending({
+                                            action: "connect",
+                                            sandbox,
+                                        })
+                                    }
+                                    onLimit={() => {
+                                        setUntilStopped(false);
+                                        setPending({
+                                            action: "limit",
+                                            sandbox,
+                                        });
+                                    }}
+                                    onPause={() =>
+                                        void run(sandbox.sandboxID, () =>
+                                            e2b(
+                                                `/sandboxes/${sandbox.sandboxID}/pause`,
+                                                "POST",
+                                            ),
+                                        )
+                                    }
+                                    onKill={() =>
+                                        setPending({
+                                            action: "kill",
+                                            sandbox,
+                                        })
+                                    }
+                                />
+                            ))}
                     </div>
                     <Footnotes>
                         <div className="flex items-start gap-1.5">

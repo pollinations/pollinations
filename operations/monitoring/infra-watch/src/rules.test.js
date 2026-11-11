@@ -322,20 +322,6 @@ test("payments fail on any row and open on the first check with a ping", () => {
     assert.equal(r.actions[0].type, "close");
 });
 
-test("a payments card closes on its own check, whatever gen or its status data do", () => {
-    for (const outage of [
-        { gen: { kind: "GEN_DOWN" } },
-        { analytics: { kind: "ANALYTICS_DOWN" } },
-    ]) {
-        let r = step({}, paymentsFailing([webhook5xx]), 1);
-        r = step(r.state, outage, 2);
-        assert.deepEqual(
-            r.actions.map((a) => `${a.type} ${a.key}`),
-            ["close payments"],
-        );
-    }
-});
-
 // 8 Nov 2026: D1 stalls of a few seconds, minutes apart.
 const minute = (time, failures, d1_failures = failures, top_route = "/*") => ({
     minute: `2026-11-08 ${time}:00`,

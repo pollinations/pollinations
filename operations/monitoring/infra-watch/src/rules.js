@@ -273,9 +273,6 @@ const CONFIRMED = new Set([
     "platform",
 ]);
 const HOSTS = { gen: true, public: true, upstream: true, enter: true };
-// Checked on their own, so judged whatever gen or analytics does.
-const independent = (key) =>
-    key === "enter" || key === "payments" || key.startsWith("stale:");
 // A model incident's model, from its key; null for any other incident.
 export const modelOf = (key) =>
     key.startsWith("model:") ? key.slice(6) : null;
@@ -290,8 +287,8 @@ const SEVERITY = ["PRIMARY_WEAK", "DEGRADED"];
 const worse = (a, b) => (SEVERITY.indexOf(b) > SEVERITY.indexOf(a) ? b : a);
 
 export function step(state, found, now, recent = []) {
-    // With gen down, only the independent checks can be judged, not even a
-    // single hostname. With analytics down, the hostname checks can be too.
+    // With gen down, only Enter's own check can be judged, not even a single
+    // hostname. With analytics down, the hostname and Enter checks still can.
     const open = { ...(state.open ?? {}) };
     const closed = Object.fromEntries(
         Object.entries(state.closed ?? {}).filter(
@@ -346,8 +343,8 @@ export function step(state, found, now, recent = []) {
 
     for (const [key, incident] of Object.entries(open)) {
         if (found[key]) continue;
-        const blind = found.gen || (found.analytics && !HOSTS[key]);
-        if (blind && !independent(key)) continue;
+        if (found.gen && key !== "enter") continue;
+        if (found.analytics && !HOSTS[key]) continue;
         // A model needs RECOVER_CHECKS clean checks in a row to close; a thin
         // sample neither counts nor resets the run.
         const model = modelOf(key);

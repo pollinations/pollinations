@@ -4641,11 +4641,7 @@ test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1, wit
     );
 
     for (const answer of answers)
-        expect(answer).toEqual({
-            status: "credited",
-            pollen: 10,
-            bonusPending: false,
-        });
+        expect(answer).toEqual({ status: "credited", pollen: 10 });
     expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
     expect(await topUpBonusClaimedAt()).toBeTruthy();
     // A credited session never needs a Stripe round trip.
@@ -4667,10 +4663,37 @@ const QUEST_CHECK_FAILURES = [
     ],
 ] as const;
 
-// A broken quest check must not hide a paid pack. The webhook's own check may
-// still credit the bonus, so the answer tells the wallet to look again.
+// The wallet reloads once, on "credited". A quest check that fails is tried
+// again first, so a bonus that could still be credited is in by then.
 test.for(QUEST_CHECK_FAILURES)(
-    "GET /api/stripe/checkout/sessions/:id says credited with the bonus pending while the quest check %s",
+    "GET /api/stripe/checkout/sessions/:id tries again before it answers when the quest check %s",
+    async ([, breakQuestCheck, repairQuestCheck], { sessionToken, mocks }) => {
+        await mocks.enable("stripe", "tinybird");
+        const userId = await getSeededUserId();
+        const tierBefore = await readTierBalance(userId);
+
+        await env.DB.prepare(breakQuestCheck).run();
+        let answer: Promise<unknown>;
+        try {
+            await completeCheckoutWithCard(mocks.stripe.state, {
+                id: "bonus_retry",
+                allowRedisplay: "always",
+            });
+            answer = checkoutStatus(sessionToken, "cs_bonus_retry");
+            // The first try fails at once; the next is a second later.
+            await scheduler.wait(300);
+        } finally {
+            await env.DB.prepare(repairQuestCheck).run();
+        }
+
+        expect(await answer).toEqual({ status: "credited", pollen: 10 });
+        expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
+    },
+);
+
+// A quest check that keeps failing must not hide a paid pack.
+test.for(QUEST_CHECK_FAILURES)(
+    "GET /api/stripe/checkout/sessions/:id confirms the pack without the bonus while the quest check %s",
     async ([, breakQuestCheck, repairQuestCheck], { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
         const userId = await getSeededUserId();
@@ -4679,21 +4702,19 @@ test.for(QUEST_CHECK_FAILURES)(
         await env.DB.prepare(breakQuestCheck).run();
         try {
             await completeCheckoutWithCard(mocks.stripe.state, {
-                id: "bonus_retry",
+                id: "bonus_later",
                 allowRedisplay: "always",
             });
             expect(
-                await checkoutStatus(sessionToken, "cs_bonus_retry"),
-            ).toEqual({ status: "credited", pollen: 10, bonusPending: true });
+                await checkoutStatus(sessionToken, "cs_bonus_later"),
+            ).toEqual({ status: "credited", pollen: 10 });
+            expect(await readTierBalance(userId)).toBeCloseTo(tierBefore);
         } finally {
             await env.DB.prepare(repairQuestCheck).run();
         }
 
-        expect(await checkoutStatus(sessionToken, "cs_bonus_retry")).toEqual({
-            status: "credited",
-            pollen: 10,
-            bonusPending: false,
-        });
+        // The next quest check credits it.
+        await checkoutStatus(sessionToken, "cs_bonus_later");
         expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
     },
 );

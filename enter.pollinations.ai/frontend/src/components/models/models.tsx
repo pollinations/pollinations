@@ -59,7 +59,6 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
-import { SandboxTemplateList } from "./sandbox-template-list.tsx";
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
@@ -75,20 +74,18 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-/** Catalog pages: /models, and /agents showing agents, MCP servers or
- * sandbox templates. */
-export type CatalogKind = "models" | "agent" | "mcp" | "sandbox";
+/** Catalog pages: /models, and /agents showing agents or MCP servers. */
+export type CatalogKind = "models" | "agent" | "mcp";
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
-const NO_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
+const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
 const QUERY_FILTER_KEYS_BY_KIND: Record<
     CatalogKind,
     readonly ModelQueryFilterKey[]
 > = {
     models: MODEL_QUERY_FILTER_KEYS,
     agent: AGENT_QUERY_FILTER_KEYS,
-    mcp: NO_QUERY_FILTER_KEYS,
-    sandbox: NO_QUERY_FILTER_KEYS,
+    mcp: MCP_QUERY_FILTER_KEYS,
 };
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -233,7 +230,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
         [modelModels],
     );
     const activeTabModels = useMemo(() => {
-        if (activeTab === "mcp" || activeTab === "sandbox") return [];
+        if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
         return modelSections[activeTab];
     }, [activeTab, agentModels, modelSections]);
@@ -310,22 +307,18 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
         [activeSort, filteredModels],
     );
     const searchLabel = SEARCH_LABELS[activeTab];
-    // MCP servers and sandbox templates are plain lists: no sort, no rates.
-    const isList = activeTab === "mcp" || activeTab === "sandbox";
     const searchTarget =
         activeTab === "mcp"
             ? "MCP servers"
-            : activeTab === "sandbox"
-              ? "sandbox templates"
-              : activeTab === "agent"
-                ? "agents"
-                : activeTab === "all"
-                  ? explicitModelSource
-                      ? `${explicitModelSource} models`
-                      : "models"
-                  : [explicitModelSource, searchLabel, "models"]
-                        .filter(Boolean)
-                        .join(" ");
+            : activeTab === "agent"
+              ? "agents"
+              : activeTab === "all"
+                ? explicitModelSource
+                    ? `${explicitModelSource} models`
+                    : "models"
+                : [explicitModelSource, searchLabel, "models"]
+                      .filter(Boolean)
+                      .join(" ");
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -492,9 +485,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                     ? "Models"
                     : kind === "agent"
                       ? "Agents"
-                      : kind === "mcp"
-                        ? "MCP"
-                        : "Sandbox templates"
+                      : "MCP"
             }
             actionClassName="ml-auto"
             action={
@@ -588,7 +579,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                             />
                         </div>
                     </div>
-                    {!isList && (
+                    {activeTab !== "mcp" && (
                         <div className="flex flex-wrap items-center gap-2">
                             <ModelSortMenu
                                 value={activeSort}
@@ -623,8 +614,6 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
             )}
             {activeTab === "mcp" ? (
                 <McpServerList query={query} />
-            ) : activeTab === "sandbox" ? (
-                <SandboxTemplateList query={query} />
             ) : (
                 <SectionContent loading={catalogLoading}>
                     {catalogError ? (
@@ -662,7 +651,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                     )}
                 </SectionContent>
             )}
-            {!isList && (
+            {activeTab !== "mcp" && (
                 <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">

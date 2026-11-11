@@ -6,7 +6,6 @@ import {
     BeakerIcon,
     BotIcon,
     CloudUploadIcon,
-    CubeIcon,
     LockIcon,
     McpIcon,
     NewspaperIcon,
@@ -98,14 +97,6 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: McpIcon,
         group: "resources",
     },
-    {
-        id: "sandbox-templates",
-        to: "/agents",
-        search: { view: "sandbox" },
-        label: "Sandbox templates",
-        icon: CubeIcon,
-        group: "resources",
-    },
 ] as const satisfies readonly {
     id: string;
     to: string;
@@ -137,11 +128,16 @@ export function isDashboardPath(path: string): boolean {
 const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(
     (item) => item.group === "resources",
 );
-const QUESTS_ITEM = DASHBOARD_NAV_ITEMS.filter((item) => item.id === "quests");
+const PUBLIC_YOURS_ITEMS = DASHBOARD_NAV_ITEMS.filter(
+    (item) => item.id === "quests" || item.id === "sandboxes",
+);
 
 // Signed out there is no card of your own; Quests, the way to earn free
-// pollen, joins the resources.
+// pollen, and Sandboxes, with its templates and prices, join the resources.
 export const SIGNED_OUT_NAV_ITEMS = [
     ...RESOURCE_ITEMS,
-    ...QUESTS_ITEM.map((item) => ({ ...item, group: "resources" as const })),
+    ...PUBLIC_YOURS_ITEMS.map((item) => ({
+        ...item,
+        group: "resources" as const,
+    })),
 ];

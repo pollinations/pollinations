@@ -4020,6 +4020,46 @@ test("checkout card update retries without crediting twice", async ({
     expect(customer.invoice_settings.default_payment_method).toBe(card.id);
 });
 
+async function readTierBalance(userId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ tierBalance: userTable.tierBalance })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    return row?.tierBalance ?? 0;
+}
+
+async function topUpBonusClaimedAt() {
+    const [reward] = await drizzle(env.DB)
+        .select({ claimedAt: rewardsTable.claimedAt })
+        .from(rewardsTable)
+        .where(eq(rewardsTable.questId, "top_up_since_launch"));
+    return reward?.claimedAt;
+}
+
+// Stripe's retry finds the pack credited and stops there, so the bonus must
+// not wait for the card.
+test("a failed card save does not lose the top-up bonus", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    mocks.stripe.state.failCustomerUpdates = true;
+    const userId = await getSeededUserId();
+    const tierBefore = await readTierBalance(userId);
+
+    await completeCheckoutWithCard(mocks.stripe.state, {
+        id: "bonus_card_fails",
+        allowRedisplay: "always",
+        expectedStatus: 500,
+    });
+
+    await expect
+        .poll(() => readTierBalance(userId))
+        .toBeCloseTo(tierBefore + 5);
+    expect(await topUpBonusClaimedAt()).toBeTruthy();
+});
+
 // A card pays at once; a bank transfer or a voucher is paid later.
 test.for([
     "checkout.session.completed",
@@ -4030,17 +4070,9 @@ test.for([
         void sessionToken;
         await mocks.enable("tinybird");
         const userId = await getSeededUserId();
-        const db = drizzle(env.DB);
-        const readTierBalance = async () => {
-            const [row] = await db
-                .select({ tierBalance: userTable.tierBalance })
-                .from(userTable)
-                .where(eq(userTable.id, userId));
-            return row?.tierBalance ?? 0;
-        };
         const pack = getPollenPackByAmount(10);
         if (!pack) throw new Error("Expected $10 pollen pack");
-        const tierBefore = await readTierBalance();
+        const tierBefore = await readTierBalance(userId);
 
         const response = await postSignedStripeWebhook({
             id: "evt_test_top_up_bonus",
@@ -4062,12 +4094,10 @@ test.for([
         expect(response.status).toBe(200);
 
         // The bonus is credited in waitUntil, after the webhook ACK.
-        await expect.poll(readTierBalance).toBeCloseTo(tierBefore + 5);
-        const [reward] = await db
-            .select({ claimedAt: rewardsTable.claimedAt })
-            .from(rewardsTable)
-            .where(eq(rewardsTable.questId, "top_up_since_launch"));
-        expect(reward?.claimedAt).toBeTruthy();
+        await expect
+            .poll(() => readTierBalance(userId))
+            .toBeCloseTo(tierBefore + 5);
+        expect(await topUpBonusClaimedAt()).toBeTruthy();
     },
 );
 
@@ -4568,6 +4598,34 @@ test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1", as
     expect(await response.json()).toEqual({ status: "credited", pollen: 10 });
     // A credited session never needs a Stripe round trip.
     expect(mocks.stripe.state.requests).toHaveLength(0);
+});
+
+// The wallet reloads on "credited", and the webhook's own quest check may
+// still be running then.
+test("GET /api/stripe/checkout/sessions/:id says credited with the top-up bonus already in", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const tierBefore = await readTierBalance(userId);
+    await drizzle(env.DB).insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_credited_bonus",
+        eventId: "evt_credited_bonus",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+
+    const response = await SELF.fetch(
+        `${base}/checkout/sessions/cs_credited_bonus`,
+        { headers: { cookie: `better-auth.session_token=${sessionToken}` } },
+    );
+
+    expect(await response.json()).toEqual({ status: "credited", pollen: 10 });
+    expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
+    expect(await topUpBonusClaimedAt()).toBeTruthy();
 });
 
 test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless expired or failed", async ({

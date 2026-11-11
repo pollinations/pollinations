@@ -395,9 +395,10 @@ function emitCheckoutSessionAnalytics(
 }
 
 /**
- * Check the top-up quests after a newly credited checkout; the check credits
- * their rewards. Runs in waitUntil so a quest failure never fails the pack
- * credit or the ACK.
+ * Check the top-up quests once a checkout is credited; the check credits
+ * their rewards. Also for an event Stripe sends again: its first delivery may
+ * have failed after the pack was credited. Runs in waitUntil so a quest
+ * failure never fails the pack credit or the ACK.
  */
 function checkTopUpQuestsLater(
     c: {
@@ -686,6 +687,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         session,
                         c.env,
                     );
+                    checkTopUpQuestsLater(c, session, result);
 
                     if (result.success) {
                         await saveCheckoutCardAsDefault(stripe, session);
@@ -695,7 +697,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         break;
                     }
 
-                    checkTopUpQuestsLater(c, session, result);
                     emitCheckoutSessionAnalytics(
                         c,
                         event,
@@ -719,6 +720,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     session,
                     c.env,
                 );
+                checkTopUpQuestsLater(c, session, result);
 
                 if (result.success) {
                     await saveCheckoutCardAsDefault(stripe, session);
@@ -728,7 +730,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     break;
                 }
 
-                checkTopUpQuestsLater(c, session, result);
                 emitCheckoutSessionAnalytics(
                     c,
                     event,

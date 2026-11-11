@@ -25,7 +25,7 @@ import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { accountClient, apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
@@ -413,7 +413,8 @@ const TOP_UP_QUEST_ID = "top_up_since_launch";
 
 /**
  * The top-up quest reward while it is unearned: the Stripe webhook credits it
- * with the next pack. It reloads with the billing, so a purchase hides it.
+ * with the next pack bought at checkout. It reloads with the billing, so a
+ * purchase hides it. "Manual": automatic top-ups don't count for the quest.
  */
 const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
     billing,
@@ -423,28 +424,19 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
     useEffect(() => {
         if (!billing) return;
         let cancelled = false;
-        const load = async () => {
-            const [catalogResponse, rewardsResponse] = await Promise.all([
-                apiClient.quests.catalog.$get(),
-                accountClient.quests.rewards.$get(),
-            ]);
-            if (!catalogResponse.ok || !rewardsResponse.ok) return;
-            const [{ quests }, { rewards }] = await Promise.all([
-                catalogResponse.json(),
-                rewardsResponse.json(),
-            ]);
-            const quest = quests.find((q) => q.id === TOP_UP_QUEST_ID);
-            const earned = rewards.some((r) => r.questId === TOP_UP_QUEST_ID);
-            if (!cancelled) {
-                setBonus(
-                    quest?.state === "available" && !earned
-                        ? quest.rewardAmount
-                        : null,
-                );
-            }
-        };
-        // No bonus line when quests can't load; buying still works.
-        load().catch(() => {});
+        accountClient.quests
+            .$get()
+            .then(async (response) => {
+                if (!response.ok) return null;
+                const { quests } = await response.json();
+                const quest = quests.find((q) => q.id === TOP_UP_QUEST_ID);
+                return quest?.status === "open" ? quest.rewardAmount : null;
+            })
+            // No bonus line when quests can't load; buying still works.
+            .catch(() => null)
+            .then((next) => {
+                if (!cancelled) setBonus(next);
+            });
         return () => {
             cancelled = true;
         };
@@ -455,7 +447,7 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
         <p className="flex items-start gap-1.5">
             <WalletKindIcon kind="tier" className="mt-0.5" />
             <span>
-                Your next top-up adds{" "}
+                Your next manual top-up adds{" "}
                 <strong className="font-semibold text-theme-text-strong">
                     {formatPollen(bonus)} Quest pollen
                 </strong>

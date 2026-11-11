@@ -17,6 +17,8 @@ import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import {
     captureFromRequest,
@@ -103,6 +105,13 @@ export const stripeRoutes = new Hono<Env>()
             .bind(sessionId, user.id)
             .first<{ pollen_credited: number }>();
         if (credit) {
+            // The wallet reloads on this answer, and the webhook's own quest
+            // check may still be running: the top-up bonus is in first.
+            await checkQuestsForUser(c.env, user.id, [
+                ACCOUNT_SETUP_QUEST_GROUP,
+            ]).catch((error) =>
+                console.error("Top-up quest check failed:", error),
+            );
             return c.json({
                 status: "credited" as const,
                 pollen: credit.pollen_credited,

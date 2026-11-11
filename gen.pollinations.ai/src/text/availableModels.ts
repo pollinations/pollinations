@@ -859,6 +859,25 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-carbon",
+        config: portkeyConfig["google/gemini-4-carbon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Carbon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon:vercel",
+        config: portkeyConfig["google/gemini-4-carbon:vercel"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-argon",
         config: portkeyConfig["google/gemini-4-argon"],
         transform: pipe(

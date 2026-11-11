@@ -451,15 +451,19 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const load = useCallback(async () => {
         setLoadError(null);
         try {
+            // The pricing is public: signed out it still lists the
+            // templates that can start; your sandboxes need you signed in.
             const [prices, list] = await Promise.all([
                 e2b<Pricing>("/pricing"),
-                e2b<Sandbox[]>("/v2/sandboxes"),
+                signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
             ]);
             setPricing(prices);
             setSandboxes(list);
-            window.dispatchEvent(
-                new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list }),
-            );
+            if (signedIn) {
+                window.dispatchEvent(
+                    new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list }),
+                );
+            }
         } catch (error) {
             setLoadError(
                 error instanceof Error
@@ -467,11 +471,11 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     : "Couldn’t load sandboxes.",
             );
         }
-    }, []);
+    }, [signedIn]);
 
     useEffect(() => {
-        if (signedIn) void load();
-    }, [load, signedIn]);
+        void load();
+    }, [load]);
 
     async function run(id: string, action: () => Promise<unknown>) {
         setBusyId(id);
@@ -508,7 +512,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
-    const loading = signedIn && !pricing && !loadError;
+    const loading = !pricing && !loadError;
     const running = sandboxes.filter((s) => s.state === "running").length;
     const full = !!pricing && running >= pricing.maxRunning;
     const spends = pending && pending.action !== "kill";
@@ -658,8 +662,11 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                             </h3>
                         </>
                     )}
-                    {(pricing || !signedIn) && (
+                    {/* Gen's pricing lists the templates that can start,
+                        so the cards and the create picker always agree. */}
+                    {pricing && (
                         <SandboxTemplateList
+                            templates={Object.keys(pricing.templates)}
                             create={
                                 signedIn
                                     ? {

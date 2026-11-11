@@ -79,103 +79,110 @@ const LedgerRow: FC<{
 // provider and the size on the left, the price ledger on the right, then the
 // two ways to start one, the polli command and Create.
 export const SandboxTemplateList: FC<{
+    /** The templates gen says can start; the registry adds their details. */
+    templates: readonly string[];
     /** Signed out there is none: the cards are just the price list. */
     create?: {
         label: string;
         disabled: boolean;
         onCreate: (template: string) => void;
     };
-}> = ({ create }) => (
+}> = ({ templates, create }) => (
     <div className="@container flex flex-col gap-3">
-        {SANDBOX_TEMPLATES.map((template) => {
-            const perHour = hourly(template);
-            return (
-                // Two columns when wide: the size over the command on the left,
-                // the price over Create on the right, so Create lines up with
-                // the price's icons. Stacked in that order when narrow.
-                <Surface
-                    key={template.id}
-                    className="grid items-center gap-3 @xl:grid-cols-[minmax(0,1fr)_auto] @xl:gap-x-6"
-                >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                        <ProviderLogo provider={template.provider} />
-                        <span
-                            aria-hidden="true"
-                            className="h-10 w-px shrink-0 bg-divider"
-                        />
-                        <dl className="flex gap-6">
-                            {[
-                                [String(template.cpuCount), "vCPU"],
-                                [`${template.memoryMB / 1024} GB`, "memory"],
-                                [`${gb(template.diskSizeMB)} GB`, "disk"],
-                            ].map(([value, label]) => (
-                                <div
-                                    key={label}
-                                    className="flex flex-col-reverse gap-0.5"
-                                >
-                                    <dt className="text-xs text-theme-text-muted">
-                                        {label}
-                                    </dt>
-                                    <dd className="text-lg font-semibold leading-none text-theme-text-strong">
-                                        {value}
-                                    </dd>
+        {SANDBOX_TEMPLATES.filter(({ id }) => templates.includes(id)).map(
+            (template) => {
+                const perHour = hourly(template);
+                return (
+                    // Two columns when wide: the size over the command on the left,
+                    // the price over Create on the right, so Create lines up with
+                    // the price's icons. Stacked in that order when narrow.
+                    <Surface
+                        key={template.id}
+                        className="grid items-center gap-3 @xl:grid-cols-[minmax(0,1fr)_auto] @xl:gap-x-6"
+                    >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                            <ProviderLogo provider={template.provider} />
+                            <span
+                                aria-hidden="true"
+                                className="h-10 w-px shrink-0 bg-divider"
+                            />
+                            <dl className="flex gap-6">
+                                {[
+                                    [String(template.cpuCount), "vCPU"],
+                                    [
+                                        `${template.memoryMB / 1024} GB`,
+                                        "memory",
+                                    ],
+                                    [`${gb(template.diskSizeMB)} GB`, "disk"],
+                                ].map(([value, label]) => (
+                                    <div
+                                        key={label}
+                                        className="flex flex-col-reverse gap-0.5"
+                                    >
+                                        <dt className="text-xs text-theme-text-muted">
+                                            {label}
+                                        </dt>
+                                        <dd className="text-lg font-semibold leading-none text-theme-text-strong">
+                                            {value}
+                                        </dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                        <div className="grid grid-cols-[6.5rem_6ch_3.5rem] gap-x-1 justify-self-start">
+                            <LedgerRow Icon={WalletIcon} label="Pollen">
+                                <div className="col-span-2 flex">
+                                    <BalanceAccessChip access="quest" />
                                 </div>
-                            ))}
-                        </dl>
-                    </div>
-                    <div className="grid grid-cols-[6.5rem_6ch_3.5rem] gap-x-1 justify-self-start">
-                        <LedgerRow Icon={WalletIcon} label="Pollen">
-                            <div className="col-span-2 flex">
-                                <BalanceAccessChip access="quest" />
-                            </div>
-                        </LedgerRow>
-                        {/* As on the Models list, the price in $ (1 pollen
+                            </LedgerRow>
+                            {/* As on the Models list, the price in $ (1 pollen
                             is about $1); under it, smaller and unlabelled,
                             the same price over a month left on. */}
-                        <LedgerRow Icon={ClockIcon} label="Price">
-                            <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
-                                ${amount(perHour)}
-                            </span>
-                            <span className="text-xs text-theme-text-muted">
-                                /hour
-                            </span>
-                        </LedgerRow>
-                        <div className="col-span-full grid grid-cols-subgrid items-center">
-                            <span aria-hidden="true" />
-                            <span className="text-right text-xs tabular-nums text-theme-text-muted">
-                                ${amount(perHour * HOURS_PER_MONTH)}
-                            </span>
-                            <span className="text-xs text-theme-text-muted">
-                                /month
-                            </span>
-                        </div>
-                    </div>
-                    {create && (
-                        <>
-                            {/* Only as wide as the command needs. */}
-                            <div className="w-fit max-w-full">
-                                <CopyField
-                                    label={`Copy the command that creates a ${template.id} sandbox`}
-                                    value={`polli sandbox create ${template.id}`}
-                                />
+                            <LedgerRow Icon={ClockIcon} label="Price">
+                                <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                                    ${amount(perHour)}
+                                </span>
+                                <span className="text-xs text-theme-text-muted">
+                                    /hour
+                                </span>
+                            </LedgerRow>
+                            <div className="col-span-full grid grid-cols-subgrid items-center">
+                                <span aria-hidden="true" />
+                                <span className="text-right text-xs tabular-nums text-theme-text-muted">
+                                    ${amount(perHour * HOURS_PER_MONTH)}
+                                </span>
+                                <span className="text-xs text-theme-text-muted">
+                                    /month
+                                </span>
                             </div>
-                            <Button
-                                type="button"
-                                intent="commit"
-                                icon={<TerminalIcon />}
-                                aria-haspopup={
-                                    create.disabled ? undefined : "dialog"
-                                }
-                                disabled={create.disabled}
-                                className="justify-self-start"
-                                onClick={() => create.onCreate(template.id)}
-                            >
-                                {create.label}
-                            </Button>
-                        </>
-                    )}
-                </Surface>
-            );
-        })}
+                        </div>
+                        {create && (
+                            <>
+                                {/* Only as wide as the command needs. */}
+                                <div className="w-fit max-w-full">
+                                    <CopyField
+                                        label={`Copy the command that creates a ${template.id} sandbox`}
+                                        value={`polli sandbox create ${template.id}`}
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    intent="commit"
+                                    icon={<TerminalIcon />}
+                                    aria-haspopup={
+                                        create.disabled ? undefined : "dialog"
+                                    }
+                                    disabled={create.disabled}
+                                    className="justify-self-start"
+                                    onClick={() => create.onCreate(template.id)}
+                                >
+                                    {create.label}
+                                </Button>
+                            </>
+                        )}
+                    </Surface>
+                );
+            },
+        )}
     </div>
 );

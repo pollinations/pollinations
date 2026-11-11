@@ -42,11 +42,7 @@ import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
-import {
-    amount,
-    LAUNCH_DISCOUNT,
-    SandboxTemplateList,
-} from "./sandbox-templates.tsx";
+import { amount, LAUNCH_DISCOUNT } from "./sandbox-templates.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -428,9 +424,15 @@ function SandboxCard({
     );
 }
 
-// Your sandboxes, then the templates you start new ones from. Signed out
-// the templates are just a price list; the sign-in banner is the way in.
-export function Sandboxes({ signedIn }: { signedIn: boolean }) {
+// Your sandboxes. `create` names a template whose create dialog opens on
+// arrival: the Models page's Sandboxes tab links here with it.
+export function Sandboxes({
+    create,
+    onCreateOpened,
+}: {
+    create?: string;
+    onCreateOpened: () => void;
+}) {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
     // The prices' error, shown with the templates, and your list's, shown
@@ -450,7 +452,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         // even when your sandboxes can't load; those need you signed in.
         const [prices, list] = await Promise.allSettled([
             e2b<Pricing>("/pricing"),
-            signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
+            e2b<Sandbox[]>("/v2/sandboxes"),
         ]);
         const message = (reason: unknown) =>
             reason instanceof Error
@@ -463,7 +465,19 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         // A failed reload keeps the last list it had.
         if (list.status === "fulfilled") setSandboxes(list.value);
         setListError(list.status === "rejected" ? message(list.reason) : null);
-    }, [signedIn]);
+    }, []);
+
+    // The template the Models page sent you with: its dialog opens once the
+    // prices are in, then the link is cleared so a reload doesn't reopen it.
+    useEffect(() => {
+        if (!create || !pricing) return;
+        setPending({
+            action: "create",
+            name: generateFunName(),
+            template: create,
+        });
+        onCreateOpened();
+    }, [create, pricing, onCreateOpened]);
 
     // No refresh button: the list reloads after every action and whenever
     // you come back to the tab, so a sandbox that paused meanwhile shows it.
@@ -569,139 +583,114 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         );
     }
 
-    const hasSandboxes = !!pricing && sandboxes.length > 0;
-    const actionAlert = (
-        <>
-            {actionError && (
-                <Alert intent="danger">
-                    {actionError}
-                    {actionError === NO_POLLEN && (
-                        <>
-                            {" "}
-                            <InlineLink href="/pollen">Go to Pollen</InlineLink>
-                        </>
-                    )}
-                </Alert>
-            )}
-        </>
+    const error = loadError ?? listError;
+
+    function startCreate(template: string) {
+        setPending({ action: "create", name: generateFunName(), template });
+    }
+
+    const createAction = (
+        <Button
+            intent="commit"
+            type="button"
+            icon={<TerminalIcon />}
+            aria-busy={creating}
+            aria-haspopup="dialog"
+            disabled={full || creating || !pricing}
+            onClick={() => startCreate("pollinations")}
+        >
+            {creating ? "Creating…" : "Create"}
+        </Button>
     );
 
-    // Two cards: yours (only when you have some, running or paused), then
-    // the templates you start new ones from. With none, just the second.
+    // Your sandboxes; the templates and their prices are a tab of the
+    // Models page, whose Create opens this page's dialog.
     return (
         <>
-            {hasSandboxes && (
-                <Section title="Your sandboxes">
-                    {listError && (
-                        <LoadError
-                            onRetry={load}
-                            paths={["/alpha/e2b/v2/sandboxes"]}
-                        >
-                            {listError}
-                        </LoadError>
-                    )}
-                    {actionAlert}
+            <Section
+                title="Sandboxes"
+                action={sandboxes.length > 0 && createAction}
+            >
+                {error && (
+                    <LoadError
+                        onRetry={load}
+                        paths={[
+                            "/alpha/e2b/pricing",
+                            "/alpha/e2b/v2/sandboxes",
+                        ]}
+                    >
+                        {error}
+                    </LoadError>
+                )}
+                {actionError && (
+                    <Alert intent="danger">
+                        {actionError}
+                        {actionError === NO_POLLEN && (
+                            <>
+                                {" "}
+                                <InlineLink href="/pollen">
+                                    Go to Pollen
+                                </InlineLink>
+                            </>
+                        )}
+                    </Alert>
+                )}
+                <SectionContent loading={loading}>
                     {/* The limit shows only once it's reached; the footnote
-                        below the templates names it otherwise. */}
-                    {full && (
+                        names it otherwise. */}
+                    {full && pricing && (
                         <Text size="sm" tone="strong">
                             {running} of {pricing.maxRunning} running. Pause or
                             kill one to start or resume another.
                         </Text>
                     )}
                     <div className="flex flex-col gap-3" aria-live="polite">
-                        {sandboxes.map((sandbox) => (
-                            <SandboxCard
-                                key={sandbox.sandboxID}
-                                sandbox={sandbox}
-                                pricing={pricing}
-                                busy={busyId === sandbox.sandboxID}
-                                onConnect={() =>
-                                    setPending({
-                                        action: "connect",
-                                        sandbox,
-                                    })
-                                }
-                                onLimit={() => {
-                                    setUntilStopped(false);
-                                    setPending({
-                                        action: "limit",
-                                        sandbox,
-                                    });
-                                }}
-                                onPause={() =>
-                                    void run(sandbox.sandboxID, () =>
-                                        e2b(
-                                            `/sandboxes/${sandbox.sandboxID}/pause`,
-                                            "POST",
-                                        ),
-                                    )
-                                }
-                                onKill={() =>
-                                    setPending({
-                                        action: "kill",
-                                        sandbox,
-                                    })
-                                }
-                            />
-                        ))}
-                    </div>
-                    <Footnotes>
-                        <div className="flex items-start gap-1.5">
-                            <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <div className="flex min-w-0 flex-1 flex-col gap-2">
-                                <p>
-                                    Connect with SSH or VS Code: run this once,
-                                    then use the ssh command on its card.
-                                </p>
-                                <CopyField
-                                    label="Copy the polli setup command"
-                                    value={SSH_SETUP}
+                        {pricing &&
+                            sandboxes.map((sandbox) => (
+                                <SandboxCard
+                                    key={sandbox.sandboxID}
+                                    sandbox={sandbox}
+                                    pricing={pricing}
+                                    busy={busyId === sandbox.sandboxID}
+                                    onConnect={() =>
+                                        setPending({
+                                            action: "connect",
+                                            sandbox,
+                                        })
+                                    }
+                                    onLimit={() => {
+                                        setUntilStopped(false);
+                                        setPending({
+                                            action: "limit",
+                                            sandbox,
+                                        });
+                                    }}
+                                    onPause={() =>
+                                        void run(sandbox.sandboxID, () =>
+                                            e2b(
+                                                `/sandboxes/${sandbox.sandboxID}/pause`,
+                                                "POST",
+                                            ),
+                                        )
+                                    }
+                                    onKill={() =>
+                                        setPending({
+                                            action: "kill",
+                                            sandbox,
+                                        })
+                                    }
                                 />
-                            </div>
-                        </div>
-                    </Footnotes>
-                </Section>
-            )}
-            <Section title="New sandbox">
-                {loadError && (
-                    <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
-                        {loadError}
-                    </LoadError>
-                )}
-                {/* A create that fails before you have any sandbox. */}
-                {!hasSandboxes && actionAlert}
-                <SectionContent loading={loading}>
-                    {/* Gen's pricing lists the templates that can start, so
-                        the cards and the create picker always agree. */}
-                    {pricing && (
-                        <SandboxTemplateList
-                            prices={Object.fromEntries(
-                                Object.entries(pricing.templates).map(
-                                    ([id, size]) => [
-                                        id,
-                                        perSecond(pricing, id, size) * 3600,
-                                    ],
-                                ),
-                            )}
-                            create={
-                                signedIn
-                                    ? {
-                                          label: creating
-                                              ? "Creating…"
-                                              : "Create",
-                                          disabled: full || creating,
-                                          onCreate: (template) =>
-                                              setPending({
-                                                  action: "create",
-                                                  name: generateFunName(),
-                                                  template,
-                                              }),
-                                      }
-                                    : undefined
-                            }
-                        />
-                    )}
+                            ))}
+                        {pricing && sandboxes.length === 0 && (
+                            <Surface className="p-6 text-center">
+                                <div className="mb-2">{createAction}</div>
+                                <p className="text-sm text-theme-text-muted">
+                                    A Linux computer in the cloud. Open it with
+                                    ssh or VS Code.
+                                </p>
+                            </Surface>
+                        )}
+                    </div>
                 </SectionContent>
                 <Footnotes>
                     <p className="flex items-start gap-1.5">
@@ -709,7 +698,12 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                         <span>
                             Paid 10 minutes at a time.
                             {LAUNCH_DISCOUNT > 0 &&
-                                ` Launch price: ${LAUNCH_DISCOUNT}% off.`}
+                                ` Launch price: ${LAUNCH_DISCOUNT}% off.`}{" "}
+                            Every size and its price is on{" "}
+                            <InlineLink href="/models?category=sandbox">
+                                Models
+                            </InlineLink>
+                            .
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -723,16 +717,23 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                             )}
                         </span>
                     </p>
-                    <p className="flex items-start gap-1.5">
+                    <div className="flex items-start gap-1.5">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            A Linux computer in the cloud. See the{" "}
-                            <InlineLink href={genDocsUrl("#tag/sandboxes")}>
-                                Sandboxes docs
-                            </InlineLink>
-                            .
-                        </span>
-                    </p>
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                            <p>
+                                Connect with SSH or VS Code: run this once, then
+                                use the ssh command on its card. See the{" "}
+                                <InlineLink href={genDocsUrl("#tag/sandboxes")}>
+                                    Sandboxes docs
+                                </InlineLink>
+                                .
+                            </p>
+                            <CopyField
+                                label="Copy the polli setup command"
+                                value={SSH_SETUP}
+                            />
+                        </div>
+                    </div>
                 </Footnotes>
             </Section>
 

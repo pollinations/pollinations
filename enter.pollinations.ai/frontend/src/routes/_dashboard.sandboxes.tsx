@@ -1,14 +1,28 @@
-import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { Sandboxes } from "../components/sandboxes.tsx";
 
 export const Route = createFileRoute("/_dashboard/sandboxes")({
+    // `create`: the Models page's Sandboxes tab names a template to start.
+    validateSearch: (search: Record<string, unknown>): { create?: string } =>
+        typeof search.create === "string" ? { create: search.create } : {},
+    beforeLoad: ({ context, location }) => {
+        if (!context.user && !context.sessionUnavailable) {
+            throw redirect({
+                to: "/sign-in",
+                search: { next: location.href },
+            });
+        }
+    },
     component: SandboxesPage,
 });
 
-// Public: signed out, the page is the templates' price list.
 function SandboxesPage() {
-    // Only a confirmed user loads private sandboxes; while sign-in is down
-    // the page is the public price list.
-    const { user } = useLoaderData({ from: "/_dashboard" });
-    return <Sandboxes signedIn={Boolean(user)} />;
+    const { create } = Route.useSearch();
+    const navigate = Route.useNavigate();
+    const clearCreate = useCallback(
+        () => void navigate({ search: {}, replace: true }),
+        [navigate],
+    );
+    return <Sandboxes create={create} onCreateOpened={clearCreate} />;
 }

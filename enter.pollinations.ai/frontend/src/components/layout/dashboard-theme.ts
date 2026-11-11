@@ -63,12 +63,10 @@ export function isDashboardPath(path: string): path is DashboardPath {
     return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
 }
 
-// Sandboxes too: signed out it lists the templates and their prices.
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
     "quests",
-    "sandboxes",
 ]);
 
 export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>

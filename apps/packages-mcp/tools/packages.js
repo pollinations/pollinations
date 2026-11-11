@@ -2,14 +2,14 @@ import { prerelease, rcompare, valid } from "semver";
 import { z } from "zod";
 import { fetchJson, fetchText } from "../fetch.js";
 
-const patterns = {
-    npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
-    pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
-    crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
-};
-
 // Registry metadata selection from xiaotian1171 (#17699).
 export async function lookup({ ecosystem, name, version }) {
+    const patterns = {
+        npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
+        pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
+        crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
+        rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
+    };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
     const encoded = encodeURIComponent(name);
@@ -56,6 +56,30 @@ export async function lookup({ ecosystem, name, version }) {
                 info.package_url ?? `https://pypi.org/project/${encoded}/`,
         };
     }
+    if (ecosystem === "rubygems") {
+        const data = await fetchJson(
+            version
+                ? `https://rubygems.org/api/v2/rubygems/${encoded}/versions/${encodeURIComponent(version)}.json`
+                : `https://rubygems.org/api/v1/gems/${encoded}.json`,
+        );
+        const resolved = data.version ?? data.number;
+        return {
+            ecosystem,
+            name: data.name,
+            version: resolved,
+            description: data.info,
+            licenses: data.licenses,
+            homepage: data.homepage_uri,
+            repository: data.source_code_uri,
+            documentation: data.documentation_uri,
+            platform: data.platform,
+            downloads: data.downloads,
+            versionDownloads: data.version_downloads,
+            yanked: data.yanked,
+            dependencies: data.dependencies,
+            registryUrl: `https://rubygems.org/gems/${encodeURIComponent(data.name)}/versions/${encodeURIComponent(resolved)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -93,9 +117,11 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
-            ecosystem: z.enum(["npm", "pypi", "crates"]).default("npm"),
+            ecosystem: z
+                .enum(["npm", "pypi", "crates", "rubygems"])
+                .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z
                 .string()
@@ -122,7 +148,11 @@ export const packageTools = [
                 .default("last-week"),
         },
         async ({ name, range }) => {
-            if (!patterns.npm.test(name))
+            if (
+                !/^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/.test(
+                    name,
+                )
+            )
                 throw new Error("Invalid npm package name");
             return fetchJson(
                 `https://api.npmjs.org/downloads/range/${range}/${encodeURIComponent(name)}`,

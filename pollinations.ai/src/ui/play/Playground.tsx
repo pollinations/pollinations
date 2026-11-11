@@ -67,6 +67,7 @@ import {
     audioEndpoint,
     audioInputError,
     generatePlaygroundAudio,
+    supportsAudioLength,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { reproducibleApiUrl, videoOptions } from "./video-options";
@@ -703,7 +704,6 @@ export function Playground() {
     const [height, setHeight] = useState(search.height ?? "");
     const [duration, setDuration] = useState(Number(search.duration) || 0);
     const [aspectRatio, setAspectRatio] = useState(search.aspect ?? "");
-    // Audio models declare no length range, so the API validates the value.
     const [audioLength, setAudioLength] = useState(search.length ?? "");
     const [language, setLanguage] = useState(search.language ?? "");
     const [seed, setSeed] = useState(search.seed ?? "");
@@ -913,7 +913,13 @@ export function Playground() {
             : undefined;
     const isAudioTranscription =
         currentAudioEndpoint === "/v1/audio/transcriptions";
-    const showsAudioLength = audioTask === "music-and-sound-effects";
+    const showsAudioLength =
+        currentModel &&
+        audioTask === "music-and-sound-effects" &&
+        supportsAudioLength(currentModel);
+    const audioDuration = showsAudioLength
+        ? Number(audioLength) || undefined
+        : undefined;
     const audioError =
         currentModel?.category === "audio"
             ? audioInputError(currentModel, prompt, audioFiles[0])
@@ -997,8 +1003,8 @@ export function Playground() {
                   ...(currentModel.voices.length
                       ? { voice: selectedVoice }
                       : {}),
-                  ...(showsAudioLength && Number(audioLength)
-                      ? { duration: Number(audioLength) }
+                  ...(audioDuration !== undefined
+                      ? { duration: audioDuration }
                       : {}),
                   ...(isAudioTranscription && language.trim()
                       ? { language: language.trim() }
@@ -1034,9 +1040,7 @@ export function Playground() {
                             }
                           : {
                                 voice: selectedVoice || undefined,
-                                duration: showsAudioLength
-                                    ? Number(audioLength) || undefined
-                                    : undefined,
+                                duration: audioDuration,
                             }),
                       key: "YOUR_API_KEY",
                   }).flatMap(([name, value]) =>
@@ -1151,9 +1155,7 @@ export function Playground() {
                         prompt: trimmedPrompt,
                         file: audioFiles[0],
                         voice: selectedVoice || undefined,
-                        duration: showsAudioLength
-                            ? Number(audioLength) || undefined
-                            : undefined,
+                        duration: audioDuration,
                         language: isAudioTranscription
                             ? language.trim() || undefined
                             : undefined,

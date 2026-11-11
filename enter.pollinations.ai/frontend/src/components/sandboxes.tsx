@@ -564,8 +564,10 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     return (
         <Section
             title="Sandboxes"
+            // Refresh updates your sandboxes' state; with none there's
+            // nothing to refresh.
             action={
-                signedIn && (
+                sandboxes.length > 0 && (
                     <IconButton
                         size="md"
                         variant="ghost"

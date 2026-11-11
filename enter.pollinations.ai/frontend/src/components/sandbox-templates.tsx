@@ -90,79 +90,80 @@ export const SandboxTemplateList: FC<{
         {SANDBOX_TEMPLATES.map((template) => {
             const perHour = hourly(template);
             return (
-                <Surface key={template.id} className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center">
-                        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                            <ProviderLogo provider={template.provider} />
-                            <span
-                                aria-hidden="true"
-                                className="h-10 w-px shrink-0 bg-divider"
-                            />
-                            <dl className="flex gap-6">
-                                {[
-                                    [String(template.cpuCount), "vCPU"],
-                                    [
-                                        `${template.memoryMB / 1024} GB`,
-                                        "memory",
-                                    ],
-                                    [`${gb(template.diskSizeMB)} GB`, "disk"],
-                                ].map(([value, label]) => (
-                                    <div
-                                        key={label}
-                                        className="flex flex-col-reverse gap-0.5"
-                                    >
-                                        <dt className="text-xs text-theme-text-muted">
-                                            {label}
-                                        </dt>
-                                        <dd className="text-lg font-semibold leading-none text-theme-text-strong">
-                                            {value}
-                                        </dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </div>
-                        <div className="grid grid-cols-[6.5rem_auto_auto] gap-x-1 self-start @xl:ml-auto @xl:self-center">
-                            <LedgerRow Icon={WalletIcon} label="Pollen">
-                                <div className="col-span-2 flex">
-                                    <BalanceAccessChip access="quest" />
+                // Two columns when wide: the size over the command on the left,
+                // the price over Create on the right, so Create lines up with
+                // the price's icons. Stacked in that order when narrow.
+                <Surface
+                    key={template.id}
+                    className="grid items-center gap-3 @xl:grid-cols-[minmax(0,1fr)_auto] @xl:gap-x-6"
+                >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                        <ProviderLogo provider={template.provider} />
+                        <span
+                            aria-hidden="true"
+                            className="h-10 w-px shrink-0 bg-divider"
+                        />
+                        <dl className="flex gap-6">
+                            {[
+                                [String(template.cpuCount), "vCPU"],
+                                [`${template.memoryMB / 1024} GB`, "memory"],
+                                [`${gb(template.diskSizeMB)} GB`, "disk"],
+                            ].map(([value, label]) => (
+                                <div
+                                    key={label}
+                                    className="flex flex-col-reverse gap-0.5"
+                                >
+                                    <dt className="text-xs text-theme-text-muted">
+                                        {label}
+                                    </dt>
+                                    <dd className="text-lg font-semibold leading-none text-theme-text-strong">
+                                        {value}
+                                    </dd>
                                 </div>
-                            </LedgerRow>
-                            <LedgerRow Icon={ClockIcon} label="Per hour">
-                                <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
-                                    {amount(perHour)}
-                                </span>
-                                <span className="text-xs text-theme-text-muted">
-                                    /hour
-                                </span>
-                            </LedgerRow>
-                            <LedgerRow Icon={ClockIcon} label="Per month">
-                                <span className="text-right text-xs tabular-nums text-theme-text-muted">
-                                    {amount(perHour * HOURS_PER_MONTH)}
-                                </span>
-                                <span className="text-xs text-theme-text-muted">
-                                    /month
-                                </span>
-                            </LedgerRow>
-                        </div>
+                            ))}
+                        </dl>
                     </div>
-                    <div className="flex flex-col gap-2 @md:flex-row @md:items-center">
+                    <div className="grid grid-cols-[6.5rem_auto_auto] gap-x-1 justify-self-start">
+                        <LedgerRow Icon={WalletIcon} label="Pollen">
+                            <div className="col-span-2 flex">
+                                <BalanceAccessChip access="quest" />
+                            </div>
+                        </LedgerRow>
+                        <LedgerRow Icon={ClockIcon} label="Per hour">
+                            <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                                {amount(perHour)}
+                            </span>
+                            <span className="text-xs text-theme-text-muted">
+                                /hour
+                            </span>
+                        </LedgerRow>
+                        <LedgerRow Icon={ClockIcon} label="Per month">
+                            <span className="text-right text-xs tabular-nums text-theme-text-muted">
+                                {amount(perHour * HOURS_PER_MONTH)}
+                            </span>
+                            <span className="text-xs text-theme-text-muted">
+                                /month
+                            </span>
+                        </LedgerRow>
+                    </div>
+                    {/* Only as wide as the command needs. */}
+                    <div className="w-fit max-w-full">
                         <CopyField
                             label={`Copy the command that creates a ${template.id} sandbox`}
                             value={`polli sandbox create ${template.id}`}
-                            className="min-w-0 @md:flex-1"
                         />
-                        <Button
-                            type="button"
-                            intent="commit"
-                            icon={<TerminalIcon />}
-                            aria-haspopup={disabled ? undefined : "dialog"}
-                            disabled={disabled}
-                            className="shrink-0 self-start @md:self-auto"
-                            onClick={() => onCreate(template.id)}
-                        >
-                            {createLabel}
-                        </Button>
                     </div>
+                    <Button
+                        type="button"
+                        intent="commit"
+                        icon={<TerminalIcon />}
+                        aria-haspopup={disabled ? undefined : "dialog"}
+                        disabled={disabled}
+                        className="justify-self-start"
+                        onClick={() => onCreate(template.id)}
+                    >
+                        {createLabel}
+                    </Button>
                 </Surface>
             );
         })}

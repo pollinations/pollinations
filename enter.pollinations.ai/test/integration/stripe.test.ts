@@ -4641,7 +4641,11 @@ test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1, wit
     );
 
     for (const answer of answers)
-        expect(answer).toEqual({ status: "credited", pollen: 10 });
+        expect(answer).toEqual({
+            status: "credited",
+            pollen: 10,
+            bonusPending: false,
+        });
     expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
     expect(await topUpBonusClaimedAt()).toBeTruthy();
     // A credited session never needs a Stripe round trip.
@@ -4663,10 +4667,10 @@ const QUEST_CHECK_FAILURES = [
     ],
 ] as const;
 
-// The webhook's own check may still credit the bonus after this one failed,
-// and the wallet reloads only once: the next poll has to look again.
+// A broken quest check must not hide a paid pack. The webhook's own check may
+// still credit the bonus, so the answer tells the wallet to look again.
 test.for(QUEST_CHECK_FAILURES)(
-    "GET /api/stripe/checkout/sessions/:id keeps a new purchase pending while the quest check %s",
+    "GET /api/stripe/checkout/sessions/:id says credited with the bonus pending while the quest check %s",
     async ([, breakQuestCheck, repairQuestCheck], { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
         const userId = await getSeededUserId();
@@ -4680,7 +4684,7 @@ test.for(QUEST_CHECK_FAILURES)(
             });
             expect(
                 await checkoutStatus(sessionToken, "cs_bonus_retry"),
-            ).toEqual({ status: "pending" });
+            ).toEqual({ status: "credited", pollen: 10, bonusPending: true });
         } finally {
             await env.DB.prepare(repairQuestCheck).run();
         }
@@ -4688,39 +4692,11 @@ test.for(QUEST_CHECK_FAILURES)(
         expect(await checkoutStatus(sessionToken, "cs_bonus_retry")).toEqual({
             status: "credited",
             pollen: 10,
+            bonusPending: false,
         });
         expect(await readTierBalance(userId)).toBeCloseTo(tierBefore + 5);
     },
 );
-
-// By then the webhook's check is over, and a broken quest check must not
-// hide a paid pack. The next quest check credits the bonus.
-test("GET /api/stripe/checkout/sessions/:id confirms an older purchase whose quest check fails", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    // In milliseconds, as the webhook writes it.
-    await env.DB.prepare(
-        `INSERT INTO stripe_checkout_credits (
-            session_id, event_id, event_type, user_id, pollen_credited, created_at
-        ) VALUES ('cs_older', 'evt_older', 'checkout.session.completed', ?, 10, ?)`,
-    )
-        .bind(userId, Date.now() - 60_000)
-        .run();
-
-    const [, breakQuestCheck, repairQuestCheck] = QUEST_CHECK_FAILURES[0];
-    await env.DB.prepare(breakQuestCheck).run();
-    try {
-        expect(await checkoutStatus(sessionToken, "cs_older")).toEqual({
-            status: "credited",
-            pollen: 10,
-        });
-    } finally {
-        await env.DB.prepare(repairQuestCheck).run();
-    }
-});
 
 test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless expired or failed", async ({
     sessionToken,

@@ -2,21 +2,24 @@ import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
+    afterPoll,
+    POLL_START,
+    type PollState,
+    type SessionStatus,
+} from "../../lib/checkout-poll.ts";
+import {
     type CheckoutConfirmationState,
     CheckoutStatusMessage,
 } from "./checkout-status-message.tsx";
 
 const POLL_INTERVAL_MS = 1500;
-const POLL_ATTEMPTS = 20;
-
-/** GET /api/stripe/checkout/sessions/:id */
-type SessionStatus =
-    | { status: "credited"; pollen: number }
-    | { status: "pending" | "expired" | "failed" };
 
 type CheckoutConfirmationProps = {
     sessionId: string;
-    /** Reload the wallet and billing once the Pollen is in. */
+    /**
+     * Reload the wallet and billing once the Pollen is in, and once more
+     * when a top-up bonus follows it.
+     */
     onCredited?: () => void;
     /** Start a new checkout after an expired or failed one. */
     onRetry?: () => void;
@@ -41,8 +44,10 @@ export const CheckoutConfirmation: FC<CheckoutConfirmationProps> = ({
     useEffect(() => {
         let canceled = false;
         let timer: ReturnType<typeof setTimeout> | undefined;
-        async function poll(attempt: number): Promise<void> {
-            const next = await apiClient.stripe.checkout.sessions[":sessionId"]
+        async function poll(current: PollState): Promise<void> {
+            const answer = await apiClient.stripe.checkout.sessions[
+                ":sessionId"
+            ]
                 .$get({ param: { sessionId } })
                 .then(
                     async (response): Promise<SessionStatus | null> =>
@@ -50,20 +55,14 @@ export const CheckoutConfirmation: FC<CheckoutConfirmationProps> = ({
                 )
                 .catch(() => null);
             if (canceled) return;
-            if (next?.status === "credited") {
-                setState(next);
-                onCreditedRef.current?.();
-                return;
+            const { show, reload, next } = afterPoll(current, answer);
+            if (show) setState(show);
+            if (reload) onCreditedRef.current?.();
+            if (next) {
+                timer = setTimeout(() => void poll(next), POLL_INTERVAL_MS);
             }
-            if (next?.status === "expired" || next?.status === "failed")
-                return setState({ status: next.status });
-            if (attempt + 1 >= POLL_ATTEMPTS) {
-                setState({ status: "timeout" });
-                return;
-            }
-            timer = setTimeout(() => void poll(attempt + 1), POLL_INTERVAL_MS);
         }
-        void poll(0);
+        void poll(POLL_START);
         return () => {
             canceled = true;
             clearTimeout(timer);

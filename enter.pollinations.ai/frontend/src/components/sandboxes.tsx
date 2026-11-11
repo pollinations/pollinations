@@ -29,6 +29,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
+import { TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     SANDBOX_PROVIDERS,
     sandboxTemplate,
@@ -145,6 +146,14 @@ const templateTitle = (id: string, size?: Size) => {
         .join(" · ");
 };
 
+// The closed picker's label: cores, memory and where it runs.
+const templateShort = (id: string, size?: Size) => {
+    const { cpuCount, memoryMB } = size ?? sandboxTemplate(id) ?? {};
+    return cpuCount && memoryMB
+        ? `${cpuCount} vCPU · ${memoryMB / 1024} GB memory · ${templateSource(id)}`
+        : id;
+};
+
 // Where it runs, shown quieter beside the title; another E2B template shows
 // its own name.
 const templateSource = (id: string) => {
@@ -176,13 +185,20 @@ function TemplatePicker({
     error: string | null;
     onChange: (template: string, custom?: boolean) => void;
 }) {
+    // Open, each option has room: the size, then where it runs, its price
+    // and that Quest pollen pays for it (as every sandbox can).
     const option = (id: string, size: Size) => (
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
             <span className="font-semibold">{templateTitle(id, size)}</span>
-            <span className="text-xs font-normal text-theme-text-muted">
-                {templateSource(id)} ·{" "}
-                {pollen(perSecond(pricing, id, size) * 3600)}
-                /hour
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-normal text-theme-text-muted">
+                <span>
+                    {templateSource(id)} ·{" "}
+                    {pollen(perSecond(pricing, id, size) * 3600)}/hour
+                </span>
+                <TierChip size="sm">
+                    <WalletKindIcon kind="tier" />
+                    Quest
+                </TierChip>
             </span>
         </span>
     );
@@ -210,31 +226,15 @@ function TemplatePicker({
                             aria-label="Choose sandbox template"
                             className="w-full min-w-0 self-stretch justify-between gap-2"
                         >
+                            {/* Closed, just enough to recognise it. */}
                             <span className="min-w-0 truncate">
                                 {custom
                                     ? "Other E2B template"
-                                    : templateTitle(
+                                    : templateShort(
                                           template,
                                           pricing.templates[template],
                                       )}
                             </span>
-                            {!custom && (
-                                <span className="ml-auto whitespace-nowrap text-xs font-normal">
-                                    {templateSource(template)}
-                                </span>
-                            )}
-                            {!custom && pricing.templates[template] && (
-                                <span className="whitespace-nowrap text-xs font-normal">
-                                    {pollen(
-                                        perSecond(
-                                            pricing,
-                                            template,
-                                            pricing.templates[template],
-                                        ) * 3600,
-                                    )}
-                                    /hour
-                                </span>
-                            )}
                             <ChevronIcon
                                 expanded={open}
                                 className="h-4 w-4 shrink-0"

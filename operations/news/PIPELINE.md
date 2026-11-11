@@ -39,7 +39,7 @@ AFTER THOSE (news-build-index.yml)
 | Sunday 06:00 | also `data/summaries/weekly/<sunday>.json` and `posts/<platform>/weekly/<sunday>.json` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
 | Daily 06:00 | `data/models/<today>.json` when `/models` changed | — |
-| Wednesday 14:00 | `posts/discord/models/<wed>.json`, then `posts/discord/community/<wed>.json` | Discord: the model post with the models role ping, then the community post without one; each saved once sent |
+| Wednesday 14:00 | `posts/discord/models/<wed>.json`, then `posts/discord/community/<wed>.json` | Discord: official cards, then community cards, without mentions; each report saved once sent |
 | 1st 06:00 | also `data/summaries/monthly/<last month>.json` and `data/contributors/<last month>.json` | — |
 
 The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when. PRs merged into `master` reach the daily and weekly, and get their deploy post once the legacy cache deploy ships them.
@@ -140,7 +140,11 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 ### Model and community posts: `posts/discord/models/`, `posts/discord/community/`
 
-`YYYY-MM-DD.json` is the post as sent, saved only after Discord confirms the send; a week without changes saves nothing. The community writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text. Models and agents are two groups; an agent shows its base model instead of a price or access change, which follow that model.
+`YYYY-MM-DD.json` holds the exact Discord `messages` payloads, saved after delivery. `model_posts.py` renders the catalog diff directly, without a language-model call. Official models, community models and community agents have separate reports. Each lists New, Updated and Removed in that order; official entries are grouped by category and community entries by the publisher in their canonical ID. New community models show their category rather than a modality list. Titles are escaped display text. Each model gets one bullet with all its price/feature changes. Quest/Paid appears only for new models or an access change; additions are purple, removals orange, price decreases green, increases red, and other updates blue. An old ID retained as an alias is not announced as removed.
+
+Each nonempty New, Updated or Removed section gets one native embed containing all its categories or publishers. Report titles and section subtitles are outside the cards; publisher headings use 👤. Removed means absent from the recorded public catalog, which can include community models made private. Endpoint-listing changes are left to API news, so catalog metadata corrections do not create model announcements. Overflow starts another card at a model boundary and repeats the category/publisher heading; no rows are truncated. Neither report mentions a role. The delivery record hashes the complete payload, so a rerun cannot save different cards after an earlier send. Partial sends stay `attempt` for manual reconciliation.
+
+The community report optionally reads `/models/status?minutes=10080&traffic=regular` once during writing. Publisher success is request-weighted rollup 2xx / (2xx + 5xx) across public community models, excluding 4xx, internal and legacy traffic; successful fallbacks count as successes. Rates appear in publisher headings, with “Publisher success over the last 7 days” in the final card's footer. No samples is shown explicitly; failed stats and historical previews omit rates. A week without meaningful changes saves nothing.
 
 ### Deploy posts: `posts/discord/prs/`
 
@@ -256,7 +260,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 4. **`publish_tier` gates what reaches the daily and weekly posts** — non-user-facing PRs stay out.
 5. **Model news comes from the live catalog.** The `/models` record dates a change when it is seen in production, not when its PR merged.
 6. **A PR is announced on Discord when it ships,** after the production deploy, not at merge.
-7. **One prompt file per post** — brand → tone → the post file. Each post is a fixed prompt and one model call (a deploy post: its note, then its text); no agent, so content stays predictable.
+7. **One prompt file per post** — brand → tone → the post file. Prose posts use fixed prompts and model calls (a deploy post: its note, then its text). Wednesday model and community cards are rendered directly from catalog facts.
 8. **No content for quiet days** — no `daily`-tier notes, no posts.
 
 ---
@@ -312,8 +316,6 @@ operations/news/prompts/
     discord/tone.md
     discord/weekly.md
     discord/pr.md
-    discord/models.md
-    discord/community.md
 ```
 
 A post file's settings say its `job`, its `tone` (the platform whose `tone.md` is the system prompt; a summary has none and is its own system prompt), its `temperature`, its `pictures` and the fields its reply must have. A post under `posts/<platform>/` is saved as `posts/<platform>/<job>/<date>.json`. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR's note filled in.

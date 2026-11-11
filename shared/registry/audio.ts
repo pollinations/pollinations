@@ -761,8 +761,8 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scale plan: Scribe batch $0.22/hour
-            promptAudioSeconds: 0.22 / 3600,
+            // ElevenLabs Scale API plan: Scribe batch $0.20/hour (2026-11-10)
+            promptAudioSeconds: 0.2 / 3600,
         },
         title: "Scribe v2",
         description: "Transcription in 90+ languages with speaker labels",

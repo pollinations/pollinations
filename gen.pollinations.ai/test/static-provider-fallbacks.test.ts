@@ -343,7 +343,7 @@ describe("static provider fallbacks", () => {
         );
     });
 
-    it("records MiMo V2.6 Flash's discounted backup cost and keeps the Novita quote", () => {
+    it("records MiMo V2.6 Flash's standard backup cost and keeps the Novita quote", () => {
         const model = "xiaomi/mimo-v2.6-flash";
         const billed = calculateUsageBilling({
             model,
@@ -355,7 +355,7 @@ describe("static provider fallbacks", () => {
             servedBy: TEXT_SERVICES[`${model}:deepinfra`],
             quotedBy: TEXT_SERVICES[model],
         });
-        expect(billed.cost.totalCost).toBeCloseTo(0.000109564, 12);
+        expect(billed.cost.totalCost).toBeCloseTo(0.00016856, 12);
         expect(billed.price.totalPrice).toBe(0.00016856);
     });
 
@@ -763,7 +763,7 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("uses cheaper Replicate for Grok Video Pro with independent Fal backup", () => {
+    it("uses Replicate's 720p rate for Grok Video Pro with independent Fal backup", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
         const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:fal"];
         expect(primary).toMatchObject({
@@ -772,7 +772,7 @@ describe("static provider fallbacks", () => {
             priceMultiplier: 1,
             aliases: ["grok-imagine-video", "grok-video-pro"],
             fallbacks: ["x-ai/grok-imagine-video:fal"],
-            cost: { promptImageTokens: 0, completionVideoSeconds: 0.05 },
+            cost: { promptImageTokens: 0, completionVideoSeconds: 0.07 },
         });
         expect(fallback.provider).toBe("fal");
         expect(fallback.cost).toEqual({

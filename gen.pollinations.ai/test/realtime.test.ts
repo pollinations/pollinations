@@ -867,10 +867,7 @@ test.each([
         const telemetry = await closeAndReadTelemetry(session);
         expect(telemetry.requestPath).toBe(path);
         expect(telemetry.resolvedModelRequested).toBe(canonicalModel);
-        expect(telemetry.totalCost).toBeCloseTo(
-            (0.1 * (upstreamModel === "scribe_v3_live" ? 0.22 : 0.39)) / 3600,
-            12,
-        );
+        expect(telemetry.totalCost).toBeCloseTo((0.1 * 0.22) / 3600, 12);
         expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
     },
 );
@@ -1006,7 +1003,7 @@ test.each([
 
         const telemetry = await closeAndReadTelemetry(session);
         const user = await waitForPackBalanceBelow(session.userId, 1);
-        const expectedCharge = 0.39 / 3600;
+        const expectedCharge = 0.22 / 3600;
         const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
         expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
         expect(telemetry.eventType).toBe("generate.realtime");
@@ -1754,7 +1751,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         paid_only: true,
         pricing: {
             currency: "pollen",
-            promptAudioSeconds: "0.000108333333",
+            promptAudioSeconds: "0.000061111111",
         },
     });
     expect(scribeRealtime?.description?.toLowerCase()).not.toContain(

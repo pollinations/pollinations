@@ -1,5 +1,6 @@
 """Wednesday Discord cards, rendered from catalog facts without a prose model call."""
 
+import json
 import re
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -7,7 +8,7 @@ from decimal import Decimal
 
 import requests
 
-from common import diff_models
+from common import _normalize_for_diff, diff_models
 
 CATEGORIES = {
     "text": "🧠 Text", "decision": "🧭 Decision", "image": "🎨 Image",
@@ -16,15 +17,25 @@ CATEGORIES = {
 }
 LIST_FIELDS = {
     "input_modalities": "input", "output_modalities": "output",
-    # Endpoint listings describe API discovery, not a model capability change.
     "supported_parameters": "parameters",
     "video_capabilities": "video features", "voices": "voices", "resolutions": "resolutions",
+}
+IGNORED_FIELDS = {
+    # Display metadata and endpoint discovery corrections are not model news.
+    "title", "publisher", "brand_url", "brand_icon_url", "supported_endpoints",
+}
+BILLING_FIELDS = {
+    "pricing", "pricing_units", "flat_rate", "pricing_variants",
+    "pricing_adjustments", "pricing_dimensions", "pricing_default_label", "paid_only",
 }
 VALUE_FIELDS = {
     "context_length": "Context", "max_reference_images": "Reference images",
     "min_duration": "Minimum duration (s)", "max_duration": "Maximum duration (s)",
     "default_duration": "Default duration (s)", "per_user_rpm": "Requests/min",
     "category": "Category", "base_model": "Base model", "agent": "Agent",
+    "max_completion_tokens": "Maximum output tokens", "supports_structured_output": "Structured output",
+    "allowed_durations": "Allowed durations (s)", "max_reference_videos": "Reference videos",
+    "required_safety": "Safety required", "alpha": "Preview",
 }
 PRICE_LABELS = {
     "promptTextTokens": "Text input", "completionTextTokens": "Text output",
@@ -88,13 +99,17 @@ def price_changes(before, after):
         a, b = Decimal(str(old[key])), Decimal(str(new[key]))
         if a == b:
             continue
-        if a == 0:
+        if b == 0:
+            changes.append(f"🟢 {name} now free")
+        elif a == 0:
             changes.append(f"🔴 {name} now charged")
         else:
             percent = abs((b - a) / a * 100)
             amount = f"{percent:.1f}".rstrip("0").rstrip(".") if percent >= Decimal("0.1") else "<0.1"
             deltas[key] = (b < a, amount)
             changes.append(f"{'🟢' if b < a else '🔴'} {name} {amount}% {'cheaper' if b < a else 'more expensive'}")
+    if changes and all(key in new and Decimal(str(new[key])) == 0 for key in price_keys):
+        return ["🟢 Now free"]
     if deltas.keys() == price_keys and len(set(deltas.values())) == 1:
         # Say "25% cheaper" only when every price component fell by the same amount.
         cheaper, amount = next(iter(deltas.values()))
@@ -102,7 +117,7 @@ def price_changes(before, after):
     return changes
 
 
-def updates(before, after):
+def pricing_updates(before, after):
     changes = price_changes(before, after)
     old_variants = {v["name"]: v for v in before.get("pricing_variants") or []}
     new_variants = {v["name"]: v for v in after.get("pricing_variants") or []}
@@ -125,6 +140,22 @@ def updates(before, after):
     for field in ("pricing_adjustments", "pricing_dimensions", "pricing_default_label"):
         if before.get(field) != after.get(field):
             changes.append(f"🔵 {label(field).capitalize()} changed; see model details")
+    return changes
+
+
+def display_value(value):
+    if value is None:
+        return "unspecified"
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    if isinstance(value, list):
+        return ", ".join(display_value(item) for item in value) or "none"
+    return plain(value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def updates(before, after):
+    # Agent rates/access come from the base model, which has its own announcement.
+    changes = [] if after.get("agent") else pricing_updates(before, after)
     lists = {**LIST_FIELDS, "capabilities": "features"}
     for field, heading in lists.items():
         a = capabilities(before) if field == "capabilities" else set(before.get(field) or [])
@@ -133,13 +164,16 @@ def updates(before, after):
             if values:
                 display = plain if field.startswith("supported_") else label
                 changes.append(f"🔵 {heading[0].upper() + heading[1:]} {verb}: {', '.join(display(v) for v in sorted(values))}")
-    for field, heading in VALUE_FIELDS.items():
-        a, b = before.get(field), after.get(field)
+    old, new = _normalize_for_diff(before), _normalize_for_diff(after)
+    handled = lists.keys() | BILLING_FIELDS | IGNORED_FIELDS | {"tools", "reasoning"}
+    for field in sorted((old.keys() | new.keys()) - handled):
+        heading = VALUE_FIELDS.get(field, label(field).capitalize())
+        a, b = old.get(field), new.get(field)
         if a != b:
-            changes.append(f"🔵 {heading}: {plain(a) if a is not None else 'unspecified'} → {plain(b) if b is not None else 'unspecified'}")
+            changes.append(f"🔵 {heading}: {display_value(a)} → {display_value(b)}")
     if before["name"] != after["name"]:
         changes.append(f"🔵 Replaces {title(before)}; old ID remains an alias")
-    if bool(before.get("paid_only")) != bool(after.get("paid_only")):
+    if not after.get("agent") and bool(before.get("paid_only")) != bool(after.get("paid_only")):
         changes.append(f"🔵 Now {access(after)}")
     return changes
 

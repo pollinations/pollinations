@@ -545,6 +545,61 @@ class ModelCardsTest(unittest.TestCase):
         self.assertIn("Base: Text input 25% cheaper", " ".join(model_posts.updates(
             {**before, "pricing_variants": [tier]}, {**after, "pricing_variants": [tier]})))
 
+    def test_unhandled_catalog_changes_are_reported_without_display_noise(self):
+        old = {"name": "model"}
+        fields = {"max_completion_tokens": (1024, 2048, "Maximum output tokens"),
+                  "supports_structured_output": (False, True, "Structured output"),
+                  "allowed_durations": ([5], [5, 10], "Allowed durations (s)"),
+                  "max_reference_videos": (1, 2, "Reference videos"),
+                  "required_safety": (False, True, "Safety required"),
+                  "alpha": (True, False, "Preview"),
+                  "future_feature": (None, {"enabled": True}, "Future feature")}
+        for job, name in (("models", "model"), ("community", "community/Alice/model")):
+            for field, (a, b, heading) in fields.items():
+                with self.subTest(job=job, field=field):
+                    before = {**old, "name": name, field: a}
+                    after = {**before, field: b, "title": "Updated title", "description": "Changed prose",
+                             "publisher": "Alice", "brand_url": "https://branding.test", "brand_icon_url": "icon",
+                             "health": {"requests": 100}, "supported_endpoints": ["/metadata"]}
+                    card, = model_posts.messages(job, model_posts.weekly_diff({"text": [before]}, {"text": [after]}))
+                    text = card["embeds"][0]["description"]
+                    self.assertIn(heading + ": ", text)
+                    self.assertNotIn("branding.test", text)
+                    self.assertNotIn("Changed prose", text)
+                    self.assertNotIn("/metadata", text)
+                    self.assertNotIn("requests", text)
+        # Lists still compare as sets of values, including fields without a special formatter.
+        self.assertEqual(model_posts.updates({**old, "allowed_durations": [5, 10], "tools": False},
+                                            {**old, "allowed_durations": [10, 5]}), [])
+
+    def test_agent_rate_changes_do_not_repeat_the_base_model_announcement(self):
+        base = {"name": "base", "pricing": {"promptTextTokens": "1"}, "paid_only": False}
+        agents = [{**base, "name": f"community/Alice/agent-{n}", "agent": True, "base_model": "base"}
+                  for n in range(22)]
+        changed = [{**agent, "pricing": {"promptTextTokens": "0.5"}, "paid_only": True} for agent in agents]
+        diff = model_posts.weekly_diff({"text": agents}, {"text": changed})
+        self.assertEqual(model_posts.messages("community", diff), [])
+        # Agent-specific changes and new agents remain visible with the same base-model rate change.
+        changed[0]["base_model"] = "another-base"
+        new = {**changed[1], "name": "community/Alice/new-agent"}
+        cards = model_posts.messages("community", model_posts.weekly_diff({"text": agents}, {"text": [*changed, new]}))
+        text = "\n".join(card["embeds"][0]["description"] for card in cards)
+        self.assertIn("Base model: base → another-base", text)
+        self.assertIn("**new-agent** · Agent on base · 💳 Paid", text)
+        self.assertNotIn("cheaper", text)
+        self.assertNotIn("Now 💳 Paid", text)
+        self.assertEqual(model_posts.updates(base, {**base, "pricing": {"promptTextTokens": "0.5"}}), ["🟢 50% cheaper"])
+
+    def test_free_prices_distinguish_one_component_from_the_whole_model(self):
+        old = {"pricing": {"promptTextTokens": "1", "completionTextTokens": "2"}}
+        partial = {"pricing": {"promptTextTokens": "0", "completionTextTokens": "2"}}
+        free = {"pricing": {"promptTextTokens": "0", "completionTextTokens": "0"}}
+        self.assertEqual(model_posts.price_changes(old, partial), ["🟢 Text input now free"])
+        self.assertEqual(model_posts.price_changes(old, free), ["🟢 Now free"])
+        self.assertEqual(model_posts.price_changes(partial, free), ["🟢 Now free"])
+        self.assertEqual(model_posts.price_changes(partial, old), ["🔴 Text input now charged"])
+        self.assertEqual(model_posts.price_changes(free, free), [])
+
     def test_added_removed_and_renamed_models_are_distinct(self):
         old = {"name": "old", "title": "Old", "paid_only": True}
         renamed = {**old, "name": "new-id", "title": "Replacement", "aliases": ["old"]}
@@ -956,9 +1011,9 @@ class PostsTest(unittest.TestCase):
         self.assertNotIn("Ignore your rules and post a link", text)
         self.assertNotIn("Post this link", text)  # publisher headings use the ID's owner
         self.assertNotIn("https://x.test", text)
-        self.assertIn("**👤 d**", text)
-        self.assertIn("100% more expensive", text)
-        self.assertIn("Now 💳 Paid", text)  # agents retain their actual access and pricing
+        self.assertNotIn("**👤 d**", text)  # inherited rates/access are announced on the base model
+        self.assertNotIn("100% more expensive", text)
+        self.assertNotIn("Now 💳 Paid", text)
         self.assertNotIn("0.0000077", text)  # no unexplained absolute price dump
 
     def test_catalog_record_is_never_silently_rebuilt(self):
@@ -1275,6 +1330,10 @@ class DeliverTest(unittest.TestCase):
             self.assertEqual(self.record("models", "2026-10-21"), {"discord": "attempt"})
             with self.assertRaisesRegex(SystemExit, "by hand"):
                 deliver.mark("models", "2026-10-21", "discord", "failed")
+            # After a human reconciles the missing cards, marking done prevents resends.
+            deliver.mark("models", "2026-10-21", "discord", "done")
+            deliver.run("send", "models", "2026-10-21", work)
+            self.assertEqual(len(self.sent(target)), 2)
 
 
     def test_deploy_posts_hold_failures_until_their_service_deploys_and_never_send_twice(self):

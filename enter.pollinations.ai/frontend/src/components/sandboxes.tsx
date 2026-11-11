@@ -417,15 +417,14 @@ function SandboxCard({
 // pauses and kills.
 const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
 
-/** How many sandboxes run and how many are paused, on the drawer's Sandboxes
- * row, each with its icon as the balances have theirs; nothing at zero. */
+/** How many sandboxes run, on the drawer's Sandboxes row, with a green play
+ * icon as the balances have theirs; nothing at zero. Paused ones cost
+ * nothing and pile up, so they stay on the page. */
 export function SidebarSandboxes() {
-    const [counts, setCounts] = useState({ running: 0, paused: 0 });
+    const [running, setRunning] = useState(0);
     useEffect(() => {
-        const count = (list: Sandbox[]) => {
-            const running = list.filter((s) => s.state === "running").length;
-            setCounts({ running, paused: list.length - running });
-        };
+        const count = (list: Sandbox[]) =>
+            setRunning(list.filter((s) => s.state === "running").length);
         const onLoaded = (event: Event) =>
             count((event as CustomEvent<Sandbox[]>).detail);
         e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});
@@ -433,29 +432,16 @@ export function SidebarSandboxes() {
         return () =>
             window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
     }, []);
-    if (counts.running + counts.paused === 0) return null;
+    if (running === 0) return null;
     return (
         <Chip
             intent="neutral"
             size="sm"
             className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
         >
-            {counts.running > 0 && (
-                <>
-                    <PlayIcon className="h-3 w-3 shrink-0 text-intent-success-text" />
-                    {counts.running}
-                    <span className="sr-only"> running</span>
-                </>
-            )}
-            {counts.paused > 0 && (
-                <>
-                    <PauseIcon
-                        className={`h-3 w-3 shrink-0 text-theme-text-muted ${counts.running > 0 ? "ml-1" : ""}`}
-                    />
-                    {counts.paused}
-                    <span className="sr-only"> paused</span>
-                </>
-            )}
+            <PlayIcon className="h-3 w-3 shrink-0 text-intent-success-text" />
+            {running}
+            <span className="sr-only"> running</span>
         </Chip>
     );
 }

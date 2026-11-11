@@ -13,13 +13,11 @@ import {
     Dropdown,
     DropdownItem,
     Field,
-    IconButton,
     InlineLink,
     Input,
     PauseIcon,
     PlayIcon,
     PlusIcon,
-    RefreshIcon,
     Section,
     Surface,
     TabButton,
@@ -497,8 +495,16 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         }
     }, [signedIn]);
 
+    // No refresh button: the list reloads after every action and whenever
+    // you come back to the tab, so a sandbox that paused meanwhile shows it.
     useEffect(() => {
         void load();
+        const onVisible = () => {
+            if (document.visibilityState === "visible") void load();
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return () =>
+            document.removeEventListener("visibilitychange", onVisible);
     }, [load]);
 
     async function run(id: string, action: () => Promise<unknown>) {
@@ -623,19 +629,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     return (
         <>
             {hasSandboxes && (
-                <Section
-                    title="Your sandboxes"
-                    action={
-                        <IconButton
-                            size="md"
-                            variant="ghost"
-                            title="Refresh"
-                            onClick={() => void load()}
-                        >
-                            <RefreshIcon className="h-4 w-4" />
-                        </IconButton>
-                    }
-                >
+                <Section title="Your sandboxes">
                     {alerts}
                     {/* The limit shows only once it's reached; the footnote
                         below the templates names it otherwise. */}

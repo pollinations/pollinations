@@ -29,7 +29,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import { WalletKindIcon } from "@pollinations/ui/wallet";
+import { TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     SANDBOX_PROVIDERS,
     sandboxTemplate,
@@ -44,6 +44,7 @@ import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
+import { LAUNCH_DISCOUNT, SandboxTemplateList } from "./sandbox-templates.tsx";
 
 // Gen serves E2B's API here and keeps the sandbox rules and billing.
 const E2B_PATH = "/alpha/e2b";
@@ -130,23 +131,35 @@ const perSecond = (pricing: Pricing, template: string, size: Size) => {
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
 
-const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
-
-// The cheapest size's hourly price, for the card's footnote.
-const cheapestHourly = (pricing: Pricing) =>
-    Math.min(
-        ...Object.entries(pricing.templates).map(
-            ([template, size]) => perSecond(pricing, template, size) * 3600,
-        ),
-    );
-
-const templateLabel = (id: string) => {
+// What a template gives you, as its title: "2 vCPU · 2 GB memory · 26 GB
+// disk". The size comes from the registry, or from the sandbox or pricing for
+// a template the registry doesn't list (no disk then).
+const templateTitle = (id: string, size?: Size) => {
     const template = sandboxTemplate(id);
-    return template
-        ? `${template.name} (${SANDBOX_PROVIDERS[template.provider].name})`
-        : id;
+    const { cpuCount, memoryMB } = size ?? template ?? {};
+    return [
+        cpuCount && `${cpuCount} vCPU`,
+        memoryMB && `${memoryMB / 1024} GB memory`,
+        template && `${Math.round(template.diskSizeMB / 1024)} GB disk`,
+    ]
+        .filter(Boolean)
+        .join(" · ");
 };
+
+// Where it runs, shown quieter beside the title; another E2B template shows
+// its own name.
+const templateSource = (id: string) => {
+    const template = sandboxTemplate(id);
+    return template ? SANDBOX_PROVIDERS[template.provider].name : id;
+};
+
+// The picker's title: the size, then where it runs in quieter brackets.
+const TemplateName = ({ id, size }: { id: string; size?: Size }) => (
+    <>
+        {templateTitle(id, size)}{" "}
+        <span className="font-normal opacity-60">({templateSource(id)})</span>
+    </>
+);
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>
@@ -172,13 +185,19 @@ function TemplatePicker({
     error: string | null;
     onChange: (template: string, custom?: boolean) => void;
 }) {
+    // Open, each option has room: the size and where it runs, then its price
+    // and that Quest pollen pays for it (as every sandbox can).
     const option = (id: string, size: Size) => (
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-            <span className="font-semibold">{templateLabel(id)}</span>
-            <span className="text-xs font-normal text-theme-text-muted">
-                {sizeLabel(size)} ·{" "}
-                {pollen(perSecond(pricing, id, size) * 3600)}
-                /hour
+            <span className="font-semibold">
+                <TemplateName id={id} size={size} />
+            </span>
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-normal text-theme-text-muted">
+                <span>{pollen(perSecond(pricing, id, size) * 3600)}/hour</span>
+                <TierChip size="sm">
+                    <WalletKindIcon kind="tier" />
+                    Quest
+                </TierChip>
             </span>
         </span>
     );
@@ -207,22 +226,15 @@ function TemplatePicker({
                             className="w-full min-w-0 self-stretch justify-between gap-2"
                         >
                             <span className="min-w-0 truncate">
-                                {custom
-                                    ? "Other E2B template"
-                                    : templateLabel(template)}
+                                {custom ? (
+                                    "Other E2B template"
+                                ) : (
+                                    <TemplateName
+                                        id={template}
+                                        size={pricing.templates[template]}
+                                    />
+                                )}
                             </span>
-                            {!custom && pricing.templates[template] && (
-                                <span className="ml-auto whitespace-nowrap text-xs font-normal">
-                                    {pollen(
-                                        perSecond(
-                                            pricing,
-                                            template,
-                                            pricing.templates[template],
-                                        ) * 3600,
-                                    )}
-                                    /hour
-                                </span>
-                            )}
                             <ChevronIcon
                                 expanded={open}
                                 className="h-4 w-4 shrink-0"
@@ -326,8 +338,8 @@ function SandboxCard({
                         {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
-                        {templateLabel(templateOf(sandbox))} ·{" "}
-                        {sizeLabel(sandbox)} ·{" "}
+                        {templateTitle(templateOf(sandbox), sandbox)} ·{" "}
+                        {templateSource(templateOf(sandbox))} ·{" "}
                         {pollen(
                             perSecond(pricing, templateOf(sandbox), sandbox) *
                                 3600,
@@ -394,7 +406,38 @@ function SandboxCard({
     );
 }
 
-export function Sandboxes() {
+// The page tells the drawer after every load, so its count follows starts,
+// pauses and kills.
+const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
+
+/** How many sandboxes run, on the drawer's Sandboxes row; nothing at zero. */
+export function SidebarSandboxes() {
+    const [running, setRunning] = useState(0);
+    useEffect(() => {
+        const count = (list: Sandbox[]) =>
+            setRunning(list.filter((s) => s.state === "running").length);
+        const onLoaded = (event: Event) =>
+            count((event as CustomEvent<Sandbox[]>).detail);
+        e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});
+        window.addEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
+        return () =>
+            window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
+    }, []);
+    if (running === 0) return null;
+    return (
+        <Chip
+            intent="neutral"
+            size="sm"
+            className="ml-auto bg-transparent text-theme-text-soft"
+        >
+            {running} running
+        </Chip>
+    );
+}
+
+// Your sandboxes, then the templates you start new ones from. Signed out
+// the templates are just a price list; the sign-in banner is the way in.
+export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -408,12 +451,19 @@ export function Sandboxes() {
     const load = useCallback(async () => {
         setLoadError(null);
         try {
+            // The pricing is public: signed out it still lists the
+            // templates that can start; your sandboxes need you signed in.
             const [prices, list] = await Promise.all([
                 e2b<Pricing>("/pricing"),
-                e2b<Sandbox[]>("/v2/sandboxes"),
+                signedIn ? e2b<Sandbox[]>("/v2/sandboxes") : [],
             ]);
             setPricing(prices);
             setSandboxes(list);
+            if (signedIn) {
+                window.dispatchEvent(
+                    new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list }),
+                );
+            }
         } catch (error) {
             setLoadError(
                 error instanceof Error
@@ -421,7 +471,7 @@ export function Sandboxes() {
                     : "Couldn’t load sandboxes.",
             );
         }
-    }, []);
+    }, [signedIn]);
 
     useEffect(() => {
         void load();
@@ -519,31 +569,13 @@ export function Sandboxes() {
         );
     }
 
-    const createAction = (
-        <Button
-            intent="commit"
-            type="button"
-            icon={<TerminalIcon />}
-            aria-busy={creating}
-            aria-haspopup="dialog"
-            disabled={full || creating}
-            onClick={() =>
-                setPending({
-                    action: "create",
-                    name: generateFunName(),
-                    template: "pollinations",
-                })
-            }
-        >
-            {creating ? "Creating…" : "Create"}
-        </Button>
-    );
-
     return (
         <Section
             title="Sandboxes"
+            // Refresh updates your sandboxes' state; with none there's
+            // nothing to refresh.
             action={
-                <ButtonGroup>
+                sandboxes.length > 0 && (
                     <IconButton
                         size="md"
                         variant="ghost"
@@ -553,8 +585,7 @@ export function Sandboxes() {
                     >
                         <RefreshIcon className="h-4 w-4" />
                     </IconButton>
-                    {sandboxes.length > 0 && createAction}
-                </ButtonGroup>
+                )
             }
         >
             {loadError && (
@@ -577,60 +608,84 @@ export function Sandboxes() {
                 </Alert>
             )}
             <SectionContent loading={loading}>
-                {pricing && (
-                    <div className="flex flex-col gap-3">
-                        {sandboxes.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {pricing && sandboxes.length > 0 && (
+                        <>
                             <Text size="sm" tone={full ? "strong" : "muted"}>
                                 {running} of {pricing.maxRunning} running.
                                 {full &&
                                     " Pause or kill one to start or resume another."}
                             </Text>
-                        )}
-                        <div className="flex flex-col gap-2" aria-live="polite">
-                            {sandboxes.map((sandbox) => (
-                                <SandboxCard
-                                    key={sandbox.sandboxID}
-                                    sandbox={sandbox}
-                                    pricing={pricing}
-                                    busy={busyId === sandbox.sandboxID}
-                                    onConnect={() =>
-                                        setPending({
-                                            action: "connect",
-                                            sandbox,
-                                        })
-                                    }
-                                    onLimit={() => {
-                                        setUntilStopped(false);
-                                        setPending({
-                                            action: "limit",
-                                            sandbox,
-                                        });
-                                    }}
-                                    onPause={() =>
-                                        void run(sandbox.sandboxID, () =>
-                                            e2b(
-                                                `/sandboxes/${sandbox.sandboxID}/pause`,
-                                                "POST",
-                                            ),
-                                        )
-                                    }
-                                    onKill={() =>
-                                        setPending({ action: "kill", sandbox })
-                                    }
-                                />
-                            ))}
-                            {!sandboxes.length && (
-                                <Surface className="p-6 text-center">
-                                    <div className="mb-2">{createAction}</div>
-                                    <p className="text-sm text-theme-text-muted">
-                                        A Linux computer in the cloud. Open it
-                                        with ssh or VS Code.
-                                    </p>
-                                </Surface>
-                            )}
-                        </div>
-                    </div>
-                )}
+                            <div
+                                className="flex flex-col gap-2"
+                                aria-live="polite"
+                            >
+                                {sandboxes.map((sandbox) => (
+                                    <SandboxCard
+                                        key={sandbox.sandboxID}
+                                        sandbox={sandbox}
+                                        pricing={pricing}
+                                        busy={busyId === sandbox.sandboxID}
+                                        onConnect={() =>
+                                            setPending({
+                                                action: "connect",
+                                                sandbox,
+                                            })
+                                        }
+                                        onLimit={() => {
+                                            setUntilStopped(false);
+                                            setPending({
+                                                action: "limit",
+                                                sandbox,
+                                            });
+                                        }}
+                                        onPause={() =>
+                                            void run(sandbox.sandboxID, () =>
+                                                e2b(
+                                                    `/sandboxes/${sandbox.sandboxID}/pause`,
+                                                    "POST",
+                                                ),
+                                            )
+                                        }
+                                        onKill={() =>
+                                            setPending({
+                                                action: "kill",
+                                                sandbox,
+                                            })
+                                        }
+                                    />
+                                ))}
+                            </div>
+                            {/* Your sandboxes above, new ones below. */}
+                            <h3 className="pt-2 font-body text-sm font-bold uppercase tracking-wide text-theme-text-muted">
+                                New sandbox
+                            </h3>
+                        </>
+                    )}
+                    {/* Gen's pricing lists the templates that can start,
+                        so the cards and the create picker always agree. */}
+                    {pricing && (
+                        <SandboxTemplateList
+                            templates={Object.keys(pricing.templates)}
+                            create={
+                                signedIn
+                                    ? {
+                                          label: creating
+                                              ? "Creating…"
+                                              : "Create",
+                                          disabled: full || creating,
+                                          onCreate: (template) =>
+                                              setPending({
+                                                  action: "create",
+                                                  name: generateFunName(),
+                                                  template,
+                                              }),
+                                      }
+                                    : undefined
+                            }
+                        />
+                    )}
+                </div>
             </SectionContent>
             {/* The dashboard's footnote block: 8px between lines, as on every
                 other page. */}
@@ -638,55 +693,41 @@ export function Sandboxes() {
                 <p className="flex items-start gap-1.5">
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Pay with{" "}
-                        <span className="whitespace-nowrap">
-                            <WalletKindIcon
-                                kind="tier"
-                                className="mr-1 inline align-[-2px]"
-                            />
-                            Quest Pollen
-                        </span>{" "}
-                        or{" "}
-                        <span className="whitespace-nowrap">
-                            <WalletKindIcon
-                                kind="paid"
-                                className="mr-1 inline align-[-2px]"
-                            />
-                            Paid Pollen
-                        </span>{" "}
-                        in 10-minute steps
-                        {pricing && (
-                            <>
-                                , from {pollen(cheapestHourly(pricing))} an hour
-                            </>
-                        )}
-                        . Each size’s price shows when you create one.
+                        Paid 10 minutes at a time.
+                        {LAUNCH_DISCOUNT > 0 &&
+                            ` Launch price: ${LAUNCH_DISCOUNT}% off.`}
                     </span>
                 </p>
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        A paused sandbox costs nothing and keeps its files.
-                        Sandboxes pause when their time runs out
+                        Sandboxes pause when their time runs out. A paused one
+                        costs nothing, keeps its files and resumes when you
+                        connect.
                         {pricing && (
-                            <>; up to {pricing.maxRunning} run at once</>
+                            <> Up to {pricing.maxRunning} run at once.</>
                         )}
-                        .
                     </span>
                 </p>
                 <div className="flex items-start gap-1.5">
                     <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <p>
-                            Connect to your sandbox with SSH: run this once,
-                            then use the ssh command on its card. A paused
-                            sandbox resumes, and it keeps running while you’re
-                            connected, paid 10 minutes at a time.
+                            A Linux computer in the cloud.
+                            {signedIn &&
+                                " Connect with SSH or VS Code: run this once, then use the ssh command on its card."}{" "}
+                            See the{" "}
+                            <InlineLink href={genDocsUrl("#tag/sandboxes")}>
+                                Sandboxes docs
+                            </InlineLink>
+                            .
                         </p>
-                        <CopyField
-                            label="Copy the polli setup command"
-                            value={SSH_SETUP}
-                        />
+                        {signedIn && (
+                            <CopyField
+                                label="Copy the polli setup command"
+                                value={SSH_SETUP}
+                            />
+                        )}
                     </div>
                 </div>
             </Footnotes>
@@ -828,12 +869,16 @@ export function Sandboxes() {
                                         Template
                                     </dt>
                                     <dd>
-                                        {templateLabel(
+                                        {templateTitle(
                                             templateOf(pending.sandbox),
+                                            pending.sandbox,
                                         )}
                                         <span className="text-theme-text-muted">
                                             {" "}
-                                            · {sizeLabel(pending.sandbox)}
+                                            ·{" "}
+                                            {templateSource(
+                                                templateOf(pending.sandbox),
+                                            )}
                                         </span>
                                     </dd>
                                     {pricing && (

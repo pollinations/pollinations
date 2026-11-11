@@ -18,7 +18,9 @@ describe.each([
 
     it("still splits comma- and pipe-separated URLs", () => {
         expect(
-            parseImage("https://a.example/1.png, https://b.example/w_1,h_2.png"),
+            parseImage(
+                "https://a.example/1.png, https://b.example/w_1,h_2.png",
+            ),
         ).toEqual(["https://a.example/1.png", "https://b.example/w_1,h_2.png"]);
         expect(
             parseImage("https://a.example/1,2.png|https://b.example/2.png"),

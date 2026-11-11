@@ -121,7 +121,7 @@ export const SandboxTemplateList: FC<{
                                 ))}
                             </dl>
                         </div>
-                        <div className="grid grid-cols-[6.5rem_auto_minmax(0,1fr)] gap-x-1 @xl:w-64 @xl:shrink-0">
+                        <div className="grid grid-cols-[6.5rem_auto_auto] gap-x-1 self-start @xl:ml-auto @xl:self-center">
                             <LedgerRow Icon={WalletIcon} label="Pollen">
                                 <div className="col-span-2 flex">
                                     <BalanceAccessChip access="quest" />
@@ -135,17 +135,14 @@ export const SandboxTemplateList: FC<{
                                     /hour
                                 </span>
                             </LedgerRow>
-                            {/* The same price over a month left on, small and
-                                unlabelled under the hourly one. */}
-                            <div className="col-span-full grid grid-cols-subgrid items-center">
-                                <span aria-hidden="true" />
+                            <LedgerRow Icon={ClockIcon} label="Per month">
                                 <span className="text-right text-xs tabular-nums text-theme-text-muted">
                                     {amount(perHour * HOURS_PER_MONTH)}
                                 </span>
                                 <span className="text-xs text-theme-text-muted">
                                     /month
                                 </span>
-                            </div>
+                            </LedgerRow>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 @md:flex-row @md:items-center">

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "✍️",
+    "name": "Stretchtext for Pollinations",
+    "url": "https://tomdacatto.github.io/pollinations-stretchtext",
+    "description": "Browser extension that shrinks any page to a short version with Pollinations AI. Click a phrase to grow the original sentence back in place, word for word. Readers pay with their own Pollen.",
+    "language": "en",
+    "category": "writing",
+    "platform": "browser-ext",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-stretchtext",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18021",
+    "approvedDate": "2026-11-11",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/249c6a2d-1c21-46c1-95f3-e89eb6457941"
+  },
+  {
+    "emoji": "✍️",
     "name": "StretchText",
     "url": "https://rekty.github.io/stretchtext",
     "description": "Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request spends the reader's own Pollen via the device flow. No build step, live model list, tested.",

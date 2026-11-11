@@ -1026,9 +1026,11 @@ function isImplausibleProxyUsage(
     let prompt = 0;
     let completion = 0;
     for (const [type, amount] of Object.entries(usage)) {
-        // A negative count would cancel a large one in the sum. Negated, so
-        // a count that is not a number is implausible too.
-        if (!(amount >= 0)) return true;
+        // Checked before it is summed: a negative count would cancel a large
+        // one, and text that reads as a number ("0x1") would turn the sum
+        // into text, which is never over a ceiling. Number.isFinite does
+        // not convert, so only a real number passes.
+        if (!Number.isFinite(amount) || amount < 0) return true;
         if (type.startsWith("prompt")) prompt += amount;
         else completion += amount;
     }

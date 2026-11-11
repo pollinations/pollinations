@@ -28,6 +28,7 @@ import {
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -4176,13 +4177,45 @@ describe("trackResponse community proxy usage", () => {
         },
     );
 
-    // An empty answer is an error the provider still charged for.
+    // An empty answer is an error the provider still charged for. The text
+    // handler normalizes its usage as reported, with no schema in between.
+    // The total counts the reasoning on top, so the details are kept as
+    // they are and none is capped to the completion tokens.
+    const emptyAnswer = (imageTokens: unknown, completionTokens = 10) =>
+        openaiUsageToUsage({
+            prompt_tokens: 1,
+            completion_tokens: completionTokens,
+            total_tokens: completionTokens + 2,
+            completion_tokens_details: {
+                image_tokens: imageTokens as never,
+                reasoning_tokens: 1,
+            },
+        });
+
     it.each([
-        ["past the ceiling", 200_001, false],
-        ["at the ceiling", 200_000, true],
+        [
+            "past the ceiling",
+            { promptTextTokens: 1, completionTextTokens: 200_001 },
+            false,
+        ],
+        [
+            "at the ceiling",
+            { promptTextTokens: 1, completionTextTokens: 200_000 },
+            true,
+        ],
+        ["a null count is a missing one", emptyAnswer(null), true],
+        // Text that reads as a number turns the sum into text, and text is
+        // never over a ceiling: this one billed 2,000,001 completion tokens.
+        ["a hex string count", emptyAnswer("0x1", 2_000_001), false],
+        ["a hex string count on a small answer", emptyAnswer("0x1"), false],
+        ["a numeric string count", emptyAnswer("1"), false],
+        ["a word for a count", emptyAnswer("bad"), false],
+        ["a boolean count", emptyAnswer(true), false],
+        ["an infinite count", emptyAnswer(Number.POSITIVE_INFINITY), false],
+        ["a negative count", emptyAnswer(-5), false],
     ])(
         "bills a proxy's failed answer only within the ceiling: %s",
-        async (_name, completionTextTokens, isBilledUsage) => {
+        async (_name, billedUsage, isBilledUsage) => {
             const tracking = await trackResponse(
                 "generate.text",
                 requestTrackingFixture(),
@@ -4191,7 +4224,7 @@ describe("trackResponse community proxy usage", () => {
                 undefined,
                 new UpstreamError(502, {
                     message: "Provider returned an empty response",
-                    billedUsage: { promptTextTokens: 1, completionTextTokens },
+                    billedUsage,
                 }),
             );
             expect(tracking).toMatchObject({

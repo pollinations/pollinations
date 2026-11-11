@@ -64,6 +64,7 @@ type StripeCheckoutSession = {
     metadata?: Record<string, string>;
     payment_status?: "paid" | "unpaid";
     payment_intent?: string | null;
+    amount_subtotal?: number | null;
 };
 
 type StripePortalSession = {

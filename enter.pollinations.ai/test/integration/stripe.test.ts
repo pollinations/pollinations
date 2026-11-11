@@ -4725,13 +4725,14 @@ const REFUNDED_SESSION = {
     url: null,
     status: "complete",
     payment_intent: "pi_refunded",
+    amount_subtotal: 1000,
 };
 
 /** A paid p10 checkout from January, credited through the webhook, that Stripe can find by its payment. Auto top-up is on. */
 async function buyRefundablePack(stripeState: MockStripeState) {
     const userId = await getSeededUserId();
     const balanceBefore = (await readRefundState(userId)).packBalance;
-    await completeCheckoutWithCard(stripeState, {
+    const { event: purchase } = await completeCheckoutWithCard(stripeState, {
         id: "refunded",
         allowRedisplay: "always",
     });
@@ -4744,7 +4745,7 @@ async function buyRefundablePack(stripeState: MockStripeState) {
             "UPDATE user SET auto_top_up_enabled = 1 WHERE id = ?",
         ).bind(userId),
     ]);
-    return { userId, balanceBefore };
+    return { userId, balanceBefore, purchase };
 }
 
 function chargeRefundedEvent(
@@ -4791,7 +4792,7 @@ test("charge.refunded takes a fully refunded pack back once, and the next purcha
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
-    const { userId, balanceBefore } = await buyRefundablePack(
+    const { userId, balanceBefore, purchase } = await buyRefundablePack(
         mocks.stripe.state,
     );
     expect(await readRefundState(userId)).toEqual({
@@ -4807,6 +4808,8 @@ test("charge.refunded takes a fully refunded pack back once, and the next purcha
         );
         expect(response.status).toBe(200);
     }
+    // That holds for the purchase too: it must not give the pack back.
+    expect((await postSignedStripeWebhook(purchase)).status).toBe(200);
     // Auto top-up goes off: the lower balance must not charge the card again.
     expect(await readRefundState(userId)).toEqual({
         packBalance: balanceBefore,
@@ -4919,23 +4922,41 @@ test("charge.refunded fails until its purchase is credited, then takes the pack 
 });
 
 // Sent again only while the purchase can still be credited: these never are.
-test.for<[string, (userId: string) => Record<string, string>]>([
-    ["has no buyer", () => ({ packKey: "p10" })],
-    ["has an unknown pack", (userId) => ({ userId, packKey: "p_gone" })],
+test.for<
+    [
+        string,
+        (userId: string) => {
+            metadata: Record<string, string>;
+            amount_subtotal?: number;
+        },
+    ]
+>([
+    ["has no buyer", () => ({ metadata: { packKey: "p10" } })],
+    [
+        "has an unknown pack",
+        (userId) => ({ metadata: { userId, packKey: "p_gone" } }),
+    ],
     [
         "belongs to a deleted account",
-        () => ({ userId: "deleted-account", packKey: "p10" }),
+        () => ({ metadata: { userId: "deleted-account", packKey: "p10" } }),
+    ],
+    [
+        "paid nothing",
+        (userId) => ({
+            metadata: { userId, packKey: "p10" },
+            amount_subtotal: 0,
+        }),
     ],
 ])(
     "charge.refunded is acknowledged when its uncredited checkout %s",
-    async ([, metadata], { sessionToken, mocks }) => {
+    async ([, session], { sessionToken, mocks }) => {
         void sessionToken;
         await mocks.enable("stripe", "tinybird");
         const userId = await getSeededUserId();
         const before = await readRefundState(userId);
         mocks.stripe.state.checkoutSessions.push({
             ...REFUNDED_SESSION,
-            metadata: metadata(userId),
+            ...session(userId),
         });
 
         const response = await postSignedStripeWebhook(

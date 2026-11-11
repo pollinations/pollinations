@@ -30,7 +30,11 @@ import {
 } from "react";
 import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageLoading,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { Footnotes } from "../pollen/pollen-balance.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
@@ -440,21 +444,15 @@ export function CommunityEndpoints({
         </Button>
     );
 
-    if (isLoading || (error && !hasLoaded)) {
-        return (
-            <DeploymentsPlaceholder
-                error={isLoading ? null : error}
-                onRetry={() => {
-                    setIsLoading(true);
-                    void loadEndpoints();
-                }}
-            />
-        );
-    }
+    // Agents and models wait for their own requests inside the card, so the
+    // tabs, and the Apps tab with its own data, stay usable meanwhile.
+    const endpointsPending = isLoading || (!!error && !hasLoaded);
 
     return (
         <>
-            {error && <Alert intent="danger">{error}</Alert>}
+            {error && hasLoaded && listingTab !== "apps" && (
+                <Alert intent="danger">{error}</Alert>
+            )}
             {/* One card: agents, models and apps behind tab buttons, then the
                 tab's note. The open tab's Create sits on the tab row. */}
             <Section title="My listings" id="listings">
@@ -482,12 +480,26 @@ export function CommunityEndpoints({
                     </div>
                     {listingTab === "apps"
                         ? appsTab.action
-                        : listingTab === "agents"
-                          ? agentEndpoints.length > 0 && agentAction
-                          : modelEndpoints.length > 0 && modelAction}
+                        : endpointsPending
+                          ? null
+                          : listingTab === "agents"
+                            ? agentEndpoints.length > 0 && agentAction
+                            : modelEndpoints.length > 0 && modelAction}
                 </div>
                 {listingTab === "apps" ? (
                     appsTab.content
+                ) : endpointsPending ? (
+                    <SectionContent loading={isLoading}>
+                        <LoadError
+                            onRetry={() => {
+                                setIsLoading(true);
+                                void loadEndpoints();
+                            }}
+                            paths={["/account/my-models", "/account/agents"]}
+                        >
+                            {error ?? ""}
+                        </LoadError>
+                    </SectionContent>
                 ) : (
                     <>
                         {listingTab === "agents" ? (
@@ -565,7 +577,9 @@ export function CommunityEndpoints({
             {/* One publisher for all your public agents and models, so it
                 sits in its own card rather than inside a listings tab; apps
                 don't use it, so the Apps tab hides it. */}
-            {canPublish && listingTab !== "apps" && (
+            {/* Its fields load with your agents and models; empty ones
+                would save over the real details. */}
+            {canPublish && listingTab !== "apps" && !endpointsPending && (
                 <Section title="Publisher" id="publisher">
                     <form
                         className="flex flex-col gap-3"

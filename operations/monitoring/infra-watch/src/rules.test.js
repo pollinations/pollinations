@@ -10,6 +10,7 @@ import {
     duration,
     earlyErrors,
     escalates,
+    gpuPoolsMissing,
     heartbeat,
     jobsStale,
     legacyDown,
@@ -989,4 +990,19 @@ test("a job is stale past its table's max age, after 3 checks, pinging as the ta
         { now: 0 },
     );
     assert.match(plain(card.text), /none in the last day/);
+});
+
+test("GPU pool counts flag capacity below the expected fleet and allow replacements", () => {
+    const found = gpuPoolsMissing({ flux: [], zimage: [{}], sana: [{}] });
+    assert.deepEqual(Object.keys(found), ["gpu:flux", "gpu:sana"]);
+    assert.deepEqual(found["gpu:sana"], {
+        kind: "GPU_MISSING",
+        pool: "sana",
+        active: 1,
+        expected: 2,
+    });
+    assert.deepEqual(
+        gpuPoolsMissing({ flux: [{}], zimage: [{}], sana: [{}, {}, {}] }),
+        {},
+    );
 });

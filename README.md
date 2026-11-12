@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 One Question](https://sugamdeol.github.io/one-question) | Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and the reader's own Pollen pays. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [✍️ Tell Tale](https://sugamdeol.github.io/tell-tale) | Paste prose. See which sentences carry the LLM voice and exactly which tell fired. Then have it rewritten in a register you pick, not in a nicer version of the same voice. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [💬 The Call That Never Ends](https://arvex-gh.github.io/the-call-that-never-ends) | Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo. | [@Arvex-GH](https://github.com/Arvex-GH) |
 | [💬 Two AIs Talk](https://two-ais-talk.pollinations.app) | Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen. | [@hellway803-creator](https://github.com/hellway803-creator) |
@@ -30,7 +31,6 @@
 | [📚 Glassbox Lab](https://patbing.github.io/glassbox-lab) | Type a science topic and get a live simulation with sliders, a guided tour, predict-then-test questions checked by the simulation itself, and Wikipedia sources. BYOP. | [@patbing](https://github.com/patbing) |
 | [🎮 Machine Double](https://patbing.github.io/machine-double) | An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen. | [@patbing](https://github.com/patbing) |
 | [🎮 Left Alone](https://sugamdeol.github.io/left-alone) | Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [🎮 Decision Pit](https://patbing.github.io/decision-pit) | AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP. | [@patbing](https://github.com/patbing) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

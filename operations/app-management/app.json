@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "One Question",
+    "url": "https://sugamdeol.github.io/one-question",
+    "description": "Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and the reader's own Pollen pays.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/one-question",
+    "repositoryStars": null,
+    "discordUsername": "*No response*",
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19227",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d1dfafd0-a16e-4208-a2ee-28e9a734a9ac"
+  },
+  {
     "emoji": "✍️",
     "name": "Tell Tale",
     "url": "https://sugamdeol.github.io/tell-tale",

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Vaultwright",
+    "url": "https://vaultwright.rekty-dev.workers.dev",
+    "description": "A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/vaultwright",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19442",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/fb24869d-90e9-4ee3-9d7a-debf9a59d99f"
+  },
+  {
+    "emoji": "🎮",
     "name": "Empty Room",
     "url": "https://rekty.github.io/empty-room",
     "description": "Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move.",

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Empty Room",
+    "url": "https://rekty.github.io/empty-room",
+    "description": "Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/empty-room",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19445",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/88a07638-1703-45b8-91be-1018c802c5b3"
+  },
+  {
     "emoji": "🖼️",
     "name": "Cover Story",
     "url": "https://rekty.github.io/cover-story",

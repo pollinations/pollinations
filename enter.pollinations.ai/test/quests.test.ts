@@ -1131,63 +1131,75 @@ test("first auto top-up quest records only a paid auto top-up", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
-    const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    const autoTopUpRewards = () =>
-        db
-            .select({ pollenAmount: schema.rewards.pollenAmount })
-            .from(schema.rewards)
-            .where(eq(schema.rewards.questId, FIRST_AUTO_TOP_UP_QUEST_ID));
 
-    await db.insert(schema.stripeAutoTopUpAttempt).values({
-        id: `attempt_${user.id}_failed`,
-        userId: user.id,
-        amountUsd: 5,
-        status: "failed",
-    });
+    await addAutoTopUp(user.id, "failed", "failed", null);
     await checkQuestsForUser(env, user.id);
     expect(await autoTopUpRewards()).toEqual([]);
 
-    await db.insert(schema.stripeAutoTopUpAttempt).values({
-        id: `attempt_${user.id}_paid`,
-        userId: user.id,
-        amountUsd: 5,
-        status: "paid",
-    });
+    await addAutoTopUp(user.id, "paid", "paid", Date.now());
     await checkQuestsForUser(env, user.id);
     expect(await autoTopUpRewards()).toEqual([{ pollenAmount: 20 }]);
 });
 
-test("first auto top-up quest counts only auto top-ups from launch day", async ({
+test("first auto top-up quest counts auto top-ups paid from launch day", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    const autoTopUpRewards = () =>
-        drizzle(env.DB, { schema })
-            .select({ pollenAmount: schema.rewards.pollenAmount })
-            .from(schema.rewards)
-            .where(eq(schema.rewards.questId, FIRST_AUTO_TOP_UP_QUEST_ID));
-    // created_at holds milliseconds; drizzle's timestamp mode would write seconds.
-    const addPaidAutoTopUp = (id: string, createdAt: number) =>
-        env.DB.prepare(
-            `INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status, created_at, updated_at)
-            VALUES (?, ?, 5, 'paid', ?, ?)`,
-        )
-            .bind(`attempt_${user.id}_${id}`, user.id, createdAt, createdAt)
-            .run();
 
     // Users already on auto top-up earn it with their next refill.
-    await addPaidAutoTopUp("before", Date.parse("2026-10-01T00:00:00Z"));
+    await addAutoTopUp(
+        user.id,
+        "before",
+        "paid",
+        Date.parse("2026-10-01T00:00:00Z"),
+    );
     await checkQuestsForUser(env, user.id);
     expect(await autoTopUpRewards()).toEqual([]);
 
-    await addPaidAutoTopUp("after", Date.now());
+    // A charge started before launch but paid after it counts.
+    await addAutoTopUp(
+        user.id,
+        "retried",
+        "paid",
+        Date.parse("2026-10-13T00:01:00Z"),
+        Date.parse("2026-10-12T23:59:00Z"),
+    );
     await checkQuestsForUser(env, user.id);
     expect(await autoTopUpRewards()).toEqual([{ pollenAmount: 20 }]);
 });
+
+const autoTopUpRewards = () =>
+    drizzle(env.DB, { schema })
+        .select({ pollenAmount: schema.rewards.pollenAmount })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, FIRST_AUTO_TOP_UP_QUEST_ID));
+
+// Timestamps hold milliseconds, as the auto top-up code writes them; drizzle's
+// timestamp mode would write seconds.
+const addAutoTopUp = (
+    userId: string,
+    id: string,
+    status: string,
+    completedAt: number | null,
+    createdAt = completedAt ?? Date.now(),
+) =>
+    env.DB.prepare(
+        `INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status, created_at, updated_at, completed_at)
+        VALUES (?, ?, 5, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `attempt_${userId}_${id}`,
+            userId,
+            status,
+            createdAt,
+            createdAt,
+            completedAt,
+        )
+        .run();
 
 test("POST /account/quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,

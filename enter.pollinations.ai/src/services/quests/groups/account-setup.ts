@@ -40,7 +40,7 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS = 1_782_000_000; // 2026-06-21T00:00:0
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS * 1000;
 const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
-// Only auto top-ups from the quest's launch count.
+// Only auto top-ups paid from the quest's launch count.
 const AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL = "13/10/26";
 const AUTO_TOP_UP_QUEST_LAUNCH_MILLIS = Date.parse("2026-10-13T00:00:00Z");
 
@@ -264,7 +264,7 @@ export async function evaluateUser(
         FROM stripe_auto_top_up_attempt
         WHERE stripe_auto_top_up_attempt.user_id = ${user.id}
           AND +stripe_auto_top_up_attempt.status = 'paid'
-          AND stripe_auto_top_up_attempt.created_at >= ${AUTO_TOP_UP_QUEST_LAUNCH_MILLIS}
+          AND stripe_auto_top_up_attempt.completed_at >= ${AUTO_TOP_UP_QUEST_LAUNCH_MILLIS}
         LIMIT 1`)
             : [],
     ]);

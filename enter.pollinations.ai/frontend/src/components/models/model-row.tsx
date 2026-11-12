@@ -1,8 +1,8 @@
-import { formatCount, InlineLink, Surface, Tooltip } from "@pollinations/ui";
+import { formatCount, InlineLink, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
+import { CatalogCard } from "../catalog-card.tsx";
 import { calculatePerPollen } from "./calculations.ts";
-import { CopyValue } from "./copy-value.tsx";
 import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
@@ -218,146 +218,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
           : "quest";
     const pricing = useModelPricingSelection(model);
 
+    // The shared catalog card, as for MCP servers and sandbox templates: the
+    // logo, title and description together, the rest of what the model is
+    // on the lines under them, the price beside, the model id to copy last.
     return (
-        <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
-            {/* Brand logo — fixed width column */}
-            <div className="w-10 shrink-0 flex items-center justify-center">
-                <ModelBrandIcon model={model} />
-            </div>
-
-            {/* Hairline separating the brand logo from the model info —
-                spaced clear of the logo square on both sides */}
-            {hasLeadingIcon && (
-                <span
-                    aria-hidden="true"
-                    className="mx-3 h-10 w-px shrink-0 self-center bg-divider"
-                />
-            )}
-
-            {/* Model info — flexible width; logo-less rows pad to the same
-                start (40px logo + 25px divider footprint = 65px) */}
-            <div
-                className={
-                    brandLogoPath || CommunityModelIcon
-                        ? "flex-1 min-w-0 self-stretch"
-                        : "flex-1 min-w-0 self-stretch pl-[25px]"
-                }
-            >
-                <div className="flex h-full min-w-0 flex-col justify-center gap-2">
-                    <div className="flex min-h-5 min-w-0 items-center text-base font-medium leading-tight">
-                        <ModelTitle model={model} />
-                    </div>
-                    <div className="flex min-h-5 min-w-0 items-center">
-                        <CopyValue
-                            value={model.name}
-                            label={`Copy model id ${model.name}`}
-                            showCopyIcon
-                        />
-                    </div>
-                    {modelDescription && (
-                        <ModelDescription text={modelDescription} />
-                    )}
-                    {model.brandUrl && model.publisher && (
-                        <InlineLink
-                            href={model.brandUrl}
-                            size="footer"
-                            className="inline-flex min-h-5 w-fit max-w-full items-center"
-                        >
-                            <span className="truncate">{model.publisher}</span>
-                        </InlineLink>
-                    )}
-                    {(inputModalities.length > 0 ||
-                        capabilities.length > 0 ||
-                        model.perUserRpm != null) && (
-                        <div className="inline-flex min-h-5 items-center gap-2.5 text-theme-text-muted">
-                            {inputModalities.length > 0 && (
-                                <Tooltip
-                                    content={
-                                        <span>
-                                            <strong className="font-semibold text-theme-text-strong">
-                                                Input:
-                                            </strong>{" "}
-                                            {inputModalities.join(", ")}
-                                        </span>
-                                    }
-                                    ariaLabel={modalityLabel}
-                                    tapEnabled
-                                    displayContents
-                                >
-                                    <span className="inline-flex items-center gap-2">
-                                        {inputModalities.map((key) => {
-                                            const Icon = MODALITY_ICON[key];
-                                            return (
-                                                <Icon
-                                                    key={key}
-                                                    className="h-4 w-4"
-                                                />
-                                            );
-                                        })}
-                                    </span>
-                                </Tooltip>
-                            )}
-                            {inputModalities.length > 0 &&
-                                capabilities.length > 0 && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                            {capabilities.length > 0 && (
-                                <Tooltip
-                                    content={
-                                        <strong className="font-semibold text-theme-text-strong">
-                                            {capabilityLabel}
-                                        </strong>
-                                    }
-                                    ariaLabel={capabilityLabel}
-                                    tapEnabled
-                                    displayContents
-                                >
-                                    <span className="inline-flex items-center gap-2">
-                                        {capabilities.map((key) => {
-                                            const Icon = CAPABILITY_ICON[key];
-                                            return (
-                                                <Icon
-                                                    key={key}
-                                                    className="h-4 w-4"
-                                                />
-                                            );
-                                        })}
-                                    </span>
-                                </Tooltip>
-                            )}
-                            {(inputModalities.length > 0 ||
-                                capabilities.length > 0) &&
-                                model.perUserRpm != null && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                            <PerUserRateLimit value={model.perUserRpm} />
-                        </div>
-                    )}
-                    {(model.health ||
-                        showNew ||
-                        showAlpha ||
-                        (model.agent && model.verified)) && (
-                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                            <ModelStatusChips
-                                health={model.health}
-                                communityProxy={Boolean(
-                                    model.community && !model.agent,
-                                )}
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                                verified={Boolean(
-                                    model.agent && model.verified,
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
+        <CatalogCard
+            split="wide"
+            logo={hasLeadingIcon ? <ModelBrandIcon model={model} /> : null}
+            price={
                 <ModelPricingLedger
                     modelName={model.displayName ?? model.name}
                     pricing={pricing}
+                    className="w-full"
+                    align="left"
                     requestBadge={<BalanceAccessChip access={balanceAccess} />}
                     hasTools={pollinationsTools}
                     requestEstimate={
@@ -366,7 +239,127 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )
                     }
                 />
+            }
+            copy={{ value: model.name, label: `Copy model id ${model.name}` }}
+            details={
+                (model.brandUrl && model.publisher) ||
+                inputModalities.length > 0 ||
+                capabilities.length > 0 ||
+                model.perUserRpm != null ||
+                model.health ||
+                showNew ||
+                showAlpha ||
+                (model.agent && model.verified) ? (
+                    <div className="flex min-w-0 flex-col gap-2">
+                        {model.brandUrl && model.publisher && (
+                            <InlineLink
+                                href={model.brandUrl}
+                                size="footer"
+                                className="inline-flex min-h-5 w-fit max-w-full items-center"
+                            >
+                                <span className="truncate">
+                                    {model.publisher}
+                                </span>
+                            </InlineLink>
+                        )}
+                        {(inputModalities.length > 0 ||
+                            capabilities.length > 0 ||
+                            model.perUserRpm != null) && (
+                            <div className="inline-flex min-h-5 items-center gap-2.5 text-theme-text-muted">
+                                {inputModalities.length > 0 && (
+                                    <Tooltip
+                                        content={
+                                            <span>
+                                                <strong className="font-semibold text-theme-text-strong">
+                                                    Input:
+                                                </strong>{" "}
+                                                {inputModalities.join(", ")}
+                                            </span>
+                                        }
+                                        ariaLabel={modalityLabel}
+                                        tapEnabled
+                                        displayContents
+                                    >
+                                        <span className="inline-flex items-center gap-2">
+                                            {inputModalities.map((key) => {
+                                                const Icon = MODALITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                {inputModalities.length > 0 &&
+                                    capabilities.length > 0 && (
+                                        <span className="h-3.5 w-px bg-current opacity-30" />
+                                    )}
+                                {capabilities.length > 0 && (
+                                    <Tooltip
+                                        content={
+                                            <strong className="font-semibold text-theme-text-strong">
+                                                {capabilityLabel}
+                                            </strong>
+                                        }
+                                        ariaLabel={capabilityLabel}
+                                        tapEnabled
+                                        displayContents
+                                    >
+                                        <span className="inline-flex items-center gap-2">
+                                            {capabilities.map((key) => {
+                                                const Icon =
+                                                    CAPABILITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                {(inputModalities.length > 0 ||
+                                    capabilities.length > 0) &&
+                                    model.perUserRpm != null && (
+                                        <span className="h-3.5 w-px bg-current opacity-30" />
+                                    )}
+                                <PerUserRateLimit value={model.perUserRpm} />
+                            </div>
+                        )}
+                        {(model.health ||
+                            showNew ||
+                            showAlpha ||
+                            (model.agent && model.verified)) && (
+                            <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                                <ModelStatusChips
+                                    health={model.health}
+                                    communityProxy={Boolean(
+                                        model.community && !model.agent,
+                                    )}
+                                    showNew={showNew}
+                                    showAlpha={showAlpha}
+                                    verified={Boolean(
+                                        model.agent && model.verified,
+                                    )}
+                                />
+                            </div>
+                        )}
+                    </div>
+                ) : undefined
+            }
+        >
+            <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-h-5 min-w-0 items-center font-medium leading-tight">
+                    <ModelTitle model={model} />
+                </div>
+                {modelDescription && (
+                    <ModelDescription text={modelDescription} />
+                )}
             </div>
-        </Surface>
+        </CatalogCard>
     );
 };

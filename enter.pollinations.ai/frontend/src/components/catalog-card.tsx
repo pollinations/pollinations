@@ -26,22 +26,30 @@ const SPLIT = {
  * The list needs `@container`.
  */
 export const CatalogCard: FC<{
+    /** Without one (a model with no brand logo), the text keeps its place. */
     logo: ReactNode;
     children: ReactNode;
+    /** More about it on its own lines under the logo row, from the left. */
+    details?: ReactNode;
     price: ReactNode;
     copy?: { value: string; label: string };
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({ logo, children, price, copy, action, split = "half" }) => (
+}> = ({ logo, children, details, price, copy, action, split = "half" }) => (
     <Surface className="flex flex-col gap-3">
         <div className={`grid gap-3 ${SPLIT[split].top}`}>
-            <div className="flex min-w-0 items-center gap-2.5">
-                {logo}
-                <span
-                    aria-hidden="true"
-                    className="h-10 w-px shrink-0 bg-divider"
-                />
-                <div className="min-w-0 flex-1">{children}</div>
+            <div className="flex min-w-0 flex-col gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    {logo ?? (
+                        <span aria-hidden="true" className="w-8 shrink-0" />
+                    )}
+                    <span
+                        aria-hidden="true"
+                        className={`h-10 w-px shrink-0 bg-divider ${logo ? "" : "invisible"}`}
+                    />
+                    <div className="min-w-0 flex-1">{children}</div>
+                </div>
+                {details}
             </div>
             <div className="min-w-0">{price}</div>
         </div>

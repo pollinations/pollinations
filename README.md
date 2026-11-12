@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Empty Room](https://rekty.github.io/empty-room) | Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move. | [@rekty](https://github.com/rekty) |
 | [🖼️ Cover Story](https://rekty.github.io/cover-story) | Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested. | [@rekty](https://github.com/rekty) |
 | [📚 Phenomena Lab](https://phenomena-lab.jm716111.chatgpt.site) | Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [📚 Unfold](https://sugamdeol.github.io/unfold) | Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it. | [@Sugamdeol](https://github.com/Sugamdeol) |
@@ -30,7 +31,6 @@
 | [💬 Model Table](https://heisenberg22077.github.io/pollinations-model-arena) | Compare 13 Pollinations AI models side by side with BYOP, response timing, token metrics, Pollen cost estimates and a concurrent FLUX visual answer, in an interactive pixel garden. | [@Heisenberg22077](https://github.com/Heisenberg22077) |
 | [💬 One Question](https://sugamdeol.github.io/one-question) | Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and the reader's own Pollen pays. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [✍️ Tell Tale](https://sugamdeol.github.io/tell-tale) | Paste prose. See which sentences carry the LLM voice and exactly which tell fired. Then have it rewritten in a register you pick, not in a nicer version of the same voice. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [💬 The Call That Never Ends](https://arvex-gh.github.io/the-call-that-never-ends) | Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo. | [@Arvex-GH](https://github.com/Arvex-GH) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

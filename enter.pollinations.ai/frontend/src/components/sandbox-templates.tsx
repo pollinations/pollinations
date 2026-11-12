@@ -1,17 +1,11 @@
-import {
-    Button,
-    ClockIcon,
-    CopyField,
-    Surface,
-    TerminalIcon,
-    WalletIcon,
-} from "@pollinations/ui";
+import { Button, ClockIcon, TerminalIcon, WalletIcon } from "@pollinations/ui";
 import {
     SANDBOX_PROVIDERS,
     SANDBOX_TEMPLATES,
     type SandboxProvider,
 } from "@shared/registry/sandbox.ts";
 import type { FC, ReactNode } from "react";
+import { CatalogCard } from "./catalog-card.tsx";
 import { BalanceAccessChip } from "./models/model-status-chips.tsx";
 
 // Two significant digits, as the prices are shown.
@@ -90,9 +84,8 @@ const LedgerRow: FC<{
     </div>
 );
 
-// Every sandbox template with its price; each Create starts a sandbox from it. Like a Models list card: the
-// provider and the size on the left, the price ledger on the right, then the
-// two ways to start one, the polli command and Create.
+// Every sandbox template with its price, on the shared catalog card: the
+// provider and the size, the price, then the polli command and Create.
 export const SandboxTemplateList: FC<{
     /** Gen's hourly price per template it can start; the registry adds the
      * details. */
@@ -104,70 +97,55 @@ export const SandboxTemplateList: FC<{
         onCreate: (template: string) => void;
     };
 }> = ({ prices, create }) => (
-    <div className="@container flex flex-col gap-3">
-        {SANDBOX_TEMPLATES.filter(({ id }) => id in prices).map((template) => {
-            const perHour = prices[template.id];
-            return (
-                // From half a screen, two rows: the size and the price, then
-                // the command and Create. The price block is 12rem wide, so
-                // when wide Create's 12rem slot starts at the price's icons;
-                // at half a screen it sits flush right to leave the command
-                // room. Stacked on phones.
-                <Surface key={template.id} className="flex flex-col gap-3">
-                    <div className="grid gap-3 @lg:grid-cols-[minmax(0,1fr)_12rem] @lg:items-center @lg:gap-x-6">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                            <ProviderLogo provider={template.provider} />
-                            <span
-                                aria-hidden="true"
-                                className="h-10 w-px shrink-0 bg-divider"
-                            />
-                            <SizeStats {...template} />
-                        </div>
-                        <div className="grid w-48 grid-cols-[4.5rem_3.5rem_3.5rem] gap-x-1">
-                            <LedgerRow Icon={WalletIcon} label="Pollen">
-                                <div className="col-span-2 flex">
-                                    <BalanceAccessChip access="quest" />
-                                </div>
-                            </LedgerRow>
-                            {/* As on the Models list, the price in $ (1 pollen
-                                    is about $1). */}
-                            <LedgerRow Icon={ClockIcon} label="Price">
-                                <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
-                                    ${amount(perHour)}
-                                </span>
-                                <span className="text-xs text-theme-text-muted">
-                                    /hour
-                                </span>
-                            </LedgerRow>
-                        </div>
+    <div className="@container flex flex-col gap-3 [--catalog-price-width:12rem]">
+        {SANDBOX_TEMPLATES.filter(({ id }) => id in prices).map((template) => (
+            <CatalogCard
+                key={template.id}
+                logo={<ProviderLogo provider={template.provider} />}
+                price={
+                    <div className="grid grid-cols-[4.5rem_3.5rem_3.5rem] gap-x-1">
+                        <LedgerRow Icon={WalletIcon} label="Pollen">
+                            <div className="col-span-2 flex">
+                                <BalanceAccessChip access="quest" />
+                            </div>
+                        </LedgerRow>
+                        {/* As on the Models list, the price in $ (1 pollen is
+                            about $1). */}
+                        <LedgerRow Icon={ClockIcon} label="Price">
+                            <span className="text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+                                ${amount(prices[template.id])}
+                            </span>
+                            <span className="text-xs text-theme-text-muted">
+                                /hour
+                            </span>
+                        </LedgerRow>
                     </div>
-                    {create && (
-                        <div className="flex flex-col items-start gap-3 @lg:flex-row @lg:items-center @lg:gap-6">
-                            {/* Only as wide as the command needs. */}
-                            <div className="w-fit min-w-0 max-w-full">
-                                <CopyField
-                                    label={`Copy the command that creates a ${template.id} sandbox`}
-                                    value={`polli sandbox create ${template.id}`}
-                                />
-                            </div>
-                            <div className="shrink-0 @lg:ml-auto @2xl:w-48">
-                                <Button
-                                    type="button"
-                                    intent="commit"
-                                    icon={<TerminalIcon />}
-                                    aria-haspopup={
-                                        create.disabled ? undefined : "dialog"
-                                    }
-                                    disabled={create.disabled}
-                                    onClick={() => create.onCreate(template.id)}
-                                >
-                                    {create.label}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </Surface>
-            );
-        })}
+                }
+                copy={
+                    create && {
+                        value: `polli sandbox create ${template.id}`,
+                        label: `Copy the command that creates a ${template.id} sandbox`,
+                    }
+                }
+                action={
+                    create && (
+                        <Button
+                            type="button"
+                            intent="commit"
+                            icon={<TerminalIcon />}
+                            aria-haspopup={
+                                create.disabled ? undefined : "dialog"
+                            }
+                            disabled={create.disabled}
+                            onClick={() => create.onCreate(template.id)}
+                        >
+                            {create.label}
+                        </Button>
+                    )
+                }
+            >
+                <SizeStats {...template} />
+            </CatalogCard>
+        ))}
     </div>
 );

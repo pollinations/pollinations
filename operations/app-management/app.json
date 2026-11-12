@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💼",
+    "name": "Pollen Tower",
+    "url": "https://tomdacatto.github.io/pollinations-pollen-tower",
+    "description": "3D tower of AI-run companies, each floor a public Pollinations prompt agent. Run a company's day, rent an office with your own agent, and pay with your own Pollen when you sign in.",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-pollen-tower",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18022",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/90f6f487-7818-4383-8f91-2a0af51cf171"
+  },
+  {
     "emoji": "✍️",
     "name": "Stretchtext for Pollinations",
     "url": "https://tomdacatto.github.io/pollinations-stretchtext",

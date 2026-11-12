@@ -15,6 +15,7 @@ import { apikey, user } from "@shared/db/better-auth.ts";
 import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { fixLink } from "@shared/http/fix-link.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
@@ -523,8 +524,14 @@ function noteRequestActivity(
 
 // Writes polli's login into a new sandbox: a key of its own, created with the
 // caller's key through enter's key API, as `polli harness ... on` creates one.
-// envd, the agent in every sandbox, writes the file as `user`.
+// envd, the agent in every sandbox, writes the file as `user`. A key can only
+// give a key what it has, so the box key gets the polli permissions the caller
+// has, and from a caller with a budget a budget of 0: the box's rent is billed
+// to the caller's budget, so the caller keeps all of it. Returns what the
+// caller must do then to fund the box key.
 async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
+    const callerKey = c.var.auth.apiKey;
+    const budgeted = typeof callerKey?.pollenBalance === "number";
     const created = await c.env.ENTER.fetch(
         `${PUBLIC_URLS.enter.production}/api/account/keys`,
         {
@@ -536,7 +543,12 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
             body: JSON.stringify({
                 name: `polli-sandbox-${sandbox.sandboxID}`,
                 type: "secret",
-                accountPermissions: POLLI_PERMISSIONS,
+                accountPermissions: callerKey
+                    ? POLLI_PERMISSIONS.filter((permission) =>
+                          callerKey.permissions?.account?.includes(permission),
+                      )
+                    : POLLI_PERMISSIONS,
+                ...(budgeted && { pollenBudget: 0 }),
             }),
         },
     );
@@ -545,7 +557,7 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
             `Key creation returned ${created.status}: ${(await created.text()).slice(0, 300)}`,
         );
     }
-    const { key } = await created.json<{ key: string }>();
+    const { key, id } = await created.json<{ key: string; id: string }>();
     // polli keeps a staging login apart from a production one.
     const file =
         c.env.ENVIRONMENT === "production"
@@ -570,6 +582,8 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
         },
     );
     if (!response.ok) throw await upstreamError(response);
+    if (!budgeted) return undefined;
+    return `This sandbox's polli login has a budget of 0 Pollen, because the key that created the sandbox has a budget. Give the login a budget at ${fixLink(c, "/edit-key", { id, ref: "sandbox_key_budget" })}.`;
 }
 
 async function ownerOnly(c: E2bContext) {
@@ -673,9 +687,10 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             await charge(c, bill, startTime);
             // Pollinations templates come logged in to polli.
+            let notice: string | undefined;
             if (template) {
                 try {
-                    await logIn(c, created);
+                    notice = await logIn(c, created);
                 } catch (error) {
                     // The sandbox still works; `polli auth login` in it logs in.
                     c.var.log.error("Sandbox login failed: {error}", {
@@ -686,7 +701,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     });
                 }
             }
-            return c.json(servedByGen(c.env, created), 201);
+            return c.json({ ...servedByGen(c.env, created), notice }, 201);
         })
         .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.

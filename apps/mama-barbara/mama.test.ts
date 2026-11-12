@@ -164,3 +164,63 @@ test("Delete her removes a Barbara whose key the sign-in may not revoke", async 
     assert.equal(owner.barbaras.length, 0);
     assert.equal(saves, 1);
 });
+
+test("a new Barbara needs a sign-in whose budget covers hers", async (t) => {
+    const owner = { key: "sk_owner", barbaras: [] as unknown[] };
+    await load({
+        get: async () => ({ 42: owner }),
+        put: async () => {},
+    } as never);
+    let signIn = { expiresAt: null, pollenBudget: 5 as number | null };
+    const sent: string[] = [];
+    const calls: string[] = [];
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async (url: string, init: RequestInit = {}) => {
+            const { pathname } = new URL(url);
+            calls.push(
+                `${init.method ?? "GET"} ${pathname} ${init.body ?? ""}`,
+            );
+            if (pathname.endsWith("/sendMessage")) {
+                sent.push(JSON.parse(String(init.body)).text);
+                return Response.json({ ok: true, result: {} });
+            }
+            if (pathname.startsWith("/bot"))
+                return Response.json({ ok: true, result: "bot-token" });
+            if (pathname === "/account/key") return Response.json(signIn);
+            if (pathname === "/alpha/e2b/sandboxes")
+                return Response.json({ sandboxID: "inew" });
+            if (pathname === "/account/keys")
+                return Response.json({
+                    data: [{ id: "k1", name: "polli-sandbox-inew" }],
+                });
+            if (pathname === "/account/keys/k1") return Response.json({});
+            // Her box's envd: setting her up stops here.
+            return new Response("unreachable", { status: 502 });
+        },
+    );
+    const newBot = () =>
+        onUpdate({
+            update_id: 1,
+            managed_bot: {
+                user: { id: 42, first_name: "Owner" },
+                bot: { id: 9, first_name: "Barbara", username: "new_bot" },
+            },
+        });
+
+    await newBot();
+    assert.match(
+        sent[0],
+        /budget of 5\.00 Pollen\. It pays for her computer and the 10 Pollen.*Send \/signin and clear the budget/,
+    );
+    assert.ok(!calls.some((call) => call.startsWith("POST /alpha/e2b")));
+
+    // Signed in without a budget: her box is made and its key gets hers.
+    signIn = { expiresAt: null, pollenBudget: null };
+    await newBot();
+    assert.ok(
+        calls.some((call) => call.startsWith("POST /alpha/e2b/sandboxes")),
+    );
+    assert.ok(calls.includes('PATCH /account/keys/k1 {"pollenBudget":10}'));
+});

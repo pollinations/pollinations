@@ -155,7 +155,7 @@ async function signIn(from: TgUser) {
         );
         await say(
             from.id,
-            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry: your Barbaras stop when my access ends.",
+            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry and the budget: your Barbaras stop when my access ends or its budget runs out.",
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -401,11 +401,21 @@ async function setUp(owner: TgUser, bot: TgUser) {
         waitingBots.set(owner.id, bot);
         return signIn(owner);
     }
-    await say(
-        owner.id,
-        `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
-    );
     try {
+        // A sign-in's budget pays both her computer's rent and the BUDGET
+        // her box key gets from it (setBudget).
+        const { pollenBudget } = await gen<SignIn>(user.key, "/account/key");
+        if (pollenBudget !== null && pollenBudget < BUDGET) {
+            waitingBots.set(owner.id, bot);
+            return say(
+                owner.id,
+                `My access to your account has a budget of ${pollenBudget.toFixed(2)} Pollen. It pays for her computer and the ${BUDGET} Pollen she can spend, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
+            );
+        }
+        await say(
+            owner.id,
+            `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
+        );
         const token = await botToken(bot.id);
         await tg("setManagedBotAccessSettings", {
             user_id: bot.id,

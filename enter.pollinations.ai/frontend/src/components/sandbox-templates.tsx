@@ -133,7 +133,6 @@ export const SandboxTemplateList: FC<{
                             type="button"
                             intent="commit"
                             icon={<TerminalIcon />}
-                            className="@2xl:w-full"
                             aria-haspopup={
                                 create.disabled ? undefined : "dialog"
                             }

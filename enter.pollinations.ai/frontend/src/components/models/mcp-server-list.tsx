@@ -94,7 +94,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     {server.name} MCP
                                     {server.alpha && (
                                         <Chip intent="alpha" size="sm">
-                                            alpha
+                                            Alpha
                                         </Chip>
                                     )}
                                 </span>

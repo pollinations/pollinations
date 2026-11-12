@@ -3,16 +3,19 @@ import type { FC, ReactNode } from "react";
 
 // Where a card goes from stacked to two columns: a short main part (a
 // template's size) fits beside the price from half a screen; a description
-// needs a wide screen. Full class names, so Tailwind finds them.
+// needs a wide screen. Side by side, the text starts at the price box's top,
+// and the copy row starts at the title's edge (logo 2rem, the gaps and the
+// divider) and lets the action wrap under it before the copy box breaks.
+// Full class names, so Tailwind finds them.
 const SPLIT = {
     half: {
-        top: "@lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:items-center @lg:gap-x-6",
-        bottom: "@lg:flex-row @lg:items-center @lg:gap-6",
+        top: "@lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:items-start @lg:gap-x-6",
+        bottom: "@lg:flex-row @lg:flex-wrap @lg:items-center @lg:gap-6 @lg:pl-[3.3125rem]",
         action: "@lg:ml-auto",
     },
     wide: {
-        top: "@2xl:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @2xl:items-center @2xl:gap-x-6",
-        bottom: "@2xl:flex-row @2xl:items-center @2xl:gap-6",
+        top: "@2xl:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @2xl:items-start @2xl:gap-x-6",
+        bottom: "@2xl:flex-row @2xl:flex-wrap @2xl:items-center @2xl:gap-6 @2xl:pl-[3.3125rem]",
         action: "@2xl:ml-auto",
     },
 };
@@ -30,12 +33,23 @@ export const CatalogCard: FC<{
     logo: ReactNode;
     children: ReactNode;
     price: ReactNode;
+    /** A quiet line under the price box (who published it). */
+    priceNote?: ReactNode;
     copy?: { value: string; label: string };
     /** Beside the copy box: whether what you copy works right now. */
     status?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({ logo, children, price, copy, status, action, split = "half" }) => (
+}> = ({
+    logo,
+    children,
+    price,
+    priceNote,
+    copy,
+    status,
+    action,
+    split = "half",
+}) => (
     <Surface className="flex flex-col gap-3">
         <div className={`grid gap-3 ${SPLIT[split].top}`}>
             {/* The logo lines up with the title, however many lines follow. */}
@@ -49,8 +63,12 @@ export const CatalogCard: FC<{
             </div>
             {/* Bordered like the copy box, so the price reads as one
                 object and its lines end inside it. */}
-            <div className="min-w-0 rounded-lg border border-divider px-3 py-2">
-                {price}
+            <div className="flex min-w-0 flex-col gap-2">
+                <div className="min-w-0 rounded-lg border border-divider px-3 py-2">
+                    {price}
+                </div>
+                {/* In from the box's edge, level with the icons inside. */}
+                {priceNote && <div className="min-w-0 px-3">{priceNote}</div>}
             </div>
         </div>
         {(copy || action) && (

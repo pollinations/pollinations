@@ -638,12 +638,7 @@ describe("generateTextPortkey", () => {
             content: null,
             tool_calls: [toolCall],
         };
-        expect(mistral).toEqual(withoutReasoning);
-        expect(azureMistral).toEqual(withoutReasoning);
-        expect(inferencePort).toEqual(withoutReasoning);
-        expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
-        // Mistral's own reasoning model gets its thinking back as a chunk.
-        expect(mistralLarge4).toEqual({
+        const thinkingChunk = {
             ...withoutReasoning,
             content: [
                 {
@@ -651,7 +646,15 @@ describe("generateTextPortkey", () => {
                     thinking: [{ type: "text", text: "thinking" }],
                 },
             ],
-        });
+        };
+        // Mistral Small 4 rejects reasoning history too, and its own reasoning
+        // model gets thinking back as a chunk.
+        expect(mistral).toEqual(thinkingChunk);
+        expect(azureMistral).toEqual(withoutReasoning);
+        expect(inferencePort).toEqual(withoutReasoning);
+        expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
+        // Mistral's own reasoning model gets its thinking back as a chunk.
+        expect(mistralLarge4).toEqual(thinkingChunk);
     });
 
     it.each([

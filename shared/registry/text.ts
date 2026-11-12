@@ -1171,6 +1171,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-carbon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Vertex global list rates (2026-11-11). The 50% credit-back promotion
+        // through 2026-11-30 is not priced in, matching Gemini 4 Argon.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4), // No Vertex cache-write rate listed; input rate assumed.
+            promptAudioTokens: perMillion(4),
+            promptImageTokens: perMillion(4),
+            promptVideoTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Carbon",
+        description:
+            "Frontier reasoning for long-running agentic coding and knowledge work, with a 1M-token context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3000, // Vertex Carbon shares this limit with documents.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-4-argon": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],

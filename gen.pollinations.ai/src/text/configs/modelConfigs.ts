@@ -1277,6 +1277,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "global",
     ),
+    "google/gemini-4-carbon": createVertexGeminiConfig(
+        "gemini-4-carbon",
+        "global",
+    ),
+    "google/gemini-4-carbon:openrouter:ai-studio": createPinnedOpenRouterConfig(
+        "google/gemini-4-carbon",
+        "google-ai-studio",
+    ),
     "google/gemini-4-argon": createVertexGeminiConfig(
         "gemini-4-argon",
         "global",

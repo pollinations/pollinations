@@ -1815,6 +1815,38 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps the Carbon quote and records the OpenRouter receipt including Exa", () => {
+        const model = "google/gemini-4-carbon";
+        const route = "google/gemini-4-carbon:openrouter:ai-studio";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: [],
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            fallbackOnly: true,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: {
+                usage: {
+                    cost: 0.019,
+                    server_tool_use_details: { web_search_requests: 1 },
+                },
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.019 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
+    });
+
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =

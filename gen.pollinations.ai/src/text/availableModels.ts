@@ -7,6 +7,7 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
+    createOpenRouterGoogleSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -855,6 +856,25 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon",
+        config: portkeyConfig["google/gemini-4-carbon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Carbon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-4-carbon:openrouter:ai-studio"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createOpenRouterGoogleSearchTransform("exa"),
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

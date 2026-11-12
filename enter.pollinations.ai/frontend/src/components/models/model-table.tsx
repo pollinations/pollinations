@@ -83,7 +83,7 @@ const TabContent: FC<{
         <>
             {/* One card at every width: the shared catalog card folds by
                 container size, so phones need no card of their own. */}
-            <div className="@container flex flex-col gap-3 [--catalog-price-width:18rem]">
+            <div className="@container flex flex-col gap-3 [--catalog-price-width:21rem]">
                 {visibleModels.map((model) => (
                     <ModelRow key={model.name} model={model} />
                 ))}

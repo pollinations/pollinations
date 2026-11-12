@@ -20,8 +20,8 @@ const SPLIT = {
 /**
  * One card of a catalog list (sandbox templates, MCP servers): the logo and
  * what it is beside the price, then the command or URL to copy and the
- * action. The price slot is `--catalog-price-width` wide (set on the list),
- * so on a wide screen the action's slot starts at the price's icons; in
+ * action. The price box is `--catalog-price-width` wide (set on the list),
+ * so on a wide screen the action's slot starts at the box's edge; in
  * between it sits flush right to leave the copy box room. Stacked on phones.
  * The list needs `@container`.
  */
@@ -47,7 +47,11 @@ export const CatalogCard: FC<{
                 />
                 <div className="min-w-0 flex-1">{children}</div>
             </div>
-            <div className="min-w-0">{price}</div>
+            {/* Bordered like the copy box, so the price reads as one
+                object and its lines end inside it. */}
+            <div className="min-w-0 rounded-lg border border-divider px-3 py-2">
+                {price}
+            </div>
         </div>
         {(copy || action) && (
             <div

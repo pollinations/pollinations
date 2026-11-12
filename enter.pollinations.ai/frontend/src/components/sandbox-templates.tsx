@@ -97,7 +97,7 @@ export const SandboxTemplateList: FC<{
         onCreate: (template: string) => void;
     };
 }> = ({ prices, create }) => (
-    <div className="@container flex flex-col gap-3 [--catalog-price-width:12rem]">
+    <div className="@container flex flex-col gap-3 [--catalog-price-width:13.75rem]">
         {SANDBOX_TEMPLATES.filter(({ id }) => id in prices).map((template) => (
             <CatalogCard
                 key={template.id}

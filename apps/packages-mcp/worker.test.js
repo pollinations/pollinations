@@ -243,6 +243,68 @@ test("Rust stable versions can have hyphens in build metadata", async (t) => {
         "1.0.0+stable-build",
     );
 });
+test("RubyGems latest and exact versions keep licenses, downloads and dependencies", async (t) => {
+    const latest = {
+        name: "rails",
+        version: "8.1.4.1",
+        info: "Ruby on Rails is a full-stack web framework.",
+        licenses: ["MIT"],
+        homepage_uri: "https://rubyonrails.org",
+        source_code_uri: "https://github.com/rails/rails",
+        documentation_uri: "https://api.rubyonrails.org",
+        platform: "ruby",
+        downloads: 813413968,
+        version_downloads: 1234,
+        yanked: false,
+        dependencies: {
+            runtime: [{ name: "actionpack", requirements: "= 8.1.4.1" }],
+            development: [],
+        },
+    };
+    const exact = {
+        ...latest,
+        version: "7.1.0",
+        number: "7.1.0",
+        version_downloads: 42,
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json(
+            url.endsWith("/api/v1/gems/rails.json") ? latest : exact,
+        );
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+    });
+    assert.equal(data.version, "8.1.4.1");
+    assert.deepEqual(data.licenses, ["MIT"]);
+    assert.equal(data.downloads, 813413968);
+    assert.deepEqual(data.dependencies.runtime, [
+        { name: "actionpack", requirements: "= 8.1.4.1" },
+    ]);
+    assert.equal(
+        data.registryUrl,
+        "https://rubygems.org/gems/rails/versions/8.1.4.1",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+        version: "7.1.0",
+    });
+    assert.equal(pinned.version, "7.1.0");
+    assert.equal(pinned.versionDownloads, 42);
+    assert.deepEqual(urls, [
+        "https://rubygems.org/api/v1/gems/rails.json",
+        "https://rubygems.org/api/v2/rubygems/rails/versions/7.1.0.json",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "rubygems", name: "not a gem" }),
+        /Invalid rubygems package name/,
+    );
+});
 test("OSV preserves advisories, affected ranges and pagination without claiming safety", async (t) => {
     const advisory = {
         id: "GHSA-example",
@@ -478,28 +540,23 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
-test("Packagist package lookup selects highest stable and exact versions", async (t) => {
+test("Packagist expands the minified list and matches v-prefixed tags", async (t) => {
     t.mock.method(globalThis, "fetch", async (url) => {
         assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
         return Response.json({
+            minified: "composer/2.0",
             packages: {
                 "monolog/monolog": [
                     {
                         name: "monolog/monolog",
-                        version: "3.2.0",
+                        version: "v3.3.0-RC1",
                         description: "Logging for PHP",
                         license: ["MIT"],
-                        require: { php: ">=8.1" },
-                        source: {
-                            url: "https://github.com/Seldaek/monolog.git",
-                        },
+                        require: { php: ">=8.2" },
+                        suggest: { "ext-mongodb": "MongoDB handler" },
                     },
-                    {
-                        name: "monolog/monolog",
-                        version: "3.1.0",
-                        description: "Older logging",
-                        license: ["MIT"],
-                    },
+                    { version: "v3.2.0", require: { php: ">=8.1" } },
+                    { version: "v3.1.0", suggest: "__unset" },
                 ],
             },
         });
@@ -510,10 +567,20 @@ test("Packagist package lookup selects highest stable and exact versions", async
         name: "monolog/monolog",
     });
     assert.equal(latest.name, "monolog/monolog");
-    assert.equal(latest.version, "3.2.0");
+    assert.equal(latest.version, "v3.2.0");
+    assert.equal(latest.description, "Logging for PHP");
+    assert.deepEqual(latest.license, ["MIT"]);
     assert.deepEqual(latest.dependencies, { php: ">=8.1" });
     assert.equal(
         latest.registryUrl,
         "https://packagist.org/packages/monolog/monolog",
     );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+        version: "3.1.0",
+    });
+    assert.equal(pinned.version, "v3.1.0");
+    assert.deepEqual(pinned.dependencies, { php: ">=8.1" });
+    assert.equal(pinned.suggest, undefined);
 });

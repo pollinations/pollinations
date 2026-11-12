@@ -38,7 +38,6 @@ from common import (
     chunk_message,
     get_env,
     get_post_image_urls,
-    safe_truncate,
 )
 from posts import CATALOG_JOBS, check_date, job_posts, model_post, post_path, summary_path
 
@@ -388,27 +387,22 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
         if not payload:
             print(f"No {job} changes for {date}: nothing to send")
             return
-        text = payload["text"].strip()
-        digest = hashlib.sha256(text.encode()).hexdigest()
+        messages = payload["messages"]
+        digest = hashlib.sha256(json.dumps(messages, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         webhook = get_env("DISCORD_MODELS_WEBHOOK_URL")
-        # Only the model post mentions its role; community text never pings anyone.
-        message = {
-            "content": safe_truncate(text, DISCORD_CHUNK_SIZE),
-            "allowed_mentions": {"parse": ["roles"] if job == "models" else []},
-        }
 
         def prepare():
-            return lambda: send_discord(webhook, [message])
+            return lambda: send_discord(webhook, messages)
 
         folder, key = record_of("discord", job, date)
-        outcome = deliver(folder, key, prepare, text_sha256=digest)
-        # save stores this WORK's post, so it must be the text that went out.
+        outcome = deliver(folder, key, prepare, payload_sha256=digest)
+        # save stores this WORK's post, so it must be the complete payload that went out.
         entry = read_record(folder)[0].get(key) or {}
         if outcome not in ("failed", "stuck") and (
             entry.get("state"),
-            entry.get("text_sha256"),
+            entry.get("payload_sha256"),
         ) != ("done", digest):
-            sys.exit(f"{job} {date} isn't recorded as sent with this WORK's text")
+            sys.exit(f"{job} {date} isn't recorded as sent with this WORK's payload")
         outcomes = {"discord": outcome}
     else:
         # A date counts as empty only when it has no post and no summary text (a quiet

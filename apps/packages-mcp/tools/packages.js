@@ -8,8 +8,9 @@ export async function lookup({ ecosystem, name, version }) {
         npm: /^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/,
         pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
         crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
+        rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
         packagist:
-            /^[a-z0-9](?:[_.-]?[a-z0-9]+)*\/[a-z0-9](?:[_.-]?[a-z0-9]+)*$/,
+            /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -57,26 +58,59 @@ export async function lookup({ ecosystem, name, version }) {
                 info.package_url ?? `https://pypi.org/project/${encoded}/`,
         };
     }
+    if (ecosystem === "rubygems") {
+        const data = await fetchJson(
+            version
+                ? `https://rubygems.org/api/v2/rubygems/${encoded}/versions/${encodeURIComponent(version)}.json`
+                : `https://rubygems.org/api/v1/gems/${encoded}.json`,
+        );
+        const resolved = data.version ?? data.number;
+        return {
+            ecosystem,
+            name: data.name,
+            version: resolved,
+            description: data.info,
+            licenses: data.licenses,
+            homepage: data.homepage_uri,
+            repository: data.source_code_uri,
+            documentation: data.documentation_uri,
+            platform: data.platform,
+            downloads: data.downloads,
+            versionDownloads: data.version_downloads,
+            yanked: data.yanked,
+            dependencies: data.dependencies,
+            registryUrl: `https://rubygems.org/gems/${encodeURIComponent(data.name)}/versions/${encodeURIComponent(resolved)}`,
+        };
+    }
     if (ecosystem === "packagist") {
         const [vendor, pkg] = name.split("/");
         const data = await fetchJson(
             `https://packagist.org/p2/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}.json`,
         );
-        const versions = data.packages?.[name];
-        if (!Array.isArray(versions) || versions.length === 0) {
+        // p2 lists are minified: only the first entry is complete, each later one
+        // lists the fields that changed and "__unset" removes a field, as in
+        // Composer's MetadataMinifier::expand.
+        let previous = {};
+        const versions = (data.packages?.[name] ?? []).map((entry) => {
+            previous = { ...previous, ...entry };
+            for (const [key, value] of Object.entries(previous))
+                if (value === "__unset") delete previous[key];
+            return previous;
+        });
+        if (versions.length === 0)
             throw new Error(`Packagist package ${name} not found`);
-        }
+        // Tags are spelled v8.1.11 or 8.1.11; accept either for an exact version.
+        const bare = (value) => value.replace(/^v/, "");
         const selected = version
-            ? versions.find((v) => v.version === version)
+            ? versions.find((v) => bare(v.version) === bare(version))
             : versions
                   .filter((v) => valid(v.version) && !prerelease(v.version))
                   .sort((a, b) => rcompare(a.version, b.version))[0] ||
               versions[0];
-        if (!selected) {
+        if (!selected)
             throw new Error(
                 `Packagist version ${version} not found for ${name}`,
             );
-        }
         return {
             ecosystem,
             name: selected.name,
@@ -128,10 +162,10 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI package metadata, crates.io sparse-index versions, or Packagist PHP packages with dependencies and requirements. Default: npm latest tag, PyPI latest, Rust/PHP highest stable version. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
-                .enum(["npm", "pypi", "crates", "packagist"])
+                .enum(["npm", "pypi", "crates", "rubygems", "packagist"])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z

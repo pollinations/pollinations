@@ -7,6 +7,12 @@ const QUALITIES = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
+export const IMAGE_DIMENSIONS_HEADER = "X-Image-Dimensions";
+export const FLUX_SIZE_DESCRIPTION =
+    "`black-forest-labs/flux.1-schnell` (`flux`) accepts 64–8192 px per side on its primary backend. It scales oversized requests down proportionally to the backend cap (810,000 or 1,048,576 pixels), then snaps to a size within the cap with sides divisible by 8 and a pixel count divisible by 65,536. Aspect ratios within 5% of the target are treated as equally close. Among equally close ratios it chooses the smallest size at or above the target pixel count, or the largest below it if none fits. The `X-Image-Dimensions` response header reports the produced size when available.";
+
+const imageSizeConstraints = `For images, model-specific constraints apply. ${FLUX_SIZE_DESCRIPTION} \`flux-2-pro\`, \`flux-2-flex\`, and \`microsoft/mai-image-2.6-flash\` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). \`tongyi-mai/z-image-turbo\` and \`black-forest-labs/flux.2-klein-4b\` need at least 256 px per side and at most 2,359,296 total pixels. \`black-forest-labs/flux.1.1-pro\` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use \`resolution\` to select a resolution tier.`;
+
 const modelSchema = (defaultModel: string) =>
     z
         .preprocess(
@@ -21,14 +27,24 @@ const modelSchema = (defaultModel: string) =>
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
-    width: z.coerce.number().int().positive().optional().default(1024).meta({
-        description:
-            "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-    }),
-    height: z.coerce.number().int().positive().optional().default(1024).meta({
-        description:
-            "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-    }),
+    width: z.coerce
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .default(1024)
+        .meta({
+            description: `Width in pixels. ${imageSizeConstraints}`,
+        }),
+    height: z.coerce
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .default(1024)
+        .meta({
+            description: `Height in pixels. ${imageSizeConstraints}`,
+        }),
     seed: z.coerce
         .number()
         .int()

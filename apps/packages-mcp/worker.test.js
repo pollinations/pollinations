@@ -541,6 +541,121 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
+test("Packagist expands the minified list, ranks non-semver and patch tags and matches v-prefixed tags", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
+        return Response.json({
+            minified: "composer/2.0",
+            packages: {
+                "monolog/monolog": [
+                    {
+                        name: "monolog/monolog",
+                        version: "v3.3.0-RC1",
+                        version_normalized: "3.3.0.0-RC1",
+                        description: "Logging for PHP",
+                        license: ["MIT"],
+                        require: { php: ">=8.2" },
+                        suggest: { "ext-mongodb": "MongoDB handler" },
+                    },
+                    { version: "3.10", version_normalized: "3.10.0.0" },
+                    {
+                        version: "3.10-p1",
+                        version_normalized: "3.10.0.0-patch1",
+                    },
+                    {
+                        version: "v3.2.0",
+                        version_normalized: "3.2.0.0",
+                        require: { php: ">=8.1" },
+                    },
+                    {
+                        version: "v3.1.0",
+                        version_normalized: "3.1.0.0",
+                        suggest: "__unset",
+                    },
+                ],
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+    });
+    assert.equal(latest.name, "monolog/monolog");
+    assert.equal(latest.version, "3.10-p1");
+    assert.equal(latest.description, "Logging for PHP");
+    assert.deepEqual(latest.license, ["MIT"]);
+    assert.deepEqual(latest.dependencies, { php: ">=8.2" });
+    assert.equal(
+        latest.registryUrl,
+        "https://packagist.org/packages/monolog/monolog",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+        version: "3.1.0",
+    });
+    assert.equal(pinned.version, "v3.1.0");
+    assert.deepEqual(pinned.dependencies, { php: ">=8.1" });
+    assert.equal(pinned.suggest, undefined);
+});
+
+test("Go lookup uses @latest without a version and escapes capitals in path and version", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        const target = new URL(url);
+        assert.equal(target.hostname, "proxy.golang.org");
+        if (target.pathname.endsWith(".mod"))
+            return new Response("module example\n\ngo 1.22\n");
+        if (target.pathname.includes("gin-gonic"))
+            return Response.json({
+                Version: "v1.12.0",
+                Time: "2026-02-28T10:10:09Z",
+                Origin: { VCS: "git", URL: "https://github.com/gin-gonic/gin" },
+            });
+        return Response.json({
+            Version: "v68.0.0+incompatible",
+            Time: "2023-01-19T11:02:01Z",
+        });
+    });
+
+    const client = await clientFor(t);
+    const gin = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/gin-gonic/gin",
+    });
+    assert.equal(gin.version, "v1.12.0");
+    assert.equal(gin.time, "2026-02-28T10:10:09Z");
+    assert.equal(gin.origin.VCS, "git");
+    assert.match(gin.goMod, /^module example/);
+    assert.equal(
+        gin.registryUrl,
+        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.12.0",
+    );
+
+    const azure = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/Azure/azure-sdk-for-go",
+        version: "v68.0.0+incompatible",
+    });
+    assert.equal(azure.name, "github.com/Azure/azure-sdk-for-go");
+    assert.equal(azure.origin, null);
+    await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "git.sr.ht/~emersion/go-scfg",
+        version: "v0.1.0",
+    });
+    assert.deepEqual(urls, [
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@latest",
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.12.0.mod",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.info",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
 test("package_downloads passes through daily counts and validates names", async (t) => {
     const expected = {
         package: "@scope/pkg",

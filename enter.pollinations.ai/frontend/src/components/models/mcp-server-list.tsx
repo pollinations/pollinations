@@ -89,7 +89,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                 label: `Copy ${server.name} MCP endpoint`,
                             }}
                             title={
-                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-soft">
+                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-strong">
                                     {server.name} MCP
                                     {server.alpha && (
                                         <Chip intent="alpha" size="sm">

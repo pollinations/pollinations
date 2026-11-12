@@ -268,9 +268,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             copy={{ value: model.name, label: `Copy model id ${model.name}` }}
             status={
                 <>
-                    {/* A badge as tall as the copy box and framed like it. */}
+                    {/* The bars and a small status label, no frame. */}
                     {model.health && (
-                        <span className="inline-flex min-h-10 shrink-0 items-center rounded-lg border border-divider px-3">
+                        <span className="inline-flex shrink-0 items-center">
                             <ModelHealthIndicator
                                 health={model.health}
                                 communityProxy={Boolean(
@@ -301,7 +301,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             title={
                 <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
-                        <span className="min-w-0 truncate text-theme-text-soft">
+                        <span className="min-w-0 truncate text-theme-text-strong">
                             {title}
                         </span>
                         <ModelStatusChips

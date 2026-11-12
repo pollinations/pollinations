@@ -80,7 +80,7 @@ const SizeStats: FC<{
         ].map(([value, label]) => (
             <div key={label} className="flex flex-col-reverse gap-0.5">
                 <dt className="text-xs text-theme-text-muted">{label}</dt>
-                <dd className="text-lg font-semibold leading-none text-theme-text-soft">
+                <dd className="text-lg font-semibold leading-none text-theme-text-strong">
                     {value}
                 </dd>
             </div>
@@ -146,7 +146,8 @@ export const SandboxTemplateList: FC<{
                         label: `Copy the command that creates a ${template.id} sandbox`,
                     }
                 }
-                action={
+                // Beside the command: start it here instead of in a terminal.
+                status={
                     create && (
                         <Button
                             type="button"

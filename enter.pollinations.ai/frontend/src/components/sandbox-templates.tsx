@@ -25,7 +25,7 @@ const PROVIDER_LOGOS: Record<SandboxProvider, string> = {
 
 const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
     const logo = PROVIDER_LOGOS[provider];
-    const className = "h-8 w-8 shrink-0 text-ink-900 opacity-55";
+    const className = "h-full w-full shrink-0 text-ink-900 opacity-55";
     return (
         <span title={SANDBOX_PROVIDERS[provider].name} className="flex">
             <span className="sr-only">{SANDBOX_PROVIDERS[provider].name}</span>
@@ -61,7 +61,7 @@ const SizeStats: FC<{
         ].map(([value, label]) => (
             <div key={label} className="flex flex-col-reverse gap-0.5">
                 <dt className="text-xs text-theme-text-muted">{label}</dt>
-                <dd className="text-lg font-semibold leading-none text-theme-text-soft">
+                <dd className="text-lg font-semibold leading-none text-theme-text-strong">
                     {value}
                 </dd>
             </div>
@@ -97,7 +97,7 @@ export const SandboxTemplateList: FC<{
         onCreate: (template: string) => void;
     };
 }> = ({ prices, create }) => (
-    <div className="@container flex flex-col gap-3 [--catalog-price-width:24rem]">
+    <div className="@container flex flex-col gap-3 [--catalog-price-width:13.75rem]">
         {SANDBOX_TEMPLATES.filter(({ id }) => id in prices).map((template) => (
             <CatalogCard
                 key={template.id}
@@ -125,13 +125,16 @@ export const SandboxTemplateList: FC<{
                     create && {
                         value: `polli sandbox create ${template.id}`,
                         label: `Copy the command that creates a ${template.id} sandbox`,
+                        wrap: true,
                     }
                 }
-                action={
+                // Beside the command: start it here instead of in a terminal.
+                status={
                     create && (
                         <Button
                             type="button"
                             intent="commit"
+                            size="sm"
                             icon={<TerminalIcon />}
                             aria-haspopup={
                                 create.disabled ? undefined : "dialog"
@@ -143,9 +146,8 @@ export const SandboxTemplateList: FC<{
                         </Button>
                     )
                 }
-            >
-                <SizeStats {...template} />
-            </CatalogCard>
+                title={<SizeStats {...template} />}
+            />
         ))}
     </div>
 );

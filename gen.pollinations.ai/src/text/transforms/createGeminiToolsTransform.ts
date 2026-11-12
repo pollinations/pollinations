@@ -52,24 +52,26 @@ export function isGoogleSearchTool(tool: unknown): boolean {
 }
 
 /** Converts Pollinations' public Gemini search tool to OpenRouter's native tool. */
-export const adaptGoogleSearchToolForOpenRouter: TransformFn = (
-    messages,
-    options,
-) => ({
-    messages,
-    options: {
-        ...options,
-        ...(options.tools === undefined
-            ? {}
-            : {
-                  tools: options.tools.map((tool) =>
-                      isGoogleSearchTool(tool)
-                          ? {
-                                type: "openrouter:web_search",
-                                parameters: { engine: "native" },
-                            }
-                          : tool,
-                  ),
-              }),
-    },
-});
+export const createOpenRouterGoogleSearchTransform =
+    (engine: "native" | "exa"): TransformFn =>
+    (messages, options) => ({
+        messages,
+        options: {
+            ...options,
+            ...(options.tools === undefined
+                ? {}
+                : {
+                      tools: options.tools.map((tool) =>
+                          isGoogleSearchTool(tool)
+                              ? {
+                                    type: "openrouter:web_search",
+                                    parameters: { engine },
+                                }
+                              : tool,
+                      ),
+                  }),
+        },
+    });
+
+export const adaptGoogleSearchToolForOpenRouter =
+    createOpenRouterGoogleSearchTransform("native");

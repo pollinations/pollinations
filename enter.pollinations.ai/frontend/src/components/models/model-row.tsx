@@ -1,4 +1,12 @@
-import { ClockIcon, formatCount, InlineLink, Tooltip } from "@pollinations/ui";
+import {
+    Button,
+    ClockIcon,
+    CloudUploadIcon,
+    ExternalLinkIcon,
+    formatCount,
+    InlineLink,
+    Tooltip,
+} from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { type FC, Fragment } from "react";
 import { CatalogCard } from "../catalog-card.tsx";
@@ -27,11 +35,12 @@ import {
 import {
     type BalanceAccess,
     BalanceAccessChip,
+    ModelHealthIndicator,
     ModelRateValue,
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
-import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
+import { isOpenWebUiChattable, openWebUiChatUrl } from "./open-webui-link.tsx";
 import {
     LedgerPriceValue,
     ModelPricingLedger,
@@ -135,29 +144,12 @@ export const PerPollenEstimate: FC<{
     );
 };
 
-/** The model title opens the same destination on desktop and mobile. */
-export function ModelTitle({ model }: { model: ModelPrice }) {
-    const title = getModelDisplayName(model) || model.name;
-    const chatSupported = isOpenWebUiChattable(model);
-    const href =
-        !chatSupported && !["3d", "embedding", "realtime"].includes(model.type)
-            ? `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`
-            : undefined;
-    const content = chatSupported ? (
-        <OpenWebUiLink modelId={model.name} title={title} />
-    ) : href ? (
-        <InlineLink
-            href={href}
-            className="model-title-link inline-flex min-w-0 max-w-full items-baseline"
-            aria-label={`Open ${title} in Play`}
-        >
-            <span className="min-w-0 truncate">{title}</span>
-        </InlineLink>
-    ) : (
-        <span className="min-w-0 truncate">{title}</span>
-    );
-
-    return content;
+/** Where to try a model: a chat for chat models, Play for the media ones;
+ * nowhere for 3D, embedding and realtime models. */
+function modelTryUrl(model: ModelPrice): string | undefined {
+    if (isOpenWebUiChattable(model)) return openWebUiChatUrl(model.name);
+    if (["3d", "embedding", "realtime"].includes(model.type)) return undefined;
+    return `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`;
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
@@ -183,6 +175,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const videoDuration = formatVideoDuration(model);
     const baseModel = model.agent ? model.baseModel : undefined;
     const publisher = model.brandUrl && model.publisher;
+    const title = getModelDisplayName(model) || model.name;
+    // No Try while most recent requests fail. "Down" starts at 20% failures,
+    // so a down model can still answer most requests and keeps its Try.
+    const mostlyFailing = (model.health?.success_rate ?? 100) < 50;
+    const tryUrl = mostlyFailing ? undefined : modelTryUrl(model);
 
     // What the model takes, can do and holds, on one line; a thin rule
     // between each group.
@@ -248,11 +245,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     ].filter(Boolean);
 
     // The shared catalog card, as for MCP servers and sandbox templates: all
-    // about the model beside its logo, its health with its tags; the price
-    // and the model id to copy together beside it.
+    // about the model beside its logo, the model id to copy with its health,
+    // the price beside.
     return (
         <CatalogCard
-            split="wide"
             logo={hasLeadingIcon ? <ModelBrandIcon model={model} /> : null}
             price={
                 <ModelPricingLedger
@@ -270,59 +266,93 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 />
             }
             copy={{ value: model.name, label: `Copy model id ${model.name}` }}
-            // Who made it: at the bottom left, apart from what it is.
-            note={
-                publisher && (
-                    <span className="flex min-w-0 items-center gap-1 text-xs text-theme-text-muted">
-                        Published by
-                        <InlineLink
-                            href={model.brandUrl}
-                            tone="quiet"
-                            className="inline-flex min-w-0 items-center"
+            status={
+                <>
+                    {/* Opens a chat or Play and changes nothing: filled, in
+                        the quiet grey of secondary actions, at the size of
+                        the card's other controls (the pricing selectors). */}
+                    {tryUrl && (
+                        <Button
+                            as="a"
+                            href={tryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            intent="neutral"
+                            size="sm"
+                            className="shrink-0"
+                            aria-label={`Try ${title} (opens in a new tab)`}
                         >
-                            <span className="truncate">{publisher}</span>
-                        </InlineLink>
-                    </span>
-                )
+                            Try
+                            <ExternalLinkIcon className="ml-1.5 h-3.5 w-3.5 shrink-0" />
+                        </Button>
+                    )}
+                </>
+            }
+            title={
+                <div className="flex min-w-0 flex-col gap-0.5">
+                    <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
+                        <span className="min-w-0 truncate text-theme-text-strong">
+                            {title}
+                        </span>
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                            verified={Boolean(model.agent && model.verified)}
+                        />
+                        {/* Live, beside the tags: the bars and the state. */}
+                        {model.health && (
+                            <ModelHealthIndicator
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showLabel
+                            />
+                        )}
+                    </div>
+                    {/* Who made it, under the name beside the logo; the My
+                        listings icon says "published by". */}
+                    {publisher && (
+                        <span className="flex min-w-0 items-center gap-1.5 text-xs text-theme-text-muted">
+                            <Tooltip
+                                content="Published by"
+                                ariaLabel="Published by"
+                                tapEnabled
+                                displayContents
+                            >
+                                <CloudUploadIcon className="h-3.5 w-3.5 shrink-0" />
+                            </Tooltip>
+                            <InlineLink
+                                href={model.brandUrl}
+                                tone="quiet"
+                                className="inline-flex min-w-0 items-center"
+                            >
+                                <span className="truncate">{publisher}</span>
+                            </InlineLink>
+                        </span>
+                    )}
+                </div>
             }
         >
-            <div className="flex min-w-0 flex-col gap-1">
-                <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
-                    <ModelTitle model={model} />
-                    <ModelStatusChips
-                        health={model.health}
-                        communityProxy={Boolean(
-                            model.community && !model.agent,
-                        )}
-                        showNew={showNew}
-                        showAlpha={showAlpha}
-                        verified={Boolean(model.agent && model.verified)}
-                    />
+            {modelDescription && <ModelDescription text={modelDescription} />}
+            {baseModel && (
+                <span className="min-w-0 max-w-full truncate text-xs leading-snug text-theme-text-muted">
+                    Base model{" "}
+                    <span className="text-theme-text-base">{baseModel}</span>
+                </span>
+            )}
+            {facts.length > 0 && (
+                <div className="mt-1 inline-flex min-h-5 flex-wrap items-center gap-2.5 text-theme-text-muted">
+                    {facts.map((fact, index) => (
+                        <Fragment key={index}>
+                            {index > 0 && (
+                                <span className="h-3.5 w-px bg-current opacity-30" />
+                            )}
+                            {fact}
+                        </Fragment>
+                    ))}
                 </div>
-                {modelDescription && (
-                    <ModelDescription text={modelDescription} />
-                )}
-                {baseModel && (
-                    <span className="min-w-0 max-w-full truncate text-xs leading-snug text-theme-text-muted">
-                        Base model{" "}
-                        <span className="text-theme-text-base">
-                            {baseModel}
-                        </span>
-                    </span>
-                )}
-                {facts.length > 0 && (
-                    <div className="mt-1 inline-flex min-h-5 flex-wrap items-center gap-2.5 text-theme-text-muted">
-                        {facts.map((fact, index) => (
-                            <Fragment key={index}>
-                                {index > 0 && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                                {fact}
-                            </Fragment>
-                        ))}
-                    </div>
-                )}
-            </div>
+            )}
         </CatalogCard>
     );
 };

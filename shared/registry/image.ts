@@ -757,6 +757,7 @@ const IMAGE_BASE_SERVICES = {
         provider: "openai",
         publisher: "OpenAI",
         category: "image",
+        cacheVersion: "preserve-output-format-v1",
         addedDate: new Date("2026-11-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,

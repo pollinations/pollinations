@@ -36,13 +36,12 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
     return (
         <div className="flex flex-col gap-4">
             {/* The shared catalog card, as on the Sandboxes page. */}
-            <div className="@container flex flex-col gap-3 [--catalog-price-width:24rem]">
+            <div className="@container flex flex-col gap-3 [--catalog-price-width:19rem]">
                 {servers.map((server) => {
                     const pricing = getMcpPricingInfo(server);
                     return (
                         <CatalogCard
                             key={server.id}
-                            split="wide"
                             logo={
                                 <McpIcon className="h-8 w-8 shrink-0 text-ink-900 opacity-55" />
                             }
@@ -88,9 +87,8 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                 value: `${config.genBaseUrl}/mcp/${server.id}`,
                                 label: `Copy ${server.name} MCP endpoint`,
                             }}
-                        >
-                            <div className="flex flex-col gap-1">
-                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-soft">
+                            title={
+                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-strong">
                                     {server.name} MCP
                                     {server.alpha && (
                                         <Chip intent="alpha" size="sm">
@@ -98,17 +96,18 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                         </Chip>
                                     )}
                                 </span>
-                                <p className="text-sm text-theme-text-muted">
-                                    {server.description}{" "}
-                                    {"accountPath" in server && (
-                                        <InlineLink
-                                            href={`${config.baseUrl}${server.accountPath}`}
-                                        >
-                                            Connect apps
-                                        </InlineLink>
-                                    )}
-                                </p>
-                            </div>
+                            }
+                        >
+                            <p className="text-sm text-theme-text-muted">
+                                {server.description}{" "}
+                                {"accountPath" in server && (
+                                    <InlineLink
+                                        href={`${config.baseUrl}${server.accountPath}`}
+                                    >
+                                        Connect apps
+                                    </InlineLink>
+                                )}
+                            </p>
                         </CatalogCard>
                     );
                 })}

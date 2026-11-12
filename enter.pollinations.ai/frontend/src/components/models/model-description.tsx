@@ -27,7 +27,7 @@ export const ModelDescription: FC<{ text: string }> = ({ text }) => {
             <p
                 ref={ref}
                 id={id}
-                className={`${expanded ? "" : "line-clamp-4 "}text-xs leading-snug text-theme-text-muted`}
+                className={`${expanded ? "" : "line-clamp-4 "}text-sm leading-snug text-theme-text-muted`}
             >
                 {text}
             </p>

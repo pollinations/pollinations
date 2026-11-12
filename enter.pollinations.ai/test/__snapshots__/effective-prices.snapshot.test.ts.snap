@@ -1683,6 +1683,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000211,
     },
   },
+  "google/gemini-4-carbon": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptAudioTokens": 0.000004,
+      "promptCacheWriteTokens": 0.000004,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+      "promptVideoTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptAudioTokens": 0.000004,
+      "promptCacheWriteTokens": 0.000004,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+      "promptVideoTokens": 0.000004,
+    },
+  },
+  "google/gemini-4-carbon:openrouter:ai-studio": {
+    "cost": {
+      "completionTextTokens": 0.00001055,
+      "promptAudioTokens": 0.00000211,
+      "promptCacheWriteTokens": 0.00000211,
+      "promptCachedTokens": 0.0000001055,
+      "promptImageTokens": 0.00000211,
+      "promptTextTokens": 0.00000211,
+      "promptVideoTokens": 0.00000211,
+    },
+    "price": {
+      "completionTextTokens": 0.00001055,
+      "promptAudioTokens": 0.00000211,
+      "promptCacheWriteTokens": 0.00000211,
+      "promptCachedTokens": 0.0000001055,
+      "promptImageTokens": 0.00000211,
+      "promptTextTokens": 0.00000211,
+      "promptVideoTokens": 0.00000211,
+    },
+  },
   "google/gemini-embedding-2": {
     "cost": {
       "promptAudioTokens": 0.0000065,
@@ -4357,16 +4397,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "qwen/qwen3.8-2.4t-a95b:deepinfra": {
+  "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {
     "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.00000026375,
+      "promptTextTokens": 0.00000211,
     },
     "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.00000026375,
+      "promptTextTokens": 0.00000211,
     },
   },
   "qwen/qwen3.8-27b": {

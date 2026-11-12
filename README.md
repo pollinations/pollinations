@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Glassbox Lab](https://patbing.github.io/glassbox-lab) | Type a science topic and get a live simulation with sliders, a guided tour, predict-then-test questions checked by the simulation itself, and Wikipedia sources. BYOP. | [@patbing](https://github.com/patbing) |
 | [🎮 Machine Double](https://patbing.github.io/machine-double) | An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen. | [@patbing](https://github.com/patbing) |
 | [🎮 Left Alone](https://sugamdeol.github.io/left-alone) | Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Decision Pit](https://patbing.github.io/decision-pit) | AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP. | [@patbing](https://github.com/patbing) |
@@ -30,7 +31,6 @@
 | [✍️ StretchText](https://rekty.github.io/stretchtext) | Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request spends the reader's own Pollen via the device flow. No build step, live model list, tested. | [@rekty](https://github.com/rekty) |
 | [🖼️ Pollinations Studio](https://pollinations-studio-1.vercel.app) | AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication. | [@lekezoa](https://github.com/lekezoa) |
 | [🖼️ Tomadix](https://tomadix.ibitweb.com.br) | Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai. | [@gereiz](https://github.com/gereiz) |
-| [💬 Parallel Voices](https://ezzelddin-abdallah.github.io/pollinations-parallel-voices) | Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen. | [@EzzElddin-AbdAllah](https://github.com/EzzElddin-AbdAllah) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

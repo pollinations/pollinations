@@ -151,7 +151,10 @@ export function wrapChatResponse(response: ChatResponse): ChatResponseExt {
     const usage = response.usage;
     return {
         ...response,
-        text: response.choices[0]?.message?.content || "",
+        text:
+            response.choices[0]?.message?.content ||
+            response.choices[0]?.message?.refusal ||
+            "",
         tokens: {
             input: usage?.prompt_tokens || 0,
             output: usage?.completion_tokens || 0,

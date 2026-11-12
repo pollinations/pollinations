@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.29] - 2026-11-12
+
+### Fixed
+- `chat()` and `generateText(prompt, { raw: true })` return the refusal as
+  `text` for refusal-only completions, like `text()` already does.
+
 ## [5.1.0-alpha.28] - 2026-11-11
 
 ### Fixed

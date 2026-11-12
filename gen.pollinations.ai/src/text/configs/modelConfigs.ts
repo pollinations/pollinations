@@ -204,6 +204,20 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "google/gemini-decision-1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "google/gemini-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["google"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
+    "gemini-decision-1": () => portkeyConfig["google/gemini-decision-1"](),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:

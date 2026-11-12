@@ -313,6 +313,56 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     });
 });
 
+test("routes google/gemini-decision-1 through the OpenRouter decisions endpoint", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 1 },
+    });
+    mocks.decisions.state.response = Response.json({
+        id: "dec-gemini-1",
+        model: "google/gemini-decision-1",
+        provider: "Google",
+        answers: {
+            act: { type: "noul", noul: 0.95 },
+        },
+        usage: { input_tokens: 452, output_tokens: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "google/gemini-decision-1",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "google/gemini-decision-1",
+        provider: "Google",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "google/gemini-decision-1" },
+    });
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "google/gemini-decision-1",
+        modelProviderUsed: "openrouter",
+        tokenCountPromptText: 452,
+        tokenCountCompletionText: 0,
+        isBilledUsage: true,
+    });
+    expect(event.totalCost).toBeCloseTo((452 * 0.1 * 1.055) / 1_000_000, 12);
+    expect(event.totalPrice).toBe(0.00004769);
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0.99995231,
+    });
+});
+
 test("routes Span-01 Lite under its own id and bills nothing", async ({
     mocks,
 }) => {

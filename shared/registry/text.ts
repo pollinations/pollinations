@@ -1996,6 +1996,36 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: true,
     },
+    "google/gemini-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "decision",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // OpenRouter list price ($0.10/M) plus its 5.5% credit fee.
+            promptTextTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Gemini Decision 1",
+        description:
+            "Fast multimodal decisions with calibrated confidence and probabilities instead of generated text; " +
+            "post state and questions to /alpha/decisions, or send the same " +
+            "JSON in the last user message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        maxReferenceImages: 3600,
+        maxReferenceVideos: 10,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

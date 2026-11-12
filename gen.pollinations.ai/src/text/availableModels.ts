@@ -1058,6 +1058,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "google/gemini-decision-1",
+        config: portkeyConfig["google/gemini-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(

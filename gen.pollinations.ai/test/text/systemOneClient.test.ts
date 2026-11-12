@@ -402,6 +402,33 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("routes google/gemini-decision-1 to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "google/gemini-decision-1",
+                });
+                return Response.json({
+                    model: "google/gemini-decision-1",
+                    answers,
+                    usage: { input_tokens: 35, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "google/gemini-decision-1",
+                modelConfig: {
+                    ...modelConfig,
+                    model: "google/gemini-decision-1",
+                },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("routes liquid/d1 to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

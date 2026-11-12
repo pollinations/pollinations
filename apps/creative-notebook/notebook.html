@@ -1,0 +1,124 @@
+<!doctype html>
+<notebook theme="cotton">
+  <title>Pollinations · a living prompt study</title>
+  <script id="1" type="text/markdown">
+    # A living prompt study
+    Change a subject, compose a prompt, inspect a result, share a study.
+    The saved schematic below works without a key. Generating a new image spends Pollen
+    from the key you supply; only **Generate one image** sends a generation request.
+
+    **Hack the cells:** in this example’s repository folder, edit ordinary JavaScript in
+    `notebook.html` and `study.js`, and run `npm install` then `npm run dev`. `npm run build` makes a static site in `.observable/dist`.
+    Observable Desktop can also edit the notebook. The published page shows source;
+    it does not include an editor. To run the downloads, save all four files in a new folder,
+    then run `npm install` and `npm run dev` there. The dev command prepares source attachments. Keys stay in memory and are never saved or exported.
+  </script>
+  <script id="2" type="module">
+    import {defaults, parametersFor, imageUrl, savedPreview, exportStudy} from "./study.js";
+    const notebookSource = FileAttachment("source/notebook.html.txt");
+    const helperSource = FileAttachment("source/study.js.txt");
+    const packageSource = FileAttachment("source/package.json.txt");
+    const testSource = FileAttachment("source/study.test.js.txt");
+    display(html`<p><a href=${await notebookSource.url()} download="notebook.html">Download notebook source</a> · <a href=${await helperSource.url()} download="study.js">Download pure functions</a> · <a href=${await packageSource.url()} download="package.json">Download package.json</a> · <a href=${await testSource.url()} download="study.test.js">Download checks</a></p>`);
+  </script>
+  <script id="3" type="module" pinned>
+    const controls = Inputs.form({
+      subject: Inputs.text({label: "Subject", value: defaults.subject}),
+      medium: Inputs.select(["cyanotype", "risograph", "charcoal drawing"], {label: "Medium", value: defaults.medium}),
+      model: Inputs.text({label: "Image model", value: defaults.model}),
+      seed: Inputs.number([0, 2147483647], {label: "Seed", value: defaults.seed, step: 1})
+    });
+    const draft = view(controls);
+  </script>
+  <script id="4" type="text/markdown">
+    ## 1 · Local composition
+    These inputs only recompute the prompt below. Edit `parametersFor` to change
+    the transformation. Model names come from [/image/models](https://gen.pollinations.ai/image/models).
+    A model's price and availability can change.
+  </script>
+  <script id="5" type="module" pinned>
+    const parameters = parametersFor(draft);
+    display(parameters);
+  </script>
+  <script id="6" type="text/markdown">
+    ## 2 · Deliberate generation
+    This cell owns the network effect. It snapshots the controls when clicked.
+    Editing an input cancels the local wait; a provider may already have started
+    and charged for a submitted request. Failed or superseded runs keep the last good result.
+  </script>
+  <script id="7" type="module" pinned>
+    const runner = html`<section>
+      <label>API key <input type="password" autocomplete="off" spellcheck="false" placeholder="Optional · paste your key to generate"></label>
+      <p><button type="button">Generate one image · spends Pollen</button></p>
+      <p role="status">Showing a saved schematic. No generation requested.</p>
+    </section>`;
+    const key = runner.querySelector("input");
+    const button = runner.querySelector("button");
+    const status = runner.querySelector("[role=status]");
+    let version = 0, controller;
+    runner.value = savedPreview;
+    const cancel = () => {
+      version++;
+      if (controller) {
+        controller.abort();
+        controller = undefined;
+        button.disabled = false;
+        status.textContent = "Inputs changed. Last good result kept; click Generate to submit again.";
+      }
+    };
+    controls.addEventListener("input", cancel);
+    button.onclick = async () => {
+      const ticket = ++version;
+      try {
+        const snapshot = parametersFor(controls.value);
+        if (!key.value.trim()) throw new Error("Supply your API key to generate, or explore the saved preview.");
+        controller = new AbortController();
+        button.disabled = true;
+        status.textContent = "Generating one image…";
+        const response = await fetch(imageUrl(snapshot), {
+          headers: {Authorization: `Bearer ${key.value.trim()}`}, signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`Generation failed (HTTP ${response.status}).`);
+        const blob = await response.blob();
+        if (!blob.type.startsWith("image/")) throw new Error("The response was not an image.");
+        const url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Could not save the image."));
+          reader.readAsDataURL(blob);
+        });
+        if (ticket !== version) return;
+        runner.value = {parameters: snapshot, images: [{url, caption: snapshot.prompt}]};
+        runner.dispatchEvent(new Event("input", {bubbles: true}));
+        status.textContent = "Image saved in this tab. Export it before closing.";
+      } catch (error) {
+        if (ticket === version) status.textContent = `${error.message} Last good result kept.`;
+      } finally {
+        if (ticket === version) {controller = undefined; button.disabled = false;}
+      }
+    };
+    invalidation.then(() => {
+      cancel();
+      controls.removeEventListener("input", cancel);
+      key.value = "";
+    });
+    const result = view(runner);
+  </script>
+  <script id="8" type="text/markdown">
+    ## 3 · Inspect and share
+    The result retains the inputs used for that run, even when the draft changes.
+    The export includes image data, parameters, and source filenames. Download the
+    four source files above too; JSON contains no runnable code or credentials.
+  </script>
+  <script id="9" type="module" pinned>
+    const zoom = view(Inputs.range([160, 640], {label: "Preview width", value: 360, step: 20}));
+  </script>
+  <script id="10" type="module">
+    display(html`<figure><img src=${result.images[0].url} alt=${result.images[0].caption} style=${`width:${zoom}px;max-width:100%;height:auto`}><figcaption>${result.images[0].caption}</figcaption></figure>`);
+    display(result.parameters);
+    const exported = exportStudy(result);
+    const download = URL.createObjectURL(new Blob([JSON.stringify(exported, null, 2)], {type: "application/json"}));
+    display(html`<a href=${download} download="pollinations-study.json">Export study + image bank</a>`);
+    invalidation.then(() => URL.revokeObjectURL(download));
+  </script>
+</notebook>

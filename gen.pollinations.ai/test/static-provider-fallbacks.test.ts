@@ -1822,7 +1822,7 @@ describe("static provider fallbacks", () => {
         const fallback = TEXT_SERVICES[route];
         expect(primary).toMatchObject({
             provider: "google",
-            paidOnly: false,
+            paidOnly: true,
             priceMultiplier: 1,
             aliases: [],
             fallbacks: [route],

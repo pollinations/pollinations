@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Machine Double",
+    "url": "https://patbing.github.io/machine-double",
+    "description": "An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/machine-double",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19419",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4031e01d-d870-43d3-b148-9f2515094cd0"
+  },
+  {
+    "emoji": "🎮",
     "name": "Left Alone",
     "url": "https://sugamdeol.github.io/left-alone",
     "description": "Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is.",

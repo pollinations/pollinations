@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Machine Double](https://patbing.github.io/machine-double) | An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen. | [@patbing](https://github.com/patbing) |
 | [🎮 Left Alone](https://sugamdeol.github.io/left-alone) | Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Decision Pit](https://patbing.github.io/decision-pit) | AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP. | [@patbing](https://github.com/patbing) |
 | [🎮 Night Cipher](https://night-cipher.vercel.app) | A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP. | [@argyrisAEK](https://github.com/argyrisAEK) |
@@ -30,7 +31,6 @@
 | [🖼️ Pollinations Studio](https://pollinations-studio-1.vercel.app) | AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication. | [@lekezoa](https://github.com/lekezoa) |
 | [🖼️ Tomadix](https://tomadix.ibitweb.com.br) | Tomadix is an AI-powered creative platform designed to help users create professional prompts and generate high-quality images using artificial intelligence. Made with Pollinations.ai. | [@gereiz](https://github.com/gereiz) |
 | [💬 Parallel Voices](https://ezzelddin-abdallah.github.io/pollinations-parallel-voices) | Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen. | [@EzzElddin-AbdAllah](https://github.com/EzzElddin-AbdAllah) |
-| [💬 DynaSpark AI](https://dynaspark.th3.qzz.io) | DynaSpark AI is a versatile multimodal assistant for text, code, image and video generation, data analysis, and web and document processing, powered by Pollinations AI and BYOP models. | [@Th3-C0der](https://github.com/Th3-C0der) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

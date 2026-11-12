@@ -6008,8 +6008,8 @@
   {
     "emoji": "🎨",
     "name": "AI Image Generator",
-    "url": "https://unique-chebakia-44dbdc.netlify.app/",
-    "description": "Generate images with AI Image Generator.",
+    "url": "https://cr-ai-image-generator.netlify.app/",
+    "description": "Type a prompt and generate an image in your browser. Sign in with Pollinations and pay with your own Pollen.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -6022,7 +6022,7 @@
     "submittedDate": "2026-04-06",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9991",
     "approvedDate": "2026-05-17",
-    "byop": false,
+    "byop": true,
     "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/1e368df7-6f31-4eea-977a-64ac7d296f12"
   },

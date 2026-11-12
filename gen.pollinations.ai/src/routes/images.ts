@@ -152,11 +152,14 @@ async function parseEditInput(c: Context): Promise<{
                 message: "Invalid multipart form data",
             });
         }
-        const prompt = formData.get("prompt") as string;
-        if (!prompt)
+        const promptField = formData.get("prompt");
+        // A file in the prompt field is not a prompt: passing it on reaches
+        // string helpers and used to surface as a 500.
+        if (typeof promptField !== "string" || !promptField)
             throw new UpstreamError(400, {
                 message: "Missing required field: prompt",
             });
+        const prompt = promptField;
 
         const imageUrls: string[] = [];
         for (const entry of [
@@ -214,13 +217,19 @@ async function parseEditInput(c: Context): Promise<{
                 message: size.error.issues.map((i) => i.message).join(", "),
             });
 
+        const safeField = formData.get("safe");
+        if (safeField !== null && typeof safeField !== "string")
+            throw new UpstreamError(400, {
+                message: "safe must be a string",
+            });
+
         return {
             prompt,
             imageUrls,
             size: size.data,
             quality: (formData.get("quality") as string) || undefined,
             seed: seed.data ?? undefined,
-            safe: formData.get("safe") as string | null,
+            safe: safeField,
             response_format: format.data,
             extra: collectPassthrough(
                 Object.fromEntries(formData.entries()),

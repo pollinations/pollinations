@@ -1011,6 +1011,18 @@ export const proxyRoutes = new Hono<Env>()
                                 format: "binary",
                             },
                         },
+                        "image/webp": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/gif": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
                         "image/svg+xml": {
                             schema: {
                                 type: "string",

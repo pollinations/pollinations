@@ -31,6 +31,8 @@ import {
     mediaResponseHeaders,
 } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
+import { every } from "hono/combine";
+import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -578,6 +580,15 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
     });
 }
 
+function assertDialogueOutputFormat(responseFormat: string | undefined): void {
+    if (responseFormat === "flac") {
+        throw new UpstreamError(400, {
+            message:
+                "Dialogue supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
+        });
+    }
+}
+
 export async function generateElevenLabsDialogue(opts: {
     inputs: { text: string; voice: string }[];
     responseFormat: string;
@@ -586,16 +597,11 @@ export async function generateElevenLabsDialogue(opts: {
     log: Logger;
 }): Promise<Response> {
     const { inputs, responseFormat, seed, apiKey, log } = opts;
+    assertDialogueOutputFormat(responseFormat);
     const characterCount = inputs.reduce(
         (total, input) => total + input.text.length,
         0,
     );
-    if (responseFormat === "flac") {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "Dialogue supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
-        });
-    }
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Dialogue service is not configured (missing API key)",
@@ -4035,6 +4041,20 @@ async function generateAudioFromSpeechRequest(
     });
 }
 
+export const speechAudioCache = every(
+    createMiddleware<Env>(async (c, next) => {
+        if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
+            const responseFormat =
+                c.req.method === "GET"
+                    ? c.req.query("response_format")
+                    : (await parseSpeechRequest(c)).response_format;
+            assertDialogueOutputFormat(responseFormat);
+        }
+        await next();
+    }),
+    audioCache,
+);
+
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
@@ -4732,7 +4752,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         track("generate.audio"),
         prepareGenerationRequest,
-        audioCache,
+        speechAudioCache,
         generationAccess,
         deduplicateGeneration,
         apiKeyBudgetReservation,

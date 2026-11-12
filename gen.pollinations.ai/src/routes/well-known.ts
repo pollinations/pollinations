@@ -1,5 +1,5 @@
 import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
+import { getPublicOrigin, siblingOrigin } from "@shared/public-origin.ts";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
@@ -146,9 +146,7 @@ export const wellKnownRoutes = new Hono<Env>()
         c.header("Cache-Control", "public, max-age=3600");
         return c.json({
             resource: origin,
-            authorization_servers: [
-                origin.replace("gen.pollinations.ai", "enter.pollinations.ai"),
-            ],
+            authorization_servers: [siblingOrigin(origin, "enter")],
             scopes_supported: [...OAUTH_SCOPES],
             bearer_methods_supported: ["header"],
             resource_name: "Pollinations API",

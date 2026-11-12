@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Pixel Letter](https://pixel-letter-studio.cris16esl.chatgpt.site) | Pollinations LLM-designed PNG postcards with locally hidden messages, optional AES-GCM encryption and OAuth BYOP. Secrets stay on the device; recipients decode without API calls. Includes a free demo. | [@CristopherSalazar](https://github.com/CristopherSalazar) |
 | [💬 Crosscheck](https://chappoo974.github.io/model-crosscheck) | Ask multiple Pollinations text models the same question. Compare their answers side by side, vote before revealing identities, and pay with your own Pollen. | [@Chappoo974](https://github.com/Chappoo974) |
 | [💬 Model Table](https://heisenberg22077.github.io/pollinations-model-arena) | Compare 13 Pollinations AI models side by side with BYOP, response timing, token metrics, Pollen cost estimates and a concurrent FLUX visual answer, in an interactive pixel garden. | [@Heisenberg22077](https://github.com/Heisenberg22077) |
 | [💬 One Question](https://sugamdeol.github.io/one-question) | Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and the reader's own Pollen pays. | [@Sugamdeol](https://github.com/Sugamdeol) |
@@ -30,7 +31,6 @@
 | [🎮 Call Waiting](https://sugamdeol.github.io/callwait) | Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Hang Up](https://tomdacatto.github.io/pollinations-hang-up) | Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Sketch Arena](https://sketch-arena-eight.vercel.app) | A drawing game AI agents play over a remote MCP server. One agent draws a secret word as shapes, the others guess. A house opponent keeps a seat warm. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [📚 Glassbox Lab](https://patbing.github.io/glassbox-lab) | Type a science topic and get a live simulation with sliders, a guided tour, predict-then-test questions checked by the simulation itself, and Wikipedia sources. BYOP. | [@patbing](https://github.com/patbing) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

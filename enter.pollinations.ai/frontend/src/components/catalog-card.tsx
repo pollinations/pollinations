@@ -29,27 +29,23 @@ export const CatalogCard: FC<{
     /** Without one (a model with no brand logo), the text keeps its place. */
     logo: ReactNode;
     children: ReactNode;
-    /** More about it on its own lines under the logo row, from the left. */
-    details?: ReactNode;
     price: ReactNode;
     copy?: { value: string; label: string };
+    /** Beside the copy box: whether what you copy works right now. */
+    status?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({ logo, children, details, price, copy, action, split = "half" }) => (
+}> = ({ logo, children, price, copy, status, action, split = "half" }) => (
     <Surface className="flex flex-col gap-3">
         <div className={`grid gap-3 ${SPLIT[split].top}`}>
-            <div className="flex min-w-0 flex-col gap-3">
-                <div className="flex min-w-0 items-center gap-2.5">
-                    {logo ?? (
-                        <span aria-hidden="true" className="w-8 shrink-0" />
-                    )}
-                    <span
-                        aria-hidden="true"
-                        className={`h-10 w-px shrink-0 bg-divider ${logo ? "" : "invisible"}`}
-                    />
-                    <div className="min-w-0 flex-1">{children}</div>
-                </div>
-                {details}
+            {/* The logo lines up with the title, however many lines follow. */}
+            <div className="flex min-w-0 items-start gap-2.5">
+                {logo ?? <span aria-hidden="true" className="w-8 shrink-0" />}
+                <span
+                    aria-hidden="true"
+                    className={`h-10 w-px shrink-0 bg-divider ${logo ? "" : "invisible"}`}
+                />
+                <div className="min-w-0 flex-1">{children}</div>
             </div>
             <div className="min-w-0">{price}</div>
         </div>
@@ -59,8 +55,11 @@ export const CatalogCard: FC<{
             >
                 {/* Only as wide as the command needs. */}
                 {copy && (
-                    <div className="w-fit min-w-0 max-w-full">
-                        <CopyField label={copy.label} value={copy.value} />
+                    <div className="flex min-w-0 max-w-full items-center gap-2">
+                        <div className="w-fit min-w-0 max-w-full">
+                            <CopyField label={copy.label} value={copy.value} />
+                        </div>
+                        {status}
                     </div>
                 )}
                 {action && (

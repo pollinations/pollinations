@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 The Call That Never Ends](https://arvex-gh.github.io/the-call-that-never-ends) | Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo. | [@Arvex-GH](https://github.com/Arvex-GH) |
 | [💬 Two AIs Talk](https://two-ais-talk.pollinations.app) | Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen. | [@hellway803-creator](https://github.com/hellway803-creator) |
 | [🎮 Call Waiting](https://sugamdeol.github.io/callwait) | Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Hang Up](https://tomdacatto.github.io/pollinations-hang-up) | Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
@@ -30,7 +31,6 @@
 | [🎮 Left Alone](https://sugamdeol.github.io/left-alone) | Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Decision Pit](https://patbing.github.io/decision-pit) | AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP. | [@patbing](https://github.com/patbing) |
 | [🎮 Night Cipher](https://night-cipher.vercel.app) | A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP. | [@argyrisAEK](https://github.com/argyrisAEK) |
-| [💼 Pollen Tower](https://tomdacatto.github.io/pollinations-pollen-tower) | 3D tower of AI-run companies, each floor a public Pollinations prompt agent. Run a company's day, rent an office with your own agent, and pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

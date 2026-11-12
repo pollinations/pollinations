@@ -1,6 +1,27 @@
 [
   {
     "emoji": "💬",
+    "name": "Crosscheck",
+    "url": "https://chappoo974.github.io/model-crosscheck",
+    "description": "Ask multiple Pollinations text models the same question. Compare their answers side by side, vote before revealing identities, and pay with your own Pollen.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "Chappoo974",
+    "githubUserId": "279499521",
+    "repositoryUrl": "https://github.com/Chappoo974/model-crosscheck",
+    "repositoryStars": null,
+    "discordUsername": "officialkirk",
+    "other": null,
+    "submittedDate": "2026-11-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19502",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/7d08fc48-ef03-45e9-9dd9-0cb95f9995a5"
+  },
+  {
+    "emoji": "💬",
     "name": "Model Table",
     "url": "https://heisenberg22077.github.io/pollinations-model-arena",
     "description": "Compare 13 Pollinations AI models side by side with BYOP, response timing, token metrics, Pollen cost estimates and a concurrent FLUX visual answer, in an interactive pixel garden.",

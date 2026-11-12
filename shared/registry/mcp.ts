@@ -253,7 +253,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Calculators",
         description:
-            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+            "Time, cron schedules, Unicode, color contrast, QR codes, text hashes, and ECB currency rates.",
         binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {

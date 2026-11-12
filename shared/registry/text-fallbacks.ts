@@ -422,14 +422,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        // Vercel AI Gateway pinned to Novita at the primary's text rates.
-        "qwen/qwen3.8-2.4t-a95b:vercel": {
-            provider: "vercel",
-            addedDate: new Date("2026-10-24").getTime(),
+        // SiliconFlow FP8 rates include OpenRouter's 5.5% credit-purchase fee.
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {
+            provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.25),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
         },
     },

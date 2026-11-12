@@ -513,14 +513,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
-    it("pins the Qwen3.8 A95B fallback to Novita on Vercel", () => {
+    it("pins the Qwen3.8 A95B fallback to the dated SiliconFlow FP8 endpoint", () => {
         const result = resolveModelConfig(messages, {
-            model: "qwen/qwen3.8-2.4t-a95b:vercel",
+            model: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
         });
 
-        expect(result.options.model).toBe("alibaba/qwen3.8-2.4t-a95b");
-        expect(result.options.providerOptions).toEqual({
-            gateway: { only: ["novita"] },
+        expect(result.options.model).toBe("qwen/qwen3.8-2.4t-a95b-20260812");
+        expect(result.options.provider).toEqual({
+            only: ["siliconflow/fp8"],
+            allow_fallbacks: false,
         });
     });
 

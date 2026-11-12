@@ -443,8 +443,10 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:vercel",
-        config: portkeyConfig["qwen/qwen3.8-2.4t-a95b:vercel"],
+        name: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
+        config: portkeyConfig[
+            "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8"
+        ],
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {

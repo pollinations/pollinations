@@ -816,13 +816,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "qwen/qwen3.8-2.4t-a95b": () =>
         createAlibabaModelConfig({ model: "qwen3.8-2.4t-a95b" }),
-    "qwen/qwen3.8-2.4t-a95b:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "alibaba/qwen3.8-2.4t-a95b",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+    "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-2.4t-a95b-20260812",
             responsesEndpoint: undefined,
             defaultOptions: {
-                providerOptions: { gateway: { only: ["novita"] } },
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    allow_fallbacks: false,
+                },
             },
         }),
     "moonshotai/Kimi-K2.6": () =>

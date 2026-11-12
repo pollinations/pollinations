@@ -10,6 +10,7 @@ import {
 import {
     type UseAccountKeyValue,
     useAccountKey,
+    useAccountKeyUsage,
     useAuthState,
     useTextGeneration,
 } from "./hooks.js";
@@ -105,6 +106,33 @@ describe("account hooks", () => {
         expect(read<UseAccountKeyValue>(latest).data).toBeNull();
         expect(read<UseAccountKeyValue>(latest).isLoading).toBe(false);
         expect(read<UseAccountKeyValue>(latest).error).toBeNull();
+    });
+
+    it("forwards the usage page cursor to the key usage endpoint", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(jsonResponse({ usage: [], count: 0 }));
+
+        function Probe() {
+            useAccountKeyUsage({
+                before: "2026-11-01 00:00:00",
+                before_event_id: "evt_1",
+            });
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        await waitFor(() => fetchMock.mock.calls.length > 0);
+        const url = new URL(String(fetchMock.mock.calls[0][0]));
+        expect(url.searchParams.get("before")).toBe("2026-11-01 00:00:00");
+        expect(url.searchParams.get("before_event_id")).toBe("evt_1");
     });
 
     it("exposes a temporary account failure and recovers on refresh without disconnecting", async () => {

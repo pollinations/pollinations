@@ -12,7 +12,7 @@ const WAN_3_IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
 const WAN_3_R2V_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
-const WAN_3_DURATION_SECONDS = 5;
+const WAN_3_DEFAULT_DURATION_SECONDS = 5;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
 const WAN_3_ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
@@ -27,6 +27,7 @@ interface FalQueueStatus {
 }
 
 interface FalWan3Result {
+    duration?: number;
     video?: {
         url?: string;
         content_type?: string;
@@ -51,12 +52,7 @@ export async function callWan3FalAPI(
             message: "Wan 3.0 is not configured",
         });
 
-    const duration = safeParams.duration ?? WAN_3_DURATION_SECONDS;
-    if (duration !== WAN_3_DURATION_SECONDS) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Wan 3.0 supports exactly 5 seconds",
-        });
-    }
+    const duration = safeParams.duration ?? WAN_3_DEFAULT_DURATION_SECONDS;
 
     const images = safeParams.image ?? [];
     const hasFrames = images.length > 0;
@@ -165,6 +161,17 @@ export async function callWan3FalAPI(
             message: "Wan 3.0 returned no video",
         });
     }
+    // Bill the generated length fal reports, not the requested one.
+    const outputSeconds = result.duration;
+    if (
+        typeof outputSeconds !== "number" ||
+        !Number.isFinite(outputSeconds) ||
+        outputSeconds <= 0
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "Wan 3.0 returned no video duration",
+        });
+    }
 
     const videoResponse = await fetchUpstream(result.video.url, {
         errorLabel: "Failed to download Wan 3.0 output",
@@ -175,10 +182,10 @@ export async function callWan3FalAPI(
             result.video.content_type ||
             videoResponse.headers.get("content-type") ||
             "video/mp4",
-        durationSeconds: duration,
+        durationSeconds: outputSeconds,
         trackingData: {
             actualModel: safeParams.model,
-            usage: { completionVideoSeconds: duration },
+            usage: { completionVideoSeconds: outputSeconds },
         },
     };
 }

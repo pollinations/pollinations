@@ -9,6 +9,7 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     type OpenAIImageUsage,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     usageToOpenAIImageUsage,
 } from "@shared/registry/usage-headers.ts";
@@ -24,6 +25,7 @@ import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
 // --- Helpers ---
@@ -35,6 +37,10 @@ const PASSTHROUGH_PARAMS = [
     "guidance_scale",
     "duration",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 const CACHE_PARAMS = [
     "image",
@@ -46,6 +52,10 @@ const CACHE_PARAMS = [
     "resolution",
     "aspectRatio",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 
 function imageResponse(
@@ -81,6 +91,12 @@ function responseImageUsage(
     // /v1/images/* records fallback_used = false.
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
+    // Some providers report a charge instead of token counts. Preserve the
+    // receipt when wrapping the media response in OpenAI-compatible JSON.
+    for (const name of Object.values(PROVIDER_BILLING_HEADERS)) {
+        const value = response.headers.get(name);
+        if (value !== null) c.header(name, value);
+    }
     return usageToOpenAIImageUsage(usage);
 }
 
@@ -320,6 +336,27 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
+        // OpenAI-style aspect_ratio is an optional convenience when no custom
+        // size was specified. Explicit non-default size remains authoritative.
+        const flareAspectSizes: Record<string, string> = {
+            "16:9": "1536x864",
+            "9:16": "864x1536",
+            "1:1": "1024x1024",
+            "4:3": "1152x864",
+            "3:4": "864x1152",
+            "3:2": "1536x1024",
+            "2:3": "1024x1536",
+        };
+        const ratio = body.aspect_ratio;
+        const ratioSize =
+            c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
+            typeof ratio === "string" &&
+            body.size === "1024x1024"
+                ? flareAspectSizes[ratio]
+                : undefined;
+        // The generation handler resolves size again after the cache middleware,
+        // so persist the effective size instead of only changing this local copy.
+        if (ratioSize) body.size = ratioSize;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
@@ -339,7 +376,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             normalizedJsonBody(
                 JSON.stringify({
                     prompt: safePrompt,
-                    model: c.var.model.resolved,
+                    model: c.var.model.requested.includes(",")
+                        ? c.var.model.requested
+                        : c.var.model.resolved,
                     ...resolved,
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),
@@ -368,9 +407,12 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest;
         const mediaLink = response.headers.get("Link");
         if (mediaLink) c.header("Link", mediaLink);
+        const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
+        if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
         const mediaData =
-            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
+            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
+            mediaType.startsWith("video/")
                 ? { media_type: mediaType }
                 : {};
 

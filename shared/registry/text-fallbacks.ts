@@ -6,6 +6,7 @@ import {
 } from "./cost-variants";
 import {
     openRouterGeminiBilling,
+    reportedTextCost,
     VERCEL_EXA_SEARCH_BILLING,
 } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
@@ -343,11 +344,12 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-flash:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra current 35% discount verified 2026-10-24; callers keep the Novita quote.
+            // DeepInfra standard rates verified 2026-11-11; the 35% discount ended.
+            // Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.091),
-                promptCachedTokens: perMillion(0.00182),
-                completionTextTokens: perMillion(0.182),
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
             },
         },
     },
@@ -421,14 +423,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        "qwen/qwen3.8-2.4t-a95b:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        // SiliconFlow FP8 rates include OpenRouter's 5.5% credit-purchase fee.
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {
+            provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
         },
     },
@@ -602,6 +603,22 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3.1-pro": {
+        "moonshotai/kimi-k3.1-pro:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelKimiK31,
+            provider: "vercel",
+            addedDate: new Date("2026-11-06").getTime(),
+            // Vercel AI Gateway list rates (2026-11-03), no gateway fee; cache
+            // writes bill at the input rate (Moonshot 5-minute TTL).
+            // https://ai-gateway.vercel.sh/v1/models/moonshotai/kimi-k3.1-pro/endpoints
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.2),
+                promptCacheWriteTokens: perMillion(2),
+                completionTextTokens: perMillion(10),
             },
         },
     },
@@ -865,16 +882,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3.5-lightning": {
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
-            supportedParameters: CHAT_PARAMETERS.openRouterNemotron,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+        "nvidia/nemotron-3.5-lightning:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
+            provider: "deepinfra",
+            addedDate: new Date("2026-11-09").getTime(),
             cost: {
-                // OpenRouter CoreWeave BF16 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.07) * 1.055,
-                promptCachedTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(0.2) * 1.055,
+                // DeepInfra BF16 rates (2026-10-24): $0.06/$0.03/$0.16 per million.
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.16),
             },
         },
     },
@@ -894,17 +910,22 @@ export const TEXT_FALLBACKS = {
     },
     "nvidia/nemotron-3-ultra": {
         "nvidia/nemotron-3-ultra:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
             provider: "deepinfra",
-            addedDate: new Date("2026-09-30").getTime(),
+            addedDate: new Date("2026-11-09").getTime(),
+            // DeepInfra NVFP4 standard-tier rates (2026-10-24).
             cost: {
-                // DeepInfra standard-tier rates (2026-09-30). Flex is
-                // deliberately excluded because requests may wait up to ten
-                // minutes.
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.2),
             },
+        },
+    },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Direct Anthropic standard rates match Bedrock global.
         },
     },
     "mistralai/mistral-small-4": {
@@ -980,6 +1001,30 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 0.5 * 1.055,
             }),
+        },
+    },
+    "google/gemini-4-carbon": {
+        "google/gemini-4-carbon:openrouter:ai-studio": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-11").getTime(),
+            // OpenRouter's posted AI Studio launch rates. Receipt totals also
+            // cover rate changes and the tokens used by the Exa tool loop.
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 7 * 1.055,
+                    storageCostPerMillionTokenHours: 2.25 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
         },
     },
     "google/gemini-4-argon": {

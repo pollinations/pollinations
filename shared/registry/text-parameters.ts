@@ -200,13 +200,22 @@ export const CHAT_PARAMETERS = {
         "reasoning_effort",
         "parallel_tool_calls",
         "logit_bias",
-        "n",
         "prediction",
     ],
     // InferencePort Lightning routers: /v1/models lists temperature, stop and
     // max_tokens as the sampling controls, plus tools and JSON mode.
     inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
+    // DeepInfra's Nemotron routes return no logprobs and ignore logit_bias.
+    deepinfraNemotron: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        "seed",
+        "top_k",
+        "reasoning_effort",
+        "parallel_tool_calls",
+        "n",
+    ],
     openRouterGemma: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,
@@ -246,18 +255,6 @@ export const CHAT_PARAMETERS = {
         "reasoning_effort",
         "stop",
         "logit_bias",
-    ],
-    openRouterNemotron: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        ...LOGPROBS,
-        ...OPENROUTER_REASONING,
-        "top_k",
-        "repetition_penalty",
-        "seed",
-        "response_format",
-        "stop",
     ],
     // Shared by the Together and DeepInfra FP4 endpoints: neither accepts seed,
     // and only Together lists logprobs.

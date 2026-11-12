@@ -205,8 +205,8 @@ of guessing them.
 
 The Connectors MCP uses Composio to discover and run tools in each user's own
 accounts. Connect the MCP endpoint, then ask for a specific task, such as
-“Summarize my unread Gmail”, “Find open issues in my GitHub repository” or
-“Commit this fix to a new branch in my fork.” Hosted agents can't use it. GitHub
+âSummarize my unread Gmailâ, âFind open issues in my GitHub repositoryâ or
+âCommit this fix to a new branch in my fork.â Hosted agents can't use it. GitHub
 commits go through Composio's tools, such as `GITHUB_COMMIT_MULTIPLE_FILES`,
 which commits several files at once and can create the branch. `git` in the
 Computer shell can't use the connection.

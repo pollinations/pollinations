@@ -66,15 +66,15 @@ const CALLER_FIELDS = [
 ];
 
 const SYSTEM_PROMPT = `You investigate one infra-watch alert for the Pollinations maintainers in a private Discord channel.
-The user message is JSON: the moment, your previous lines on this incident, the alert, and public request statistics for the last 15 and 60 minutes.
+The user message is JSON: the moment, your previous lines on this incident, the alert, and, for a model, public request statistics for the last 15 and 60 minutes.
 The moment is one of:
 - open: the incident just opened.
 - change: it changed in a way that matters; the reason says how.
-- closed: it is over; footprint says how long it lasted and how many requests and callers it cost.
+- closed: it is over; footprint says how long it lasted and, for a model, how many requests and callers it cost.
 
 You may call read-only tools when they help explain the alert, at most ${MAX_TOOL_CALLS} calls in all:
 - model_status(model, minutes): public status rows of any official model for the last 15 or 60 minutes, for example a fallback target or a related model.
-- recent_errors(model, minutes): server errors of the last minutes (at most 60), for one official model or platform-wide when model is omitted, grouped by kind, largest first, with count, first and last time, median duration and an example request id. error_kind is one of rate_limited, quota_or_billing, content_filtered, auth, timeout, overloaded, network, config or other. omitted_errors counts errors outside the groups shown.
+- recent_errors(model, minutes): server errors of the last minutes (at most 60), for one official model or platform-wide when model is omitted, grouped by kind, largest first, with count, first and last time, median duration and an example request id. error_kind is one of database (Enter's D1 failing: API keys, sign-in and billing), rate_limited, quota_or_billing, content_filtered, auth, timeout, overloaded, network, config or other. omitted_errors counts errors outside the groups shown.
 - caller_spread(model, minutes): for one official model, requests, final 5xx failures, callers and failing callers (each an account), the largest single account's failures, and failures per traffic group: regular users, legacy bridges, operations (our own bots and monitors) and dev (staff).
 
 How to read a status row:
@@ -87,11 +87,13 @@ How to read a status row:
 - Latencies are in milliseconds; times are UTC.
 - A PRIMARY_WEAK alert means callers are fine thanks to a fallback, but the model's primary route fails often: explain why the primary fails and whether the fallback keeps up.
 - A platform-drop alert lists the models whose traffic fell the most: now10 is the last 10 minutes, baseline10 the average 10 minutes before.
+- An alert without a model is about the platform: gen or one of its hostnames, Enter (API keys, sign-in, billing), the status data, payments, a background job or feed, the community monitor or a legacy bridge. Start with recent_errors without a model.
+- An EARLY_ERRORS alert counts server errors on requests that failed before any model was known: worst is the worst minute, d1 those from Enter's database, route the route that failed most, firstAt and lastAt the first and last bad minute (epoch ms). /account/* is gen passing a request on to Enter.
 
-Your answer is added as one line to the incident's card, under a panel that already gives the success rate, the callers and each route, and under your previous lines. Reply with one line of plain text, at most two short sentences and under 250 characters:
+Your answer is added as one line to the incident's card, under the alert's panel and your previous lines. Reply with one line of plain text, at most two short sentences and under 250 characters:
 - open: the verdict (an outage, a provider fault, our fault, a single caller, or unclear), then the cause, naming the provider and the kind of error.
 - change: what changed and what it means now, without repeating your previous lines.
-- closed: what caused it and what ended it. The card's summary already says how long it lasted and how many users and requests it cost: do not repeat those numbers.
+- closed: what caused it and what ended it. The card's summary already says how long it lasted and, for a model, how many users and requests it cost: do not repeat those numbers.
 Do not repeat the panel's numbers, request ids or caveats, and no markdown.
 
 Use only facts from the data and tool results. If they cannot explain the alert, say it is unclear.`;
@@ -153,8 +155,9 @@ const TOOL_SPECS = [
     },
 ];
 
-export const investigates = (kind) =>
-    ["DEGRADED", "PRIMARY_WEAK", "PLATFORM_DROP"].includes(kind);
+// Every outage gets AI lines: when it opens, changes and closes. A sign-up
+// burst is about one email domain's accounts, not an outage.
+export const investigates = (kind) => kind !== "SIGNUP_BURST";
 
 const only = (fields, row) =>
     Object.fromEntries(fields.map((f) => [f, row[f]]));
@@ -207,6 +210,23 @@ export function evidence(post, data) {
             .slice(0, 10);
         return { alert: info, biggestDrops };
     }
+    // Payment rows carry Stripe ids: the model reads what failed, not whose.
+    if (info.kind === "PAYMENTS_FAILING")
+        return {
+            alert: {
+                ...info,
+                rows: info.rows.map(
+                    ({ kind, reason, n, amount_cents, at }) => ({
+                        kind,
+                        reason,
+                        n,
+                        amount_cents,
+                        at,
+                    }),
+                ),
+            },
+        };
+    if (!info.model) return { alert: info };
     const rows = (all) => all.filter((r) => r.model === info.model).map(pick);
     return {
         alert: info,

@@ -9,7 +9,7 @@ import {
     imageCache,
     model3dCache,
 } from "@/middleware/media-cache.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { requestedModelIds, resolveModel } from "@/middleware/model.ts";
 import { track } from "@/middleware/track.ts";
 import {
     responsesToChatCompletion,
@@ -89,7 +89,7 @@ export function mediaResponses(protocol: MediaProtocol) {
         const registry = await getGenerationModelRegistry(c.env);
         const entry =
             typeof body.model === "string"
-                ? registry.resolve(body.model)
+                ? registry.resolve(requestedModelIds(body.model)[0])
                 : null;
         const route = entry && mediaPromptRoute(entry);
         if (!entry || !route) return next();
@@ -114,7 +114,12 @@ export function mediaResponses(protocol: MediaProtocol) {
                         `${route}${encodeURIComponent(prompt)}`,
                         ctx.req.url,
                     );
-                    url.searchParams.set("model", entry.id);
+                    url.searchParams.set(
+                        "model",
+                        ctx.var.model.requested.includes(",")
+                            ? ctx.var.model.requested
+                            : entry.id,
+                    );
                     if (body.safe !== undefined)
                         url.searchParams.set("safe", String(body.safe));
                     ctx.set("generationRequestUrl", url);
@@ -164,7 +169,9 @@ export function mediaResponses(protocol: MediaProtocol) {
         // The file is already stored; this response only needs its URL.
         await media.body?.cancel();
         const response = createMediaResponse(
-            entry.id,
+            c.var.model.requested.includes(",")
+                ? (media.headers.get("x-model-used") ?? entry.id)
+                : entry.id,
             mediaUrl,
             media.headers.get("content-type") ?? "",
         );
@@ -177,7 +184,12 @@ export function mediaResponses(protocol: MediaProtocol) {
         ])
             headers.delete(name);
         // The file is immutable, not the per-request protocol envelope.
-        headers.set("Cache-Control", "no-cache");
+        headers.set(
+            "Cache-Control",
+            c.var.model.requested.includes(",")
+                ? "private, no-store"
+                : "no-cache",
+        );
         if (body.stream === true) {
             const stream = textResponseStream(response);
             headers.set("Content-Type", "text/event-stream; charset=utf-8");

@@ -1,0 +1,28 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: how old the newest row of each analytics feed is,
+    one row per source with age_seconds. error_event and product_event are
+    Enter's live feeds; d1_copy is the oldest of the five d1_* snapshots,
+    each stamped with synced_at by the data-sync workflow. A source with no
+    row in the last day reads as very old.
+
+NODE infra_watch_freshness_node
+SQL >
+    SELECT 'error_event' AS source, dateDiff('second', max(timestamp), now()) AS age_seconds
+    FROM error_event
+    WHERE environment = 'production' AND timestamp > now() - INTERVAL 1 DAY
+    UNION ALL
+    SELECT 'product_event', dateDiff('second', toDateTime(max(timestamp)), now())
+    FROM product_event
+    WHERE environment = 'production' AND timestamp > now() - INTERVAL 1 DAY
+    UNION ALL
+    SELECT 'd1_copy', dateDiff('second', least(
+        (SELECT max(synced_at) FROM d1_user),
+        (SELECT max(synced_at) FROM d1_apikey),
+        (SELECT max(synced_at) FROM d1_community_model),
+        (SELECT max(synced_at) FROM d1_session),
+        (SELECT max(synced_at) FROM d1_account)
+    ), now())
+
+TYPE endpoint

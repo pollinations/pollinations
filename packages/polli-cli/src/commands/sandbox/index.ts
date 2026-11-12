@@ -77,14 +77,17 @@ export const sandboxCommand = new Command("sandbox")
                 async (template: string, { timeout }: { timeout?: number }) => {
                     requireKey();
                     try {
-                        const { sandboxID } = await createSandbox(
+                        const { sandboxID, notice } = await createSandbox(
                             template,
                             timeout,
                         );
                         try {
                             setupSsh();
                         } catch (err) {
-                            printResult({ id: sandboxID });
+                            printResult({
+                                id: sandboxID,
+                                ...(notice && { notice }),
+                            });
                             fail(
                                 `Sandbox ${sandboxID} created, but failed to set up ssh`,
                                 err,
@@ -98,6 +101,7 @@ export const sandboxCommand = new Command("sandbox")
                         printResult({
                             id: sandboxID,
                             ssh: `ssh ${sandboxID}.polli`,
+                            ...(notice && { notice }),
                         });
                     } catch (err) {
                         fail("Failed to create sandbox", err);

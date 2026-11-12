@@ -7,6 +7,7 @@ import {
     emptyAgentForm,
     emptyForm,
     idleAction,
+    nextFormState,
 } from "../frontend/src/components/community-endpoints/types.ts";
 
 vi.hoisted(() => {
@@ -102,6 +103,19 @@ describe("getCommunityEndpointSubmitDisabledReason", () => {
         ["fallback", {}, "Complete all required fields to save"],
     ])("explains a missing %s", (_, overrides, reason) => {
         expect(endpointReason(overrides)).toBe(reason);
+    });
+});
+
+describe("nextFormState", () => {
+    it("follows the provider model for a new listing, never for a saved one", () => {
+        const form = { ...validForm, name: "llama", upstreamModel: "llama" };
+        const rename = (isEdit: boolean) =>
+            nextFormState(form, "upstreamModel", "llama-v2", isEdit);
+        expect(rename(false).name).toBe("llama-v2");
+        expect(rename(true)).toMatchObject({
+            name: "llama",
+            upstreamModel: "llama-v2",
+        });
     });
 });
 

@@ -158,7 +158,7 @@ export function createInferencePortModelConfig(
     return createOpenAICompatibleConfig(
         "https://api.inferenceport.ai/v1",
         textEnvironmentValue("INFERENCEPORT_API_KEY"),
-        overrides,
+        { supportsReasoningHistory: false, ...overrides },
     );
 }
 
@@ -168,7 +168,7 @@ export function createMistralModelConfig(
     return createOpenAICompatibleConfig(
         "https://api.mistral.ai/v1",
         textEnvironmentValue("MISTRAL_API_KEY"),
-        overrides,
+        { supportsReasoningHistory: false, ...overrides },
     );
 }
 

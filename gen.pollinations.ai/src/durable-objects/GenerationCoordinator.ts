@@ -110,6 +110,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                     await this.settleCacheHitRecord();
                 }
                 immediate = { status: "cached" };
+                this.resolveWaiters(immediate);
                 return;
             }
 
@@ -165,6 +166,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             });
             if (cachePresent) {
                 await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
+                this.resolveWaiters({ status: "cached" });
             }
         });
         return status;
@@ -199,7 +201,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
     async alarm(): Promise<void> {
         let stored: PersistedJob | undefined;
-        let interrupted: PersistedJob | undefined;
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const job = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
@@ -209,29 +210,28 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             // The alarm provides an independent timeout, not retry semantics.
-            // Claim before the provider call so a restarted alarm fails closed.
-            if (job.started) {
-                interrupted = job;
-                return;
+            // Keep the previous claim state; only fresh jobs may call a provider.
+            stored = job;
+            if (!job.started) {
+                await this.ctx.storage.put(JOB_KEY, { ...job, started: true });
             }
-
-            stored = { ...job, started: true };
-            await this.ctx.storage.put(JOB_KEY, stored);
         });
 
-        if (interrupted) {
-            await this.finish(
-                unavailable("Detached generation was interrupted"),
-                interrupted.bodyChunks,
-            );
-            return;
-        }
         if (!stored) return;
 
         let settlement: Promise<void> | undefined;
         try {
             if (await cacheExists(this.env, stored.cache)) {
                 await this.finish({ status: "cached" }, stored.bodyChunks);
+                return;
+            }
+            // An interrupted execution may have saved its result before dying.
+            // Without that result, fail closed instead of generating it again.
+            if (stored.started) {
+                await this.finish(
+                    unavailable("Detached generation was interrupted"),
+                    stored.bodyChunks,
+                );
                 return;
             }
 
@@ -372,9 +372,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 });
                 await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
             }
-            for (const resolve of this.waiters) resolve(outcome);
-            this.waiters.clear();
+            this.resolveWaiters(outcome);
         });
+    }
+
+    /** Cache-hit recovery may cancel the only alarm that could wake callers. */
+    private resolveWaiters(outcome: GenerationOutcome): void {
+        for (const resolve of this.waiters) resolve(outcome);
+        this.waiters.clear();
     }
 
     /** A cache-hit join settles the pending record when the alarm cannot. */

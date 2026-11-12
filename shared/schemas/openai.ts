@@ -344,7 +344,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -428,7 +428,17 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((value, ctx) => {
+        if (value.tool_choice === "required" && !value.tools?.length) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["tools"],
+                message:
+                    'tool_choice "required" requires at least one tool in tools.',
+            });
+        }
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
@@ -840,8 +850,37 @@ export const OpenAIModelSchema = z
                 "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
             ),
         context_length: z.number().optional(),
+        video_capabilities: ModelInfoSchema.shape.video_capabilities.describe(
+            "Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video.",
+        ),
+        min_duration: ModelInfoSchema.shape.min_duration.describe(
+            "Shortest accepted video or audio `duration` in seconds.",
+        ),
+        max_duration: ModelInfoSchema.shape.max_duration.describe(
+            "Longest accepted video or audio `duration` in seconds.",
+        ),
+        default_duration: ModelInfoSchema.shape.default_duration.describe(
+            "Video length in seconds when the request omits `duration`.",
+        ),
+        allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
+            "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
+        ),
+        resolutions: ModelInfoSchema.shape.resolutions.describe(
+            "Output resolutions the model accepts for the `resolution` parameter, such as `1k`, `2k` or `1080p`. The first entry is the default. Omitted when the model declares none.",
+        ),
         per_user_rpm: z.number().positive().nullable().optional(),
+        max_reference_images:
+            ModelInfoSchema.shape.max_reference_images.describe(
+                "Most reference or input images one request accepts. Omitted when the model declares none.",
+            ),
+        max_reference_videos:
+            ModelInfoSchema.shape.max_reference_videos.describe(
+                "Most reference or input videos one request accepts. Omitted when the model declares none.",
+            ),
         health: ModelHealthSchema.optional(),
+        voices: ModelInfoSchema.shape.voices.describe(
+            "Preset voice names for the `voice` parameter. Omitted when the model lists none.",
+        ),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -863,6 +902,7 @@ export const GetModelsResponseSchema = z
 // Shared fields between image generation and editing requests
 const imageModelField = z
     .string()
+    .min(1)
     .optional()
     .default("black-forest-labs/flux.1-schnell")
     .meta({
@@ -871,6 +911,7 @@ const imageModelField = z
 // Edits need a model that reads the source image; schnell is text-only.
 const imageEditModelField = z
     .string()
+    .min(1)
     .optional()
     .default("openai/gpt-image-1-mini")
     .meta({
@@ -919,7 +960,7 @@ const imageSeedField = z
             "Seed for reproducible results. -1 maps to the stable compatibility seed.",
     });
 const imageQualityField = z
-    .enum(["standard", "hd", "low", "medium", "high"])
+    .enum(["standard", "hd", "low", "medium", "high", "auto"])
     .optional()
     .default("medium")
     .meta({
@@ -933,6 +974,16 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
+    description:
+        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+});
+const imageFrameCountField = z.number().int().min(2).max(16).optional();
+const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
+const imageBackgroundField = z
+    .enum(["auto", "opaque", "transparent"])
+    .optional();
+
 const imageResponseFormatField = z
     .enum(["url", "b64_json"])
     .optional()
@@ -950,7 +1001,18 @@ export const CreateImageRequestSchema = z
         model: imageModelField,
         n: imageNField,
         size: imageSizeField,
+        aspect_ratio: z
+            .enum(["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"])
+            .optional()
+            .meta({
+                description:
+                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+            }),
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
@@ -1032,6 +1094,10 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,

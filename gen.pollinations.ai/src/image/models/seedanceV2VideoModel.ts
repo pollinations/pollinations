@@ -21,22 +21,6 @@ import {
 const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
-const MODELS = {
-    "bytedance/seedance-2.0": {
-        upstream: "bytedance/seedance-2.0",
-        maxDuration: 15,
-    },
-    "bytedance/seedance-2.0-mini": {
-        upstream: "bytedance/seedance-2.0-mini",
-        maxDuration: 10,
-    },
-    "bytedance/seedance-2.0-fast": {
-        upstream: "bytedance/seedance-2.0-fast",
-        maxDuration: 5,
-    },
-} as const;
-type SeedanceV2ModelName = keyof typeof MODELS;
-
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
@@ -55,19 +39,13 @@ export async function callSeedanceV2API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const modelName = safeParams.model as SeedanceV2ModelName;
-    const config = MODELS[modelName];
+    const modelName = safeParams.model;
     const definition = IMAGE_SERVICES[modelName] as ModelDefinition;
     const resolution = (safeParams.resolution ??
         definition.resolutions?.[0] ??
         "720p") as SeedanceV2Input["resolution"];
 
-    // Replicate accepts 4–15 seconds. Pollinations caps Mini and Fast at their
-    // empirically verified synchronous latency limits.
-    const duration = Math.max(
-        4,
-        Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
-    );
+    const duration = safeParams.duration ?? 5;
 
     const images = safeParams.image ?? [];
 
@@ -111,7 +89,7 @@ export async function callSeedanceV2API(
     let actualDurationSeconds: number | undefined;
     try {
         const result = await runReplicatePrediction<SeedanceV2Input, string>({
-            model: config.upstream,
+            model: modelName,
             input,
         });
         videoUrl = result.output;

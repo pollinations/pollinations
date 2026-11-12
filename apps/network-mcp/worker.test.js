@@ -54,15 +54,22 @@ for (const modern of [false, true])
     test(`real stateless MCP protocol: ${modern ? "modern" : "legacy"}`, async (t) => {
         const client = await clientFor(t, modern);
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
+        const { tools } = await client.listTools();
+        assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "dns_lookup",
+            "domain_whois",
+            "http_probe",
+            "inspect_cidr",
+            "inspect_mac",
+            "ip_whois",
+        ]);
+        // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
-            (await client.listTools()).tools.map((x) => x.name).sort(),
-            [
-                "dns_lookup",
-                "domain_whois",
-                "http_probe",
-                "inspect_cidr",
-                "ip_whois",
-            ],
+            tools
+                .filter((x) => x.annotations.openWorldHint !== false)
+                .map((x) => x.name)
+                .sort(),
+            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -381,4 +388,34 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
             true,
         );
     }
+});
+test("inspect_mac parses and normalizes MAC addresses across formats", async (t) => {
+    const client = await clientFor(t);
+    const unicast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "00:1A:2B:3C:4D:5E" },
+    });
+    const uResult = JSON.parse(unicast.content[0].text);
+    assert.equal(uResult.valid, true);
+    assert.equal(uResult.formats.colon, "00:1a:2b:3c:4d:5e");
+    assert.equal(uResult.formats.hyphen, "00-1a-2b-3c-4d-5e");
+    assert.equal(uResult.formats.cisco_dot, "001a.2b3c.4d5e");
+    assert.equal(uResult.properties.is_unicast, true);
+    assert.equal(uResult.properties.is_multicast, false);
+    assert.equal(uResult.properties.is_universally_administered, true);
+
+    const multicast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "01-80-c2-00-00-00" },
+    });
+    const mResult = JSON.parse(multicast.content[0].text);
+    assert.equal(mResult.properties.is_multicast, true);
+    assert.equal(mResult.properties.is_unicast, false);
+
+    const broadcast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "ffff.ffff.ffff" },
+    });
+    const bResult = JSON.parse(broadcast.content[0].text);
+    assert.equal(bResult.properties.is_broadcast, true);
 });

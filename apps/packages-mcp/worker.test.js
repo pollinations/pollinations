@@ -115,7 +115,7 @@ test("PyPI exact/latest keeps SPDX license, dependencies, Python and yank inform
         version: "1.0",
         license: null,
         license_expression: "BSD-3-Clause",
-        summary: "Café",
+        summary: "CafÃ©",
         requires_python: ">=3.10",
         requires_dist: ["numpy>=2; python_version >= '3.11'"],
         yanked: true,

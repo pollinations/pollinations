@@ -65,7 +65,11 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "compare_versions",
+                "to_fraction",
+                "diff_text",
                 "create_qr",
+                "hash_text",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -390,4 +394,284 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "hash_text", { text: "abc" }), {
+        algorithm: "sha256",
+        hex: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        base64: "ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=",
+        bytes: 32,
+    });
+    const sha1 = await call(client, "hash_text", {
+        text: "abc",
+        algorithm: "sha1",
+    });
+    assert.equal(sha1.hex, "a9993e364706816aba3e25717850c26c9cd0d89d");
+    assert.equal(sha1.bytes, 20);
+    assert.equal(
+        (await call(client, "hash_text", { text: "abc", algorithm: "sha384" }))
+            .bytes,
+        48,
+    );
+    assert.equal(
+        (await call(client, "hash_text", { text: "abc", algorithm: "sha512" }))
+            .bytes,
+        64,
+    );
+    assert.equal(
+        (await call(client, "hash_text", { text: "héllo 👋" })).hex,
+        "241bff4036211b66e25dc44c43c7305feb99e7a62b953f03c3597ad0593c508f",
+    );
+    for (const args of [{}, { text: "" }, { text: "abc", algorithm: "md5" }])
+        assert.equal(
+            (await client.callTool({ name: "hash_text", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+});
+
+test("compare_versions orders by SemVer precedence, not string order", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.10.0", "1.9.0", "2.0.0-rc.1", "2.0.0"],
+        }),
+        {
+            sorted: ["1.9.0", "1.10.0", "2.0.0-rc.1", "2.0.0"],
+            newest: "2.0.0",
+            oldest: "1.9.0",
+            equal: false,
+        },
+    );
+    // A prerelease sorts before its release. Build metadata is ignored for
+    // precedence but preserved in the returned strings.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
+        }),
+        {
+            sorted: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
+            newest: "1.0.0",
+            oldest: "1.0.0-rc.1",
+            equal: false,
+        },
+    );
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.2.3+build.1", "1.2.3+build.2"],
+        }),
+        {
+            sorted: ["1.2.3+build.1", "1.2.3+build.2"],
+            newest: "1.2.3+build.2",
+            oldest: "1.2.3+build.1",
+            equal: true,
+        },
+    );
+    // Parts above Number.MAX_SAFE_INTEGER stay distinct in the core version.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["9007199254740993.0.0", "9007199254740992.0.0"],
+        }),
+        {
+            sorted: ["9007199254740992.0.0", "9007199254740993.0.0"],
+            newest: "9007199254740993.0.0",
+            oldest: "9007199254740992.0.0",
+            equal: false,
+        },
+    );
+    // Numeric prerelease identifiers stay distinct above the safe range too.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-9007199254740993", "1.0.0-9007199254740992"],
+        }),
+        {
+            sorted: ["1.0.0-9007199254740992", "1.0.0-9007199254740993"],
+            newest: "1.0.0-9007199254740993",
+            oldest: "1.0.0-9007199254740992",
+            equal: false,
+        },
+    );
+    for (const args of [
+        {},
+        { versions: ["1.2.3"] },
+        { versions: ["1.2.3", "latest"] },
+        { versions: ["1.2", "1.2.3"] },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "compare_versions",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+});
+
+test("to_fraction converts decimals and reduces fractions exactly", async (t) => {
+    const client = await clientFor(t);
+    for (const [input, expected] of [
+        ["0.5", "1/2"],
+        ["1.5", "3/2"],
+        ["0.25", "1/4"],
+        ["4/6", "2/3"],
+        ["-2.5", "-5/2"],
+        ["+2.5", "5/2"],
+        ["3.14159", "314159/100000"],
+        // Exact through BigInt: this is the value a float would round to 1/3.
+        ["0.3333333333333333", "3333333333333333/10000000000000000"],
+        ["9360/1260", "52/7"],
+        ["4/2", "2"],
+        ["0.1", "1/10"],
+    ]) {
+        assert.deepEqual(
+            await call(client, "to_fraction", { value: input }),
+            { fraction: expected },
+            input,
+        );
+    }
+});
+
+test("to_fraction rejects malformed input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "" },
+        { value: "abc" },
+        { value: "1.2.3" },
+        { value: "1/0" },
+        { value: "1/2/3" },
+        { value: "1 / 2" },
+        { value: "--5" },
+        // A sign with nothing after it: the bare "+" and "-" already fall through to the
+        // empty check, and the dotted forms would otherwise parse as a whole number of 0.
+        { value: "." },
+        { value: "+." },
+        { value: "-." },
+        { value: "+" },
+        { value: "-" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "to_fraction", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("diff_text produces a minimal unified diff with line counts", async (t) => {
+    const client = await clientFor(t);
+
+    const changed = await call(client, "diff_text", {
+        before: "a\nb\nc\n",
+        after: "a\nB\nc\n",
+        context: 3,
+    });
+    assert.equal(changed.diff, "@@ -1,3 +1,3 @@\n a\n-b\n+B\n c");
+    assert.equal(changed.added, 1);
+    assert.equal(changed.removed, 1);
+
+    const identical = await call(client, "diff_text", {
+        before: "a\n",
+        after: "a\n",
+        context: 3,
+    });
+    assert.deepEqual(identical, { diff: "", added: 0, removed: 0 });
+
+    // Empty text has zero lines, so the hunk starts at 0 and there is nothing to remove.
+    const inserted = await call(client, "diff_text", {
+        before: "",
+        after: "x\n",
+        context: 3,
+    });
+    assert.equal(inserted.diff, "@@ -0,0 +1 @@\n+x");
+    assert.equal(inserted.added, 1);
+    assert.equal(inserted.removed, 0);
+
+    // A single changed line in the middle keeps only one line of context either side.
+    const narrow = await call(client, "diff_text", {
+        before: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+        after: "1\n2\n3\n4\nX\n6\n7\n8\n9\n10",
+        context: 1,
+    });
+    assert.equal(narrow.diff, "@@ -4,3 +4,3 @@\n 4\n-5\n+X\n 6");
+
+    // The script is minimal: moving one line must report one removal and one addition,
+    // not a whole-block replacement.
+    const moved = await call(client, "diff_text", {
+        before: "a\nb\nc\nd\n",
+        after: "b\nc\nd\na\n",
+        context: 0,
+    });
+    assert.equal(moved.added, 1);
+    assert.equal(moved.removed, 1);
+});
+
+test("diff_text reports a missing final newline the way diff(1) does", async (t) => {
+    const client = await clientFor(t);
+
+    // Same text, only the terminator changed: a replacement, with the marker right after
+    // the line it describes.
+    const added = await call(client, "diff_text", {
+        before: "a",
+        after: "a\n",
+        context: 3,
+    });
+    assert.equal(
+        added.diff,
+        "@@ -1 +1 @@\n-a\n\\ No newline at end of file\n+a",
+    );
+    assert.equal(added.added, 1);
+    assert.equal(added.removed, 1);
+
+    const removed = await call(client, "diff_text", {
+        before: "a\n",
+        after: "a",
+        context: 3,
+    });
+    assert.equal(
+        removed.diff,
+        "@@ -1 +1 @@\n-a\n+a\n\\ No newline at end of file",
+    );
+    assert.equal(removed.added, 1);
+    assert.equal(removed.removed, 1);
+
+    // Neither side ends with a newline, so both rendered lines carry the marker.
+    const both = await call(client, "diff_text", {
+        before: "a",
+        after: "b",
+        context: 3,
+    });
+    assert.equal(
+        both.diff,
+        "@@ -1 +1 @@\n-a\n\\ No newline at end of file\n+b\n\\ No newline at end of file",
+    );
+
+    // The incomplete last line sits outside the hunk, so nothing is printed for it: the
+    // marker belongs to a rendered line, not to the file as a whole.
+    // Line 10 is the one without a terminator, and it sits outside the hunk, so GNU
+    // prints nothing for it. This is the case the previous revision got wrong by
+    // appending a single marker for the whole diff.
+    const outside = await call(client, "diff_text", {
+        before: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+        after: "1\n2\n3\n4\nX\n6\n7\n8\n9\n10",
+        context: 1,
+    });
+    assert.equal(outside.diff, "@@ -4,3 +4,3 @@\n 4\n-5\n+X\n 6");
+});
+
+test("diff_text rejects input past the line cap", async (t) => {
+    const client = await clientFor(t);
+    const tooMany = Array.from({ length: 2001 }, (_, i) => `line ${i}`).join(
+        "\n",
+    );
+    const result = await client.callTool({
+        name: "diff_text",
+        arguments: { before: tooMany, after: "x" },
+    });
+    assert.equal(result.isError, true);
 });

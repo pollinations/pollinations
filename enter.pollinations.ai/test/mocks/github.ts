@@ -5,6 +5,8 @@ import {
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
+const REPO = "pollinations/pollinations";
+
 export type MockGithubState = {
     secretScanningPublicKeys: Array<{
         key_identifier: string;
@@ -33,7 +35,9 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
+            repository?: string;
             headRefName?: string;
+            baseRefName?: string;
             author: {
                 __typename?: string;
                 login?: string;
@@ -45,6 +49,11 @@ export type MockGithubState = {
         number: number;
         authorLogin: string;
         mergedAt: string;
+        authorId?: number;
+        base?: string;
+        labels?: string[];
+        // An issue number in this repository, or an issue elsewhere.
+        closingIssues?: (number | { number: number; repository: string })[];
     }>;
     // Commit author GitHub ids per PR number, including co-authors.
     commitAuthors: Record<number, number[]>;
@@ -155,14 +164,54 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             const search = body.variables?.query ?? "";
             if (search.includes("is:pr")) {
                 const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+                const base = search.match(/\bbase:([^\s]+)/)?.[1];
+                const mergedFrom = search.match(/\bmerged:>=(\S+)/)?.[1];
+                const mergedBefore = search.match(/\bmerged:<(\S+)/)?.[1];
                 const nodes = state.mergedPullRequests
-                    .filter((pr) => !author || pr.authorLogin === author)
-                    .slice(0, 1)
+                    .filter(
+                        (pr) =>
+                            (!author || pr.authorLogin === author) &&
+                            (!base || (pr.base ?? "main") === base) &&
+                            (!mergedFrom ||
+                                Date.parse(pr.mergedAt) >=
+                                    Date.parse(mergedFrom)) &&
+                            (!mergedBefore ||
+                                Date.parse(pr.mergedAt) <
+                                    Date.parse(mergedBefore)),
+                    )
                     .map((pr) => ({
                         number: pr.number,
+                        title: `PR ${pr.number}`,
+                        url: `https://github.com/${REPO}/pull/${pr.number}`,
                         mergedAt: pr.mergedAt,
+                        author: { databaseId: pr.authorId ?? state.user.id },
+                        labels: {
+                            nodes: (pr.labels ?? []).map((name) => ({ name })),
+                        },
+                        closingIssuesReferences: {
+                            nodes: (pr.closingIssues ?? []).map((issue) =>
+                                typeof issue === "number"
+                                    ? {
+                                          number: issue,
+                                          repository: { nameWithOwner: REPO },
+                                      }
+                                    : {
+                                          number: issue.number,
+                                          repository: {
+                                              nameWithOwner: issue.repository,
+                                          },
+                                      },
+                            ),
+                        },
                     }));
-                return c.json({ data: { search: { nodes } } });
+                return c.json({
+                    data: {
+                        search: {
+                            nodes,
+                            pageInfo: { hasNextPage: false, endCursor: null },
+                        },
+                    },
+                });
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
@@ -179,6 +228,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 state: issue.state.toUpperCase(),
                 title: issue.title,
                 url: issue.html_url,
+                createdAt: issue.created_at,
                 body: issue.body,
                 author: issue.user
                     ? { databaseId: issue.user.databaseId ?? null }
@@ -191,7 +241,15 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
                 labels: { nodes: issue.labels ?? [] },
                 closedByPullRequestsReferences: {
-                    nodes: issue.closedByPullRequestsReferences ?? [],
+                    nodes: (issue.closedByPullRequestsReferences ?? []).map(
+                        (pr) => ({
+                            ...pr,
+                            baseRefName: pr.baseRefName ?? "main",
+                            repository: {
+                                nameWithOwner: pr.repository ?? REPO,
+                            },
+                        }),
+                    ),
                 },
             }));
             const next = start + nodes.length;

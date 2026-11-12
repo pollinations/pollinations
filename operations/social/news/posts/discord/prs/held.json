@@ -20,8 +20,35 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "19210": {
+      "merge_sha": "65b151788df75d5e1dd7ed1d1ebc582529eea7df",
+      "merged_at": "2026-11-12T22:04:04Z",
+      "required": [
+        "deploy-cloudflare-production.yml:Deploy apps/packages-mcp",
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "19610": {
+      "merge_sha": "e2804682e87d1849961b8bce932cf09505d2785f",
+      "merged_at": "2026-11-12T18:20:49Z",
+      "required": []
+    },
+    "19613": {
+      "merge_sha": "ff8b9ecda1a6ce7a246ff9ae345ceec2e08e0bd7",
+      "merged_at": "2026-11-12T22:19:11Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/economics",
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
+        "deploy-applications.yml:Deploy operations/dashboards/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
     }
   },
-  "production": "67db0d69c50a6d57cf0c6d63e3c9c1a0a01f351e",
+  "production": "e1bd9b97d0ad7bc0a7f31e63e500fb631c4a62ee",
   "master": "ba13d3b9b3828a1b990be95229c700859cd0445a"
 }

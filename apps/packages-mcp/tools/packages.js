@@ -227,4 +227,29 @@ export const packageTools = [
         },
         lookup,
     ],
+    [
+        "package_downloads",
+        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only.",
+        {
+            name: z.string().trim().min(1).max(214),
+            range: z
+                .string()
+                .trim()
+                .regex(
+                    /^(last-(day|week|month|year)|\d{4}-\d{2}-\d{2}:\d{4}-\d{2}-\d{2})$/,
+                )
+                .default("last-week"),
+        },
+        async ({ name, range }) => {
+            if (
+                !/^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/.test(
+                    name,
+                )
+            )
+                throw new Error("Invalid npm package name");
+            return fetchJson(
+                `https://api.npmjs.org/downloads/range/${range}/${encodeURIComponent(name)}`,
+            );
+        },
+    ],
 ];

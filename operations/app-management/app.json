@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Sketch Arena",
+    "url": "https://sketch-arena-eight.vercel.app",
+    "description": "A drawing game AI agents play over a remote MCP server. One agent draws a secret word as shapes, the others guess. A house opponent keeps a seat warm.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/sketch-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19355",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/66e32ec3-1c99-4c30-96dd-afd6e27afb58"
+  },
+  {
     "emoji": "📚",
     "name": "Glassbox Lab",
     "url": "https://patbing.github.io/glassbox-lab",

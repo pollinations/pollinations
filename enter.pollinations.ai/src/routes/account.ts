@@ -30,7 +30,11 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { permissionRequired } from "@shared/http/permission-required-error.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
+import {
+    PermissionRequiredError,
+    permissionRequired,
+} from "@shared/http/permission-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     keyAllowsModelPermissions,
@@ -302,11 +306,12 @@ function parsePermissions(
  * account owner (no key) can manage every key.
  */
 async function requireKeyWithinCallerKey(
-    db: D1Database,
+    c: RefusalContext & { env: { DB: D1Database } },
     callerKey: AuthenticatedApiKey | undefined,
     key: typeof apikeyTable.$inferSelect,
 ): Promise<void> {
     if (!callerKey) return;
+    const db = c.env.DB;
     const permissions = parsePermissions(key.permissions);
     const within =
         !(callerKey.questPollenOnly && !key.questPollenOnly) &&
@@ -330,11 +335,21 @@ async function requireKeyWithinCallerKey(
             },
         ));
     if (!within) {
-        throw new HTTPException(403, {
-            message:
-                "An API key can only edit or revoke keys within its own account permissions, models, expiry and budget. Sign in to manage this key.",
-        });
+        throw signInToManage(
+            c,
+            key.id,
+            "An API key can only edit or revoke keys within its own account permissions, models, expiry and budget.",
+        );
     }
+}
+
+/** A refusal only the signed-in owner can fix, on that key's own page. */
+function signInToManage(c: RefusalContext, id: string, reason: string) {
+    const fixUrl = fixLink(c, "/edit-key", { id });
+    return new PermissionRequiredError(
+        `${reason} Sign in to manage this key at ${fixUrl}`,
+        fixUrl,
+    );
 }
 
 // The JSON shape of a key in the list and update responses; never the hash.
@@ -2151,10 +2166,11 @@ export const accountRoutes = new Hono<Env>()
             // Redirect URLs decide where an app's sign-ins send users, so
             // only the account owner changes them once the app key exists.
             if (callerKey && redirectUris !== undefined) {
-                throw new HTTPException(403, {
-                    message:
-                        "An API key can't change an app key's redirect URLs. Sign in to change them.",
-                });
+                throw signInToManage(
+                    c,
+                    id,
+                    "An API key can't change an app key's redirect URLs.",
+                );
             }
             // As on creation: a key can't grant spending it doesn't have.
             if (
@@ -2200,7 +2216,7 @@ export const accountRoutes = new Hono<Env>()
             // spending changed them, the payment goes back and the update
             // starts over from the key as it is now.
             for (let attempt = 1; ; attempt++) {
-                await requireKeyWithinCallerKey(c.env.DB, callerKey, key);
+                await requireKeyWithinCallerKey(c, callerKey, key);
                 // Raising a budget takes the difference; an unlimited key
                 // counts as having none.
                 const budgetChange =
@@ -2385,7 +2401,7 @@ export const accountRoutes = new Hono<Env>()
             if (!key) {
                 throw new HTTPException(404, { message: "API key not found" });
             }
-            await requireKeyWithinCallerKey(c.env.DB, callerKey, key);
+            await requireKeyWithinCallerKey(c, callerKey, key);
 
             await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
 

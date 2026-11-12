@@ -189,6 +189,15 @@ test("a new Barbara needs a sign-in whose budget covers hers", async (t) => {
             if (pathname.startsWith("/bot"))
                 return Response.json({ ok: true, result: "bot-token" });
             if (pathname === "/account/key") return Response.json(signIn);
+            // The large box's day of rent is 1.97 Pollen at these rates.
+            if (pathname === "/alpha/e2b/pricing")
+                return Response.json({
+                    vcpuSecond: 3.5e-6,
+                    gibSecond: 1.1e-6,
+                    templates: {
+                        "pollinations-large": { cpuCount: 4, memoryMB: 8192 },
+                    },
+                });
             if (pathname === "/alpha/e2b/sandboxes")
                 return Response.json({ sandboxID: "inew" });
             if (pathname === "/account/keys")
@@ -200,21 +209,39 @@ test("a new Barbara needs a sign-in whose budget covers hers", async (t) => {
             return new Response("unreachable", { status: 502 });
         },
     );
+    let botId = 9;
     const newBot = () =>
         onUpdate({
             update_id: 1,
             managed_bot: {
                 user: { id: 42, first_name: "Owner" },
-                bot: { id: 9, first_name: "Barbara", username: "new_bot" },
+                bot: {
+                    id: botId++,
+                    first_name: "Barbara",
+                    username: "new_bot",
+                },
             },
         });
 
-    await newBot();
-    assert.match(
-        sent[0],
-        /budget of 5\.00 Pollen\. It pays for her computer and the 10 Pollen.*Send \/signin and clear the budget/,
-    );
+    // Her 10 Pollen alone isn't enough: the box's first lease comes first.
+    for (const pollenBudget of [5, 10, 11.5]) {
+        signIn = { expiresAt: null, pollenBudget };
+        await newBot();
+        assert.match(
+            sent.at(-1) ?? "",
+            /It pays for the 10 Pollen she can spend and her computer, about 2\.0 Pollen a day.*Send \/signin and clear the budget/,
+        );
+        assert.ok(
+            sent.at(-1)?.includes(`budget of ${pollenBudget.toFixed(2)}`),
+        );
+    }
     assert.ok(!calls.some((call) => call.startsWith("POST /alpha/e2b")));
+
+    // A budget that covers both sets her up.
+    signIn = { expiresAt: null, pollenBudget: 12 };
+    await newBot();
+    assert.ok(calls.includes('PATCH /account/keys/k1 {"pollenBudget":10}'));
+    calls.length = 0;
 
     // Signed in without a budget: her box is made and its key gets hers.
     signIn = { expiresAt: null, pollenBudget: null };

@@ -403,13 +403,19 @@ async function setUp(owner: TgUser, bot: TgUser) {
     }
     try {
         // A sign-in's budget pays both her computer's rent and the BUDGET
-        // her box key gets from it (setBudget).
-        const { pollenBudget } = await gen<SignIn>(user.key, "/account/key");
-        if (pollenBudget !== null && pollenBudget < BUDGET) {
+        // her box key gets from it (setBudget), so it needs both, with a day
+        // of rent to start.
+        const template = user.size ?? DEFAULT_SIZE;
+        const [{ pollenBudget }, pricing] = await Promise.all([
+            gen<SignIn>(user.key, "/account/key"),
+            gen<Pricing>(user.key, "/alpha/e2b/pricing"),
+        ]);
+        const rent = rentPerDay(pricing, pricing.templates[template]);
+        if (pollenBudget !== null && pollenBudget < BUDGET + rent) {
             waitingBots.set(owner.id, bot);
             return say(
                 owner.id,
-                `My access to your account has a budget of ${pollenBudget.toFixed(2)} Pollen. It pays for her computer and the ${BUDGET} Pollen she can spend, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
+                `My access to your account has a budget of ${pollenBudget.toFixed(2)} Pollen. It pays for the ${BUDGET} Pollen she can spend and her computer, about ${rent.toFixed(1)} Pollen a day, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
             );
         }
         await say(
@@ -430,7 +436,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         }>(user.key, "/alpha/e2b/sandboxes", {
             method: "POST",
             body: {
-                templateID: user.size ?? DEFAULT_SIZE,
+                templateID: template,
                 timeout: KEEP_SECONDS,
                 autoPause: true,
                 metadata: { name: `barbara-${bot.username}` },

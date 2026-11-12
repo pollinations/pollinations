@@ -789,9 +789,15 @@ describe("Account Key Management API", () => {
                     ["PATCH", { pollenBudget: 0 }],
                     ["DELETE"],
                 ] as const) {
+                    const refused = await call(caller.key, url, method, body);
+                    expect(refused.status).toBe(403);
+                    // The owner fixes it on that key's page.
                     expect(
-                        (await call(caller.key, url, method, body)).status,
-                    ).toBe(403);
+                        new URL((await refused.json()).error.fixUrl),
+                    ).toMatchObject({
+                        pathname: "/edit-key",
+                        search: `?id=${target.id}`,
+                    });
                 }
                 // The key still works, and its owner can still revoke it.
                 expect((await call(target.key, "/key", "GET")).status).toBe(
@@ -883,6 +889,9 @@ describe("Account Key Management API", () => {
                 redirectUris,
             });
             expect(byKey.status).toBe(403);
+            expect((await byKey.json()).error.fixUrl).toMatch(
+                new RegExp(`/edit-key\\?id=${app.id}$`),
+            );
             const renamed = await call(caller.key, url, "PATCH", {
                 name: "renamed",
             });

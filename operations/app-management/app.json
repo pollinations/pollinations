@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Glassbox Lab",
+    "url": "https://patbing.github.io/glassbox-lab",
+    "description": "Type a science topic and get a live simulation with sliders, a guided tour, predict-then-test questions checked by the simulation itself, and Wikipedia sources. BYOP.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/glassbox-lab",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19364",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/7378fe24-9d2c-4ace-9a22-87bb83898267"
+  },
+  {
     "emoji": "🎮",
     "name": "Machine Double",
     "url": "https://patbing.github.io/machine-double",

@@ -285,18 +285,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <ExternalLinkIcon className="ml-1.5 h-3.5 w-3.5 shrink-0" />
                         </Button>
                     )}
-                    {/* After the actions: the bars and a small status label. */}
-                    {model.health && (
-                        <span className="inline-flex shrink-0 items-center">
-                            <ModelHealthIndicator
-                                health={model.health}
-                                communityProxy={Boolean(
-                                    model.community && !model.agent,
-                                )}
-                                showLabel
-                            />
-                        </span>
-                    )}
                 </>
             }
             title={
@@ -310,6 +298,16 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showAlpha={showAlpha}
                             verified={Boolean(model.agent && model.verified)}
                         />
+                        {/* Live, beside the tags: the bars and the state. */}
+                        {model.health && (
+                            <ModelHealthIndicator
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showLabel
+                            />
+                        )}
                     </div>
                     {/* Who made it, under the name beside the logo; the My
                         listings icon says "published by". */}

@@ -23,22 +23,18 @@ const healthStyles = {
     healthy: {
         className: "text-intent-success-text",
         label: "Healthy",
-        intent: "success",
     },
     degraded: {
         className: "text-intent-warning-text",
         label: "Degraded",
-        intent: "warning",
     },
     down: {
         className: "text-intent-danger-text",
         label: "Down",
-        intent: "danger",
     },
     unknown: {
         className: "text-theme-text-muted",
         label: "No data",
-        intent: "neutral",
     },
 } as const;
 
@@ -84,11 +80,11 @@ export function ModelHealthIndicator({
 }: {
     health: ModelHealth;
     communityProxy: boolean;
-    /** The status's name in a small label beside the bars, where there is
-     * room for it. */
+    /** The state's name beside the bars, in its colour, where there is room
+     * for it. */
     showLabel?: boolean;
 }) {
-    const { className, label, intent } = healthStyles[health.status];
+    const { className, label } = healthStyles[health.status];
     const sample = communityProxy
         ? `last ${health.requests} eligible requests · up to 7 days`
         : "last 24 hours";
@@ -113,16 +109,17 @@ export function ModelHealthIndicator({
             displayContents
         >
             {showLabel ? (
-                // A label like Quest or Free: the bars (lit by state) and
-                // the state's name, in its colour.
-                <span aria-hidden="true" className="inline-flex">
-                    <Chip intent={intent} size="sm">
-                        <ModelHealthIcon
-                            status={health.status}
-                            className="h-3.5 w-3.5 shrink-0"
-                        />
-                        {label}
-                    </Chip>
+                // A reading, not a tag: no badge behind it, the bars (lit by
+                // state) and the state's name in its colour.
+                <span
+                    aria-hidden="true"
+                    className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${className}`}
+                >
+                    <ModelHealthIcon
+                        status={health.status}
+                        className="h-4 w-4 shrink-0"
+                    />
+                    {shownLabel}
                 </span>
             ) : (
                 <span

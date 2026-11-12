@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✍️ Tell Tale](https://sugamdeol.github.io/tell-tale) | Paste prose. See which sentences carry the LLM voice and exactly which tell fired. Then have it rewritten in a register you pick, not in a nicer version of the same voice. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [💬 The Call That Never Ends](https://arvex-gh.github.io/the-call-that-never-ends) | Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo. | [@Arvex-GH](https://github.com/Arvex-GH) |
 | [💬 Two AIs Talk](https://two-ais-talk.pollinations.app) | Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen. | [@hellway803-creator](https://github.com/hellway803-creator) |
 | [🎮 Call Waiting](https://sugamdeol.github.io/callwait) | Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground. | [@Sugamdeol](https://github.com/Sugamdeol) |
@@ -30,7 +31,6 @@
 | [🎮 Machine Double](https://patbing.github.io/machine-double) | An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen. | [@patbing](https://github.com/patbing) |
 | [🎮 Left Alone](https://sugamdeol.github.io/left-alone) | Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Decision Pit](https://patbing.github.io/decision-pit) | AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP. | [@patbing](https://github.com/patbing) |
-| [🎮 Night Cipher](https://night-cipher.vercel.app) | A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP. | [@argyrisAEK](https://github.com/argyrisAEK) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

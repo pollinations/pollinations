@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Tell Tale",
+    "url": "https://sugamdeol.github.io/tell-tale",
+    "description": "Paste prose. See which sentences carry the LLM voice and exactly which tell fired. Then have it rewritten in a register you pick, not in a nicer version of the same voice.",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/tell-tale",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19235",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e6a99693-fdc9-4063-8d3f-65bc32f93fd4"
+  },
+  {
     "emoji": "💬",
     "name": "The Call That Never Ends",
     "url": "https://arvex-gh.github.io/the-call-that-never-ends",

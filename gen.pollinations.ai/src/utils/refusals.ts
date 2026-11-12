@@ -31,12 +31,18 @@ export async function requireFunds(
     cost: number,
     loadBalance: () => Promise<UserBalance>,
     paidOnly = false,
+    free = false,
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
     // A cost that would print as $0.0000 says nothing: name the bound instead.
     const charge = `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
-    if (typeof budget === "number" && budget < Math.max(0, cost)) {
+    // A cost of 0 can mean "not known until billed" (no price history, or a
+    // receipt), so a key with nothing left only makes calls known to be free.
+    if (
+        typeof budget === "number" &&
+        (budget < Math.max(0, cost) || (budget <= 0 && !free))
+    ) {
         throw keyBudgetExhausted(
             c,
             `API key budget too low. ${charge}, but this key has ${usd(budget)} left.`,

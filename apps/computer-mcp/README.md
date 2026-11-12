@@ -54,7 +54,9 @@ The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
 set. That header selects the Durable Object (`user:<userId>`), so a missing header
-is a 401 here.
+is a 401 here. Each agent on an account gets its own Durable Object
+(`user:<userId>:agent:<agent model id>`), apart from the owner's; a renamed
+agent starts on a new one.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

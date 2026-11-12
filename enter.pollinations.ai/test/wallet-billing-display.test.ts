@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BillingOverview } from "../frontend/src/backend-types.ts";
 import { autoTopUpStatus } from "../frontend/src/components/pollen/auto-top-up-status.ts";
 import { formatUsd } from "../frontend/src/components/pollen/format-usd.ts";
+import { OutOfPollenBanner } from "../frontend/src/components/pollen/out-of-pollen-banner.tsx";
 import {
     describePaymentMethod,
     formatAddress,
@@ -385,6 +386,56 @@ describe("dollar amounts", () => {
 });
 
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+
+describe("out-of-pollen banner", () => {
+    const buy = "/pollen#buy-pollen";
+    it.each([
+        [
+            "an empty wallet",
+            { tierBalance: 0, packBalance: 0 },
+            [buy, "/quests"],
+        ],
+        // Locked Quest pollen cannot be spent, and quests would only add to it.
+        [
+            "only locked Quest pollen",
+            { tierBalance: 35.54, packBalance: 0, questPollenRestricted: true },
+            [buy],
+        ],
+        // The wallet shows this as 0, but the API still accepts a request.
+        [
+            "a remainder too small to show",
+            { tierBalance: 0.00004, packBalance: 0 },
+            [],
+        ],
+        ["Quest pollen left", { tierBalance: 0.5, packBalance: 0 }, []],
+        [
+            "paid pollen beside locked Quest pollen",
+            { tierBalance: 35.54, packBalance: 2, questPollenRestricted: true },
+            [],
+        ],
+    ])("links to the refills that help: %s", (_name, balance, links) => {
+        const router = createRouter({
+            routeTree: createRootRoute(),
+            history: createMemoryHistory(),
+        });
+        const html = renderToStaticMarkup(
+            createElement(
+                RouterContextProvider,
+                { router },
+                createElement(OutOfPollenBanner, {
+                    questPollenRestricted: false,
+                    ...balance,
+                }),
+            ),
+        );
+        expect(
+            [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]),
+        ).toEqual(links);
+        // A wallet with pollen renders nothing, not a banner without links.
+        expect(html === "").toBe(links.length === 0);
+    });
+});
+
 import {
     createMemoryHistory,
     createRootRoute,

@@ -64,7 +64,7 @@ Successful target checks are saved so they do not expire with Actions history. T
 
 ## Recover a model or community post
 
-Each is written, sent to Discord and saved in one run; the run saves only if its text is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `posts` artifact, so the same texts are saved, and a post already sent is not sent again. A new run writes a new text, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
+Each is written, sent to Discord and saved in one run; the run saves only if its complete Discord payload is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `posts` artifact, so the same cards are saved, and a post already sent is not sent again. A new run can write different cards or success rates, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
 
 ## Missing from Enter's News page
 

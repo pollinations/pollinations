@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Unfold",
+    "url": "https://sugamdeol.github.io/unfold",
+    "description": "Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/unfold",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-07",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19348",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/df7879cc-d408-4075-bbe0-b05a49f5de6a"
+  },
+  {
     "emoji": "🎮",
     "name": "Model Machine",
     "url": "https://sugamdeol.github.io/model-machine",

@@ -505,12 +505,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Mistral Large 4 to Mistral direct", () => {
+    it("routes Mistral Large 4 to its myceli Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",
         });
 
-        expect(result.options.model).toBe("mistral-large-4");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "mistral-large-4-latest",
+        });
     });
 
     it("pins the Qwen3.8 A95B fallback to the dated SiliconFlow FP8 endpoint", () => {
@@ -539,17 +543,6 @@ describe("resolveModelConfig", () => {
         });
         expect(fallback.options.providerOptions).toEqual({
             gateway: { only: ["deepinfra"] },
-        });
-    });
-
-    it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
-        const result = resolveModelConfig(messages, {
-            model: "mistralai/mistral-large-4:vercel",
-        });
-
-        expect(result.options.model).toBe("mistral/mistral-large-4");
-        expect(result.options.providerOptions).toEqual({
-            gateway: { only: ["mistral"] },
         });
     });
 

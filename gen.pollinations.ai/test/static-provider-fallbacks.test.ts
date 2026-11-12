@@ -2376,27 +2376,10 @@ describe("static provider fallbacks", () => {
         expect(
             findModelByName("mistralai/mistral-large-4")?.config(),
         ).toMatchObject({
-            "custom-host": "https://api.mistral.ai/v1",
-            model: "mistral-large-4",
+            provider: "azure-openai",
+            "azure-deployment-id": "mistral-large-4-latest",
         });
-        expect(
-            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
-        ).toMatchObject({
-            provider: "openai",
-            model: "mistral/mistral-large-4",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["mistral"] } },
-            },
-        });
-        for (const [unit, cost] of Object.entries(
-            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
-        )) {
-            expect(
-                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
-                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
-                ],
-            ).toBeCloseTo(cost, 15);
-        }
+        expect(findModelByName("mistralai/mistral-large-4:vercel")).toBeNull();
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

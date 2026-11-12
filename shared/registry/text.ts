@@ -3690,27 +3690,28 @@ const TEXT_BASE_SERVICES = {
     "mistralai/mistral-large-4": {
         supportedParameters: CHAT_PARAMETERS.mistralLarge4,
         aliases: [],
-        provider: "mistral",
+        provider: "azure",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-10-06").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            // Mistral direct API standard rates, verified 2026-11-11:
-            // https://docs.mistral.ai/inference/pricing
+            // Azure Foundry Global Standard rates for mistral-large-4-latest,
+            // from the Foundry model page (2026-11-11). Matches Mistral's direct
+            // standard rate. DataZone deployments cost more.
             promptTextTokens: perMillion(0.7),
             promptCachedTokens: perMillion(0.07),
             completionTextTokens: perMillion(2.1),
         },
         title: "Mistral Large 4",
         description:
-            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+            "Frontier multimodal model for reasoning, coding and agentic workloads with a 128K context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 524288,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {

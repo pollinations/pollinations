@@ -1418,11 +1418,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistralai/mistral-large-4",
-        config: portkeyConfig["mistral-large-4"],
-    },
-    {
-        name: "mistralai/mistral-large-4:vercel",
-        config: portkeyConfig["mistral-large-4-vercel"],
+        config: portkeyConfig["Mistral-Large-4"],
     },
     {
         name: "mistralai/mistral-large-3",

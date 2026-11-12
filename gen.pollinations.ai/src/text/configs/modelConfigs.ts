@@ -528,20 +528,14 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
-    "mistral-large-4": () =>
-        createMistralModelConfig({
-            model: "mistral-large-4",
-            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
-            useMistralChatFormat: true,
-        }),
-    "mistral-large-4-vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "mistral/mistral-large-4",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["mistral"] } },
-            },
-        }),
+    // Maintainer-created Foundry deployment; the endpoint is not yet probed.
+    "Mistral-Large-4": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-large-4-latest/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
+        ),
     // Nex returns a generic server error when it cannot fetch an image URL.
     "nex-agi/nex-n2.5-mini": () => ({
         ...createPinnedOpenRouterConfig(

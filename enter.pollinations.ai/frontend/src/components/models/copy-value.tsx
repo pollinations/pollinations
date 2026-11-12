@@ -5,12 +5,15 @@ type CopyValueProps = {
     value: string;
     label: string;
     showCopyIcon?: boolean;
+    /** The value in the normal text colour, for a value worth taking. */
+    bright?: boolean;
 };
 
 export const CopyValue: FC<CopyValueProps> = ({
     value,
     label,
     showCopyIcon = false,
+    bright = false,
 }) => (
     <CopyButton
         value={value}
@@ -24,7 +27,9 @@ export const CopyValue: FC<CopyValueProps> = ({
                 "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
                 copied
                     ? "text-intent-success-text"
-                    : "text-theme-text-muted hover:text-theme-text-soft",
+                    : bright
+                      ? "text-theme-text-strong hover:text-theme-text-soft"
+                      : "text-theme-text-muted hover:text-theme-text-soft",
             )
         }
     >

@@ -1,43 +1,48 @@
-import { CopyField, Surface } from "@pollinations/ui";
+import { Surface } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
+import { CopyValue } from "./models/copy-value.tsx";
 
-// Where a card goes from stacked to two columns: a short main part (a
+// Where a card goes from stacked to side by side: a short main part (a
 // template's size) fits beside the price from half a screen; a description
-// needs a wide screen. Side by side, the left column holds what it is and the
-// note, the right column the price box with the copy box under it and the
-// action. Stacked, the column wrappers dissolve and `order` sets the sequence.
-// Full class names, so Tailwind finds them.
+// needs a wide screen. Side by side it is one grid: the logo and its bar, what
+// it is (with the value to copy right under it), a 1.5rem gap and the price
+// box share the first row, so the bar runs as tall as that row; the action
+// follows under the price. Stacked, the logo and a short bar open the title
+// line, and the rest starts at the card's edge. Full class names, so Tailwind
+// finds them.
 const SPLIT = {
     half: {
-        card: "@lg:grid @lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:items-start @lg:gap-x-6",
-        column: "@lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-3",
-        // The left column runs the card's height; the note sits at its
-        // bottom, level with the copy box (h-10).
-        stretch: "@lg:self-stretch",
-        bottom: "@lg:mt-auto @lg:flex @lg:min-h-10 @lg:items-center",
-        // One line beside the description; the full value shows on hover.
-        oneLine: "@lg:[&>span:first-child]:truncate",
+        card: "@lg:grid @lg:grid-cols-[auto_minmax(0,1fr)_1.5rem_var(--catalog-price-width)] @lg:gap-x-0",
+        head: "@lg:contents",
+        logo: "@lg:flex @lg:col-start-1 @lg:row-start-1 @lg:pr-2.5",
+        bar: "@lg:h-auto @lg:min-h-10",
+        text: "@lg:col-start-2 @lg:row-start-1 @lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-1 @lg:self-start",
+        price: "@lg:col-start-4 @lg:row-start-1 @lg:self-start",
+        action: "@lg:col-start-4 @lg:row-start-2",
     },
     wide: {
-        card: "@2xl:grid @2xl:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @2xl:items-start @2xl:gap-x-6",
-        column: "@2xl:flex @2xl:min-w-0 @2xl:flex-col @2xl:gap-3",
-        stretch: "@2xl:self-stretch",
-        bottom: "@2xl:mt-auto @2xl:flex @2xl:min-h-10 @2xl:items-center",
-        oneLine: "@2xl:[&>span:first-child]:truncate",
+        card: "@2xl:grid @2xl:grid-cols-[auto_minmax(0,1fr)_1.5rem_var(--catalog-price-width)] @2xl:gap-x-0",
+        head: "@2xl:contents",
+        logo: "@2xl:flex @2xl:col-start-1 @2xl:row-start-1 @2xl:pr-2.5",
+        bar: "@2xl:h-auto @2xl:min-h-10",
+        text: "@2xl:col-start-2 @2xl:row-start-1 @2xl:flex @2xl:min-w-0 @2xl:flex-col @2xl:gap-1 @2xl:self-start",
+        price: "@2xl:col-start-4 @2xl:row-start-1 @2xl:self-start",
+        action: "@2xl:col-start-4 @2xl:row-start-2",
     },
 };
 
 /**
  * One card of a catalog list (models, MCP servers, sandbox templates). On a
- * wide screen: the logo and what it is, then a note (who published it) on the
- * left; on the right, `--catalog-price-width` wide (set on the list), the
- * price box, the command or ID to copy under it, and the action. On phones:
- * what it is, the price, the copy box, the action, the note. The list needs
- * `@container`.
+ * wide screen: the logo at the top left with a bar as tall as the price box,
+ * what it is, the command or ID to copy (with its health) and a note (who
+ * published it) under it; on the right, `--catalog-price-width` wide (set on
+ * the list), the price box and the action. Stacked: the logo and the title on
+ * one line, then what it is, the value to copy and the note, the price and the
+ * action. The list needs `@container`.
  */
 export const CatalogCard: FC<{
-    /** Shown at the start of the title line, 1.75rem; none starts the title
-     * at the edge. */
+    /** Without one (a model with no brand logo), side by side the text keeps
+     * its place; stacked the title starts at the edge. */
     logo: ReactNode;
     /** The title line: the name and its tags. */
     title: ReactNode;
@@ -45,48 +50,75 @@ export const CatalogCard: FC<{
     children?: ReactNode;
     price: ReactNode;
     copy?: { value: string; label: string };
-    /** A quiet line at the bottom left (who published it). */
+    /** Beside the value to copy: whether it works right now. */
+    status?: ReactNode;
+    /** A quiet last line under the value to copy (who published it). */
     note?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({ logo, title, children, price, copy, note, action, split = "half" }) => (
-    <Surface className={`flex flex-col gap-3 ${SPLIT[split].card}`}>
-        <div
-            className={`contents ${SPLIT[split].column} ${SPLIT[split].stretch}`}
-        >
-            {/* The logo opens the title line; the rest starts at the edge. */}
-            <div className="order-1 flex min-w-0 flex-col gap-1">
-                <div className="flex min-w-0 items-center gap-2">
-                    {logo && (
-                        <span className="flex h-7 w-7 shrink-0 [&>*]:h-full [&>*]:w-full">
-                            {logo}
-                        </span>
-                    )}
-                    <div className="min-w-0 flex-1">{title}</div>
-                </div>
-                {children}
-            </div>
-            {note && (
-                <div className={`order-5 min-w-0 ${SPLIT[split].bottom}`}>
-                    {note}
-                </div>
-            )}
-        </div>
-        <div className={`contents ${SPLIT[split].column}`}>
-            {/* The price and how to call it, two boxes of one width. */}
-            <div className="order-2 min-w-0 rounded-lg border border-divider px-3 py-2">
-                {price}
-            </div>
-            {copy && (
-                <div className="order-3 min-w-0" title={copy.value}>
-                    <CopyField
-                        label={copy.label}
-                        value={copy.value}
-                        className={SPLIT[split].oneLine}
+}> = ({
+    logo,
+    title,
+    children,
+    price,
+    copy,
+    status,
+    note,
+    action,
+    split = "half",
+}) => {
+    const at = SPLIT[split];
+    return (
+        <Surface className={`flex flex-col gap-3 ${at.card}`}>
+            {/* Stacked: a grid of the logo and the title, the rest across
+                both columns. Side by side it dissolves into the card's grid. */}
+            <div
+                className={`order-1 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 gap-y-2.5 ${at.head}`}
+            >
+                <div
+                    className={`${logo ? "flex" : "hidden"} gap-2.5 ${at.logo}`}
+                >
+                    <span className="flex h-8 w-8 shrink-0 [&>*]:h-full [&>*]:w-full">
+                        {logo}
+                    </span>
+                    {/* Stacked, as tall as the logo; side by side, down the
+                        row, as tall as the price box. */}
+                    <span
+                        aria-hidden="true"
+                        className={`h-8 w-px shrink-0 bg-divider ${logo ? "" : "invisible"} ${at.bar}`}
                     />
                 </div>
-            )}
-            {action && <div className="order-4">{action}</div>}
-        </div>
-    </Surface>
-);
+                <div className={`contents ${at.text}`}>
+                    <div className={`min-w-0 ${logo ? "" : "col-span-full"}`}>
+                        {title}
+                    </div>
+                    <div className="col-span-full flex min-w-0 flex-col gap-1">
+                        {children}
+                        {/* How to call it: the value and a copy icon, no box;
+                            long values end in "…" and still copy in full. */}
+                        {copy && (
+                            <div className="mt-2 flex min-w-0 items-center gap-2">
+                                <div className="flex min-w-0">
+                                    <CopyValue
+                                        label={copy.label}
+                                        value={copy.value}
+                                        showCopyIcon
+                                        bright
+                                    />
+                                </div>
+                                {status}
+                            </div>
+                        )}
+                        {note && <div className="min-w-0">{note}</div>}
+                    </div>
+                </div>
+            </div>
+            <div
+                className={`order-2 min-w-0 rounded-lg border border-divider px-3 py-2 ${at.price}`}
+            >
+                {price}
+            </div>
+            {action && <div className={`order-4 ${at.action}`}>{action}</div>}
+        </Surface>
+    );
+};

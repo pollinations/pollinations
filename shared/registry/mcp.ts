@@ -253,7 +253,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Calculators",
         description:
-            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+            "Time, cron schedules, Unicode, color contrast, QR codes, hashes, version ordering, and ECB rates.",
         binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {
@@ -306,7 +306,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Research",
         description:
-            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank data.",
         binding: "RESEARCH_MCP",
         billing: "downstream",
         pricing: {

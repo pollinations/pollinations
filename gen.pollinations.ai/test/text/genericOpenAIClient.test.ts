@@ -70,9 +70,15 @@ describe("genericOpenAIClient", () => {
         },
     );
 
-    it.each([false, true])(
-        "normalizes configured Mistral thinking chunks and preserves usage (stream=%s)",
-        async (stream) => {
+    it.each([
+        ["mistralai/mistral-large-4", false],
+        ["mistralai/mistral-large-4", true],
+        // Reasoning on Mistral Small 4 also returns content as thinking chunks.
+        ["mistralai/mistral-small-4", false],
+        ["mistralai/mistral-small-4", true],
+    ] as const)(
+        "normalizes configured Mistral thinking chunks and preserves usage (%s stream=%s)",
+        async (model, stream) => {
             const usage = {
                 prompt_tokens: 2,
                 completion_tokens: 7,
@@ -99,7 +105,7 @@ describe("genericOpenAIClient", () => {
                 usage,
             };
             const resolved = resolveModelConfig([], {
-                model: "mistralai/mistral-large-4",
+                model,
                 stream,
             });
             const completion = await genericOpenAIClient(

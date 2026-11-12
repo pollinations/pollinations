@@ -200,7 +200,6 @@ export const CHAT_PARAMETERS = {
         "reasoning_effort",
         "parallel_tool_calls",
         "logit_bias",
-        "n",
         "prediction",
     ],
     // InferencePort Lightning routers: /v1/models lists temperature, stop and

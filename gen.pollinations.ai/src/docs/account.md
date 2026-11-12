@@ -36,6 +36,8 @@ The directory is public, so no extra permission is required (the same as `/accou
 
 When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see Quest Pollen vs paid Pollen. Budgeted keys without `account:usage` do **not** receive `accountBalance`, which would expose the owner's wallet.
 
+Amounts are in Pollen, and 1 Pollen is worth 1 US dollar: a `balance` of `12.5` is $12.50.
+
 ### GET /account/key/usage
 
 Usage history for the API key used in the request. No extra scope is required. A key can always read its own usage. For account-wide usage across all keys, use `GET /account/usage` with `account:usage`.

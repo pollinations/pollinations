@@ -513,6 +513,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
+    it("pins the Qwen3.8 A95B fallback to the dated SiliconFlow FP8 endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-2.4t-a95b-20260812");
+        expect(result.options.provider).toEqual({
+            only: ["siliconflow/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Step 5 Preview to StepFun and its fallback to DeepInfra", () => {
         const primary = resolveModelConfig(messages, {
             model: "stepfun/step-5-preview",
@@ -1026,17 +1038,16 @@ describe("resolveModelConfig", () => {
         expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
-    it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {
+    it("routes the Qwen3.8 A95B alias directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-2.4t-a95b",
         });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/qwen3p8-2p4t-a95b",
-        );
+        expect(result.options.model).toBe("qwen3.8-2.4t-a95b");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
     });

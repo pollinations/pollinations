@@ -53,21 +53,6 @@ const CATEGORIES = {
             tsp_us: f(473176473n, 96000000000n),
         },
     },
-    data: {
-        base: "B",
-        units: {
-            B: f(1n),
-            bit: f(1n, 8n),
-            kB: f(1000n),
-            MB: f(1000000n),
-            GB: f(1000000000n),
-            TB: f(1000000000000n),
-            KiB: f(1024n),
-            MiB: f(1048576n),
-            GiB: f(1073741824n),
-            TiB: f(1099511627776n),
-        },
-    },
 };
 
 // Temperature is affine rather than proportional: 0 °C is 32 °F, so a single factor cannot
@@ -223,7 +208,7 @@ function fromCelsius(value, unit) {
 export const unitTools = [
     [
         "convert_units",
-        "Convert a value between units of length, mass, volume, data or temperature, using exact fractions instead of floating point, so 100 in to cm is 254 and not 253.99999999999997. Length: m, km, cm, mm, um, nm, in, ft, yd, mi, nmi. Mass: kg, g, mg, t, lb, oz, st. Volume: l, ml, cl, dl, m3, gal_us, gal_uk, floz_us, cup_us, tbsp_us, tsp_us. Data: B, bit, kB, MB, GB, TB, KiB, MiB, GiB, TiB. Temperature: C, F, K, which goes through Celsius because it is affine and not proportional. The value is a string so decimals arrive exact.",
+        "Convert a value between units of length, mass, volume or temperature, using exact fractions instead of floating point, so 100 in to cm is 254 and not 253.99999999999997. Length: m, km, cm, mm, um, nm, in, ft, yd, mi, nmi. Mass: kg, g, mg, t, lb, oz, st. Volume: l, ml, cl, dl, m3, gal_us, gal_uk, floz_us, cup_us, tbsp_us, tsp_us. Temperature: C, F, K, which goes through Celsius because it is affine and not proportional. The value is a string so decimals arrive exact.",
         {
             value: z
                 .string()

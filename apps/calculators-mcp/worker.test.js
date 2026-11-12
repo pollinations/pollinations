@@ -699,15 +699,26 @@ test("convert_units is exact where a float would not be", async (t) => {
         ).result,
         "1.609344",
     );
+    // A cubic metre is exactly 1000 litres, and a stone exactly 14 pounds.
     assert.equal(
         (
             await call(client, "convert_units", {
                 value: "1",
-                from: "GiB",
-                to: "GB",
+                from: "m3",
+                to: "l",
             })
         ).result,
-        "1.073741824",
+        "1000",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "1",
+                from: "st",
+                to: "lb",
+            })
+        ).result,
+        "14",
     );
     assert.equal(
         (

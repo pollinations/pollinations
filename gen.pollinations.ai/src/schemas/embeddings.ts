@@ -6,7 +6,7 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "@/embeddings/limits.ts";
 
 const TextContentPartSchema = z.object({
     type: z.literal("text"),
-    text: z.string(),
+    text: z.string().min(1),
 });
 
 const ImageUrlContentPartSchema = z.object({
@@ -63,8 +63,8 @@ export const CreateEmbeddingRequestSchema = z
         }),
         input: z
             .union([
-                z.string(),
-                z.array(z.string()).min(1).max(MAX_EMBEDDING_BATCH_SIZE),
+                z.string().min(1),
+                z.array(z.string().min(1)).min(1).max(MAX_EMBEDDING_BATCH_SIZE),
                 ContentPartSchema,
                 z.array(ContentPartSchema).min(1),
             ])

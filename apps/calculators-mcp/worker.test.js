@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
+                "list_discovery_endpoints",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -674,4 +675,33 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("list_discovery_endpoints returns structured discovery data", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "list_discovery_endpoints");
+    assert.ok(Array.isArray(result.endpoints), "endpoints must be array");
+    assert.ok(result.endpoints.length > 0, "endpoints must not be empty");
+    assert.equal(typeof result.count, "number", "count must be number");
+    assert.equal(
+        result.endpoints.length,
+        result.count,
+        "count must match array length",
+    );
+
+    // Each entry has name, href (URL), and description
+    for (const ep of result.endpoints) {
+        assert.ok(typeof ep.name === "string" && ep.name, "name");
+        // Parse rather than prefix-match: "https://gen.pollinations.ai.evil.example"
+        // also starts with the base, so startsWith is not an origin check.
+        assert.equal(
+            new URL(ep.href).origin,
+            "https://gen.pollinations.ai",
+            "href origin",
+        );
+        assert.ok(
+            typeof ep.description === "string" && ep.description,
+            "description",
+        );
+    }
 });

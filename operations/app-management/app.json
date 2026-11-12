@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Decision Pit",
+    "url": "https://patbing.github.io/decision-pit",
+    "description": "AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/decision-pit",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19366",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/941c4b32-7fec-4d51-ab04-cd77d48c7518"
+  },
+  {
+    "emoji": "🎮",
     "name": "Night Cipher",
     "url": "https://night-cipher.vercel.app",
     "description": "A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP.",

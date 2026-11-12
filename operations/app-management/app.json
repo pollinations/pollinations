@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Left Alone",
+    "url": "https://sugamdeol.github.io/left-alone",
+    "description": "Put two or three AI models in an empty world with no task and no one to report to. Tick it forward and read what each one chooses to do, says, and admits its reason is.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/left-alone",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19232",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/25e001c6-7b6c-470a-bff9-95020d36360e"
+  },
+  {
+    "emoji": "🎮",
     "name": "Decision Pit",
     "url": "https://patbing.github.io/decision-pit",
     "description": "AI decision models trade one seeded fake market. Their confidence sets each trade's size, a second question scores their forecasts, and you meddle with rumors and shocks. BYOP.",

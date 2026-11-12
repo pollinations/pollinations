@@ -26,7 +26,10 @@ const handler = createMcpHandler(
                     inputSchema: z.object(shape),
                     annotations: {
                         readOnlyHint: true,
-                        openWorldHint: name !== "inspect_cidr",
+                        openWorldHint: ![
+                            "inspect_cidr",
+                            "inspect_mac",
+                        ].includes(name),
                     },
                 },
                 async (args) => ({

@@ -34,10 +34,10 @@ Currency tools return ECB reference rates and their publication date; weekends
 and holidays resolve to the previous working day.
 
 Network (`https://gen.pollinations.ai/mcp/network`) provides free `dns_lookup`,
-`http_probe`, `inspect_cidr`, `domain_whois` and `ip_whois` tools. A key is still required. HTTP probes accept
+`http_probe`, `inspect_cidr`, `inspect_mac`, `domain_whois` and `ip_whois` tools. A key is still required. HTTP probes accept
 public hostnames on standard HTTP(S) ports, follow at most five redirects, and
 return at most 4 KiB of text. DNS results are one resolver's cached view, not a
-propagation or safety check. CIDR inspection is local and does not scan hosts.
+propagation or safety check. CIDR and MAC inspection are local and do not scan hosts.
 RDAP uses authoritative registries; cached results last ten minutes and missing
 country or ownership fields remain null.
 

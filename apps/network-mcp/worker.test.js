@@ -54,16 +54,22 @@ for (const modern of [false, true])
     test(`real stateless MCP protocol: ${modern ? "modern" : "legacy"}`, async (t) => {
         const client = await clientFor(t, modern);
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
+        const { tools } = await client.listTools();
+        assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "dns_lookup",
+            "domain_whois",
+            "http_probe",
+            "inspect_cidr",
+            "inspect_mac",
+            "ip_whois",
+        ]);
+        // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
-            (await client.listTools()).tools.map((x) => x.name).sort(),
-            [
-                "dns_lookup",
-                "domain_whois",
-                "http_probe",
-                "inspect_cidr",
-                "inspect_mac",
-                "ip_whois",
-            ],
+            tools
+                .filter((x) => x.annotations.openWorldHint !== false)
+                .map((x) => x.name)
+                .sort(),
+            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
         );
         const response = await client.callTool({
             name: "inspect_cidr",

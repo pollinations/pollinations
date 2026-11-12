@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Cover Story",
+    "url": "https://rekty.github.io/cover-story",
+    "description": "Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/cover-story",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18475",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/79732066-0567-42b2-a5d9-11c636123605"
+  },
+  {
     "emoji": "📚",
     "name": "Phenomena Lab",
     "url": "https://phenomena-lab.jm716111.chatgpt.site",

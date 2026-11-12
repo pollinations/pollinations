@@ -14,8 +14,10 @@ if (!TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set");
 const ENTER = "https://enter.pollinations.ai";
 const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
-// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
-const SCOPE = "generate machines keys";
+// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes. That
+// key carries `profile` and `usage`, and a key only creates, edits or revokes
+// keys within its own permissions.
+const SCOPE = "generate profile usage machines keys";
 // The computers a new Barbara can get; gen's pricing list gives their CPUs,
 // memory and rates. Only E2B's, whose envd Mama reaches directly (envd.ts).
 const SIZES: Record<string, string> = {
@@ -153,7 +155,7 @@ async function signIn(from: TgUser) {
         );
         await say(
             from.id,
-            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry: your Barbaras stop when my access ends.",
+            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry and the budget: your Barbaras stop when my access ends or its budget runs out.",
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -399,11 +401,27 @@ async function setUp(owner: TgUser, bot: TgUser) {
         waitingBots.set(owner.id, bot);
         return signIn(owner);
     }
-    await say(
-        owner.id,
-        `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
-    );
     try {
+        // A sign-in's budget pays both her computer's rent and the BUDGET
+        // her box key gets from it (setBudget), so it needs both, with a day
+        // of rent to start.
+        const template = user.size ?? DEFAULT_SIZE;
+        const [{ pollenBudget }, pricing] = await Promise.all([
+            gen<SignIn>(user.key, "/account/key"),
+            gen<Pricing>(user.key, "/alpha/e2b/pricing"),
+        ]);
+        const rent = rentPerDay(pricing, pricing.templates[template]);
+        if (pollenBudget !== null && pollenBudget < BUDGET + rent) {
+            waitingBots.set(owner.id, bot);
+            return say(
+                owner.id,
+                `My access to your account has a budget of ${pollenBudget.toFixed(2)} Pollen. It pays for the ${BUDGET} Pollen she can spend and her computer, about ${rent.toFixed(1)} Pollen a day, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
+            );
+        }
+        await say(
+            owner.id,
+            `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
+        );
         const token = await botToken(bot.id);
         await tg("setManagedBotAccessSettings", {
             user_id: bot.id,
@@ -418,7 +436,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         }>(user.key, "/alpha/e2b/sandboxes", {
             method: "POST",
             body: {
-                templateID: user.size ?? DEFAULT_SIZE,
+                templateID: template,
                 timeout: KEEP_SECONDS,
                 autoPause: true,
                 metadata: { name: `barbara-${bot.username}` },
@@ -744,7 +762,10 @@ const deleteView = (b: Barbara): View => ({
     },
 });
 
-// Deletes her box and revokes its key; the bot stays the owner's.
+// Deletes her box and revokes its key; the bot stays the owner's. Enter
+// refuses the revoke (403) when her key is outside this sign-in's limits, as
+// one made under an earlier sign-in can be. She is deleted all the same, and
+// the name of the key that stays on the account is returned.
 async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     const boxKey = keyOf(await keysOf(key), b);
     await gen(key, `/alpha/e2b/sandboxes/${b.box}`, {
@@ -752,11 +773,18 @@ async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     }).catch((error) => {
         if (!String(error).includes("404")) throw error;
     });
+    let keyLeft: string | undefined;
     if (boxKey)
-        await gen(key, `/account/keys/${boxKey.id}`, { method: "DELETE" });
+        await gen(key, `/account/keys/${boxKey.id}`, {
+            method: "DELETE",
+        }).catch((error: Error) => {
+            if (!error.message.startsWith("403 ")) throw error;
+            keyLeft = boxKey.name;
+        });
     const user = userOf(owner.id);
     user.barbaras = user.barbaras.filter((x) => x.botId !== b.botId);
     save();
+    return keyLeft;
 }
 
 async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
@@ -1064,11 +1092,14 @@ async function onButton(q: Callback) {
     }
     if (action === "delete") return show(owner.id, deleteView(b), messageId);
     if (action === "deleted" && key) {
-        await deleteBarbara(owner, b, key);
+        const keyLeft = await deleteBarbara(owner, b, key);
+        const leftover = keyLeft
+            ? ` I couldn't revoke her key ${keyLeft}; revoke it at ${ENTER}/keys.`
+            : "";
         return show(
             owner.id,
             {
-                text: `@${b.bot} is deleted. Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
+                text: `@${b.bot} is deleted.${leftover} Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
                 reply_markup: userOf(owner.id).barbaras.length
                     ? {
                           inline_keyboard: [

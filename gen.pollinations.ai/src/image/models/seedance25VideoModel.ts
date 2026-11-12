@@ -1,4 +1,3 @@
-import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -44,12 +43,6 @@ export async function callSeedance25API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    if ((safeParams.duration ?? DURATION) !== DURATION) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Seedance 2.5 currently supports 4-second videos",
-        });
-    }
-
     // params.ts limits resolution to the registry's list (480p, 720p).
     const resolution = (safeParams.resolution ??
         "480p") as Seedance25Input["resolution"];

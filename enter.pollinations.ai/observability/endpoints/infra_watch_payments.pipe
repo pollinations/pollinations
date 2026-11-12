@@ -1,0 +1,76 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: payments in trouble, one row each, ids only.
+    `server_error`: Stripe webhook or checkout 5xx in the last 15 minutes,
+    per route, leaving out Enter's database (D1) failing, raw or wrapped by
+    drizzle as "Failed query:", which the database card covers.
+    `not_credited`: a payment that succeeded 15 minutes to 24 hours ago with
+    no credit recorded. A pack payment (it carries a packKey) is credited by
+    its checkout session's success event, an auto top-up payment by its
+    invoice's credit outcome (Stripe links the payment to its invoice as
+    payment_details.order_reference).
+
+NODE infra_watch_payments_node
+SQL >
+    SELECT
+        'server_error' AS kind,
+        route_path AS id,
+        '' AS ref,
+        0 AS amount_cents,
+        toString(max(status)) AS reason,
+        count() AS n,
+        max(timestamp) AS at
+    FROM error_event
+    WHERE environment = 'production'
+        AND timestamp >= now() - INTERVAL 15 MINUTE
+        AND status >= 500
+        AND (route_path = '/api/webhooks/stripe' OR startsWith(route_path, '/api/stripe/checkout'))
+        AND multiSearchAnyCaseInsensitive(concat(message, ' ', stack), ['D1_ERROR', 'Failed query:']) = 0
+    GROUP BY route_path
+
+    UNION ALL
+
+    SELECT
+        'not_credited' AS kind,
+        session_id AS id,
+        invoice AS ref,
+        amount_cents,
+        '' AS reason,
+        1 AS n,
+        timestamp AS at
+    FROM (
+        SELECT
+            session_id,
+            amount_cents,
+            timestamp,
+            JSONExtractString(payload, 'data', 'object', 'metadata', 'packKey') AS pack,
+            JSONExtractString(payload, 'data', 'object', 'payment_details', 'order_reference') AS invoice
+        FROM stripe_event
+        WHERE livemode = 1
+            AND event_type = 'payment_intent.succeeded'
+            AND timestamp >= now() - INTERVAL 25 HOUR
+        ORDER BY timestamp DESC
+        LIMIT 1 BY session_id
+    )
+    WHERE timestamp >= now() - INTERVAL 24 HOUR
+        AND timestamp < now() - INTERVAL 15 MINUTE
+        AND (
+            (pack != '' AND session_id NOT IN (
+                SELECT JSONExtractString(payload, 'data', 'object', 'payment_intent')
+                FROM stripe_event
+                WHERE livemode = 1
+                    AND timestamp >= now() - INTERVAL 25 HOUR
+                    AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+            ))
+            OR (pack = '' AND startsWith(invoice, 'in_') AND invoice NOT IN (
+                SELECT session_id
+                FROM stripe_event
+                WHERE livemode = 1
+                    AND timestamp >= now() - INTERVAL 25 HOUR
+                    AND event_type IN ('invoice.paid', 'invoice.payment_succeeded')
+                    AND payment_status IN ('credited', 'invoice already credited', 'not an auto top-up invoice')
+            ))
+        )
+
+TYPE endpoint

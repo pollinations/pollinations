@@ -189,7 +189,7 @@ async function fetchWithTimeout<T>(
     }
 }
 
-function chatStreamError(chunk: unknown): PollinationsError | null {
+function chatCompletionError(chunk: unknown): PollinationsError | null {
     if (!chunk || typeof chunk !== "object") return null;
     const { error, choices } = chunk as {
         error?: unknown;
@@ -200,7 +200,7 @@ function chatStreamError(chunk: unknown): PollinationsError | null {
         choices.some((choice) => choice?.finish_reason === "error");
     if (error == null && !failed) return null;
 
-    let message = "Streaming request failed";
+    let message = "Chat completion failed";
     let status = 502;
     let code = "STREAM_ERROR";
     if (typeof error === "string") message = error;
@@ -241,7 +241,7 @@ function parseChatStreamData(data: string): ChatStreamChunk {
             502,
         );
     }
-    const error = chatStreamError(parsed);
+    const error = chatCompletionError(parsed);
     if (error) throw error;
 
     if (
@@ -1110,7 +1110,10 @@ export class Pollinations {
                     await this.handleErrorResponse(response);
                 }
 
-                return response.json() as Promise<ChatResponse>;
+                const data = (await response.json()) as ChatResponse;
+                const error = chatCompletionError(data);
+                if (error) throw error;
+                return data;
             },
         );
     }

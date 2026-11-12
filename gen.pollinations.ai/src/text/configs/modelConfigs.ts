@@ -756,6 +756,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- Azure Fireworks Models (NVIDIA) --------------------------------------
+    "azure/Nemotron-3-Ultra": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3-Ultra/chat/completions?api-version=2024-12-01-preview",
+        ),
+
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({
@@ -880,10 +887,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
-    ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
     ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
@@ -1106,6 +1109,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1118,6 +1123,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAnthropicConfig({
             model: "claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-fable-5.2": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.2:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
         createAnthropicConfig({
@@ -1304,13 +1319,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        }),
-    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -1328,6 +1344,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
     "moonshotai/kimi-k3.1-pro": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro",
         }),

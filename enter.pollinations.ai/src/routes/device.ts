@@ -1,4 +1,5 @@
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { findPublishableClientKey } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -10,6 +11,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
@@ -61,6 +63,24 @@ async function requirePendingDevice(
     return device;
 }
 
+/**
+ * Reject client ids that cannot be approved. Issuing a code for an unknown or
+ * revoked app key only fails later on the consent page with an opaque error,
+ * after the CLI has already told the user to approve it.
+ */
+async function isKnownDeviceClient(
+    c: Context<Env>,
+    clientId: string,
+): Promise<boolean> {
+    const db = drizzle(c.env.DB, { schema });
+    const key = await findPublishableClientKey(
+        createAuth(c.env, c.executionCtx),
+        db,
+        clientId,
+    );
+    return key !== null;
+}
+
 /** Generate a cryptographically random alphanumeric string. */
 export function generateCode(length: number): string {
     const chars =
@@ -110,6 +130,15 @@ export async function parseFormOrJsonBody<TEnv extends Env>(
 export const deviceRoutes = new Hono<Env>()
     .post("/code", async (c) => {
         const body = await parseFormOrJsonBody(c);
+        if (body.client_id && !(await isKnownDeviceClient(c, body.client_id))) {
+            return c.json(
+                {
+                    error: "invalid_client",
+                    error_description: "Unknown or revoked client_id",
+                },
+                400,
+            );
+        }
 
         const deviceCode = generateCode(DEVICE_CODE_LENGTH);
         const userCode = generateUserCode(USER_CODE_LENGTH);

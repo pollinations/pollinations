@@ -138,7 +138,7 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description:
-                "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
             rates: [],
         },
     },
@@ -253,7 +253,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Calculators",
         description:
-            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+            "Time, cron schedules, Unicode, color contrast, QR codes, text hashes, and ECB currency rates.",
         binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {
@@ -306,7 +306,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Research",
         description:
-            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, Crossref and World Bank indicators.",
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank data.",
         binding: "RESEARCH_MCP",
         billing: "downstream",
         pricing: {

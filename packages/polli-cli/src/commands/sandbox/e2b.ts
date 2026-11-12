@@ -10,6 +10,8 @@ export interface Connection {
     domain?: string | null;
     envdAccessToken?: string;
     trafficAccessToken?: string | null;
+    // Gen's note on create when the sandbox's polli login needs funding.
+    notice?: string;
 }
 
 export type Sandbox = {

@@ -26,6 +26,7 @@ import {
     useState,
 } from "react";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { SandboxTemplateCatalog } from "../sandbox-templates.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -62,7 +63,6 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
-import { SandboxTemplateList } from "./sandbox-template-list.tsx";
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
@@ -223,11 +223,17 @@ export const Models: FC = () => {
         [query, supportedFilterKeys],
     );
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
-    const visibleSearch = getModelQueryVisibleSearch(
+    const visibleSearchText = getModelQueryVisibleSearch(
         search,
         filterTokens,
         draftFilter,
     );
+    // Keep the space while the user types the next word. The query sent to
+    // the router and the filters above still use the trimmed value.
+    const visibleSearch =
+        visibleSearchText && search.endsWith(" ")
+            ? `${visibleSearchText} `
+            : visibleSearchText;
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(() => {
@@ -370,7 +376,7 @@ export const Models: FC = () => {
               ]
                   .filter(Boolean)
                   .join(" ")
-            : [...preservedFilters, nextSearch.trim()]
+            : [...preservedFilters, nextSearch.trimStart()]
                   .filter(Boolean)
                   .join(" ");
 
@@ -674,7 +680,7 @@ export const Models: FC = () => {
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
                 ) : activeTab === "sandbox" ? (
-                    <SandboxTemplateList query={query} />
+                    <SandboxTemplateCatalog query={query} />
                 ) : (
                     <SectionContent loading={catalogLoading}>
                         {catalogError ? (

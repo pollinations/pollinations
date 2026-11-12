@@ -1,10 +1,22 @@
-import { env } from "cloudflare:test";
+import {
+    createExecutionContext,
+    createScheduledController,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { exports } from "cloudflare:workers";
+import type { Fetcher as ScheduledFetcher } from "@cloudflare/workers-types/experimental";
 import {
     getModels,
     getRegistryModelDefinition,
+    isFreeModel,
 } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CommunityModelEnv } from "../src/community-models.ts";
+import {
+    type CommunityModelEnv,
+    getCommunityModelRegistryEntries,
+} from "../src/community-models.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -119,7 +131,11 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash", "stop", true],
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3.5-lightning", "logprobs", true],
+            ["nvidia/nemotron-3.5-lightning:deepinfra", "logprobs", false],
             ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["nvidia/nemotron-3-ultra", "logprobs", true],
+            ["nvidia/nemotron-3-ultra:deepinfra", "logprobs", false],
             ["meta/muse-spark-open", "tools", true],
             ["meta/muse-spark-open", "reasoning_effort", true],
             ["meta/muse-spark-open", "response_format", false],
@@ -274,6 +290,96 @@ describe("getGenerationModelRegistry", () => {
         );
     });
 
+    it("refreshes the catalog once on the minute tick before concurrent readers arrive", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const prepare = vi.spyOn(env.DB, "prepare");
+        const context = createExecutionContext();
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            env,
+            context,
+        );
+        await waitOnExecutionContext(context);
+
+        // Independent reads bypass the isolate cache, as readers in different
+        // locations do. None should fan out another full-catalog D1 query.
+        await Promise.all(
+            Array.from({ length: 20 }, () =>
+                getCommunityModelRegistryEntries(env),
+            ),
+        );
+        expect(
+            prepare.mock.calls.filter(([query]) =>
+                query.includes('from "community_endpoint"'),
+            ),
+        ).toHaveLength(1);
+        expect(prepare).toHaveBeenCalledTimes(1);
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        expect(keys).toHaveLength(1);
+        const secondsUntilExpiry =
+            (keys[0].expiration ?? 0) - Math.floor(Date.now() / 1000);
+        expect(secondsUntilExpiry).toBeGreaterThan(60);
+        expect(secondsUntilExpiry).toBeLessThanOrEqual(90);
+        expect(
+            Number(await env.KV.get("heartbeat:community-catalog")),
+        ).toBeCloseTo(Date.now(), -4);
+    });
+
+    it("dispatches the catalog cron through the Worker service binding", async () => {
+        await resetGenerationModelRegistryCache(env);
+        await (
+            exports as unknown as { default: ScheduledFetcher }
+        ).default.scheduled({
+            cron: "* * * * *",
+        });
+        expect(
+            (await env.KV.list({ prefix: "community-catalog:" })).keys,
+        ).toHaveLength(1);
+    });
+
+    it("refreshes the isolate registry within 30 seconds after a cache loss", async () => {
+        await resetGenerationModelRegistryCache(env);
+        await getGenerationModelRegistry(env);
+        const now = Date.now();
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        await env.KV.delete(keys[0].name);
+        vi.spyOn(Date, "now").mockReturnValue(now + 30_001);
+        const prepare = vi.spyOn(env.DB, "prepare");
+
+        await getGenerationModelRegistry(env);
+
+        expect(prepare).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports a failed scheduled refresh while preserving the expiring catalog", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const entries = await getCommunityModelRegistryEntries(env);
+        const before = await env.KV.list({ prefix: "community-catalog:" });
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const context = createExecutionContext();
+        const bindings = { ...env, DB: skewedDbBinding() };
+        await env.KV.delete("heartbeat:community-catalog");
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            bindings,
+            context,
+        );
+        await waitOnExecutionContext(context);
+
+        expect(consoleError).toHaveBeenCalledWith(
+            "Community model catalog refresh failed",
+            expect.any(Error),
+        );
+        expect(await getCommunityModelRegistryEntries(bindings)).toEqual(
+            entries,
+        );
+        const { keys } = await env.KV.list({ prefix: "community-catalog:" });
+        expect(keys[0].expiration).toBe(before.keys[0].expiration);
+        expect(await env.KV.get("heartbeat:community-catalog")).toBeNull();
+    });
+
     it("serves static models when the community catalog query fails", async () => {
         const consoleError = vi
             .spyOn(console, "error")
@@ -299,4 +405,23 @@ describe("getGenerationModelRegistry", () => {
             expect.any(Error),
         );
     });
+});
+
+it("treats a model as free only when no rate or billing rule can charge", () => {
+    const paid = getRegistryModelDefinition("openai/gpt-5-nano");
+    const free = {
+        ...paid,
+        cost: { promptTextTokens: 0, completionTextTokens: 0 },
+    };
+    expect(isFreeModel(paid)).toBe(false);
+    expect(isFreeModel(free)).toBe(true);
+    expect(
+        isFreeModel({
+            ...free,
+            costVariants: { long: { promptTextTokens: 1e-6 } },
+        }),
+    ).toBe(false);
+    expect(
+        isFreeModel({ ...free, billing: { resolveTotalCost: () => 0.01 } }),
+    ).toBe(false);
 });

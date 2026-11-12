@@ -49,9 +49,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "lykon/dreamshaper-8-lcm": {
-        // "sana" is kept as an alias so existing callers and the legacy image
-        // proxy worker keep working unchanged.
+        // Kept for the legacy image proxy worker, which calls it as "sana", and
+        // for existing callers: hidden from the catalog, still served.
         aliases: ["sana", "dreamshaper"],
+        hidden: true,
         provider: "vast",
         publisher: "Lykon",
         category: "image",
@@ -922,6 +923,36 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
+    "google/gemini-omni-1.2-flash": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "video",
+        addedDate: new Date("2026-11-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex AI pricing verified 2026-11-05:
+        // https://cloud.google.com/model-garden/pricing
+        // Video output is priced per token: 1931, 5792, 8688 and 17376 tokens per
+        // second at 360p, 720p, 1080p and 4k (with audio).
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9),
+            completionVideoTokens: perMillion(12),
+        },
+        resolutions: ["720p", "360p", "1080p", "4k"],
+        title: "Gemini Omni 1.2 Flash",
+        description:
+            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
         provider: "fal",
@@ -1095,6 +1126,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 10,
         defaultDuration: 5,
     },
@@ -1119,6 +1151,7 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
+        // Replicate allows 15 s; capped at the verified synchronous latency limit.
         maxDuration: 5,
         defaultDuration: 5,
     },
@@ -1316,7 +1349,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+            "2-15 second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1328,8 +1361,8 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 5,
-        maxDuration: 5,
+        minDuration: 2,
+        maxDuration: 15,
         defaultDuration: 5,
     },
     "alibaba/wan-2.7-image": {
@@ -1739,7 +1772,7 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             promptImageTokens: 0, // included in output-video price
-            completionVideoSeconds: 0.05, // per reported output second at 720p
+            completionVideoSeconds: 0.07, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",

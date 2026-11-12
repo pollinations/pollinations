@@ -48,7 +48,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 url: "https://gen.pollinations.ai/mcp/ask-jev",
                 pricing: {
                     description:
-                        "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                        "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
                     rates: [],
                 },
             },

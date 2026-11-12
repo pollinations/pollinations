@@ -702,6 +702,11 @@ test.for([429, 503])(
         expect(response.headers.get("x-usage-completion-text-tokens")).toBe(
             "8",
         );
+        // Preserve the actual gateway charge even when it exceeds the catalog rate.
+        expect(response.headers.get("x-usage-provider-billable-units")).toBe(
+            "0.052185",
+        );
+        expect(response.headers.get("x-usage-provider-unit-cost")).toBe("1");
         await response.arrayBuffer();
         await wait();
         expect(mocks.vertex.state.requests).toHaveLength(1);

@@ -243,6 +243,68 @@ test("Rust stable versions can have hyphens in build metadata", async (t) => {
         "1.0.0+stable-build",
     );
 });
+test("RubyGems latest and exact versions keep licenses, downloads and dependencies", async (t) => {
+    const latest = {
+        name: "rails",
+        version: "8.1.4.1",
+        info: "Ruby on Rails is a full-stack web framework.",
+        licenses: ["MIT"],
+        homepage_uri: "https://rubyonrails.org",
+        source_code_uri: "https://github.com/rails/rails",
+        documentation_uri: "https://api.rubyonrails.org",
+        platform: "ruby",
+        downloads: 813413968,
+        version_downloads: 1234,
+        yanked: false,
+        dependencies: {
+            runtime: [{ name: "actionpack", requirements: "= 8.1.4.1" }],
+            development: [],
+        },
+    };
+    const exact = {
+        ...latest,
+        version: "7.1.0",
+        number: "7.1.0",
+        version_downloads: 42,
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json(
+            url.endsWith("/api/v1/gems/rails.json") ? latest : exact,
+        );
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+    });
+    assert.equal(data.version, "8.1.4.1");
+    assert.deepEqual(data.licenses, ["MIT"]);
+    assert.equal(data.downloads, 813413968);
+    assert.deepEqual(data.dependencies.runtime, [
+        { name: "actionpack", requirements: "= 8.1.4.1" },
+    ]);
+    assert.equal(
+        data.registryUrl,
+        "https://rubygems.org/gems/rails/versions/8.1.4.1",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+        version: "7.1.0",
+    });
+    assert.equal(pinned.version, "7.1.0");
+    assert.equal(pinned.versionDownloads, 42);
+    assert.deepEqual(urls, [
+        "https://rubygems.org/api/v1/gems/rails.json",
+        "https://rubygems.org/api/v2/rubygems/rails/versions/7.1.0.json",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "rubygems", name: "not a gem" }),
+        /Invalid rubygems package name/,
+    );
+});
 test("OSV preserves advisories, affected ranges and pagination without claiming safety", async (t) => {
     const advisory = {
         id: "GHSA-example",

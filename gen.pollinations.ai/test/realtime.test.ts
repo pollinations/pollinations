@@ -309,9 +309,11 @@ async function openPaidRealtimeSession({
 
 async function openPaidScribeSession({
     name,
+    model = "scribe-realtime",
     path = "/v1/realtime",
 }: {
     name: string;
+    model?: string;
     path?: "/realtime" | "/v1/realtime";
 }) {
     const { key, userId } = await createTestApiKey({
@@ -321,7 +323,7 @@ async function openPaidScribeSession({
     });
     const upstream = mockRealtimeProvider();
     const { response, ctx } = await fetchWorkerWithContext(
-        `${path}?model=scribe-realtime`,
+        `${path}?model=${model}`,
         {
             headers: {
                 Authorization: `Bearer ${key}`,
@@ -714,12 +716,38 @@ test("refuses publishable keys, which only identify an app", async () => {
     await waitOnExecutionContext(ctx);
 });
 
-test.each(["/realtime", "/v1/realtime"] as const)(
+test.each([
+    [
+        "/realtime",
+        "scribe-realtime",
+        "elevenlabs/scribe-v2-realtime",
+        "scribe_v2_realtime",
+    ],
+    [
+        "/v1/realtime",
+        "scribe-realtime",
+        "elevenlabs/scribe-v2-realtime",
+        "scribe_v2_realtime",
+    ],
+    [
+        "/realtime",
+        "elevenlabs/scribe-v3-live",
+        "elevenlabs/scribe-v3-live",
+        "scribe_v3_live",
+    ],
+    [
+        "/v1/realtime",
+        "elevenlabs/scribe-v3-live",
+        "elevenlabs/scribe-v3-live",
+        "scribe_v3_live",
+    ],
+] as const)(
     "serves Scribe through the OpenAI protocol on %s",
-    async (path) => {
+    async (path, model, canonicalModel, upstreamModel) => {
         const session = await openPaidScribeSession({
             name: `scribe-openai-${path}-key`,
             path,
+            model,
         });
         await expect(session.initialClientMessage).resolves.toMatchObject({
             type: "session.created",
@@ -736,7 +764,7 @@ test.each(["/realtime", "/v1/realtime"] as const)(
                         input: {
                             format: { type: "audio/pcm", rate: 24_000 },
                             transcription: {
-                                model: "scribe-realtime",
+                                model,
                                 prompt: "contexte",
                                 languages: ["fr", "en"],
                             },
@@ -757,7 +785,7 @@ test.each(["/realtime", "/v1/realtime"] as const)(
                 audio: {
                     input: {
                         transcription: {
-                            model: "elevenlabs/scribe-v2-realtime",
+                            model: canonicalModel,
                             prompt: "contexte",
                             languages: ["fr", "en"],
                         },
@@ -790,7 +818,7 @@ test.each(["/realtime", "/v1/realtime"] as const)(
 
         const upstreamUrl = new URL(session.upstream.request.url);
         expect(Object.fromEntries(upstreamUrl.searchParams)).toEqual({
-            model_id: "scribe_v2_realtime",
+            model_id: upstreamModel,
             audio_format: "pcm_24000",
             commit_strategy: "vad",
             language_code: "fr",
@@ -838,6 +866,8 @@ test.each(["/realtime", "/v1/realtime"] as const)(
 
         const telemetry = await closeAndReadTelemetry(session);
         expect(telemetry.requestPath).toBe(path);
+        expect(telemetry.resolvedModelRequested).toBe(canonicalModel);
+        expect(telemetry.totalCost).toBeCloseTo((0.1 * 0.22) / 3600, 12);
         expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
     },
 );
@@ -973,7 +1003,7 @@ test.each([
 
         const telemetry = await closeAndReadTelemetry(session);
         const user = await waitForPackBalanceBelow(session.userId, 1);
-        const expectedCharge = 0.39 / 3600;
+        const expectedCharge = 0.22 / 3600;
         const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
         expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
         expect(telemetry.eventType).toBe("generate.realtime");
@@ -1721,7 +1751,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         paid_only: true,
         pricing: {
             currency: "pollen",
-            promptAudioSeconds: "0.000108333333",
+            promptAudioSeconds: "0.000061111111",
         },
     });
     expect(scribeRealtime?.description?.toLowerCase()).not.toContain(

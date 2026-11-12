@@ -138,7 +138,7 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description:
-                "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
             rates: [],
         },
     },

@@ -45,7 +45,7 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { runFalJob } from "@/model3d/models/falClient.ts";
+import { runFalJob, runFalJobResponse } from "@/model3d/models/falClient.ts";
 import { toUpstreamError } from "@/model3d/modelUtils.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
@@ -64,6 +64,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
+import { falBillableUnits } from "../image/utils/falBillableUnits.ts";
 import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
@@ -98,7 +99,7 @@ export const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, and sonilo/sonilo-1.1-sfx support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, ElevenLabs sound effects, and sonilo/sonilo-1.1-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -121,12 +122,12 @@ export const CreateSpeechRequestSchema = z
         }),
         loop: z.boolean().optional().meta({
             description:
-                "Loop the generated sound effect (elevenlabs/eleven-text-to-sound-v2 only)",
+                "Loop the generated sound effect (ElevenLabs sound effects only)",
             example: false,
         }),
         prompt_influence: z.number().min(0).max(1).optional().meta({
             description:
-                "How strictly to follow the prompt, 0-1 (elevenlabs/eleven-text-to-sound-v2 only)",
+                "How strictly to follow the prompt, 0-1 (ElevenLabs sound effects only)",
             example: 0.3,
         }),
         instrumental: z.boolean().optional().meta({
@@ -1437,6 +1438,7 @@ export async function transcribeWithOpenRouterGemini(opts: {
 }
 
 export async function transcribeWithElevenLabs(opts: {
+    modelName?: "elevenlabs/scribe-v2" | "elevenlabs/scribe-v3";
     file: File;
     language?: string;
     responseFormat?: string;
@@ -1445,6 +1447,7 @@ export async function transcribeWithElevenLabs(opts: {
     numSpeakers?: number;
 }): Promise<Response> {
     const {
+        modelName = "elevenlabs/scribe-v2",
         file,
         language,
         responseFormat = "json",
@@ -1469,7 +1472,10 @@ export async function transcribeWithElevenLabs(opts: {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("model_id", "scribe_v2");
+    formData.append(
+        "model_id",
+        modelName === "elevenlabs/scribe-v3" ? "scribe_v3" : "scribe_v2",
+    );
     if (language) {
         formData.append("language_code", language);
     }
@@ -1514,7 +1520,7 @@ export async function transcribeWithElevenLabs(opts: {
     );
 
     const usageHeaders = buildUsageHeaders(
-        "elevenlabs/scribe-v2",
+        modelName,
         createAudioSecondsUsage(meteredInputSeconds),
     );
 
@@ -1864,10 +1870,16 @@ export async function generateMusic(
 
 /**
  * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
- * Billed per metered second (see registry `elevenlabs/eleven-text-to-sound-v2`
- * cost block).
+ * Billed in seconds at the serving registry entry's rate.
  */
+type SoundEffectModel =
+    | "elevenlabs/eleven-text-to-sound-v2"
+    | "elevenlabs/eleven-text-to-sound-v3"
+    | "elevenlabs/eleven-text-to-sound-v3:fal";
+
 export async function generateSoundEffect(opts: {
+    modelName?: SoundEffectModel;
+    falKey?: string;
     prompt: string;
     durationSeconds?: number;
     loop?: boolean;
@@ -1877,6 +1889,8 @@ export async function generateSoundEffect(opts: {
     log: Logger;
 }): Promise<Response> {
     const {
+        modelName = "elevenlabs/eleven-text-to-sound-v2",
+        falKey,
         prompt,
         durationSeconds,
         loop,
@@ -1886,7 +1900,8 @@ export async function generateSoundEffect(opts: {
         log,
     } = opts;
 
-    if (!apiKey) {
+    const isFal = AUDIO_SERVICES[modelName].provider === "fal";
+    if (isFal ? !falKey : !apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Sound effects service is not configured (missing API key)",
@@ -1896,11 +1911,15 @@ export async function generateSoundEffect(opts: {
     // downgrading (default "mp3" passes).
     if (responseFormat && responseFormat !== "mp3") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
+            message: `${modelName} only supports mp3 output; response_format=${responseFormat} is not available.`,
         });
     }
 
-    const modelId = "eleven_text_to_sound_v2";
+    // v2 is scheduled for provider removal on March 1, 2027.
+    const modelId =
+        modelName === "elevenlabs/eleven-text-to-sound-v2"
+            ? "eleven_text_to_sound_v2"
+            : "eleven_text_to_sound_v3";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
 
     const body: Record<string, unknown> = { text: prompt, model_id: modelId };
@@ -1916,6 +1935,36 @@ export async function generateSoundEffect(opts: {
         duration: durationSeconds ?? "auto",
     });
 
+    if (isFal) {
+        const { model_id: _modelId, ...input } = body;
+        const result = await runFalJobResponse(
+            { endpoint: "elevenlabs/sound-effects/v3", input },
+            falKey,
+        ).catch((error) => {
+            throw toUpstreamError(error);
+        });
+        const units = falBillableUnits(result);
+        const data = (await result.json()) as { audio?: { url?: string } };
+        if (!data.audio?.url) {
+            throw new UpstreamError(502, {
+                message: "Sound effects returned no audio output",
+            });
+        }
+        const audio = await ensureUpstreamOk(
+            await fetch(data.audio.url),
+            data.audio.url,
+        );
+        return new Response(await audio.arrayBuffer(), {
+            headers: {
+                "Content-Type": "audio/mpeg",
+                ...buildUsageHeaders(
+                    modelName,
+                    createCompletionAudioSecondsUsage(units),
+                ),
+            },
+        });
+    }
+
     const rawResponse = await fetch(elevenLabsUrl, {
         method: "POST",
         headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
@@ -1924,13 +1973,18 @@ export async function generateSoundEffect(opts: {
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
-    // Bill ElevenLabs' character-cost meter: 12 credits per second, and a flat
-    // 60 credits when the caller sets no duration, whatever length it returns.
-    const meteredSeconds = getElevenLabsMeteredInputSeconds(response, log);
+    // v3 reports rounded quota credits, not exact billed seconds: a 30s
+    // request reports 361 credits but workspace analytics charges exactly
+    // $0.06. No precise duration meter is returned; analytics confirms the
+    // submitted duration, or a flat 5s for auto-duration (2026-11-10).
+    const meteredSeconds =
+        modelName === "elevenlabs/eleven-text-to-sound-v3"
+            ? Number(body.duration_seconds ?? 5)
+            : getElevenLabsMeteredInputSeconds(response, log);
     const audioBuffer = await response.arrayBuffer();
 
     const usageHeaders = buildUsageHeaders(
-        "elevenlabs/eleven-text-to-sound-v2",
+        modelName,
         createCompletionAudioSecondsUsage(meteredSeconds),
     );
 
@@ -3659,10 +3713,16 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "elevenlabs/eleven-text-to-sound-v2") {
+    if (
+        model === "elevenlabs/eleven-text-to-sound-v2" ||
+        model === "elevenlabs/eleven-text-to-sound-v3" ||
+        model === "elevenlabs/eleven-text-to-sound-v3:fal"
+    ) {
         return withSafetyHeaders(
             c,
             await generateSoundEffect({
+                modelName: model,
+                falKey,
                 prompt: text,
                 durationSeconds: duration,
                 loop,
@@ -4263,8 +4323,12 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             });
         }
-        if (candidate.id === "elevenlabs/scribe-v2") {
+        if (
+            candidate.id === "elevenlabs/scribe-v2" ||
+            candidate.id === "elevenlabs/scribe-v3"
+        ) {
             return transcribeWithElevenLabs({
+                modelName: candidate.id,
                 file,
                 language: language || undefined,
                 responseFormat: responseFormat || undefined,

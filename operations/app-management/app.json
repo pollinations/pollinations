@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Pixel Letter",
+    "url": "https://pixel-letter-studio.cris16esl.chatgpt.site",
+    "description": "Pollinations LLM-designed PNG postcards with locally hidden messages, optional AES-GCM encryption and OAuth BYOP. Secrets stay on the device; recipients decode without API calls. Includes a free demo.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "CristopherSalazar",
+    "githubUserId": "50456515",
+    "repositoryUrl": "https://github.com/CristopherSalazar/pixel-letter-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18973",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/66e982a7-4ec1-4885-8a49-02d3563415db"
+  },
+  {
     "emoji": "💬",
     "name": "Crosscheck",
     "url": "https://chappoo974.github.io/model-crosscheck",

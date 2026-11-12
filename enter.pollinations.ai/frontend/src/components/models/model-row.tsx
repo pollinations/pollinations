@@ -176,9 +176,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const baseModel = model.agent ? model.baseModel : undefined;
     const publisher = model.brandUrl && model.publisher;
     const title = getModelDisplayName(model) || model.name;
-    // Nothing to try while it is down.
-    const tryUrl =
-        model.health?.status === "down" ? undefined : modelTryUrl(model);
+    // No Try while most recent requests fail. "Down" starts at 20% failures,
+    // so a down model can still answer most requests and keeps its Try.
+    const mostlyFailing = (model.health?.success_rate ?? 100) < 50;
+    const tryUrl = mostlyFailing ? undefined : modelTryUrl(model);
 
     // What the model takes, can do and holds, on one line; a thin rule
     // between each group.

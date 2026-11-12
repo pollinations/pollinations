@@ -540,7 +540,7 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
-test("Packagist expands the minified list, ranks non-semver tags and matches v-prefixed tags", async (t) => {
+test("Packagist expands the minified list, ranks non-semver and patch tags and matches v-prefixed tags", async (t) => {
     t.mock.method(globalThis, "fetch", async (url) => {
         assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
         return Response.json({
@@ -557,6 +557,10 @@ test("Packagist expands the minified list, ranks non-semver tags and matches v-p
                         suggest: { "ext-mongodb": "MongoDB handler" },
                     },
                     { version: "3.10", version_normalized: "3.10.0.0" },
+                    {
+                        version: "3.10-p1",
+                        version_normalized: "3.10.0.0-patch1",
+                    },
                     {
                         version: "v3.2.0",
                         version_normalized: "3.2.0.0",
@@ -577,7 +581,7 @@ test("Packagist expands the minified list, ranks non-semver tags and matches v-p
         name: "monolog/monolog",
     });
     assert.equal(latest.name, "monolog/monolog");
-    assert.equal(latest.version, "3.10");
+    assert.equal(latest.version, "3.10-p1");
     assert.equal(latest.description, "Logging for PHP");
     assert.deepEqual(latest.license, ["MIT"]);
     assert.deepEqual(latest.dependencies, { php: ">=8.2" });

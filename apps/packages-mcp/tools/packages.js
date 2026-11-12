@@ -105,19 +105,25 @@ export async function lookup({ ecosystem, name, version }) {
         const bare = (value) => value.replace(/^v/, "");
         // Composer allows tags such as 2.1 that semver rejects, so stable
         // releases are ranked by version_normalized: four numbers (3.2.0.0),
-        // with a suffix such as -RC1 on prereleases.
-        const numbers = (v) => v.version_normalized.split(".").map(Number);
+        // or -patchN on a stable patch release, which ranks above its base.
+        // Prereleases carry other suffixes such as -RC1.
+        const numbers = (v) =>
+            v.version_normalized
+                .replace(/-patch(\d*)$/, (_, n) => `.${Number(n) + 1}`)
+                .split(".")
+                .map(Number);
         const byNewest = (a, b) => {
             const x = numbers(a);
             const y = numbers(b);
-            const i = x.findIndex((n, k) => n !== y[k]);
-            return i < 0 ? 0 : y[i] - x[i];
+            for (let k = 0; k < 5; k++)
+                if (x[k] !== y[k]) return (y[k] ?? 0) - (x[k] ?? 0);
+            return 0;
         };
         const selected = version
             ? versions.find((v) => bare(v.version) === bare(version))
             : versions
                   .filter((v) =>
-                      /^\d+\.\d+\.\d+\.\d+$/.test(v.version_normalized),
+                      /^\d+(\.\d+){3}(-patch\d*)?$/.test(v.version_normalized),
                   )
                   .sort(byNewest)[0] || versions[0];
         if (!selected)

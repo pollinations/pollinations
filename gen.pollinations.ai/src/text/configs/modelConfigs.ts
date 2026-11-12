@@ -528,9 +528,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
-    // Maintainer-created Foundry deployment; the endpoint is not yet probed.
+    // Use the chat adapter for Responses; Azure native Responses fails for this deployment.
     "Mistral-Large-4": () =>
-        createAzureResponsesModelConfig(
+        createAzureModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-large-4-latest/chat/completions?api-version=2024-12-01-preview",
             // Mistral's server rejects unknown message fields on Azure too.

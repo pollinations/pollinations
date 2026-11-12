@@ -349,7 +349,15 @@ describe("Chat stream to Responses stream", () => {
             chatStreamToResponsesStream(
                 sse(
                     { choices: [{ delta: { reasoning_content: "hm" } }] },
-                    { choices: [{ delta: { content: "Hel" } }] },
+                    {
+                        choices: [
+                            {
+                                delta: {
+                                    content: [{ type: "text", text: "Hel" }],
+                                },
+                            },
+                        ],
+                    },
                     { choices: [{ delta: { content: "lo" } }] },
                     {
                         choices: [

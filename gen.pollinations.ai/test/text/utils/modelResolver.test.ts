@@ -515,6 +515,7 @@ describe("resolveModelConfig", () => {
             "azure-resource-name": "myceli-prod-eastus",
             "azure-deployment-id": "mistral-large-4-latest",
         });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
     });
 
     it("pins the Qwen3.8 A95B fallback to the dated SiliconFlow FP8 endpoint", () => {

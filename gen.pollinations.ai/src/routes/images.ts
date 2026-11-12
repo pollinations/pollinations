@@ -24,6 +24,7 @@ import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
 // --- Helpers ---
@@ -360,6 +361,8 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest;
         const mediaLink = response.headers.get("Link");
         if (mediaLink) c.header("Link", mediaLink);
+        const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
+        if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
         const mediaData =
             mediaType === "image/svg+xml" || mediaType.startsWith("video/")

@@ -67,6 +67,11 @@ class AspectRatioTest(unittest.TestCase):
             self.assertGreaterEqual(width, dimensions.MIN_DIMENSION)
             self.assertGreaterEqual(height, dimensions.MIN_DIMENSION)
 
+    def test_considers_near_ratio_heights_that_keep_the_pixel_count(self):
+        for cap in (MAX_PIXELS, FULL_RES_PIXELS):
+            with self.subTest(cap=cap):
+                self.assert_size((1024, 672), (1024, 704), cap)
+
     def test_result_always_satisfies_the_backend_invariant(self):
         for requested in [
             (256, 128),

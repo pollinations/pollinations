@@ -5,6 +5,7 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import {
     type FallbackCandidate,
     fallbackCandidates,
@@ -450,12 +451,22 @@ export async function generateImageOrVideoResponse(
         if (result.trackingData.pricingInput) {
             c.var.track.setPricingInput(result.trackingData.pricingInput);
         }
+        const contentType = result.mimeType || detectMimeType(result.buffer);
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
-            result.mimeType || detectMimeType(result.buffer),
+            contentType,
         );
+        if (c.var.model.resolved === "black-forest-labs/flux.1-schnell") {
+            const size = readImageDimensions(result.buffer, contentType);
+            if (size) {
+                headers.set(
+                    IMAGE_DIMENSIONS_HEADER,
+                    `${size.width}x${size.height}`,
+                );
+            }
+        }
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

@@ -2,6 +2,7 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import {
     createGenerationCache,
@@ -28,6 +29,7 @@ const CACHED_HEADERS = new Set([
     "x-elevenlabs-reference-song-id",
     "x-elevenlabs-song-id",
     "x-generation-id",
+    IMAGE_DIMENSIONS_HEADER.toLowerCase(),
     "x-fallback-target",
     "x-model-used",
     "x-tts-voice",

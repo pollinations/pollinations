@@ -49,37 +49,38 @@ def nearest_valid_dimensions(
         target_w = max(SIDE_MULTIPLE, round(target_w * scale))
         target_h = max(SIDE_MULTIPLE, round(target_h * scale))
 
-    ratio = target_w / target_h
     target_pixels = target_w * target_h
-    best: tuple[float, int, int, int, int] | None = None
+    best: tuple[float, bool, int, int, int] | None = None
 
     # The loop only builds valid sizes: the width is a multiple of 8 and the
     # height is a multiple of _height_step, so width * height is always a
     # multiple of 65536.
     for candidate_w in range(MIN_DIMENSION, MAX_DIMENSION + 1, SIDE_MULTIPLE):
         step = _height_step(candidate_w)
-        ideal_h = candidate_w / ratio
-        candidate_h = max(step, round(ideal_h / step) * step)
-        if candidate_h < MIN_DIMENSION or candidate_h > MAX_DIMENSION:
-            continue
-        pixels = candidate_w * candidate_h
-        if pixels > max_pixels:
-            continue
-        aspect_error = abs(candidate_w / candidate_h - ratio) / ratio
-        if aspect_error <= ASPECT_RATIO_TOLERANCE:
-            aspect_error = 0.0
-        # Keep the detail the caller asked for: among equally good ratios a
-        # size at or above the requested pixel count wins, and the smallest
-        # such size wins so the result does not balloon. Only when nothing
-        # that large fits the cap do we take the largest size below it.
-        size_error = (
-            (0, pixels - target_pixels)
-            if pixels >= target_pixels
-            else (1, target_pixels - pixels)
-        )
-        score = (aspect_error, *size_error, candidate_w, candidate_h)
-        if best is None or score < best:
-            best = score
+        first_h = ((MIN_DIMENSION + step - 1) // step) * step
+        last_h = min(MAX_DIMENSION, max_pixels // candidate_w)
+        for candidate_h in range(first_h, last_h + 1, step):
+            pixels = candidate_w * candidate_h
+            # Compare integer cross products before dividing so exactly 5%
+            # stays inside the tolerance.
+            target_cross_product = target_w * candidate_h
+            aspect_error = (
+                abs(candidate_w * target_h - target_cross_product)
+                / target_cross_product
+            )
+            if aspect_error <= ASPECT_RATIO_TOLERANCE:
+                aspect_error = 0.0
+            # Among equally good ratios, prefer the smallest size that keeps
+            # the target pixel count, or the largest below it if none fits.
+            score = (
+                aspect_error,
+                pixels < target_pixels,
+                abs(pixels - target_pixels),
+                candidate_w,
+                candidate_h,
+            )
+            if best is None or score < best:
+                best = score
 
     if best is None:
         raise ValueError(f"No valid size for {width}x{height}")

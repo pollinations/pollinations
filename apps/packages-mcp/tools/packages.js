@@ -1,6 +1,26 @@
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 import { prerelease, rcompare, valid } from "semver";
 import { z } from "zod";
 import { fetchJson, fetchText } from "../fetch.js";
+
+// XML parsing from news-mcp's feeds.js: reject DTDs and custom entities
+// (XXE guard) and validate before parsing.
+const xmlParser = new XMLParser({
+    ignoreAttributes: false,
+    parseTagValue: false,
+    parseAttributeValue: false,
+    removeNSPrefix: true,
+});
+const array = (value) =>
+    value === undefined ? [] : Array.isArray(value) ? value : [value];
+const text = (value) => (typeof value === "string" ? value : value?.["#text"]);
+const parseXml = (xml, what) => {
+    if (/<!DOCTYPE|<!ENTITY/i.test(xml) || XMLValidator.validate(xml) !== true)
+        throw new Error(
+            `${what} must be valid XML without DTDs or custom entities.`,
+        );
+    return xmlParser.parse(xml);
+};
 
 // Registry metadata selection from xiaotian1171 (#17699).
 export async function lookup({ ecosystem, name, version }) {
@@ -13,6 +33,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Maven coordinates are "group:artifact"; group segments are dot-separated.
+        maven: /^[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9][A-Za-z0-9_-]*)*:[A-Za-z0-9][A-Za-z0-9._-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +188,56 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    // Maven Central serves version metadata and POM files from repo1, the
+    // canonical host; search.maven.org is not needed.
+    if (ecosystem === "maven") {
+        const [group, artifact] = name.split(":");
+        const base = `https://repo1.maven.org/maven2/${group.replaceAll(".", "/")}/${artifact}`;
+        const versioning =
+            parseXml(
+                await fetchText(`${base}/maven-metadata.xml`),
+                "Maven metadata",
+            ).metadata?.versioning ?? {};
+        const versions = array(versioning.versions?.version).map(String);
+        const resolved = version
+            ? versions.includes(version)
+                ? version
+                : null
+            : (text(versioning.release) ?? text(versioning.latest) ?? null);
+        if (!resolved)
+            throw new Error(
+                version
+                    ? `Maven version ${version} not found for ${name}`
+                    : `Maven artifact ${name} has no release version`,
+            );
+        const project =
+            parseXml(
+                await fetchText(
+                    `${base}/${encodeURIComponent(resolved)}/${artifact}-${encodeURIComponent(resolved)}.pom`,
+                ),
+                "Maven POM",
+            ).project ?? {};
+        return {
+            ecosystem,
+            name,
+            version: resolved,
+            description:
+                text(project.description)?.replace(/\s+/g, " ").trim() || null,
+            licenses: array(project.licenses?.license)
+                .map((license) => text(license.name))
+                .filter(Boolean),
+            homepage: text(project.url) ?? null,
+            dependencies: array(project.dependencies?.dependency).map(
+                (dep) => ({
+                    group: text(dep.groupId),
+                    artifact: text(dep.artifactId),
+                    version: text(dep.version) ?? null,
+                    scope: text(dep.scope) ?? "compile",
+                }),
+            ),
+            registryUrl: `https://central.sonatype.com/artifact/${group}/${artifact}/${encodeURIComponent(resolved)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +275,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, Maven Central metadata and POM files, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Maven latest release, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Maven description, license and homepage come from the artifact's own POM and may be absent when a parent POM declares them. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +285,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "maven",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

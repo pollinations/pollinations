@@ -7,11 +7,7 @@ import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
-import {
-    audioCache,
-    imageCache,
-    model3dCache,
-} from "@/middleware/media-cache.ts";
+import { imageCache, model3dCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -106,7 +102,7 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
-import { handleSimpleAudio } from "./audio.ts";
+import { handleSimpleAudio, speechAudioCache } from "./audio.ts";
 import {
     generateChatCompletion,
     generateEmbeddingsResponse,
@@ -1240,7 +1236,7 @@ export const proxyRoutes = new Hono<Env>()
             supportedEndpoint: "/audio/{text}",
         }),
         track("generate.audio"),
-        audioCache,
+        speechAudioCache,
         generationAccess,
         deduplicateGeneration,
         apiKeyBudgetReservation,

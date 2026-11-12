@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes seven tools using the MCP transport", async () => {
+test("private worker exposes eight tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -385,16 +385,18 @@ test("Atom xml:base applies through feed, entry and link", () => {
     );
 });
 
-test("history_on_this_day fetches historical events without credentials", async (t) => {
+test("history_on_this_day reads each offered type under its own key", async (t) => {
+    const paths = [];
     t.mock.method(globalThis, "fetch", async (url) => {
         const u = new URL(url);
         assert.equal(u.hostname, "en.wikipedia.org");
-        assert.equal(u.pathname, "/api/rest_v1/feed/onthisday/selected/01/15");
+        paths.push(u.pathname);
+        const type = u.pathname.split("/")[5];
         return Response.json({
-            selected: [
+            [type]: [
                 {
-                    text: "Wikipedia was launched.",
-                    year: 2001,
+                    text: `${type} entry`,
+                    ...(type === "holidays" ? {} : { year: 2001 }),
                     pages: [
                         {
                             title: "Wikipedia",
@@ -411,15 +413,29 @@ test("history_on_this_day fetches historical events without credentials", async 
         });
     });
     const c = await client();
-    const result = await c.callTool({
+    for (const type of ["selected", "deaths", "holidays"]) {
+        const result = await c.callTool({
+            name: "history_on_this_day",
+            arguments: { month: 1, day: 15, type, limit: 5 },
+        });
+        assert.equal(result.isError, undefined);
+        const parsed = JSON.parse(result.content[0].text);
+        assert.equal(parsed.items[0].text, `${type} entry`);
+        assert.equal(parsed.items[0].year, type === "holidays" ? null : 2001);
+        assert.equal(parsed.items[0].pages[0].title, "Wikipedia");
+    }
+    assert.deepEqual(paths, [
+        "/api/rest_v1/feed/onthisday/selected/01/15",
+        "/api/rest_v1/feed/onthisday/deaths/01/15",
+        "/api/rest_v1/feed/onthisday/holidays/01/15",
+    ]);
+
+    const missing = await c.callTool({
         name: "history_on_this_day",
-        arguments: { month: 1, day: 15, type: "selected", limit: 5 },
+        arguments: { month: 2, day: 30 },
     });
-    assert.equal(result.isError, undefined);
-    const parsed = JSON.parse(result.content[0].text);
-    assert.equal(parsed.month, 1);
-    assert.equal(parsed.day, 15);
-    assert.equal(parsed.items[0].year, 2001);
-    assert.equal(parsed.items[0].pages[0].title, "Wikipedia");
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /Month 2 has no day 30/);
+    assert.equal(paths.length, 3);
     await c.close();
 });

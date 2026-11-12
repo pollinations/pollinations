@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Voiceprint",
+    "url": "https://llm-voiceprint.jm716111.chatgpt.site",
+    "description": "Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a zero-Pollen local scan.",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "ismailbanouigu",
+    "githubUserId": "20683163",
+    "repositoryUrl": "https://github.com/ismailbanouigu/llm-voiceprint",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19204",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/395f2b31-b2a6-4b5a-9439-a3e7eb005e31"
+  },
+  {
     "emoji": "💬",
     "name": "Ask Them All",
     "url": "https://ask-them-all.pollinations.app",

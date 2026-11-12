@@ -67,11 +67,6 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19188": {
-      "merge_sha": "bf86968bc5c9822474abd2fafa4295d31944d242",
-      "merged_at": "2026-11-12T07:35:04Z",
-      "required": []
-    },
     "19199": {
       "merge_sha": "96e610bb2ff3883fccb9c8a9f82acd34effa9bd8",
       "merged_at": "2026-11-12T01:30:17Z",
@@ -229,11 +224,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "19499": {
-      "merge_sha": "13d448dd3c1fa6f60b46c94789c326090f7549e2",
-      "merged_at": "2026-11-12T07:40:13Z",
-      "required": []
-    },
     "19503": {
       "merge_sha": "3732f900b7bba98d9de811130fd0fbf10f9c7a7e",
       "merged_at": "2026-11-12T10:44:28Z",
@@ -255,11 +245,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "19511": {
-      "merge_sha": "5bee8b09bf4e2a07c543bcfbe769396de6859847",
-      "merged_at": "2026-11-11T17:19:04Z",
-      "required": []
-    },
     "19512": {
       "merge_sha": "58d3d6c4d4839a0eaef4a86d9e34b69a32665115",
       "merged_at": "2026-11-12T16:20:15Z",
@@ -268,11 +253,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "19516": {
-      "merge_sha": "5d5966c7a2ad829c93dba801ce1a41000f12d7d2",
-      "merged_at": "2026-11-11T17:27:52Z",
-      "required": []
     },
     "19519": {
       "merge_sha": "dc8e4ddd8bea8ef08bec84fb6937818c03c32ac0",
@@ -315,32 +295,12 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19527": {
-      "merge_sha": "28ce36e58433aa8c8640ab36ca9c86c3e9985c65",
-      "merged_at": "2026-11-12T04:14:41Z",
-      "required": []
-    },
     "19530": {
       "merge_sha": "b028633727c05473885fdadaaf41700ef9917d38",
       "merged_at": "2026-11-12T07:43:25Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
-    },
-    "19533": {
-      "merge_sha": "3401b919326890184ea65fb605427a665206ac54",
-      "merged_at": "2026-11-12T05:18:05Z",
-      "required": []
-    },
-    "19534": {
-      "merge_sha": "47d5fdcb6b904bf73564f0730b73a1115557f3e9",
-      "merged_at": "2026-11-12T05:28:04Z",
-      "required": []
-    },
-    "19535": {
-      "merge_sha": "195426c4f92a9f71cd57d378f2c023c741a10b98",
-      "merged_at": "2026-11-12T05:47:37Z",
-      "required": []
     },
     "19536": {
       "merge_sha": "689d009cad6965f9ed80ed2ee972a15b85015e9f",
@@ -359,122 +319,12 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19537": {
-      "merge_sha": "ce727e32a4f37b741c2634de8dc7d1d23eccd170",
-      "merged_at": "2026-11-12T05:55:10Z",
-      "required": []
-    },
-    "19539": {
-      "merge_sha": "482cbd5b9cfc2cf6df93af447f4e8faf2eae65b7",
-      "merged_at": "2026-11-12T06:03:34Z",
-      "required": []
-    },
     "19540": {
       "merge_sha": "8c9d8288b9ca64d897277b0d49b73595dea85935",
       "merged_at": "2026-11-12T07:43:25Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
-    },
-    "19542": {
-      "merge_sha": "b8acdae08c44d7b754c0d3a13c08f1517b721af2",
-      "merged_at": "2026-11-12T06:11:58Z",
-      "required": []
-    },
-    "19544": {
-      "merge_sha": "28f0e34d9e149777b4c104047d9bd0cbd2e83a4d",
-      "merged_at": "2026-11-12T06:20:44Z",
-      "required": []
-    },
-    "19545": {
-      "merge_sha": "573b88d8ccb1b4b65152480141bf53a0c405548e",
-      "merged_at": "2026-11-12T06:30:45Z",
-      "required": []
-    },
-    "19546": {
-      "merge_sha": "c63395552d06e8a8861b366ccea6f30bcb080cd4",
-      "merged_at": "2026-11-12T06:39:49Z",
-      "required": []
-    },
-    "19547": {
-      "merge_sha": "fb277797ed6c9ea6fbef7f51b1387f140536c0bf",
-      "merged_at": "2026-11-12T06:47:10Z",
-      "required": []
-    },
-    "19548": {
-      "merge_sha": "06c81046356609695ebd9e8c57320e4db062184d",
-      "merged_at": "2026-11-12T06:55:18Z",
-      "required": []
-    },
-    "19549": {
-      "merge_sha": "3473b1110d0508815805070b517672d5dc31f6e6",
-      "merged_at": "2026-11-12T07:03:14Z",
-      "required": []
-    },
-    "19550": {
-      "merge_sha": "34449c182beaed9e1e247464ecda64d8905112c2",
-      "merged_at": "2026-11-12T07:11:10Z",
-      "required": []
-    },
-    "19551": {
-      "merge_sha": "87b8eb717f50831b36361b5dc94d2b03aecf9381",
-      "merged_at": "2026-11-12T07:11:44Z",
-      "required": []
-    },
-    "19552": {
-      "merge_sha": "3eb5ce7e350842f217f4e831df1be30ce526fde8",
-      "merged_at": "2026-11-12T07:21:02Z",
-      "required": []
-    },
-    "19556": {
-      "merge_sha": "b7a93efa020bb183ff136ac20914a6f2b4f97ea5",
-      "merged_at": "2026-11-12T07:34:29Z",
-      "required": []
-    },
-    "19557": {
-      "merge_sha": "0dd91b4f70715c4636ec1bed39abe56acb9db77c",
-      "merged_at": "2026-11-12T07:43:25Z",
-      "required": []
-    },
-    "19558": {
-      "merge_sha": "3581b309d5462eda9bea75aa661f06917b427b7d",
-      "merged_at": "2026-11-12T07:58:55Z",
-      "required": []
-    },
-    "19568": {
-      "merge_sha": "bf1396dd7af856ab0f25ee4f4752d58e8c6135bc",
-      "merged_at": "2026-11-12T08:06:27Z",
-      "required": []
-    },
-    "19569": {
-      "merge_sha": "4ec4ae58e7b9c61b653098dcd256c618f2b71b86",
-      "merged_at": "2026-11-12T08:14:58Z",
-      "required": []
-    },
-    "19578": {
-      "merge_sha": "3ff21e1a913b76461042fbd18c12c4ccab43cdb2",
-      "merged_at": "2026-11-12T08:24:06Z",
-      "required": []
-    },
-    "19579": {
-      "merge_sha": "e76af550ed8139f47e5fab3467d71c21d5aea995",
-      "merged_at": "2026-11-12T08:33:03Z",
-      "required": []
-    },
-    "19580": {
-      "merge_sha": "b8d616a125ef7ae75b4c8d45ba0caf18486f42b5",
-      "merged_at": "2026-11-12T08:41:24Z",
-      "required": []
-    },
-    "19581": {
-      "merge_sha": "97bab99d6b10bc35e48c02bf2e16b31410f5038d",
-      "merged_at": "2026-11-12T08:49:58Z",
-      "required": []
-    },
-    "19582": {
-      "merge_sha": "5c790c785c5063a4ec260e99b61e215bfebaa399",
-      "merged_at": "2026-11-12T08:57:09Z",
-      "required": []
     },
     "19585": {
       "merge_sha": "d6ff0d899296f90889ee3e0f95b7a91eb43170a4",

@@ -1815,29 +1815,36 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("bills Gemini 4 Carbon's Vercel backup at its promotional cost and the standard price", () => {
-        const primary = TEXT_SERVICES["google/gemini-4-carbon"];
-        const fallback = TEXT_SERVICES["google/gemini-4-carbon:vercel"];
+    it("keeps the Carbon quote and records the OpenRouter receipt including Exa", () => {
+        const model = "google/gemini-4-carbon";
+        const route = "google/gemini-4-carbon:openrouter:ai-studio";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
         expect(primary).toMatchObject({
             provider: "google",
-            paidOnly: true,
+            paidOnly: false,
             priceMultiplier: 1,
             aliases: [],
-            fallbacks: ["google/gemini-4-carbon:vercel"],
+            fallbacks: [route],
         });
-        expect(fallback.cost).toMatchObject({
-            promptTextTokens: 2 / 1_000_000,
-            promptCachedTokens: 0.1 / 1_000_000,
-            completionTextTokens: 10 / 1_000_000,
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            fallbackOnly: true,
         });
         const billing = calculateUsageBilling({
-            model: "google/gemini-4-carbon",
+            model,
             usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
             servedBy: fallback,
             quotedBy: primary,
+            output: {
+                usage: {
+                    cost: 0.019,
+                    server_tool_use_details: { web_search_requests: 1 },
+                },
+            },
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.012, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.019 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {

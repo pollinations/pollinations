@@ -300,7 +300,7 @@ describe("Flash Lite Vercel routing", () => {
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
         });
     });
-    it.each(["gemini-fast", "google/gemini-4-carbon:vercel"])(
+    it.each(["gemini-fast"])(
         "converts audio and video to Vercel files for %s while preserving images and text",
         async (model) => {
             const transform = findModelByName(model)?.transform;
@@ -372,5 +372,23 @@ describe("Flash Lite Vercel routing", () => {
             only: ["google-ai-studio"],
             allow_fallbacks: false,
         });
+    });
+});
+
+it("uses Exa for Carbon fallback search and preserves caller tools", async () => {
+    const model = "google/gemini-4-carbon:openrouter:ai-studio";
+    const route = findModelByName(model);
+    if (!route?.transform) throw new Error("Missing Carbon fallback transform");
+    const custom = { type: "function", function: { name: "lookup" } };
+    const { options } = await route.transform([], {
+        tools: [{ type: "google_search" }, custom],
+    });
+    expect(options.tools).toEqual([
+        { type: "openrouter:web_search", parameters: { engine: "exa" } },
+        custom,
+    ]);
+    expect(resolveModelConfig([], { model }).options.provider).toEqual({
+        only: ["google-ai-studio"],
+        allow_fallbacks: false,
     });
 });

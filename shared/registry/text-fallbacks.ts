@@ -6,6 +6,7 @@ import {
 } from "./cost-variants";
 import {
     openRouterGeminiBilling,
+    reportedTextCost,
     VERCEL_EXA_SEARCH_BILLING,
 } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
@@ -1004,20 +1005,26 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemini-4-carbon": {
-        "google/gemini-4-carbon:vercel": {
-            provider: "vercel",
+        "google/gemini-4-carbon:openrouter:ai-studio": {
+            provider: "openrouter",
             addedDate: new Date("2026-11-11").getTime(),
-            // Vercel AI Gateway promotional rates (2026-11-11, listed at 50% off).
-            // The gateway adds no fee on direct routes. The promotion has no end
-            // date on Vercel's page.
+            // OpenRouter's posted AI Studio launch rates. Receipt totals also
+            // cover rate changes and the tokens used by the Exa tool loop.
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.1),
-                promptCacheWriteTokens: perMillion(2),
-                promptAudioTokens: perMillion(2),
-                promptImageTokens: perMillion(2),
-                promptVideoTokens: perMillion(2),
-                completionTextTokens: perMillion(10),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 7 * 1.055,
+                    storageCostPerMillionTokenHours: 2.25 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
             },
         },
     },

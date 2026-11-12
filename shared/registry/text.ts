@@ -1179,7 +1179,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-11-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         // Vertex global list rates (2026-11-11). The 50% credit-back promotion
         // through 2026-11-30 is not priced in, matching Gemini 4 Argon.
         cost: {

@@ -7,6 +7,7 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
+    createOpenRouterGoogleSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -869,12 +870,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-4-carbon:vercel",
-        config: portkeyConfig["google/gemini-4-carbon:vercel"],
+        name: "google/gemini-4-carbon:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-4-carbon:openrouter:ai-studio"],
         transform: pipe(
             sanitizeToolSchemas,
-            mediaToVercelFiles,
-            adaptGoogleSearchToolForVertex,
+            createOpenRouterGoogleSearchTransform("exa"),
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

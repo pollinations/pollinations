@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "compare_versions",
+                "convert_units",
                 "to_fraction",
                 "diff_text",
                 "create_qr",
@@ -674,4 +675,139 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("convert_units converts within each category and rejects mismatches", async (t) => {
+    const client = await clientFor(t);
+    for (const [args, expected] of [
+        [
+            { value: 1, from: "km", to: "m" },
+            { value: 1, from: "km", to: "m", category: "length", result: 1000 },
+        ],
+        [
+            { value: 1, from: "mi", to: "km" },
+            {
+                value: 1,
+                from: "mi",
+                to: "km",
+                category: "length",
+                result: 1.609344,
+            },
+        ],
+        [
+            { value: 1, from: "pounds", to: "kg" },
+            {
+                value: 1,
+                from: "lb",
+                to: "kg",
+                category: "mass",
+                result: 0.45359237,
+            },
+        ],
+        [
+            { value: 1, from: "gal", to: "l" },
+            {
+                value: 1,
+                from: "gal",
+                to: "l",
+                category: "volume",
+                result: 3.785411784,
+            },
+        ],
+        [
+            { value: 1, from: "acre", to: "m2" },
+            {
+                value: 1,
+                from: "acre",
+                to: "m2",
+                category: "area",
+                result: 4046.8564224,
+            },
+        ],
+        [
+            { value: 60, from: "mph", to: "km/h" },
+            {
+                value: 60,
+                from: "mph",
+                to: "km/h",
+                category: "speed",
+                result: 96.56064,
+            },
+        ],
+        [
+            { value: 1, from: "h", to: "s" },
+            { value: 1, from: "h", to: "s", category: "time", result: 3600 },
+        ],
+        [
+            { value: 1, from: "kib", to: "byte" },
+            {
+                value: 1,
+                from: "kib",
+                to: "byte",
+                category: "data",
+                result: 1024,
+            },
+        ],
+        [
+            { value: 100, from: "c", to: "f" },
+            {
+                value: 100,
+                from: "C",
+                to: "F",
+                category: "temperature",
+                result: 212,
+            },
+        ],
+        [
+            { value: 32, from: "f", to: "c" },
+            {
+                value: 32,
+                from: "F",
+                to: "C",
+                category: "temperature",
+                result: 0,
+            },
+        ],
+        [
+            { value: -40, from: "c", to: "f" },
+            {
+                value: -40,
+                from: "C",
+                to: "F",
+                category: "temperature",
+                result: -40,
+            },
+        ],
+        [
+            { value: 0, from: "celsius", to: "kelvin" },
+            {
+                value: 0,
+                from: "C",
+                to: "K",
+                category: "temperature",
+                result: 273.15,
+            },
+        ],
+    ])
+        assert.deepEqual(
+            await call(client, "convert_units", args),
+            expected,
+            JSON.stringify(args),
+        );
+
+    for (const args of [
+        { value: 1, from: "m", to: "kg" },
+        { value: 1, from: "parsec", to: "m" },
+        { value: 1, from: "c", to: "l" },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "convert_units",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
 });

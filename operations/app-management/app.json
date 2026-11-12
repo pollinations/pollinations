@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "Ask Them All",
+    "url": "https://ask-them-all.pollinations.app",
+    "description": "Ask one question and several labs answer it in parallel through a single Pollinations key, side by side, with a summary of where they agree and differ.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "mhmdrizzzki",
+    "githubUserId": "82577674",
+    "repositoryUrl": "https://github.com/mhmdrizzzki/ask-them-all",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19194",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/55f2227f-0a10-4bbd-97d6-5ba1d39bfe33"
+  },
+  {
     "emoji": "🎮",
     "name": "Vaultwright",
     "url": "https://vaultwright.rekty-dev.workers.dev",

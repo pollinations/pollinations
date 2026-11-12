@@ -1192,6 +1192,7 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(1.5),
             completionTextTokens: perMillion(7.5),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Hydrogen",
         description:
             "High-throughput agentic model for long-horizon coding, tool use and multimodal analysis with a 1M-token context",

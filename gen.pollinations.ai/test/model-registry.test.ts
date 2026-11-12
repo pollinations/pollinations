@@ -146,6 +146,14 @@ describe("getGenerationModelRegistry", () => {
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
+            // Fireworks and the Azure-hosted Fireworks routes serve one choice
+            // per request and answer n>1 with "n must be 1 on serverless".
+            ["z-ai/glm-5.3", "n", false],
+            ["minimax/minimax-m3", "n", false],
+            ["nvidia/nemotron-3.5-lightning", "n", false],
+            // DeepInfra and OVH do honor n.
+            ["deepseek/deepseek-v4.1-flash", "n", true],
+            ["openai/gpt-oss-20b", "n", true],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

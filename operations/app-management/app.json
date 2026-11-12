@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Call Waiting",
+    "url": "https://sugamdeol.github.io/callwait",
+    "description": "Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/callwait",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-07",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19352",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/ed704175-08d3-40b2-aeb2-4bc5bb21f315"
+  },
+  {
+    "emoji": "🎮",
     "name": "Hang Up",
     "url": "https://tomdacatto.github.io/pollinations-hang-up",
     "description": "Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in.",

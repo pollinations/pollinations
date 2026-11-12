@@ -927,7 +927,7 @@ test("anyone can read the prices, and they match what gen charges", async () => 
 test("the pollinations templates come logged in with a key from enter's key API", async () => {
     const e2b = stubE2b();
     const owner = await createTestApiKey({
-        accountPermissions: ["machines", "keys"],
+        accountPermissions: ["profile", "usage", "machines", "keys"],
         user: { tierBalance: 10 },
     });
 
@@ -938,7 +938,9 @@ test("the pollinations templates come logged in with a key from enter's key API"
     const created = await createSandbox(owner.key, {
         templateID: "pollinations",
     });
-    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const { sandboxID, ...rest } = await created.json<{ sandboxID: string }>();
+    // An unlimited caller's login is unlimited too: nothing to fund.
+    expect(rest).not.toHaveProperty("notice");
     expect(e2b.files).toMatchObject([
         {
             sandboxID,
@@ -967,6 +969,31 @@ test("the pollinations templates come logged in with a key from enter's key API"
         sandboxID,
         largeID,
     ]);
+});
+
+test("a caller with a budget logs the box in with its own permissions and a budget of 0", async () => {
+    const e2b = stubE2b();
+    // A narrow key like Mama Barbara's old sign-ins, with a budget.
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines", "keys"],
+        pollenBudget: 5,
+        user: { tierBalance: 10 },
+    });
+
+    const created = await createSandbox(owner.key, {
+        templateID: "pollinations",
+    });
+    expect(created.status).toBe(201);
+    const { notice } = await created.json<{ notice: string }>();
+    const { apiKey } = JSON.parse(e2b.files[0].content);
+    // Rent bills the caller's budget, so the caller keeps it all.
+    expect(JSON.parse(apiKey).body).toMatchObject({
+        accountPermissions: ["machines"],
+        pollenBudget: 0,
+    });
+    expect(notice).toMatch(
+        /^This sandbox's polli login has a budget of 0 Pollen, because the key that created the sandbox has a budget\. Give the login a budget at https:\/\/\S+\/edit-key\?id=enter-stub-key&ref=sandbox_key_budget\.$/,
+    );
 });
 
 const SECRET = "a-webhook-secret-of-32-characters";

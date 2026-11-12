@@ -65,6 +65,8 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "compare_versions",
+                "to_fraction",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -428,4 +430,134 @@ test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", asy
             true,
             JSON.stringify(args),
         );
+});
+
+test("compare_versions orders by SemVer precedence, not string order", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.10.0", "1.9.0", "2.0.0-rc.1", "2.0.0"],
+        }),
+        {
+            sorted: ["1.9.0", "1.10.0", "2.0.0-rc.1", "2.0.0"],
+            newest: "2.0.0",
+            oldest: "1.9.0",
+            equal: false,
+        },
+    );
+    // A prerelease sorts before its release. Build metadata is ignored for
+    // precedence but preserved in the returned strings.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
+        }),
+        {
+            sorted: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
+            newest: "1.0.0",
+            oldest: "1.0.0-rc.1",
+            equal: false,
+        },
+    );
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.2.3+build.1", "1.2.3+build.2"],
+        }),
+        {
+            sorted: ["1.2.3+build.1", "1.2.3+build.2"],
+            newest: "1.2.3+build.2",
+            oldest: "1.2.3+build.1",
+            equal: true,
+        },
+    );
+    // Parts above Number.MAX_SAFE_INTEGER stay distinct in the core version.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["9007199254740993.0.0", "9007199254740992.0.0"],
+        }),
+        {
+            sorted: ["9007199254740992.0.0", "9007199254740993.0.0"],
+            newest: "9007199254740993.0.0",
+            oldest: "9007199254740992.0.0",
+            equal: false,
+        },
+    );
+    // Numeric prerelease identifiers stay distinct above the safe range too.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-9007199254740993", "1.0.0-9007199254740992"],
+        }),
+        {
+            sorted: ["1.0.0-9007199254740992", "1.0.0-9007199254740993"],
+            newest: "1.0.0-9007199254740993",
+            oldest: "1.0.0-9007199254740992",
+            equal: false,
+        },
+    );
+    for (const args of [
+        {},
+        { versions: ["1.2.3"] },
+        { versions: ["1.2.3", "latest"] },
+        { versions: ["1.2", "1.2.3"] },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "compare_versions",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+});
+
+test("to_fraction converts decimals and reduces fractions exactly", async (t) => {
+    const client = await clientFor(t);
+    for (const [input, expected] of [
+        ["0.5", "1/2"],
+        ["1.5", "3/2"],
+        ["0.25", "1/4"],
+        ["4/6", "2/3"],
+        ["-2.5", "-5/2"],
+        ["+2.5", "5/2"],
+        ["3.14159", "314159/100000"],
+        // Exact through BigInt: this is the value a float would round to 1/3.
+        ["0.3333333333333333", "3333333333333333/10000000000000000"],
+        ["9360/1260", "52/7"],
+        ["4/2", "2"],
+        ["0.1", "1/10"],
+    ]) {
+        assert.deepEqual(
+            await call(client, "to_fraction", { value: input }),
+            { fraction: expected },
+            input,
+        );
+    }
+});
+
+test("to_fraction rejects malformed input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "" },
+        { value: "abc" },
+        { value: "1.2.3" },
+        { value: "1/0" },
+        { value: "1/2/3" },
+        { value: "1 / 2" },
+        { value: "--5" },
+        // A sign with nothing after it: the bare "+" and "-" already fall through to the
+        // empty check, and the dotted forms would otherwise parse as a whole number of 0.
+        { value: "." },
+        { value: "+." },
+        { value: "-." },
+        { value: "+" },
+        { value: "-" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "to_fraction", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

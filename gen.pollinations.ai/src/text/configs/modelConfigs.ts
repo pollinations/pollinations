@@ -1089,6 +1089,9 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603": () =>
         createMistralModelConfig({
             model: "mistral-small-2603",
+            // With reasoning enabled Mistral returns message.content as an
+            // array of thinking/text chunks; flatten it like mistral-large-4.
+            useMistralChatFormat: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "mistral-small-2603-openrouter": () =>

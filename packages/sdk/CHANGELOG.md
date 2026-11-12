@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.28] - 2026-11-11
+
+### Fixed
+- `useAccountKeyUsage` forwards `before_event_id`, so paging with the
+  previous page's cursor no longer skips rows that share its timestamp.
+
 ## [5.1.0-alpha.27] - 2026-11-06
 
 ### Fixed

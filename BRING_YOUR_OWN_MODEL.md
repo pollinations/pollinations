@@ -63,7 +63,7 @@ Publishing a model or changing its public prices takes effect after 3 hours.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
-- Text models use the token categories reported by the upstream endpoint.
+- Text models use the token categories reported by the upstream endpoint. A call that reports more than 2,000,000 prompt tokens or 200,000 completion tokens is not billed.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.

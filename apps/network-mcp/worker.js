@@ -3,6 +3,7 @@ import { z } from "zod";
 import { cidrTools } from "./tools/cidr.js";
 import { dnsTools } from "./tools/dns.js";
 import { httpTools } from "./tools/http.js";
+import { macTools } from "./tools/mac.js";
 import { rdapTools } from "./tools/rdap.js";
 
 const handler = createMcpHandler(
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
             ...httpTools,
             ...cidrTools,
             ...rdapTools,
+            ...macTools,
         ]) {
             server.registerTool(
                 name,
@@ -24,7 +26,10 @@ const handler = createMcpHandler(
                     inputSchema: z.object(shape),
                     annotations: {
                         readOnlyHint: true,
-                        openWorldHint: name !== "inspect_cidr",
+                        openWorldHint: ![
+                            "inspect_cidr",
+                            "inspect_mac",
+                        ].includes(name),
                     },
                 },
                 async (args) => ({

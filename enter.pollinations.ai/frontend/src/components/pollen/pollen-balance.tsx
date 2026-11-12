@@ -17,16 +17,13 @@ import {
     WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    WalletBalanceCard,
-    WalletKindIcon,
-} from "@pollinations/ui/wallet";
+import { WalletBalanceCard, WalletKindIcon } from "@pollinations/ui/wallet";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
+import { formatUsd } from "./format-usd.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
 
@@ -69,7 +66,7 @@ const TooltipList: FC<{
         </ul>
         {earned !== undefined && earned > 0 && (
             <span className="mt-2 block border-t border-divider pt-1.5 text-intent-success-text font-semibold">
-                +{formatPollen(earned)}{" "}
+                +{formatUsd(earned)}{" "}
                 <span className="font-medium text-theme-text-muted">
                     earned past 7d
                 </span>
@@ -102,7 +99,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <WalletBalanceCard
                     kind="paid"
                     label="Paid"
-                    value={formatPollen(displayPaidBalance)}
+                    value={formatUsd(displayPaidBalance)}
                     info={
                         <InfoTip
                             label="About Paid pollen"
@@ -123,7 +120,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     footer={
                         paidWeek > 0 ? (
                             <>
-                                +{formatPollen(paidWeek)}{" "}
+                                +{formatUsd(paidWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
@@ -142,7 +139,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     : undefined
                             }
                         >
-                            {formatPollen(displayTierBalance)}
+                            {formatUsd(displayTierBalance)}
                         </span>
                     }
                     info={
@@ -167,7 +164,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     footer={
                         !questPollenRestricted && tierWeek > 0 ? (
                             <>
-                                +{formatPollen(tierWeek)}{" "}
+                                +{formatUsd(tierWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
@@ -186,17 +183,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 {questPollenRestricted ? "Available" : "Total"}
                             </span>
                             <div className="flex flex-col items-end leading-tight">
-                                <span className="flex items-baseline gap-1.5">
-                                    <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                                        {formatPollen(totalPollen)}
-                                    </span>
-                                    <span className="text-xs font-bold text-theme-text-soft">
-                                        pollen
-                                    </span>
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                    {formatUsd(totalPollen)}
                                 </span>
                                 {totalWeek > 0 && (
                                     <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                                        +{formatPollen(totalWeek)}{" "}
+                                        +{formatUsd(totalWeek)}{" "}
                                         <span className="font-medium text-theme-text-muted">
                                             / 7d
                                         </span>
@@ -212,7 +204,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 />
                                 <span>
                                     <span className="font-semibold text-theme-text-strong">
-                                        {formatPollen(displayTierBalance)} Quest
+                                        {formatUsd(displayTierBalance)} Quest
                                         pollen locked.
                                     </span>{" "}
                                     Verification needed:{" "}
@@ -278,7 +270,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
             title="Earned in the last 7 days"
             className="ml-auto bg-transparent text-theme-text-soft"
         >
-            +{formatPollen(earned)} pollen
+            +{formatUsd(earned)}
             <span className="sr-only"> earned in the last 7 days</span>
         </Chip>
     );
@@ -296,7 +288,7 @@ export const SidebarBalance: FC<{
         className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
     >
         <WalletKindIcon kind={kind} />
-        {formatPollen(normalizeDisplayBalance(balance))}
+        {formatUsd(normalizeDisplayBalance(balance))}
         <span className="sr-only">
             {kind === "paid" ? " paid" : " Quest"} pollen
         </span>
@@ -374,7 +366,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 />
                 <span>
                     Auto top-up buys its pack when your paid balance reaches{" "}
-                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                    {formatUsd(AUTO_TOP_UP_THRESHOLD_POLLEN)}
                 </span>
             </p>
             <p className="flex items-start gap-1.5">

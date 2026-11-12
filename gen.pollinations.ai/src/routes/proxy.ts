@@ -413,6 +413,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         max_duration: entry.info.max_duration,
         default_duration: entry.info.default_duration,
         allowed_durations: entry.info.allowed_durations,
+        resolutions: entry.info.resolutions,
         voices: entry.info.voices,
         max_reference_images: entry.info.max_reference_images,
         max_reference_videos: entry.info.max_reference_videos,

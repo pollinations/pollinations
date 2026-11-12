@@ -76,9 +76,12 @@ const healthNumber = new Intl.NumberFormat("en", {
 export function ModelHealthIndicator({
     health,
     communityProxy,
+    showLabel = false,
 }: {
     health: ModelHealth;
     communityProxy: boolean;
+    /** The status's name beside the bars, where there is room for it. */
+    showLabel?: boolean;
 }) {
     const { className, label } = healthStyles[health.status];
     const sample = communityProxy
@@ -93,9 +96,10 @@ export function ModelHealthIndicator({
         <Tooltip content={detail} ariaLabel={detail} tapEnabled displayContents>
             <span
                 aria-hidden="true"
-                className={`inline-flex h-5 w-5 items-center justify-center ${className}`}
+                className={`inline-flex h-5 items-center gap-1 ${showLabel ? "" : "w-5 justify-center"} ${className}`}
             >
                 <ModelHealthIcon status={health.status} />
+                {showLabel && <span className="text-xs">{label}</span>}
             </span>
         </Tooltip>
     );

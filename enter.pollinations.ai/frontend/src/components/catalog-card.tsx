@@ -1,50 +1,42 @@
-import { Surface } from "@pollinations/ui";
+import { CopyField, Surface } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
-import { CopyValue } from "./models/copy-value.tsx";
 
-// Where a card goes from stacked to side by side: a short main part (a
-// template's size) fits beside the price from half a screen; a description
-// needs a wide screen. Side by side it is one grid: the logo and its bar, what
-// it is (with the value to copy right under it), a 1.5rem gap and the price
-// box share the first row, so the bar runs as tall as that row; the action
-// follows under the price. Stacked, the logo and a short bar open the title
-// line, and the rest starts at the card's edge. Full class names, so Tailwind
-// finds them.
+// The logo and a short bar always open the title line; the rest starts at the
+// card's edge. Stacked, the price follows the copy box; side by side, it sits
+// on the right behind a vertical line, with the action under it. A short main
+// part (a template's size) goes side by side from 32rem, a description from
+// 38rem, where the title and its tags still fit beside the price (about
+// 13rem). Full class names, so Tailwind finds them.
 const SPLIT = {
     half: {
-        card: "@lg:grid @lg:grid-cols-[auto_minmax(0,1fr)_1.5rem_var(--catalog-price-width)] @lg:gap-x-0",
-        head: "@lg:contents",
-        logo: "@lg:flex @lg:col-start-1 @lg:row-start-1 @lg:pr-2.5",
-        bar: "@lg:h-auto @lg:min-h-10",
-        text: "@lg:col-start-2 @lg:row-start-1 @lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-1 @lg:self-start",
-        price: "@lg:col-start-4 @lg:row-start-1 @lg:self-start",
-        action: "@lg:col-start-4 @lg:row-start-2",
+        card: "@lg:grid @lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:gap-x-6",
+        head: "@lg:col-start-1 @lg:row-start-1 @lg:self-start",
+        price: "@lg:col-start-2 @lg:row-start-1 @lg:self-start @lg:border-l @lg:border-divider @lg:pl-4",
+        // One line beside the price; the full value still copies.
+        oneLine: "@lg:[&>span:first-child]:truncate",
+        action: "@lg:col-start-2 @lg:row-start-2 @lg:pl-4",
     },
     wide: {
-        card: "@2xl:grid @2xl:grid-cols-[auto_minmax(0,1fr)_1.5rem_var(--catalog-price-width)] @2xl:gap-x-0",
-        head: "@2xl:contents",
-        logo: "@2xl:flex @2xl:col-start-1 @2xl:row-start-1 @2xl:pr-2.5",
-        bar: "@2xl:h-auto @2xl:min-h-10",
-        text: "@2xl:col-start-2 @2xl:row-start-1 @2xl:flex @2xl:min-w-0 @2xl:flex-col @2xl:gap-1 @2xl:self-start",
-        price: "@2xl:col-start-4 @2xl:row-start-1 @2xl:self-start",
-        action: "@2xl:col-start-4 @2xl:row-start-2",
+        card: "@min-[38rem]:grid @min-[38rem]:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @min-[38rem]:gap-x-6",
+        head: "@min-[38rem]:col-start-1 @min-[38rem]:row-start-1 @min-[38rem]:self-start",
+        price: "@min-[38rem]:col-start-2 @min-[38rem]:row-start-1 @min-[38rem]:self-start @min-[38rem]:border-l @min-[38rem]:border-divider @min-[38rem]:pl-4",
+        oneLine: "@min-[38rem]:[&>span:first-child]:truncate",
+        action: "@min-[38rem]:col-start-2 @min-[38rem]:row-start-2 @min-[38rem]:pl-4",
     },
 };
 
 /**
- * One card of a catalog list (models, MCP servers, sandbox templates). On a
- * wide screen: the logo at the top left with a bar as tall as the price box,
- * what it is, the command or ID to copy (with its health) and a note (who
- * published it) under it; on the right, `--catalog-price-width` wide (set on
- * the list), the price box and the action. Stacked: the logo and the title on
- * one line, then what it is, the value to copy and the note, the price and the
- * action. The list needs `@container`.
+ * One card of a catalog list (models, MCP servers, sandbox templates): the
+ * logo and the title, what it is and the command or ID to copy (with its
+ * health); the price, `--catalog-price-width` wide (set on the list), beside
+ * it or under it, and the action under the price. The list needs
+ * `@container`.
  */
 export const CatalogCard: FC<{
-    /** Without one (a model with no brand logo), side by side the text keeps
-     * its place; stacked the title starts at the edge. */
+    /** Without one (a model with no brand logo), the title starts at the
+     * edge. */
     logo: ReactNode;
-    /** The title line: the name and its tags. */
+    /** Beside the logo: the name and its tags, and who published it. */
     title: ReactNode;
     /** What it is, under the title line. */
     children?: ReactNode;
@@ -52,8 +44,6 @@ export const CatalogCard: FC<{
     copy?: { value: string; label: string };
     /** Beside the value to copy: whether it works right now. */
     status?: ReactNode;
-    /** A quiet last line under the value to copy (who published it). */
-    note?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
 }> = ({
@@ -63,62 +53,52 @@ export const CatalogCard: FC<{
     price,
     copy,
     status,
-    note,
     action,
     split = "half",
 }) => {
     const at = SPLIT[split];
     return (
         <Surface className={`flex flex-col gap-3 ${at.card}`}>
-            {/* Stacked: a grid of the logo and the title, the rest across
-                both columns. Side by side it dissolves into the card's grid. */}
-            <div
-                className={`order-1 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 gap-y-2.5 ${at.head}`}
-            >
-                <div
-                    className={`${logo ? "flex" : "hidden"} gap-2.5 ${at.logo}`}
-                >
-                    <span className="flex h-8 w-8 shrink-0 [&>*]:h-full [&>*]:w-full">
-                        {logo}
-                    </span>
-                    {/* Stacked, as tall as the logo; side by side, down the
-                        row, as tall as the price box. */}
-                    <span
-                        aria-hidden="true"
-                        className={`h-8 w-px shrink-0 bg-divider ${logo ? "" : "invisible"} ${at.bar}`}
-                    />
+            <div className={`flex min-w-0 flex-col gap-2.5 ${at.head}`}>
+                <div className="flex min-w-0 items-center gap-2.5">
+                    {logo && (
+                        <>
+                            <span className="flex h-8 w-8 shrink-0 [&>*]:h-full [&>*]:w-full">
+                                {logo}
+                            </span>
+                            <span
+                                aria-hidden="true"
+                                className="h-8 w-px shrink-0 bg-divider"
+                            />
+                        </>
+                    )}
+                    <div className="min-w-0 flex-1">{title}</div>
                 </div>
-                <div className={`contents ${at.text}`}>
-                    <div className={`min-w-0 ${logo ? "" : "col-span-full"}`}>
-                        {title}
-                    </div>
-                    <div className="col-span-full flex min-w-0 flex-col gap-1">
-                        {children}
-                        {/* How to call it: the value and a copy icon, no box;
-                            long values end in "…" and still copy in full. */}
-                        {copy && (
-                            <div className="mt-2 flex min-w-0 items-center gap-2">
-                                <div className="flex min-w-0">
-                                    <CopyValue
-                                        label={copy.label}
-                                        value={copy.value}
-                                        showCopyIcon
-                                        bright
-                                    />
-                                </div>
+                <div className="flex min-w-0 flex-col gap-1">{children}</div>
+                {/* How to call it, in the copy box used everywhere; stacked,
+                    it is the edge between what it is and the price. */}
+                {copy && (
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <div className="w-fit min-w-0 max-w-full">
+                            <CopyField
+                                label={copy.label}
+                                value={copy.value}
+                                className={at.oneLine}
+                            />
+                        </div>
+                        {/* Beside the box when it fits, under it otherwise:
+                            whether it works, and where to try it. */}
+                        {status && (
+                            <div className="flex min-h-5 items-center gap-2">
                                 {status}
                             </div>
                         )}
-                        {note && <div className="min-w-0">{note}</div>}
                     </div>
-                </div>
+                )}
             </div>
-            <div
-                className={`order-2 min-w-0 rounded-lg border border-divider px-3 py-2 ${at.price}`}
-            >
-                {price}
-            </div>
-            {action && <div className={`order-4 ${at.action}`}>{action}</div>}
+            {/* No box: a line on its left beside the text, none stacked. */}
+            <div className={`min-w-0 ${at.price}`}>{price}</div>
+            {action && <div className={at.action}>{action}</div>}
         </Surface>
     );
 };

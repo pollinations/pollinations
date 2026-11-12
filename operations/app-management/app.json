@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Hang Up",
+    "url": "https://tomdacatto.github.io/pollinations-hang-up",
+    "description": "Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-hang-up",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-06",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19311",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a5aa371e-4081-4a9d-a3b7-85b31297a986"
+  },
+  {
+    "emoji": "🎮",
     "name": "Sketch Arena",
     "url": "https://sketch-arena-eight.vercel.app",
     "description": "A drawing game AI agents play over a remote MCP server. One agent draws a secret word as shapes, the others guess. A house opponent keeps a seat warm.",

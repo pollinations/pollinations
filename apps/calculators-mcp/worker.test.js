@@ -67,6 +67,7 @@ for (const modern of [false, true])
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
+                "check_digit",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -674,4 +675,102 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("check_digit validates published test numbers", async (t) => {
+    const client = await clientFor(t);
+
+    // The standard Luhn test value, and the same value with one digit changed.
+    assert.deepEqual(
+        await call(client, "check_digit", {
+            scheme: "luhn",
+            value: "4539578763621486",
+        }),
+        { valid: true, expected: null },
+    );
+    assert.deepEqual(
+        await call(client, "check_digit", {
+            scheme: "luhn",
+            value: "4539578763621487",
+        }),
+        { valid: false, expected: "6" },
+    );
+
+    // IBAN modulo 97, including a wrong check pair, spaced as it is written by hand.
+    assert.equal(
+        (
+            await call(client, "check_digit", {
+                scheme: "iban",
+                value: "GB82 WEST 1234 5698 7654 32",
+            })
+        ).valid,
+        true,
+    );
+    assert.deepEqual(
+        await call(client, "check_digit", {
+            scheme: "iban",
+            value: "GB83WEST12345698765432",
+        }),
+        { valid: false, expected: "82" },
+    );
+
+    // ISBN-10 modulo 11, where the check character may be X.
+    assert.equal(
+        (
+            await call(client, "check_digit", {
+                scheme: "isbn10",
+                value: "080442957X",
+            })
+        ).valid,
+        true,
+    );
+    assert.deepEqual(
+        await call(client, "check_digit", {
+            scheme: "isbn10",
+            value: "0306406153",
+        }),
+        { valid: false, expected: "2" },
+    );
+
+    assert.equal(
+        (
+            await call(client, "check_digit", {
+                scheme: "isbn13",
+                value: "9780306406157",
+            })
+        ).valid,
+        true,
+    );
+    assert.equal(
+        (
+            await call(client, "check_digit", {
+                scheme: "ean13",
+                value: "4006381333931",
+            })
+        ).valid,
+        true,
+    );
+});
+
+test("check_digit rejects values that are not the shape of their scheme", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { scheme: "luhn", value: "12a" },
+        { scheme: "luhn", value: "4" },
+        { scheme: "iban", value: "GB82" },
+        { scheme: "iban", value: "1234567890123456" },
+        { scheme: "isbn10", value: "030640615" },
+        { scheme: "isbn10", value: "0306406152X" },
+        { scheme: "isbn13", value: "978030640615" },
+        { scheme: "ean13", value: "97803064061579" },
+        { scheme: "mod11", value: "123" },
+        { scheme: "luhn", value: "" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "check_digit", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

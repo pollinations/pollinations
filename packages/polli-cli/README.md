@@ -169,6 +169,8 @@ polli harness openclaw on         # adds the Pollinations provider + Polli skill
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
 polli harness tgpt on             # authenticated Pollinations text models in tgpt
+polli harness vibe on             # Mistral Vibe provider, models, and Polli skill
+polli harness vibe on --model deepseek/deepseek-v4-flash
 polli harness <harness> status
 polli harness <harness> off
 ```
@@ -187,7 +189,38 @@ Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
 servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
 Model setup remains compatible with older Pi versions.
 
+Mistral Vibe uses `$VIBE_HOME/config.toml`, `.env`, and `skills/polli/` (default
+`~/.vibe`). Polli configures the live tool-calling model catalog and routes
+session titles and smart approval through the selected Pollinations model.
+Start a new `vibe` session afterward. Project, agent, admin, and environment
+settings can override this user configuration. TOML is reformatted on setup;
+`off` restores untouched files byte-for-byte or removes only the Pollinations
+setup when files were edited. Install Vibe first with `uv tool install mistral-vibe`.
+
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
+## Editors (ACP)
+
+`polli acp` makes Pollinations agents available in editors that speak the
+[Agent Client Protocol](https://agentclientprotocol.com), such as Zed and
+JetBrains IDEs. The editor starts it; the agent itself runs on Pollinations.
+Add it to Zed's `settings.json`:
+
+```json
+"agent_servers": {
+  "Pollinations": {
+    "type": "custom",
+    "command": "npx",
+    "args": ["-y", "@pollinations/cli", "acp", "community/<owner>/<name>"]
+  }
+}
+```
+
+The agent argument is optional; the editor's model picker lists every agent.
+Sign in with `polli auth login` first, or set `POLLINATIONS_API_KEY` in the
+entry's `env`. MCP servers configured in the editor are connected locally and
+offered to the agent as tools; each call asks for permission. Each thread
+keeps its history while the editor runs.
 
 ## Sandboxes
 

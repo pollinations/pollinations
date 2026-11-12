@@ -133,7 +133,7 @@ const ANSWERS = {
 function decisionResponse(answers = ANSWERS) {
     return Response.json({
         id: "dec-test",
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 312, output_tokens: 48 },
@@ -159,7 +159,7 @@ test("sends native state and questions to the decisions endpoint", async (t) => 
         );
         const body = JSON.parse(init.body);
         assert.deepEqual(body, {
-            model: "typesafe/jev-1.13",
+            model: "typesafe/jev-1.14",
             state: "My payouts have been failing for 3 days.",
             questions: QUESTIONS,
         });
@@ -181,6 +181,26 @@ test("sends native state and questions to the decisions endpoint", async (t) => 
     assert.equal(result.content.length, 1);
     assert.equal(result.content[0].type, "text");
     assert.deepEqual(JSON.parse(result.content[0].text), ANSWERS);
+});
+
+test("forwards a chosen decision model", async (t) => {
+    let model;
+    t.mock.method(globalThis, "fetch", async (_input, init) => {
+        model = JSON.parse(init.body).model;
+        return decisionResponse({ is_urgent: ANSWERS.is_urgent });
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "jev_decide",
+        arguments: {
+            model: "vllm-sr/d3",
+            state: "Please fix this before noon.",
+            questions: { is_urgent: QUESTIONS.is_urgent },
+        },
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(model, "vllm-sr/d3");
 });
 
 test("preserves optional noul criteria in the decision request", async (t) => {
@@ -290,7 +310,7 @@ test("accepts native string, object, and array instructions and rubric values", 
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(content, {
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         state: "My card was declined.",
         questions: richQuestions,
     });

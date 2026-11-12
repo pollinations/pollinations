@@ -11,7 +11,7 @@ export const IMAGE_DIMENSIONS_HEADER = "X-Image-Dimensions";
 export const FLUX_SIZE_DESCRIPTION =
     "`black-forest-labs/flux.1-schnell` (`flux`) accepts 64–8192 px per side on its primary backend. It scales oversized requests down proportionally to the backend cap (810,000 or 1,048,576 pixels), then snaps to a size within the cap with sides divisible by 8 and a pixel count divisible by 65,536. Aspect ratios within 5% of the target are treated as equally close. Among equally close ratios it chooses the smallest size at or above the target pixel count, or the largest below it if none fits. The `X-Image-Dimensions` response header reports the produced size when available.";
 
-const imageSizeConstraints = `For images, model-specific constraints apply. ${FLUX_SIZE_DESCRIPTION} \`flux-2-pro\`, \`flux-2-flex\`, and \`microsoft/mai-image-2.6-flash\` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). \`black-forest-labs/flux.1.1-pro\` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use \`resolution\` to select a resolution tier.`;
+const imageSizeConstraints = `For images, model-specific constraints apply. ${FLUX_SIZE_DESCRIPTION} \`flux-2-pro\`, \`flux-2-flex\`, and \`microsoft/mai-image-2.6-flash\` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). \`tongyi-mai/z-image-turbo\` and \`black-forest-labs/flux.2-klein-4b\` need at least 256 px per side and at most 2,359,296 total pixels. \`black-forest-labs/flux.1.1-pro\` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use \`resolution\` to select a resolution tier.`;
 
 const modelSchema = (defaultModel: string) =>
     z
@@ -63,7 +63,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`.",
+                "Image quality level. Supported by GPT Image models and `grok-imagine-image-2.0`.",
         }),
     image: z
         .string()
@@ -139,7 +139,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         }),
     transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`; other models return 400.",
+            "Generate an image with a transparent background. Unsupported models return 400.",
     }),
 
     // Video-specific params
@@ -152,15 +152,15 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default.",
+            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `google/gemini-omni-1.2-flash`: 3-15s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: 2-15s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default.",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`.",
     }),
     audio: BooleanQueryParamSchema.optional().meta({
         description:
-            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
+            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `black-forest-labs/flux-3-max` generates audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),
 });
 

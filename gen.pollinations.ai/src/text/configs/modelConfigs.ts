@@ -109,11 +109,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
-    "jev-1.13": () =>
+    "jev-1.14": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "typesafe-ai/jev-1.13.0",
+            model: "typesafe-ai/jev-1.14.0",
             defaultOptions: {
                 providerOptions: {
                     gateway: { only: ["typesafe-ai"] },
@@ -121,11 +121,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "typesafe/jev-1.13:openrouter:typesafe": () => ({
+    "typesafe/jev-1.14:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         defaultOptions: {
             provider: {
                 only: ["typesafe"],
@@ -756,6 +756,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
+    // -- Azure Fireworks Models (NVIDIA) --------------------------------------
+    "azure/Nemotron-3-Ultra": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3-Ultra/chat/completions?api-version=2024-12-01-preview",
+        ),
+
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({
@@ -880,10 +887,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
-    ),
-    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
     ),
     "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
         createDeepInfraModelConfig({
@@ -1046,6 +1049,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
+    // -- Fireworks AI (Muse Spark Open) --------------------------------------
+    "accounts/fireworks/models/muse-spark-open": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-spark-open",
+            serviceTier: "default",
+        }),
+
     // -- Kimi K3 (global Bedrock, then Fireworks) -----------------------------
     "kimi-k3-bedrock": () =>
         createBedrockChatConfig("global.moonshotai.kimi-k3"),
@@ -1053,6 +1063,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
             serviceTier: "default",
+        }),
+    "moonshotai/kimi-k3.1-pro-highspeed": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro-highspeed",
         }),
     // -- Fireworks AI (Qwen) ------------------------------------------------
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
@@ -1075,6 +1089,9 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603": () =>
         createMistralModelConfig({
             model: "mistral-small-2603",
+            // With reasoning enabled Mistral returns message.content as an
+            // array of thinking/text chunks; flatten it like mistral-large-4.
+            useMistralChatFormat: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "mistral-small-2603-openrouter": () =>
@@ -1095,6 +1112,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1107,6 +1126,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAnthropicConfig({
             model: "claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-fable-5.2": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.2:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-2",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
         createAnthropicConfig({
@@ -1286,15 +1315,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "accounts/fireworks/models/minimax-m3p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3p1-flash",
+            serviceTier: "default",
+        }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
-    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
-        }),
-    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+    "azure/Nemotron-3.5-Lightning": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Nemotron-3.5-Lightning/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Lightning",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -1311,6 +1346,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
         }),
+    "moonshotai/kimi-k3.1-pro": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "moonshotai/kimi-k3.1-pro:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro",
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
@@ -1322,6 +1366,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",
+        }),
+    "meta/muse-spark-open:vercel:baseten": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-open",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

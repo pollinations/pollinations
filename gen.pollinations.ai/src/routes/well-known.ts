@@ -40,6 +40,17 @@ async function sha256Hex(text: string): Promise<string> {
         .join("");
 }
 
+// AI Catalog Level 2 (Discoverable Catalog) identifies the catalog operator.
+// The identifier is the operator domain; documentation follows the serving
+// origin, like the entries, so staging never points at production.
+function buildCatalogHost(origin: string) {
+    return {
+        displayName: "Pollinations.ai",
+        identifier: "pollinations.ai",
+        documentationUrl: `${origin}/docs/llm.txt`,
+    };
+}
+
 // One entry per hosted MCP server's Server Card. The SEP-2127 AI Catalog and
 // the ARD manifest share this list, so the two can't drift. Both schemas
 // require a per-entry displayName (ards-project/ard-spec, ai-catalog v1.0).
@@ -62,6 +73,7 @@ export const wellKnownRoutes = new Hono<Env>()
             JSON.stringify(
                 {
                     specVersion: "1.0",
+                    host: buildCatalogHost(origin),
                     entries: buildCatalogEntries(origin),
                 },
                 null,

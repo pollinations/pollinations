@@ -4,7 +4,9 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -41,8 +43,16 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         storage: "media",
         label: config.label,
         async getKey(c) {
-            const variables = c.var as typeof c.var & Partial<ModelVariables>;
+            const variables = c.var as typeof c.var &
+                Partial<ModelVariables & AuthVariables>;
             const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
+            if (variables.model?.requested.includes(",")) {
+                c.set("generationCachePrivate", true);
+                cacheUrl.searchParams.set(
+                    "__caller_list_key",
+                    callerCacheScope(variables.auth),
+                );
+            }
             if (c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
                     "__request_body",
@@ -62,7 +72,12 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         async get(c, cacheKey) {
             const response = await c.env.MEDIA.get(cacheKey);
             if (!response) return null;
-            response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+            response.headers.set(
+                "Cache-Control",
+                c.var.generationCachePrivate
+                    ? "private, no-store"
+                    : IMMUTABLE_CACHE_CONTROL,
+            );
             response.headers.set("X-Cache", "HIT");
             return response;
         },
@@ -75,7 +90,12 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
-            const stored = new Response(response.clone().body, response);
+            const captured = new Response(response.body, response);
+            captured.headers.set("X-Cache", "MISS");
+            if (c.var.generationCachePrivate) {
+                captured.headers.set("Cache-Control", "private, no-store");
+            }
+            const stored = new Response(captured.clone().body, captured);
             for (const name of [...stored.headers.keys()]) {
                 if (
                     !CACHED_HEADERS.has(name) &&
@@ -86,7 +106,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 }
             }
             return {
-                response,
+                response: captured,
                 write: c.env.MEDIA.put(cacheKey, stored),
             };
         },

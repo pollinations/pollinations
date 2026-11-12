@@ -2,18 +2,36 @@
 // user and does the work: a request returns at once, and setup and sign-in
 // keep running in the object for up to 15 minutes.
 import { DurableObject } from "cloudflare:workers";
-import { load, onUpdate, type Update, webhookSecret } from "./mama.ts";
+import {
+    checkSignIns,
+    load,
+    onUpdate,
+    type Update,
+    webhookSecret,
+} from "./mama.ts";
 
 type Env = { MAMA: DurableObjectNamespace<Mama> };
+
+const HOUR_MS = 3_600_000;
 
 export class Mama extends DurableObject<Env> {
     constructor(ctx: DurableObjectState, env: Env) {
         super(ctx, env);
-        ctx.blockConcurrencyWhile(() => load(ctx.storage));
+        ctx.blockConcurrencyWhile(async () => {
+            await load(ctx.storage);
+            // Her timer, armed once and then by each alarm.
+            if ((await ctx.storage.getAlarm()) === null)
+                await ctx.storage.setAlarm(Date.now() + HOUR_MS);
+        });
     }
 
     update(update: Update) {
         this.ctx.waitUntil(onUpdate(update));
+    }
+
+    async alarm() {
+        await this.ctx.storage.setAlarm(Date.now() + HOUR_MS);
+        await checkSignIns();
     }
 }
 

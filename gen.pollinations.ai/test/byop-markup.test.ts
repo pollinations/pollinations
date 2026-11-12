@@ -136,7 +136,7 @@ describe("BYOP markup", () => {
         "amazon/nova-2-lite-v1",
         "amazon/nova-micro-v1",
         "jaredpalmer/kev-4b",
-        "typesafe/jev-1.13",
+        "typesafe/jev-1.14",
         "assemblyai/universal-3.5-pro",
         "assemblyai/universal-2",
         "microsoft/trellis-2",
@@ -784,7 +784,7 @@ describe("BYOP markup", () => {
             checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),
         ).rejects.toMatchObject({
             status: 402,
-            message: expect.stringContaining("~0.0100"),
+            message: expect.stringContaining("costs about $0.0100"),
         });
     });
 

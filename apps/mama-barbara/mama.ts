@@ -14,8 +14,10 @@ if (!TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set");
 const ENTER = "https://enter.pollinations.ai";
 const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
-// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
-const SCOPE = "generate machines keys";
+// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes. That
+// key carries `profile` and `usage`, and a key only creates, edits or revokes
+// keys within its own permissions.
+const SCOPE = "generate profile usage machines keys";
 // The computers a new Barbara can get; gen's pricing list gives their CPUs,
 // memory and rates. Only E2B's, whose envd Mama reaches directly (envd.ts).
 const SIZES: Record<string, string> = {
@@ -55,6 +57,8 @@ type User = {
     botLink?: number;
     // The computer chosen there for the next Barbara.
     size?: string;
+    // The sign-in warnings sent and still due (checkSignIns).
+    warned?: Warning[];
 };
 type TgUser = { id: number; first_name: string; username?: string };
 
@@ -151,7 +155,7 @@ async function signIn(from: TgUser) {
         );
         await say(
             from.id,
-            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry: your Barbaras stop when my access ends.",
+            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry and the budget: your Barbaras stop when my access ends or its budget runs out.",
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -186,6 +190,8 @@ async function signIn(from: TgUser) {
             if (token.access_token) {
                 const user = userOf(from.id);
                 user.key = token.access_token;
+                // A new sign-in gets its own warnings (checkSignIns).
+                user.warned = undefined;
                 save();
                 const bot = waitingBots.get(from.id);
                 waitingBots.delete(from.id);
@@ -249,11 +255,16 @@ const ASK_FOR_BOT =
 const NO_BOT_YET =
     "\n\nNo bot yet. If Telegram's Create keeps spinning, it's limiting how many bots your account can make right now. That can last up to a day; send /new again later.";
 
+type Size = { cpuCount: number; memoryMB: number };
 type Pricing = {
     vcpuSecond: number;
     gibSecond: number;
-    templates: Record<string, { cpuCount: number; memoryMB: number }>;
+    templates: Record<string, Size>;
 };
+
+// What a computer of this size costs a day while it runs.
+const rentPerDay = (rates: Pricing, { cpuCount, memoryMB }: Size) =>
+    (cpuCount * rates.vcpuSecond + (memoryMB / 1024) * rates.gibSecond) * 86400;
 
 // Her computer can't change once she runs, so it's chosen here.
 async function botLinkView(from: TgUser): Promise<View> {
@@ -269,14 +280,10 @@ async function botLinkView(from: TgUser): Promise<View> {
         r.json(),
     )) as Pricing;
     const sizes = Object.keys(SIZES).map((template) => {
-        const { cpuCount, memoryMB } = pricing.templates[template];
-        const perDay =
-            (cpuCount * pricing.vcpuSecond +
-                (memoryMB / 1024) * pricing.gibSecond) *
-            86400;
+        const size = pricing.templates[template];
         return {
             template,
-            text: `<b>${SIZES[template]}</b>: ${cpuCount} CPUs, ${memoryMB / 1024} GB, about ${perDay.toFixed(1)} Pollen a day while she runs`,
+            text: `<b>${SIZES[template]}</b>: ${size.cpuCount} CPUs, ${size.memoryMB / 1024} GB, about ${rentPerDay(pricing, size).toFixed(1)} Pollen a day while she runs`,
         };
     });
     return {
@@ -394,11 +401,27 @@ async function setUp(owner: TgUser, bot: TgUser) {
         waitingBots.set(owner.id, bot);
         return signIn(owner);
     }
-    await say(
-        owner.id,
-        `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
-    );
     try {
+        // A sign-in's budget pays both her computer's rent and the BUDGET
+        // her box key gets from it (setBudget), so it needs both, with a day
+        // of rent to start.
+        const template = user.size ?? DEFAULT_SIZE;
+        const [{ pollenBudget }, pricing] = await Promise.all([
+            gen<SignIn>(user.key, "/account/key"),
+            gen<Pricing>(user.key, "/alpha/e2b/pricing"),
+        ]);
+        const rent = rentPerDay(pricing, pricing.templates[template]);
+        if (pollenBudget !== null && pollenBudget < BUDGET + rent) {
+            waitingBots.set(owner.id, bot);
+            return say(
+                owner.id,
+                `My access to your account has a budget of ${pollenBudget.toFixed(2)} Pollen. It pays for the ${BUDGET} Pollen she can spend and her computer, about ${rent.toFixed(1)} Pollen a day, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
+            );
+        }
+        await say(
+            owner.id,
+            `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
+        );
         const token = await botToken(bot.id);
         await tg("setManagedBotAccessSettings", {
             user_id: bot.id,
@@ -413,7 +436,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         }>(user.key, "/alpha/e2b/sandboxes", {
             method: "POST",
             body: {
-                templateID: user.size ?? DEFAULT_SIZE,
+                templateID: template,
                 timeout: KEEP_SECONDS,
                 autoPause: true,
                 metadata: { name: `barbara-${bot.username}` },
@@ -491,7 +514,7 @@ type Key = {
     pollenBalance: number | null;
     lastRequest: string | null;
 };
-type Box = {
+type Box = Partial<Size> & {
     sandboxID: string;
     state: string;
     domain?: string;
@@ -510,6 +533,7 @@ const STATES: Record<string, string> = {
     running: "🟢 Running",
     paused: "⏸️ Paused",
     deleted: "⚫ Box deleted",
+    unknown: "❔ Couldn't reach her box",
 };
 
 // Mama acts as each Barbara for her name and photo, with the token Telegram
@@ -527,10 +551,11 @@ async function botToken(botId: number) {
 const nameOf = async (b: Barbara) =>
     (await tg<{ name: string }>("getMyName", {}, await botToken(b.botId))).name;
 
+// Only gen's 404 says her box is gone; any other failure says nothing.
 const boxOf = (key: string, b: Barbara) =>
-    gen<Box>(key, `/alpha/e2b/sandboxes/${b.box}`).catch(() => ({
+    gen<Box>(key, `/alpha/e2b/sandboxes/${b.box}`).catch((error: Error) => ({
         sandboxID: b.box,
-        state: "deleted",
+        state: error.message.startsWith("404 ") ? "deleted" : "unknown",
     }));
 
 const accessOf = (b: Barbara) =>
@@ -737,7 +762,10 @@ const deleteView = (b: Barbara): View => ({
     },
 });
 
-// Deletes her box and revokes its key; the bot stays the owner's.
+// Deletes her box and revokes its key; the bot stays the owner's. Enter
+// refuses the revoke (403) when her key is outside this sign-in's limits, as
+// one made under an earlier sign-in can be. She is deleted all the same, and
+// the name of the key that stays on the account is returned.
 async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     const boxKey = keyOf(await keysOf(key), b);
     await gen(key, `/alpha/e2b/sandboxes/${b.box}`, {
@@ -745,11 +773,18 @@ async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     }).catch((error) => {
         if (!String(error).includes("404")) throw error;
     });
+    let keyLeft: string | undefined;
     if (boxKey)
-        await gen(key, `/account/keys/${boxKey.id}`, { method: "DELETE" });
+        await gen(key, `/account/keys/${boxKey.id}`, {
+            method: "DELETE",
+        }).catch((error: Error) => {
+            if (!error.message.startsWith("403 ")) throw error;
+            keyLeft = boxKey.name;
+        });
     const user = userOf(owner.id);
     user.barbaras = user.barbaras.filter((x) => x.botId !== b.botId);
     save();
+    return keyLeft;
 }
 
 async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
@@ -1057,11 +1092,14 @@ async function onButton(q: Callback) {
     }
     if (action === "delete") return show(owner.id, deleteView(b), messageId);
     if (action === "deleted" && key) {
-        await deleteBarbara(owner, b, key);
+        const keyLeft = await deleteBarbara(owner, b, key);
+        const leftover = keyLeft
+            ? ` I couldn't revoke her key ${keyLeft}; revoke it at ${ENTER}/keys.`
+            : "";
         return show(
             owner.id,
             {
-                text: `@${b.bot} is deleted. Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
+                text: `@${b.bot} is deleted.${leftover} Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
                 reply_markup: userOf(owner.id).barbaras.length
                     ? {
                           inline_keyboard: [
@@ -1160,6 +1198,68 @@ async function handle(update: Update) {
         "I set up Barbaras: your own assistant on Telegram, running on your Pollinations account. Tap New Barbara to make one, or My Barbaras to see and change yours.",
         MENU,
     );
+}
+
+// Box rent bills the owner's sign-in, so the expiry or budget they picked on
+// the sign-in page stops all their Barbaras. Mama warns 2 days before the
+// expiry, and when the budget is down to a day of their running boxes' rent.
+type Warning = "expiry" | "budget";
+type SignIn = { expiresAt: string | null; pollenBudget: number | null };
+
+const DAY_MS = 86_400_000;
+
+// What Mama says when a warning is due, or undefined.
+export const expiryWarning = ({ expiresAt }: SignIn) =>
+    expiresAt && Date.parse(expiresAt) - Date.now() < 2 * DAY_MS
+        ? `My access to your account ends ${when(expiresAt)}, and your Barbaras stop then. To keep them running, send /signin and clear the expiry.`
+        : undefined;
+
+export const budgetWarning = ({ pollenBudget }: SignIn, rent: number) =>
+    pollenBudget !== null && pollenBudget < rent
+        ? `My access to your account has ${pollenBudget.toFixed(2)} Pollen left, about ${Math.floor((24 * pollenBudget) / rent)} hours of your Barbaras' computers. They stop when it runs out. To keep them running, send /signin and clear the budget.`
+        : undefined;
+
+// What their running Barbaras' computers cost a day. A box that doesn't
+// answer leaves it unknown.
+async function rentOf(key: string, barbaras: Barbara[]) {
+    const [rates, boxes] = await Promise.all([
+        gen<Pricing>(key, "/alpha/e2b/pricing"),
+        Promise.all(barbaras.map((b) => boxOf(key, b))),
+    ]);
+    if (boxes.some((box) => box.state === "unknown"))
+        throw new Error("A box didn't answer");
+    return boxes
+        .filter((box) => box.state === "running")
+        .reduce((sum, box) => sum + rentPerDay(rates, box as Size), 0);
+}
+
+// On Mama's hourly alarm (index.ts). Each warning goes once, and again only if
+// it was fixed and comes back. A failed read leaves that warning as it was.
+export async function checkSignIns() {
+    for (const [id, user] of Object.entries(state)) {
+        const { key } = user;
+        if (!key || !user.barbaras.length) continue;
+        const warn = async (warning: Warning, text?: string) => {
+            // Signed in again meanwhile: this answer is about the old key.
+            if (user.key !== key) return;
+            if (text && !user.warned?.includes(warning))
+                await say(Number(id), text, MENU);
+            user.warned = user.warned?.filter((w) => w !== warning) ?? [];
+            if (text) user.warned.push(warning);
+            save();
+        };
+        try {
+            const signIn = await gen<SignIn>(key, "/account/key");
+            await warn("expiry", expiryWarning(signIn));
+            const rent =
+                signIn.pollenBudget === null
+                    ? 0
+                    : await rentOf(key, user.barbaras);
+            await warn("budget", budgetWarning(signIn, rent));
+        } catch (error) {
+            console.error(`checkSignIns ${id}:`, error);
+        }
+    }
 }
 
 // Telegram checks this against the secret the webhook was set with

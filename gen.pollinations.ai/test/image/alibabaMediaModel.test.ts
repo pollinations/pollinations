@@ -95,7 +95,7 @@ describe("Alibaba media adapters", () => {
             tokenPricePromptVideoSeconds: 0.068,
         });
     });
-    it("preserves Wan 2.6 portrait selection and duration rounding", async () => {
+    it("preserves Wan 2.6 portrait selection and duration", async () => {
         const fetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValueOnce(
@@ -118,7 +118,7 @@ describe("Alibaba media adapters", () => {
                 ...params,
                 model: "alibaba/wan-2.6",
                 aspectRatio: "9:16",
-                duration: 8,
+                duration: 10,
             },
             "2.6",
         );

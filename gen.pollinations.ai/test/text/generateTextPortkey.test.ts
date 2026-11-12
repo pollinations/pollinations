@@ -2,11 +2,13 @@ import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import { getChatRequestData } from "../../src/text/requestUtils.ts";
 import type { ChatMessage } from "../../src/text/types.js";
 
 const azureModelConfig = {
@@ -115,6 +117,33 @@ describe("generateTextPortkey", () => {
             );
         },
     );
+
+    it("keeps Muse Spark Open on Fireworks Standard", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_, init) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        message: { role: "assistant", content: "Hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 10, completion_tokens: 1 },
+            });
+        });
+
+        await generateTextPortkey([{ role: "user", content: "Hello" }], {
+            model: "meta/muse-spark-open",
+            service_tier: "priority",
+        });
+
+        expect(bodies).toHaveLength(1);
+        expect(bodies[0]).toMatchObject({
+            model: "accounts/fireworks/models/muse-spark-open",
+            service_tier: "default",
+        });
+    });
 
     it.each([0, 1, 2, 3])(
         "uses the GLM 5.3 chain with %i failed providers",
@@ -541,6 +570,183 @@ describe("generateTextPortkey", () => {
             },
         ]);
     });
+
+    it("drops echoed reasoning only for providers that reject it", async () => {
+        const bodies: Record<string, unknown>[] = [];
+        const respond = async (
+            _input: RequestInfo | URL,
+            init?: RequestInit,
+        ) => {
+            bodies.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 5,
+                    completion_tokens: 1,
+                    total_tokens: 6,
+                },
+            });
+        };
+        const portkeyFetcher = vi.fn(respond);
+        // Mistral Large 4 calls Mistral directly, without the Portkey fetcher.
+        vi.spyOn(globalThis, "fetch").mockImplementation(respond);
+        const toolCall = {
+            id: "call_1",
+            type: "function",
+            function: { name: "read_file", arguments: "{}" },
+        };
+        const reasoning = {
+            reasoning: "thinking",
+            reasoning_content: "thinking",
+            reasoning_details: [{ type: "reasoning.text", text: "thinking" }],
+        };
+        const messages = [
+            { role: "user", content: "hello" },
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [toolCall],
+                ...reasoning,
+            },
+            { role: "tool", tool_call_id: "call_1", content: "ok" },
+        ];
+
+        for (const model of [
+            "mistralai/mistral-small-4",
+            "mistralai/mistral-large-3",
+            "inferenceport-ai/lightning-text-v2",
+            "minimax/minimax-m3",
+            "mistralai/mistral-large-4",
+        ]) {
+            await generateTextPortkey(
+                messages,
+                { model, portkeyGatewayUrl: "https://portkey.test" },
+                portkeyFetcher,
+            );
+        }
+
+        const [mistral, azureMistral, inferencePort, fireworks, mistralLarge4] =
+            bodies.map((body) => (body.messages as ChatMessage[])[1]);
+        const withoutReasoning = {
+            role: "assistant",
+            content: null,
+            tool_calls: [toolCall],
+        };
+        const thinkingChunk = {
+            ...withoutReasoning,
+            content: [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: "thinking" }],
+                },
+            ],
+        };
+        // Mistral Small 4 rejects reasoning history too, and its own reasoning
+        // model gets thinking back as a chunk.
+        expect(mistral).toEqual(thinkingChunk);
+        expect(azureMistral).toEqual(withoutReasoning);
+        expect(inferencePort).toEqual(withoutReasoning);
+        expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
+        // Mistral's own reasoning model gets its thinking back as a chunk.
+        expect(mistralLarge4).toEqual(thinkingChunk);
+    });
+
+    it.each([
+        {
+            model: "z-ai/glm-5.3-flash",
+            caller: { service_tier: "priority" },
+            sent: { service_tier: undefined },
+        },
+        {
+            model: "google/gemini-2.5-flash-lite",
+            caller: {
+                providerOptions: { gateway: { serviceTier: "priority" } },
+            },
+            sent: {
+                providerOptions: { gateway: { only: ["vertex", "google"] } },
+            },
+        },
+        {
+            // A tier the route sets on purpose is still sent.
+            model: "meta/llama-4-scout:deepinfra:priority",
+            caller: { service_tier: "flex" },
+            sent: { service_tier: "priority" },
+        },
+        {
+            // OpenRouter's provider pin keeps zero data retention.
+            model: "x-ai/grok-4.20:openrouter:xai-zdr",
+            caller: {
+                modelConfig: {
+                    provider: "openai",
+                    model: "caller/model",
+                    directEndpoint: "https://example.com/v1/chat/completions",
+                },
+                provider: { only: ["xai"] },
+                models: ["anthropic/claude-opus-4.7"],
+                preset: "@preset/fallbacks",
+                plugins: [{ id: "web" }],
+            },
+            sent: {
+                model: "x-ai/grok-4.20",
+                provider: { only: ["xai/zdr"], allow_fallbacks: false },
+                models: undefined,
+                preset: undefined,
+                plugins: undefined,
+            },
+        },
+        {
+            // The route's own transform still adds its web plugin.
+            model: "google/gemini-2.5-flash-lite:search",
+            caller: { plugins: [{ id: "file-parser" }] },
+            sent: { plugins: [{ id: "web", engine: "exa", max_results: 5 }] },
+        },
+    ])(
+        "sends $model only the route's processing tier, routing and plugins",
+        async ({ model, caller, sent }) => {
+            syncTextEnvironment({
+                ...env,
+                AI_GATEWAY_API_KEY: "test-vercel-key",
+                DEEPINFRA_API_KEY: "test-deepinfra-key",
+                FIREWORKS_NEO_API_KEY: "test-fireworks-key",
+            });
+            let body: Record<string, unknown> = {};
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_input, init) => {
+                    body = JSON.parse(String(init?.body));
+                    return Response.json({
+                        choices: [
+                            {
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 5,
+                            completion_tokens: 1,
+                            total_tokens: 6,
+                        },
+                    });
+                },
+            );
+            const { messages, ...options } = getChatRequestData(
+                CreateChatCompletionRequestSchema.parse({
+                    model,
+                    messages: [{ role: "user", content: "Hi" }],
+                    ...caller,
+                }),
+            );
+            await generateTextPortkey(messages, options);
+            for (const [key, value] of Object.entries(sent)) {
+                expect(body[key]).toEqual(value);
+            }
+        },
+    );
 
     it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(

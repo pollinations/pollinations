@@ -12,7 +12,10 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
 import {
     atomicAdjustApiKeyBalance,
@@ -27,6 +30,11 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
+import {
+    PermissionRequiredError,
+    permissionRequired,
+} from "@shared/http/permission-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     keyAllowsModelPermissions,
@@ -45,6 +53,7 @@ import { discordConfigFromEnv } from "../services/discord.ts";
 import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { attributeAppSignup } from "../services/quests/groups/referrals.ts";
 import {
     ACCOUNT_SETUP_QUEST_GROUP,
     listQuestCards,
@@ -136,6 +145,7 @@ const CreateKeySchema = z.object({
         ),
     pollenBudget: z
         .number()
+        .min(0)
         .nullable()
         .optional()
         .describe(
@@ -148,7 +158,7 @@ const CreateKeySchema = z.object({
             "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
         ),
     accountPermissions: z
-        .array(z.string())
+        .array(z.enum(CONSENT_PERMISSIONS))
         .nullable()
         .optional()
         .describe(
@@ -286,6 +296,60 @@ function parsePermissions(
     } catch {
         return null;
     }
+}
+
+/**
+ * A key can only edit or revoke keys that are already within its own limits,
+ * so it can't cut down or remove a key that can do more than it can. Budgets
+ * aren't compared by amount: a key with a budget can't manage a key without
+ * one, but still manages the keys it funded after spending its own down. The
+ * account owner (no key) can manage every key.
+ */
+async function requireKeyWithinCallerKey(
+    c: RefusalContext & { env: { DB: D1Database } },
+    callerKey: AuthenticatedApiKey | undefined,
+    key: typeof apikeyTable.$inferSelect,
+): Promise<void> {
+    if (!callerKey) return;
+    const db = c.env.DB;
+    const permissions = parsePermissions(key.permissions);
+    const within =
+        !(callerKey.questPollenOnly && !key.questPollenOnly) &&
+        (await grantFromCallerKey(
+            db,
+            callerKey,
+            {
+                accountPermissions: permissions?.account ?? null,
+                allowedModels: permissions?.models ?? null,
+                expiresAt: key.expiresAt,
+                // Publishable keys never have a budget.
+                pollenBudget: key.prefix === "pk" ? 0 : key.pollenBalance,
+            },
+            0,
+        ).then(
+            () => true,
+            (error) => {
+                if (error instanceof HTTPException && error.status === 403)
+                    return false;
+                throw error;
+            },
+        ));
+    if (!within) {
+        throw signInToManage(
+            c,
+            key.id,
+            "An API key can only edit or revoke keys within its own account permissions, models, expiry and budget.",
+        );
+    }
+}
+
+/** A refusal only the signed-in owner can fix, on that key's own page. */
+function signInToManage(c: RefusalContext, id: string, reason: string) {
+    const fixUrl = fixLink(c, "/edit-key", { id });
+    return new PermissionRequiredError(
+        `${reason} Sign in to manage this key at ${fixUrl}`,
+        fixUrl,
+    );
 }
 
 // The JSON shape of a key in the list and update responses; never the hash.
@@ -1448,10 +1512,11 @@ export const accountRoutes = new Hono<Env>()
 
             // Unbudgeted keys cannot see any balance without account:usage.
             if (keyBudget == null && !canViewAccount) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
-                });
+                throw permissionRequired(
+                    c,
+                    { permission: "usage" },
+                    "API key does not have 'account:usage' permission and no budget of its own to show instead.",
+                );
             }
 
             let accountBalance:
@@ -2006,6 +2071,17 @@ export const accountRoutes = new Hono<Env>()
                 }
                 throw error;
             });
+            if (created.byopClientKeyId) {
+                await attributeAppSignup(
+                    drizzle(c.env.DB, { schema }),
+                    user.id,
+                    created.byopClientKeyId,
+                ).catch((error) =>
+                    c.get("log").warn("App sign-up referral failed: {error}", {
+                        error,
+                    }),
+                );
+            }
 
             // Awarding the first-key quest is a few D1 queries; awaiting it
             // means the balance and quests the caller reads next include it.
@@ -2025,7 +2101,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, can only edit keys that are within its own account permissions, models, expiry and budget and stay within them, and can't change an app key's `redirectUris`. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
@@ -2087,6 +2163,15 @@ export const accountRoutes = new Hono<Env>()
             for (const uri of redirectUris ?? []) {
                 validateRedirectUriFormat(uri);
             }
+            // Redirect URLs decide where an app's sign-ins send users, so
+            // only the account owner changes them once the app key exists.
+            if (callerKey && redirectUris !== undefined) {
+                throw signInToManage(
+                    c,
+                    id,
+                    "An API key can't change an app key's redirect URLs.",
+                );
+            }
             // As on creation: a key can't grant spending it doesn't have.
             if (
                 callerKey?.questPollenOnly &&
@@ -2131,6 +2216,7 @@ export const accountRoutes = new Hono<Env>()
             // spending changed them, the payment goes back and the update
             // starts over from the key as it is now.
             for (let attempt = 1; ; attempt++) {
+                await requireKeyWithinCallerKey(c, callerKey, key);
                 // Raising a budget takes the difference; an unlimited key
                 // counts as having none.
                 const budgetChange =
@@ -2275,7 +2361,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Revoke API Key",
             description:
-                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. Cannot revoke the key used to authenticate the request.",
+                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. An API key can't revoke itself, and can only revoke keys within its own account permissions, models, expiry and budget.",
             responses: {
                 200: { description: "Key revoked" },
                 400: { description: "Cannot revoke self" },
@@ -2315,6 +2401,7 @@ export const accountRoutes = new Hono<Env>()
             if (!key) {
                 throw new HTTPException(404, { message: "API key not found" });
             }
+            await requireKeyWithinCallerKey(c, callerKey, key);
 
             await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
 

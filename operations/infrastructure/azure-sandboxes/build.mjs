@@ -1,26 +1,48 @@
 #!/usr/bin/env node
 // Builds the Azure templates' image and imports it into each sandbox group
-// given, as the disk image gen's AZURE_SANDBOX_IMAGE names there. It all runs
-// on Azure: a builder box gets this checkout's ../e2b and this folder, builds
+// gen's wrangler.toml names (AZURE_SANDBOX_GROUP_URL), then writes the new
+// image ids into its AZURE_SANDBOX_IMAGE lines. It all runs on Azure: a
+// builder box gets this checkout's ../e2b and this folder, builds
 // ../e2b/e2b.Dockerfile on what E2B's builder adds (e2b-base.Dockerfile), then
 // the Dockerfile here, and serves the result
 // from a registry on a port of its own, which Azure imports from. Then a box
-// from the image must start envd with its token before the ids are printed.
-// Needs `az login` with the Data Owner role on the groups.
+// from the image must start envd with its token before its id is written.
+// Needs `az login` with the Data Owner role on the groups; CI logs in as the
+// pollinations-ci-sandbox-image app (deploy-azure-sandbox-image.yml).
 //
-//   node operations/infrastructure/azure-sandboxes/build.mjs <group-url>...
-//
-// A group URL is the sandbox group's data plane:
-// https://management.<region>.azuredevcompute.io/subscriptions/<sub>/resourceGroups/<rg>/sandboxGroups/<group>
+//   node operations/infrastructure/azure-sandboxes/build.mjs
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 
-const groups = process.argv.slice(2);
-if (!groups.length) {
-    console.error("usage: build.mjs <group-url>...");
-    process.exit(1);
-}
 const here = new URL(".", import.meta.url).pathname;
+const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
+// Staging first: the builder box runs there, and a broken image fails there
+// before production imports it.
+const staging = (url) => url.endsWith("/pollisbx-staging");
+// Local dev reuses staging's group, so a group can appear more than once.
+const groups = [
+    ...new Set(
+        [
+            ...readFileSync(wrangler, "utf8").matchAll(
+                /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
+            ),
+        ].map(([, url]) => url),
+    ),
+].sort((a, b) => staging(b) - staging(a));
+
+// The image line follows its group's line in each block that uses it.
+function pin(group, image) {
+    const lines = readFileSync(wrangler, "utf8").split("\n");
+    lines.forEach((line, i) => {
+        if (line !== `AZURE_SANDBOX_GROUP_URL = "${group}"`) return;
+        if (!lines[i + 1]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
+            throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
+        }
+        lines[i + 1] = `AZURE_SANDBOX_IMAGE = "${image}"`;
+    });
+    writeFileSync(wrangler, lines.join("\n"));
+}
 const commit = execFileSync(
     "git",
     ["-C", here, "rev-parse", "--short", "HEAD"],
@@ -74,6 +96,32 @@ async function azure(url, init = {}) {
 const put = (url, body) =>
     azure(url, { method: "PUT", body: JSON.stringify(body) });
 
+// The boxes this run asked for, from the moment it asks. A cancelled or
+// timed-out CI job gets SIGINT, then SIGTERM, and Node skips `finally` on a
+// signal, so one cleanup deletes them all, waiting for creates still in
+// flight. A box deleted already just answers 404 again.
+const boxes = new Map();
+function newBox(group, body) {
+    const box = put(`${group}/sandboxes`, body);
+    boxes.set(box, group);
+    return box;
+}
+const removeBox = (group, id) =>
+    azure(`${group}/sandboxes/${id}`, { method: "DELETE" });
+let cleaningUp = false;
+for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.on(signal, async () => {
+        if (cleaningUp) return;
+        cleaningUp = true;
+        await Promise.allSettled(
+            [...boxes].map(async ([box, group]) =>
+                removeBox(group, (await box).id),
+            ),
+        );
+        process.exit(1);
+    });
+}
+
 async function running(group, id) {
     for (let tries = 0; tries < 60; tries++) {
         if ((await azure(`${group}/sandboxes/${id}`)).state === "Running") {
@@ -113,7 +161,7 @@ docker push localhost:5000/polli-azure | sed -n 's/.*digest: \\(sha256:[0-9a-f]*
 // envd must answer only with the token, at Azure's port URL.
 async function smokeTest(group, image) {
     const accessToken = randomBytes(32).toString("hex");
-    const box = await put(`${group}/sandboxes`, {
+    const box = await newBox(group, {
         sourcesRef: { diskImage: { id: image } },
         resources: { cpu: "2000m", memory: "2048Mi" },
         labels: { pollinations_role: "image-smoke-test" },
@@ -148,12 +196,12 @@ async function smokeTest(group, image) {
             );
         }
     } finally {
-        await azure(`${group}/sandboxes/${box.id}`, { method: "DELETE" });
+        await removeBox(group, box.id);
     }
 }
 
 const [home] = groups;
-const builder = await put(`${home}/sandboxes`, {
+const builder = await newBox(home, {
     sourcesRef: { diskImage: { name: "ubuntu", isPublic: true } },
     resources: { cpu: "4000m", memory: "8192Mi", disk: "61440Mi" },
     labels: { pollinations_role: "image-builder" },
@@ -198,8 +246,9 @@ try {
             image = await azure(`${group}/diskimages/${image.id}`);
         }
         await smokeTest(group, image.id);
+        pin(group, image.id);
         console.log(`${group}\n  AZURE_SANDBOX_IMAGE = "${image.id}"`);
     }
 } finally {
-    await azure(`${home}/sandboxes/${builder.id}`, { method: "DELETE" });
+    await removeBox(home, builder.id);
 }

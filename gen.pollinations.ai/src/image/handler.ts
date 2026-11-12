@@ -4,6 +4,7 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import {
@@ -14,7 +15,7 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -133,21 +134,20 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
+    model = c.var.model,
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
-    const resolvedModel = c.var.model.resolved;
+    const resolvedModel = model.resolved;
     const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
-        model: c.var.model.communityEndpoint
-            ? DEFAULT_IMAGE_MODEL
-            : resolvedModel,
+        model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
     delete mergedParams.prompt;
     delete mergedParams.key;
 
     const communityReferences =
-        c.var.model.communityEndpoint?.modality === "video"
+        model.communityEndpoint?.modality === "video"
             ? CommunityReferenceParamsSchema.safeParse(mergedParams)
             : null;
     if (communityReferences && !communityReferences.success) {
@@ -178,8 +178,8 @@ function parseImageParams(
     // endpoints get the image and decide for themselves.
     if (
         parseResult.data.image.length > 0 &&
-        !c.var.model.communityEndpoint &&
-        !c.var.model.definition.inputModalities?.includes("image")
+        !model.communityEndpoint &&
+        !model.definition.inputModalities?.includes("image")
     ) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
@@ -188,8 +188,8 @@ function parseImageParams(
     // Community endpoints receive the flag and decide for themselves.
     if (
         parseResult.data.transparent &&
-        !c.var.model.communityEndpoint &&
-        !c.var.model.definition.supportsTransparency
+        !model.communityEndpoint &&
+        !model.definition.supportsTransparency
     ) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
@@ -249,6 +249,8 @@ function mediaHeaders(
 }
 
 export function throwImageError(error: unknown): never {
+    if (error instanceof HTTPException && !(error instanceof UpstreamError))
+        throw error;
     const upstream =
         error instanceof UpstreamError
             ? error
@@ -307,6 +309,7 @@ async function generateMediaWithFallback(
     c: ImageContext,
     prompt: string,
     safeParams: RuntimeImageParams,
+    body: Record<string, unknown>,
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
@@ -330,7 +333,28 @@ async function generateMediaWithFallback(
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
-            const params = { ...safeParams, model: attempt.id };
+            let params = { ...safeParams, model: attempt.id };
+            if (c.var.model.requested.includes(",") && attempt.entry) {
+                const parsed = parseImageParams(c, body, {
+                    ...c.var.model,
+                    resolved: attempt.id,
+                    definition: attempt.entry.definition,
+                    communityEndpoint: attempt.communityEndpoint,
+                });
+                params =
+                    attempt.entry.definition.category === "image" &&
+                    attempt.entry.definition.inputModalities?.includes("image")
+                        ? await resolveEditDimensionsForImage(parsed)
+                        : parsed;
+            }
+            c.var.track.setPricingInput({
+                resolution: params.resolution,
+                quality: params.quality,
+                hasImage: (params.image?.length ?? 0) > 0,
+                hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+                maxImageDimension: Math.max(params.width, params.height),
+                megapixels: (params.width * params.height) / 1_000_000,
+            });
             if (attempt.communityEndpoint) {
                 const isVideo = attempt.communityEndpoint.modality === "video";
                 const generated = isVideo
@@ -364,7 +388,7 @@ async function generateMediaWithFallback(
             return { result: generated, params };
         },
         c.var.track?.attempts,
-        (attempt) => enforceModelRateLimit(c, attempt),
+        (attempt) => requireModelAttemptAccess(c, attempt),
         shouldFallback,
     );
     return {
@@ -433,20 +457,13 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    c.var.track.setPricingInput({
-        resolution: safeParams.resolution,
-        quality: safeParams.quality,
-        hasImage: (safeParams.image?.length ?? 0) > 0,
-        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(safeParams.width, safeParams.height),
-        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
-    });
 
     try {
         const { result, params, servedIndex } = await generateMediaWithFallback(
             c,
             originalPrompt,
             safeParams,
+            body,
         );
         if (result.trackingData.pricingInput) {
             c.var.track.setPricingInput(result.trackingData.pricingInput);

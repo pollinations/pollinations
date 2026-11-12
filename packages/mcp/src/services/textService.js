@@ -84,6 +84,8 @@ async function generateText(params, context) {
 
         if (assistantMessage?.content) {
             responseContent.push(createTextContent(assistantMessage.content));
+        } else if (assistantMessage?.refusal) {
+            responseContent.push(createTextContent(assistantMessage.refusal));
         }
 
         if (assistantMessage?.reasoning_content) {

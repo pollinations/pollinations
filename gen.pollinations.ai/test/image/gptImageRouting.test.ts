@@ -1,6 +1,11 @@
 import { remapUpstreamStatus } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
+import {
+    calculateCost,
+    calculatePrice,
+    calculateUsageBilling,
+    getVisibleImageModels,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type AuthResult,
@@ -17,6 +22,7 @@ const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: "flare-sweden-key",
     AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: "sunburst-sweden-key",
     OPENAI_API_KEY: "openai-key",
+    FAL_KEY: "fal-key",
 } as const;
 
 const AZURE_KEY_NAMES = Object.keys(
@@ -184,13 +190,15 @@ describe("openai/gpt-image-2 Azure routing", () => {
     });
 });
 
-describe("GPT Image OpenAI fallback routing", () => {
+describe("GPT Image direct OpenAI routing", () => {
     const routes = [
         ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
         ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
         ["openai/gpt-image-2:openai", "gpt-image-2"],
         ["openai/gpt-image-2.5-flare:openai", "gpt-image-2.5-flare"],
         ["openai/gpt-image-2.5-sunburst:openai", "gpt-image-2.5-sunburst"],
+        ["openai/gpt-image-2.6-flare", "gpt-image-2.6-flare"],
+        ["openai/gpt-image-2.6-sunburst", "gpt-image-2.6-sunburst"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -238,6 +246,98 @@ describe("GPT Image OpenAI fallback routing", () => {
             .filter((host) => host !== "api.openai.com");
         // The direct OpenAI call does not advance the Azure rotation.
         expect(new Set(azureHosts).size).toBe(2);
+    });
+});
+
+describe("GPT Image 2.6 fal fallback", () => {
+    for (const variant of ["flare", "sunburst"] as const) {
+        const model = `openai/gpt-image-2.6-${variant}` as const;
+        const fallback = `${model}:fal` as const;
+
+        it(`${model} uses the paid-only primary price and keeps the fallback private`, () => {
+            const definition = IMAGE_SERVICES[model];
+            expect(definition).toMatchObject({
+                provider: "openai",
+                paidOnly: true,
+                priceMultiplier: 1,
+                aliases: [],
+                fallbacks: [fallback],
+            });
+            expect(getVisibleImageModels()).not.toContain(fallback);
+            expect(
+                calculatePrice(model, {
+                    promptTextTokens: 15,
+                    completionImageTokens: 824,
+                }).totalPrice,
+            ).toBeCloseTo(0.024795, 8);
+        });
+
+        it(`${fallback} preserves image parameters and bills the reported receipt without fabricated tokens`, async () => {
+            const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json(
+                    {
+                        images: [
+                            {
+                                url: "data:image/png;base64,AQID",
+                                content_type: "image/png",
+                            },
+                        ],
+                    },
+                    { headers: { "x-fal-billable-units": "0.0248" } },
+                ),
+            );
+            const result = await callGPTImage(
+                "test",
+                {
+                    ...params,
+                    model: fallback,
+                    width: 1536,
+                    height: 864,
+                    transparent: true,
+                },
+                userInfo,
+                fallback,
+            );
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(url).toBe(
+                `https://fal.run/openai/gpt-image-2.6/${variant}/text-to-image`,
+            );
+            expect(JSON.parse(String(init?.body))).toMatchObject({
+                prompt: "test",
+                quality: "low",
+                image_size: { width: 1536, height: 864 },
+                background: "transparent",
+                output_format: "png",
+                sync_mode: true,
+                enable_safety_checker: true,
+            });
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Key fal-key",
+            );
+            expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
+            expect(result.trackingData.usage).toEqual({});
+            const billing = calculateUsageBilling({
+                model,
+                usage: result.trackingData.usage,
+                servedBy: IMAGE_SERVICES[fallback],
+                quotedBy: IMAGE_SERVICES[model],
+                input: { providerBilling: result.trackingData.providerBilling },
+            });
+            expect(billing.cost.totalCost).toBe(0.0248);
+            expect(billing.price.totalPrice).toBe(0.0248);
+            expect(billing.adjustments).toHaveLength(1);
+        });
+    }
+
+    it("rejects a fal response without its billing receipt", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ images: [{ url: "data:image/png;base64,AQID" }] }),
+        );
+        const model = "openai/gpt-image-2.6-flare:fal";
+        await expect(
+            callGPTImage("test", { ...params, model }, userInfo, model),
+        ).rejects.toThrow("Fal response has no billable units");
     });
 });
 

@@ -90,7 +90,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                             }}
                         >
                             <div className="flex flex-col gap-1">
-                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-strong">
+                                <span className="flex flex-wrap items-center gap-2 font-medium leading-tight text-theme-text-soft">
                                     {server.name} MCP
                                     {server.alpha && (
                                         <Chip intent="alpha" size="sm">

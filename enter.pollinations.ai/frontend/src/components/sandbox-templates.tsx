@@ -61,7 +61,7 @@ const SizeStats: FC<{
         ].map(([value, label]) => (
             <div key={label} className="flex flex-col-reverse gap-0.5">
                 <dt className="text-xs text-theme-text-muted">{label}</dt>
-                <dd className="text-lg font-semibold leading-none text-theme-text-strong">
+                <dd className="text-lg font-semibold leading-none text-theme-text-soft">
                     {value}
                 </dd>
             </div>
@@ -133,6 +133,7 @@ export const SandboxTemplateList: FC<{
                             type="button"
                             intent="commit"
                             icon={<TerminalIcon />}
+                            className="@2xl:w-full"
                             aria-haspopup={
                                 create.disabled ? undefined : "dialog"
                             }

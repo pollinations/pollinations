@@ -749,6 +749,16 @@ test("convert_units converts within each category and rejects mismatches", async
             },
         ],
         [
+            { value: 1, from: "GiB", to: "bytes" },
+            {
+                value: 1,
+                from: "gib",
+                to: "byte",
+                category: "data",
+                result: 1073741824,
+            },
+        ],
+        [
             { value: 100, from: "c", to: "f" },
             {
                 value: 100,

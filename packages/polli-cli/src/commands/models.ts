@@ -138,10 +138,14 @@ export const modelsCommand = new Command("models")
                 const rows = await fetchModelStats(windowMinutes);
                 // Video and 3D share image events; category and search belong
                 // to the catalog rather than the billing event type.
-                const names =
-                    opts.type !== "all" || params.size || opts.voices
-                        ? new Set((await listModels()).map((m) => m.name))
-                        : undefined;
+                const filtered =
+                    opts.type !== "all" || params.size || opts.voices;
+                // /models leaves out community models that fail health
+                // checks, and those are the ones stats are for.
+                if (!opts.reliability) params.set("reliability", "all");
+                const names = filtered
+                    ? new Set((await listModels()).map((m) => m.name))
+                    : undefined;
                 const valid = rows.filter(
                     (r) =>
                         r.model !== "undefined" &&

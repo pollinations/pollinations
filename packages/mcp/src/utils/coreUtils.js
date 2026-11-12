@@ -167,8 +167,12 @@ export function parseApiError(status, errorText) {
     try {
         parsed = JSON.parse(errorText);
     } catch {}
+    const rawMessage =
+        parsed?.error?.message ?? parsed?.message ?? parsed?.error ?? errorText;
     const errorMessage =
-        parsed?.error?.message || parsed?.message || parsed?.error || errorText;
+        typeof rawMessage === "string"
+            ? rawMessage
+            : JSON.stringify(rawMessage);
     switch (status) {
         case 400:
             if (

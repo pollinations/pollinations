@@ -343,11 +343,12 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-flash:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra current 35% discount verified 2026-10-24; callers keep the Novita quote.
+            // DeepInfra standard rates verified 2026-11-11; the 35% discount ended.
+            // Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.091),
-                promptCachedTokens: perMillion(0.00182),
-                completionTextTokens: perMillion(0.182),
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
             },
         },
     },

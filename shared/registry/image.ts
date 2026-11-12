@@ -1772,7 +1772,7 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             promptImageTokens: 0, // included in output-video price
-            completionVideoSeconds: 0.05, // per reported output second at 720p
+            completionVideoSeconds: 0.07, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",

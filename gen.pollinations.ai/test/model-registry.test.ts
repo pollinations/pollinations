@@ -9,6 +9,7 @@ import type { Fetcher as ScheduledFetcher } from "@cloudflare/workers-types/expe
 import {
     getModels,
     getRegistryModelDefinition,
+    isFreeModel,
 } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -404,4 +405,23 @@ describe("getGenerationModelRegistry", () => {
             expect.any(Error),
         );
     });
+});
+
+it("treats a model as free only when no rate or billing rule can charge", () => {
+    const paid = getRegistryModelDefinition("openai/gpt-5-nano");
+    const free = {
+        ...paid,
+        cost: { promptTextTokens: 0, completionTextTokens: 0 },
+    };
+    expect(isFreeModel(paid)).toBe(false);
+    expect(isFreeModel(free)).toBe(true);
+    expect(
+        isFreeModel({
+            ...free,
+            costVariants: { long: { promptTextTokens: 1e-6 } },
+        }),
+    ).toBe(false);
+    expect(
+        isFreeModel({ ...free, billing: { resolveTotalCost: () => 0.01 } }),
+    ).toBe(false);
 });

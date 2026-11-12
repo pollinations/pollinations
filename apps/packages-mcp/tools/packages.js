@@ -84,13 +84,15 @@ export async function lookup({ ecosystem, name, version }) {
     }
     if (ecosystem === "golang") {
         // The Go proxy writes each capital as "!" plus the lowercase letter.
-        const escape = (value) =>
+        const goEscape = (value) =>
             encodeURIComponent(
                 value.replace(/[A-Z]/g, (c) => `!${c.toLowerCase()}`),
             );
-        const base = `https://proxy.golang.org/${name.split("/").map(escape).join("/")}`;
+        const base = `https://proxy.golang.org/${name.split("/").map(goEscape).join("/")}`;
         const info = await fetchJson(
-            version ? `${base}/@v/${escape(version)}.info` : `${base}/@latest`,
+            version
+                ? `${base}/@v/${goEscape(version)}.info`
+                : `${base}/@latest`,
         );
         return {
             ecosystem,
@@ -98,7 +100,7 @@ export async function lookup({ ecosystem, name, version }) {
             version: info.Version,
             time: info.Time,
             origin: info.Origin ?? null,
-            goMod: await fetchText(`${base}/@v/${escape(info.Version)}.mod`),
+            goMod: await fetchText(`${base}/@v/${goEscape(info.Version)}.mod`),
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }

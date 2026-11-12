@@ -206,14 +206,12 @@ export const mcpRoutes = new Hono<Env>()
             });
         }
         // A tool's cost is known only from its receipt, so a tool call needs a
-        // spendable balance and some key budget left up front: the smallest
-        // positive cost refuses a budget of 0. Initialization and discovery
-        // stay free.
+        // spendable balance up front. Initialization and discovery stay free.
         if (
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireAccountFunds(c, Number.MIN_VALUE);
+            await requireAccountFunds(c, 0);
         }
         const binding = c.env[server.binding] as Fetcher;
 

@@ -53,6 +53,7 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { getVisibleImageModels } from "@shared/registry/registry.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -146,12 +147,16 @@ const ImageEditMultipartSchema = z
             "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
     });
 
-// Build dynamic model lists from registry for use in API descriptions
+// Build dynamic model lists from registry for use in API descriptions,
+// leaving out hidden models as /models does
+const visibleImageIds = new Set<string>(getVisibleImageModels());
 const imageModelNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
 const videoModelNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
@@ -166,7 +171,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` or \`elevenlabs/scribe-v3-live\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
@@ -403,6 +408,14 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        video_capabilities: entry.info.video_capabilities,
+        min_duration: entry.info.min_duration,
+        max_duration: entry.info.max_duration,
+        default_duration: entry.info.default_duration,
+        allowed_durations: entry.info.allowed_durations,
+        voices: entry.info.voices,
+        max_reference_images: entry.info.max_reference_images,
+        max_reference_videos: entry.info.max_reference_videos,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }
@@ -804,7 +817,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
+                "Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt and code agents execute their own tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",

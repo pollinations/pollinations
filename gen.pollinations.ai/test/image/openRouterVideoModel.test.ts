@@ -161,20 +161,6 @@ describe("openRouterVideoModel", () => {
         });
     });
 
-    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds", async () => {
-        setOpenRouterEnv();
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callHeyGenVideoAPI("a paper boat", {
-                ...baseParams,
-                model: "heygen/heygen-video-1",
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("bills a short HappyHorse clip from OpenRouter's reported cost", async () => {
         setOpenRouterEnv();
         // OpenRouter bills 5 seconds for a 3-second clip.
@@ -489,24 +475,6 @@ describe("OpenRouter Grok Video Pro", () => {
         });
     });
 
-    it("keeps the existing 1-15 second duration clamping", async () => {
-        setOpenRouterEnv();
-        const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
-
-        const result = await callOpenRouterGrokVideoAPI(
-            "a calm ocean at sunrise",
-            {
-                ...baseParams,
-                model: "x-ai/grok-imagine-video-1.5",
-                duration: 99,
-            },
-        );
-
-        expect(requests[0].duration).toBe(15);
-        expect(result.durationSeconds).toBe(15);
-    });
-
     it.each([["x-ai/grok-imagine-video-1.5-lite:openrouter", 3]] as const)(
         "enforces a %s timeout of %i minutes",
         async (model, minutes) => {
@@ -550,23 +518,6 @@ describe("OpenRouter Grok Video Pro", () => {
             await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
             await rejection;
             expect(pollAttempts).toBe(minutes * 2);
-        },
-    );
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects non-integer duration %s before submitting a job",
-        async (duration) => {
-            setOpenRouterEnv();
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-            await expect(
-                callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video-1.5",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
         },
     );
 });

@@ -73,6 +73,12 @@ async function fake(input, init = {}) {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === "discord.test") return discord(url, init);
     if (url.pathname === "/") return new Response("ok");
+    // Enter's key check, made with the probe key.
+    if (url.href === "https://enter.pollinations.ai/api/account/key") {
+        world.enterKey = init.headers.authorization;
+        if (world.enter === "reset") throw new Error("connection reset");
+        return new Response(null, { status: world.enter });
+    }
     if (url.pathname === "/models/status") {
         const regular = url.searchParams.get("traffic") === "regular";
         return Response.json({ data: regular ? world.regular : world.rows });
@@ -104,8 +110,20 @@ async function fake(input, init = {}) {
             ? Response.json({ data: world.legacy })
             : new Response("unavailable", { status: 503 });
     }
+    if (url.pathname.endsWith("/infra_watch_freshness.json"))
+        return world.freshness
+            ? Response.json({ data: world.freshness })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_errors.json"))
         return Response.json({ data: [] });
+    if (url.pathname.endsWith("/infra_watch_payments.json"))
+        return world.payments
+            ? Response.json({ data: world.payments })
+            : new Response("unavailable", { status: 503 });
+    if (url.pathname.endsWith("/infra_watch_early_errors.json"))
+        return world.early
+            ? Response.json({ data: world.early })
+            : new Response("unavailable", { status: 503 });
     if (url.pathname.endsWith("/infra_watch_signups.json"))
         return world.signups
             ? Response.json({ data: world.signups })
@@ -148,7 +166,23 @@ async function fake(input, init = {}) {
 
 beforeAll(() => applyD1Migrations(env.DB, env.TEST_MIGRATIONS));
 
-beforeEach(() => {
+const gpuHeartbeat = (pool, id, at = Date.now(), environment = "production") =>
+    env.GEN_KV.put(
+        `image:server:${environment}:${pool}:${id}`,
+        JSON.stringify({
+            url: `https://${id}.test`,
+            lastHeartbeat: at,
+        }),
+    );
+const healthyGpuPools = () =>
+    Promise.all([
+        gpuHeartbeat("flux", "flux"),
+        gpuHeartbeat("zimage", "zimage"),
+        gpuHeartbeat("sana", "sana1"),
+        gpuHeartbeat("sana", "sana2"),
+    ]);
+
+beforeEach(async () => {
     world = {
         rows: [],
         regular: [],
@@ -158,8 +192,12 @@ beforeEach(() => {
         agent: () => ({ community: null, maintainers: null }),
         legacy: [],
         legacyReads: 0,
+        payments: [],
+        early: [],
+        enter: 200,
         catalog: [{ name: "a/model" }, { name: "b/model" }],
         signups: [],
+        freshness: [],
         aiGate: null,
         aiDelay: 0,
         tinybirdDelay: 0,
@@ -173,6 +211,7 @@ beforeEach(() => {
         answers: 0,
     };
     vi.stubGlobal("fetch", fake);
+    await healthyGpuPools();
 });
 afterEach(() => {
     vi.restoreAllMocks();
@@ -196,6 +235,42 @@ const edits = (id) =>
     world.writes.filter(
         (w) => w.ok && w.method === "PATCH" && w.path.endsWith(`/${id}`),
     );
+
+it("labels cached caller counts when a newer status read reports final success", async () => {
+    const stub = watch();
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    const sampledAt = (await stored(stub, "state")).open[KEY].enriched.at;
+
+    world.rows = [
+        row(10, 10),
+        {
+            ...row(5, 10),
+            is_rollup: 0,
+            provider: "openrouter",
+            fallback_used: false,
+        },
+        {
+            ...row(5, 5),
+            is_rollup: 0,
+            provider: "deepinfra",
+            fallback_used: true,
+        },
+    ];
+    world.failingCallers = 0;
+    await stub.check();
+    await settle(stub);
+
+    const incident = (await stored(stub, "state")).open[KEY];
+    expect(incident.enriched.at).toBe(sampledAt);
+    const text = edits("m1").at(-1).text;
+    expect(text).toMatch(/FINAL\s+100\.0% of 10 reqs 15m/);
+    expect(text).toMatch(/CALLERS\s+3 of 3 failing/);
+    expect(text).toContain(
+        `Caller counts: separate 15m sample, checked <t:${Math.round(sampledAt / 1000)}:f>`,
+    );
+});
 
 it("never edits a closed card back to open", async () => {
     const stub = watch();
@@ -956,6 +1031,7 @@ const answers = (broken, reported) => (path, body) => {
 };
 // A check, and the community cycle it started.
 const cycled = async (stub) => {
+    await healthyGpuPools();
     await stub.check();
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
@@ -990,6 +1066,111 @@ const tells =
         };
     };
 const HOURS = (n) => n * 60 * 60_000;
+
+it("opens an Enter card after three failed key checks, never for a refused key, and closes it once Enter answers", async () => {
+    const stub = watch();
+    const enter = async () => (await stored(stub, "state")).open?.enter;
+    world.enter = 401;
+    await checks(stub, 3);
+    expect(await enter()).toBeUndefined();
+    world.enter = 503;
+    await checks(stub, 2);
+    expect(await enter()).toBeUndefined();
+    world.enter = "reset";
+    await stub.check();
+    const card = await enter();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("DOWN: enter.pollinations.ai");
+    expect(post.text).toContain("connection reset");
+    expect(world.enterKey).toBe("Bearer probe-test");
+    world.enter = 200;
+    await stub.check();
+    await settle(stub);
+    expect(await enter()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens a payments card on the first unpaid payment with a ping, keeps it while Tinybird can't say, and closes it once credited", async () => {
+    const stub = watch();
+    const payments = async () => (await stored(stub, "state")).open?.payments;
+    await stub.check();
+    expect(await payments()).toBeUndefined();
+    world.payments = [
+        {
+            kind: "not_credited",
+            id: "pi_3UZX8i7rcjS3l7tr1Scu896L",
+            ref: "in_1UZX8g7rcjS3l7trEyyzuUj8",
+            amount_cents: 1065,
+            reason: "",
+            n: 1,
+            at: "2026-11-08 14:32:15",
+        },
+    ];
+    await stub.check();
+    const card = await payments();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: payments");
+    expect(post.text).toContain("pi_3UZX8i7rcjS3l7tr1Scu896L");
+    expect(post.text).toContain("in_1UZX8g7rcjS3l7trEyyzuUj8");
+    // The read fails: the card stays open.
+    world.payments = null;
+    await stub.check();
+    expect(await payments()).toBeDefined();
+    // The payment is credited: the card closes.
+    world.payments = [];
+    await stub.check();
+    await settle(stub);
+    expect(await payments()).toBeUndefined();
+    expect(over(edits(card.messageId).at(-1))).toBe(true);
+});
+
+it("opens an early-errors card on the first bad minute with a ping, keeps it while Tinybird can't say, and closes it once the window is clean", async () => {
+    const stub = watch();
+    const early = async () => (await stored(stub, "state")).open?.early;
+    // Quiet minutes and a lone failure open nothing.
+    const quiet = {
+        minute: "2026-11-08 15:20:00",
+        failures: 3,
+        d1_failures: 0,
+    };
+    world.early = [quiet];
+    await stub.check();
+    expect(await early()).toBeUndefined();
+    // 8 Nov 2026 15:21 UTC, as it happened: one burst minute is enough.
+    world.early = [
+        quiet,
+        {
+            minute: "2026-11-08 15:21:00",
+            failures: 236,
+            d1_failures: 235,
+            top_route: "/*",
+        },
+    ];
+    await stub.check();
+    const card = await early();
+    const [post] = posts(INFRA);
+    expect(post.content).toBe(MAINTAINERS);
+    expect(post.text).toContain("FAILING: Enter database (D1)");
+    expect(post.text).toContain("236 reqs failed in 1 min");
+    // The read fails: the card stays open.
+    world.early = null;
+    await stub.check();
+    expect(await early()).toBeDefined();
+    // The burst leaves the 30-minute window: the card closes.
+    world.early = [];
+    await stub.check();
+    await settle(stub);
+    expect(await early()).toBeUndefined();
+    // Like a model card: it keeps its box, and ends on a green AI line under
+    // the red opening one.
+    const last = edits(card.messageId).at(-1);
+    expect(over(last)).toBe(true);
+    expect(last.text).toContain("236 reqs failed in 1 min");
+    expect(last.text).toMatch(/🔴 <t:\d+:t> Line 1\.\n🟢 <t:\d+:t> Line 2\./);
+    expect(last.text.split("\n").at(-1)).toBe("### ⏱️ 1 min");
+});
 
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
     const stub = watch();
@@ -1551,3 +1732,128 @@ it("tells a served-model mismatch to the maintainers once due, however long deli
     await cycled(stub);
     expect(posts(INFRA)).toHaveLength(2);
 }, 15_000);
+
+it("a stale feed opens after 3 checks with a ping, survives a failed read, and closes once fresh", async () => {
+    const stub = watch();
+    world.rows = OK;
+    world.freshness = [
+        { source: "error_event", age_seconds: 20 },
+        { source: "product_event", age_seconds: 1200 },
+    ];
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open?.["stale:product_event"]).toBe(
+        undefined,
+    );
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[
+        "stale:product_event"
+    ];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: Enter feed (product_event)");
+    expect(posted.text).toContain("20 min old");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    // Tinybird fails: the card stays open.
+    world.freshness = null;
+    await stub.check();
+    expect(
+        (await stored(stub, "state")).open["stale:product_event"],
+    ).toBeTruthy();
+
+    world.freshness = [{ source: "product_event", age_seconds: 5 }];
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:product_event"]).toBe(
+        undefined,
+    );
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});
+
+it("a gen cron whose heartbeat is too old opens a stale card; one that never beat is skipped", async () => {
+    const stub = watch();
+    world.rows = OK;
+    await env.GEN_KV.put(
+        "heartbeat:community-catalog",
+        String(Date.now() - 10 * 60_000),
+    );
+    await env.GEN_KV.put("heartbeat:sandbox-keeper", String(Date.now()));
+    await checks(stub, 3);
+    await settle(stub);
+    const { open } = await stored(stub, "state");
+    expect(Object.keys(open).filter((key) => key.startsWith("stale:"))).toEqual(
+        ["stale:community-catalog"],
+    );
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("STALE: community model catalog refresh");
+
+    await env.GEN_KV.delete("heartbeat:sandbox-keeper");
+    await env.GEN_KV.put("heartbeat:community-catalog", String(Date.now()));
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open["stale:community-catalog"]).toBe(
+        undefined,
+    );
+});
+
+it("an expired GPU opens a ping after three checks; failed reads interrupt three-check recovery", async () => {
+    const stub = watch();
+    const key = "gpu:sana";
+    await gpuHeartbeat("sana", "sana2", Date.now() - 180_000);
+    // A fresh staging GPU must not cover a missing production worker.
+    await gpuHeartbeat("sana", "staging", Date.now(), "staging");
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open[key]).toBeUndefined();
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[key];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("GPU MISSING: DreamShaper GPU pool");
+    expect(posted.text).toContain("1 of 2 registered");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    await gpuHeartbeat("sana", "sana2");
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).clears[key]).toBe(2);
+    await runInDurableObject(stub, async (instance) => {
+        const read = vi
+            .spyOn(instance.env.GEN_KV, "list")
+            .mockRejectedValueOnce(new Error("KV unavailable"));
+        await instance.check();
+        read.mockRestore();
+    });
+    expect((await stored(stub, "state")).open[key]).toBeDefined();
+    expect((await stored(stub, "state")).clears[key]).toBeUndefined();
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open[key]).toBeDefined();
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open[key]).toBeUndefined();
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});
+
+it.each(["gen", "analytics"])(
+    "GPU alerts open and recover independently of %s failures",
+    async (source) => {
+        const stub = watch();
+        vi.stubGlobal("fetch", (input, init) => {
+            const url = new URL(
+                input instanceof Request ? input.url : String(input),
+            );
+            if (url.pathname === (source === "gen" ? "/" : "/models/status"))
+                return new Response("unavailable", { status: 503 });
+            return fake(input, init);
+        });
+        await env.GEN_KV.delete("image:server:production:flux:flux");
+        await checks(stub, 3);
+        let { open } = await stored(stub, "state");
+        expect(open[source]).toBeDefined();
+        expect(open["gpu:flux"]).toBeDefined();
+        await gpuHeartbeat("flux", "flux");
+        await checks(stub, 3);
+        ({ open } = await stored(stub, "state"));
+        expect(open[source]).toBeDefined();
+        expect(open["gpu:flux"]).toBeUndefined();
+        await settle(stub);
+    },
+);

@@ -48,7 +48,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 url: "https://gen.pollinations.ai/mcp/ask-jev",
                 pricing: {
                     description:
-                        "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                        "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
                     rates: [],
                 },
             },
@@ -643,11 +643,11 @@ test("refuses receipt-billed tool calls from an empty wallet but keeps initializ
 
 test("refuses receipt-billed tool calls from a key with no budget left", async () => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1 },
+        user: { tierBalance: 10, packBalance: 0 },
         pollenBudget: 0,
     });
     const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/computer",
+        "https://gen.pollinations.ai/mcp/ffmpeg",
         {
             method: "POST",
             headers: {
@@ -663,7 +663,7 @@ test("refuses receipt-billed tool calls from a key with no budget left", async (
         error: { code: "KEY_BUDGET_EXHAUSTED" },
     });
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 1,
+        tierBalance: 10,
         packBalance: 0,
     });
 });

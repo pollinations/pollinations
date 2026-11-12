@@ -10,7 +10,9 @@
     // Domain detection inputs, shared with Enter. D1 owns each account's
     // Quest Pollen spending restriction.
     "kv_namespaces": [
-        { "binding": "SETUP_HOLDS", "id": "957b3d13dc2c4142ab22fdf889f27bec" }
+        { "binding": "SETUP_HOLDS", "id": "957b3d13dc2c4142ab22fdf889f27bec" },
+        // gen production's KV, read only for cron heartbeats and GPU pool membership.
+        { "binding": "GEN_KV", "id": "a621f17ad3e34000971cffa616675c5b" }
     ],
     "d1_databases": [
         {

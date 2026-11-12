@@ -124,6 +124,7 @@ Publishing requires a key attached to a user account.
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
 - `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
+- `429` - Too many requests from one key, IP or account
 
 ### `GET /:id`
 

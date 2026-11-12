@@ -715,6 +715,16 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-fable-5.2",
+        config: portkeyConfig["anthropic/claude-fable-5.2"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.2:anthropic",
+        config: portkeyConfig["anthropic/claude-fable-5.2:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
@@ -1137,27 +1147,23 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
-        ],
+        config: portkeyConfig["azure/Nemotron-3-Ultra"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "nvidia/nemotron-3.5-lightning",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
-        ],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
-        transform: fireworksThinking,
+        name: "nvidia/nemotron-3.5-lightning",
+        config: portkeyConfig["azure/Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3.5-lightning:deepinfra",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3.5-super-vl",
@@ -1332,6 +1338,10 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k3.1-pro",
         config: portkeyConfig["moonshotai/kimi-k3.1-pro"],
+    },
+    {
+        name: "moonshotai/kimi-k3.1-pro:vercel",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro:vercel"],
     },
     {
         name: "meta/muse-spark-1.3",

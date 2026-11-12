@@ -45,13 +45,11 @@ from common import (
     call_pollinations_api,
     daily_summary_input,
     diff_models,
-    discord_payload,
     fetch_all_snapshots,
     generate_image,
     get_env,
     get_week_dates,
     load_prompt,
-    models_report_input,
     month_dates,
     monthly_digest_input,
     normalize_platform_post,
@@ -63,32 +61,13 @@ from common import (
 )
 from contributors import month_counts
 from prs import day_notes
+from model_posts import messages, publisher_success, weekly_diff
 
 # The weekly posts written from the recorded catalog: official and community models.
 CATALOG_JOBS = ("models", "community")
 # Every public model, the community ones the reliability filter hides included, so a
 # model leaving or rejoining the default list is no news.
 FULL_CATALOG = {"reliability": "all"}
-# The catalog facts the community post states. Owner-written text (title, publisher,
-# description, links) never reaches the writer of a public post; the id names the owner.
-CATALOG_FACTS = (
-    "name",
-    "category",
-    "agent",
-    "paid_only",
-    "pricing",
-    "flat_rate",
-    "input_modalities",
-    "output_modalities",
-    "capabilities",
-    "tools",
-    "reasoning",
-    "context_length",
-    "base_model",
-)
-# An agent costs what its base model costs and is paid-only when it is, so the post
-# names the base model instead.
-BASE_MODEL_FACTS = ("pricing", "flat_rate", "paid_only")
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
@@ -124,6 +103,8 @@ def read_post(path: Path) -> dict:
 def job_posts(job: str) -> list[dict]:
     """The job's posts, its summary first. Files without settings (tone.md, the PR
     note prompt) are system prompts, not posts."""
+    if job in CATALOG_JOBS:
+        return [{"name": f"posts/discord/{job}", "platform": "discord", "job": job}]
     paths = sorted([*(PROMPTS_DIR / "summaries").glob("*.md"), *(PROMPTS_DIR / "posts").glob("*/*.md")])
     posts = [read_post(path) for path in paths if path.read_text(encoding="utf-8").startswith("---\n")]
     return sorted(
@@ -252,43 +233,26 @@ def read_snapshot(news: Path, date: str | None) -> dict | None:
     )
 
 
-def community_facts(model: dict, names: dict) -> dict:
-    """A community model's CATALOG_FACTS; an agent's without what its base model sets.
-    An owner types the base model freely, so it stays only as a catalog model's name."""
-    dropped = BASE_MODEL_FACTS if model.get("agent") else ()
-    facts = {
-        key: value
-        for key, value in model.items()
-        if key in CATALOG_FACTS and key not in dropped
-    }
-    base = names.get(facts.pop("base_model", None))
-    if base:
-        facts["base_model"] = base
-    return facts
-
-
 def covered(job: str, snapshot: dict | None) -> dict | None:
-    """The models a post covers: the official ones for the model post, the community
-    ones' facts for the community post."""
+    """Separate official and community catalogs; retain display facts for the cards."""
     if not snapshot:
         return snapshot
-    if job == "models":
-        return {
-            category: [model for model in models if not model.get("community")]
-            for category, models in snapshot.items()
-        }
-    names = {
-        alias: model["name"]
-        for models in snapshot.values()
-        for model in models
-        for alias in (model["name"], *(model.get("aliases") or ()))
-    }
-    return {
-        category: [
-            community_facts(model, names) for model in models if model.get("community")
-        ]
-        for category, models in snapshot.items()
-    }
+    names = {alias: model["name"] for models in snapshot.values() for model in models
+             for alias in (model["name"], *(model.get("aliases") or ()))}
+    result = {}
+    for category, models in snapshot.items():
+        result[category] = []
+        for model in models:
+            if bool(model.get("community")) != (job == "community"):
+                continue
+            model = dict(model)
+            # An agent's base model is owner-entered; show only a known catalog ID.
+            if "base_model" in model:
+                base = names.get(model.pop("base_model"))
+                if base:
+                    model["base_model"] = base
+            result[category].append(model)
+    return result
 
 
 def daily_notes(notes: list[dict]) -> list[dict]:
@@ -314,16 +278,13 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
         previous_date = snapshot_date(news, week_before.strftime("%Y-%m-%d"))
         current_date = snapshot_date(news, date)
         print(f"  Snapshots: {previous_date or '(none)'} to {current_date or '(none)'}")
-        diff = diff_models(
+        diff = weekly_diff(
             covered(job, read_snapshot(news, previous_date)),
             covered(job, read_snapshot(news, current_date)),
         )
-        user = (
-            None
-            if diff.is_empty()
-            else models_report_input(diff.to_json(), date, previous_date)
-        )
-        return user, {"diff": diff.to_json(), "previous_date": previous_date}
+        return ("catalog changes" if any(entries for categories in diff.values() for entries in categories.values()) else None), {
+            "diff": diff, "previous_date": previous_date,
+        }
     if job == "monthly":
         summaries = read_daily_summaries(*month_dates(date), news)
         repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
@@ -361,7 +322,6 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
 def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -> None:
     """Make the job's model calls and pictures into WORK: raw.json and images/."""
     check(job, date, news, overwrite)
-    token = get_env("POLLINATIONS_TOKEN")
     (work / "images").mkdir(parents=True, exist_ok=True)
     (work / "raw.json").unlink(missing_ok=True)
     print(f"Writing {job} {date}")
@@ -369,9 +329,16 @@ def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) 
         raw = {"job": job, "date": date, "snapshot": fetch_all_snapshots(FULL_CATALOG)}
         (work / "raw.json").write_bytes(json_file(raw))
         return
-    summary, *posts = job_posts(job)
     user, kept = job_input(job, date, news)
     raw = {"job": job, "date": date, **kept, "outputs": {}}
+    if job in CATALOG_JOBS:
+        rates = publisher_success(date) if job == "community" and user else None
+        raw["messages"] = messages(job, kept["diff"], rates)
+        raw["generated_at"] = datetime.now(UTC).isoformat()
+        (work / "raw.json").write_bytes(json_file(raw))
+        return
+    token = get_env("POLLINATIONS_TOKEN")
+    summary, *posts = job_posts(job)
     outputs = raw["outputs"]
     if user:
         outputs[summary["name"]] = ask(
@@ -463,20 +430,14 @@ def model_post_path(job: str, date: str) -> str:
 
 def model_post(raw: dict) -> dict | None:
     """The model or community post as sent to Discord, or None when nothing changed."""
-    job = raw["job"]
-    report = raw["outputs"].get(job_posts(job)[0]["name"])
-    if not report:
+    if not raw["messages"]:
         return None
-    # Only the weekly model post mentions the model-news role.
-    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID") if job == "models" else None
-    return discord_payload(
-        report["discord_text"],
-        raw["date"],
-        raw["previous_date"],
-        role_id,
-        raw["generated_at"],
-        "models_weekly" if job == "models" else "community_weekly",
-    )
+    return {
+        "platform": "discord",
+        "scope": "models_weekly" if raw["job"] == "models" else "community_weekly",
+        "date": raw["date"], "previous_date": raw["previous_date"],
+        "generated_at": raw["generated_at"], "messages": raw["messages"],
+    }
 
 
 def model_files(raw: dict) -> dict[str, bytes]:

@@ -56,6 +56,7 @@ export async function createAndReturnVideo(
     let result: VideoGenerationResult;
     switch (safeParams.model) {
         case "google/gemini-omni-1.1-flash":
+        case "google/gemini-omni-1.2-flash":
             result = await callGeminiOmniAPI(prompt, safeParams);
             break;
         case "google/veo-3.1-fast":

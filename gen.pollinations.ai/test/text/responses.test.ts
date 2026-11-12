@@ -170,6 +170,21 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("drops a caller's processing tier on unpinned native Responses routes", () => {
+        const input = request({
+            model: "z-ai/glm-5.3-flash",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct Fireworks target");
+        expect(target.endpoint).toBe(
+            "https://api.fireworks.ai/inference/v1/responses",
+        );
+        expect(
+            buildDirectResponsesRequestBody(input, target),
+        ).not.toHaveProperty("service_tier");
+    });
+
     it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
         const directRequest = request({
             model: "nex-agi/nex-n2.5-mini",

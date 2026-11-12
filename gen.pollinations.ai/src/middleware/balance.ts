@@ -56,6 +56,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             });
             throw new HTTPException(503, {
                 message: "Unable to verify balance. Please try again shortly.",
+                cause: error instanceof Error ? (error.cause ?? error) : error,
             });
         }
     };

@@ -716,7 +716,11 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), env, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        env,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     const [due, old, , ending, paused, dashboard] = e2b.sandboxes;
@@ -820,6 +824,66 @@ test("the cron keeps a keep whose key D1 fails to read, and renews it next time"
     expect(await keeps()).toHaveLength(1);
 });
 
+test("the cron keeps the keeps while E2B blocks our team, and renews them after", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    e2b.sandboxes.push(
+        {
+            sandboxID: "due",
+            startedAt: inSeconds(0),
+            endAt: inSeconds(300),
+            cpuCount: 2,
+            memoryMB: 512,
+            state: "running",
+            metadata: { pollinations_user: owner.userId },
+        },
+        {
+            sandboxID: "paused",
+            startedAt: inSeconds(-600),
+            endAt: inSeconds(-60),
+            cpuCount: 2,
+            memoryMB: 512,
+            state: "paused",
+            metadata: { pollinations_user: owner.userId },
+        },
+    );
+    const month = new Date(Date.now() + 30 * 86_400_000);
+    await drizzle(env.DB)
+        .insert(sandboxKeep)
+        .values([
+            { sandboxId: "due", apiKeyId: owner.id, until: month },
+            { sandboxId: "paused", apiKeyId: owner.id, until: month },
+        ]);
+    const cron = async () => {
+        const ctx = createExecutionContext();
+        await worker.scheduled(createScheduledController(), env, ctx);
+        await waitOnExecutionContext(ctx);
+    };
+
+    // Like E2B for a blocked team: reads still work, changes are refused.
+    const stubbed = globalThis.fetch;
+    vi.stubGlobal("fetch", (input: RequestInfo, init?: RequestInit) => {
+        const request = new Request(input, init);
+        return new URL(request.url).origin === E2B && request.method === "POST"
+            ? Response.json(
+                  { code: 403, message: "team is blocked" },
+                  { status: 403 },
+              )
+            : stubbed(input, init);
+    });
+    await cron();
+    expect(await keeps()).toHaveLength(2);
+    expect(e2b.leases()).toEqual([]);
+
+    vi.stubGlobal("fetch", stubbed);
+    await cron();
+    expect(await keeps()).toHaveLength(2);
+    for (const sandbox of e2b.sandboxes) {
+        expect(sandbox.state).toBe("running");
+        expect(Date.parse(sandbox.endAt) - Date.now()).toBeGreaterThan(590_000);
+    }
+});
+
 test("the account owner's session token runs sandboxes without a key scope", async () => {
     stubE2b();
     const { userId } = await createTestApiKey({ user: { tierBalance: 10 } });
@@ -846,7 +910,13 @@ test("anyone can read the prices, and they match what gen charges", async () => 
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 8,
-        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+        templates: {
+            "pollinations-large": {
+                provider: "e2b",
+                cpuCount: 4,
+                memoryMB: 8192,
+            },
+        },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
     expect(

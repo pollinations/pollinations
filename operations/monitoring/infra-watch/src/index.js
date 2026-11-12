@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { readGpuServers } from "../../../../shared/gpu-registry.ts";
 import {
     AGENT_DAILY_LIMIT,
     brief,
@@ -38,11 +39,18 @@ import {
     communityDown,
     conditions,
     duration,
+    earlyErrors,
     escalates,
+    GEN_HEARTBEATS,
+    GPU_POOLS,
+    gpuPoolsMissing,
+    jobsStale,
+    lasted,
     legacyDown,
     lineColor,
     modelOf,
     noteworthy,
+    paymentsFailing,
     pings,
     renderCard,
     snapshot,
@@ -111,6 +119,20 @@ const isUp = (gen) =>
         res.body?.cancel();
         return res.ok;
     }).catch(() => false);
+
+// Enter reads the key from its database (D1) to answer, so this fails when
+// API keys, sign-in and billing do. Why it failed, or null. Any answer under
+// 500 is Enter up: a refused probe key is the community monitor's card.
+const ENTER_KEY_CHECK = "https://enter.pollinations.ai/api/account/key";
+const enterError = (key) =>
+    withTimeout(20_000, async (signal) => {
+        const res = await fetch(ENTER_KEY_CHECK, {
+            signal,
+            headers: { authorization: `Bearer ${key}` },
+        });
+        res.body?.cancel();
+        return res.status < 500 ? null : `HTTP ${res.status}`;
+    }).catch((error) => error.message);
 
 const show = (label, body) =>
     console.log(
@@ -230,7 +252,18 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up] = await Promise.all([isUp(PUBLIC), isUp(UPSTREAM)]);
+        const [pub, up, enterDown, early, freshness, payments, gpuPools] =
+            await Promise.all([
+                isUp(PUBLIC),
+                isUp(UPSTREAM),
+                enterError(this.env.COMMUNITY_PROBE_KEY),
+                // Requests that failed before any model was known, per
+                // minute over the last 30 minutes.
+                this.tinybird("infra_watch_early_errors"),
+                this.freshness(now),
+                this.tinybird("infra_watch_payments"),
+                this.gpuPools(),
+            ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
         const gen = pub ? PUBLIC : UPSTREAM;
@@ -262,6 +295,13 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
+        // Enter, early errors, analytics feeds, payments and GPU pools have
+        // independent checks, so they are judged whatever gen does.
+        if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
+        if (early) Object.assign(found, earlyErrors(early));
+        if (freshness) Object.assign(found, jobsStale(freshness));
+        if (payments) Object.assign(found, paymentsFailing(payments));
+        if (gpuPools) Object.assign(found, gpuPoolsMissing(gpuPools));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -304,12 +344,16 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups or legacy bridges keep their open cards.
-        // A sign-up card Discord hasn't taken yet is retried until it has:
-        // its 24-hour window can end first.
+        // Unknown sources keep their open cards. A sign-up card Discord
+        // hasn't taken yet is retried until it has: its 24-hour window can
+        // end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
+            early === null && "early",
+            freshness === null && "stale:",
+            payments === null && "payments",
+            gpuPools === null && "gpu:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -368,8 +412,7 @@ export class Watch extends DurableObject {
                         tinybird,
                     );
                 const id = incident.messageId;
-                const closing =
-                    Boolean(model) && investigates(incident.kind) && reserve();
+                const closing = investigates(incident.kind) && reserve();
                 // With a closing line to come, the card closes with
                 // "checking why…" now and gets its last edit from the note.
                 const delivered = await this.writes(async () => {
@@ -539,6 +582,80 @@ export class Watch extends DurableObject {
             actions: next.actions.map((a) => `${a.type} ${a.key}`),
             failed,
         };
+    }
+
+    // A Tinybird pipe's rows, read every check; null when the read failed.
+    async tinybird(name) {
+        try {
+            return await pipe(
+                name,
+                {},
+                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
+            );
+        } catch (error) {
+            console.error(`${name}: ${error.message}`);
+            return null;
+        }
+    }
+
+    // Use the same live registry entries as Gen's image router. A failed
+    // read is unknown, not evidence that a missing GPU has recovered.
+    async gpuPools() {
+        try {
+            return Object.fromEntries(
+                await Promise.all(
+                    Object.keys(GPU_POOLS).map(async (pool) => [
+                        pool,
+                        await readGpuServers(
+                            this.env.GEN_KV,
+                            "production",
+                            pool,
+                        ),
+                    ]),
+                ),
+            );
+        } catch (error) {
+            console.error(`GPU registry: ${error.message}`);
+            return null;
+        }
+    }
+
+    // How old each analytics feed's newest row is, from Tinybird, and each
+    // gen cron's last finished run, from the heartbeat gen writes to its KV;
+    // read every check, null when a read failed. A job that never wrote a
+    // heartbeat is skipped.
+    async freshness(now) {
+        try {
+            const [feeds, ...beats] = await Promise.all([
+                pipe(
+                    "infra_watch_freshness",
+                    {},
+                    {
+                        tinybirdToken: this.env.TINYBIRD_TOKEN,
+                        fetchImpl: fetch,
+                    },
+                ),
+                ...GEN_HEARTBEATS.map((job) =>
+                    this.env.GEN_KV.get(`heartbeat:${job}`),
+                ),
+            ]);
+            return [
+                ...feeds,
+                ...GEN_HEARTBEATS.flatMap((job, i) =>
+                    beats[i] === null
+                        ? []
+                        : [
+                              {
+                                  source: job,
+                                  age_seconds: (now - Number(beats[i])) / 1000,
+                              },
+                          ],
+                ),
+            ];
+        } catch (error) {
+            console.error(`freshness: ${error.message}`);
+            return null;
+        }
     }
 
     // Each legacy bridge's row from Tinybird, read once an hour from 5
@@ -844,7 +961,7 @@ export class Watch extends DurableObject {
             const apiKey = this.env.POLLINATIONS_API_KEY;
             if (!apiKey) throw new Error("POLLINATIONS_API_KEY missing");
             const footprint = closing && {
-                down: duration(incident.closedAt - incident.openedAt),
+                down: duration(lasted(incident)),
                 lost: incident.lost,
             };
             const tinybird = { tinybirdToken: this.env.TINYBIRD_TOKEN };

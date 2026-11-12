@@ -1003,6 +1003,24 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
+    "google/gemini-4-carbon": {
+        "google/gemini-4-carbon:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-11-11").getTime(),
+            // Vercel AI Gateway promotional rates (2026-11-11, listed at 50% off).
+            // The gateway adds no fee on direct routes. The promotion has no end
+            // date on Vercel's page.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.1),
+                promptCacheWriteTokens: perMillion(2),
+                promptAudioTokens: perMillion(2),
+                promptImageTokens: perMillion(2),
+                promptVideoTokens: perMillion(2),
+                completionTextTokens: perMillion(10),
+            },
+        },
+    },
     "google/gemini-4-argon": {
         "google/gemini-4-argon:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,

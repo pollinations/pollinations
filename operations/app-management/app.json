@@ -1,6 +1,27 @@
 [
   {
     "emoji": "💬",
+    "name": "The Call That Never Ends",
+    "url": "https://arvex-gh.github.io/the-call-that-never-ends",
+    "description": "Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "Arvex-GH",
+    "githubUserId": "334172571",
+    "repositoryUrl": "https://github.com/Arvex-GH/the-call-that-never-ends",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19365",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1df4bfa6-0228-4fe1-a6f7-06f19852eff6"
+  },
+  {
+    "emoji": "💬",
     "name": "Two AIs Talk",
     "url": "https://two-ais-talk.pollinations.app",
     "description": "Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen.",

@@ -1723,6 +1723,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000211,
     },
   },
+  "google/gemini-decision-1": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "google/gemini-decision-1:openrouter": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
+    },
+  },
   "google/gemini-embedding-2": {
     "cost": {
       "promptAudioTokens": 0.0000065,

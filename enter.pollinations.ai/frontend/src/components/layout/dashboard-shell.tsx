@@ -221,7 +221,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <ScrollArea
                     ref={mainScrollRef}
                     className={cn(
-                        "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                        // The page starts on the profile row's line (the rail's py-4).
+                        "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-4",
                         signInBanner ? "pt-3" : "pt-16",
                     )}
                 >

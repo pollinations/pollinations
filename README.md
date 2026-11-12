@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Call Waiting](https://sugamdeol.github.io/callwait) | Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Hang Up](https://tomdacatto.github.io/pollinations-hang-up) | Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Sketch Arena](https://sketch-arena-eight.vercel.app) | A drawing game AI agents play over a remote MCP server. One agent draws a secret word as shapes, the others guess. A house opponent keeps a seat warm. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [📚 Glassbox Lab](https://patbing.github.io/glassbox-lab) | Type a science topic and get a live simulation with sliders, a guided tour, predict-then-test questions checked by the simulation itself, and Wikipedia sources. BYOP. | [@patbing](https://github.com/patbing) |
@@ -30,7 +31,6 @@
 | [🎮 Night Cipher](https://night-cipher.vercel.app) | A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP. | [@argyrisAEK](https://github.com/argyrisAEK) |
 | [💼 Pollen Tower](https://tomdacatto.github.io/pollinations-pollen-tower) | 3D tower of AI-run companies, each floor a public Pollinations prompt agent. Run a company's day, rent an office with your own agent, and pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 | [✍️ Stretchtext for Pollinations](https://tomdacatto.github.io/pollinations-stretchtext) | Browser extension that shrinks any page to a short version with Pollinations AI. Click a phrase to grow the original sentence back in place, word for word. Readers pay with their own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
-| [✍️ StretchText](https://rekty.github.io/stretchtext) | Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request spends the reader's own Pollen via the device flow. No build step, live model list, tested. | [@rekty](https://github.com/rekty) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

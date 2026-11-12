@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Night Cipher",
+    "url": "https://night-cipher.vercel.app",
+    "description": "A steganography game you actually play: decode hidden messages, master 10 visual ciphers with walkthrough and sandbox, and watch AI Hider vs Seeker duel. BYOP.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "argyrisAEK",
+    "githubUserId": "117667228",
+    "repositoryUrl": "https://github.com/argyrisAEK/night-cipher",
+    "repositoryStars": null,
+    "discordUsername": "Argyrisk21",
+    "other": null,
+    "submittedDate": "2026-11-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19513",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/82f51822-09bc-4b74-8eff-75cfba2e59a7"
+  },
+  {
     "emoji": "💼",
     "name": "Pollen Tower",
     "url": "https://tomdacatto.github.io/pollinations-pollen-tower",

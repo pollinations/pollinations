@@ -65,6 +65,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "compare_versions",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -425,6 +426,60 @@ test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", asy
         assert.equal(
             (await client.callTool({ name: "hash_text", arguments: args }))
                 .isError,
+            true,
+            JSON.stringify(args),
+        );
+});
+
+test("compare_versions orders by SemVer precedence, not string order", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.10.0", "1.9.0", "2.0.0-rc.1", "2.0.0"],
+        }),
+        {
+            sorted: ["1.9.0", "1.10.0", "2.0.0-rc.1", "2.0.0"],
+            newest: "2.0.0",
+            oldest: "1.9.0",
+            equal: false,
+        },
+    );
+    // A prerelease sorts before its release, and build metadata is ignored.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
+        }),
+        {
+            sorted: ["1.0.0-rc.1", "1.0.0", "1.0.0"],
+            newest: "1.0.0",
+            oldest: "1.0.0-rc.1",
+            equal: false,
+        },
+    );
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.2.3+build.1", "1.2.3+build.2"],
+        }),
+        {
+            sorted: ["1.2.3", "1.2.3"],
+            newest: "1.2.3",
+            oldest: "1.2.3",
+            equal: true,
+        },
+    );
+    for (const args of [
+        {},
+        { versions: ["1.2.3"] },
+        { versions: ["1.2.3", "latest"] },
+        { versions: ["1.2", "1.2.3"] },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "compare_versions",
+                    arguments: args,
+                })
+            ).isError,
             true,
             JSON.stringify(args),
         );

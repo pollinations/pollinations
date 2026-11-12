@@ -581,10 +581,17 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
     });
     assert.equal(azure.name, "github.com/Azure/azure-sdk-for-go");
     assert.equal(azure.origin, null);
+    await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "git.sr.ht/~emersion/go-scfg",
+        version: "v0.1.0",
+    });
     assert.deepEqual(urls, [
         "https://proxy.golang.org/github.com/gin-gonic/gin/@latest",
         "https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.12.0.mod",
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.info",
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
     ]);
 });

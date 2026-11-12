@@ -9,7 +9,8 @@ export async function lookup({ ecosystem, name, version }) {
         pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
         crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
         rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
-        golang: /^[a-zA-Z0-9][-a-zA-Z0-9_.]*(?:\/[a-zA-Z0-9][-a-zA-Z0-9_.]*)+$/,
+        // Go path elements allow letters, digits and -._~ but cannot start with a dot.
+        golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);

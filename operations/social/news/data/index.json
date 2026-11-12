@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-11T06:08:12.767108+00:00",
+  "generated_at": "2026-11-12T06:08:48.935373+00:00",
   "models": [
     {
       "id": "2026-10-13:assemblyai/universal-2",
@@ -6287,6 +6287,56 @@
   ],
   "daily": [
     {
+      "date": "2026-11-11",
+      "emoji": "🚀",
+      "title": "Choose a sandbox template",
+      "text": "Compare sandbox templates by provider, size, hourly price, and Quest eligibility, then open creation with your choice selected. The Sandboxes page also shows running and paused states more clearly.",
+      "prs": [
+        19508
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-11",
+      "emoji": "🎵",
+      "title": "Inspect media before editing",
+      "text": "Use the FFmpeg MCP tool `probeMedia` to inspect one public HTTPS media URL before choosing `runFfmpeg` arguments. It returns format and stream metadata as JSON, including duration, codecs, resolution, bitrate, and frame rate. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19175
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-11",
+      "emoji": "🤖",
+      "title": "Hash text in MCP",
+      "text": "The calculators MCP tool `hash_text` hashes UTF-8 text locally and returns lowercase hex and base64 digests. It uses SHA-256 by default; SHA-1 is available for checksum compatibility. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19318
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-11",
+      "emoji": "🎯",
+      "title": "Pick a decision model",
+      "text": "Ask Jev's `jev_decide` tool now accepts an optional `model` argument. Choose an accessible model that lists `/alpha/decisions` as a supported endpoint, or omit it to use the default Jev model. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19342
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-11",
+      "emoji": "🔗",
+      "title": "Look up RubyGems",
+      "text": "The packages MCP tool `package_lookup` now fetches the current version of a Ruby gem or an exact version you specify. Results include dependencies, license, download counts, and yank status. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19380
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-11-10",
       "emoji": "🎵",
       "title": "ElevenLabs SFX v3",
@@ -7492,136 +7542,6 @@
         17233
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🎯",
-      "title": "Keys for specific models",
-      "text": "Limit an API key to model IDs such as `flux` instead of granting access to an entire category. Set limits through BYOP links or the CLI, and review them in the key dashboard. [Manage API keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        17213
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "✨",
-      "title": "Usage by model or key",
-      "text": "Switch the activity table between Models and Keys to compare request counts or Pollen usage. The grouping stays in shared URLs and browser history.",
-      "prs": [
-        17165
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "💡",
-      "title": "One place for news",
-      "text": "Enter now puts Announcements, product Updates and the Changelog in separate tabs. Signed-out visitors can read all three.",
-      "prs": [
-        16986
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🤖",
-      "title": "Claude Opus 5.5 fast",
-      "text": "Use the paid-only `anthropic/claude-opus-5.5:fast` model ID for a fast-mode route without a fallback to standard-speed providers. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5:fast).",
-      "prs": [
-        16954
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🎵",
-      "title": "Set OpenAI speech speed",
-      "text": "Send `speed` to `/v1/audio/speech` with `openai/tts-1` or `openai/tts-1-hd` to generate speech from 0.25× to 4× speed. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16532
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🤖",
-      "title": "REST API Agent Skill",
-      "text": "Agents that cannot install the CLI can discover a skill for making image, chat and audio requests directly through HTTP.",
-      "prs": [
-        16945
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🔗",
-      "title": "Markdown docs for agents",
-      "text": "Request `/docs` with `Accept: text/markdown` to get the API guide without parsing an HTML reference page. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16988
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🔗",
-      "title": "Agent discovery from pages",
-      "text": "Website responses now include Link headers pointing agents to existing API descriptions, documentation and catalogs. No HTML scraping expedition required.",
-      "prs": [
-        17009
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🎯",
-      "title": "Quest skill for agents",
-      "text": "A discoverable Agent Skill guides coding agents through finding open contribution Quests, checking their rules, submitting a linked PR and claiming an awarded reward. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
-      "prs": [
-        17154
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🎮",
-      "title": "Talking Roblox NPC examples",
-      "text": "Build from two Luau examples that let Roblox NPCs answer players using Pollinations text models. Both include example places and setup guides.",
-      "prs": [
-        17129
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🤖",
-      "title": "Agents that survive disconnects",
-      "text": "Pollinations sandbox templates now include herdr, so agents started in its panes can keep running through SSH disconnects and sandbox pause/resume.",
-      "prs": [
-        17208
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🔗",
-      "title": "MCP client sign-in",
-      "text": "Compatible MCP clients can use an HTTPS Client ID Metadata Document for account sign-in without registering a `pk_` app. Users still review the client and authorize access with their own account.",
-      "prs": [
-        17209
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-12",
-      "emoji": "🤖",
-      "title": "Mention Discord bots anywhere",
-      "text": "Address CatGPT or Opposite Prompt by @mention in any channel; they no longer respond to ordinary messages in their former channels. [Join the community chat](https://chat.pollinations.ai).",
-      "prs": [
-        17230
-      ],
-      "kind": "product"
     }
   ]
 }

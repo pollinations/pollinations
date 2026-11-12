@@ -36,7 +36,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
     return (
         <div className="flex flex-col gap-4">
             {/* The shared catalog card, as on the Sandboxes page. */}
-            <div className="@container flex flex-col gap-3 [--catalog-price-width:19rem]">
+            <div className="@container flex flex-col gap-3 [--catalog-price-width:24rem]">
                 {servers.map((server) => {
                     const pricing = getMcpPricingInfo(server);
                     return (

@@ -3,17 +3,17 @@ import type { FC, ReactNode } from "react";
 
 // Where a card goes from stacked to two columns: a short main part (a
 // template's size) fits beside the price from half a screen; a description
-// needs a wide screen. Side by side, the left column holds what it is, the
-// command or ID to copy and the note, from the title's edge (logo 2rem, the
-// gaps and the divider); the right column holds the price and the action.
-// Stacked, the column wrappers dissolve and `order` sets the sequence.
+// needs a wide screen. Side by side, the left column holds what it is and the
+// note, the right column the price box with the copy box under it and the
+// action. Stacked, the column wrappers dissolve and `order` sets the sequence.
 // Full class names, so Tailwind finds them.
 const SPLIT = {
     half: {
         card: "@lg:grid @lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:items-start @lg:gap-x-6",
         column: "@lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-3",
+        // The note starts at the title's edge (logo 2rem, gaps, divider).
         indent: "@lg:pl-[3.3125rem]",
-        // One line on a wide screen; the full value shows on hover.
+        // One line beside the description; the full value shows on hover.
         oneLine: "@lg:[&>span:first-child]:truncate",
     },
     wide: {
@@ -26,10 +26,11 @@ const SPLIT = {
 
 /**
  * One card of a catalog list (models, MCP servers, sandbox templates). On a
- * wide screen: the logo and what it is, the command or ID to copy and a note
- * (who published it) on the left; the price box and the action on the right,
- * `--catalog-price-width` wide (set on the list). On phones: what it is, the
- * price, the copy box, the note, the action. The list needs `@container`.
+ * wide screen: the logo and what it is, then a note (who published it) on the
+ * left; on the right, `--catalog-price-width` wide (set on the list), the
+ * price box, the command or ID to copy under it, and the action. On phones:
+ * what it is, the price, the copy box, the action, the note. The list needs
+ * `@container`.
  */
 export const CatalogCard: FC<{
     /** Without one (a model with no brand logo), the text keeps its place. */
@@ -37,22 +38,11 @@ export const CatalogCard: FC<{
     children: ReactNode;
     price: ReactNode;
     copy?: { value: string; label: string };
-    /** Beside the copy box: whether what you copy works right now. */
-    status?: ReactNode;
     /** A quiet line at the bottom left (who published it). */
     note?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({
-    logo,
-    children,
-    price,
-    copy,
-    status,
-    note,
-    action,
-    split = "half",
-}) => (
+}> = ({ logo, children, price, copy, note, action, split = "half" }) => (
     <Surface className={`flex flex-col gap-3 ${SPLIT[split].card}`}>
         <div className={`contents ${SPLIT[split].column}`}>
             {/* The logo lines up with the title, however many lines follow. */}
@@ -64,37 +54,27 @@ export const CatalogCard: FC<{
                 />
                 <div className="min-w-0 flex-1">{children}</div>
             </div>
-            {copy && (
-                <div
-                    className={`order-3 flex min-w-0 max-w-full items-center gap-2 ${SPLIT[split].indent}`}
-                >
-                    {/* Only as wide as the value needs, never past the column. */}
-                    <div
-                        className="w-fit min-w-0 max-w-full"
-                        title={copy.value}
-                    >
-                        <CopyField
-                            label={copy.label}
-                            value={copy.value}
-                            className={SPLIT[split].oneLine}
-                        />
-                    </div>
-                    {status}
-                </div>
-            )}
             {note && (
-                <div className={`order-4 min-w-0 ${SPLIT[split].indent}`}>
+                <div className={`order-5 min-w-0 ${SPLIT[split].indent}`}>
                     {note}
                 </div>
             )}
         </div>
         <div className={`contents ${SPLIT[split].column}`}>
-            {/* Bordered like the copy box, so the price reads as one
-                object and its lines end inside it. */}
+            {/* The price and how to call it, two boxes of one width. */}
             <div className="order-2 min-w-0 rounded-lg border border-divider px-3 py-2">
                 {price}
             </div>
-            {action && <div className="order-5">{action}</div>}
+            {copy && (
+                <div className="order-3 min-w-0" title={copy.value}>
+                    <CopyField
+                        label={copy.label}
+                        value={copy.value}
+                        className={SPLIT[split].oneLine}
+                    />
+                </div>
+            )}
+            {action && <div className="order-4">{action}</div>}
         </div>
     </Surface>
 );

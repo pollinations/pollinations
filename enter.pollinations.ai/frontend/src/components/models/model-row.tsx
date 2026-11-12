@@ -27,7 +27,6 @@ import {
 import {
     type BalanceAccess,
     BalanceAccessChip,
-    ModelHealthIndicator,
     ModelRateValue,
     ModelStatusChips,
     PerUserRateLimit,
@@ -249,8 +248,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     ].filter(Boolean);
 
     // The shared catalog card, as for MCP servers and sandbox templates: all
-    // about the model beside its logo, the price beside that, then the model
-    // id to copy with its health next to it.
+    // about the model beside its logo, its health with its tags; the price
+    // and the model id to copy together beside it.
     return (
         <CatalogCard
             split="wide"
@@ -271,16 +270,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 />
             }
             copy={{ value: model.name, label: `Copy model id ${model.name}` }}
-            status={
-                model.health && (
-                    <ModelHealthIndicator
-                        health={model.health}
-                        communityProxy={Boolean(
-                            model.community && !model.agent,
-                        )}
-                    />
-                )
-            }
             // Who made it: at the bottom left, apart from what it is.
             note={
                 publisher && (
@@ -301,6 +290,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
                     <ModelTitle model={model} />
                     <ModelStatusChips
+                        health={model.health}
+                        communityProxy={Boolean(
+                            model.community && !model.agent,
+                        )}
                         showNew={showNew}
                         showAlpha={showAlpha}
                         verified={Boolean(model.agent && model.verified)}

@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Phenomena Lab](https://phenomena-lab.jm716111.chatgpt.site) | Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [📚 Unfold](https://sugamdeol.github.io/unfold) | Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [🎮 Model Machine](https://sugamdeol.github.io/model-machine) | A computer with no CPU: a Pollinations model returns each next machine state, one instruction per call, while a reference core runs beside it to show where it drifts. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [📚 Pixel Letter](https://pixel-letter-studio.cris16esl.chatgpt.site) | Pollinations LLM-designed PNG postcards with locally hidden messages, optional AES-GCM encryption and OAuth BYOP. Secrets stay on the device; recipients decode without API calls. Includes a free demo. | [@CristopherSalazar](https://github.com/CristopherSalazar) |
@@ -30,7 +31,6 @@
 | [✍️ Tell Tale](https://sugamdeol.github.io/tell-tale) | Paste prose. See which sentences carry the LLM voice and exactly which tell fired. Then have it rewritten in a register you pick, not in a nicer version of the same voice. | [@Sugamdeol](https://github.com/Sugamdeol) |
 | [💬 The Call That Never Ends](https://arvex-gh.github.io/the-call-that-never-ends) | Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo. | [@Arvex-GH](https://github.com/Arvex-GH) |
 | [💬 Two AIs Talk](https://two-ais-talk.pollinations.app) | Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen. | [@hellway803-creator](https://github.com/hellway803-creator) |
-| [🎮 Call Waiting](https://sugamdeol.github.io/callwait) | Two AI agents on one phone line with opposite goals. Mira must keep the caller, Dale wants to cancel. They talk until one ends the call, then a third model judges who gave up the most ground. | [@Sugamdeol](https://github.com/Sugamdeol) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

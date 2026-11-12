@@ -1,6 +1,27 @@
 [
   {
     "emoji": "📚",
+    "name": "Phenomena Lab",
+    "url": "https://phenomena-lab.jm716111.chatgpt.site",
+    "description": "Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "ismailbanouigu",
+    "githubUserId": "20683163",
+    "repositoryUrl": "https://github.com/ismailbanouigu/phenomena-lab",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19202",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/cfa4f437-d369-467a-a7ed-1eb4c4af56fd"
+  },
+  {
+    "emoji": "📚",
     "name": "Unfold",
     "url": "https://sugamdeol.github.io/unfold",
     "description": "Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it.",

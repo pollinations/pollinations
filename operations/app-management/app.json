@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Model Machine",
+    "url": "https://sugamdeol.github.io/model-machine",
+    "description": "A computer with no CPU: a Pollinations model returns each next machine state, one instruction per call, while a reference core runs beside it to show where it drifts.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Sugamdeol",
+    "githubUserId": "92591383",
+    "repositoryUrl": "https://github.com/Sugamdeol/model-machine",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-07",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19337",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/2158a451-e386-425e-b3f9-5bae1ddb0211"
+  },
+  {
     "emoji": "📚",
     "name": "Pixel Letter",
     "url": "https://pixel-letter-studio.cris16esl.chatgpt.site",

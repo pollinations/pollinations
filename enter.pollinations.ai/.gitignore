@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .vite/
+test-results/
+playwright-report/
 .pipelight/
 .wrangler/
 .dev.vars

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact sheet · Pollinations tiny tools</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #253e35; background: #f5f1e8; }
+    * { box-sizing: border-box; } body { max-width: 1080px; margin: auto; padding: 36px 24px; }
+    h1 { font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: -.035em; margin: 8px 0; }
+    p { max-width: 70ch; line-height: 1.6; } a { color: inherit; } label { display: inline-grid; gap: 6px; font-size: .9rem; }
+    .controls { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin: 24px 0; }
+    input, button, textarea { font: inherit; } button, input[type=number] { padding: 10px 14px; border: 1px solid #80988b; border-radius: 5px; background: #fffdf8; color: #253e35; }
+    button { cursor: pointer; } button[type=submit] { color: white; background: #253e35; } button:disabled { opacity: .5; cursor: wait; }
+    input[type=file] { max-width: 260px; } input[type=number] { width: 80px; }
+    #status { min-height: 1.6em; font-size: .9rem; } #preview { padding: 14px; background: #e5dfd2; min-height: 180px; border-radius: 8px; }
+    canvas { max-width: 100%; height: auto; display: block; margin: auto; } details { margin-top: 28px; } summary { cursor: pointer; font-weight: 600; }
+    textarea { width: 100%; min-height: 180px; margin-top: 12px; padding: 12px; font-family: monospace; font-size: .8rem; border: 1px solid #80988b; }
+    pre { overflow: auto; padding: 16px; background: #e5dfd2; } footer { margin-top: 36px; font-size: .85rem; }
+    :focus-visible { outline: 3px solid #b35b33; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <header><small>POLLINATIONS / TINY TOOLS / 01</small><h1>One sheet. Many possibilities.</h1>
+    <p>Arrange saved images into a captioned contact sheet. Run it here, edit the bank, or import the function into your own notebook. Rendering happens in your browser; no key needed.</p>
+  </header>
+  <main>
+    <form>
+      <div class="controls">
+        <label>Replace with local images<input id="files" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" multiple></label>
+        <label>Columns<input name="columns" type="number" min="1" max="6" value="3" required></label>
+        <button type="submit">Render sheet</button><button id="png" type="button" disabled>Download PNG</button>
+      </div>
+      <p id="status" role="status" aria-live="polite">Preparing local examples…</p>
+      <div id="preview"></div>
+      <details><summary>Edit or exchange the image bank</summary>
+        <p>Use <code>{"images":[{"url":"https://…","caption":"…"}]}</code>. Up to 24 images and 16 MB of JSON. Long captions are shortened only on the sheet; the bank keeps the full text. Public media links must allow CORS. Use local files when a host blocks canvas export.</p>
+        <p>Loading a URL contacts its image host. Only share public links: do not paste keys, private or signed URLs, or personal data. PNG/JPEG/WebP/GIF/SVG uploads are embedded in exported banks. Images are decoded by the browser, never inserted as HTML.</p>
+        <label for="bank">Image bank JSON</label><textarea id="bank" spellcheck="false" maxlength="16777216"></textarea>
+        <div class="controls"><label>Import bank<input id="import" type="file" accept="application/json,.json"></label><button id="export" type="button">Export bank</button></div>
+        <p>After editing captions or URLs, press <strong>Render sheet</strong>. A load error keeps the previous sheet available.</p>
+      </details>
+    </form>
+    <details><summary>Take the function. Change the tool.</summary>
+      <pre><code>import { renderContactSheet } from "./contact-sheet.js";
+const sheet = await renderContactSheet(bank.images, { columns: 3 });
+document.body.append(sheet);</code></pre>
+      <p>Source: <a href="./contact-sheet.js">renderer + pure layout</a> · <a href="./demo.js">this page's behavior</a> · <a href="./contact-sheet.test.js">runnable checks</a>. No install or build step.</p>
+      <p>From the repository root, run <code>python3 -m http.server 8080</code> and open <code>http://localhost:8080/apps/contact-sheet-tool/</code>. Run checks with <code>node --test apps/contact-sheet-tool/contact-sheet.test.js</code>.</p>
+    </details>
+  </main>
+  <footer>A local tool for saved Pollinations media and your own images. Fork the source to make it yours.</footer>
+  <script type="module" src="./demo.js"></script>
+</body>
+</html>

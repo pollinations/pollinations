@@ -1,39 +1,6 @@
-import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
-import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CopyValue } from "./copy-value.tsx";
-import { ModelDescription } from "./model-description.tsx";
-import {
-    CAPABILITY_ICON,
-    getCommunityModelIcon,
-    MODALITY_ICON,
-    ModelBrandIcon,
-} from "./model-icons.tsx";
-import {
-    type DisplayCapability,
-    getModelBrandLogoPath,
-    getModelCapabilities,
-    getModelCapabilityLabel,
-    getModelDescriptionWithoutName,
-    getModelInputModalities,
-    getModelModalityLabel,
-    hasPollinationsTools,
-    type InputModality,
-    isAlpha,
-    isNewModel,
-    isPaidOnly,
-} from "./model-info.ts";
-import { ModelRow, ModelTitle, PerPollenEstimate } from "./model-row.tsx";
+import { type FC, useEffect, useRef, useState } from "react";
+import { ModelRow } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
-import {
-    type BalanceAccess,
-    BalanceAccessChip,
-    ModelStatusChips,
-    PerUserRateLimit,
-} from "./model-status-chips.tsx";
-import {
-    ModelPricingLedger,
-    useModelPricingSelection,
-} from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 export type SectionType = ModelCategory;
@@ -70,44 +37,13 @@ export const sectionLabels: Record<SectionType, string> = {
 
 // --- Tab content ---
 
-// Matches Tailwind's @2xl container breakpoint while respecting the user's
-// root font size instead of assuming 1rem is always 16px.
-const DESKTOP_TABLE_MIN_REM = 42;
 const INITIAL_MODEL_COUNT = 24;
 const MODEL_BATCH_SIZE = 24;
 
-function useDesktopModelTable() {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
-
-    useLayoutEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const updateLayout = () => {
-            const rootFontSize = Number.parseFloat(
-                window.getComputedStyle(document.documentElement).fontSize,
-            );
-            setIsDesktop(
-                container.clientWidth >= DESKTOP_TABLE_MIN_REM * rootFontSize,
-            );
-        };
-        const observer = new ResizeObserver(updateLayout);
-
-        updateLayout();
-        observer.observe(container);
-
-        return () => observer.disconnect();
-    }, []);
-
-    return { containerRef, isDesktop };
-}
-
 const TabContent: FC<{
     models: ModelPrice[];
-    isDesktop: boolean;
     resetKey: string;
-}> = ({ models, isDesktop, resetKey }) => {
+}> = ({ models, resetKey }) => {
     const [pagination, setPagination] = useState({
         key: resetKey,
         count: INITIAL_MODEL_COUNT,
@@ -119,7 +55,6 @@ const TabContent: FC<{
     const visibleCount =
         pagination.key === resetKey ? pagination.count : INITIAL_MODEL_COUNT;
     const visibleModels = models.slice(0, visibleCount);
-    const Row = isDesktop ? ModelRow : MobileModelRow;
 
     useEffect(() => {
         const loadMore = loadMoreRef.current;
@@ -146,220 +81,17 @@ const TabContent: FC<{
 
     return (
         <>
-            <div className="flex flex-col gap-3">
+            {/* One card at every width: the shared catalog card folds by
+                container size, so phones need no card of their own. */}
+            <div className="@container flex flex-col gap-3 [--catalog-price-width:21rem]">
                 {visibleModels.map((model) => (
-                    <Row key={model.name} model={model} />
+                    <ModelRow key={model.name} model={model} />
                 ))}
             </div>
             {visibleCount < models.length && (
                 <div ref={loadMoreRef} className="h-px" aria-hidden="true" />
             )}
         </>
-    );
-};
-
-// --- Mobile tap-to-expand row ---
-
-type MobileModelRowProps = {
-    model: ModelPrice;
-};
-
-const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescriptionWithoutName(model);
-    const brandLogoPath = getModelBrandLogoPath(model);
-    const CommunityModelIcon = getCommunityModelIcon(model);
-    const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
-    const inputModalities = getModelInputModalities(model);
-    const modalityLabel = getModelModalityLabel(model);
-    const capabilities = getModelCapabilities(model);
-    const capabilityLabel = getModelCapabilityLabel(model);
-    const pollinationsTools = hasPollinationsTools(model);
-    const showNew = isNewModel(model);
-    const showPaidOnly = isPaidOnly(model);
-    const showAlpha = isAlpha(model);
-    const balanceAccess: BalanceAccess = model.free
-        ? "free"
-        : showPaidOnly
-          ? "paid"
-          : "quest";
-    const pricing = useModelPricingSelection(model);
-
-    return (
-        <Surface className="transition-colors hover:bg-surface-opaque/90">
-            <div className="flex items-center gap-2.5">
-                <ModelBrandIcon
-                    model={model}
-                    className="h-8 w-8 shrink-0 opacity-55"
-                />
-                {hasLeadingIcon && (
-                    <span
-                        aria-hidden="true"
-                        className="h-10 w-px shrink-0 bg-divider"
-                    />
-                )}
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <div className="flex min-h-5 min-w-0 items-center text-sm font-medium leading-tight">
-                        <ModelTitle model={model} />
-                    </div>
-                    <div className="flex min-h-5 min-w-0 items-center">
-                        <CopyValue
-                            value={model.name}
-                            label={`Copy model id ${model.name}`}
-                            showCopyIcon
-                        />
-                    </div>
-                    {modelDescription && (
-                        <ModelDescription text={modelDescription} />
-                    )}
-                    {model.brandUrl && model.publisher && (
-                        <InlineLink
-                            href={model.brandUrl}
-                            size="footer"
-                            className="inline-flex min-h-5 w-fit max-w-full items-center"
-                        >
-                            <span className="truncate">{model.publisher}</span>
-                        </InlineLink>
-                    )}
-                    <MobileMetadataBadges
-                        inputModalities={inputModalities}
-                        capabilities={capabilities}
-                        modalityLabel={modalityLabel}
-                        capabilityLabel={capabilityLabel}
-                        perUserRpm={model.perUserRpm}
-                    />
-                    {(model.health ||
-                        showNew ||
-                        showAlpha ||
-                        (model.agent && model.verified)) && (
-                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                            <ModelStatusChips
-                                health={model.health}
-                                communityProxy={Boolean(
-                                    model.community && !model.agent,
-                                )}
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                                verified={Boolean(
-                                    model.agent && model.verified,
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className="mt-3 flex gap-2.5">
-                {hasLeadingIcon && (
-                    <>
-                        <span
-                            aria-hidden="true"
-                            className="hidden w-8 shrink-0 min-[480px]:block"
-                        />
-                        <span
-                            aria-hidden="true"
-                            className="hidden w-px shrink-0 min-[480px]:block"
-                        />
-                    </>
-                )}
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <ModelPricingLedger
-                        modelName={model.displayName ?? model.name}
-                        pricing={pricing}
-                        className="w-full"
-                        align="left"
-                        requestBadge={
-                            <BalanceAccessChip access={balanceAccess} />
-                        }
-                        hasTools={pollinationsTools}
-                        requestEstimate={
-                            !model.agent && (
-                                <PerPollenEstimate model={model} ledger />
-                            )
-                        }
-                    />
-                </div>
-            </div>
-        </Surface>
-    );
-};
-
-type MobileMetadataBadgesProps = {
-    inputModalities: InputModality[];
-    capabilities: DisplayCapability[];
-    modalityLabel: string;
-    capabilityLabel: string;
-    perUserRpm?: number | null;
-};
-
-const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
-    inputModalities,
-    capabilities,
-    modalityLabel,
-    capabilityLabel,
-    perUserRpm,
-}) => {
-    if (
-        inputModalities.length === 0 &&
-        capabilities.length === 0 &&
-        perUserRpm == null
-    ) {
-        return null;
-    }
-
-    return (
-        <div className="inline-flex min-h-5 items-center gap-1.5 text-theme-text-muted">
-            {inputModalities.length > 0 && (
-                <Tooltip
-                    triggerAs="span"
-                    content={
-                        <span>
-                            <strong className="font-semibold text-theme-text-strong">
-                                Input:
-                            </strong>{" "}
-                            {inputModalities.join(", ")}
-                        </span>
-                    }
-                    ariaLabel={modalityLabel}
-                    tapEnabled
-                    displayContents
-                >
-                    <span className="inline-flex items-center gap-1">
-                        {inputModalities.map((key) => {
-                            const Icon = MODALITY_ICON[key];
-                            return <Icon key={key} className="h-4 w-4" />;
-                        })}
-                    </span>
-                </Tooltip>
-            )}
-            {inputModalities.length > 0 && capabilities.length > 0 && (
-                <span className="h-3.5 w-px bg-current opacity-30" />
-            )}
-            {capabilities.length > 0 && (
-                <Tooltip
-                    triggerAs="span"
-                    content={
-                        <strong className="font-semibold text-theme-text-strong">
-                            {capabilityLabel}
-                        </strong>
-                    }
-                    ariaLabel={capabilityLabel}
-                    tapEnabled
-                    displayContents
-                >
-                    <span className="inline-flex items-center gap-1">
-                        {capabilities.map((key) => {
-                            const Icon = CAPABILITY_ICON[key];
-                            return <Icon key={key} className="h-4 w-4" />;
-                        })}
-                    </span>
-                </Tooltip>
-            )}
-            {(inputModalities.length > 0 || capabilities.length > 0) &&
-                perUserRpm != null && (
-                    <span className="h-3.5 w-px bg-current opacity-30" />
-                )}
-            <PerUserRateLimit value={perUserRpm} />
-        </div>
     );
 };
 
@@ -379,7 +111,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     agentModels,
     activeTab,
 }) => {
-    const { containerRef, isDesktop } = useDesktopModelTable();
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "all", models: allModels },
         { type: "image", models: imageModels },
@@ -396,14 +127,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const activeSection = sections.find((s) => s.type === activeTab);
 
     return (
-        <div ref={containerRef}>
+        <div>
             {/* Tab content — the selected modality */}
-            {activeSection && isDesktop !== null && (
-                <TabContent
-                    models={activeSection.models}
-                    isDesktop={isDesktop}
-                    resetKey={listKey}
-                />
+            {activeSection && (
+                <TabContent models={activeSection.models} resetKey={listKey} />
             )}
         </div>
     );

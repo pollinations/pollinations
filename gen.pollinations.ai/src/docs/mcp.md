@@ -25,7 +25,7 @@ then choose a server:
 | Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
 | Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
-| Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
+| Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
 
 Calculators is free but still requires a key. Time conversion rejects ambiguous or
 skipped local times: include an explicit

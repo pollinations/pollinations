@@ -9,7 +9,7 @@ describe("model description", () => {
         );
         const id = markup.match(/<p[^>]* id="([^"]+)"/)?.[1];
 
-        expect(markup).toContain("line-clamp-2");
+        expect(markup).toContain("line-clamp-4");
         expect(markup).toContain(
             "Free behaviour scoring for agent conversations.",
         );

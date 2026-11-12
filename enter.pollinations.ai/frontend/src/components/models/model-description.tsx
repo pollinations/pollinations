@@ -1,7 +1,10 @@
 import { InlineLink } from "@pollinations/ui";
 import { type FC, useId, useLayoutEffect, useRef, useState } from "react";
 
-/** Two-line model description with a "Show more" toggle when it is clamped. */
+/**
+ * Model description up to four lines (nearly every one fits beside the price
+ * box), with a "Show more" toggle when it is clamped.
+ */
 export const ModelDescription: FC<{ text: string }> = ({ text }) => {
     const id = useId();
     const ref = useRef<HTMLParagraphElement>(null);
@@ -24,7 +27,7 @@ export const ModelDescription: FC<{ text: string }> = ({ text }) => {
             <p
                 ref={ref}
                 id={id}
-                className={`${expanded ? "" : "line-clamp-2 "}text-xs leading-snug text-theme-text-muted`}
+                className={`${expanded ? "" : "line-clamp-4 "}text-xs leading-snug text-theme-text-muted`}
             >
                 {text}
             </p>

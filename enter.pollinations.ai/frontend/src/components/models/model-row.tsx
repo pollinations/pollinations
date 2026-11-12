@@ -1,11 +1,12 @@
-import { formatCount, InlineLink, Surface, Tooltip } from "@pollinations/ui";
+import { ClockIcon, formatCount, InlineLink, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { FC, ReactNode } from "react";
+import { type FC, Fragment } from "react";
+import { CatalogCard } from "../catalog-card.tsx";
 import { calculatePerPollen } from "./calculations.ts";
-import { CopyValue } from "./copy-value.tsx";
 import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
+    ContextIcon,
     getCommunityModelIcon,
     MODALITY_ICON,
     ModelBrandIcon,
@@ -53,6 +54,23 @@ function formatVideoDuration(model: ModelPrice): string | null {
     if (model.maxDuration != null) return `≤${model.maxDuration}s`;
     return null;
 }
+
+// One of the model's facts on the capabilities line: an icon and a value, its
+// meaning on hover like the icons beside it.
+const ModelFact: FC<{
+    Icon: FC<{ className?: string }>;
+    value: string;
+    label: string;
+}> = ({ Icon, value, label }) => (
+    <Tooltip content={label} ariaLabel={label} tapEnabled displayContents>
+        <span className="inline-flex items-center gap-1">
+            <Icon className="h-4 w-4" />
+            <span className="text-sm font-semibold leading-none tabular-nums text-theme-text-strong">
+                {value}
+            </span>
+        </span>
+    </Tooltip>
+);
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -117,52 +135,9 @@ export const PerPollenEstimate: FC<{
     );
 };
 
-export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
-    // Description renders inline on the row; tooltip keeps the denser metadata.
-    const videoDuration = formatVideoDuration(model);
-
-    if (
-        (!model.agent || !model.baseModel) &&
-        model.contextLength == null &&
-        !videoDuration
-    ) {
-        return null;
-    }
-
-    return (
-        <span className="flex max-w-sm flex-col gap-1.5 text-left">
-            {model.agent && model.baseModel && (
-                <span className="text-xs text-theme-text-muted">
-                    <strong className="font-semibold text-theme-text-base">
-                        Base model:
-                    </strong>{" "}
-                    <span className="font-mono">{model.baseModel}</span>
-                </span>
-            )}
-            {model.contextLength != null && (
-                <span className="text-xs text-theme-text-muted">
-                    <strong className="font-semibold text-theme-text-base">
-                        Context window:
-                    </strong>{" "}
-                    {formatCount(model.contextLength)} tokens
-                </span>
-            )}
-            {videoDuration && (
-                <span className="text-xs text-theme-text-muted">
-                    <strong className="font-semibold text-theme-text-base">
-                        Video duration:
-                    </strong>{" "}
-                    {videoDuration}
-                </span>
-            )}
-        </span>
-    );
-}
-
 /** The model title opens the same destination on desktop and mobile. */
 export function ModelTitle({ model }: { model: ModelPrice }) {
     const title = getModelDisplayName(model) || model.name;
-    const details = getModelTitleTooltipContent(model);
     const chatSupported = isOpenWebUiChattable(model);
     const href =
         !chatSupported && !["3d", "embedding", "realtime"].includes(model.type)
@@ -182,20 +157,7 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
         <span className="min-w-0 truncate">{title}</span>
     );
 
-    return details ? (
-        <Tooltip
-            triggerAs="span"
-            content={details}
-            ariaLabel={`${title}: model details`}
-            className="min-w-0"
-            tapEnabled={!chatSupported && !href}
-            displayContents
-        >
-            {content}
-        </Tooltip>
-    ) : (
-        content
-    );
+    return content;
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
@@ -218,146 +180,86 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
           : "quest";
     const pricing = useModelPricingSelection(model);
 
-    return (
-        <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
-            {/* Brand logo — fixed width column */}
-            <div className="w-10 shrink-0 flex items-center justify-center">
-                <ModelBrandIcon model={model} />
-            </div>
+    const videoDuration = formatVideoDuration(model);
+    const baseModel = model.agent ? model.baseModel : undefined;
+    const publisher = model.brandUrl && model.publisher;
 
-            {/* Hairline separating the brand logo from the model info —
-                spaced clear of the logo square on both sides */}
-            {hasLeadingIcon && (
-                <span
-                    aria-hidden="true"
-                    className="mx-3 h-10 w-px shrink-0 self-center bg-divider"
-                />
-            )}
-
-            {/* Model info — flexible width; logo-less rows pad to the same
-                start (40px logo + 25px divider footprint = 65px) */}
-            <div
-                className={
-                    brandLogoPath || CommunityModelIcon
-                        ? "flex-1 min-w-0 self-stretch"
-                        : "flex-1 min-w-0 self-stretch pl-[25px]"
+    // What the model takes, can do and holds, on one line; a thin rule
+    // between each group.
+    const facts = [
+        inputModalities.length > 0 && (
+            <Tooltip
+                content={
+                    <span>
+                        <strong className="font-semibold text-theme-text-strong">
+                            Input:
+                        </strong>{" "}
+                        {inputModalities.join(", ")}
+                    </span>
                 }
+                ariaLabel={modalityLabel}
+                tapEnabled
+                displayContents
             >
-                <div className="flex h-full min-w-0 flex-col justify-center gap-2">
-                    <div className="flex min-h-5 min-w-0 items-center text-base font-medium leading-tight">
-                        <ModelTitle model={model} />
-                    </div>
-                    <div className="flex min-h-5 min-w-0 items-center">
-                        <CopyValue
-                            value={model.name}
-                            label={`Copy model id ${model.name}`}
-                            showCopyIcon
-                        />
-                    </div>
-                    {modelDescription && (
-                        <ModelDescription text={modelDescription} />
-                    )}
-                    {model.brandUrl && model.publisher && (
-                        <InlineLink
-                            href={model.brandUrl}
-                            size="footer"
-                            className="inline-flex min-h-5 w-fit max-w-full items-center"
-                        >
-                            <span className="truncate">{model.publisher}</span>
-                        </InlineLink>
-                    )}
-                    {(inputModalities.length > 0 ||
-                        capabilities.length > 0 ||
-                        model.perUserRpm != null) && (
-                        <div className="inline-flex min-h-5 items-center gap-2.5 text-theme-text-muted">
-                            {inputModalities.length > 0 && (
-                                <Tooltip
-                                    content={
-                                        <span>
-                                            <strong className="font-semibold text-theme-text-strong">
-                                                Input:
-                                            </strong>{" "}
-                                            {inputModalities.join(", ")}
-                                        </span>
-                                    }
-                                    ariaLabel={modalityLabel}
-                                    tapEnabled
-                                    displayContents
-                                >
-                                    <span className="inline-flex items-center gap-2">
-                                        {inputModalities.map((key) => {
-                                            const Icon = MODALITY_ICON[key];
-                                            return (
-                                                <Icon
-                                                    key={key}
-                                                    className="h-4 w-4"
-                                                />
-                                            );
-                                        })}
-                                    </span>
-                                </Tooltip>
-                            )}
-                            {inputModalities.length > 0 &&
-                                capabilities.length > 0 && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                            {capabilities.length > 0 && (
-                                <Tooltip
-                                    content={
-                                        <strong className="font-semibold text-theme-text-strong">
-                                            {capabilityLabel}
-                                        </strong>
-                                    }
-                                    ariaLabel={capabilityLabel}
-                                    tapEnabled
-                                    displayContents
-                                >
-                                    <span className="inline-flex items-center gap-2">
-                                        {capabilities.map((key) => {
-                                            const Icon = CAPABILITY_ICON[key];
-                                            return (
-                                                <Icon
-                                                    key={key}
-                                                    className="h-4 w-4"
-                                                />
-                                            );
-                                        })}
-                                    </span>
-                                </Tooltip>
-                            )}
-                            {(inputModalities.length > 0 ||
-                                capabilities.length > 0) &&
-                                model.perUserRpm != null && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                            <PerUserRateLimit value={model.perUserRpm} />
-                        </div>
-                    )}
-                    {(model.health ||
-                        showNew ||
-                        showAlpha ||
-                        (model.agent && model.verified)) && (
-                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                            <ModelStatusChips
-                                health={model.health}
-                                communityProxy={Boolean(
-                                    model.community && !model.agent,
-                                )}
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                                verified={Boolean(
-                                    model.agent && model.verified,
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
+                <span className="inline-flex items-center gap-2">
+                    {inputModalities.map((key) => {
+                        const Icon = MODALITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
+            </Tooltip>
+        ),
+        capabilities.length > 0 && (
+            <Tooltip
+                content={
+                    <strong className="font-semibold text-theme-text-strong">
+                        {capabilityLabel}
+                    </strong>
+                }
+                ariaLabel={capabilityLabel}
+                tapEnabled
+                displayContents
+            >
+                <span className="inline-flex items-center gap-2">
+                    {capabilities.map((key) => {
+                        const Icon = CAPABILITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
+            </Tooltip>
+        ),
+        model.contextLength != null && (
+            <ModelFact
+                Icon={ContextIcon}
+                value={formatCount(model.contextLength)}
+                label={`Context window: ${model.contextLength.toLocaleString("en")} tokens`}
+            />
+        ),
+        videoDuration && (
+            <ModelFact
+                Icon={ClockIcon}
+                value={videoDuration}
+                label={`Video length: ${videoDuration}`}
+            />
+        ),
+        model.perUserRpm != null && (
+            <PerUserRateLimit value={model.perUserRpm} />
+        ),
+    ].filter(Boolean);
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
+    // The shared catalog card, as for MCP servers and sandbox templates: all
+    // about the model beside its logo, its health with its tags; the price
+    // and the model id to copy together beside it.
+    return (
+        <CatalogCard
+            split="wide"
+            logo={hasLeadingIcon ? <ModelBrandIcon model={model} /> : null}
+            price={
                 <ModelPricingLedger
                     modelName={model.displayName ?? model.name}
                     pricing={pricing}
+                    className="w-full"
+                    align="left"
                     requestBadge={<BalanceAccessChip access={balanceAccess} />}
                     hasTools={pollinationsTools}
                     requestEstimate={
@@ -366,7 +268,61 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )
                     }
                 />
+            }
+            copy={{ value: model.name, label: `Copy model id ${model.name}` }}
+            // Who made it: at the bottom left, apart from what it is.
+            note={
+                publisher && (
+                    <span className="flex min-w-0 items-center gap-1 text-xs text-theme-text-muted">
+                        Published by
+                        <InlineLink
+                            href={model.brandUrl}
+                            tone="quiet"
+                            className="inline-flex min-w-0 items-center"
+                        >
+                            <span className="truncate">{publisher}</span>
+                        </InlineLink>
+                    </span>
+                )
+            }
+        >
+            <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
+                    <ModelTitle model={model} />
+                    <ModelStatusChips
+                        health={model.health}
+                        communityProxy={Boolean(
+                            model.community && !model.agent,
+                        )}
+                        showNew={showNew}
+                        showAlpha={showAlpha}
+                        verified={Boolean(model.agent && model.verified)}
+                    />
+                </div>
+                {modelDescription && (
+                    <ModelDescription text={modelDescription} />
+                )}
+                {baseModel && (
+                    <span className="min-w-0 max-w-full truncate text-xs leading-snug text-theme-text-muted">
+                        Base model{" "}
+                        <span className="text-theme-text-base">
+                            {baseModel}
+                        </span>
+                    </span>
+                )}
+                {facts.length > 0 && (
+                    <div className="mt-1 inline-flex min-h-5 flex-wrap items-center gap-2.5 text-theme-text-muted">
+                        {facts.map((fact, index) => (
+                            <Fragment key={index}>
+                                {index > 0 && (
+                                    <span className="h-3.5 w-px bg-current opacity-30" />
+                                )}
+                                {fact}
+                            </Fragment>
+                        ))}
+                    </div>
+                )}
             </div>
-        </Surface>
+        </CatalogCard>
     );
 };

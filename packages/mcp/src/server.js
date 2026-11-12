@@ -42,6 +42,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
 - generateText can invoke any listed text model or agent. Use listModels with agent=true to discover agents. generateImage can invoke any listed image model.
 - transcribeAudio converts spoken audio from a public HTTPS URL into text.
+- listMcpServers lists the other MCP servers Pollinations hosts, with their endpoints and pricing.
 - For pricing, quote the returned pricing fields and currency; do not estimate.
 - Use getModelStatus for recent health and latency, not model discovery.
 

@@ -67,6 +67,7 @@ for (const modern of [false, true])
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
+                "convert_units",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -674,4 +675,137 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("convert_units is exact where a float would not be", async (t) => {
+    const client = await clientFor(t);
+
+    // 100 in is exactly 254 cm. Through a double it lands on 253.99999999999997.
+    assert.deepEqual(
+        await call(client, "convert_units", {
+            value: "100",
+            from: "in",
+            to: "cm",
+        }),
+        { result: "254", unit: "cm" },
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "1",
+                from: "mi",
+                to: "km",
+            })
+        ).result,
+        "1.609344",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "1",
+                from: "GiB",
+                to: "GB",
+            })
+        ).result,
+        "1.073741824",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "1",
+                from: "oz",
+                to: "g",
+            })
+        ).result,
+        "28.349523125",
+    );
+});
+
+test("convert_units keeps US and imperial apart and handles affine temperature", async (t) => {
+    const client = await clientFor(t);
+
+    // A US gallon is not an imperial gallon: 1 gal_us is 0.8326742 gal_uk.
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "1",
+                from: "gal_us",
+                to: "gal_uk",
+            })
+        ).result,
+        "0.832674184629",
+    );
+
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "0",
+                from: "C",
+                to: "F",
+            })
+        ).result,
+        "32",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "100",
+                from: "C",
+                to: "F",
+            })
+        ).result,
+        "212",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "32",
+                from: "F",
+                to: "C",
+            })
+        ).result,
+        "0",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "0",
+                from: "C",
+                to: "K",
+            })
+        ).result,
+        "273.15",
+    );
+    // -40 is the one point where Celsius and Fahrenheit agree.
+    assert.equal(
+        (
+            await call(client, "convert_units", {
+                value: "-40",
+                from: "C",
+                to: "F",
+            })
+        ).result,
+        "-40",
+    );
+});
+
+test("convert_units rejects units from different categories and bad numbers", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "1", from: "kg", to: "l" },
+        { value: "1", from: "m", to: "C" },
+        { value: "1", from: "parsec", to: "m" },
+        { value: "1", from: "m", to: "parsec" },
+        { value: "abc", from: "m", to: "cm" },
+        { value: "1e3", from: "m", to: "cm" },
+        { value: "", from: "m", to: "cm" },
+        { value: "1.2.3", from: "m", to: "cm" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "convert_units", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

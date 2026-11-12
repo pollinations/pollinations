@@ -243,6 +243,68 @@ test("Rust stable versions can have hyphens in build metadata", async (t) => {
         "1.0.0+stable-build",
     );
 });
+test("RubyGems latest and exact versions keep licenses, downloads and dependencies", async (t) => {
+    const latest = {
+        name: "rails",
+        version: "8.1.4.1",
+        info: "Ruby on Rails is a full-stack web framework.",
+        licenses: ["MIT"],
+        homepage_uri: "https://rubyonrails.org",
+        source_code_uri: "https://github.com/rails/rails",
+        documentation_uri: "https://api.rubyonrails.org",
+        platform: "ruby",
+        downloads: 813413968,
+        version_downloads: 1234,
+        yanked: false,
+        dependencies: {
+            runtime: [{ name: "actionpack", requirements: "= 8.1.4.1" }],
+            development: [],
+        },
+    };
+    const exact = {
+        ...latest,
+        version: "7.1.0",
+        number: "7.1.0",
+        version_downloads: 42,
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json(
+            url.endsWith("/api/v1/gems/rails.json") ? latest : exact,
+        );
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+    });
+    assert.equal(data.version, "8.1.4.1");
+    assert.deepEqual(data.licenses, ["MIT"]);
+    assert.equal(data.downloads, 813413968);
+    assert.deepEqual(data.dependencies.runtime, [
+        { name: "actionpack", requirements: "= 8.1.4.1" },
+    ]);
+    assert.equal(
+        data.registryUrl,
+        "https://rubygems.org/gems/rails/versions/8.1.4.1",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "rubygems",
+        name: "rails",
+        version: "7.1.0",
+    });
+    assert.equal(pinned.version, "7.1.0");
+    assert.equal(pinned.versionDownloads, 42);
+    assert.deepEqual(urls, [
+        "https://rubygems.org/api/v1/gems/rails.json",
+        "https://rubygems.org/api/v2/rubygems/rails/versions/7.1.0.json",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "rubygems", name: "not a gem" }),
+        /Invalid rubygems package name/,
+    );
+});
 test("OSV preserves advisories, affected ranges and pagination without claiming safety", async (t) => {
     const advisory = {
         id: "GHSA-example",
@@ -478,36 +540,51 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
-test("golang module proxy lookup returns version, timestamp, mod file and registry link", async (t) => {
+test("Go lookup uses @latest without a version and escapes capitals in path and version", async (t) => {
+    const urls = [];
     t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
         const target = new URL(url);
         assert.equal(target.hostname, "proxy.golang.org");
-        if (target.pathname.endsWith(".info")) {
+        if (target.pathname.endsWith(".mod"))
+            return new Response("module example\n\ngo 1.22\n");
+        if (target.pathname.includes("gin-gonic"))
             return Response.json({
-                Version: "v1.2.3",
-                Time: "2026-01-01T12:00:00Z",
+                Version: "v1.12.0",
+                Time: "2026-02-28T10:10:09Z",
                 Origin: { VCS: "git", URL: "https://github.com/gin-gonic/gin" },
             });
-        }
-        if (target.pathname.endsWith(".mod")) {
-            return new Response("module github.com/gin-gonic/gin\n\ngo 1.22\n");
-        }
-        return new Response("Not found", { status: 404 });
+        return Response.json({
+            Version: "v68.0.0+incompatible",
+            Time: "2023-01-19T11:02:01Z",
+        });
     });
 
     const client = await clientFor(t);
-    const mod = await call(client, "package_lookup", {
+    const gin = await call(client, "package_lookup", {
         ecosystem: "golang",
         name: "github.com/gin-gonic/gin",
     });
-
-    assert.equal(mod.ecosystem, "golang");
-    assert.equal(mod.name, "github.com/gin-gonic/gin");
-    assert.equal(mod.version, "v1.2.3");
-    assert.equal(mod.time, "2026-01-01T12:00:00Z");
-    assert.ok(mod.goMod.includes("module github.com/gin-gonic/gin"));
+    assert.equal(gin.version, "v1.12.0");
+    assert.equal(gin.time, "2026-02-28T10:10:09Z");
+    assert.equal(gin.origin.VCS, "git");
+    assert.match(gin.goMod, /^module example/);
     assert.equal(
-        mod.registryUrl,
-        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.2.3",
+        gin.registryUrl,
+        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.12.0",
     );
+
+    const azure = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/Azure/azure-sdk-for-go",
+        version: "v68.0.0+incompatible",
+    });
+    assert.equal(azure.name, "github.com/Azure/azure-sdk-for-go");
+    assert.equal(azure.origin, null);
+    assert.deepEqual(urls, [
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@latest",
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.12.0.mod",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.info",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
+    ]);
 });

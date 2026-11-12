@@ -895,7 +895,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.25, 8);
+    ).toBeCloseTo(0.35, 8);
     expect(
         calculateCost("x-ai/grok-imagine-video-1.5", {
             promptImageTokens: 1,
@@ -1988,7 +1988,7 @@ test("FLUX megapixel prices and flat reference-image prices retain their units",
         {
             direction: "output",
             kind: "video",
-            price: "0.05",
+            price: "0.07",
             unit: "second",
         },
     ]);

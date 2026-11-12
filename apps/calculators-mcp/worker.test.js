@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "create_qr",
+                "hash_text",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -390,4 +391,41 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "hash_text", { text: "abc" }), {
+        algorithm: "sha256",
+        hex: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        base64: "ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=",
+        bytes: 32,
+    });
+    const sha1 = await call(client, "hash_text", {
+        text: "abc",
+        algorithm: "sha1",
+    });
+    assert.equal(sha1.hex, "a9993e364706816aba3e25717850c26c9cd0d89d");
+    assert.equal(sha1.bytes, 20);
+    assert.equal(
+        (await call(client, "hash_text", { text: "abc", algorithm: "sha384" }))
+            .bytes,
+        48,
+    );
+    assert.equal(
+        (await call(client, "hash_text", { text: "abc", algorithm: "sha512" }))
+            .bytes,
+        64,
+    );
+    assert.equal(
+        (await call(client, "hash_text", { text: "héllo 👋" })).hex,
+        "241bff4036211b66e25dc44c43c7305feb99e7a62b953f03c3597ad0593c508f",
+    );
+    for (const args of [{}, { text: "" }, { text: "abc", algorithm: "md5" }])
+        assert.equal(
+            (await client.callTool({ name: "hash_text", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
 });

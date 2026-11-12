@@ -71,19 +71,11 @@ it("filters stats by the searchable catalog and model category", async () => {
         .mockImplementation(() => true);
     setOutputMode("json");
     await modelsCommand.parseAsync(
-        [
-            "waterfall",
-            "--stats",
-            "--type",
-            "video",
-            "--source",
-            "official",
-            "--reliability",
-            "all",
-        ],
+        ["waterfall", "--stats", "--type", "video", "--source", "official"],
         { from: "user" },
     );
     expect(JSON.parse(String(write.mock.calls[0][0]))).toEqual([rows[0]]);
+    // Stats lookups include models that fail health checks by default.
     expect(fetch.mock.calls.map(([url]) => String(url))).toContainEqual(
         expect.stringMatching(
             /\/models\?query=waterfall&source=official&reliability=all$/,

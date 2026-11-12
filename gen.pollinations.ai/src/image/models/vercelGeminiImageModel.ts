@@ -117,9 +117,7 @@ export async function callVercelGeminiImageAPI(
             trackingData: {
                 actualModel: params.model,
                 usage,
-                pricingInput: {
-                    providerBilling: { units: reported.cost, unitCost: 1 },
-                },
+                providerBilling: { units: reported.cost, unitCost: 1 },
             },
         };
     } catch (error) {

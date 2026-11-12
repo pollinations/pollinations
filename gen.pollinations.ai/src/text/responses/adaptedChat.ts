@@ -110,8 +110,17 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
         return messages;
     }
     const callIds = new Set<string>();
+    let toolMedia: JsonObject[] = [];
+    const flushToolMedia = () => {
+        if (toolMedia.length)
+            messages.push({ role: "user", content: toolMedia });
+        toolMedia = [];
+    };
     for (const raw of request.input) {
         const item = object(raw);
+        // Stateless: earlier reasoning is not replayed to Chat providers.
+        if (item.type === "reasoning") continue;
+        if (item.type !== "function_call_output") flushToolMedia();
         if (item.type === "function_call") {
             const call = ResponseFunctionCallSchema.safeParse(item);
             if (!call.success || callIds.has(call.data.call_id)) {
@@ -151,6 +160,13 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
                     "Function call outputs must follow their function call",
                 );
             }
+            if (Array.isArray(output.data.output)) {
+                toolMedia.push(
+                    ...output.data.output
+                        .filter((part) => part.type !== "input_text")
+                        .map(chatPart),
+                );
+            }
             messages.push({
                 role: "tool",
                 tool_call_id: output.data.call_id,
@@ -158,8 +174,6 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
             });
             continue;
         }
-        // Stateless: earlier reasoning is not replayed to Chat providers.
-        if (item.type === "reasoning") continue;
         if (item.type !== undefined && item.type !== "message") {
             invalid(`Unsupported input item: ${String(item.type)}`);
         }
@@ -169,6 +183,7 @@ function chatMessages(request: CreateResponseRequest): ChatMessage[] {
         }
         messages.push({ role, content: chatContent(item.content) });
     }
+    flushToolMedia();
     return messages;
 }
 
@@ -327,7 +342,7 @@ type FunctionCall = {
     call_id: string;
     name: string;
     arguments: string;
-    status: "in_progress" | "completed";
+    status: "in_progress" | "completed" | "incomplete";
 };
 
 const PART_EVENTS: Record<PartKind, { delta: string; done: string }> = {
@@ -356,6 +371,7 @@ function outputCollector(send: Send = () => {}) {
     const items: JsonObject[] = [];
     const calls: FunctionCall[] = [];
     const callAt = new Map<number, FunctionCall>();
+    const pendingAnnotations: JsonObject[] = [];
     let item: JsonObject | undefined;
     let part: { kind: PartKind; value: JsonObject; index: number } | undefined;
 
@@ -444,6 +460,43 @@ function outputCollector(send: Send = () => {}) {
                 ...(kind === "text" ? { logprobs: [] } : {}),
             });
         },
+        annotations(value: unknown) {
+            if (Array.isArray(value)) {
+                for (const raw of value) {
+                    const citation = raw?.url_citation;
+                    if (
+                        raw?.type === "url_citation" &&
+                        typeof citation?.url === "string" &&
+                        typeof citation.title === "string" &&
+                        Number.isInteger(citation.start_index) &&
+                        Number.isInteger(citation.end_index)
+                    ) {
+                        pendingAnnotations.push({
+                            type: "url_citation",
+                            url: citation.url,
+                            title: citation.title,
+                            start_index: citation.start_index,
+                            end_index: citation.end_index,
+                        });
+                    }
+                }
+            }
+            // An annotation-only chunk can precede the first text delta.
+            if (!item || part?.kind !== "text") return;
+            const annotations = part.value.annotations as JsonObject[];
+            for (const annotation of pendingAnnotations) {
+                const annotationIndex = annotations.length;
+                annotations.push(annotation);
+                send("response.output_text.annotation.added", {
+                    item_id: item.id,
+                    output_index: items.indexOf(item),
+                    content_index: part.index,
+                    annotation_index: annotationIndex,
+                    annotation,
+                });
+            }
+            pendingAnnotations.length = 0;
+        },
         /**
          * Streams a tool call's arguments as they arrive. Chunks find their
          * call by index, but a new id starts a new call: Gemini sends every
@@ -481,9 +534,14 @@ function outputCollector(send: Send = () => {}) {
             });
         },
         finish(finishReason: string | null | undefined) {
-            closeItem(isIncomplete(finishReason) ? "incomplete" : "completed");
+            closeItem(
+                isIncomplete(finishReason) || finishReason === "error"
+                    ? "incomplete"
+                    : "completed",
+            );
             for (const call of calls) {
-                call.status = "completed";
+                call.status =
+                    finishReason === "error" ? "incomplete" : "completed";
                 const position = {
                     item_id: call.id,
                     output_index: items.indexOf(call),
@@ -628,6 +686,7 @@ export function chatCompletionToResponse(
             thinkingText(message.content_blocks, "thinking"),
     );
     output.delta("text", messageText(message.content));
+    output.annotations(message.annotations);
     output.delta("refusal", message.refusal);
     for (const [index, call] of (
         (message.tool_calls ?? []) as JsonObject[]
@@ -645,9 +704,21 @@ export function chatCompletionToResponse(
         `resp_${crypto.randomUUID()}`,
         Math.floor(Date.now() / 1000),
         {
-            status: isIncomplete(choice.finish_reason)
-                ? "incomplete"
-                : "completed",
+            status:
+                choice.finish_reason === "error"
+                    ? "failed"
+                    : isIncomplete(choice.finish_reason)
+                      ? "incomplete"
+                      : "completed",
+            ...(choice.finish_reason === "error"
+                ? {
+                      error: {
+                          code: "upstream_error",
+                          message:
+                              "Chat Completions provider failed to complete the response",
+                      },
+                  }
+                : {}),
             output: output.finish(choice.finish_reason),
             usage: chatUsageToResponsesUsage(usage.data),
             finishReason: choice.finish_reason,
@@ -709,7 +780,11 @@ export function chatStreamToResponsesStream(
         out.enqueue(encoder.encode("data: [DONE]\n\n"));
         ended = true;
     };
-    const fail = (code: string, message: string) => {
+    const fail = (
+        code: string,
+        message: string,
+        terminalUsage: ResponseUsage | null = null,
+    ) => {
         // Open Responses nests the error payload; OpenAI SDKs read it flat.
         send("error", {
             code,
@@ -721,7 +796,7 @@ export function chatStreamToResponsesStream(
             response: snapshot({
                 status: "failed",
                 output: output.items,
-                usage: null,
+                usage: terminalUsage,
                 error: { code, message },
             }),
         });
@@ -737,6 +812,14 @@ export function chatStreamToResponsesStream(
             return;
         }
         const items = output.finish(finishReason);
+        if (finishReason === "error") {
+            fail(
+                "upstream_error",
+                "Chat Completions provider failed to complete the response",
+                chatUsageToResponsesUsage(parsed.data),
+            );
+            return;
+        }
         const status = isIncomplete(finishReason) ? "incomplete" : "completed";
         send(`response.${status}`, {
             response: snapshot({
@@ -772,6 +855,7 @@ export function chatStreamToResponsesStream(
                 thinkingText(delta.content_blocks, "delta"),
         );
         output.delta("text", delta.content);
+        output.annotations(delta.annotations);
         output.delta("refusal", delta.refusal);
         for (const call of delta.tool_calls ?? []) {
             output.toolCall(call.index, { id: call.id, ...call.function });

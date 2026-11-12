@@ -49,7 +49,7 @@ export const simpleAudioQuerySchema = z.object({
         .optional()
         .meta({
             description:
-                "Audio output format. Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav and raw 24 kHz pcm; other explicit formats are rejected. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3.5`, `google/lyria-3-clip-preview`, `elevenlabs/eleven-text-to-sound-v2`, and `sonilo/sonilo-1.1-sfx` support mp3 only.",
+                "Audio output format. Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav and raw 24 kHz pcm; other explicit formats are rejected. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3.5`, `google/lyria-3-clip-preview`, ElevenLabs sound effects, and `sonilo/sonilo-1.1-sfx` support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({
@@ -100,7 +100,7 @@ export const simpleAudioQuerySchema = z.object({
         .transform((v) => (v === undefined ? undefined : v === "true"))
         .meta({
             description:
-                "Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only)",
+                "Loop the generated sound effect (ElevenLabs sound effects only)",
             example: "false",
         }),
     prompt_influence: z
@@ -110,7 +110,7 @@ export const simpleAudioQuerySchema = z.object({
         .pipe(z.number().min(0).max(1).optional())
         .meta({
             description:
-                "How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only)",
+                "How strictly to follow the prompt, 0-1 (ElevenLabs sound effects only)",
             example: "0.3",
         }),
     seed: z.coerce.number().int().min(-1).max(4294967295).optional().meta({

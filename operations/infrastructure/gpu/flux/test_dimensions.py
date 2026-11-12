@@ -51,6 +51,12 @@ class AspectRatioTest(unittest.TestCase):
         self.assert_size((800, 600), (1024, 768))
         # 1280x720 is above the cap, so it takes the largest valid 16:9 size.
         self.assert_size((1280, 720), (1024, 576))
+        # Treat ratios within 5% as equal: a larger near-ratio size must beat
+        # a smaller exact one at both caps.
+        self.assert_size((1536, 1024), (1024, 704))
+        self.assert_size((1080, 1350), (512, 640))
+        self.assert_size((1536, 1024), (1024, 704), FULL_RES_PIXELS)
+        self.assert_size((1080, 1350), (832, 1024), FULL_RES_PIXELS)
 
     def test_never_returns_a_side_below_the_minimum(self):
         # A narrow request used to snap to 48x4096, below MIN_DIMENSION.
@@ -73,6 +79,8 @@ class AspectRatioTest(unittest.TestCase):
             (1024, 512),
             (800, 600),
             (1280, 720),
+            (1536, 1024),
+            (1080, 1350),
             (64, 5461),
             (5461, 64),
         ]:

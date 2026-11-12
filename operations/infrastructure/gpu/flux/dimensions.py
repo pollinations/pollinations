@@ -15,6 +15,9 @@ MIN_DIMENSION = 64
 MAX_DIMENSION = 8192
 PIXEL_MULTIPLE = 65536
 SIDE_MULTIPLE = 8
+# Ratios this close are treated as equal so a larger near-ratio size can win
+# over a smaller exact one.
+ASPECT_RATIO_TOLERANCE = 0.05
 
 
 def _height_step(width: int) -> int:
@@ -63,6 +66,8 @@ def nearest_valid_dimensions(
         if pixels > max_pixels:
             continue
         aspect_error = abs(candidate_w / candidate_h - ratio) / ratio
+        if aspect_error <= ASPECT_RATIO_TOLERANCE:
+            aspect_error = 0.0
         # Keep the detail the caller asked for: among equally good ratios a
         # size at or above the requested pixel count wins, and the smallest
         # such size wins so the result does not balloon. Only when nothing

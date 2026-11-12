@@ -1003,6 +1003,23 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
+    "google/gemini-4-hydrogen": {
+        // Vercel AI Gateway route for the Vertex model. Its rate mirrors the
+        // Gemini API paid tier until Vercel publishes its own rate.
+        "google/gemini-4-hydrogen:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-11-12").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.5),
+                promptAudioTokens: perMillion(1.5),
+                promptImageTokens: perMillion(1.5),
+                promptVideoTokens: perMillion(1.5),
+                completionTextTokens: perMillion(7.5),
+            },
+        },
+    },
     "google/gemini-4-carbon": {
         "google/gemini-4-carbon:openrouter:ai-studio": {
             provider: "openrouter",

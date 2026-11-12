@@ -29,6 +29,28 @@ describe("resolveModelConfig", () => {
         }
     });
 
+    it("routes Gemini 4 Hydrogen to Vertex with a Vercel fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "google/gemini-4-hydrogen",
+        });
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-model-id": "gemini-4-hydrogen",
+            "vertex-region": "global",
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "google/gemini-4-hydrogen:vercel",
+        });
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["google"] },
+        });
+    });
+
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
             [

@@ -1171,6 +1171,40 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-hydrogen": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Gemini API paid-tier rates for gemini-4-hydrogen (2026-11-12). Vertex
+        // has not published its own rate. Cache writes bill at the input rate
+        // until 2027-01-12, when Vertex adds TTL-based cache writes.
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(1.5),
+            promptAudioTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
+        },
+        title: "Gemini 4 Hydrogen",
+        description:
+            "High-throughput agentic model for long-horizon coding, tool use and multimodal analysis with a 1M-token context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-4-carbon": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],

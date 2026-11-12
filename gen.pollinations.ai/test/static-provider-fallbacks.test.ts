@@ -1847,6 +1847,31 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
+    it("bills Gemini 4 Hydrogen's Vercel backup at the Gemini API rate it mirrors", () => {
+        const primary = TEXT_SERVICES["google/gemini-4-hydrogen"];
+        const fallback = TEXT_SERVICES["google/gemini-4-hydrogen:vercel"];
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: [],
+            fallbacks: ["google/gemini-4-hydrogen:vercel"],
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: 1.5 / 1_000_000,
+            promptCachedTokens: 0.075 / 1_000_000,
+            completionTextTokens: 7.5 / 1_000_000,
+        });
+        const billing = calculateUsageBilling({
+            model: "google/gemini-4-hydrogen",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
+    });
+
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =

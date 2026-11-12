@@ -1282,6 +1282,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "global",
     ),
+    "google/gemini-4-hydrogen": createVertexGeminiConfig(
+        "gemini-4-hydrogen",
+        "global",
+    ),
+    "google/gemini-4-hydrogen:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "google/gemini-4-hydrogen",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        }),
     "google/gemini-4-carbon": createVertexGeminiConfig(
         "gemini-4-carbon",
         "global",

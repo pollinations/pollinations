@@ -205,6 +205,85 @@ test("Europe PMC keeps core journal titles, PMID source, abstract text and searc
     assert.equal(value(result).abstract, "One & two.\n\nNext.");
 });
 
+test("arXiv parses Atom entries, maps sort names and rejects malformed IDs before any request", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests.push(url.searchParams);
+        assert.equal(url.hostname, "export.arxiv.org");
+        return new Response(`<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <opensearch:totalResults>19447</opensearch:totalResults>
+  <entry>
+    <id>http://arxiv.org/abs/hep-th/9901001v3</id>
+    <title>String Junctions &amp;
+      Duals</title>
+    <updated>2023-08-02T00:41:18Z</updated>
+    <summary> We study $T^2$ &lt;compactifications&gt;. </summary>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>1999-01-01T00:00:00Z</published>
+    <arxiv:journal_ref>Prog.Theor.Phys.101:1155-1164,1999</arxiv:journal_ref>
+    <arxiv:doi>10.1143/PTP.101.1155</arxiv:doi>
+    <arxiv:primary_category term="hep-th"/>
+    <author><name>Yosuke Imamura</name></author>
+    <author><name>Ana &amp; Bo</name></author>
+  </entry>
+</feed>`);
+    });
+    const c = await client(t);
+    let result = await call(c, "arxiv_search", {
+        query: "ti:junction AND cat:hep-th",
+        limit: 5,
+        sort: "submitted",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].get("search_query"), "ti:junction AND cat:hep-th");
+    assert.equal(requests[0].get("sortBy"), "submittedDate");
+    assert.equal(requests[0].get("max_results"), "5");
+    assert.equal(value(result).total, 19447);
+    const [paper] = value(result).papers;
+    assert.equal(paper.id, "hep-th/9901001");
+    assert.equal(paper.version, 3);
+    assert.equal(paper.title, "String Junctions & Duals");
+    assert.deepEqual(paper.authors, ["Yosuke Imamura", "Ana & Bo"]);
+    assert.deepEqual(paper.categories, ["hep-th", "cs.LG"]);
+    assert.equal(paper.primary_category, "hep-th");
+    assert.equal(paper.abstract, "We study $T^2$ <compactifications>.");
+    assert.equal(paper.doi, "10.1143/PTP.101.1155");
+    assert.equal(paper.comment, null);
+    assert.equal(paper.pdf_url, "https://arxiv.org/pdf/hep-th/9901001");
+
+    result = await call(c, "arxiv_paper", { id: "arXiv:hep-th/9901001" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[1].get("id_list"), "hep-th/9901001");
+    assert.equal(
+        value(result).journal_ref,
+        "Prog.Theor.Phys.101:1155-1164,1999",
+    );
+
+    result = await call(c, "arxiv_paper", { id: "notanid" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Use an arXiv ID/);
+    assert.equal(requests.length, 2);
+});
+
+test("arXiv error entries pass on arXiv's message", async (t) => {
+    mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(`<feed><entry>
+    <id>https://arxiv.org/api/errors#incorrect_id_format_for_x</id>
+    <title>Error</title>
+    <summary>incorrect id format for x</summary>
+  </entry></feed>`),
+    );
+    const c = await client(t);
+    const result = await call(c, "arxiv_search", { query: "ti:" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /arXiv: incorrect id format for x/);
+});
+
 test("World Bank uses arbitrary official codes, source metadata, descending years, missing-value filtering and country lookup", async (t) => {
     mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
@@ -279,6 +358,8 @@ for (const modern of [false, true]) {
                 "get_entity",
                 "search_articles",
                 "get_article",
+                "arxiv_search",
+                "arxiv_paper",
                 "get_indicator_data",
                 "list_countries",
             ].sort(),

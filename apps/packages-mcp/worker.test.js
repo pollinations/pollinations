@@ -584,3 +584,59 @@ test("Packagist expands the minified list and matches v-prefixed tags", async (t
     assert.deepEqual(pinned.dependencies, { php: ">=8.1" });
     assert.equal(pinned.suggest, undefined);
 });
+
+test("Go lookup uses @latest without a version and escapes capitals in path and version", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        const target = new URL(url);
+        assert.equal(target.hostname, "proxy.golang.org");
+        if (target.pathname.endsWith(".mod"))
+            return new Response("module example\n\ngo 1.22\n");
+        if (target.pathname.includes("gin-gonic"))
+            return Response.json({
+                Version: "v1.12.0",
+                Time: "2026-02-28T10:10:09Z",
+                Origin: { VCS: "git", URL: "https://github.com/gin-gonic/gin" },
+            });
+        return Response.json({
+            Version: "v68.0.0+incompatible",
+            Time: "2023-01-19T11:02:01Z",
+        });
+    });
+
+    const client = await clientFor(t);
+    const gin = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/gin-gonic/gin",
+    });
+    assert.equal(gin.version, "v1.12.0");
+    assert.equal(gin.time, "2026-02-28T10:10:09Z");
+    assert.equal(gin.origin.VCS, "git");
+    assert.match(gin.goMod, /^module example/);
+    assert.equal(
+        gin.registryUrl,
+        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.12.0",
+    );
+
+    const azure = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/Azure/azure-sdk-for-go",
+        version: "v68.0.0+incompatible",
+    });
+    assert.equal(azure.name, "github.com/Azure/azure-sdk-for-go");
+    assert.equal(azure.origin, null);
+    await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "git.sr.ht/~emersion/go-scfg",
+        version: "v0.1.0",
+    });
+    assert.deepEqual(urls, [
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@latest",
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.12.0.mod",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.info",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});

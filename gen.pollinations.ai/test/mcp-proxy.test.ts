@@ -215,7 +215,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 alpha: true,
                 name: "Research",
                 description:
-                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+                    "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv and World Bank indicators.",
                 url: "https://gen.pollinations.ai/mcp/research",
                 pricing: {
                     description:
@@ -546,29 +546,46 @@ test("refuses agent run tokens on Connectors", async () => {
     expect(response.status).toBe(403);
 });
 
-test("keeps agent run tokens minted from a secret key on Computer", async () => {
+test("gives each agent its own Computer on the account, kept across runs", async () => {
     const parent = await createTestApiKey({
         user: { tierBalance: 1 },
     });
-    const token = await signAgentRunToken({
-        secret: env.BETTER_AUTH_SECRET,
-        parentApiKeyId: parent.id,
-        parentRequestId: crypto.randomUUID(),
-    });
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/computer",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+    const computerFor = async (authorization: string) => {
+        const response = await SELF.fetch(
+            "https://gen.pollinations.ai/mcp/computer",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${authorization}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(MCP_REQUEST),
             },
-            body: JSON.stringify(MCP_REQUEST),
-        },
-    );
+        );
+        expect(response.status).toBe(200);
+        return response.text();
+    };
+    const runOf = (agentModelId: string) =>
+        signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent.id,
+            parentRequestId: crypto.randomUUID(),
+            agentModelId,
+        });
 
-    expect(response.status).toBe(200);
-    expect(await response.text()).toContain(`computer:${parent.userId}`);
+    const agentOne = await computerFor(
+        await runOf("community/owner/agent-one"),
+    );
+    expect(agentOne).toContain(
+        `computer:${parent.userId}:agent:community/owner/agent-one:`,
+    );
+    expect(await computerFor(await runOf("community/owner/agent-one"))).toBe(
+        agentOne,
+    );
+    expect(
+        await computerFor(await runOf("community/owner/agent-two")),
+    ).not.toBe(agentOne);
+    expect(await computerFor(parent.key)).not.toBe(agentOne);
 });
 
 test.for(["composio", "computer"])(

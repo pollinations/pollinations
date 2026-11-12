@@ -9,6 +9,8 @@ export async function lookup({ ecosystem, name, version }) {
         pypi: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,
         crates: /^[A-Za-z][A-Za-z0-9_-]{0,63}$/,
         rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
+        // Go path elements allow letters, digits and -._~ but cannot start with a dot.
+        golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
     };
@@ -125,6 +127,28 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://packagist.org/packages/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}`,
         };
     }
+    if (ecosystem === "golang") {
+        // The Go proxy writes each capital as "!" plus the lowercase letter.
+        const goEscape = (value) =>
+            encodeURIComponent(
+                value.replace(/[A-Z]/g, (c) => `!${c.toLowerCase()}`),
+            );
+        const base = `https://proxy.golang.org/${name.split("/").map(goEscape).join("/")}`;
+        const info = await fetchJson(
+            version
+                ? `${base}/@v/${goEscape(version)}.info`
+                : `${base}/@latest`,
+        );
+        return {
+            ecosystem,
+            name,
+            version: info.Version,
+            time: info.Time,
+            origin: info.Origin ?? null,
+            goMod: await fetchText(`${base}/@v/${goEscape(info.Version)}.mod`),
+            registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -162,10 +186,17 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
-                .enum(["npm", "pypi", "crates", "rubygems", "packagist"])
+                .enum([
+                    "npm",
+                    "pypi",
+                    "crates",
+                    "rubygems",
+                    "golang",
+                    "packagist",
+                ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z

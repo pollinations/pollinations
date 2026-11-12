@@ -444,13 +444,14 @@ test("compare_versions orders by SemVer precedence, not string order", async (t)
             equal: false,
         },
     );
-    // A prerelease sorts before its release, and build metadata is ignored.
+    // A prerelease sorts before its release. Build metadata is ignored for
+    // precedence but preserved in the returned strings.
     assert.deepEqual(
         await call(client, "compare_versions", {
             versions: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
         }),
         {
-            sorted: ["1.0.0-rc.1", "1.0.0", "1.0.0"],
+            sorted: ["1.0.0-rc.1", "1.0.0+build.5", "1.0.0"],
             newest: "1.0.0",
             oldest: "1.0.0-rc.1",
             equal: false,
@@ -461,10 +462,34 @@ test("compare_versions orders by SemVer precedence, not string order", async (t)
             versions: ["1.2.3+build.1", "1.2.3+build.2"],
         }),
         {
-            sorted: ["1.2.3", "1.2.3"],
-            newest: "1.2.3",
-            oldest: "1.2.3",
+            sorted: ["1.2.3+build.1", "1.2.3+build.2"],
+            newest: "1.2.3+build.2",
+            oldest: "1.2.3+build.1",
             equal: true,
+        },
+    );
+    // Parts above Number.MAX_SAFE_INTEGER stay distinct in the core version.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["9007199254740993.0.0", "9007199254740992.0.0"],
+        }),
+        {
+            sorted: ["9007199254740992.0.0", "9007199254740993.0.0"],
+            newest: "9007199254740993.0.0",
+            oldest: "9007199254740992.0.0",
+            equal: false,
+        },
+    );
+    // Numeric prerelease identifiers stay distinct above the safe range too.
+    assert.deepEqual(
+        await call(client, "compare_versions", {
+            versions: ["1.0.0-9007199254740993", "1.0.0-9007199254740992"],
+        }),
+        {
+            sorted: ["1.0.0-9007199254740992", "1.0.0-9007199254740993"],
+            newest: "1.0.0-9007199254740993",
+            oldest: "1.0.0-9007199254740992",
+            equal: false,
         },
     );
     for (const args of [

@@ -8,11 +8,16 @@ const SEMVER =
     /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 const NUMERIC = /^\d+$/;
 
+function compareIntegers(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function compareIdentifiers(left, right) {
     const leftNumeric = NUMERIC.test(left);
     const rightNumeric = NUMERIC.test(right);
     if (leftNumeric && rightNumeric)
-        return Math.sign(Number(left) - Number(right));
+        // BigInt keeps identifiers above Number.MAX_SAFE_INTEGER exact.
+        return compareIntegers(BigInt(left), BigInt(right));
     // Numeric identifiers always have lower precedence than alphanumeric ones.
     if (leftNumeric) return -1;
     if (rightNumeric) return 1;
@@ -21,7 +26,7 @@ function compareIdentifiers(left, right) {
 
 function compareParsed(left, right) {
     for (const part of ["major", "minor", "patch"]) {
-        const result = Math.sign(left[part] - right[part]);
+        const result = compareIntegers(left[part], right[part]);
         if (result !== 0) return result;
     }
     if (!left.prerelease.length && !right.prerelease.length) return 0;
@@ -45,9 +50,9 @@ function parse(value) {
     const match = SEMVER.exec(value);
     if (match === null) throw new Error(`Not a semantic version: ${value}`);
     return {
-        major: Number(match[1]),
-        minor: Number(match[2]),
-        patch: Number(match[3]),
+        major: BigInt(match[1]),
+        minor: BigInt(match[2]),
+        patch: BigInt(match[3]),
         prerelease: match[4] === undefined ? [] : match[4].split("."),
     };
 }
@@ -63,7 +68,7 @@ const version = z
 export const versionTools = [
     [
         "compare_versions",
-        "Order semantic versions by SemVer precedence, locally: 1.10.0 sorts above 1.9.0, a prerelease such as 1.0.0-rc.1 sorts before 1.0.0, and build metadata is ignored. Returns the ordered list with the newest and oldest named, and rejects anything that is not a semantic version. No network or model calls.",
+        "Order semantic versions by SemVer precedence, locally: 1.10.0 sorts above 1.9.0, a prerelease such as 1.0.0-rc.1 sorts before 1.0.0, and build metadata is ignored for ordering but kept in the returned strings. Returns the ordered list with the newest and oldest named, and rejects anything that is not a semantic version. No network or model calls.",
         {
             versions: z
                 .array(version)
@@ -74,12 +79,12 @@ export const versionTools = [
         async ({ versions }) => {
             const parsed = versions.map((value) => ({
                 value,
-                // Build metadata is dropped: it is ignored for precedence.
-                version: SEMVER.exec(value) ? value.split("+")[0] : value,
                 parts: parse(value),
             }));
             parsed.sort((a, b) => compareParsed(a.parts, b.parts));
-            const sorted = parsed.map((entry) => entry.version);
+            // Build metadata does not affect precedence, so equal versions
+            // keep the caller's order and original strings.
+            const sorted = parsed.map((entry) => entry.value);
             return {
                 sorted,
                 newest: sorted[sorted.length - 1],

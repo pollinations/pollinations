@@ -281,8 +281,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     />
                 )
             }
-            // Who made it, with the price rather than among what it is.
-            priceNote={
+            // Who made it: at the bottom left, apart from what it is.
+            note={
                 publisher && (
                     <span className="flex min-w-0 items-center gap-1 text-xs text-theme-text-muted">
                         Published by

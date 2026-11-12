@@ -1,3 +1,8 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { remapUpstreamStatus } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
@@ -6,13 +11,35 @@ import {
     calculateUsageBilling,
     getVisibleImageModels,
 } from "@shared/registry/registry.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { test as routeTest } from "@shared/test/fixtures/index.ts";
+import {
+    createFetchMock,
+    teardownFetchMock,
+} from "@shared/test/mocks/fetch.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    hashGenerationCacheIdentity,
+    normalizedJsonBody,
+} from "@/middleware/generation-cache.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
 import {
     type AuthResult,
     callGPTImage,
 } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import type { ImageParams } from "../../src/image/params.ts";
+import worker from "../../src/index.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
+
+// Valid 2x2 images. The GIF contains two distinct frames, each lasting 150 ms.
+const flareImages = {
+    png: "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGP8zwACTGCSAQANHQEDgslx/wAAAABJRU5ErkJggg==",
+    webp: "UklGRjwAAABXRUJQVlA4IDAAAADQAQCdASoCAAIAAUAmJaACdLoB+AADsAD+8ut//NgVzXPv9//S4P0uD9Lg/9KQAAA=",
+    gif: "R0lGODlhAgACAIEAAP8AAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQADwAAACwAAAAAAgACAAAIBgABCAQQEAAh+QQBDwABACwAAAAAAgACAIEAAP8AAAAAAAAAAAAIBgABCAQQEAA7",
+};
+const legacyJpeg =
+    "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAACAAIBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AP7//2Q==";
 
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
@@ -55,9 +82,9 @@ const userInfo: AuthResult = {
     userId: "test-user",
 };
 
-function successResponse(): Response {
+function successResponse(base64 = "AQID"): Response {
     return Response.json({
-        data: [{ b64_json: "AQID" }],
+        data: [{ b64_json: base64 }],
         usage: {
             input_tokens: 10,
             output_tokens: 20,
@@ -81,10 +108,133 @@ const AZURE_RESOURCE_BLOCK = JSON.stringify({
     },
 });
 
-syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
+beforeEach(() => {
+    syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
+});
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe("Flare format cache", () => {
+    afterEach(teardownFetchMock);
+
+    for (const { method, format, query } of [
+        { method: "GET", format: "png", query: "" },
+        { method: "GET", format: "webp", query: "&output_format=webp" },
+        {
+            method: "GET",
+            format: "gif",
+            query: "&output_format=gif&frame_count=2&frame_duration_ms=150",
+        },
+        { method: "POST", format: "png", query: "" },
+    ] as const) {
+        routeTest(
+            `serves ${format} on a fresh ${method} response and on the next cache hit`,
+            async ({ paidApiKey }) => {
+                const model = "openai/gpt-image-2.6-flare";
+                const prompt = "flare format cache regression";
+                const seed = 42;
+                const url = new URL(
+                    method === "GET"
+                        ? `/image/${encodeURIComponent(prompt)}?model=${model}&seed=${seed}${query}`
+                        : "/v1/images/generations",
+                    "https://gen.pollinations.ai",
+                );
+                const legacyUrl = new URL(url);
+                if (method === "POST") {
+                    const body = normalizedJsonBody(
+                        JSON.stringify({
+                            prompt,
+                            model,
+                            width: 1024,
+                            height: 1024,
+                            quality: "medium",
+                            seed,
+                        }),
+                    );
+                    legacyUrl.searchParams.set(
+                        "__request_body",
+                        await hashGenerationCacheIdentity("media", body),
+                    );
+                }
+                await env.MEDIA.put(
+                    await generateCacheKey(legacyUrl),
+                    new Response(Buffer.from(legacyJpeg, "base64"), {
+                        headers: { "Content-Type": "image/jpeg" },
+                    }),
+                );
+
+                const requests: unknown[] = [];
+                const mocks = createFetchMock({
+                    tinybird: createMockTinybird(),
+                    upstream: {
+                        state: requests,
+                        handlerMap: {
+                            "api.openai.com": async (request: Request) => {
+                                requests.push(await request.json());
+                                return successResponse(flareImages[format]);
+                            },
+                            "content-safety.test": async () =>
+                                Response.json({ categoriesAnalysis: [] }),
+                        },
+                        reset: () => {
+                            requests.length = 0;
+                        },
+                    },
+                });
+                await mocks.enable("tinybird", "upstream");
+
+                const bindings = withInlineGenerationCoordinator(env);
+                for (const cache of ["MISS", "HIT"]) {
+                    const ctx = createExecutionContext();
+                    const response = await worker.fetch(
+                        new Request(url, {
+                            method,
+                            headers: {
+                                Authorization: `Bearer ${paidApiKey}`,
+                                "Content-Type": "application/json",
+                            },
+                            body:
+                                method === "POST"
+                                    ? JSON.stringify({ model, prompt, seed })
+                                    : undefined,
+                        }),
+                        bindings,
+                        ctx,
+                    );
+                    const error = response.ok
+                        ? ""
+                        : await response.clone().text();
+                    expect(response.status, error).toBe(200);
+                    expect(response.headers.get("X-Cache")).toBe(cache);
+                    if (method === "GET") {
+                        expect(response.headers.get("Content-Type")).toBe(
+                            `image/${format}`,
+                        );
+                        expect(
+                            Buffer.from(await response.arrayBuffer()),
+                        ).toEqual(Buffer.from(flareImages[format], "base64"));
+                    } else {
+                        expect(await response.json()).toMatchObject({
+                            data: [{ b64_json: flareImages[format] }],
+                        });
+                    }
+                    await waitOnExecutionContext(ctx);
+                }
+
+                expect(requests).toEqual([
+                    expect.objectContaining({
+                        model: "gpt-image-2.6-flare",
+                        output_format: format,
+                        ...(format === "gif"
+                            ? { frame_count: 2, frame_duration_ms: 150 }
+                            : {}),
+                    }),
+                ]);
+            },
+        );
+    }
 });
 
 describe("openai/gpt-image-2 Azure routing", () => {
@@ -228,7 +378,7 @@ describe("GPT Image direct OpenAI routing", () => {
     it("forwards GIF frame timing to OpenAI Flare and reports GIF output", async () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValue(successResponse());
+            .mockResolvedValue(successResponse(flareImages.gif));
         const model = "openai/gpt-image-2.6-flare";
         const result = await callGPTImage(
             "a pollinating bee in flight",
@@ -258,6 +408,7 @@ describe("GPT Image direct OpenAI routing", () => {
             quality: "auto",
         });
         expect(result.mimeType).toBe("image/gif");
+        expect(result.buffer).toEqual(Buffer.from(flareImages.gif, "base64"));
     });
 
     it("fits 16:9 GIF frames inside the upstream GIF pixel budget", async () => {
@@ -289,10 +440,10 @@ describe("GPT Image direct OpenAI routing", () => {
     });
 
     it("forwards WebP while keeping PNG as the default Flare format", async () => {
-        // Each upstream call consumes the response body; do not reuse one Response.
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
-            .mockImplementation(async () => successResponse());
+            .mockResolvedValueOnce(successResponse(flareImages.webp))
+            .mockResolvedValueOnce(successResponse(flareImages.png));
         const model = "openai/gpt-image-2.6-flare";
         const webp = await callGPTImage(
             "test",
@@ -346,7 +497,7 @@ describe("GPT Image direct OpenAI routing", () => {
 
 describe("GPT Image 2.6 fal fallback", () => {
     it("forwards GIF parameters to the Flare fallback and returns GIF bytes", async () => {
-        const gif = Buffer.from("GIF89a" + "animation-payload");
+        const gif = Buffer.from(flareImages.gif, "base64");
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {

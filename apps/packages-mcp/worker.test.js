@@ -540,7 +540,7 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
-test("Packagist expands the minified list and matches v-prefixed tags", async (t) => {
+test("Packagist expands the minified list, ranks non-semver tags and matches v-prefixed tags", async (t) => {
     t.mock.method(globalThis, "fetch", async (url) => {
         assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
         return Response.json({
@@ -550,13 +550,23 @@ test("Packagist expands the minified list and matches v-prefixed tags", async (t
                     {
                         name: "monolog/monolog",
                         version: "v3.3.0-RC1",
+                        version_normalized: "3.3.0.0-RC1",
                         description: "Logging for PHP",
                         license: ["MIT"],
                         require: { php: ">=8.2" },
                         suggest: { "ext-mongodb": "MongoDB handler" },
                     },
-                    { version: "v3.2.0", require: { php: ">=8.1" } },
-                    { version: "v3.1.0", suggest: "__unset" },
+                    { version: "3.10", version_normalized: "3.10.0.0" },
+                    {
+                        version: "v3.2.0",
+                        version_normalized: "3.2.0.0",
+                        require: { php: ">=8.1" },
+                    },
+                    {
+                        version: "v3.1.0",
+                        version_normalized: "3.1.0.0",
+                        suggest: "__unset",
+                    },
                 ],
             },
         });
@@ -567,10 +577,10 @@ test("Packagist expands the minified list and matches v-prefixed tags", async (t
         name: "monolog/monolog",
     });
     assert.equal(latest.name, "monolog/monolog");
-    assert.equal(latest.version, "v3.2.0");
+    assert.equal(latest.version, "3.10");
     assert.equal(latest.description, "Logging for PHP");
     assert.deepEqual(latest.license, ["MIT"]);
-    assert.deepEqual(latest.dependencies, { php: ">=8.1" });
+    assert.deepEqual(latest.dependencies, { php: ">=8.2" });
     assert.equal(
         latest.registryUrl,
         "https://packagist.org/packages/monolog/monolog",

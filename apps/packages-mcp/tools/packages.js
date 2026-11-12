@@ -103,12 +103,23 @@ export async function lookup({ ecosystem, name, version }) {
             throw new Error(`Packagist package ${name} not found`);
         // Tags are spelled v8.1.11 or 8.1.11; accept either for an exact version.
         const bare = (value) => value.replace(/^v/, "");
+        // Composer allows tags such as 2.1 that semver rejects, so stable
+        // releases are ranked by version_normalized: four numbers (3.2.0.0),
+        // with a suffix such as -RC1 on prereleases.
+        const numbers = (v) => v.version_normalized.split(".").map(Number);
+        const byNewest = (a, b) => {
+            const x = numbers(a);
+            const y = numbers(b);
+            const i = x.findIndex((n, k) => n !== y[k]);
+            return i < 0 ? 0 : y[i] - x[i];
+        };
         const selected = version
             ? versions.find((v) => bare(v.version) === bare(version))
             : versions
-                  .filter((v) => valid(v.version) && !prerelease(v.version))
-                  .sort((a, b) => rcompare(a.version, b.version))[0] ||
-              versions[0];
+                  .filter((v) =>
+                      /^\d+\.\d+\.\d+\.\d+$/.test(v.version_normalized),
+                  )
+                  .sort(byNewest)[0] || versions[0];
         if (!selected)
             throw new Error(
                 `Packagist version ${version} not found for ${name}`,

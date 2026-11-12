@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-11",
+  "period_start": "2026-11-11",
+  "period_end": "2026-11-11",
+  "generated_at": "2026-11-12T06:07:40.079308+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/c12ea1afac93ae8aed1c221d0b2c9fa040eba4a174c0158047649906179c5489"
+    }
+  ],
+  "text": "`/v1/responses` now reports provider failures as failed responses with token usage. Partial output is marked incomplete. Tool media stays with its result; URL citations keep titles, links, and offsets in buffered and streamed output. Even errors need a paper trail."
+}

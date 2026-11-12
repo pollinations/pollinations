@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-11",
+  "period_start": "2026-11-11",
+  "period_end": "2026-11-11",
+  "title": "Sandboxes are easier to choose and manage",
+  "summary": "Sandbox controls and community-built agent tools led the day, alongside Responses API repairs and steadier image GPU monitoring.\n\nSandbox templates now show provider, size, hourly price, and Quest eligibility before creation. The Sandboxes page shows clearer running and paused states, a stop time for running sandboxes, and an updated list after actions or when the tab regains focus.\n\nQuest contributors added media probing, local text hashing, and a model choice for Ask Jev decisions. Package lookup gained RubyGems support. MCP error parsing also handles structured API errors without failing while reporting them.\n\nThe `/v1/responses` Chat adapter now reports provider failures as failed responses while retaining token usage and marking partial output incomplete. Function-call media stays attached to its tool result, and URL citations retain their titles, links, and text offsets in buffered and streamed responses.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 19175,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19238,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19318,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19342,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19380,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19403,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19454,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19478,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19482,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19492,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19508,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19511,
+      "date": "2026-11-11"
+    },
+    {
+      "number": 19516,
+      "date": "2026-11-11"
+    }
+  ],
+  "generated_at": "2026-11-12T06:07:40.079308+00:00",
+  "daily": [
+    {
+      "emoji": "🚀",
+      "title": "Choose a sandbox template",
+      "text": "Compare sandbox templates by provider, size, hourly price, and Quest eligibility, then open creation with your choice selected. The Sandboxes page also shows running and paused states more clearly.",
+      "prs": [
+        19508
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Inspect media before editing",
+      "text": "Use the FFmpeg MCP tool `probeMedia` to inspect one public HTTPS media URL before choosing `runFfmpeg` arguments. It returns format and stream metadata as JSON, including duration, codecs, resolution, bitrate, and frame rate. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19175
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Hash text in MCP",
+      "text": "The calculators MCP tool `hash_text` hashes UTF-8 text locally and returns lowercase hex and base64 digests. It uses SHA-256 by default; SHA-1 is available for checksum compatibility. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19318
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Pick a decision model",
+      "text": "Ask Jev's `jev_decide` tool now accepts an optional `model` argument. Choose an accessible model that lists `/alpha/decisions` as a supported endpoint, or omit it to use the default Jev model. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19342
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Look up RubyGems",
+      "text": "The packages MCP tool `package_lookup` now fetches the current version of a Ruby gem or an exact version you specify. Results include dependencies, license, download counts, and yank status. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19380
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "Two AIs Talk",
+    "url": "https://two-ais-talk.pollinations.app",
+    "description": "Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "hellway803-creator",
+    "githubUserId": "347834573",
+    "repositoryUrl": "https://github.com/hellway803-creator/two-ais-talk",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19185",
+    "approvedDate": "2026-11-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/20fe8b99-926e-4c49-9880-55c6e09eb7a7"
+  },
+  {
     "emoji": "🎮",
     "name": "Call Waiting",
     "url": "https://sugamdeol.github.io/callwait",

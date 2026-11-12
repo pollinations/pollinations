@@ -1,0 +1,26 @@
+#!/bin/zsh
+# Starts the agent dashboard (http://127.0.0.1:7320/) if its server isn't
+# running, then opens its window. Safe to run any time: a running server is
+# left alone. After a Mac restart, run `agent-dashboard` in a terminal or open
+# "Agent Dashboard" from Spotlight.
+
+D="$HOME/.config/herdr/dashboard"
+PORT=7320
+
+# Spotlight apps get a bare PATH; the server needs herdr, and node comes from nvm.
+nodes=($HOME/.nvm/versions/node/*/bin/node(Nn))
+node=${commands[node]:-${nodes[-1]}}
+[[ -x $node ]] || { echo "agent-dashboard: node not found" >&2; exit 1; }
+export PATH="/opt/homebrew/bin:${node:h}:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+listening() { lsof -nP -iTCP:$PORT -sTCP:LISTEN -t >/dev/null 2>&1; }
+
+if ! listening; then
+  cd "$D" || exit 1
+  nohup "$node" "$D/server.mjs" --no-open >> "$D/server.log" 2>&1 &
+  for _ in {1..50}; do listening && break; sleep 0.2; done
+  listening || { echo "agent-dashboard: server didn't start, see $D/server.log" >&2; exit 1; }
+fi
+
+nohup "$D/open.sh" >/dev/null 2>&1 &
+echo "agent dashboard at http://127.0.0.1:$PORT/"

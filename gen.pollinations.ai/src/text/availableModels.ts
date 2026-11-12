@@ -440,13 +440,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-2.4t-a95b",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
-        transform: fireworksThinkingWithoutCacheControl,
+        config: portkeyConfig["qwen/qwen3.8-2.4t-a95b"],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
-        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
-        transform: fireworksThinking,
+        name: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
+        config: portkeyConfig[
+            "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8"
+        ],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
         name: "qwen/qwen3.8-27b",

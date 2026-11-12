@@ -3856,24 +3856,25 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: ["qwen3.8-2.4t-a95b"],
-        provider: "fireworks",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).
+            // Alibaba Model Studio Singapore rates.
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
             completionTextTokens: perMillion(6),
         },
+        cacheVersion: "2026-11-12-a95b-checkpoint",
         title: "Qwen3.8 2.4T A95B",
         description:
-            "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
-        inputModalities: ["text", "image"],
+            "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents. For image input, use Qwen3.8 Max.",
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,

@@ -423,14 +423,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        "qwen/qwen3.8-2.4t-a95b:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        // SiliconFlow FP8 rates include OpenRouter's 5.5% credit-purchase fee.
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {
+            provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
         },
     },

@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "compare_versions",
+                "to_fraction",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -508,4 +509,55 @@ test("compare_versions orders by SemVer precedence, not string order", async (t)
             true,
             JSON.stringify(args),
         );
+});
+
+test("to_fraction converts decimals and reduces fractions exactly", async (t) => {
+    const client = await clientFor(t);
+    for (const [input, expected] of [
+        ["0.5", "1/2"],
+        ["1.5", "3/2"],
+        ["0.25", "1/4"],
+        ["4/6", "2/3"],
+        ["-2.5", "-5/2"],
+        ["+2.5", "5/2"],
+        ["3.14159", "314159/100000"],
+        // Exact through BigInt: this is the value a float would round to 1/3.
+        ["0.3333333333333333", "3333333333333333/10000000000000000"],
+        ["9360/1260", "52/7"],
+        ["4/2", "2"],
+        ["0.1", "1/10"],
+    ]) {
+        assert.deepEqual(
+            await call(client, "to_fraction", { value: input }),
+            { fraction: expected },
+            input,
+        );
+    }
+});
+
+test("to_fraction rejects malformed input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "" },
+        { value: "abc" },
+        { value: "1.2.3" },
+        { value: "1/0" },
+        { value: "1/2/3" },
+        { value: "1 / 2" },
+        { value: "--5" },
+        // A sign with nothing after it: the bare "+" and "-" already fall through to the
+        // empty check, and the dotted forms would otherwise parse as a whole number of 0.
+        { value: "." },
+        { value: "+." },
+        { value: "-." },
+        { value: "+" },
+        { value: "-" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "to_fraction", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

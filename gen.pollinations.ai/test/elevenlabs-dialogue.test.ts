@@ -32,6 +32,19 @@ afterEach(() => {
 });
 
 describe("ElevenLabs Text to Dialogue", () => {
+    it("rejects FLAC before calling the dialogue provider", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        await expect(
+            generateElevenLabsDialogue({
+                inputs: [{ text: "Hello.", voice: "nova" }],
+                responseFormat: "flac",
+                apiKey: "test-eleven-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("maps preset voices and bills all input characters", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {

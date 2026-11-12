@@ -590,6 +590,12 @@ export async function generateElevenLabsDialogue(opts: {
         (total, input) => total + input.text.length,
         0,
     );
+    if (responseFormat === "flac") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "Dialogue supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
+        });
+    }
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Dialogue service is not configured (missing API key)",

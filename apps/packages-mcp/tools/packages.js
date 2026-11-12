@@ -11,6 +11,8 @@ export async function lookup({ ecosystem, name, version }) {
         rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
         // Go path elements allow letters, digits and -._~ but cannot start with a dot.
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
+        packagist:
+            /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -82,6 +84,66 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://rubygems.org/gems/${encodeURIComponent(data.name)}/versions/${encodeURIComponent(resolved)}`,
         };
     }
+    if (ecosystem === "packagist") {
+        const [vendor, pkg] = name.split("/");
+        const data = await fetchJson(
+            `https://packagist.org/p2/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}.json`,
+        );
+        // p2 lists are minified: only the first entry is complete, each later one
+        // lists the fields that changed and "__unset" removes a field, as in
+        // Composer's MetadataMinifier::expand.
+        let previous = {};
+        const versions = (data.packages?.[name] ?? []).map((entry) => {
+            previous = { ...previous, ...entry };
+            for (const [key, value] of Object.entries(previous))
+                if (value === "__unset") delete previous[key];
+            return previous;
+        });
+        if (versions.length === 0)
+            throw new Error(`Packagist package ${name} not found`);
+        // Tags are spelled v8.1.11 or 8.1.11; accept either for an exact version.
+        const bare = (value) => value.replace(/^v/, "");
+        // Composer allows tags such as 2.1 that semver rejects, so stable
+        // releases are ranked by version_normalized: four numbers (3.2.0.0),
+        // or -patchN on a stable patch release, which ranks above its base.
+        // Prereleases carry other suffixes such as -RC1.
+        const numbers = (v) =>
+            v.version_normalized
+                .replace(/-patch(\d*)$/, (_, n) => `.${Number(n) + 1}`)
+                .split(".")
+                .map(Number);
+        const byNewest = (a, b) => {
+            const x = numbers(a);
+            const y = numbers(b);
+            for (let k = 0; k < 5; k++)
+                if (x[k] !== y[k]) return (y[k] ?? 0) - (x[k] ?? 0);
+            return 0;
+        };
+        const selected = version
+            ? versions.find((v) => bare(v.version) === bare(version))
+            : versions
+                  .filter((v) =>
+                      /^\d+(\.\d+){3}(-patch\d*)?$/.test(v.version_normalized),
+                  )
+                  .sort(byNewest)[0] || versions[0];
+        if (!selected)
+            throw new Error(
+                `Packagist version ${version} not found for ${name}`,
+            );
+        return {
+            ecosystem,
+            name: selected.name,
+            version: selected.version,
+            description: selected.description,
+            license: selected.license,
+            homepage: selected.homepage,
+            source: selected.source,
+            dependencies: selected.require ?? {},
+            requireDev: selected["require-dev"] ?? {},
+            suggest: selected.suggest,
+            registryUrl: `https://packagist.org/packages/${encodeURIComponent(vendor)}/${encodeURIComponent(pkg)}`,
+        };
+    }
     if (ecosystem === "golang") {
         // The Go proxy writes each capital as "!" plus the lowercase letter.
         const goEscape = (value) =>
@@ -141,10 +203,17 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
-                .enum(["npm", "pypi", "crates", "rubygems", "golang"])
+                .enum([
+                    "npm",
+                    "pypi",
+                    "crates",
+                    "rubygems",
+                    "golang",
+                    "packagist",
+                ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),
             version: z

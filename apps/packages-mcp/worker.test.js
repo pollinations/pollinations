@@ -540,6 +540,65 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     ]);
 });
 
+test("Packagist expands the minified list, ranks non-semver and patch tags and matches v-prefixed tags", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
+        return Response.json({
+            minified: "composer/2.0",
+            packages: {
+                "monolog/monolog": [
+                    {
+                        name: "monolog/monolog",
+                        version: "v3.3.0-RC1",
+                        version_normalized: "3.3.0.0-RC1",
+                        description: "Logging for PHP",
+                        license: ["MIT"],
+                        require: { php: ">=8.2" },
+                        suggest: { "ext-mongodb": "MongoDB handler" },
+                    },
+                    { version: "3.10", version_normalized: "3.10.0.0" },
+                    {
+                        version: "3.10-p1",
+                        version_normalized: "3.10.0.0-patch1",
+                    },
+                    {
+                        version: "v3.2.0",
+                        version_normalized: "3.2.0.0",
+                        require: { php: ">=8.1" },
+                    },
+                    {
+                        version: "v3.1.0",
+                        version_normalized: "3.1.0.0",
+                        suggest: "__unset",
+                    },
+                ],
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+    });
+    assert.equal(latest.name, "monolog/monolog");
+    assert.equal(latest.version, "3.10-p1");
+    assert.equal(latest.description, "Logging for PHP");
+    assert.deepEqual(latest.license, ["MIT"]);
+    assert.deepEqual(latest.dependencies, { php: ">=8.2" });
+    assert.equal(
+        latest.registryUrl,
+        "https://packagist.org/packages/monolog/monolog",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+        version: "3.1.0",
+    });
+    assert.equal(pinned.version, "v3.1.0");
+    assert.deepEqual(pinned.dependencies, { php: ">=8.1" });
+    assert.equal(pinned.suggest, undefined);
+});
+
 test("Go lookup uses @latest without a version and escapes capitals in path and version", async (t) => {
     const urls = [];
     t.mock.method(globalThis, "fetch", async (url) => {

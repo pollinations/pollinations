@@ -61,6 +61,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "calculate_combinatorics",
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
@@ -428,4 +429,48 @@ test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", asy
             true,
             JSON.stringify(args),
         );
+});
+
+test("combinatorics calculates exact factorials, permutations, combinations, and binomial probability", async (t) => {
+    const client = await clientFor(t);
+
+    // Factorial only
+    const zeroFact = await call(client, "calculate_combinatorics", { n: 0 });
+    assert.equal(zeroFact.factorial, "1");
+
+    const twentyFact = await call(client, "calculate_combinatorics", { n: 20 });
+    assert.equal(twentyFact.factorial, "2432902008176640000");
+
+    // Permutations, combinations, combinations with replacement
+    const choose = await call(client, "calculate_combinatorics", {
+        n: 5,
+        k: 2,
+    });
+    assert.equal(choose.permutations, "20");
+    assert.equal(choose.combinations, "10");
+    assert.equal(choose.combinations_with_replacement, "15");
+
+    // Classic 52-card poker hands: C(52, 5) = 2,598,960
+    const poker = await call(client, "calculate_combinatorics", {
+        n: 52,
+        k: 5,
+    });
+    assert.equal(poker.combinations, "2598960");
+    assert.equal(poker.permutations, "311875200");
+
+    // Binomial distribution: 5 heads in 10 fair coin tosses
+    const coin = await call(client, "calculate_combinatorics", {
+        n: 10,
+        k: 5,
+        probability_p: 0.5,
+    });
+    assert.equal(coin.combinations, "252");
+    assert.ok(Math.abs(coin.binomial_probability - 0.24609375) < 1e-6);
+
+    // k > n should fail
+    const over = await client.callTool({
+        name: "calculate_combinatorics",
+        arguments: { n: 3, k: 5 },
+    });
+    assert.equal(over.isError, true);
 });

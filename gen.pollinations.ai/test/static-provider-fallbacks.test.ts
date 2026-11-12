@@ -2379,7 +2379,21 @@ describe("static provider fallbacks", () => {
             provider: "azure-openai",
             "azure-deployment-id": "mistral-large-4-latest",
         });
-        expect(findModelByName("mistralai/mistral-large-4:vercel")).toBeNull();
+        expect(
+            findModelByName("mistralai/mistral-large-4:mistral")?.config(),
+        ).toMatchObject({
+            model: "mistral-large-4",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
+        });
+        expect(TEXT_SERVICES["mistralai/mistral-large-4"]).toMatchObject({
+            paidOnly: false,
+            priceMultiplier: 0.75,
+            fallbacks: ["mistralai/mistral-large-4:mistral"],
+        });
+        expect(
+            TEXT_SERVICES["mistralai/mistral-large-4:mistral"],
+        ).toMatchObject({ provider: "mistral", fallbackOnly: true });
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

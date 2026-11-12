@@ -1421,6 +1421,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["Mistral-Large-4"],
     },
     {
+        name: "mistralai/mistral-large-4:mistral",
+        config: portkeyConfig["mistral-large-4-direct"],
+    },
+    {
         name: "mistralai/mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.

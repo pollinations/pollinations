@@ -536,6 +536,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             // Mistral's server rejects unknown message fields on Azure too.
             { supportsReasoningHistory: false },
         ),
+    "mistral-large-4-direct": () =>
+        createMistralModelConfig({
+            model: "mistral-large-4",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
+        }),
     // Nex returns a generic server error when it cannot fetch an image URL.
     "nex-agi/nex-n2.5-mini": () => ({
         ...createPinnedOpenRouterConfig(

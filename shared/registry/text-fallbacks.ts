@@ -594,6 +594,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "mistralai/mistral-large-4": {
+        "mistralai/mistral-large-4:mistral": {
+            provider: "mistral",
+            addedDate: new Date("2026-11-12").getTime(),
+            // Mistral direct API standard rates.
+            cost: {
+                promptTextTokens: perMillion(0.7),
+                promptCachedTokens: perMillion(0.07),
+                completionTextTokens: perMillion(2.1),
+            },
+        },
+    },
     "mistralai/mistral-large-3": {
         "mistralai/mistral-large-3:mistral": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,

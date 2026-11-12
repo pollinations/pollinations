@@ -1,0 +1,35 @@
+:root { color-scheme: light; font-family: "Avenir Next", Avenir, sans-serif; color: #142d40; background: #edf3f7; accent-color: #256687; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header, main, footer { width: min(1180px, 100%); margin: auto; padding: 20px 28px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+a { color: #256687; text-underline-offset: 3px; }
+h1 { margin: 6px 0 0; font-size: clamp(24px, 4vw, 38px); font-weight: 600; letter-spacing: -1px; }
+h2 { font-size: 18px; margin: 0; }
+main { padding-top: 0; }
+.stage { overflow: hidden; border-radius: 10px; background: #18293a; color: #edf3f7; }
+canvas { display: block; width: 100%; aspect-ratio: 16/9; touch-action: none; cursor: crosshair; }
+.transport { display: flex; align-items: center; gap: 16px; padding: 12px; }
+.transport span { flex: 1; }
+button { font: inherit; font-size: 14px; border: 1px solid #b4c7d2; border-radius: 5px; background: #fff; color: #142d40; padding: 8px 14px; cursor: pointer; }
+button:hover { background: #dceaf1; }
+button[aria-pressed="true"] { border-color: #256687; background: #d3e6f0; box-shadow: inset 0 0 0 2px #256687; }
+:focus-visible { outline: 3px solid #eb704b; outline-offset: 3px; }
+.controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: center; gap: 24px; padding: 22px 0; border-bottom: 1px solid #b4c7d2; }
+.controls label { font-size: 14px; }
+output { float: right; font-variant-numeric: tabular-nums; }
+input[type="range"] { display: block; width: 100%; margin: 12px 0 0; }
+.library { padding: 24px 0 12px; }
+.bank-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#bank { display: flex; gap: 12px; overflow-x: auto; padding: 16px 3px; }
+#bank button { flex: 0 0 124px; padding: 5px; text-align: left; }
+#bank img { width: 112px; height: 72px; display: block; object-fit: cover; border-radius: 2px; }
+#bank span { display: block; padding: 7px 4px 3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.import { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+input[type="file"] { max-width: 100%; font: inherit; }
+#status { min-height: 24px; font-size: 14px; }
+details { max-width: 78ch; line-height: 1.55; }
+summary { cursor: pointer; font-weight: 600; }
+code { overflow-wrap: anywhere; font-size: 0.9em; }
+footer { color: #456379; font-size: 12px; padding-top: 8px; }
+@media (max-width: 720px) { header, main, footer { padding-left: 16px; padding-right: 16px; } header { align-items: start; } header > a { max-width: 110px; font-size: 14px; } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } .controls button { grid-column: 1/-1; justify-self: start; } canvas { aspect-ratio: 1; } }

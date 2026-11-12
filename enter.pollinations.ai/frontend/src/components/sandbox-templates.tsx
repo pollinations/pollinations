@@ -44,7 +44,7 @@ const PROVIDER_LOGOS: Record<SandboxProvider, string> = {
 
 const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
     const logo = PROVIDER_LOGOS[provider];
-    const className = "h-8 w-8 shrink-0 text-ink-900 opacity-55";
+    const className = "h-full w-full shrink-0 text-ink-900 opacity-55";
     return (
         <span title={SANDBOX_PROVIDERS[provider].name} className="flex">
             <span className="sr-only">{SANDBOX_PROVIDERS[provider].name}</span>
@@ -162,9 +162,8 @@ export const SandboxTemplateList: FC<{
                         </Button>
                     )
                 }
-            >
-                <SizeStats {...template} />
-            </CatalogCard>
+                title={<SizeStats {...template} />}
+            />
         ))}
     </div>
 );

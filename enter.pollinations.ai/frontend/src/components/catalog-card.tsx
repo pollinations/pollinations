@@ -11,8 +11,6 @@ const SPLIT = {
     half: {
         card: "@lg:grid @lg:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @lg:items-start @lg:gap-x-6",
         column: "@lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-3",
-        // The note starts at the title's edge (logo 2rem, gaps, divider).
-        indent: "@lg:pl-[3.3125rem]",
         // The left column runs the card's height; the note sits at its
         // bottom, level with the copy box (h-10).
         stretch: "@lg:self-stretch",
@@ -23,7 +21,6 @@ const SPLIT = {
     wide: {
         card: "@2xl:grid @2xl:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @2xl:items-start @2xl:gap-x-6",
         column: "@2xl:flex @2xl:min-w-0 @2xl:flex-col @2xl:gap-3",
-        indent: "@2xl:pl-[3.3125rem]",
         stretch: "@2xl:self-stretch",
         bottom: "@2xl:mt-auto @2xl:flex @2xl:min-h-10 @2xl:items-center",
         oneLine: "@2xl:[&>span:first-child]:truncate",
@@ -39,33 +36,38 @@ const SPLIT = {
  * `@container`.
  */
 export const CatalogCard: FC<{
-    /** Without one (a model with no brand logo), the text keeps its place. */
+    /** Shown at the start of the title line, 1.75rem; none starts the title
+     * at the edge. */
     logo: ReactNode;
-    children: ReactNode;
+    /** The title line: the name and its tags. */
+    title: ReactNode;
+    /** What it is, under the title line. */
+    children?: ReactNode;
     price: ReactNode;
     copy?: { value: string; label: string };
     /** A quiet line at the bottom left (who published it). */
     note?: ReactNode;
     action?: ReactNode;
     split?: keyof typeof SPLIT;
-}> = ({ logo, children, price, copy, note, action, split = "half" }) => (
+}> = ({ logo, title, children, price, copy, note, action, split = "half" }) => (
     <Surface className={`flex flex-col gap-3 ${SPLIT[split].card}`}>
         <div
             className={`contents ${SPLIT[split].column} ${SPLIT[split].stretch}`}
         >
-            {/* The logo lines up with the title, however many lines follow. */}
-            <div className="order-1 flex min-w-0 items-start gap-2.5">
-                {logo ?? <span aria-hidden="true" className="w-8 shrink-0" />}
-                <span
-                    aria-hidden="true"
-                    className={`h-10 w-px shrink-0 bg-divider ${logo ? "" : "invisible"}`}
-                />
-                <div className="min-w-0 flex-1">{children}</div>
+            {/* The logo opens the title line; the rest starts at the edge. */}
+            <div className="order-1 flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
+                    {logo && (
+                        <span className="flex h-7 w-7 shrink-0 [&>*]:h-full [&>*]:w-full">
+                            {logo}
+                        </span>
+                    )}
+                    <div className="min-w-0 flex-1">{title}</div>
+                </div>
+                {children}
             </div>
             {note && (
-                <div
-                    className={`order-5 min-w-0 ${SPLIT[split].indent} ${SPLIT[split].bottom}`}
-                >
+                <div className={`order-5 min-w-0 ${SPLIT[split].bottom}`}>
                     {note}
                 </div>
             )}

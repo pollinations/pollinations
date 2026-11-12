@@ -285,8 +285,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </span>
                 )
             }
-        >
-            <div className="flex min-w-0 flex-col gap-1">
+            title={
                 <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium leading-tight">
                     <ModelTitle model={model} />
                     <ModelStatusChips
@@ -299,30 +298,27 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         verified={Boolean(model.agent && model.verified)}
                     />
                 </div>
-                {modelDescription && (
-                    <ModelDescription text={modelDescription} />
-                )}
-                {baseModel && (
-                    <span className="min-w-0 max-w-full truncate text-xs leading-snug text-theme-text-muted">
-                        Base model{" "}
-                        <span className="text-theme-text-base">
-                            {baseModel}
-                        </span>
-                    </span>
-                )}
-                {facts.length > 0 && (
-                    <div className="mt-1 inline-flex min-h-5 flex-wrap items-center gap-2.5 text-theme-text-muted">
-                        {facts.map((fact, index) => (
-                            <Fragment key={index}>
-                                {index > 0 && (
-                                    <span className="h-3.5 w-px bg-current opacity-30" />
-                                )}
-                                {fact}
-                            </Fragment>
-                        ))}
-                    </div>
-                )}
-            </div>
+            }
+        >
+            {modelDescription && <ModelDescription text={modelDescription} />}
+            {baseModel && (
+                <span className="min-w-0 max-w-full truncate text-xs leading-snug text-theme-text-muted">
+                    Base model{" "}
+                    <span className="text-theme-text-base">{baseModel}</span>
+                </span>
+            )}
+            {facts.length > 0 && (
+                <div className="mt-1 inline-flex min-h-5 flex-wrap items-center gap-2.5 text-theme-text-muted">
+                    {facts.map((fact, index) => (
+                        <Fragment key={index}>
+                            {index > 0 && (
+                                <span className="h-3.5 w-px bg-current opacity-30" />
+                            )}
+                            {fact}
+                        </Fragment>
+                    ))}
+                </div>
+            )}
         </CatalogCard>
     );
 };

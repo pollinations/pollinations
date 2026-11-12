@@ -35,9 +35,8 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* The shared catalog card, as on the Sandboxes page. The
-                price slot fits sub-cent rates such as $0.00000778 /sec. */}
-            <div className="@container flex flex-col gap-3 [--catalog-price-width:18rem]">
+            {/* The shared catalog card, as on the Sandboxes page. */}
+            <div className="@container flex flex-col gap-3 [--catalog-price-width:16rem]">
                 {servers.map((server) => {
                     const pricing = getMcpPricingInfo(server);
                     return (
@@ -48,7 +47,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                 <McpIcon className="h-8 w-8 shrink-0 text-ink-900 opacity-55" />
                             }
                             price={
-                                <div className="grid grid-cols-[6rem_12ch_4rem] gap-x-2">
+                                <div className="grid grid-cols-[6rem_11ch_3rem] gap-x-2">
                                     {pricing.rates.length > 0 && (
                                         <UsagePriceRows
                                             adjustments={pricing.rates}
@@ -63,7 +62,10 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                                     Generation
                                                 </span>
                                             </span>
-                                            <span className="col-span-2 whitespace-nowrap">
+                                            {/* Right-aligned like the prices,
+                                                so every value ends on the
+                                                same edge. */}
+                                            <span className="whitespace-nowrap pr-2 text-right">
                                                 <Tooltip
                                                     triggerAs="span"
                                                     content={

@@ -2162,7 +2162,11 @@ export const accountRoutes = new Hono<Env>()
             }
             // Same rule as creation: app keys can't spend, so a budget on one
             // would only lock away Pollen reserved from a budgeted caller key.
-            if (key.prefix === "pk" && pollenBudget != null && pollenBudget !== 0) {
+            if (
+                key.prefix === "pk" &&
+                pollenBudget != null &&
+                pollenBudget !== 0
+            ) {
                 throw new HTTPException(400, {
                     message: "Publishable keys must have a pollen budget of 0",
                 });

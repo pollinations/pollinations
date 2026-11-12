@@ -248,7 +248,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     // the price beside.
     return (
         <CatalogCard
-            split="wide"
             logo={hasLeadingIcon ? <ModelBrandIcon model={model} /> : null}
             price={
                 <ModelPricingLedger
@@ -268,7 +267,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             copy={{ value: model.name, label: `Copy model id ${model.name}` }}
             status={
                 <>
-                    {/* The bars and a small status label, no frame. */}
+                    {/* Opens a chat or Play and changes nothing: filled, in
+                        the quiet grey of secondary actions, at the size of
+                        the card's other controls (the pricing selectors). */}
+                    {tryUrl && (
+                        <Button
+                            as="a"
+                            href={tryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            intent="neutral"
+                            size="sm"
+                            className="shrink-0"
+                            aria-label={`Try ${title} (opens in a new tab)`}
+                        >
+                            Try
+                            <ExternalLinkIcon className="ml-1.5 h-3.5 w-3.5 shrink-0" />
+                        </Button>
+                    )}
+                    {/* After the actions: the bars and a small status label. */}
                     {model.health && (
                         <span className="inline-flex shrink-0 items-center">
                             <ModelHealthIndicator
@@ -279,22 +296,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 showLabel
                             />
                         </span>
-                    )}
-                    {/* Opens a chat or Play and changes nothing: filled, in
-                        the quiet grey of secondary actions. */}
-                    {tryUrl && (
-                        <Button
-                            as="a"
-                            href={tryUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            intent="neutral"
-                            className="shrink-0"
-                            aria-label={`Try ${title} (opens in a new tab)`}
-                        >
-                            Try
-                            <ExternalLinkIcon className="ml-1.5 h-3.5 w-3.5 shrink-0" />
-                        </Button>
                     )}
                 </>
             }

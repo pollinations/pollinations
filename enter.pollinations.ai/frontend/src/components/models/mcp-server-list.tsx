@@ -42,7 +42,6 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                     return (
                         <CatalogCard
                             key={server.id}
-                            split="wide"
                             logo={
                                 <McpIcon className="h-8 w-8 shrink-0 text-ink-900 opacity-55" />
                             }

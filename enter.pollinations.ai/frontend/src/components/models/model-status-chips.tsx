@@ -92,13 +92,26 @@ export function ModelHealthIndicator({
     const sample = communityProxy
         ? `last ${health.requests} eligible requests · up to 7 days`
         : "last 24 hours";
-    const detail =
+    // The label already names the state; the tooltip then adds only the rest.
+    const facts =
         health.status === "unknown" || health.success_rate == null
-            ? `No data · ${communityProxy ? "last 7 days" : "last 24 hours"}`
-            : `${label} · ${healthNumber.format(health.success_rate)}% success · ${sample}`;
+            ? communityProxy
+                ? "last 7 days"
+                : "last 24 hours"
+            : `${healthNumber.format(health.success_rate)}% success · ${sample}`;
+    const shownLabel =
+        health.status === "unknown" || health.success_rate == null
+            ? "No data"
+            : label;
+    const detail = showLabel ? facts : `${shownLabel} · ${facts}`;
 
     return (
-        <Tooltip content={detail} ariaLabel={detail} tapEnabled displayContents>
+        <Tooltip
+            content={detail}
+            ariaLabel={`${shownLabel} · ${facts}`}
+            tapEnabled
+            displayContents
+        >
             {showLabel ? (
                 // A label like Quest or Free: the bars (lit by state) and
                 // the state's name, in its colour.

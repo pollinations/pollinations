@@ -144,6 +144,7 @@ export const SandboxTemplateList: FC<{
                     create && {
                         value: `polli sandbox create ${template.id}`,
                         label: `Copy the command that creates a ${template.id} sandbox`,
+                        wrap: true,
                     }
                 }
                 // Beside the command: start it here instead of in a terminal.
@@ -152,6 +153,7 @@ export const SandboxTemplateList: FC<{
                         <Button
                             type="button"
                             intent="commit"
+                            size="sm"
                             icon={<TerminalIcon />}
                             aria-haspopup={
                                 create.disabled ? undefined : "dialog"

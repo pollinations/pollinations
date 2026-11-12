@@ -88,6 +88,12 @@ export function validateRedirectUriFormat(redirectUri: string): void {
             message: "Redirect URI must not include a fragment",
         });
     }
+    // Catches two URLs run together, e.g. typed after a pre-filled default.
+    if (parsed.pathname.includes("://")) {
+        throw new HTTPException(400, {
+            message: "Redirect URI must be a single URL",
+        });
+    }
     if (!isAllowedRedirectUrl(parsed)) {
         throw new HTTPException(400, {
             message:
@@ -132,9 +138,39 @@ function pickCallerMetadata(
     return out;
 }
 
+type ApiKeyDb = ReturnType<typeof drizzle<typeof schema>>;
+
+/**
+ * Resolve a publishable app key that may act as an OAuth client_id. Rejects
+ * keys that are unknown, revoked, not publishable, or owned by a banned user.
+ */
+export async function findPublishableClientKey(
+    authClient: CreateApiKeyAuthClient,
+    db: ApiKeyDb,
+    clientId: string,
+): Promise<typeof schema.apikey.$inferSelect | null> {
+    if (!clientId.startsWith("pk_")) return null;
+
+    const result = await authClient.api.verifyApiKey({
+        body: { key: clientId },
+    });
+    const keyId = result.valid ? result.key?.id : null;
+    if (!keyId) return null;
+
+    const clientKey = await db.query.apikey.findFirst({
+        where: eq(schema.apikey.id, keyId),
+    });
+    if (!clientKey || clientKey.prefix !== "pk") return null;
+    const owner = await db.query.user.findFirst({
+        where: eq(schema.user.id, clientKey.referenceId),
+    });
+    if (!owner || isUserBanned(owner)) return null;
+    return clientKey;
+}
+
 async function validateClientRedirectBinding(
     authClient: CreateApiKeyAuthClient,
-    db: ReturnType<typeof drizzle<typeof schema>>,
+    db: ApiKeyDb,
     metadata: CallerMetadata | undefined,
 ): Promise<VerifiedClientAttribution | null> {
     if (!metadata) return null;
@@ -143,28 +179,12 @@ async function validateClientRedirectBinding(
         return null;
     }
 
-    if (!requestedClientId.startsWith("pk_")) {
-        rejectInvalidClientId();
-    }
-
-    const result = await authClient.api.verifyApiKey({
-        body: { key: requestedClientId },
-    });
-    if (!result.valid || !result.key?.id) {
-        rejectInvalidClientId();
-    }
-    const clientKeyId = result.key.id;
-
-    const clientKey = await db.query.apikey.findFirst({
-        where: eq(schema.apikey.id, clientKeyId),
-    });
-    if (!clientKey || clientKey.prefix !== "pk") {
-        rejectInvalidClientId();
-    }
-    const owner = await db.query.user.findFirst({
-        where: eq(schema.user.id, clientKey.referenceId),
-    });
-    if (!owner || isUserBanned(owner)) rejectInvalidClientId();
+    const clientKey = await findPublishableClientKey(
+        authClient,
+        db,
+        requestedClientId,
+    );
+    if (!clientKey) rejectInvalidClientId();
     const attribution = {
         clientId: clientKey.id,
     };
@@ -247,11 +267,12 @@ export async function createApiKeyForUser({
     const safeAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions);
 
+    // An App Key (pk_) never authenticates requests, so it holds no scopes.
     const permissions: Record<string, string[]> = {};
-    if (allowedModels) {
+    if (allowedModels && !isPublishable) {
         permissions.models = await toModelPermissions(dbBinding, allowedModels);
     }
-    if (safeAccountPerms && safeAccountPerms.length > 0) {
+    if (safeAccountPerms && safeAccountPerms.length > 0 && !isPublishable) {
         permissions.account = safeAccountPerms;
     }
 

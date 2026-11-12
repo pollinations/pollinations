@@ -24,6 +24,7 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import { acceptsMarkdown } from "@/middleware/agent-discovery.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
@@ -75,7 +76,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     x402PrepaidKeys: "x402 Prepaid Keys",
-    userWallets: "Connect User Wallets",
+    userWallets: "Pollinations Pay",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
     publishAgent: "Publish an Agent",
@@ -340,9 +341,9 @@ const REALTIME_DOCS = [
     "",
     "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
-    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
+    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` or `elevenlabs/scribe-v3-live` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",
     "```js",
     'import WebSocket from "ws";',
@@ -390,7 +391,7 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const USER_WALLETS_SECTION = `## Pollinations Pay\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
@@ -437,7 +438,7 @@ export const LLMS_FULL_TEXT = [
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "connect-user-wallets",
+    byop: "pollinations-pay",
     models: "publish-a-model",
     "community-models": "publish-a-model",
     agents: "publish-an-agent",
@@ -474,8 +475,8 @@ ${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
-    if (window.location.hash === '#tag/byop') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    if (window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/pollinations-pay');
     }
   }
   normalizeLegacyHash();
@@ -1136,7 +1137,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 return c.redirect(publicUrl.href, 302);
             }
             c.header("Vary", "Accept", { append: true });
-            if (c.req.header("accept")?.includes("text/markdown")) {
+            if (acceptsMarkdown(c.req.header("accept") ?? "")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
                 c.header("Cache-Control", "private, max-age=3600");
                 return c.body(LLM_DOC_TEXT, 200, {

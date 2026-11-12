@@ -3,9 +3,10 @@ import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
+import { pageTitle } from "../page-meta.ts";
 
 export const Route = createFileRoute("/error")({
-    head: () => ({ meta: [{ title: "Sign in | pollinations.ai" }] }),
+    head: () => ({ meta: [{ title: pageTitle("/error") }] }),
     component: ErrorPage,
     validateSearch: (search: Record<string, unknown>) => ({
         error: (search.error as string) || "",

@@ -2,7 +2,7 @@
 
 Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
-Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
+Model publishing and [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
 ## Supported Models
 
@@ -63,7 +63,7 @@ Publishing a model or changing its public prices takes effect after 3 hours.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
-- Text models use the token categories reported by the upstream endpoint.
+- Text models use the token categories reported by the upstream endpoint. A call that reports more than 2,000,000 prompt tokens or 200,000 completion tokens is not billed.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.
@@ -162,7 +162,7 @@ Gen calls an endpoint agent with a short-lived `ag_` run token (up to 30 minutes
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Public model lists show community proxies with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. There is no minimum sample size, and models without recent data remain listed. Private models remain visible to their owners.
+Public model lists show community proxies with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. A text answer that reports prompt tokens but no output tokens counts as a failure. There is no minimum sample size, and models without recent data remain listed. Private models remain visible to their owners.
 
 Models filtered for reliability still work by exact ID and can serve as fallbacks. Use `?reliability=all` on a model-list endpoint to include them. Private models remain owner-only; this option does not bypass access controls.
 

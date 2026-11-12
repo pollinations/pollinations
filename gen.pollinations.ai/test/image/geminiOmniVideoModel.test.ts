@@ -181,6 +181,22 @@ describe("geminiOmniVideoModel", () => {
         },
     );
 
+    it("sends Gemini Omni 1.2 Flash to Vertex under its own model ID", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockGeminiOmniFetch(requests);
+
+        const result = await callGeminiOmniAPI("a calm ocean", {
+            ...baseParams,
+            model: "google/gemini-omni-1.2-flash",
+        });
+
+        expect(requests[0]).toMatchObject({ model: "gemini-omni-1.2-flash" });
+        expect(result.trackingData.actualModel).toBe(
+            "google/gemini-omni-1.2-flash",
+        );
+    });
+
     it("rejects an unsupported FPS before calling Vertex", async () => {
         setGoogleEnv();
         const fetchSpy = vi.spyOn(globalThis, "fetch");

@@ -15,6 +15,7 @@ export const PING_INTERVAL_MS = 15_000;
 
 type ChatDelta = {
     content?: string | null;
+    refusal?: string | null;
     reasoning_content?: string | null;
     reasoning?: string | null;
     content_blocks?: { delta?: { thinking?: string; signature?: string } }[];
@@ -189,14 +190,15 @@ export function chatToMessagesStream(
                         });
                     }
                 }
-                if (delta.content) {
+                for (const text of [delta.content, delta.refusal]) {
+                    if (!text) continue;
                     if (openBlock !== "text") {
                         startBlock({ type: "text", text: "" });
                         openBlock = "text";
                     }
                     send("content_block_delta", {
                         index: blockIndex,
-                        delta: { type: "text_delta", text: delta.content },
+                        delta: { type: "text_delta", text },
                     });
                 }
                 for (const call of delta.tool_calls ?? []) {

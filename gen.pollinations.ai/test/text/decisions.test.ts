@@ -47,6 +47,8 @@ const questions = {
 type UpstreamState = {
     requests: Record<string, unknown>[];
     response?: Response;
+    failModel?: string;
+    vercelResponse?: Response;
 };
 
 function createDecisionsMock() {
@@ -56,8 +58,16 @@ function createDecisionsMock() {
         reset: () => {
             state.requests = [];
             state.response = undefined;
+            state.failModel = undefined;
+            state.vercelResponse = undefined;
         },
         handlerMap: {
+            "api.openai.com": async (request: Request) => {
+                state.requests.push({ body: await request.json() });
+                if (!state.response)
+                    throw new Error("Missing OpenAI decisions fixture");
+                return state.response.clone();
+            },
             "decision.vllm-sr.ai": async (request: Request) => {
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
@@ -72,26 +82,41 @@ function createDecisionsMock() {
                 });
             },
             "ai-gateway.vercel.sh": async (request: Request) => {
+                const body = (await request.json()) as { model: string };
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
                     authorization: request.headers.get("authorization"),
-                    body: await request.json(),
+                    body,
                 });
+                if (state.vercelResponse) return state.vercelResponse.clone();
+                if (state.response && body.model === "typesafe-ai/jev-1.14.0")
+                    return state.response.clone();
                 return Response.json({
-                    model: "liquid/d1",
+                    model: body.model,
                     answers,
-                    usage: { input_tokens: 452, output_tokens: 0 },
+                    usage: {
+                        input_tokens: 452,
+                        output_tokens:
+                            body.model === "typesafe-ai/jev-1.14.0" ? 73 : 0,
+                    },
                 });
             },
             [DECISIONS_HOST]: async (request: Request) => {
+                const body = (await request.json()) as { model: string };
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
                     authorization: request.headers.get("authorization"),
-                    body: await request.json(),
+                    body,
                 });
+                if (body.model === state.failModel) {
+                    return Response.json(
+                        { error: { message: "Upstream unavailable" } },
+                        { status: 503 },
+                    );
+                }
                 if (state.response) return state.response.clone();
                 return Response.json({
-                    model: "typesafe/jev-1.13-20260917",
+                    model: "typesafe/jev-1.14-20260917",
                     answers,
                     usage: {
                         input_tokens: 452,
@@ -115,6 +140,7 @@ const test = baseTest.extend<{
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
         env.OPENROUTER_API_KEY = "openrouter-test-key";
+        env.OPENAI_API_KEY = "openai-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
         env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
@@ -130,7 +156,7 @@ beforeEach(async () => {
         "model-stats-v3",
         JSON.stringify({
             value: {
-                data: [{ model: "typesafe/jev-1.13", avg_cost_usd: 0.001 }],
+                data: [{ model: "typesafe/jev-1.14", avg_cost_usd: 0.001 }],
             },
             ttl: 3600,
         }),
@@ -167,7 +193,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     mocks,
 }) => {
     const { response, wait } = await post("/alpha/decisions", apiKey, {
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
         questions,
     });
@@ -177,7 +203,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(body).toMatchObject({
         id: expect.stringMatching(/^dec-/),
         // Our canonical id, not the provider's dated build.
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 452, output_tokens: 73 },
@@ -187,11 +213,15 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
 
     expect(mocks.decisions.state.requests).toHaveLength(1);
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
-        authorization: "Bearer openrouter-test-key",
+        pathname: "/typesafe/v1/systemone",
+        authorization: "Bearer vercel-test-key",
         // Forwarded untouched, under the upstream's pinned model id.
         body: {
-            model: "typesafe/jev-1.13",
+            model: "typesafe-ai/jev-1.14.0",
+            providerOptions: {
+                gateway: { only: ["typesafe-ai"] },
+                typesafe: { longContext: true },
+            },
             state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
             questions,
         },
@@ -202,7 +232,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         responseStatus: 200,
-        modelRequested: "typesafe/jev-1.13",
+        modelRequested: "typesafe/jev-1.14",
         tokenCountPromptText: 452,
         tokenCountCompletionText: 73,
         isBilledUsage: true,
@@ -214,22 +244,22 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
     mocks,
 }) => {
     const { response, wait } = await post("/v1/systemone", apiKey, {
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
         questions,
     });
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 452, output_tokens: 73 },
     });
     expect(mocks.decisions.state.requests).toHaveLength(1);
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
-        body: { model: "typesafe/jev-1.13", questions },
+        pathname: "/typesafe/v1/systemone",
+        body: { model: "typesafe-ai/jev-1.14.0", questions },
     });
 
     await wait();
@@ -239,7 +269,7 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
         eventType: "generate.text",
         requestPath: "/v1/systemone",
         responseStatus: 200,
-        modelRequested: "typesafe/jev-1.13",
+        modelRequested: "typesafe/jev-1.14",
         isBilledUsage: true,
     });
 });
@@ -440,7 +470,7 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         provider: "Liquid AI",
     });
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
+        pathname: "/typesafe/v1/systemone",
         body: { model: "liquid/d1" },
     });
     await wait();
@@ -450,28 +480,28 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         eventType: "generate.text",
         responseStatus: 200,
         modelRequested: "liquid/d1",
-        modelProviderUsed: "openrouter",
+        modelProviderUsed: "vercel",
         tokenCountPromptText: 452,
-        tokenCountCompletionText: 73,
+        tokenCountCompletionText: 0,
         isBilledUsage: true,
     });
-    expect(event.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
+    expect(event.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
     const { tierBalance, packBalance } = await getUserBalance(
         drizzle(env.DB),
         userId,
     );
     expect(tierBalance).toBe(0);
-    expect(packBalance).toBeCloseTo(1 - (452 * 0.02 * 1.055) / 1_000_000, 7);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.02) / 1_000_000, 7);
 });
 
-test("falls back native D1 decisions and records Vercel cost with the public quote", async ({
+test("falls back native D1 decisions and records OpenRouter cost with the public quote", async ({
     mocks,
 }) => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 0, packBalance: 1 },
         allowedModels: ["liquid/d1"],
     });
-    mocks.decisions.state.response = Response.json(
+    mocks.decisions.state.vercelResponse = Response.json(
         { error: { message: "Upstream unavailable" } },
         { status: 503 },
     );
@@ -481,19 +511,19 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
         questions,
     });
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("liquid/d1:vercel");
+    expect(response.headers.get("x-model-used")).toBe("liquid/d1:openrouter");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await expect(response.json()).resolves.toMatchObject({
         model: "liquid/d1",
         provider: "Liquid AI",
         answers,
-        usage: { input_tokens: 452, output_tokens: 0 },
+        usage: { input_tokens: 452, output_tokens: 73 },
     });
     await wait();
     expect(mocks.decisions.state.requests).toHaveLength(2);
     expect(mocks.decisions.state.requests[1]).toMatchObject({
-        pathname: "/typesafe/v1/systemone",
-        authorization: "Bearer vercel-test-key",
+        pathname: "/api/alpha/decisions",
+        authorization: "Bearer openrouter-test-key",
         body: { model: "liquid/d1" },
     });
     const events = mocks.tinybird.state.events;
@@ -501,16 +531,16 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
     const billed = events.find((event) => event.isBilledUsage);
     expect(billed).toMatchObject({
         modelRequested: "liquid/d1",
-        modelUsed: "liquid/d1:vercel",
-        modelProviderUsed: "vercel",
+        modelUsed: "liquid/d1:openrouter",
+        modelProviderUsed: "openrouter",
         isFinal: true,
     });
-    expect(billed?.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
-    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 8);
+    expect(billed?.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
+    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02) / 1_000_000, 8);
     expect(events).toContainEqual(
         expect.objectContaining({
             modelUsed: "liquid/d1",
-            modelProviderUsed: "openrouter",
+            modelProviderUsed: "vercel",
             isBilledUsage: false,
             isFinal: false,
         }),
@@ -519,6 +549,71 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
     expect(balance.tierBalance).toBe(0);
     expect(balance.packBalance).toBeCloseTo(1 - (billed?.totalPrice ?? 0), 8);
 });
+
+for (const packBalance of [0, 1]) {
+    test(`caller decision fallback checks paid Pollen with pack balance ${packBalance}`, async ({
+        mocks,
+    }) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance },
+        });
+        mocks.decisions.state.failModel = "respan/span-01-lite";
+        const model = "respan/span-01-lite,typesafe/jev-1.14";
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model,
+            state: "Disk at 93%.",
+            questions: { act: { type: "noul", instructions: "Act now?" } },
+        });
+
+        // Without paid Pollen the paid-only choice is skipped, so the failure
+        // of the model that ran answers.
+        expect(response.status).toBe(packBalance ? 200 : 503);
+        if (packBalance) {
+            expect(response.headers.get("x-model-used")).toBe(
+                "typesafe/jev-1.14",
+            );
+            expect(response.headers.get("x-fallback-target")).toBe(
+                "config.targets[1]",
+            );
+            await expect(response.json()).resolves.toMatchObject({
+                model: "typesafe/jev-1.14",
+                provider: "TypeSafe",
+            });
+        } else {
+            await response.text();
+        }
+
+        await wait();
+        expect(
+            mocks.decisions.state.requests.map((request) => request.body),
+        ).toEqual(
+            (packBalance
+                ? ["respan/span-01-lite", "typesafe-ai/jev-1.14.0"]
+                : ["respan/span-01-lite"]
+            ).map((model) => expect.objectContaining({ model })),
+        );
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(packBalance ? 1 : 0);
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.tierBalance).toBe(1);
+        if (packBalance) {
+            expect(billed[0]).toMatchObject({
+                modelRequested: model,
+                modelUsed: "typesafe/jev-1.14",
+                modelProviderUsed: "vercel",
+            });
+            expect(billed[0].totalPrice).toBeGreaterThan(0);
+            expect(balance.packBalance).toBeCloseTo(
+                packBalance - billed[0].totalPrice,
+                8,
+            );
+        } else {
+            expect(balance.packBalance).toBe(0);
+        }
+    });
+}
 
 test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
     apiKey,
@@ -570,7 +665,7 @@ test("defaults to jev and accepts the alias", async ({
     });
     expect(withoutModel.response.status).toBe(200);
     await expect(withoutModel.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
     });
     await withoutModel.wait();
 
@@ -581,14 +676,14 @@ test("defaults to jev and accepts the alias", async ({
     });
     expect(viaAlias.response.status).toBe(200);
     await expect(viaAlias.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev-1.13",
+        model: "typesafe/jev-1.14",
     });
     await viaAlias.wait();
 
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("a decision key reaches Jev by its canonical ID and both aliases", async ({
+test("a decision key reaches Jev by its canonical ID and every alias", async ({
     mocks,
 }) => {
     const { key } = await createTestApiKey({
@@ -596,7 +691,12 @@ test("a decision key reaches Jev by its canonical ID and both aliases", async ({
         user: { tierBalance: 100, packBalance: 1 },
     });
 
-    for (const model of ["typesafe/jev-1.13", "typesafe/jev", "jev"]) {
+    for (const model of [
+        "typesafe/jev-1.14",
+        "typesafe/jev-1.13",
+        "typesafe/jev",
+        "jev",
+    ]) {
         const { response, wait } = await post("/alpha/decisions", key, {
             model,
             state: `Request through ${model}`,
@@ -604,11 +704,11 @@ test("a decision key reaches Jev by its canonical ID and both aliases", async ({
         });
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toMatchObject({
-            model: "typesafe/jev-1.13",
+            model: "typesafe/jev-1.14",
         });
         await wait();
     }
-    expect(mocks.decisions.state.requests).toHaveLength(3);
+    expect(mocks.decisions.state.requests).toHaveLength(4);
 });
 
 test("a text key needs decision on /alpha/decisions but still reaches Jev on chat", async ({
@@ -647,6 +747,31 @@ test("a text key needs decision on /alpha/decisions but still reaches Jev on cha
     expect(JSON.parse(body.choices[0].message.content)).toEqual(answers);
     await chat.wait();
     expect(mocks.decisions.state.requests).toHaveLength(1);
+});
+
+test("a text key keeps authorized decision alternatives on chat", async ({
+    mocks,
+}) => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
+    });
+    mocks.decisions.state.failModel = "respan/span-01-lite";
+    const { response, wait } = await post("/v1/chat/completions", key, {
+        model: "respan/span-01-lite,vllm-sr/d3",
+        messages: [
+            {
+                role: "user",
+                content: JSON.stringify({ state: "Disk at 91%.", questions }),
+            },
+        ],
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("vllm-sr/d3");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.json();
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
 test("the decision category holds exactly the models served at /alpha/decisions", async () => {
@@ -861,8 +986,55 @@ test("returns an upstream HTTP 502 when Jev omits usage", async ({
         error: { code: "BAD_GATEWAY", details: { name: "UpstreamError" } },
     });
     await wait();
-    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests).toHaveLength(2);
+    expect(
+        mocks.decisions.state.requests.map(
+            (request) => (request.body as { model: string }).model,
+        ),
+    ).toEqual(["typesafe-ai/jev-1.14.0", "typesafe/jev-1.14"]);
     expect(
         mocks.tinybird.state.events.some((event) => event.isBilledUsage),
     ).toBe(false);
+});
+
+test("bills native Luna Decisions cache reads and writes as subsets of input", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    mocks.decisions.state.response = Response.json({
+        model: "gpt-6-luna",
+        answers: [{ name: "overdue", type: "predicate", probability: 0.96 }],
+        usage: {
+            input_tokens: 100,
+            output_tokens: 0,
+            input_tokens_details: { cached_tokens: 20, cache_write_tokens: 30 },
+        },
+    });
+    const { response, wait } = await fetchWorker("/alpha/decisions", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-6-luna-decisions",
+            state: "Invoice overdue",
+            questions: { overdue: questions.overdue },
+        }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        usage: { input_tokens: 100, output_tokens: 0 },
+        answers: { overdue: answers.overdue },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        tokenCountPromptText: 50,
+        tokenCountPromptCached: 20,
+        tokenCountPromptCacheWrite: 30,
+        totalCost: 0.00000895,
+        totalPrice: 0.00000895,
+        isBilledUsage: true,
+    });
 });

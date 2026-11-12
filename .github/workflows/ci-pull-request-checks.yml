@@ -3,13 +3,15 @@ name: CI / Pull request checks
 "on":
   pull_request:
     branches: [main, master]
+  merge_group:
 
 permissions:
   contents: read
 
-# HEAD is the pull request merge commit. With fetch-depth 2 its first parent
-# (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
-# request diff without fetching the full repository history.
+# HEAD is the pull request merge commit, or in the merge queue this pull
+# request's squashed commit. With fetch-depth 2 its first parent (HEAD^1) is the
+# base branch tip or the queue entry ahead, so `git diff HEAD^1 HEAD` is the
+# pull request diff without fetching the full repository history.
 
 jobs:
   project-manager:
@@ -23,7 +25,7 @@ jobs:
       - name: Check for project manager changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts operations/social/prompts operations/app-management/ingestion .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- operations/infrastructure/project-manager operations/news/scripts operations/news/prompts operations/app-management/ingestion .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-python@v6
@@ -35,7 +37,7 @@ jobs:
         run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
+        run: python3 -m unittest operations/infrastructure/project-manager/test_project_manager.py operations/news/scripts/test_news.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery
@@ -137,6 +139,16 @@ jobs:
       - name: Test UI
         run: npm test --workspace @pollinations/ui
 
+      # polli-cli is not a workspace; it has its own package-lock.json.
+      - name: Test polli CLI
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- \
+            packages/polli-cli .github/workflows/ci-pull-request-checks.yml \
+            .github/workflows/deploy-pollinations-site.yml; then
+            npm ci --prefix packages/polli-cli
+            npm test --prefix packages/polli-cli
+          fi
+
       - name: Test maintenance scripts
         run: >-
           node --test
@@ -145,16 +157,18 @@ jobs:
           enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
-          operations/deployment/*.test.cjs
+          operations/app-management/performance/*.test.js
+          operations/infrastructure/deployment/*.test.cjs
+          operations/monitoring/community-leaderboards/*.test.js
           operations/community-monitor/*.test.mjs
-          operations/model-evals/*.test.js
-          operations/model-monitor/src/*.test.js
+          operations/monitoring/model-evals/*.test.js
+          operations/dashboards/model-monitor/src/*.test.js
 
-      - name: Build UI for accounting and package export tests
-        run: npm run build:js --workspace @pollinations/ui
+      - name: Test shared providers and agent configurations
+        run: npx vitest run --config shared/vitest.config.ts
 
-      - name: Test model catalog and accounting compatibility
-        run: npx vitest run --config apps/model-compatibility.vitest.config.ts
+      - name: Test Economics public calculations and UI
+        run: npm run test:public --workspace economics-web
 
       - name: Get changed files that affect the enter frontend build
         id: enter-frontend
@@ -172,6 +186,7 @@ jobs:
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
 
+      # Reuses packages/ui/dist built by Economics pretest:public above.
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs
 
@@ -350,6 +365,62 @@ jobs:
         working-directory: media.pollinations.ai
         run: npm test -- test/docs.test.ts
 
+  # The production deploy runs these suites only after a merge. Select servers
+  # the way it does: the app folder plus its deploy.json `watch` paths.
+  mcp:
+    name: Test MCP servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+
+      - name: Get changed MCP servers
+        id: mcp
+        run: |
+          # --no-renames keeps the old path of a file moved out of a server.
+          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+          FILTER="--changed=$RUNNER_TEMP/changed.txt"
+          # A change to this workflow tests every server.
+          if grep -qx '.github/workflows/ci-pull-request-checks.yml' "$RUNNER_TEMP/changed.txt"; then
+            FILTER=
+          fi
+          if [ -z "$FILTER" ] || grep -q '^packages/mcp/' "$RUNNER_TEMP/changed.txt"; then
+            echo "core=true" >> "$GITHUB_OUTPUT"
+          fi
+          # apps/mcp is the hosted server built on packages/mcp.
+          APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps $FILTER)
+          APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(apps.filter(({ name }) => /(^|-)mcp$/.test(name)).map(({ path }) => path).join(" "))' "$APPS")
+          echo "MCP applications: $APPS"
+          echo "apps=$APPS" >> "$GITHUB_OUTPUT"
+
+      - name: Test packages/mcp
+        if: steps.mcp.outputs.core == 'true'
+        run: |
+          npm ci --prefix packages/mcp
+          npm test --prefix packages/mcp
+
+      # Installs each server as its deploy.json `install` does.
+      - name: Test changed MCP applications
+        if: steps.mcp.outputs.apps != ''
+        env:
+          APPS: ${{ steps.mcp.outputs.apps }}
+        run: |
+          for app in $APPS; do
+            echo "::group::$app"
+            (cd "$app" && bash -c "$(node -p 'require("./deploy.json").install')" && npm test)
+            echo "::endgroup::"
+          done
+
   website:
     name: Build pollinations.ai
     runs-on: ubuntu-latest
@@ -399,7 +470,7 @@ jobs:
     name: Check formatting and linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, enter, gen, media-docs, website]
+    needs: [lint, enter, gen, media-docs, mcp, website]
     if: always()
 
     steps:

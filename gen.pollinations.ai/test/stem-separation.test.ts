@@ -4,12 +4,14 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { apikey } from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { stemInputSeconds } from "../src/audio/stem-separation.ts";
@@ -293,3 +295,81 @@ for (const invalid of ["variation", "file", "wrong-endpoint"]) {
         await waitOnExecutionContext(ctx);
     });
 }
+
+test("retries a repeated stem-separation list and bills only the successful attempt", async () => {
+    const tinybird = createMockTinybird();
+    let calls = 0;
+    const mocks = createFetchMock({
+        tinybird,
+        elevenlabs: {
+            state: {},
+            reset() {},
+            handlerMap: {
+                "api.elevenlabs.io": async (request) => {
+                    const form = await request.formData();
+                    expect(form.get("file")).toBeInstanceOf(File);
+                    expect(form.get("stem_variation_id")).toBe("two_stems_v1");
+                    calls++;
+                    if (calls === 1)
+                        return new Response("unavailable", { status: 503 });
+                    return new Response(zip, {
+                        headers: { "content-type": "application/zip" },
+                    });
+                },
+            },
+        },
+    });
+    await mocks.enable("elevenlabs", "tinybird");
+    const { key, id, userId } = await createTestApiKey({
+        user: { packBalance: 1 },
+        allowedModels: ["elevenlabs/stem-separation"],
+        pollenBudget: 1,
+    });
+    const form = new FormData();
+    form.set("model", "elevenlabs/stem-separation,elevenlabs/stem-separation");
+    form.set("file", input());
+    form.set("stem_variation_id", "two_stems_v1");
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/alpha/audio/stem-separation", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}` },
+            body: form,
+        }),
+        withInlineGenerationCoordinator({ ...env, ELEVENLABS_API_KEY: "test" }),
+        ctx,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("0.25");
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(zip);
+    await waitOnExecutionContext(ctx);
+    expect(calls).toBe(2);
+    expect(tinybird.state.events).toHaveLength(2);
+    expect(tinybird.state.events).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                modelUsed: "elevenlabs/stem-separation",
+                responseStatus: 503,
+                isBilledUsage: false,
+                isFinal: false,
+            }),
+            expect.objectContaining({
+                modelUsed: "elevenlabs/stem-separation",
+                modelProviderUsed: "elevenlabs",
+                responseStatus: 200,
+                isBilledUsage: true,
+                isFinal: true,
+                tokenCountPromptAudioSeconds: 0.25,
+                tokenPricePromptAudioSeconds: 0.0025,
+                totalPrice: 0.0025 * 0.25,
+            }),
+        ]),
+    );
+    const db = drizzle(env.DB);
+    expect((await getUserBalance(db, userId)).packBalance).toBeCloseTo(
+        1 - 0.0025 * 0.25,
+        10,
+    );
+    const [storedKey] = await db.select().from(apikey).where(eq(apikey.id, id));
+    expect(storedKey.pollenBalance).toBeCloseTo(1 - 0.0025 * 0.25, 10);
+});

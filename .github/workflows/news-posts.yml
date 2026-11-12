@@ -91,7 +91,7 @@ jobs:
           python - "$JOB" "$DATE" >> "$GITHUB_OUTPUT" <<'EOF'
           import sys
           from datetime import UTC, date, datetime, timedelta
-          sys.path.insert(0, "operations/social/scripts")
+          sys.path.insert(0, "operations/news/scripts")
           from posts import check_date
           job, day = sys.argv[1:]
           posts = [(job, day)]
@@ -162,7 +162,7 @@ jobs:
               echo "$1 $2 is already saved"
             else
               for command in $commands; do
-                python operations/social/scripts/posts.py "$command" "$1" "$2" --news news --work "work/$1" $flag
+                python operations/news/scripts/posts.py "$command" "$1" "$2" --news news --work "work/$1" $flag
               done
               git -C news add --all
               if [ "$RUN" != preview ] && ! git -C news diff --cached --quiet; then
@@ -245,7 +245,6 @@ jobs:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
           DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
-          DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
         # The morning schedules the Buffer posts of what it wrote; the Sunday
         # afternoon sends the week's Discord post. Every delivery is tried, then
         # the run fails if one did.
@@ -272,7 +271,7 @@ jobs:
           esac
           failed=0
           for command in "${commands[@]}"; do
-            python operations/social/scripts/deliver.py $command || failed=1
+            python operations/news/scripts/deliver.py $command || failed=1
           done
           exit $failed
 
@@ -293,7 +292,6 @@ jobs:
         env:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
-          DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
         # Only after Discord has it: the saved post is what went out. A week without
         # changes saves nothing, and a rerun after a save finds it saved.
         run: |
@@ -304,7 +302,7 @@ jobs:
             if [ -e "news/operations/social/news/posts/discord/$job/$DATE.json" ]; then
               echo "$job $DATE is already saved"
             else
-              python operations/social/scripts/posts.py save "$job" "$DATE" --news news --work "work/$job"
+              python operations/news/scripts/posts.py save "$job" "$DATE" --news news --work "work/$job"
             fi
           done
           git -C news config user.name "github-actions[bot]"

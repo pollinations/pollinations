@@ -161,6 +161,8 @@ function responseEventChunks(
     openText: Set<string>,
 ): { chunks: PollinationsChatChunk[]; terminal: boolean } {
     switch (event.type) {
+        // A refusal explains why the model did not answer; show it as text.
+        case "response.refusal.delta":
         case "response.output_text.delta": {
             const id = event.item_id ?? "text";
             const chunks: PollinationsChatChunk[] = openText.has(id)

@@ -8,6 +8,7 @@ on:
       - 'enter.pollinations.ai/**'
       - 'gen.pollinations.ai/**'
       - 'media.pollinations.ai/**'
+      - 'operations/monitoring/infra-watch/**'
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'
@@ -37,6 +38,7 @@ on:
           - enter
           - gen
           - media
+          - infra-watch
         default: all
 
 concurrency:
@@ -54,6 +56,7 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      infra_watch: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'infra-watch') || steps.filter.outputs.infra_watch == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
     steps:
       - name: Checkout code
@@ -115,6 +118,10 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
               - '.github/workflows/deploy-cloudflare-production.yml'
+            infra_watch:
+              - 'operations/monitoring/infra-watch/**'
+              - 'shared/gpu-registry.ts'
+              - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
         id: mcp-apps
@@ -124,10 +131,53 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
         run: |
           git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
-          APPS=$(node operations/deployment/discover.cjs --scope=apps --changed=changed.txt)
+          APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps --changed=changed.txt)
           MCP_APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => name.endsWith("-mcp"))))' "$APPS")
           echo "MCP applications: $MCP_APPS"
           echo "apps=$MCP_APPS" >> "$GITHUB_OUTPUT"
+
+  deploy-infra-watch:
+    needs: [changes, migrate]
+    if: >-
+      !cancelled() &&
+      github.ref == 'refs/heads/production' &&
+      needs.changes.outputs.infra_watch == 'true' &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: operations/monitoring/infra-watch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      # Preserve the existing deployed secrets; this job changes code only.
+      - name: Deploy infra-watch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npx wrangler deploy
+
+      - name: Verify production GPU registry binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          version_id="$(npx wrangler deployments list --json | jq -r 'max_by(.created_on).versions[] | select(.percentage == 100) | .version_id')"
+          test -n "$version_id"
+          npx wrangler versions view "$version_id" --json \
+            | jq -e '.resources.bindings | any(.name == "GEN_KV" and .namespace_id == "a621f17ad3e34000971cffa616675c5b")'
 
   # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
   # reasons. It keeps a red gen test from letting a schema change reach
@@ -327,7 +377,12 @@ jobs:
 
   deploy-media:
     needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    # always() as in deploy-enter: a skipped test-gen (no gen changes) would
+    # otherwise skip this job through migrate, even when media changed.
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -399,4 +454,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           SOPS_AGE_KEY: ${{ matrix.app.sops == 'default' && secrets.SOPS_AGE_KEY || '' }}
-        run: operations/deployment/deploy.sh "${{ matrix.app.path }}"
+        run: operations/infrastructure/deployment/deploy.sh "${{ matrix.app.path }}"

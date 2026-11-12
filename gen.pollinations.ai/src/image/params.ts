@@ -1,5 +1,8 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    durationError,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
@@ -99,10 +102,11 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
-                // String: support both pipe (|) and comma (,) separators
-                return value.includes("|")
+                // Keep commas inside URLs, matching the public query schema.
+                const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(",");
+                    : value.split(/,(?=\s*https?:\/\/)/);
+                return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),
         reference_images: referenceUrls.optional(),
@@ -218,14 +222,18 @@ export const ImageParamsSchema = z
                 });
             }
         }
+        const durationIssue =
+            data.duration === undefined
+                ? undefined
+                : durationError(data.model, definition, data.duration);
+        if (durationIssue) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["duration"],
+                message: durationIssue,
+            });
+        }
         if (data.model === "minimax/minimax-h3") {
-            if (data.duration !== undefined && data.duration !== 5) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["duration"],
-                    message: "minimax-h3 supports exactly 5 seconds.",
-                });
-            }
             if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -246,16 +254,6 @@ export const ImageParamsSchema = z
             data.model === "minimax/minimax-h3-max-turbo"
         ) {
             if (
-                data.duration !== undefined &&
-                ![5, 10, 15].includes(data.duration)
-            ) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["duration"],
-                    message: `${data.model} supports 5, 10, or 15 seconds.`,
-                });
-            }
-            if (
                 data.aspectRatio !== undefined &&
                 !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
                     data.aspectRatio,
@@ -275,7 +273,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "google/gemini-omni-1.1-flash") {
+        if (data.model.startsWith("google/gemini-omni-")) {
             if (
                 data.aspectRatio !== undefined &&
                 !["16:9", "9:16"].includes(data.aspectRatio)
@@ -283,16 +281,14 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["aspectRatio"],
-                    message:
-                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                    message: `${data.model} supports 16:9 or 9:16.`,
                 });
             }
             if (data.fps !== undefined && data.fps !== 24) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
-                    message:
-                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }

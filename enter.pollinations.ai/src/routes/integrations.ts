@@ -72,7 +72,7 @@ export const integrationsRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     .use("*", async (c, next) => {
         c.var.auth.requireUser();
-        requireAccountPermission(c.var.auth.apiKey, "keys");
+        requireAccountPermission(c, "keys");
         await next();
     })
     .get(

@@ -34,6 +34,50 @@ beforeEach(async () => {
 describe("text balance notice", () => {
     const enabled = TEXT_BALANCE_NOTICE_ENABLED;
 
+    it.each([false, true])(
+        "refuses locked Quest spending through the authenticated text route, quest-only=%s",
+        async (questPollenOnly) => {
+            const caller = await createTestApiKey();
+            await drizzle(env.DB)
+                .update(apikey)
+                .set({ questPollenOnly })
+                .where(eq(apikey.id, caller.id));
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({ data: [] }),
+            );
+            await drizzle(env.DB)
+                .update(user)
+                .set({
+                    tierBalance: 5,
+                    packBalance: questPollenOnly ? 3 : 0,
+                    questPollenRestricted: true,
+                })
+                .where(eq(user.id, caller.userId));
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/text/hello?model=${model}`,
+                    {
+                        headers: { Authorization: `Bearer ${caller.key}` },
+                    },
+                ),
+                env,
+                ctx,
+            );
+            const text = await response.text();
+            expect(response.status).toBe(enabled ? 200 : 402);
+            expect(text).toContain(
+                enabled ? "Quest pollen is locked" : "QUEST_POLLEN_RESTRICTED",
+            );
+            expect(text).toContain("hello@pollinations.ai");
+            expect(
+                (await getUserBalance(drizzle(env.DB), caller.userId))
+                    .tierBalance,
+            ).toBe(5);
+            await waitOnExecutionContext(ctx);
+        },
+    );
+
     it.each([false, true])("handles HEAD with json=%s", async (json) => {
         const caller = await createTestApiKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -382,13 +426,80 @@ it.each([
                 `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
             );
             if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[raise the key budget](${link})`);
+            expect(text).toContain(`[raise the key budget](<${link}>)`);
             expect(text).toContain("Topping up the wallet does not raise");
             expect(text).not.toContain("complete a quest");
         }
         await waitOnExecutionContext(ctx);
     },
 );
+
+it("refuses a key with no budget left when the model has no cost history", async () => {
+    // Without history the estimate is 0, as for an hour after a failed stats
+    // fetch: the charge is only known once the provider reports usage.
+    await env.KV.put(
+        "model-stats-v3",
+        JSON.stringify({ value: { data: [] }, ttl: 3600 }),
+    );
+    const caller = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        pollenBudget: 0,
+    });
+    let providerCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        if (!new URL(request.url).pathname.endsWith("/chat/completions")) {
+            return Response.json({ data: [] });
+        }
+        providerCalls++;
+        return Response.json({
+            id: "chatcmpl-no-history",
+            object: "chat.completion",
+            created: 1,
+            model,
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "paid result" },
+                    finish_reason: "stop",
+                },
+            ],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+        });
+    });
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "no cost history" }],
+            }),
+        }),
+        env,
+        ctx,
+    );
+    const text = await response.text();
+    await waitOnExecutionContext(ctx);
+    expect(text).toContain(
+        TEXT_BALANCE_NOTICE_ENABLED
+            ? "raise the key budget"
+            : "KEY_BUDGET_EXHAUSTED",
+    );
+    expect(providerCalls).toBe(0);
+    expect(await getUserBalance(drizzle(env.DB), caller.userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
+    });
+});
 
 it("omits the quest link when only paid Pollen can cover the model", async () => {
     const paidOnlyModel = "inception/mercury-2";
@@ -474,7 +585,7 @@ it.each([
         }).toString();
         if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
             expect(response.status, text).toBe(200);
-            expect(text).toContain(`[allow it for this key](${link})`);
+            expect(text).toContain(`[allow it for this key](<${link}>)`);
         } else {
             // JSON callers parse the body, so they keep the plain 403.
             expect(response.status, text).toBe(403);

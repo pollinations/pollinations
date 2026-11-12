@@ -1,5 +1,9 @@
 import { ensureUpstreamOk } from "@shared/error.ts";
 import { CreateDecisionRequestSchema } from "@shared/schemas/decisions.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+} from "@shared/schemas/openai.ts";
 import { completionToChatStream } from "./chat/stream.js";
 import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
 import type {
@@ -17,8 +21,28 @@ const REQUEST_EXAMPLE =
 type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
-    usage: { input_tokens: number; output_tokens: number };
+    usage: {
+        input_tokens: number;
+        output_tokens: number;
+        input_tokens_details?: {
+            cached_tokens?: number;
+            cache_write_tokens?: number;
+        };
+    };
 };
+
+export function decisionCompletionUsage(
+    usage: SystemOneResponse["usage"],
+): CompletionUsage {
+    return {
+        prompt_tokens: usage.input_tokens,
+        completion_tokens: usage.output_tokens,
+        total_tokens: usage.input_tokens + usage.output_tokens,
+        ...(usage.input_tokens_details && {
+            prompt_tokens_details: usage.input_tokens_details,
+        }),
+    };
+}
 
 type SystemOneRequest = {
     state: unknown;
@@ -280,7 +304,13 @@ export async function requestDecision(
                           input: decisionText(state),
                           questions: toOpenAIQuestions(questions),
                       }
-                    : { ...(d3 ? toD3Request(request) : request), model },
+                    : {
+                          ...(options.modelConfig?.defaultOptions as
+                              | Record<string, unknown>
+                              | undefined),
+                          ...(d3 ? toD3Request(request) : request),
+                          model,
+                      },
             ),
         });
         await ensureUpstreamOk(response, requestUrl);
@@ -296,7 +326,10 @@ export async function requestDecision(
                     typeof count === "number" &&
                     Number.isSafeInteger(count) &&
                     count >= 0,
-            )
+            ) ||
+            !CompletionUsageSchema.safeParse(
+                decisionCompletionUsage(result.usage),
+            ).success
         ) {
             throw serviceError(
                 `${model} returned a response without valid answers or usage.`,
@@ -365,12 +398,7 @@ export async function callSystemOne(
                 finish_reason: "stop",
             },
         ],
-        usage: {
-            prompt_tokens: result.usage.input_tokens,
-            completion_tokens: result.usage.output_tokens,
-            total_tokens:
-                result.usage.input_tokens + result.usage.output_tokens,
-        },
+        usage: decisionCompletionUsage(result.usage),
     };
     return withUpstreamRequestUrl(
         // TypeSafe answers arrive in one piece.

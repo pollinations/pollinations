@@ -84,6 +84,8 @@ async function generateText(params, context) {
 
         if (assistantMessage?.content) {
             responseContent.push(createTextContent(assistantMessage.content));
+        } else if (assistantMessage?.refusal) {
+            responseContent.push(createTextContent(assistantMessage.refusal));
         }
 
         if (assistantMessage?.reasoning_content) {
@@ -184,6 +186,12 @@ const messageSchema = z.object({
         .string()
         .optional()
         .describe("Participant name for multi-user conversations"),
+    function_call: z
+        .object({ name: z.string(), arguments: z.string() })
+        .optional()
+        .describe(
+            "Legacy function call from assistant (for continuing function use)",
+        ),
     tool_call_id: z
         .string()
         .optional()

@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { BillingOverview } from "../frontend/src/backend-types.ts";
 import { autoTopUpStatus } from "../frontend/src/components/pollen/auto-top-up-status.ts";
+import { formatUsd } from "../frontend/src/components/pollen/format-usd.ts";
+import { OutOfPollenBanner } from "../frontend/src/components/pollen/out-of-pollen-banner.tsx";
 import {
     describePaymentMethod,
     formatAddress,
@@ -8,6 +12,20 @@ import {
     paymentMethodDetails,
 } from "../frontend/src/components/pollen/payment-method-format.ts";
 import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
+import {
+    PollenBalance,
+    SidebarWallet,
+} from "../frontend/src/components/pollen/pollen-balance.tsx";
+import { PollenPackButtons } from "../frontend/src/components/pollen/pollen-pack-controls.tsx";
+
+vi.hoisted(() => {
+    vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
+    vi.stubEnv("MODE", "development");
+});
+afterAll(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+});
 
 function billing(
     overrides: {
@@ -236,3 +254,191 @@ describe("payment logos before checkout", () => {
             expect(paymentMethods(country)).toEqual(paymentMethods(null)),
     );
 });
+
+describe("locked Quest pollen display", () => {
+    it.each([true, false])(
+        "shows spendable funds only when restricted=%s",
+        (restricted) => {
+            const router = createRouter({
+                routeTree: createRootRoute(),
+                history: createMemoryHistory(),
+            });
+            const html = renderToStaticMarkup(
+                createElement(
+                    RouterContextProvider,
+                    { router },
+                    createElement(PollenBalance, {
+                        tierBalance: 35.54,
+                        packBalance: 2,
+                        tierWeek: 12.5,
+                        questPollenRestricted: restricted,
+                    }),
+                ),
+            );
+            if (restricted) {
+                expect(html).toContain("Available");
+                expect(html).toContain("Quest pollen locked");
+                expect(html).not.toContain("37.54");
+                expect(html).toContain("$2.00");
+                expect(html).not.toContain("/ 7d");
+            } else {
+                expect(html).toContain("Total");
+                expect(html).not.toContain("Quest pollen locked");
+                expect(html).toContain("$37.54");
+                expect(html).toContain("+$12.50");
+                expect(html).toContain("/ 7d");
+            }
+        },
+    );
+
+    it("keeps the balance visible with quiet purchase and support links", () => {
+        const router = createRouter({
+            routeTree: createRootRoute(),
+            history: createMemoryHistory(),
+        });
+        const html = renderToStaticMarkup(
+            createElement(
+                RouterContextProvider,
+                { router },
+                createElement(PollenBalance, {
+                    tierBalance: 35.54,
+                    packBalance: 2,
+                    questPollenRestricted: true,
+                }),
+            ),
+        );
+        expect(html).toContain("$35.54");
+        expect(html).toContain("Verification needed");
+        expect(html).toContain("make your first purchase");
+        expect(html).toContain('href="/pollen#buy-pollen"');
+        expect(html).toContain('href="mailto:hello@pollinations.ai"');
+        expect(html).not.toContain('role="alert"');
+        expect(html).not.toContain("request a review");
+
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarWallet, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: true,
+            }),
+        );
+        expect(sidebar).toContain("$35.54");
+        expect(sidebar).not.toContain("Frozen");
+        expect(sidebar).toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
+    });
+
+    it("removes the restriction notice when the account is verified", () => {
+        const html = renderToStaticMarkup(
+            createElement(PollenBalance, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: false,
+                compact: true,
+            }),
+        );
+        expect(html).toContain("35.54");
+        expect(html).not.toContain("Verification needed");
+        expect(html).not.toContain("couldn’t verify");
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarWallet, {
+                tierBalance: 35.54,
+                packBalance: 2,
+                questPollenRestricted: false,
+            }),
+        );
+        expect(sidebar).not.toContain(
+            'aria-label="Quest pollen needs verification"',
+        );
+    });
+});
+
+describe("dollar amounts", () => {
+    it.each([
+        [0, "$0.00"],
+        [2, "$2.00"],
+        [12.5, "$12.50"],
+        // Rounds down: a balance is never shown as more than it is.
+        [1234.567, "$1,234.56"],
+        [0.99999, "$0.9999"],
+        // Requests cost fractions of a cent, so small balances keep them.
+        [0.0042, "$0.0042"],
+        [-1.2, "-$1.20"],
+        [250_000, "$250K"],
+    ])("formats %s Pollen as %s", (pollen, text) => {
+        expect(formatUsd(pollen)).toBe(text);
+    });
+
+    it("labels a pack with the dollars it adds to the balance", () => {
+        const [pack] = POLLEN_PACKS;
+        const html = renderToStaticMarkup(
+            createElement(PollenPackButtons, {
+                packs: [pack],
+                onSelect: () => {},
+            }),
+        );
+        expect(html).toContain(`>$${pack.amountUsd}<`);
+        expect(html).toContain(
+            `aria-label="Select $${pack.amountUsd} of Pollen for $`,
+        );
+    });
+});
+
+import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+
+describe("out-of-pollen banner", () => {
+    const buy = "/pollen#buy-pollen";
+    it.each([
+        [
+            "an empty wallet",
+            { tierBalance: 0, packBalance: 0 },
+            [buy, "/quests"],
+        ],
+        // Locked Quest pollen cannot be spent, and quests would only add to it.
+        [
+            "only locked Quest pollen",
+            { tierBalance: 35.54, packBalance: 0, questPollenRestricted: true },
+            [buy],
+        ],
+        // The wallet shows this as 0, but the API still accepts a request.
+        [
+            "a remainder too small to show",
+            { tierBalance: 0.00004, packBalance: 0 },
+            [],
+        ],
+        ["Quest pollen left", { tierBalance: 0.5, packBalance: 0 }, []],
+        [
+            "paid pollen beside locked Quest pollen",
+            { tierBalance: 35.54, packBalance: 2, questPollenRestricted: true },
+            [],
+        ],
+    ])("links to the refills that help: %s", (_name, balance, links) => {
+        const router = createRouter({
+            routeTree: createRootRoute(),
+            history: createMemoryHistory(),
+        });
+        const html = renderToStaticMarkup(
+            createElement(
+                RouterContextProvider,
+                { router },
+                createElement(OutOfPollenBanner, {
+                    questPollenRestricted: false,
+                    ...balance,
+                }),
+            ),
+        );
+        expect(
+            [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]),
+        ).toEqual(links);
+        // A wallet with pollen renders nothing, not a banner without links.
+        expect(html === "").toBe(links.length === 0);
+    });
+});
+
+import {
+    createMemoryHistory,
+    createRootRoute,
+    createRouter,
+    RouterContextProvider,
+} from "@tanstack/react-router";

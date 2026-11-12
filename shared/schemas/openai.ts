@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
     AGENT_FIELD_DESCRIPTIONS,
     ModelHealthSchema,
+    ModelInfoSchema,
 } from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
@@ -209,15 +210,35 @@ const ChatCompletionRequestUserMessageSchema = z
     })
     .passthrough();
 
-const ChatCompletionMessageToolCallSchema = z.object({
-    id: z.string(),
-    type: z.literal("function"),
-    function: z.object({
-        name: z.string(),
-        arguments: z.string(),
-        thought_signature: z.string().optional(),
-    }),
-});
+const ChatCompletionMessageToolCallSchema = z
+    .object({
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({
+            name: z.string(),
+            arguments: z.string(),
+            thought_signature: z.string().optional(),
+        }),
+        // Google's OpenAI-compatible field for the same Gemini signature.
+        // Malformed values are dropped so they never fail a request or a
+        // provider response parsed with this schema.
+        extra_content: z
+            .object({
+                google: z
+                    .object({ thought_signature: z.string().optional() })
+                    .optional(),
+            })
+            .nullish()
+            .catch(undefined),
+    })
+    .transform(({ extra_content, ...call }) => {
+        const thought_signature =
+            call.function.thought_signature ??
+            extra_content?.google?.thought_signature;
+        return thought_signature
+            ? { ...call, function: { ...call.function, thought_signature } }
+            : call;
+    });
 
 const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
@@ -309,12 +330,21 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+const ChatOutputTokenLimitSchema = z
+    .number()
+    .int()
+    .min(0)
+    .nullish()
+    .describe(
+        "Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort.",
+    );
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -344,7 +374,8 @@ export const CreateChatCompletionRequestSchema = z
             .default(null),
         logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
-        max_tokens: z.number().int().min(0).nullable().optional(),
+        max_tokens: ChatOutputTokenLimitSchema,
+        max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
@@ -397,7 +428,17 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((value, ctx) => {
+        if (value.tool_choice === "required" && !value.tools?.length) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["tools"],
+                message:
+                    'tool_choice "required" requires at least one tool in tools.',
+            });
+        }
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
@@ -417,8 +458,8 @@ const ResponseFunctionToolSchema = z
     .object({
         type: z.literal("function"),
         name: z.string(),
-        description: z.string().optional(),
-        parameters: FunctionParametersSchema.optional(),
+        description: z.string().nullish(),
+        parameters: FunctionParametersSchema.nullish(),
         strict: z.boolean().nullable().optional(),
     })
     .passthrough();
@@ -431,11 +472,18 @@ const ResponseFunctionToolSchema = z
  */
 export const CreateResponseRequestSchema = z
     .object({
-        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL),
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
-        max_output_tokens: z.number().int().positive().nullish(),
+        max_output_tokens: z
+            .number()
+            .int()
+            .positive()
+            .nullish()
+            .describe(
+                "Maximum generated tokens, including reasoning. For models served through Chat Completions, non-streaming requests that exhaust an explicit limit without an answer return 400 output_token_limit_exceeded; reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. Native Responses models can instead return status incomplete with reason max_output_tokens.",
+            ),
         max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
@@ -585,6 +633,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
+    refusal: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -776,6 +825,15 @@ export const OpenAIModelSchema = z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
+        pricing_units: ModelInfoSchema.shape.pricing_units,
+        top_provider: z.object({
+            max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
+                .unwrap()
+                .nullable()
+                .describe(
+                    "Maximum output tokens; null when no limit is declared.",
+                ),
+        }),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())
@@ -792,8 +850,37 @@ export const OpenAIModelSchema = z
                 "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
             ),
         context_length: z.number().optional(),
+        video_capabilities: ModelInfoSchema.shape.video_capabilities.describe(
+            "Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video.",
+        ),
+        min_duration: ModelInfoSchema.shape.min_duration.describe(
+            "Shortest accepted video or audio `duration` in seconds.",
+        ),
+        max_duration: ModelInfoSchema.shape.max_duration.describe(
+            "Longest accepted video or audio `duration` in seconds.",
+        ),
+        default_duration: ModelInfoSchema.shape.default_duration.describe(
+            "Video length in seconds when the request omits `duration`.",
+        ),
+        allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
+            "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
+        ),
+        resolutions: ModelInfoSchema.shape.resolutions.describe(
+            "Output resolutions the model accepts for the `resolution` parameter, such as `1k`, `2k` or `1080p`. The first entry is the default. Omitted when the model declares none.",
+        ),
         per_user_rpm: z.number().positive().nullable().optional(),
+        max_reference_images:
+            ModelInfoSchema.shape.max_reference_images.describe(
+                "Most reference or input images one request accepts. Omitted when the model declares none.",
+            ),
+        max_reference_videos:
+            ModelInfoSchema.shape.max_reference_videos.describe(
+                "Most reference or input videos one request accepts. Omitted when the model declares none.",
+            ),
         health: ModelHealthSchema.optional(),
+        voices: ModelInfoSchema.shape.voices.describe(
+            "Preset voice names for the `voice` parameter. Omitted when the model lists none.",
+        ),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -815,6 +902,7 @@ export const GetModelsResponseSchema = z
 // Shared fields between image generation and editing requests
 const imageModelField = z
     .string()
+    .min(1)
     .optional()
     .default("black-forest-labs/flux.1-schnell")
     .meta({
@@ -823,6 +911,7 @@ const imageModelField = z
 // Edits need a model that reads the source image; schnell is text-only.
 const imageEditModelField = z
     .string()
+    .min(1)
     .optional()
     .default("openai/gpt-image-1-mini")
     .meta({
@@ -838,14 +927,24 @@ const imageNField = z
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
 const imageSizeMeta = {
-    description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+    description:
+        "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default",
 };
-const imageSizeField = z
+// At most 15 digits per side, so each side parses to an exact integer.
+const IMAGE_SIZE_PATTERN = /^\s*(?:auto|\d{1,15}\s*[xX]\s*\d{1,15})\s*$/;
+// Reject an unparseable size instead of letting `resolveParams()` drop it and
+// generate (and bill) a 1024x1024 default the caller never asked for.
+const imageSizeValues = z
     .string()
+    .regex(
+        IMAGE_SIZE_PATTERN,
+        "size must be `auto` or WIDTHxHEIGHT, e.g. 1024x1024",
+    );
+const imageSizeField = imageSizeValues
     .optional()
     .default("1024x1024")
     .meta(imageSizeMeta);
-const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+const imageEditSizeField = imageSizeValues.optional().meta(imageSizeMeta);
 // Same bounds as the GET image route and the chat route: out-of-range seeds
 // are rejected here instead of being silently replaced with seed 42 by the
 // generation pipeline.

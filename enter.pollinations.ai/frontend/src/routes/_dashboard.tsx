@@ -1,39 +1,60 @@
-import { Button, GitHubIcon, GoogleIcon, InlineLink } from "@pollinations/ui";
+import {
+    Button,
+    GitHubIcon,
+    GoogleIcon,
+    InlineLink,
+    OutageNotice,
+    Section,
+} from "@pollinations/ui";
 import {
     Await,
     createFileRoute,
     Outlet,
+    useMatch,
     useRouter,
+    useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useEffect, useState } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
-import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
+import type { DeveloperEarningsRow } from "../components/activity/types.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {
+    CardLoading,
     LoadError,
-    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
+import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
-    dashboardNavItems,
+    DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarWallet } from "../components/pollen";
-import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
+import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
+import {
+    BALANCE_PATH,
+    fetchAccountBalance,
+} from "../hooks/use-account-balance.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
+import { isOutageStatus, useOutage, useOutageRetry } from "../lib/outage.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
+const PUBLIC_PATHS: ReadonlySet<string> = new Set([
+    ...SIGNED_OUT_NAV_ITEMS.map((item) => item.to),
+    "/sign-in",
+]);
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
     null;
 let dashboardSessionExpiresAt = 0;
+// `sessionUnavailable`: Pollinations is down, so who is signed in is unknown.
+type DashboardSession = { user: User | null; sessionUnavailable?: boolean };
 // The last session the server confirmed. A refresh that fails to complete is
 // not a sign-out (an expired session resolves with no user), so reuse this
 // instead of replacing the dashboard, and an open new-key secret, with an
 // error page.
-let lastDashboardSession: { user: User | null } | null = null;
+let lastDashboardSession: DashboardSession | null = null;
 
 function getDashboardSession() {
     if (!dashboardSessionPromise || Date.now() >= dashboardSessionExpiresAt) {
@@ -48,13 +69,17 @@ function getDashboardSession() {
 
 export const Route = createFileRoute("/_dashboard")({
     staleTime: DASHBOARD_DATA_STALE_TIME,
-    beforeLoad: async () => {
+    beforeLoad: async (): Promise<DashboardSession> => {
         const result = await getDashboardSession().catch(() => null);
         if (!result || result.error) {
             dashboardSessionPromise = null;
             dashboardSessionExpiresAt = 0;
             if (lastDashboardSession) return lastDashboardSession;
-            throw new Error("Authentication failed.");
+            // No response or a 5xx: keep the dashboard up through the outage.
+            if (!result || isOutageStatus(result.error.status)) {
+                return { user: null, sessionUnavailable: true };
+            }
+            throw new Error(DASHBOARD_AUTH_FAILED_MESSAGE);
         }
         const user = result.data?.user ?? null;
         // Another tab may have switched accounts: stop calling the account API
@@ -113,6 +138,7 @@ export const Route = createFileRoute("/_dashboard")({
         };
         return {
             user,
+            sessionUnavailable: context.sessionUnavailable ?? false,
             githubUsername: sessionUser?.githubUsername ?? "",
             apiKeys,
             balance,
@@ -136,31 +162,27 @@ export function useDashboardRetry(resource: "balance" | "profile" | "apps") {
     };
 }
 
-// Share the loader request between navigation and page without blocking the shell.
-export function useDashboardApps() {
-    const { apps: promise, user } = Route.useLoaderData();
-    const userId = user?.id;
-    const [resolved, setResolved] = useState<{
-        userId: typeof userId;
-        apps: ListedApp[] | null;
-    }>();
-    useEffect(() => {
-        let active = true;
-        void promise.then((apps) => {
-            if (active) setResolved({ userId, apps });
-        });
-        return () => {
-            active = false;
-        };
-    }, [promise, userId]);
-    return resolved?.userId === userId ? resolved?.apps : undefined;
-}
-
 function DashboardLayout() {
+    const router = useRouter();
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const apps = useDashboardApps();
+    const pathname = useRouterState({ select: (s) => s.location.pathname });
+    // The buy page itself needs no pointer to the buy page. Matched by route:
+    // the router also serves it as /pollen/ and /Pollen.
+    const onPollenPage = useMatch({
+        from: "/_dashboard/pollen",
+        shouldThrow: false,
+    });
+    // Pages that need the account wait out the outage; public pages still load.
+    const outagePageTitle =
+        data.sessionUnavailable && !PUBLIC_PATHS.has(pathname)
+            ? (DASHBOARD_NAV_ITEMS.find((item) => item.to === pathname)
+                  ?.label ?? "Account")
+            : undefined;
+    useOutageRetry(data.sessionUnavailable, "dashboard-session", () =>
+        router.invalidate(),
+    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -177,32 +199,43 @@ function DashboardLayout() {
     return (
         <DashboardShell
             navItems={
-                data.user
-                    ? dashboardNavItems(Boolean(apps?.length))
+                data.user || data.sessionUnavailable
+                    ? DASHBOARD_NAV_ITEMS
                     : SIGNED_OUT_NAV_ITEMS
             }
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
-            accountArea={data.user ? undefined : <SignedOutAccountArea />}
-            showFooterLinks={Boolean(data.user)}
+            accountArea={
+                data.user ? undefined : data.sessionUnavailable ? (
+                    // Who is signed in is unknown: the outage takes the
+                    // account's place.
+                    <div className="px-1">
+                        <SidebarOutage />
+                    </div>
+                ) : (
+                    <SignedOutAccountArea />
+                )
+            }
+            showFooterLinks={Boolean(data.user) || data.sessionUnavailable}
             showQuestStatus={Boolean(data.user)}
-            signInBanner={data.user ? undefined : <DashboardSignInBanner />}
+            signInBanner={
+                data.user || data.sessionUnavailable ? undefined : (
+                    <DashboardSignInBanner />
+                )
+            }
             walletArea={
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<PageStatus />}>
+                    <Suspense fallback={<CardLoading className="h-11" />}>
                         <Await promise={data.balance}>
                             {(balance) =>
                                 balance ? (
                                     <Await
                                         promise={data.earnings}
                                         fallback={
-                                            <>
-                                                <SidebarWallet {...balance} />
-                                                <PageStatus />
-                                            </>
+                                            <SidebarWallet {...balance} />
                                         }
                                     >
                                         {(earnings) => (
@@ -213,9 +246,7 @@ function DashboardLayout() {
                                         )}
                                     </Await>
                                 ) : (
-                                    <LoadError onRetry={retry}>
-                                        Couldn’t load your balance.
-                                    </LoadError>
+                                    <WalletLoadError onRetry={retry} />
                                 )
                             }
                         </Await>
@@ -223,8 +254,37 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
-            <Outlet />
+            {data.user && !onPollenPage && (
+                <Suspense fallback={null}>
+                    <Await promise={data.balance}>
+                        {(balance) =>
+                            balance && <OutOfPollenBanner {...balance} />
+                        }
+                    </Await>
+                </Suspense>
+            )}
+            {outagePageTitle ? (
+                <Section title={outagePageTitle}>
+                    <OutageNotice retrying />
+                </Section>
+            ) : (
+                <Outlet />
+            )}
         </DashboardShell>
+    );
+}
+
+/** The drawer's compact outage rows, or the usual error when it is not one. */
+function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
+    const outage = useOutage([BALANCE_PATH]);
+    // The same resource as the Pollen page's balance: one retry for both.
+    useOutageRetry(outage, BALANCE_PATH, onRetry);
+    return outage ? (
+        <SidebarOutage />
+    ) : (
+        <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
+            Couldn’t load your balance.
+        </LoadError>
     );
 }
 

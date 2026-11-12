@@ -1,3 +1,4 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
@@ -26,7 +27,6 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
@@ -35,16 +35,22 @@ function requestForMcp(
     request: Request,
     server: McpServerDefinition,
     user: AuthUser,
+    agentRun: AgentRunClaims | undefined,
 ): Request {
     const headers = new Headers(request.headers);
-    if (server.billing === "usage_receipt") {
+    if (server.forwardAuthorization !== true) {
         headers.delete("authorization");
     }
     headers.delete("cookie");
     headers.delete(MCP_USER_ID_HEADER);
     headers.delete(MCP_USER_GITHUB_HEADER);
     if (server.userScoped) {
-        headers.set(MCP_USER_ID_HEADER, user.id);
+        // Each agent gets its own state on the account, apart from the
+        // account owner's.
+        headers.set(
+            MCP_USER_ID_HEADER,
+            agentRun ? `${user.id}:agent:${agentRun.agentModelId}` : user.id,
+        );
         if (user.githubId && user.githubUsername) {
             headers.set(
                 MCP_USER_GITHUB_HEADER,
@@ -168,12 +174,13 @@ export const mcpRoutes = new Hono<Env>()
                 id: server.id,
                 name: server.name,
                 description: server.description,
+                alpha: server.alpha,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),
         }),
     )
-    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
+    .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
         const message =
@@ -193,6 +200,11 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        if (server.agents === false && c.var.auth.agentRun) {
+            throw new HTTPException(403, {
+                message: `Agents can't use ${server.name}`,
+            });
+        }
         // A tool's cost is known only from its receipt, so a tool call needs a
         // spendable balance up front. Initialization and discovery stay free.
         if (
@@ -205,14 +217,13 @@ export const mcpRoutes = new Hono<Env>()
 
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user),
+            requestForMcp(c.req.raw, server, user, c.var.auth.agentRun),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
-                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

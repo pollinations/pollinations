@@ -95,7 +95,6 @@ import {
 } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
@@ -182,7 +181,6 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         BalanceVariables &
-        FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables &
         GenerationCacheVariables;
@@ -267,6 +265,15 @@ export const track = (eventType: EventType) =>
             communityModelReward?: CommunityModelRewardResolution | null;
             billedPrice?: number;
         }): Promise<InsertGenerationEvent> => {
+            // Owner-only models stay out of public stats. A private model asked
+            // for drops the row; a private fallback that served a public model
+            // keeps the row in that model's totals, with its route unnamed.
+            const isPrivate = (id: string | undefined) =>
+                fallbackCandidates(modelInfo).some(
+                    (candidate) =>
+                        candidate.communityEndpoint?.visibility === "private" &&
+                        candidate.id === id,
+                );
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
@@ -288,6 +295,8 @@ export const track = (eventType: EventType) =>
                 markup: row.markup ?? null,
                 communityModelReward: row.communityModelReward ?? null,
                 billedPrice: row.billedPrice ?? 0,
+                privateModel: isPrivate(requestTracking.resolvedModelRequested),
+                privateRoute: isPrivate(row.responseTracking.modelUsed),
             });
             await sendToTinybird(
                 event,
@@ -328,6 +337,9 @@ export const track = (eventType: EventType) =>
                 );
                 const finalCandidate =
                     finalAttempt?.candidate ?? fallbackCandidates(modelInfo)[0];
+                const billingModel = modelInfo.requested.includes(",")
+                    ? (finalCandidate.entry ?? modelInfo)
+                    : modelInfo;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -337,9 +349,8 @@ export const track = (eventType: EventType) =>
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
                     : responseForTracking(c.res);
-                // What a rescue changes: the generation's cost, and which owner
-                // earns the reward. Not the price — the caller is charged the
-                // listing they asked for either way.
+                // Catalog routes retain their listing's quote. A caller-listed
+                // alternate is charged at its own price and balance rules.
                 // Emitted only after the response above is captured: any
                 // await before that clone lets the body start streaming, and
                 // cloning a locked stream throws.
@@ -357,6 +368,13 @@ export const track = (eventType: EventType) =>
                         attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
+                            ...trackJsonErrorUsage(
+                                eventType,
+                                requestTracking,
+                                attempt.candidate,
+                                attempt.error,
+                                pricingInput,
+                            ),
                             responseStatus: status,
                             cacheHit: false,
                             isBilledUsage: false,
@@ -387,7 +405,6 @@ export const track = (eventType: EventType) =>
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
                 // trackResponse consumes SSE text and JSON bodies, so for
@@ -412,7 +429,7 @@ export const track = (eventType: EventType) =>
                 billingStarted = true;
                 try {
                     const requestedCommunityEndpoint =
-                        c.var.model?.communityEndpoint;
+                        billingModel.communityEndpoint;
                     const servedCommunityEndpoint =
                         finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
@@ -425,7 +442,7 @@ export const track = (eventType: EventType) =>
                         apiKeyReservedAmount:
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
-                        modelPaidOnly: c.var.model?.definition.paidOnly,
+                        modelPaidOnly: billingModel.definition.paidOnly,
                         questPollenOnly: c.var.auth?.apiKey?.questPollenOnly,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
@@ -479,12 +496,6 @@ export const track = (eventType: EventType) =>
                           ...payerBucketToMeter(payerBucket),
                       }
                     : balanceTracking();
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.isBilledUsage
-                        ? responseTracking.price?.totalPrice || 0
-                        : 0,
-                );
 
                 const finalEvent = await emitRow({
                     startTime,
@@ -696,6 +707,56 @@ function responseForTracking(response: Response): Response {
     return readsBody ? response.clone() : new Response(null, response);
 }
 
+/** A model list is priced at the model that ran; one model at its own price. */
+function quotedModel(
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+): ModelDefinition {
+    return request.modelRequested?.includes(",")
+        ? (candidate.definition ?? request.modelDefinition)
+        : request.modelDefinition;
+}
+
+function trackJsonErrorUsage(
+    eventType: EventType,
+    request: RequestTrackingData,
+    candidate: FallbackCandidate,
+    error: unknown,
+    input?: PricingInput,
+): Partial<ResponseTrackingData> {
+    if (
+        eventType !== "generate.text" ||
+        !(error instanceof Error) ||
+        !("responseBody" in error) ||
+        typeof error.responseBody !== "string"
+    ) {
+        return {};
+    }
+    let output: { usage?: unknown };
+    try {
+        output = JSON.parse(error.responseBody);
+    } catch {
+        return {};
+    }
+    const parsed = CompletionUsageSchema.safeParse(output?.usage);
+    if (!parsed.success) return {};
+    const usage = openaiUsageToUsage(parsed.data);
+    return {
+        usage,
+        ...calculateUsageBilling({
+            model: request.resolvedModelRequested,
+            usage,
+            servedBy: candidate.definition ?? request.modelDefinition,
+            quotedBy: quotedModel(request, candidate),
+            output,
+            input: {
+                ...input,
+                hasExplicitCacheHit: hasExplicitPromptCacheHit(parsed.data),
+            },
+        }),
+    };
+}
+
 export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -706,6 +767,7 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
+    const quotedBy = quotedModel(requestTracking, candidate);
     const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
@@ -733,9 +795,16 @@ export async function trackResponse(
         // handler reports on the error (an xAI video rejected after generation).
         const usage =
             error instanceof UpstreamError ? error.billedUsage : undefined;
-        if (!usage) {
+        if (!usage || isImplausibleProxyUsage(eventType, candidate, usage)) {
             return notBilled({
                 modelUsed,
+                ...trackJsonErrorUsage(
+                    eventType,
+                    requestTracking,
+                    candidate,
+                    error,
+                    pricingInput,
+                ),
             });
         }
         return {
@@ -748,7 +817,7 @@ export async function trackResponse(
                 usage,
                 servedBy:
                     candidate.definition ?? requestTracking.modelDefinition,
-                quotedBy: requestTracking.modelDefinition,
+                quotedBy,
                 input: pricingInput,
             }),
             modelUsed,
@@ -806,7 +875,7 @@ export async function trackResponse(
                 usage,
                 servedBy:
                     candidate.definition ?? requestTracking.modelDefinition,
-                quotedBy: requestTracking.modelDefinition,
+                quotedBy,
                 output,
                 input: billingInput,
             }),
@@ -840,7 +909,7 @@ export async function trackResponse(
             model: resolvedModelRequested,
             usage: {},
             servedBy: candidate.definition ?? requestTracking.modelDefinition,
-            quotedBy: requestTracking.modelDefinition,
+            quotedBy,
             output,
             input: pricingInput,
         });
@@ -882,8 +951,20 @@ export async function trackResponse(
             modelUsed,
         });
     }
-    // Cost follows the model that ran; price follows the one the caller asked
-    // for, so the invoice does not move because a fallback stepped in.
+    if (isImplausibleProxyUsage(eventType, candidate, modelUsage.usage)) {
+        return notBilled({
+            responseStatus: 502,
+            modelUsed,
+            usage: {},
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "usage_invalid",
+                errorMessage: `Community provider reported implausible usage: ${JSON.stringify(modelUsage.usage)}`,
+            },
+            errorOutput: { usage: modelUsage.usage },
+        });
+    }
+    // Provider cost follows the serving route; price follows its caller choice.
     const {
         cost,
         price,
@@ -895,7 +976,7 @@ export async function trackResponse(
         model: resolvedModelRequested,
         usage: modelUsage.usage,
         servedBy: candidate.definition ?? requestTracking.modelDefinition,
-        quotedBy: requestTracking.modelDefinition,
+        quotedBy,
         output: modelUsage.output,
         input: billingInput,
     });
@@ -914,11 +995,101 @@ export async function trackResponse(
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
+        errorTracking:
+            eventType === "generate.text"
+                ? zeroUsageNote(
+                      modelProviderUsed,
+                      modelUsage.usage,
+                      modelUsage.output,
+                  )
+                : undefined,
+    };
+}
+
+// A community proxy reports its own usage and its owner earns from it, so a
+// text call that claims more than this, summed over every prompt and every
+// completion bucket, is never charged.
+const MAX_PROXY_PROMPT_TOKENS = 2_000_000;
+const MAX_PROXY_COMPLETION_TOKENS = 200_000;
+
+function isImplausibleProxyUsage(
+    eventType: EventType,
+    candidate: FallbackCandidate,
+    usage: Usage,
+): boolean {
+    if (
+        eventType !== "generate.text" ||
+        candidate.communityEndpoint?.type !== "proxy"
+    ) {
+        return false;
+    }
+    let prompt = 0;
+    let completion = 0;
+    for (const [type, amount] of Object.entries(usage)) {
+        // Checked before it is summed: a negative count would cancel a large
+        // one, and text that reads as a number ("0x1") would turn the sum
+        // into text, which is never over a ceiling. Number.isFinite does
+        // not convert, so only a real number passes.
+        if (!Number.isFinite(amount) || amount < 0) return true;
+        if (type.startsWith("prompt")) prompt += amount;
+        else completion += amount;
+    }
+    return (
+        prompt > MAX_PROXY_PROMPT_TOKENS ||
+        completion > MAX_PROXY_COMPLETION_TOKENS
+    );
+}
+
+// A text answer reporting no tokens is billed at zero. Say why on its row,
+// without the content, so the cause can be traced. Community agents report
+// no usage by design.
+function zeroUsageNote(
+    provider: string | undefined,
+    usage: Usage,
+    output: unknown,
+): ErrorData | undefined {
+    if (provider === "community") return undefined;
+    if (Object.values(usage).some((value) => Number(value) > 0)) {
+        return undefined;
+    }
+    const stream = output as
+        | { streamEvents?: unknown[]; doneSeen?: boolean }
+        | undefined;
+    const events = (stream?.streamEvents ?? [output]) as {
+        usage?: unknown;
+        choices?: {
+            finish_reason?: unknown;
+            message?: { content?: unknown };
+            delta?: { content?: unknown };
+        }[];
+    }[];
+    let contentChars = 0;
+    let finishReason: unknown;
+    let reportedUsage: unknown;
+    for (const event of events) {
+        for (const choice of event?.choices ?? []) {
+            const content = choice.message?.content ?? choice.delta?.content;
+            if (typeof content === "string") contentChars += content.length;
+            finishReason = choice.finish_reason ?? finishReason;
+        }
+        reportedUsage = event?.usage ?? reportedUsage;
+    }
+    return {
+        errorResponseCode: "usage_zero",
+        errorMessage: JSON.stringify({
+            streamEvents: stream?.streamEvents?.length,
+            doneSeen: stream?.doneSeen,
+            finishReason,
+            contentChars,
+            usage: reportedUsage,
+        }).slice(0, 1000),
     };
 }
 
 function streamErrorClass(code: string | undefined): string {
-    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "usage_missing" || code === "usage_invalid") {
+        return "UpstreamUsageError";
+    }
     if (code === "upstream_stream_error") return "UpstreamStreamError";
     return "UpstreamFinishReasonError";
 }
@@ -1185,6 +1356,8 @@ type TrackingEventInput = {
     communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
+    privateModel: boolean;
+    privateRoute: boolean;
 };
 
 // Reduce the per-rule adjustment breakdown into the two Map columns the event
@@ -1228,6 +1401,8 @@ function createTrackingEvent({
     communityModelReward,
     billedPrice,
     errorTracking,
+    privateModel,
+    privateRoute,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
@@ -1258,6 +1433,8 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         communityEndpointType: requestTracking.communityEndpointType,
+        privateModel,
+        privateRoute,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

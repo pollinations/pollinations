@@ -60,15 +60,17 @@ type TopUpPanelProps = {
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `${formatPollenPackValue(amountUsd)} pollen`
-        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} pollen`;
+        ? `$${formatPollenPackValue(amountUsd)} of pollen`
+        : `From $${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)}`;
 // Every text each label can show, so it keeps the widest one's size.
 const REFILL_LABELS = [
     null,
     ...POLLEN_PACKS.filter(isAutoTopUpPack).map((pack) => pack.amountUsd),
 ].map(refillLabel);
 const buyLabel = (amountUsd: number | undefined) =>
-    amountUsd ? `Buy ${formatPollenPackValue(amountUsd)} pollen` : "Buy pollen";
+    amountUsd
+        ? `Buy $${formatPollenPackValue(amountUsd)} of pollen`
+        : "Buy pollen";
 const BUY_LABELS = [
     undefined,
     ...POLLEN_PACKS.map((pack) => pack.amountUsd),
@@ -157,8 +159,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
     // Auto top-up charges the default card and taxes by the billing
     // address. Missing either, the switch first opens Stripe for it (adding
-    // a card, or the portal where the details are); back here the buyer
-    // turns it on themselves.
+    // a card, or editing the billing details); back here the buyer turns it
+    // on themselves.
     const needsCard = Boolean(billing) && !hasDefault;
     const needsDetails =
         Boolean(billing) && hasDefault && !billing?.billingDetailsComplete;
@@ -221,7 +223,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (enabled) {
             if (!selectedRefillPack) return;
             if (needsCard) openPortal("card");
-            else if (needsDetails) openPortal();
+            else if (needsDetails) openPortal("details");
             else void saveAutoTopUp(true, selectedRefillPack.amountUsd);
         } else {
             void saveAutoTopUp(false, billing.autoTopUp.packAmountUsd);
@@ -232,7 +234,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         <Switch
             ariaLabel={
                 billing?.autoTopUp.enabled
-                    ? `Auto top-up, ${status?.tab.label} Pollen`
+                    ? `Auto top-up, $${status?.tab.label} of Pollen`
                     : "Auto top-up"
             }
             size="md"
@@ -438,7 +440,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 // No inline wrapper: the switch stays put.
                                 displayContents
                                 ariaLabel="Why auto top-up is unavailable"
-                                content="Choose 5 Pollen or more to enable auto top-up."
+                                content="Choose $5 or more to enable auto top-up."
                             >
                                 {autoTopUpSwitch}
                             </Tooltip>

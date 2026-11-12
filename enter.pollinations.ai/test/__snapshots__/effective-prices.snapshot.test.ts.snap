@@ -2613,9 +2613,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000007,
     },
     "price": {
-      "completionTextTokens": 0.0000021,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.0000007,
+      "completionTextTokens": 0.000001575,
+      "promptCachedTokens": 0.0000000525,
+      "promptTextTokens": 0.000000525,
     },
   },
   "mistralai/mistral-small-3.2": {

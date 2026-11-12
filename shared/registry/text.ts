@@ -3695,7 +3695,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Azure Foundry Global Standard rates for mistral-large-4-latest,
             // from the Foundry model page (2026-11-11). Matches Mistral's direct

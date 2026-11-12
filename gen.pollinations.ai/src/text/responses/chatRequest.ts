@@ -290,16 +290,19 @@ function messageItems(message: ChatMessage): JsonObject[] {
     );
 }
 
-function functionTools(tools: unknown[] | undefined): JsonObject[] | undefined {
+function responsesTools(
+    tools: unknown[] | undefined,
+): JsonObject[] | undefined {
     if (!tools?.length) return undefined;
     return tools.map((raw): JsonObject => {
         if (!raw || typeof raw !== "object") {
             invalidRequest("tools", "Invalid Chat tool");
         }
         const tool = raw as JsonObject;
+        if (tool.type === "web_search") return { type: "web_search" };
         const fn = tool.function;
         if (tool.type !== "function" || !fn || typeof fn !== "object") {
-            invalidRequest("tools", "Only Chat function tools are supported");
+            invalidRequest("tools", "Unsupported Chat tool type");
         }
         const definition = fn as JsonObject;
         if (typeof definition.name !== "string") {
@@ -414,7 +417,7 @@ export function chatToResponsesRequest(
         invalidRequest("model", "Model is required");
     }
 
-    const tools = functionTools(options.tools);
+    const tools = responsesTools(options.tools);
     const format = responseFormat(options.response_format);
     const maxOutputTokens = options.max_completion_tokens ?? options.max_tokens;
     const input = messages.flatMap(messageItems);

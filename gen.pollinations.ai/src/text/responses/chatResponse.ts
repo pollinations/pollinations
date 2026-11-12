@@ -61,16 +61,27 @@ function positiveCount(value: unknown): number | undefined {
         : undefined;
 }
 
-function chatUsage(usage: ResponseUsage): JsonObject {
+function chatUsage(
+    usage: ResponseUsage,
+    providerMetadata: unknown,
+): JsonObject {
     const inputDetails = usage.input_tokens_details;
     const outputDetails = usage.output_tokens_details;
-    // Perplexity reports built-in search calls here; Chat carries the count in
-    // OpenRouter's usage field so billing reads one shape.
-    const webSearches = positiveCount(
-        (usage.tool_calls_details as JsonObject | undefined)?.search_web &&
-            ((usage.tool_calls_details as JsonObject).search_web as JsonObject)
-                .invocation,
-    );
+    // Normalize provider-reported search calls to the Chat usage field.
+    const gateway = isObject(providerMetadata)
+        ? providerMetadata.gateway
+        : undefined;
+    const webSearches =
+        positiveCount(
+            isObject(gateway) ? gateway.billableWebSearchCalls : undefined,
+        ) ??
+        positiveCount(
+            (usage.tool_calls_details as JsonObject | undefined)?.search_web &&
+                (
+                    (usage.tool_calls_details as JsonObject)
+                        .search_web as JsonObject
+                ).invocation,
+        );
     return {
         prompt_tokens: usage.input_tokens,
         completion_tokens: usage.output_tokens,
@@ -291,7 +302,9 @@ export function responsesToChatCompletion(
                     ),
                 },
             ],
-            ...(usage.data ? { usage: chatUsage(usage.data) } : {}),
+            ...(usage.data
+                ? { usage: chatUsage(usage.data, data.provider_metadata) }
+                : {}),
             ...searchSources(data.output),
         },
         requestUrl,
@@ -756,7 +769,10 @@ export function responsesToChatStream(
                                 created,
                                 model,
                                 choices: [],
-                                usage: chatUsage(usage.data),
+                                usage: chatUsage(
+                                    usage.data,
+                                    response.provider_metadata,
+                                ),
                             }),
                         );
                     controller.enqueue(dataEvent("[DONE]"));

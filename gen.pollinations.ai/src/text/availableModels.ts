@@ -6,8 +6,10 @@ import { createClaudeThinkingTransform } from "./transforms/createClaudeThinking
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
     adaptGoogleSearchToolForOpenRouter,
+    adaptGoogleSearchToolForVercel,
     adaptGoogleSearchToolForVertex,
     createOpenRouterGoogleSearchTransform,
+    isGoogleSearchTool,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -76,8 +78,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
-    /** Route Chat requests through the model's declared Responses endpoint. */
-    useResponsesApi?: boolean;
+    /** Route all or selected Chat requests through the model's Responses endpoint. */
+    useResponsesApi?: boolean | ((options: TransformOptions) => boolean);
     /** Route typed decisions directly through TypeSafe System One. */
     useSystemOneApi?: boolean;
     /** Search before formatting JSON on Gemini 2.5 through Vercel. */
@@ -873,9 +875,13 @@ const models: ModelDefinition[] = [
     {
         name: "google/gemini-4-hydrogen:vercel",
         config: portkeyConfig["google/gemini-4-hydrogen:vercel"],
+        // Vercel exposes native Google Search through Responses.
+        useResponsesApi: ({ tools }) =>
+            tools?.some(isGoogleSearchTool) ?? false,
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
+            mediaToVercelFiles,
+            adaptGoogleSearchToolForVercel,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

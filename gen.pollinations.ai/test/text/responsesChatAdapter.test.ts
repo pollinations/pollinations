@@ -845,6 +845,44 @@ describe("Chat Completions over Responses", () => {
         expect(events[5]).toBe("[DONE]");
     });
 
+    it("carries Vercel native search and its reported usage across the Chat adapter", async () => {
+        const messages = [
+            { role: "user" as const, content: "Find the source" },
+        ];
+        const options = {
+            model: "provider-model",
+            modelConfig,
+            tools: [{ type: "web_search" }],
+        };
+        expect(chatToResponsesRequest(messages, options).tools).toEqual([
+            { type: "web_search" },
+        ]);
+
+        const response = {
+            status: "completed",
+            output: [],
+            usage: usage(),
+            provider_metadata: { gateway: { billableWebSearchCalls: 2 } },
+        };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(response),
+        );
+        const completion = await callChatViaResponses(messages, options);
+        const searchUsage = {
+            server_tool_use_details: { web_search_requests: 2 },
+        };
+        expect(completion.usage).toMatchObject(searchUsage);
+
+        vi.restoreAllMocks();
+        mockStream([
+            `data: ${JSON.stringify({ type: "response.completed", response })}\n\n`,
+        ]);
+        const events = await streamEvents(
+            await callChatViaResponses(messages, { ...options, stream: true }),
+        );
+        expect(events.at(-2)).toMatchObject({ usage: searchUsage });
+    });
+
     it("accepts a terminal SSE event closed by EOF", async () => {
         mockStream([
             `data: ${JSON.stringify({

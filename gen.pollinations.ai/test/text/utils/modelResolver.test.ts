@@ -29,7 +29,7 @@ describe("resolveModelConfig", () => {
         }
     });
 
-    it("routes Gemini 4 Hydrogen to Vertex with a Vercel fallback", () => {
+    it("routes Gemini 4 Hydrogen to Vertex with a Vercel fallback", async () => {
         const primary = resolveModelConfig(messages, {
             model: "google/gemini-4-hydrogen",
         });
@@ -48,6 +48,17 @@ describe("resolveModelConfig", () => {
         });
         expect(fallback.options.providerOptions).toEqual({
             gateway: { only: ["google"] },
+        });
+
+        const route = findModelByName("google/gemini-4-hydrogen:vercel");
+        if (typeof route?.useResponsesApi !== "function") {
+            throw new Error("Expected request-dependent Responses routing");
+        }
+        const search = { tools: [{ type: "google_search" }] };
+        expect(route.useResponsesApi({})).toBe(false);
+        expect(route.useResponsesApi(search)).toBe(true);
+        expect(await route.transform?.(messages, search)).toMatchObject({
+            options: { tools: [{ type: "web_search" }] },
         });
     });
 

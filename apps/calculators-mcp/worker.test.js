@@ -67,6 +67,7 @@ for (const modern of [false, true])
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
+                "parse_csv",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -674,4 +675,111 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("parse_csv reads the fields a split on commas would break", async (t) => {
+    const client = await clientFor(t);
+
+    // A quoted field holding the delimiter, which is the whole point of the format.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: '"Smith, John",42',
+            separator: ",",
+            header: false,
+        }),
+        { columns: [], rows: [["Smith, John", "42"]], rowCount: 1 },
+    );
+
+    // A quoted field holding a line break stays one field.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: '"line one\nline two",x',
+            separator: ",",
+            header: false,
+        }),
+        { columns: [], rows: [["line one\nline two", "x"]], rowCount: 1 },
+    );
+
+    // A doubled quote inside a quoted field is one literal quote.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: '"he said ""hi""",y',
+            separator: ",",
+            header: false,
+        }),
+        { columns: [], rows: [['he said "hi"', "y"]], rowCount: 1 },
+    );
+});
+
+test("parse_csv handles the header, line endings and empty fields", async (t) => {
+    const client = await clientFor(t);
+
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "a,b\n1,2\n3,4",
+            separator: ",",
+            header: true,
+        }),
+        {
+            columns: ["a", "b"],
+            rows: [
+                ["1", "2"],
+                ["3", "4"],
+            ],
+            rowCount: 2,
+        },
+    );
+
+    // A trailing line break ends the record, it does not start an empty one.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "a,b\r\n1,2\r\n",
+            separator: ",",
+            header: false,
+        }),
+        {
+            columns: [],
+            rows: [
+                ["a", "b"],
+                ["1", "2"],
+            ],
+            rowCount: 2,
+        },
+    );
+
+    // A trailing separator means a trailing empty field, not a missing one.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "a,",
+            separator: ",",
+            header: false,
+        }),
+        { columns: [], rows: [["a", ""]], rowCount: 1 },
+    );
+
+    // Tab separated text with commas inside the fields.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "a,b\tc,d",
+            separator: "\t",
+            header: false,
+        }),
+        { columns: [], rows: [["a,b", "c,d"]], rowCount: 1 },
+    );
+});
+
+test("parse_csv rejects an unclosed quote and empty text", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { text: 'a,"unterminated', separator: ",", header: false },
+        { text: "", separator: ",", header: false },
+        { text: "a,b", separator: ",,", header: false },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "parse_csv", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

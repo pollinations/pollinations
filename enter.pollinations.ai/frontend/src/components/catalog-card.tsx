@@ -13,6 +13,10 @@ const SPLIT = {
         column: "@lg:flex @lg:min-w-0 @lg:flex-col @lg:gap-3",
         // The note starts at the title's edge (logo 2rem, gaps, divider).
         indent: "@lg:pl-[3.3125rem]",
+        // The left column runs the card's height; the note sits at its
+        // bottom, level with the copy box (h-10).
+        stretch: "@lg:self-stretch",
+        bottom: "@lg:mt-auto @lg:flex @lg:min-h-10 @lg:items-center",
         // One line beside the description; the full value shows on hover.
         oneLine: "@lg:[&>span:first-child]:truncate",
     },
@@ -20,6 +24,8 @@ const SPLIT = {
         card: "@2xl:grid @2xl:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @2xl:items-start @2xl:gap-x-6",
         column: "@2xl:flex @2xl:min-w-0 @2xl:flex-col @2xl:gap-3",
         indent: "@2xl:pl-[3.3125rem]",
+        stretch: "@2xl:self-stretch",
+        bottom: "@2xl:mt-auto @2xl:flex @2xl:min-h-10 @2xl:items-center",
         oneLine: "@2xl:[&>span:first-child]:truncate",
     },
 };
@@ -44,7 +50,9 @@ export const CatalogCard: FC<{
     split?: keyof typeof SPLIT;
 }> = ({ logo, children, price, copy, note, action, split = "half" }) => (
     <Surface className={`flex flex-col gap-3 ${SPLIT[split].card}`}>
-        <div className={`contents ${SPLIT[split].column}`}>
+        <div
+            className={`contents ${SPLIT[split].column} ${SPLIT[split].stretch}`}
+        >
             {/* The logo lines up with the title, however many lines follow. */}
             <div className="order-1 flex min-w-0 items-start gap-2.5">
                 {logo ?? <span aria-hidden="true" className="w-8 shrink-0" />}
@@ -55,7 +63,9 @@ export const CatalogCard: FC<{
                 <div className="min-w-0 flex-1">{children}</div>
             </div>
             {note && (
-                <div className={`order-5 min-w-0 ${SPLIT[split].indent}`}>
+                <div
+                    className={`order-5 min-w-0 ${SPLIT[split].indent} ${SPLIT[split].bottom}`}
+                >
                     {note}
                 </div>
             )}

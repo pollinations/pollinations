@@ -67,6 +67,7 @@ for (const modern of [false, true])
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
+                "url_parse",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -674,4 +675,97 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("url_parse splits a URL and decodes repeated query keys", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "url_parse", {
+            url: "https://example.com/a/b?q=x%20y&q=z#top",
+        }),
+        {
+            absolute: true,
+            scheme: "https",
+            host: "example.com",
+            port: 443,
+            path: "/a/b",
+            query: { q: ["x y", "z"] },
+            fragment: "top",
+        },
+    );
+});
+
+test("url_parse reports the effective port and strips IPv6 brackets", async (t) => {
+    const client = await clientFor(t);
+
+    // An explicit default port and an omitted one describe the same endpoint, so they must
+    // not compare as different.
+    const omitted = await call(client, "url_parse", {
+        url: "https://example.com/",
+    });
+    const explicit = await call(client, "url_parse", {
+        url: "https://example.com:443/",
+    });
+    assert.deepEqual(omitted, explicit);
+    assert.equal(omitted.port, 443);
+
+    assert.equal(
+        (await call(client, "url_parse", { url: "https://example.com:8443/" }))
+            .port,
+        8443,
+    );
+    assert.equal(
+        (await call(client, "url_parse", { url: "ftp://h/" })).port,
+        21,
+    );
+
+    // Brackets delimit an IPv6 literal, they are not part of the address.
+    assert.equal(
+        (
+            await call(client, "url_parse", {
+                url: "http://[2001:db8::1]:8080/p",
+            })
+        ).host,
+        "2001:db8::1",
+    );
+
+    // A URL carrying credentials still parses, and the credentials are not echoed back.
+    const withCredentials = await call(client, "url_parse", {
+        url: "https://user:pw@example.com/x",
+    });
+    assert.equal(withCredentials.host, "example.com");
+    assert.equal(withCredentials.path, "/x");
+    assert.equal(JSON.stringify(withCredentials).includes("pw"), false);
+});
+
+test("url_parse resolves a relative reference against a base, and refuses without one", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "url_parse", {
+            url: "/rel/path?x=1",
+            base: "https://example.com/dir/",
+        }),
+        {
+            absolute: false,
+            scheme: "https",
+            host: "example.com",
+            port: 443,
+            path: "/rel/path",
+            query: { x: ["1"] },
+            fragment: "",
+        },
+    );
+
+    for (const args of [
+        { url: "foo" },
+        { url: "" },
+        { url: "not a url", base: "also not" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "url_parse", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

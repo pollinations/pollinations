@@ -8,6 +8,7 @@ import { hashTools } from "./tools/hash.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
+import { urlTools } from "./tools/url.js";
 import { versionTools } from "./tools/versions.js";
 
 const handler = createMcpHandler(
@@ -23,6 +24,7 @@ const handler = createMcpHandler(
             ...qrTools,
             ...currencyTools,
             ...hashTools,
+            ...urlTools,
             ...diffTools,
             ...fractionTools,
             ...versionTools,

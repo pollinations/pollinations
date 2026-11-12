@@ -128,3 +128,77 @@ test("rejects redirecting audio URLs without following them", async (t) => {
     );
     assert.deepEqual(calls, [SOURCE]);
 });
+
+test("transcribeAudio forwards response_format and returns srt as plain text", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        calls.push({ url, init });
+        if (url === SOURCE) {
+            return new Response(new Uint8Array([1]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        return new Response("1\n00:00:00,000 --> 00:00:01,000\nHello\n", {
+            headers: { "Content-Type": "text/plain" },
+        });
+    };
+
+    const result = await transcribeAudio(
+        { source: SOURCE, response_format: "srt", temperature: 0.2 },
+        CONTEXT,
+    );
+
+    assert.equal(calls[1].init.body.get("response_format"), "srt");
+    assert.equal(calls[1].init.body.get("temperature"), "0.2");
+    assert.match(result.content[0].text, /Hello/);
+});
+
+test("transcribeAudio returns diarized JSON whole", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        calls.push({ url, init });
+        if (url === SOURCE) {
+            return new Response(new Uint8Array([1]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        // Gen's diarized shape, which always includes text as well.
+        return Response.json({
+            task: "transcribe",
+            duration: 12.5,
+            text: "hi there",
+            segments: [{ speaker: "A", start: 0, end: 1.4, text: "hi there" }],
+            usage: { type: "duration", seconds: 12.5 },
+        });
+    };
+
+    const result = await transcribeAudio(
+        {
+            source: SOURCE,
+            response_format: "diarized_json",
+            speakers_expected: 2,
+        },
+        CONTEXT,
+    );
+
+    assert.equal(calls[1].init.body.get("response_format"), "diarized_json");
+    assert.equal(calls[1].init.body.get("speakers_expected"), "2");
+    // The segments and speakers survive; returning only `text` would drop them.
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        task: "transcribe",
+        duration: 12.5,
+        text: "hi there",
+        segments: [{ speaker: "A", start: 0, end: 1.4, text: "hi there" }],
+        usage: { type: "duration", seconds: 12.5 },
+    });
+});

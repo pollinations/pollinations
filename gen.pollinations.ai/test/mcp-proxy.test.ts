@@ -166,7 +166,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 alpha: true,
                 name: "Calculators",
                 description:
-                    "Time, cron schedules, Unicode, color contrast, QR codes, text hashes, and ECB currency rates.",
+                    "Time, cron schedules, Unicode, color contrast, QR codes, hashes, version ordering, and ECB rates.",
                 url: "https://gen.pollinations.ai/mcp/calculators",
                 pricing: {
                     description:

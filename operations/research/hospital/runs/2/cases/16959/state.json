@@ -1,0 +1,13 @@
+{
+  "number": 16959,
+  "kind": "bug",
+  "start": "2026-10-11 20:58:55",
+  "base": "404135d0e92e0bec0ab7ee761f1dd3034360a07a",
+  "outcome": "escalated",
+  "next": "workup",
+  "reworks": 0,
+  "end": "2026-10-11 21:09:07",
+  "cost_by_role": {
+    "claude": 3.7192950000000002
+  }
+}

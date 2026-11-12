@@ -1,0 +1,15 @@
+{
+  "number": 17045,
+  "kind": "pr",
+  "rival": 17057,
+  "start": "2026-10-13 01:21:10",
+  "base": "d3309b1d8849059b8e008919825c899643fd65a8",
+  "outcome": "discharged",
+  "next": "discharge",
+  "reworks": 0,
+  "end": "2026-10-13 01:32:16",
+  "cost_by_role": {
+    "claude": 3.3281818000000003,
+    "codex": 0.3702571
+  }
+}

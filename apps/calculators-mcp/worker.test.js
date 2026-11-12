@@ -67,6 +67,7 @@ for (const modern of [false, true])
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
+                "diff_text",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -560,4 +561,117 @@ test("to_fraction rejects malformed input", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("diff_text produces a minimal unified diff with line counts", async (t) => {
+    const client = await clientFor(t);
+
+    const changed = await call(client, "diff_text", {
+        before: "a\nb\nc\n",
+        after: "a\nB\nc\n",
+        context: 3,
+    });
+    assert.equal(changed.diff, "@@ -1,3 +1,3 @@\n a\n-b\n+B\n c");
+    assert.equal(changed.added, 1);
+    assert.equal(changed.removed, 1);
+
+    const identical = await call(client, "diff_text", {
+        before: "a\n",
+        after: "a\n",
+        context: 3,
+    });
+    assert.deepEqual(identical, { diff: "", added: 0, removed: 0 });
+
+    // Empty text has zero lines, so the hunk starts at 0 and there is nothing to remove.
+    const inserted = await call(client, "diff_text", {
+        before: "",
+        after: "x\n",
+        context: 3,
+    });
+    assert.equal(inserted.diff, "@@ -0,0 +1 @@\n+x");
+    assert.equal(inserted.added, 1);
+    assert.equal(inserted.removed, 0);
+
+    // A single changed line in the middle keeps only one line of context either side.
+    const narrow = await call(client, "diff_text", {
+        before: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+        after: "1\n2\n3\n4\nX\n6\n7\n8\n9\n10",
+        context: 1,
+    });
+    assert.equal(narrow.diff, "@@ -4,3 +4,3 @@\n 4\n-5\n+X\n 6");
+
+    // The script is minimal: moving one line must report one removal and one addition,
+    // not a whole-block replacement.
+    const moved = await call(client, "diff_text", {
+        before: "a\nb\nc\nd\n",
+        after: "b\nc\nd\na\n",
+        context: 0,
+    });
+    assert.equal(moved.added, 1);
+    assert.equal(moved.removed, 1);
+});
+
+test("diff_text reports a missing final newline the way diff(1) does", async (t) => {
+    const client = await clientFor(t);
+
+    // Same text, only the terminator changed: a replacement, with the marker right after
+    // the line it describes.
+    const added = await call(client, "diff_text", {
+        before: "a",
+        after: "a\n",
+        context: 3,
+    });
+    assert.equal(
+        added.diff,
+        "@@ -1 +1 @@\n-a\n\\ No newline at end of file\n+a",
+    );
+    assert.equal(added.added, 1);
+    assert.equal(added.removed, 1);
+
+    const removed = await call(client, "diff_text", {
+        before: "a\n",
+        after: "a",
+        context: 3,
+    });
+    assert.equal(
+        removed.diff,
+        "@@ -1 +1 @@\n-a\n+a\n\\ No newline at end of file",
+    );
+    assert.equal(removed.added, 1);
+    assert.equal(removed.removed, 1);
+
+    // Neither side ends with a newline, so both rendered lines carry the marker.
+    const both = await call(client, "diff_text", {
+        before: "a",
+        after: "b",
+        context: 3,
+    });
+    assert.equal(
+        both.diff,
+        "@@ -1 +1 @@\n-a\n\\ No newline at end of file\n+b\n\\ No newline at end of file",
+    );
+
+    // The incomplete last line sits outside the hunk, so nothing is printed for it: the
+    // marker belongs to a rendered line, not to the file as a whole.
+    // Line 10 is the one without a terminator, and it sits outside the hunk, so GNU
+    // prints nothing for it. This is the case the previous revision got wrong by
+    // appending a single marker for the whole diff.
+    const outside = await call(client, "diff_text", {
+        before: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+        after: "1\n2\n3\n4\nX\n6\n7\n8\n9\n10",
+        context: 1,
+    });
+    assert.equal(outside.diff, "@@ -4,3 +4,3 @@\n 4\n-5\n+X\n 6");
+});
+
+test("diff_text rejects input past the line cap", async (t) => {
+    const client = await clientFor(t);
+    const tooMany = Array.from({ length: 2001 }, (_, i) => `line ${i}`).join(
+        "\n",
+    );
+    const result = await client.callTool({
+        name: "diff_text",
+        arguments: { before: tooMany, after: "x" },
+    });
+    assert.equal(result.isError, true);
 });

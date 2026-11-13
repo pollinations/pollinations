@@ -33,6 +33,8 @@ const VIDEO_FRAME_LIMITS = [
     ["bytedance/seedance-2.5", 2],
     ["alibaba/happyhorse-1.1", 1],
     ["kwaivgi/kling-v3.0-std", 2],
+    ["lightricks/ltx-2.5-pro", 2],
+    ["lightricks/ltx-2.5-pro:azure", 2],
     ["black-forest-labs/flux-3-max", 2],
     ["heygen/heygen-video-1", 1],
     ["heygen/heygen-video-1:openrouter", 1],

@@ -1,4 +1,5 @@
 import { app } from "@shared/db/apps.ts";
+import { getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { z } from "zod";
 
@@ -41,8 +42,10 @@ const catalogSchema = z.array(
         })),
 );
 
-// D1 binds at most 100 values per statement: 16 columns × 6 apps.
-const APPS_PER_STATEMENT = 6;
+// D1 binds at most 100 values per statement, one per column of each app.
+const APPS_PER_STATEMENT = Math.floor(
+    100 / Object.keys(getTableColumns(app)).length,
+);
 
 /** Adds the catalog apps the database lacks; returns how many. */
 export async function importApps(

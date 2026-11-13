@@ -1,5 +1,5 @@
-// Apps people build on Pollinations. An app with an approval date is listed in
-// the public catalog; without one it is private.
+// Apps people build on Pollinations. An approved app is listed in the public
+// catalog unless its owner took it out or deleted it; any other app is private.
 
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
@@ -22,4 +22,9 @@ export const app = sqliteTable("app", {
     submittedDate: text("submitted_date"),
     issueUrl: text("issue_url"),
     approvedDate: text("approved_date"),
+    // The owner took an approved app out of the catalog.
+    unlisted: integer("unlisted", { mode: "boolean" }).notNull().default(false),
+    // The owner deleted the app. The row stays so the catalog import does not
+    // add the app again.
+    deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
 });

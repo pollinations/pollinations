@@ -62,6 +62,8 @@ it("adds the catalog apps the database lacks and leaves the others alone", async
             submittedDate: "2026-07-01",
             issueUrl: "https://github.com/pollinations/pollinations/issues/1",
             approvedDate: "2026-07-02",
+            unlisted: false,
+            deleted: false,
         },
     ]);
     // Everything in the catalog is listed, so an old entry without an

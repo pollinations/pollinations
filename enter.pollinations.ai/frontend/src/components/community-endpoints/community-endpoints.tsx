@@ -109,9 +109,15 @@ export function DeploymentsPlaceholder({
         <>
             {titles.map((title) => (
                 <Section key={title} title={title}>
+                    {/* The page first loads the publisher profile; when that
+                        fails, the listings are never asked for. */}
                     <LoadError
                         onRetry={onRetry}
-                        paths={["/account/my-models", "/account/agents"]}
+                        paths={[
+                            "/account/profile",
+                            "/account/my-models",
+                            "/account/agents",
+                        ]}
                     >
                         {error}
                     </LoadError>

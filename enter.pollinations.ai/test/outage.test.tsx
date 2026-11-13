@@ -3,6 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthFlowScreen } from "../frontend/src/components/auth/auth-flow-screen.tsx";
 import { LoadError } from "../frontend/src/components/layout/dashboard-loading.tsx";
+import { OutageBanner } from "../frontend/src/components/layout/outage-banner.tsx";
 import { fetchModelCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import {
     isOutageStatus,
@@ -279,6 +280,31 @@ describe("dashboard outage state", () => {
             }),
         ).rejects.toThrow();
         expect(render()).not.toContain(OUTAGE_TEXT);
+    });
+
+    it("shows the page banner during an outage, without promising a retry", async () => {
+        respond(503);
+        await trackedFetch("https://gen.example/account/keys");
+        const banner = renderToStaticMarkup(<OutageBanner />);
+        expect(banner).toContain(OUTAGE_TEXT);
+        // A failed save is not retried; the banner can't know what will be.
+        expect(banner).not.toContain("Retrying automatically");
+
+        respond(200);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(renderToStaticMarkup(<OutageBanner />)).toBe("");
+    });
+
+    it("shows no page banner when every failure is a timeout", async () => {
+        respond(504);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(renderToStaticMarkup(<OutageBanner />)).toBe("");
+        // The panel still says it took too long and can be tried again.
+        expect(render()).toContain("This data took too long to load.");
+
+        respond(503);
+        await trackedFetch("https://gen.example/account/profile");
+        expect(renderToStaticMarkup(<OutageBanner />)).toContain(OUTAGE_TEXT);
     });
 
     it("treats a session read with no status or a 5xx as an outage", () => {

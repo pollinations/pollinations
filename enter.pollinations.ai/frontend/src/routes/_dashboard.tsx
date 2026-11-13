@@ -31,6 +31,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
+import { OutageBanner } from "../components/layout/outage-banner.tsx";
 import { SidebarWallet } from "../components/pollen";
 import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
 import {
@@ -269,15 +270,6 @@ function DashboardLayout() {
             )}
         </DashboardShell>
     );
-}
-
-/**
- * While any Enter or gen call fails, one notice at the top of the page. As the
- * topmost notice it gives the full message; panels below keep theirs short.
- */
-function OutageBanner() {
-    const outage = useOutage();
-    return outage ? <OutageNotice retrying /> : null;
 }
 
 /** The drawer wallet with a warning per amount, or the usual error when it is

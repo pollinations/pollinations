@@ -593,20 +593,16 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     }
 
     const hasSandboxes = !!pricing && sandboxes.length > 0;
-    const actionAlert = (
-        <>
-            {actionError && (
-                <Alert intent="danger">
-                    {actionError}
-                    {actionError === NO_POLLEN && (
-                        <>
-                            {" "}
-                            <InlineLink href="/pollen">Go to Pollen</InlineLink>
-                        </>
-                    )}
-                </Alert>
+    const actionAlert = actionError && (
+        <Alert intent="danger">
+            {actionError}
+            {actionError === NO_POLLEN && (
+                <>
+                    {" "}
+                    <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                </>
             )}
-        </>
+        </Alert>
     );
 
     // Two cards: yours (when you have some, running or paused, or they failed

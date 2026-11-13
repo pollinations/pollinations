@@ -78,14 +78,13 @@ const MODEL_SECTION_ORDER: SectionType[] = [
 export type CatalogKind = "models" | "agent" | "mcp";
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
-const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
 const QUERY_FILTER_KEYS_BY_KIND: Record<
     CatalogKind,
     readonly ModelQueryFilterKey[]
 > = {
     models: MODEL_QUERY_FILTER_KEYS,
     agent: AGENT_QUERY_FILTER_KEYS,
-    mcp: MCP_QUERY_FILTER_KEYS,
+    mcp: [],
 };
 
 const SEARCH_LABELS: Record<SectionType, string> = {

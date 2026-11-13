@@ -325,88 +325,83 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     questStatus,
     onNavigate,
-}) => (
-    <aside
-        data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-68"
-        aria-label="Dashboard navigation"
-    >
-        {/* You first: your name (the way to Settings), or the sign-in
-            buttons. The phone's drawer closes by tapping outside it. */}
-        <div className="flex shrink-0 flex-col gap-2 pb-1">
-            {accountName && (
-                <AccountLink
-                    name={accountName}
-                    avatarUrl={avatarUrl}
-                    active={activePage === "account"}
+}) => {
+    const rows = (group: DashboardNavGroup) =>
+        navItems
+            .filter((item) => item.group === group)
+            .map((item) => (
+                <NavRow
+                    key={item.id}
+                    item={item}
+                    active={activePage === item.id}
+                    questStatus={questStatus}
+                    rowStatus={rowStatus}
                     onNavigate={onNavigate}
                 />
-            )}
-            {accountArea}
-        </div>
-        <ScrollArea
-            // A size container: the guides under Docs show by its height.
-            className="-mr-2 min-h-0 flex-1 pt-3 [container-type:size]"
-            style={
-                {
-                    "--polli-color-scrollbar-thumb":
-                        "color-mix(in oklab, var(--polli-color-text-muted) 65%, transparent)",
-                } as CSSProperties
-            }
+            ));
+    const yours = rows("yours");
+    return (
+        <aside
+            data-theme="neutral"
+            className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-68"
+            aria-label="Dashboard navigation"
         >
-            {/* Signed out, a thin line sets the sign-in buttons apart from
+            {/* You first: your name (the way to Settings), or the sign-in
+            buttons. The phone's drawer closes by tapping outside it. */}
+            <div className="flex shrink-0 flex-col gap-2 pb-1">
+                {accountName && (
+                    <AccountLink
+                        name={accountName}
+                        avatarUrl={avatarUrl}
+                        active={activePage === "account"}
+                        onNavigate={onNavigate}
+                    />
+                )}
+                {accountArea}
+            </div>
+            <ScrollArea
+                // A size container: the guides under Docs show by its height.
+                className="-mr-2 min-h-0 flex-1 pt-3 [container-type:size]"
+                style={
+                    {
+                        "--polli-color-scrollbar-thumb":
+                            "color-mix(in oklab, var(--polli-color-text-muted) 65%, transparent)",
+                    } as CSSProperties
+                }
+            >
+                {/* Signed out, a thin line sets the sign-in buttons apart from
                 the pages, as the one above the footer does. */}
-            {!accountName && <hr className={cn("mb-2", NAV_LINE_CLASS)} />}
-            {navItems.some((item) => item.group === "yours") && (
-                <>
-                    <nav aria-label="Yours" className="flex flex-col gap-0.5">
-                        {navItems
-                            .filter((item) => item.group === "yours")
-                            .map((item) => (
-                                <NavRow
-                                    key={item.id}
-                                    item={item}
-                                    active={activePage === item.id}
-                                    questStatus={questStatus}
-                                    rowStatus={rowStatus}
-                                    onNavigate={onNavigate}
-                                />
-                            ))}
-                    </nav>
-                    {accountCard}
-                    <hr className={cn("my-2", NAV_LINE_CLASS)} />
-                </>
-            )}
-            <nav aria-label="Pollinations" className="flex flex-col gap-0.5">
-                {navItems
-                    .filter((item) => item.group === "resources")
-                    .map((item) => (
-                        <NavRow
-                            key={item.id}
-                            item={item}
-                            active={activePage === item.id}
-                            questStatus={questStatus}
-                            rowStatus={rowStatus}
-                            onNavigate={onNavigate}
-                        />
-                    ))}
-                {/* Docs leaves the dashboard: a thin line sets it apart from
+                {!accountName && <hr className={cn("mb-2", NAV_LINE_CLASS)} />}
+                {yours.length > 0 && (
+                    <>
+                        <nav
+                            aria-label="Yours"
+                            className="flex flex-col gap-0.5"
+                        >
+                            {yours}
+                        </nav>
+                        {accountCard}
+                        <hr className={cn("my-2", NAV_LINE_CLASS)} />
+                    </>
+                )}
+                <nav
+                    aria-label="Pollinations"
+                    className="flex flex-col gap-0.5"
+                >
+                    {rows("resources")}
+                    {/* Docs leaves the dashboard: a thin line sets it apart from
                     the page rows above. */}
-                <hr className={cn("my-2", NAV_LINE_CLASS)} />
-                <DocsRow />
-                <DocGuides />
-            </nav>
-        </ScrollArea>
-        <div
-            className={cn(
-                "flex shrink-0 flex-col gap-2 border-t pt-3",
-                NAV_LINE_CLASS,
-            )}
-        >
-            <DashboardFooter />
-        </div>
-    </aside>
-);
+                    <hr className={cn("my-2", NAV_LINE_CLASS)} />
+                    <DocsRow />
+                    <DocGuides />
+                </nav>
+            </ScrollArea>
+            <div className={cn("shrink-0 border-t pt-3", NAV_LINE_CLASS)}>
+                <DashboardFooter />
+            </div>
+        </aside>
+    );
+};
 
 // Signed in with a profile picture, the phone menu button shows it, so you
 // see whose dashboard this is; otherwise the menu icon.
@@ -541,7 +536,13 @@ const DOC_GUIDES = [
 ] as const;
 
 const DocGuides: FC = () => (
-    <SubLines className="hidden flex-col gap-1 text-xs [@container(min-height:14.8125rem)]:flex">
+    // Indented under Docs, lined up with its label.
+    <div
+        className={cn(
+            "mb-1 ml-5 hidden flex-col gap-1 border-l py-1 pr-3 pl-[15px] text-xs [@container(min-height:14.8125rem)]:flex",
+            NAV_LINE_CLASS,
+        )}
+    >
         {DOC_GUIDES.map(({ label, tag, icon: Icon, show }) => (
             <a
                 key={tag}
@@ -559,7 +560,7 @@ const DocGuides: FC = () => (
                 {label}
             </a>
         ))}
-    </SubLines>
+    </div>
 );
 
 // One line signs off the rail: the logo, the small print, the colour toggle.
@@ -633,20 +634,4 @@ const AccountLink: FC<{
         </span>
         <ChevronIcon className="ml-auto -rotate-90 opacity-60" />
     </Button>
-);
-
-// Lines indented under a row, lined up with its label: the guides under Docs.
-const SubLines: FC<PropsWithChildren<{ className?: string }>> = ({
-    className,
-    children,
-}) => (
-    <div
-        className={cn(
-            "mb-1 ml-5 border-l py-1 pr-3 pl-[15px]",
-            NAV_LINE_CLASS,
-            className,
-        )}
-    >
-        {children}
-    </div>
 );

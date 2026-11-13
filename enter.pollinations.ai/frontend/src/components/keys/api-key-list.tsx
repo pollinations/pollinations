@@ -333,6 +333,11 @@ export const ApiKeyList: FC<
         </Button>
     );
 
+    // The open tab's keys and Create; the two tabs differ only in these.
+    const secret = keyTab === "secret";
+    const tabKeys = secret ? sortedApiKeys : sortedAppKeys;
+    const tabAction = secret ? keyAction : appAction;
+
     return (
         <>
             {/* Secret and app keys share one card: tab buttons switch
@@ -351,25 +356,24 @@ export const ApiKeyList: FC<
                             </TabButton>
                         ))}
                     </div>
-                    {keyTab === "secret"
-                        ? sortedApiKeys.length > 0 && keyAction
-                        : sortedAppKeys.length > 0 && appAction}
+                    {tabKeys.length > 0 && tabAction}
                 </div>
-                {keyTab === "secret" ? (
-                    <>
-                        <div className="flex flex-col gap-3">
-                            {!sortedApiKeys.length && (
-                                <Surface className="p-6 text-center">
-                                    <div className="mb-2">{keyAction}</div>
-                                    <p className="text-sm text-theme-text-muted">
-                                        Use secret keys for your own private
-                                        server-side integrations.
-                                    </p>
-                                </Surface>
-                            )}
-                            {sortedApiKeys.map(renderKeyCard)}
-                        </div>
-                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <div className="flex flex-col gap-3">
+                    {!tabKeys.length && (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{tabAction}</div>
+                            <p className="text-sm text-theme-text-muted">
+                                {secret
+                                    ? "Use secret keys for your own private server-side integrations."
+                                    : "Use app keys when your users bring their own Pollinations account."}
+                            </p>
+                        </Surface>
+                    )}
+                    {tabKeys.map(renderKeyCard)}
+                </div>
+                <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    {secret ? (
+                        <p className="flex items-start gap-1.5">
                             <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 Your backends, scripts, CLIs, connected apps,
@@ -377,22 +381,8 @@ export const ApiKeyList: FC<
                                 Pollinations account. Keep them private.
                             </span>
                         </p>
-                    </>
-                ) : (
-                    <>
-                        <div className="flex flex-col gap-3">
-                            {!sortedAppKeys.length && (
-                                <Surface className="p-6 text-center">
-                                    <div className="mb-2">{appAction}</div>
-                                    <p className="text-sm text-theme-text-muted">
-                                        Use app keys when your users bring their
-                                        own Pollinations account.
-                                    </p>
-                                </Surface>
-                            )}
-                            {sortedAppKeys.map(renderKeyCard)}
-                        </div>
-                        <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    ) : (
+                        <>
                             <p className="flex items-start gap-1.5">
                                 <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                                 <span>
@@ -409,9 +399,9 @@ export const ApiKeyList: FC<
                                     pollen users spend in your app.
                                 </span>
                             </p>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </Section>
             <DeleteConfirmation
                 app={deletingKey ? isAppKey(deletingKey) : null}

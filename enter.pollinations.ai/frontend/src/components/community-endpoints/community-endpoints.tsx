@@ -444,6 +444,11 @@ export function CommunityEndpoints({
     // Agents and models wait for their own requests inside the card, so the
     // tabs, and the Apps tab with its own data, stay usable meanwhile.
     const endpointsPending = isLoading || (!!error && !hasLoaded);
+    // The open tab's listings and Create; Agents and Models differ only in
+    // these and their two lines of text.
+    const agentsTab = listingTab === "agents";
+    const tabEndpoints = agentsTab ? agentEndpoints : modelEndpoints;
+    const tabAction = agentsTab ? agentAction : modelAction;
 
     return (
         <>
@@ -479,9 +484,7 @@ export function CommunityEndpoints({
                         ? appsTab.action
                         : endpointsPending
                           ? null
-                          : listingTab === "agents"
-                            ? agentEndpoints.length > 0 && agentAction
-                            : modelEndpoints.length > 0 && modelAction}
+                          : tabEndpoints.length > 0 && tabAction}
                 </div>
                 {listingTab === "apps" ? (
                     appsTab.content
@@ -499,44 +502,25 @@ export function CommunityEndpoints({
                     </SectionContent>
                 ) : (
                     <>
-                        {listingTab === "agents" ? (
-                            <div className="flex flex-col gap-3">
-                                {agentEndpoints.length === 0 ? (
-                                    <Surface className="p-6 text-center">
-                                        <div className="mb-2">
-                                            {agentAction}
-                                        </div>
-                                        <p className="text-sm text-theme-text-muted">
-                                            Build one from a prompt and a model,
-                                            or deploy agent.ts from GitHub.
-                                        </p>
-                                    </Surface>
-                                ) : (
-                                    agentEndpoints.map(renderEndpointCard)
-                                )}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {modelEndpoints.length === 0 ? (
-                                    <Surface className="p-6 text-center">
-                                        <div className="mb-2">
-                                            {modelAction}
-                                        </div>
-                                        <p className="text-sm text-theme-text-muted">
-                                            Register your OpenAI-compatible
-                                            endpoint.
-                                        </p>
-                                    </Surface>
-                                ) : (
-                                    modelEndpoints.map(renderEndpointCard)
-                                )}
-                            </div>
-                        )}
+                        <div className="flex flex-col gap-3">
+                            {tabEndpoints.length === 0 ? (
+                                <Surface className="p-6 text-center">
+                                    <div className="mb-2">{tabAction}</div>
+                                    <p className="text-sm text-theme-text-muted">
+                                        {agentsTab
+                                            ? "Build one from a prompt and a model, or deploy agent.ts from GitHub."
+                                            : "Register your OpenAI-compatible endpoint."}
+                                    </p>
+                                </Surface>
+                            ) : (
+                                tabEndpoints.map(renderEndpointCard)
+                            )}
+                        </div>
                         {/* One line per tab: who can use what you make. */}
                         <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                {listingTab === "agents"
+                                {agentsTab
                                     ? "Agents start private, for your own use. "
                                     : "Models start private: only you can call them, with your key. "}
                                 {goPublic}

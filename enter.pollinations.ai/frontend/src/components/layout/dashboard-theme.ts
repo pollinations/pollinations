@@ -127,14 +127,11 @@ export function isDashboardPath(path: string): boolean {
     return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
 }
 
-const RESOURCE_ITEMS = DASHBOARD_NAV_ITEMS.filter(
-    (item) => item.group === "resources",
-);
-const QUESTS_ITEM = DASHBOARD_NAV_ITEMS.filter((item) => item.id === "quests");
-
 // Signed out there is no card of your own; Quests, the way to earn free
-// pollen, joins the resources.
+// pollen, joins the resources, last.
 export const SIGNED_OUT_NAV_ITEMS = [
-    ...RESOURCE_ITEMS,
-    ...QUESTS_ITEM.map((item) => ({ ...item, group: "resources" as const })),
+    ...DASHBOARD_NAV_ITEMS.filter((item) => item.group === "resources"),
+    ...DASHBOARD_NAV_ITEMS.filter((item) => item.id === "quests").map(
+        (item) => ({ ...item, group: "resources" as const }),
+    ),
 ];

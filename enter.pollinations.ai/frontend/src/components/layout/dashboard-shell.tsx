@@ -12,10 +12,12 @@ import {
     CopyStateIcon,
     cn,
     InlineLink,
+    McpIcon,
     MenuIcon,
     NavItem,
     RocketIcon,
     ScrollArea,
+    TerminalIcon,
     useScrollLock,
     WalletIcon,
 } from "@pollinations/ui";
@@ -521,6 +523,19 @@ const DOC_GUIDES = [
         icon: BeakerIcon,
         show: "[@container(min-height:18.5625rem)]:flex",
     },
+    // The catalog's order: Sandboxes, then MCP.
+    {
+        label: "Sandboxes",
+        tag: "sandboxes",
+        icon: TerminalIcon,
+        show: "[@container(min-height:19.8125rem)]:flex",
+    },
+    {
+        label: "MCP servers",
+        tag: "mcp-servers",
+        icon: McpIcon,
+        show: "[@container(min-height:21.0625rem)]:flex",
+    },
 ] as const;
 
 const DocGuides: FC = () => (
@@ -576,7 +591,8 @@ const DashboardFooter: FC = () => (
             ))}
         </nav>
         {/* accent on the toggle's active icon, over the neutral rail */}
-        <span data-theme="accent" className="shrink-0">
+        {/* flex, not inline: no text line, so no descender space below */}
+        <span data-theme="accent" className="flex shrink-0">
             <ColorModeToggle />
         </span>
     </div>

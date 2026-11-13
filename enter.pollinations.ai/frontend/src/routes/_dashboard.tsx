@@ -31,7 +31,10 @@ import {
 import { OutageBanner } from "../components/layout/outage-banner.tsx";
 import { SidebarBalance, SidebarEarnings } from "../components/pollen";
 import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
-import { SidebarSandboxes } from "../components/sandboxes.tsx";
+import {
+    forgetSandboxCount,
+    SidebarSandboxes,
+} from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -83,7 +86,10 @@ export const Route = createFileRoute("/_dashboard")({
         const user = result.data?.user ?? null;
         // Another tab may have switched accounts: stop calling the account API
         // with the previous account's token.
-        if (user?.id !== lastDashboardSession?.user?.id) forgetSessionToken();
+        if (user?.id !== lastDashboardSession?.user?.id) {
+            forgetSessionToken();
+            forgetSandboxCount();
+        }
         lastDashboardSession = { user };
         return lastDashboardSession;
     },

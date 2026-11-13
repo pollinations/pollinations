@@ -415,31 +415,52 @@ function SandboxCard({
 
 // The page tells the drawer after every load, so its count follows starts,
 // pauses and kills.
-// The running count, shared by the desktop rail and the phone drawer: one
-// first load for both, then every load of the Sandboxes page, so starts,
-// pauses and kills show. undefined until a list arrives.
+// The running count, shared by the desktop rail and the phone drawer. It
+// loads when the drawer shows and again whenever the dashboard regains
+// focus, and every load of the Sandboxes page reports its list, so starts,
+// pauses and kills show. Only the newest list counts.
 let runningCount: number | undefined;
-let firstLoadStarted = false;
+let latestLoad = 0;
 const countListeners = new Set<() => void>();
 
-function reportSandboxes(list: Sandbox[]) {
-    runningCount = list.filter((s) => s.state === "running").length;
+function setCount(list?: Sandbox[]) {
+    runningCount = list?.filter((s) => s.state === "running").length;
     for (const listener of countListeners) listener();
+}
+
+/** The Sandboxes page's list: newer than any load still on its way. */
+function reportSandboxes(list: Sandbox[]) {
+    latestLoad++;
+    setCount(list);
+}
+
+function loadCount() {
+    const load = ++latestLoad;
+    e2b<Sandbox[]>("/v2/sandboxes").then(
+        (list) => load === latestLoad && setCount(list),
+        () => {},
+    );
+}
+
+/** Another account signed in: drop the last one's count and load anew. */
+export function forgetSandboxCount() {
+    latestLoad++;
+    setCount();
+    if (countListeners.size > 0) loadCount();
 }
 
 function subscribeToCount(listener: () => void) {
     countListeners.add(listener);
-    if (!firstLoadStarted) {
-        firstLoadStarted = true;
-        // A list the page reported meanwhile is newer: keep it.
-        e2b<Sandbox[]>("/v2/sandboxes").then(
-            (list) => runningCount === undefined && reportSandboxes(list),
-            () => {
-                firstLoadStarted = false;
-            },
-        );
+    if (countListeners.size === 1) {
+        loadCount();
+        window.addEventListener("focus", loadCount);
     }
-    return () => countListeners.delete(listener);
+    return () => {
+        countListeners.delete(listener);
+        if (countListeners.size === 0) {
+            window.removeEventListener("focus", loadCount);
+        }
+    };
 }
 
 /** How many sandboxes run, on the drawer's Sandboxes row, with a green play

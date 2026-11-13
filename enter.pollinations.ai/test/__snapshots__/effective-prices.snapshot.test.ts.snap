@@ -1969,42 +1969,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
-  "inception/mercury-2": {
-    "cost": {
-      "completionTextTokens": 0.00000079125,
-      "promptCachedTokens": 0.000000026375,
-      "promptTextTokens": 0.00000026375,
-    },
-    "price": {
-      "completionTextTokens": 0.00000079125,
-      "promptCachedTokens": 0.000000026375,
-      "promptTextTokens": 0.00000026375,
-    },
-  },
-  "inception/mercury-2.5-preview": {
-    "cost": {
-      "completionTextTokens": 0.00000015825,
-      "promptCachedTokens": 0.00000000422,
-      "promptTextTokens": 0.0000000422,
-    },
-    "price": {
-      "completionTextTokens": 0.00000015825,
-      "promptCachedTokens": 0.00000000422,
-      "promptTextTokens": 0.0000000422,
-    },
-  },
-  "inception/mercury-3": {
-    "cost": {
-      "completionTextTokens": 0.00000036925,
-      "promptCachedTokens": 0.00000001055,
-      "promptTextTokens": 0.0000001055,
-    },
-    "price": {
-      "completionTextTokens": 0.00000036925,
-      "promptCachedTokens": 0.00000001055,
-      "promptTextTokens": 0.0000001055,
-    },
-  },
   "inclusionai/ling-3.0-flash-vl": {
     "cost": {
       "completionTextTokens": 0.0000001899,

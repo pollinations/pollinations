@@ -545,7 +545,7 @@ it.each([
 );
 
 it("drops OpenRouter's provider cost from client streams", async () => {
-    const model = "inception/mercury-3";
+    const model = "cohere/command-a-plus";
     const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]\n\n`;
     const { response, text, calls } = await chatThroughHandler(
         model,
@@ -562,7 +562,7 @@ it("drops OpenRouter's provider cost from client streams", async () => {
 });
 
 it("drops OpenRouter's provider cost from non-streaming completions", async () => {
-    const model = "inception/mercury-3";
+    const model = "cohere/command-a-plus";
     const wire = JSON.stringify({
         id: "gen-nonstream",
         object: "chat.completion",
@@ -590,7 +590,7 @@ it("drops OpenRouter's provider cost from non-streaming completions", async () =
 });
 
 it("returns tool-call signatures in Google's extra_content field from non-streaming completions", async () => {
-    const model = "inception/mercury-3";
+    const model = "cohere/command-a-plus";
     const wire = JSON.stringify({
         id: "gen-signed",
         object: "chat.completion",
@@ -634,7 +634,7 @@ it("returns tool-call signatures in Google's extra_content field from non-stream
 it.each([null, "", " \n\t"])(
     "rejects empty content %j before caching while retaining provider usage",
     async (content) => {
-        const model = "inception/mercury-3";
+        const model = "cohere/command-a-plus";
         const wire = JSON.stringify({
             id: "empty-completion",
             object: "chat.completion",
@@ -1054,7 +1054,7 @@ it.each([
         },
     },
 ])("preserves non-text-only completion output %j", async (output) => {
-    const model = "inception/mercury-3";
+    const model = "cohere/command-a-plus";
     const wire = JSON.stringify({
         id: "non-text-completion",
         object: "chat.completion",
@@ -1122,7 +1122,7 @@ it("rejects the news failure's empty Responses completion through the Chat adapt
 });
 
 it("preserves content-filter refusals without treating them as retryable empty output", async () => {
-    const model = "inception/mercury-3";
+    const model = "cohere/command-a-plus";
     const { response, text, calls } = await chatThroughHandler(
         model,
         "openrouter.ai",

@@ -1,4 +1,4 @@
-import { UpstreamError } from "@shared/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { FalError, runFalJobResponse } from "../../model3d/models/falClient.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
@@ -132,20 +132,24 @@ export async function callLtxVideo(
         throw UpstreamError.fromProvider(502, {
             message: "LTX Pro returned no video",
         });
-    const video = await fetchUpstream(result.video.url, {
-        ...(URL.parse(result.video.url)?.origin === new URL(AZURE_BASE).origin
-            ? {
-                  headers: {
-                      "api-key":
-                          getImageEnv(
-                              "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
-                          ) ?? "",
-                  },
-                  redirect: "error" as const,
-              }
-            : {}),
-        errorLabel: "Failed to download LTX Pro video",
-    });
+    const url = new URL(result.video.url);
+    const video =
+        url.origin === new URL(AZURE_BASE).origin
+            ? await ensureUpstreamOk(
+                  await fetch(url, {
+                      headers: {
+                          "api-key":
+                              getImageEnv(
+                                  "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+                              ) ?? "",
+                      },
+                      redirect: "manual",
+                  }),
+                  url.href,
+              )
+            : await fetchUpstream(url.href, {
+                  errorLabel: "Failed to download LTX Pro video",
+              });
     return {
         buffer: Buffer.from(await video.arrayBuffer()),
         mimeType: "video/mp4",

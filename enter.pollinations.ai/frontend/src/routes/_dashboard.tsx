@@ -128,13 +128,16 @@ export const Route = createFileRoute("/_dashboard")({
                       const { perEntity } = (await r.json()) as {
                           perEntity: DeveloperEarningsRow[];
                       };
-                      return perEntity.reduce(
-                          (week, row) => ({
-                              paidWeek: week.paidWeek + row.paid_earned,
-                              tierWeek: week.tierWeek + row.tier_earned,
-                          }),
-                          { paidWeek: 0, tierWeek: 0 },
-                      );
+                      return {
+                          ...perEntity.reduce(
+                              (week, row) => ({
+                                  paidWeek: week.paidWeek + row.paid_earned,
+                                  tierWeek: week.tierWeek + row.tier_earned,
+                              }),
+                              { paidWeek: 0, tierWeek: 0 },
+                          ),
+                          perEntity,
+                      };
                   })
                   .catch(() => null)
             : Promise.resolve(null);
@@ -252,7 +255,10 @@ function DashboardLayout() {
                                   <Await promise={data.earnings}>
                                       {(earnings) =>
                                           earnings && (
-                                              <SidebarEarnings {...earnings} />
+                                              <SidebarEarnings
+                                                  paidWeek={earnings.paidWeek}
+                                                  tierWeek={earnings.tierWeek}
+                                              />
                                           )
                                       }
                                   </Await>

@@ -7,6 +7,7 @@ export function ModelFormRow({
     optional = false,
     action,
     note,
+    top = false,
     children,
 }: {
     label: string;
@@ -15,11 +16,18 @@ export function ModelFormRow({
     action?: ReactNode;
     /** Shown under the control so the label stays centred on the control alone. */
     note?: ReactNode;
+    /** The control is a list of fields: the label lines up with the first. */
+    top?: boolean;
     children: ReactNode;
 }) {
     return (
-        <Field.Root className="grid gap-2 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
-            <span className="inline-flex min-w-0 items-center">
+        <Field.Root
+            className={`grid gap-2 sm:grid-cols-[11rem_minmax(0,1fr)] ${top ? "sm:items-start" : "sm:items-center"}`}
+        >
+            {/* As tall as one Input, so the label centres on the first. */}
+            <span
+                className={`inline-flex min-w-0 items-center ${top ? "sm:min-h-[2.625rem]" : ""}`}
+            >
                 <Field.Label className="text-sm font-semibold leading-5 text-theme-text-strong">
                     {label}
                 </Field.Label>

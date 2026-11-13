@@ -1,104 +1,116 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
+import { importApps } from "../../src/services/app-import.ts";
 import { test } from "../fixtures.ts";
 
 // The mocked GitHub profile signs in as github id 12345.
 const OTHER_OWNER = "99999";
+const APPS_URL = "http://localhost:3000/api/account/apps";
 
-const appRow = (overrides: Record<string, unknown> = {}) => ({
+// One entry as operations/app-management/app.json holds it.
+const entry = (id: string, overrides: Record<string, unknown> = {}) => ({
+    id,
     emoji: "🧩",
-    name: "My App",
-    web_url: "https://my-app.example",
-    screenshot_url: null,
-    description: "An app",
-    category: "creative",
+    name: id,
+    url: `https://${id}.example`,
+    description: "An app that does one thing well.",
+    language: "en",
+    category: "build",
     platform: "web",
-    github_username: "testuser",
-    github_user_id: "12345",
-    github_repository_url: "https://github.com/testuser/my-app",
-    issue_url: "https://github.com/pollinations/pollinations/issues/1",
-    approved_date: "2026-01-01",
-    byop: false,
-    requests_24h: null,
+    githubUsername: "testuser",
+    githubUserId: "12345",
+    repositoryUrl: null,
+    discordUsername: null,
+    submittedDate: "2026-01-01",
+    issueUrl: null,
+    approvedDate: "2026-01-01",
     ...overrides,
 });
 
-describe("GET /api/account/apps", () => {
+describe("/api/account/apps", () => {
     test("requires authorization", async () => {
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/account/apps",
-        );
-        expect(response.status).toBe(401);
+        expect((await SELF.fetch(APPS_URL)).status).toBe(401);
+        expect(
+            (await SELF.fetch(`${APPS_URL}/older`, { method: "DELETE" }))
+                .status,
+        ).toBe(401);
     });
 
     test("lists the signed-in account's apps, newest approval first", async ({
         accountToken,
-        mocks,
     }) => {
-        await mocks.enable("tinybird");
-        mocks.tinybird.state.appDirectoryResponse = [
-            appRow({
-                name: "Older",
-                approved_date: "2025-03-01",
-            }),
-            appRow({
-                name: "Not mine",
-                web_url: "https://theirs.example",
-                github_user_id: OTHER_OWNER,
-            }),
-            appRow({
-                name: "Newest",
-                web_url: "https://newest.example",
-                approved_date: "2026-09-01",
-                byop: "1",
-                requests_24h: "12",
-            }),
-        ];
+        await importApps(env.DB, [
+            entry("older", { approvedDate: "2025-03-01" }),
+            entry("theirs", { githubUserId: OTHER_OWNER }),
+            entry("newest", { approvedDate: "2026-09-01" }),
+        ]);
 
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/account/apps",
-            { headers: { Authorization: `Bearer ${accountToken}` } },
-        );
+        const response = await SELF.fetch(APPS_URL, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
 
         expect(response.status).toBe(200);
         const { apps } = (await response.json()) as {
-            apps: { name: string; byop: boolean; requests24h: number | null }[];
+            apps: { id: string; listed: boolean }[];
         };
-        expect(apps.map((app) => app.name)).toEqual(["Newest", "Older"]);
-        expect(apps[0]).toMatchObject({ byop: true, requests24h: 12 });
-        expect(apps[1]).toMatchObject({ byop: false, requests24h: null });
+        expect(apps.map((app) => app.id)).toEqual(["newest", "older"]);
+        expect(apps.every((app) => app.listed)).toBe(true);
     });
 
-    test("returns an empty list for an account that has not listed an app", async ({
+    test("lets the owner edit, unlist and delete an app, and no one else", async ({
         accountToken,
-        mocks,
     }) => {
-        await mocks.enable("tinybird");
-        mocks.tinybird.state.appDirectoryResponse = [
-            appRow({ github_user_id: OTHER_OWNER }),
-        ];
+        await importApps(env.DB, [
+            entry("mine"),
+            entry("theirs", { githubUserId: OTHER_OWNER }),
+        ]);
+        const send = (id: string, method: string, body?: unknown) =>
+            SELF.fetch(`${APPS_URL}/${id}`, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${accountToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: body ? JSON.stringify(body) : undefined,
+            });
 
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/account/apps",
-            { headers: { Authorization: `Bearer ${accountToken}` } },
+        expect((await send("theirs", "PATCH", { name: "Taken" })).status).toBe(
+            404,
         );
+        expect((await send("theirs", "DELETE")).status).toBe(404);
+        expect(
+            (await send("mine", "PATCH", { url: "javascript:alert(1)" }))
+                .status,
+        ).toBe(400);
 
-        expect(response.status).toBe(200);
+        const edited = await send("mine", "PATCH", {
+            name: "Renamed",
+            listed: false,
+        });
+        expect(edited.status).toBe(200);
+        expect(await edited.json()).toMatchObject({
+            app: { id: "mine", name: "Renamed", listed: false },
+        });
+
+        expect((await send("mine", "DELETE")).status).toBe(200);
+        const response = await SELF.fetch(APPS_URL, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
         expect(await response.json()).toEqual({ apps: [] });
     });
 
-    test("reports a directory rate limit instead of an empty catalog", async ({
+    test("returns an empty list for an account that has no app", async ({
         accountToken,
-        mocks,
     }) => {
-        mocks.tinybird.handlerMap["localhost:7181"] = async () =>
-            new Response("Rate limited", { status: 429 });
-        await mocks.enable("tinybird");
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/account/apps",
-            { headers: { Authorization: `Bearer ${accountToken}` } },
-        );
-        expect(response.status).toBe(503);
-        expect(response.headers.get("Retry-After")).toBe("60");
+        await importApps(env.DB, [
+            entry("theirs", { githubUserId: OTHER_OWNER }),
+        ]);
+
+        const response = await SELF.fetch(APPS_URL, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ apps: [] });
     });
 });

@@ -238,8 +238,7 @@ export function MyApps({
                         <SubmitAppButton />
                     </div>
                     <p className="text-sm text-theme-text-muted">
-                        Apps you submit to the community catalog show up here
-                        once a maintainer approves them.
+                        Submit your app for a maintainer to review.
                     </p>
                 </Surface>
             ) : (
@@ -256,26 +255,20 @@ export function MyApps({
             )}
             <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                 <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                {githubConnected ? (
-                    <span>
-                        Each app here is listed in the Pollinations{" "}
-                        <InlineLink href={APP_CATALOG_URL}>
-                            app catalog
-                        </InlineLink>
-                        : submitted from your connected GitHub account and
-                        approved by a maintainer.
-                    </span>
-                ) : (
-                    <span>
-                        Apps here are listed in the Pollinations{" "}
-                        <InlineLink href={APP_CATALOG_URL}>
-                            app catalog
-                        </InlineLink>{" "}
-                        and matched to the GitHub account that submitted them.{" "}
-                        <InlineLink href="/account">Connect GitHub</InlineLink>{" "}
-                        on your account page to see yours.
-                    </span>
-                )}
+                <span>
+                    Approved apps join the{" "}
+                    <InlineLink href={APP_CATALOG_URL}>app catalog</InlineLink>{" "}
+                    and show here for the GitHub account that submitted them.
+                    {!githubConnected && (
+                        <>
+                            {" "}
+                            <InlineLink href="/account">
+                                Connect GitHub
+                            </InlineLink>{" "}
+                            to see yours.
+                        </>
+                    )}
+                </span>
             </p>
         </>
     );

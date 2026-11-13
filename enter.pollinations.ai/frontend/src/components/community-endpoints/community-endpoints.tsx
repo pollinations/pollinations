@@ -13,7 +13,6 @@ import {
     Section,
     Surface,
     TabButton,
-    TokensIcon,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
@@ -369,19 +368,11 @@ export function CommunityEndpoints({
         </InlineLink>
     );
 
-    const privateModelGuidance = (
-        <>
-            Your models are private. Only you can call them, and they appear in{" "}
-            <strong>/models</strong> only when you authenticate with your key.
-            Public publishing is allowlist-only. To request publishing access
-            for models, agents, or both, submit a {publisherAccessRequestLink}.
-            You can register, probe, and test private models without approval.
-            For questions, ask in{" "}
-            <InlineLink href="https://discord.gg/k9F7SyTgqn">
-                Discord
-            </InlineLink>
-            .
-        </>
+    // How a private listing goes public: on your own, or after access.
+    const goPublic = canPublish ? (
+        "Make one public to list it for everyone."
+    ) : (
+        <>To list one for everyone, send a {publisherAccessRequestLink}.</>
     );
 
     const modelEndpoints: CommunityEndpoint[] = [];
@@ -516,8 +507,8 @@ export function CommunityEndpoints({
                                             {agentAction}
                                         </div>
                                         <p className="text-sm text-theme-text-muted">
-                                            Build from a prompt and model, or
-                                            deploy agent.ts from GitHub.
+                                            Build one from a prompt and a model,
+                                            or deploy agent.ts from GitHub.
                                         </p>
                                     </Surface>
                                 ) : (
@@ -531,51 +522,26 @@ export function CommunityEndpoints({
                                         <div className="mb-2">
                                             {modelAction}
                                         </div>
-                                        {canPublish && (
-                                            <p className="text-sm text-theme-text-muted">
-                                                Register an OpenAI-compatible
-                                                endpoint.
-                                            </p>
-                                        )}
+                                        <p className="text-sm text-theme-text-muted">
+                                            Register your OpenAI-compatible
+                                            endpoint.
+                                        </p>
                                     </Surface>
                                 ) : (
                                     modelEndpoints.map(renderEndpointCard)
                                 )}
                             </div>
                         )}
-                        {listingTab === "agents"
-                            ? !canPublish && (
-                                  <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                                      <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                      <span>
-                                          Private agents do not need approval.
-                                          Public agents require publishing
-                                          access. Request it through the{" "}
-                                          {publisherAccessRequestLink}.
-                                      </span>
-                                  </p>
-                              )
-                            : (modelEndpoints.length > 0 || !canPublish) && (
-                                  <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                                      <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                      <span>
-                                          {canPublish ? (
-                                              <>
-                                                  Private models are callable
-                                                  only by you and shown only
-                                                  when model lists use your key.
-                                                  Make one public to list it for
-                                                  everyone in{" "}
-                                                  <strong>/models</strong> and
-                                                  bill callers at your
-                                                  configured pricing.
-                                              </>
-                                          ) : (
-                                              privateModelGuidance
-                                          )}
-                                      </span>
-                                  </p>
-                              )}
+                        {/* One line per tab: who can use what you make. */}
+                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                {listingTab === "agents"
+                                    ? "Agents start private, for your own use. "
+                                    : "Models start private: only you can call them, with your key. "}
+                                {goPublic}
+                            </span>
+                        </p>
                     </>
                 )}
             </Section>

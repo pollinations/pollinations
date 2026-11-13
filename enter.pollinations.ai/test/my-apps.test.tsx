@@ -31,7 +31,8 @@ describe("My Apps", () => {
             <MyApps apps={[]} githubConnected onRetry={async () => {}} />,
         );
         expect(html).toContain("app-submission.yml");
-        expect(html).toContain("show up here once a maintainer approves");
+        expect(html).toContain("for a maintainer to review");
+        expect(html).toContain("Approved apps join the");
     });
 
     it("asks a Google-only account to connect GitHub", () => {

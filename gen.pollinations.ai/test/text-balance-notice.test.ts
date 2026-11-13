@@ -502,7 +502,7 @@ it("refuses a key with no budget left when the model has no cost history", async
 });
 
 it("omits the quest link when only paid Pollen can cover the model", async () => {
-    const paidOnlyModel = "inception/mercury-2";
+    const paidOnlyModel = "cohere/command-a-plus";
     await env.KV.put(
         "model-stats-v3",
         JSON.stringify({

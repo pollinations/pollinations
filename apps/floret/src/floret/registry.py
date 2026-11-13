@@ -245,7 +245,6 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
                 "xai",
                 "minimax",
                 "step",
-                "mercury",
             ]
         )
         or any(
@@ -267,7 +266,6 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
                 "glm",
                 "minimax",
                 "step",
-                "mercury",
             ]
         )
     ):

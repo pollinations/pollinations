@@ -15,12 +15,14 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
     if (spendable > 0) return null;
     return (
         // Folded, it shares the menu button's row (top-3, h-10) instead of
-        // sitting under it, so the page starts higher too. Not a card, so
-        // on phones it keeps the button's 12px from the right edge too.
+        // sitting under it, so the page starts higher too; only as the
+        // page's first item, or it would cover the outage banner above it.
+        // Not a card, so on phones it keeps the button's 12px from the right
+        // edge too.
         <Alert
             intent="advisory"
             title="Out of pollen"
-            className="max-lg:-mt-[3.25rem] max-lg:ml-14 max-sm:mr-3"
+            className="max-lg:first:-mt-[3.25rem] max-lg:first:ml-14 max-sm:mr-3"
         >
             API requests fail until you add more.{" "}
             <InlineLink

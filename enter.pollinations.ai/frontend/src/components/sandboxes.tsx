@@ -32,7 +32,7 @@ import {
     SANDBOX_PROVIDERS,
     sandboxTemplate,
 } from "@shared/registry/sandbox.ts";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
 import { generateFunName } from "../lib/fun-name.ts";
@@ -415,23 +415,42 @@ function SandboxCard({
 
 // The page tells the drawer after every load, so its count follows starts,
 // pauses and kills.
-const SANDBOXES_LOADED_EVENT = "pollinations:sandboxes-loaded";
+// The running count, shared by the desktop rail and the phone drawer: one
+// first load for both, then every load of the Sandboxes page, so starts,
+// pauses and kills show. undefined until a list arrives.
+let runningCount: number | undefined;
+let firstLoadStarted = false;
+const countListeners = new Set<() => void>();
+
+function reportSandboxes(list: Sandbox[]) {
+    runningCount = list.filter((s) => s.state === "running").length;
+    for (const listener of countListeners) listener();
+}
+
+function subscribeToCount(listener: () => void) {
+    countListeners.add(listener);
+    if (!firstLoadStarted) {
+        firstLoadStarted = true;
+        // A list the page reported meanwhile is newer: keep it.
+        e2b<Sandbox[]>("/v2/sandboxes").then(
+            (list) => runningCount === undefined && reportSandboxes(list),
+            () => {
+                firstLoadStarted = false;
+            },
+        );
+    }
+    return () => countListeners.delete(listener);
+}
 
 /** How many sandboxes run, on the drawer's Sandboxes row, with a green play
  * icon as the balances have theirs; nothing at zero. Paused ones cost
  * nothing and pile up, so they stay on the page. */
 export function SidebarSandboxes() {
-    const [running, setRunning] = useState(0);
-    useEffect(() => {
-        const count = (list: Sandbox[]) =>
-            setRunning(list.filter((s) => s.state === "running").length);
-        const onLoaded = (event: Event) =>
-            count((event as CustomEvent<Sandbox[]>).detail);
-        e2b<Sandbox[]>("/v2/sandboxes").then(count, () => {});
-        window.addEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
-        return () =>
-            window.removeEventListener(SANDBOXES_LOADED_EVENT, onLoaded);
-    }, []);
+    const running = useSyncExternalStore(
+        subscribeToCount,
+        () => runningCount ?? 0,
+        () => 0,
+    );
     if (running === 0) return null;
     return (
         <Chip
@@ -481,9 +500,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
         // A failed reload keeps the last list it had.
         if (list.status === "fulfilled") {
             setSandboxes(list.value);
-            window.dispatchEvent(
-                new CustomEvent(SANDBOXES_LOADED_EVENT, { detail: list.value }),
-            );
+            reportSandboxes(list.value);
         }
         setListError(list.status === "rejected" ? message(list.reason) : null);
     }, [signedIn]);

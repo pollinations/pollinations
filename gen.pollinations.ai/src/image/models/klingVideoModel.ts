@@ -11,11 +11,11 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:kling:ops");
 
-const KLING_MODEL = "kwaivgi/kling-v3.0-std";
-const KLING_TEXT_ENDPOINT =
-    "https://queue.fal.run/fal-ai/kling-video/v3/standard/text-to-video";
-const KLING_IMAGE_ENDPOINT =
-    "https://queue.fal.run/fal-ai/kling-video/v3/standard/image-to-video";
+const KLING_MODELS = {
+    "kwaivgi/kling-v3.0-std": "standard",
+    "kwaivgi/kling-v3.0-pro": "pro",
+} as const;
+type KlingModel = keyof typeof KLING_MODELS;
 const KLING_POLL_INTERVAL_MS = 3_000;
 // Text-to-video's aspect_ratio enum; image-to-video has no such field and
 // instead follows the supplied start image.
@@ -70,6 +70,7 @@ async function fetchKlingRead(
 export async function callKlingVideoAPI(
     prompt: string,
     safeParams: ImageParams,
+    model: KlingModel = "kwaivgi/kling-v3.0-std",
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey) {
@@ -113,9 +114,8 @@ export async function callKlingVideoAPI(
             );
     }
 
-    const endpoint = isImageToVideo
-        ? KLING_IMAGE_ENDPOINT
-        : KLING_TEXT_ENDPOINT;
+    const operation = isImageToVideo ? "image-to-video" : "text-to-video";
+    const endpoint = `https://queue.fal.run/fal-ai/kling-video/v3/${KLING_MODELS[model]}/${operation}`;
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const submissionResponse = await fetchUpstream(endpoint, {
@@ -164,7 +164,7 @@ export async function callKlingVideoAPI(
     // fal reports normalized seconds priced at $0.14/unit for both endpoints.
     // Convert the reported quantity to the registry's silent/audio second rate;
     // never substitute the requested duration for the provider's billed usage.
-    const rates = IMAGE_SERVICES[KLING_MODEL].cost;
+    const rates = IMAGE_SERVICES[model].cost;
     const rate =
         rates.completionVideoSeconds +
         (generateAudio ? rates.completionAudioSeconds : 0);
@@ -199,7 +199,7 @@ export async function callKlingVideoAPI(
             "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: KLING_MODEL,
+            actualModel: model,
             usage: {
                 completionVideoSeconds: billedSeconds,
                 ...(generateAudio

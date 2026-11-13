@@ -34,6 +34,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { pageMeta } from "../../page-meta.ts";
+import { MobileCopyDocsButton } from "../copy-docs.tsx";
 import {
     QUEST_STATUS_UPDATED_EVENT,
     questNavLabel,
@@ -220,6 +221,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     avatarUrl={githubAvatarUrl}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
+                <MobileCopyDocsButton />
                 <ScrollArea
                     ref={mainScrollRef}
                     className={cn(

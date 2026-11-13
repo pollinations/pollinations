@@ -39,6 +39,7 @@ import { generateFunName } from "../lib/fun-name.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
 import { readError } from "./community-endpoints/types.ts";
+import { CopyDocs } from "./copy-docs.tsx";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
@@ -721,7 +722,10 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     </Footnotes>
                 </Section>
             )}
-            <Section title="Sandboxes">
+            <Section
+                title="Sandboxes"
+                action={<CopyDocs section="sandboxes" />}
+            >
                 {loadError && (
                     <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
                         {loadError}

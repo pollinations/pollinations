@@ -20,6 +20,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
+import { CopyDocs } from "../copy-docs.tsx";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
@@ -342,7 +343,11 @@ export const ApiKeyList: FC<
         <>
             {/* Secret and app keys share one card: tab buttons switch
                 between them, with the open tab's Create on the same row. */}
-            <Section title="Keys" id="api-keys">
+            <Section
+                title="Keys"
+                id="api-keys"
+                action={<CopyDocs section={secret ? "api" : "byop"} />}
+            >
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap gap-1.5">
                         {KEY_TABS.map(({ value, label }) => (

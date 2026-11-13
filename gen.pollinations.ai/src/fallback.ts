@@ -348,6 +348,9 @@ export type FallbackAttempt = {
     settled: boolean;
 };
 
+const MINIMAX_FLASH = "minimax/minimax-m3.1-flash";
+const MINIMAX_FLASH_NOVITA = `${MINIMAX_FLASH}:novita`;
+
 /**
  * Runs `attempt` against each candidate until one succeeds.
  *
@@ -380,6 +383,17 @@ export async function withModelFallback<
     let refusal: PaymentRequiredError | undefined;
     let failure: FallbackAttempt | undefined;
     for (const [index, candidate] of candidates.entries()) {
+        const previousFailure = failure;
+        const isNovitaFlashFallback =
+            candidate.id === MINIMAX_FLASH_NOVITA &&
+            previousFailure?.candidate.id === MINIMAX_FLASH;
+        if (
+            isNovitaFlashFallback &&
+            (!(previousFailure.error instanceof Error) ||
+                upstreamStatus(previousFailure.error) !== 429)
+        ) {
+            continue;
+        }
         // Local gates are not upstream failures and must not trigger or be
         // attributed to another fallback candidate. A payment refusal only
         // skips its own model.
@@ -412,6 +426,20 @@ export async function withModelFallback<
                 settled: !shouldFallback(error, candidate),
             };
             attempts?.push(failure);
+            // Novita validates the transformed prompt and output budget with
+            // its own tokenizer. An oversized request can still fit Fireworks.
+            if (
+                isNovitaFlashFallback &&
+                error instanceof Error &&
+                upstreamStatus(error) === 400 &&
+                upstreamFailureText(error).some((message) =>
+                    message?.includes("context window exceeds limit"),
+                )
+            ) {
+                failure.settled = false;
+                failure = previousFailure;
+                continue;
+            }
             if (failure.settled) throw error;
         }
     }

@@ -422,6 +422,13 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "minimax/minimax-m3.1-flash": {
+        "minimax/minimax-m3.1-flash:novita": {
+            provider: "novita",
+            contextLength: 1000000,
+            maxCompletionTokens: 524288,
+        },
+    },
     "qwen/qwen3.8-2.4t-a95b": {
         // SiliconFlow FP8 rates include OpenRouter's 5.5% credit-purchase fee.
         "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {

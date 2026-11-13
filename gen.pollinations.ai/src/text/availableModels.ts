@@ -1344,6 +1344,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "minimax/minimax-m3.1-flash:novita",
+        config: portkeyConfig["minimax/minimax-m3.1-flash:novita"],
+        transform: separateNovitaReasoning,
+    },
+    {
         name: "meta/muse-glimmer-30b",
         config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,

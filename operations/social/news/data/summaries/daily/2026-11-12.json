@@ -1,0 +1,615 @@
+{
+  "date": "2026-11-12",
+  "period_start": "2026-11-12",
+  "period_end": "2026-11-12",
+  "title": "More ways to make images and inspect model options",
+  "summary": "A community-heavy day brought new MCP tools, 24 catalog apps, animated GIF output, and a clearer Enter dashboard.\n\nGPT Image 2.6 Flare gained PNG, WebP, and animated GIF output, with frame and duration controls for GIFs. The models API now lists supported resolutions where available. FLUX Schnell keeps the requested aspect ratio when it adjusts image sizes, and Play preserves linked video settings when a model alias resolves. A Gemini 4 Carbon PR has no confirmed release date, so it is not included in the user-facing changes.\n\nThe Research MCP gained arXiv search and paper lookup, plus Crossref search and DOI lookup. Other MCP additions cover voice isolation and changes, npm download counts, Go and Packagist packages, MAC addresses, Wikimedia's On This Day feed, fractions, text diffs, and SemVer ordering. Agents now keep separate Computers across runs. Catalog and documentation updates make the tools easier to find.\n\nTwenty-four community apps joined the catalog. They range from model-comparison tables and agent phone calls to science simulations, hidden-message postcards, writing tools, and games where AI agents draw or plan heists. The README's recent-apps list rotated as entries arrived; those rotations did not remove apps from the catalog.",
+  "pr_count": 64,
+  "prs": [
+    {
+      "number": 15928,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 18285,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 18516,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 18722,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19152,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19159,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19188,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19199,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19210,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19229,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19252,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19290,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19314,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19359,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19439,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19451,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19453,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19456,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19464,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19467,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19468,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19469,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19486,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19487,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19488,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19490,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19499,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19503,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19512,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19519,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19523,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19525,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19526,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19530,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19533,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19534,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19535,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19536,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19537,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19539,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19540,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19542,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19544,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19545,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19546,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19547,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19548,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19549,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19550,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19551,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19552,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19556,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19557,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19558,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19568,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19569,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19578,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19579,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19580,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19581,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19582,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19585,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19610,
+      "date": "2026-11-12"
+    },
+    {
+      "number": 19613,
+      "date": "2026-11-12"
+    }
+  ],
+  "generated_at": "2026-11-13T06:12:52.092255+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Animated GIFs with Flare",
+      "text": "GPT Image 2.6 Flare can return PNG, WebP, or animated GIF. For GIFs, set `frame_count` from 2 to 16 and `frame_duration_ms` from 20 to 2000, within a 10-second total. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19314
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Model resolutions in the API",
+      "text": "`/v1/models` and `/v1/models/:model` now include `resolutions` when a model declares supported output sizes. Clients can use the field to choose a valid `resolution`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19456
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Research papers for agents",
+      "text": "Research MCP can search arXiv papers and Crossref works, then look up a paper by arXiv ID or a work by DOI. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19252,
+        19290
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Voice tools in MCP",
+      "text": "The Pollinations MCP server gained `isolateSpeech` and `changeVoice`. Pass a public HTTPS audio URL, or a video URL for speech isolation, and get an audio resource link back. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19229
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Check npm download counts",
+      "text": "The Packages MCP `package_downloads` tool retrieves daily npm downloads for a package. Choose a preset period or a custom date range of up to 18 months. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19210
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Look up Go and PHP packages",
+      "text": "Packages MCP can now look up Go modules and PHP Composer packages through `package_lookup`. Results include version details and links to the relevant package registry. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19464,
+        19469
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Inspect MAC addresses",
+      "text": "Network MCP's `inspect_mac` accepts common MAC address formats and reports normalized forms, the OUI prefix, and address flags. It runs locally without a network call. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19467
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "History on this day",
+      "text": "News MCP's `history_on_this_day` looks up selected events, deaths, or holidays for a calendar date using Wikimedia's public feed. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19468
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Exact calculations for agents",
+      "text": "Calculators MCP gained `to_fraction` for exact decimal and fraction reduction, `diff_text` for unified diffs, and `compare_versions` for SemVer ordering. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19503,
+        19519,
+        19536
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "First auto top-up Quest",
+      "text": "One paid auto top-up completed on or after October 13, 2026 qualifies an account for a one-time reward of 20 Quest Pollen. Existing auto top-up users can qualify with their next paid refill. [Explore Quests](https://pollinations.ai).",
+      "prs": [
+        19439
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Out-of-Pollen dashboard banner",
+      "text": "Signed-in accounts with no spendable Pollen now see a dashboard banner linking to Buy Pollen. It also points to Quests when Quest Pollen is not locked.",
+      "prs": [
+        15928
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "One Enter catalog card",
+      "text": "Enter now uses one responsive card layout for models, agents, MCP servers, and sandbox templates. Cards bring descriptions, capabilities, prices, and actions together, with model health shown as labeled bars. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19613
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 19610,
+      "url": "https://github.com/pollinations/pollinations/pull/19610",
+      "merged_at": "2026-11-12T18:20:49Z",
+      "api_changes": [
+        {
+          "id": "pr-19610:GET /image/{prompt}",
+          "endpoint": "GET /image/{prompt}",
+          "summary": "Generate Image",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:background",
+              "before": null,
+              "after": {
+                "type": "\"auto\"|\"opaque\"|\"transparent\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:frame_count",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:frame_duration_ms",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:output_format",
+              "before": null,
+              "after": {
+                "type": "\"png\"|\"webp\"|\"gif\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:quality",
+              "before": {
+                "type": "\"low\"|\"medium\"|\"high\"|\"hd\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"low\"|\"medium\"|\"high\"|\"hd\"|\"auto\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-19610:GET /video/{prompt}",
+          "endpoint": "GET /video/{prompt}",
+          "summary": "Generate Video",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:background",
+              "before": null,
+              "after": {
+                "type": "\"auto\"|\"opaque\"|\"transparent\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:frame_count",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:frame_duration_ms",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:output_format",
+              "before": null,
+              "after": {
+                "type": "\"png\"|\"webp\"|\"gif\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-19610:POST /v1/images/edits",
+          "endpoint": "POST /v1/images/edits",
+          "summary": "Edit Image (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:background",
+              "before": null,
+              "after": {
+                "type": "\"auto\"|\"opaque\"|\"transparent\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:frame_count",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:frame_duration_ms",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:output_format",
+              "before": null,
+              "after": {
+                "type": "\"png\"|\"webp\"|\"gif\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:quality",
+              "before": {
+                "type": "\"standard\"|\"hd\"|\"low\"|\"medium\"|\"high\"",
+                "required": false
+              },
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-19610:POST /v1/images/generations",
+          "endpoint": "POST /v1/images/generations",
+          "summary": "Generate Image (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:aspect_ratio",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:background",
+              "before": null,
+              "after": {
+                "type": "\"auto\"|\"opaque\"|\"transparent\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:frame_count",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:frame_duration_ms",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:output_format",
+              "before": null,
+              "after": {
+                "type": "\"png\"|\"webp\"|\"gif\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:quality",
+              "before": {
+                "type": "\"standard\"|\"hd\"|\"low\"|\"medium\"|\"high\"",
+                "required": false
+              },
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

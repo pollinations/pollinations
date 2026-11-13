@@ -12,23 +12,30 @@ import {
     Input,
     Section,
     Surface,
-    TokensIcon,
+    TabButton,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FormEvent,
     type ReactElement,
+    type ReactNode,
     useCallback,
     useEffect,
     useState,
 } from "react";
 import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageLoading,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
+import { Footnotes } from "../pollen/pollen-balance.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -51,10 +58,15 @@ type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
-    canPublish: boolean;
+    // null: the publisher profile didn't load.
+    canPublish: boolean | null;
+    onProfileRetry: () => unknown;
     // Public community models offered as fallback targets in the dialog.
     fallbackOptions: FallbackModelOption[];
     healthByModelId: Record<string, ApiModelInfo["health"]> | null;
+    // The Apps tab: your catalog listings and their Submit button, which the
+    // route loads.
+    appsTab: { action: ReactNode; content: ReactNode };
 };
 
 const PUBLISHER_ACCESS_REQUEST_URL =
@@ -92,47 +104,31 @@ function ProviderProfileField({
     );
 }
 
-export function DeploymentsPlaceholder({
-    canPublish = false,
-    error,
-    onRetry,
-}: {
-    canPublish?: boolean;
-    error?: string | null;
-    onRetry?: () => void;
-}) {
-    const titles = canPublish
-        ? ["Publisher info", "Agents", "Models"]
-        : ["Agents", "Models"];
-    if (!error) return <PageLoading titles={titles} />;
-    return (
-        <>
-            {titles.map((title) => (
-                <Section key={title} title={title}>
-                    {/* The page first loads the publisher profile; when that
-                        fails, the listings are never asked for. */}
-                    <LoadError
-                        onRetry={onRetry}
-                        paths={[
-                            "/account/profile",
-                            "/account/my-models",
-                            "/account/agents",
-                        ]}
-                    >
-                        {error}
-                    </LoadError>
-                </Section>
-            ))}
-        </>
-    );
-}
+const LISTING_TABS = [
+    { value: "agents", label: "Agents" },
+    { value: "models", label: "Models" },
+    { value: "apps", label: "Apps" },
+] as const;
+
+export const DeploymentsPlaceholder = () => (
+    <PageLoading titles={["My listings"]} />
+);
 
 export function CommunityEndpoints({
     onChange,
-    canPublish,
+    canPublish: publishAccess,
+    onProfileRetry,
     fallbackOptions,
     healthByModelId,
+    appsTab,
 }: CommunityEndpointsProps) {
+    const canPublish = publishAccess === true;
+    // No profile, no listings: they wait for it, while the Apps tab works.
+    const profileFailed = publishAccess === null;
+    // The tab lives in the address, so /my-apps can open the Apps tab.
+    const listingTab =
+        useSearch({ from: "/_dashboard/my-models" }).tab ?? "agents";
+    const navigate = useNavigate({ from: "/my-models" });
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -198,8 +194,8 @@ export function CommunityEndpoints({
     }, []);
 
     useEffect(() => {
-        void loadEndpoints();
-    }, [loadEndpoints]);
+        if (!profileFailed) void loadEndpoints();
+    }, [loadEndpoints, profileFailed]);
 
     async function handleCreateAgent(form: AgentFormState): Promise<void> {
         const response = await accountClient.agents.$post({
@@ -356,19 +352,11 @@ export function CommunityEndpoints({
         </InlineLink>
     );
 
-    const privateModelGuidance = (
-        <>
-            Your models are private. Only you can call them, and they appear in{" "}
-            <strong>/models</strong> only when you authenticate with your key.
-            Public publishing is allowlist-only. To request publishing access
-            for models, agents, or both, submit a {publisherAccessRequestLink}.
-            You can register, probe, and test private models without approval.
-            For questions, ask in{" "}
-            <InlineLink href="https://discord.gg/k9F7SyTgqn">
-                Discord
-            </InlineLink>
-            .
-        </>
+    // How a private listing goes public: on your own, or after access.
+    const goPublic = canPublish ? (
+        "Make one public to list it for everyone."
+    ) : (
+        <>To list one for everyone, send a {publisherAccessRequestLink}.</>
     );
 
     const modelEndpoints: CommunityEndpoint[] = [];
@@ -437,178 +425,207 @@ export function CommunityEndpoints({
         </Button>
     );
 
-    if (isLoading || (error && !hasLoaded)) {
-        return (
-            <DeploymentsPlaceholder
-                canPublish={canPublish}
-                error={isLoading ? null : error}
-                onRetry={() => {
-                    setIsLoading(true);
-                    void loadEndpoints();
-                }}
-            />
-        );
-    }
+    // Agents and models wait for their own requests inside the card, so the
+    // tabs, and the Apps tab with its own data, stay usable meanwhile.
+    const endpointsPending = isLoading || (!!error && !hasLoaded);
+    // The open tab's listings and Create; Agents and Models differ only in
+    // these and their two lines of text.
+    const agentsTab = listingTab === "agents";
+    const tabEndpoints = agentsTab ? agentEndpoints : modelEndpoints;
+    const tabAction = agentsTab ? agentAction : modelAction;
 
     return (
         <>
-            {canPublish && (
-                <Section title="Publisher info">
-                    <form
-                        className="flex flex-col gap-4"
-                        onSubmit={(event) => void handleProviderSubmit(event)}
-                    >
-                        <div className="space-y-3">
-                            <ProviderProfileField
-                                icon={<AccountIcon />}
-                                label="Publisher name"
-                                help="Shown as the publisher on all your public models."
-                            >
-                                <Input
-                                    name="community-provider-name"
-                                    value={providerName}
-                                    placeholder="Your service"
-                                    autoComplete="organization"
-                                    className="w-full min-w-0"
-                                    required={Boolean(providerUrl.trim())}
-                                    maxLength={
-                                        COMMUNITY_PROVIDER_NAME_MAX_LENGTH
-                                    }
-                                    onChange={(event) =>
-                                        setProviderName(event.target.value)
-                                    }
-                                />
-                            </ProviderProfileField>
-                            <ProviderProfileField
-                                icon={<GlobeIcon />}
-                                label="Website or privacy policy"
-                                help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
-                            >
-                                <Input
-                                    type="url"
-                                    name="community-provider-url"
-                                    value={providerUrl}
-                                    placeholder="https://example.com"
-                                    autoComplete="url"
-                                    className="w-full min-w-0"
-                                    required={Boolean(providerName.trim())}
-                                    maxLength={
-                                        COMMUNITY_PROVIDER_URL_MAX_LENGTH
-                                    }
-                                    onChange={(event) =>
-                                        setProviderUrl(event.target.value)
-                                    }
-                                />
-                            </ProviderProfileField>
-                            <ProviderProfileField
-                                icon={<ImageIcon />}
-                                label="Brand icon URL"
-                                help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                            >
-                                <Input
-                                    type="url"
-                                    name="community-provider-icon-url"
-                                    value={providerIconUrl}
-                                    placeholder="https://media.pollinations.ai/…"
-                                    autoComplete="url"
-                                    className="w-full min-w-0"
-                                    onChange={(event) =>
-                                        setProviderIconUrl(event.target.value)
-                                    }
-                                />
-                            </ProviderProfileField>
-                        </div>
-                        {!providerIsSaved && (
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    type="button"
-                                    intent="neutral"
-                                    disabled={isSavingProvider}
-                                    onClick={resetProviderChanges}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    intent="commit"
-                                    disabled={isSavingProvider}
-                                >
-                                    {isSavingProvider ? "Saving…" : "Save"}
-                                </Button>
-                            </div>
-                        )}
-                    </form>
-                </Section>
+            {error && hasLoaded && listingTab !== "apps" && (
+                <Alert intent="danger">{error}</Alert>
             )}
-            {error && <Alert intent="danger">{error}</Alert>}
-            <Section
-                title="Agents"
-                id="agents"
-                action={agentEndpoints.length > 0 && agentAction}
-            >
-                <div className="flex flex-col gap-3">
-                    {agentEndpoints.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{agentAction}</div>
-                            <p className="text-sm text-theme-text-muted">
-                                Build from a prompt and model, or deploy
-                                agent.ts from GitHub.
-                            </p>
-                        </Surface>
-                    ) : (
-                        agentEndpoints.map(renderEndpointCard)
-                    )}
+            {/* One card: agents, models and apps behind tab buttons, then the
+                tab's note. The open tab's Create sits on the tab row. */}
+            <Section title="My listings" id="listings">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {LISTING_TABS.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={listingTab === value}
+                                onClick={() =>
+                                    void navigate({
+                                        search: {
+                                            tab:
+                                                value === "agents"
+                                                    ? undefined
+                                                    : value,
+                                        },
+                                    })
+                                }
+                                ariaLabel={label}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </div>
+                    {listingTab === "apps"
+                        ? appsTab.action
+                        : endpointsPending
+                          ? null
+                          : tabEndpoints.length > 0 && tabAction}
                 </div>
-                {!canPublish && (
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Private agents do not need approval. Public agents
-                            require publishing access. Request it through the{" "}
-                            {publisherAccessRequestLink}.
-                        </span>
-                    </p>
+                {listingTab === "apps" ? (
+                    appsTab.content
+                ) : profileFailed ? (
+                    <LoadError
+                        onRetry={onProfileRetry}
+                        paths={["/account/profile"]}
+                    >
+                        Couldn’t load publisher details.
+                    </LoadError>
+                ) : endpointsPending ? (
+                    <SectionContent loading={isLoading}>
+                        <LoadError
+                            onRetry={() => {
+                                setIsLoading(true);
+                                void loadEndpoints();
+                            }}
+                            paths={["/account/my-models", "/account/agents"]}
+                        >
+                            {error ?? ""}
+                        </LoadError>
+                    </SectionContent>
+                ) : (
+                    <>
+                        <div className="flex flex-col gap-3">
+                            {tabEndpoints.length === 0 ? (
+                                <Surface className="p-6 text-center">
+                                    <div className="mb-2">{tabAction}</div>
+                                    <p className="text-sm text-theme-text-muted">
+                                        {agentsTab
+                                            ? "Build one from a prompt and a model, or deploy agent.ts from GitHub."
+                                            : "Register your OpenAI-compatible endpoint."}
+                                    </p>
+                                </Surface>
+                            ) : (
+                                tabEndpoints.map(renderEndpointCard)
+                            )}
+                        </div>
+                        {/* One line per tab: who can use what you make. */}
+                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                {agentsTab
+                                    ? "Agents start private, for your own use. "
+                                    : "Models start private: only you can call them, with your key. "}
+                                {goPublic}
+                            </span>
+                        </p>
+                    </>
                 )}
             </Section>
 
-            <Section
-                title="Models"
-                id="models"
-                action={modelEndpoints.length > 0 && modelAction}
-            >
-                <div className="flex flex-col gap-3">
-                    {modelEndpoints.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{modelAction}</div>
-                            {canPublish && (
-                                <p className="text-sm text-theme-text-muted">
-                                    Register an OpenAI-compatible endpoint.
-                                </p>
+            {/* One publisher for all your public agents and models, so it
+                sits in its own card rather than inside a listings tab; apps
+                don't use it, so the Apps tab hides it. */}
+            {/* Its fields load with your agents and models; empty ones
+                would save over the real details. */}
+            {canPublish && listingTab !== "apps" && !endpointsPending && (
+                <Section title="Publisher" id="publisher">
+                    <form
+                        className="flex flex-col gap-3"
+                        onSubmit={(event) => void handleProviderSubmit(event)}
+                    >
+                        <Surface className="flex flex-col gap-4">
+                            <div className="space-y-3">
+                                <ProviderProfileField
+                                    icon={<AccountIcon />}
+                                    label="Publisher name"
+                                    help="Shown as the publisher on all your public agents and models."
+                                >
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerUrl.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    icon={<GlobeIcon />}
+                                    label="Website or privacy policy"
+                                    help="Shown with your public agents and models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerName.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    icon={<ImageIcon />}
+                                    label="Brand icon URL"
+                                    help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </ProviderProfileField>
+                            </div>
+                            {!providerIsSaved && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        intent="neutral"
+                                        disabled={isSavingProvider}
+                                        onClick={resetProviderChanges}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        intent="commit"
+                                        disabled={isSavingProvider}
+                                    >
+                                        {isSavingProvider ? "Saving…" : "Save"}
+                                    </Button>
+                                </div>
                             )}
                         </Surface>
-                    ) : (
-                        modelEndpoints.map(renderEndpointCard)
-                    )}
-                </div>
-                {(modelEndpoints.length > 0 || !canPublish) && (
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            {canPublish ? (
-                                <>
-                                    Private models are callable only by you and
-                                    shown only when model lists use your key.
-                                    Make one public to list it for everyone in{" "}
-                                    <strong>/models</strong> and bill callers at
-                                    your configured pricing.
-                                </>
-                            ) : (
-                                privateModelGuidance
-                            )}
-                        </span>
-                    </p>
-                )}
-            </Section>
+                        <Footnotes>
+                            <p className="flex items-start gap-1.5">
+                                <AccountIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Shown on all your public agents and models.
+                                </span>
+                            </p>
+                        </Footnotes>
+                    </form>
+                </Section>
+            )}
 
             {editing && (
                 <CommunityEndpointDialog

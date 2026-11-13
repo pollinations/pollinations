@@ -10,7 +10,7 @@ export function questNavLabel(
     const claimable = rewards.filter(
         (reward) => reward.claimedAt == null,
     ).length;
-    if (claimable > 0) return `${claimable} claimable!`;
+    if (claimable > 0) return `${claimable} claimable`;
 
     const completed = new Set(
         rewards

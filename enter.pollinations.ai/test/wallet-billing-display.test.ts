@@ -14,7 +14,7 @@ import {
 import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
 import {
     PollenBalance,
-    SidebarWallet,
+    SidebarBalance,
 } from "../frontend/src/components/pollen/pollen-balance.tsx";
 import { PollenPackButtons } from "../frontend/src/components/pollen/pollen-pack-controls.tsx";
 
@@ -316,10 +316,10 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("request a review");
 
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: true,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: true,
             }),
         );
         expect(sidebar).toContain("$35.54");
@@ -342,10 +342,10 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("Verification needed");
         expect(html).not.toContain("couldn’t verify");
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: false,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: false,
             }),
         );
         expect(sidebar).not.toContain(
@@ -355,13 +355,11 @@ describe("locked Quest pollen display", () => {
 });
 
 describe("drawer wallet during an outage", () => {
-    it("shows a warning per row instead of an amount", () => {
-        const sidebar = renderToStaticMarkup(createElement(SidebarWallet));
-        expect(sidebar).toContain("Paid");
-        expect(sidebar).toContain("Quest");
-        expect(
-            sidebar.match(/aria-label="Unavailable during the outage"/g),
-        ).toHaveLength(2);
+    it("shows a warning on the Credits row instead of the amount", () => {
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarBalance, { kind: "paid" }),
+        );
+        expect(sidebar).toContain('aria-label="Unavailable during the outage"');
         expect(sidebar).not.toContain("$");
     });
 });

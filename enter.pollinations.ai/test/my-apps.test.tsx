@@ -16,13 +16,14 @@ afterAll(() => {
 });
 
 describe("My Apps", () => {
-    it("shows navigation to every signed-in account", () => {
-        expect(DASHBOARD_NAV_ITEMS.some((item) => item.id === "my-apps")).toBe(
-            true,
-        );
-        expect(SIGNED_OUT_NAV_ITEMS.some((item) => item.id === "my-apps")).toBe(
-            false,
-        );
+    it("is reached through My listings by every signed-in account", () => {
+        // My Apps is the Apps tab of My listings (/my-models?tab=apps).
+        expect(
+            DASHBOARD_NAV_ITEMS.some((item) => item.to === "/my-models"),
+        ).toBe(true);
+        expect(
+            SIGNED_OUT_NAV_ITEMS.some((item) => item.to === "/my-models"),
+        ).toBe(false);
     });
 
     it("offers submission when no app is listed", () => {
@@ -30,7 +31,8 @@ describe("My Apps", () => {
             <MyApps apps={[]} githubConnected onRetry={async () => {}} />,
         );
         expect(html).toContain("app-submission.yml");
-        expect(html).toContain("show up here once a maintainer approves");
+        expect(html).toContain("for a maintainer to review");
+        expect(html).toContain("Approved apps join the");
     });
 
     it("asks a Google-only account to connect GitHub", () => {

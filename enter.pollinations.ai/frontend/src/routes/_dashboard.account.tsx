@@ -225,31 +225,6 @@ function AccountPage() {
                 </Surface>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
-                <span>© 2026 Myceli.AI OÜ</span>
-                <InlineLink
-                    href="https://pollinations.ai/terms"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Terms of Service
-                </InlineLink>
-                <InlineLink
-                    href="https://pollinations.ai/privacy"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Privacy Policy
-                </InlineLink>
-                <InlineLink
-                    href="https://pollinations.ai/refunds"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Refund Policy
-                </InlineLink>
-            </footer>
-
             <DeleteAccountDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

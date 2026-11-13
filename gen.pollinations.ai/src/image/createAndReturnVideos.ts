@@ -113,7 +113,12 @@ export async function createAndReturnVideo(
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "kwaivgi/kling-v3.0-std":
-            result = await callKlingVideoAPI(prompt, safeParams);
+        case "kwaivgi/kling-v3.0-pro":
+            result = await callKlingVideoAPI(
+                prompt,
+                safeParams,
+                safeParams.model,
+            );
             break;
         case "black-forest-labs/flux-3-max":
             result = await callFluxMaxVideoAPI(prompt, safeParams);

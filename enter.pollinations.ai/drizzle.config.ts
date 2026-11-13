@@ -4,6 +4,7 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
     out: "./drizzle",
     schema: [
+        "../shared/db/apps.ts",
         "../shared/db/better-auth.ts",
         "../shared/db/media-catalog.ts",
         "../shared/db/sandbox.ts",

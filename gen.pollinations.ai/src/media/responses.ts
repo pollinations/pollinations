@@ -3,6 +3,7 @@ import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { defaultImageQuality } from "@/image/handler.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
@@ -116,7 +117,9 @@ export function mediaResponses(protocol: MediaProtocol) {
                     );
                     url.searchParams.set(
                         "model",
-                        ctx.var.model.requested.includes(",")
+                        ctx.var.model.requested.includes(",") ||
+                            defaultImageQuality(ctx.var.model.requested) ===
+                                "low"
                             ? ctx.var.model.requested
                             : entry.id,
                     );

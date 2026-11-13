@@ -962,7 +962,6 @@ const imageSeedField = z
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high", "auto"])
     .optional()
-    .default("medium")
     .meta({
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",

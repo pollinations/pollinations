@@ -1,6 +1,9 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import {
+    DEFAULT_IMAGE_MODEL,
+    GROK_IMAGINE_PRO_ALIASES,
+} from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
@@ -131,6 +134,11 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
     }
 }
 
+export function defaultImageQuality(requestedModel: string): "low" | "medium" {
+    const firstModel = requestedModel.split(",", 1)[0].trim();
+    return GROK_IMAGINE_PRO_ALIASES.includes(firstModel) ? "low" : "medium";
+}
+
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
@@ -143,6 +151,7 @@ function parseImageParams(
         ...body,
         model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
+    mergedParams.quality ??= defaultImageQuality(model.requested);
     delete mergedParams.prompt;
     delete mergedParams.key;
 
@@ -337,6 +346,7 @@ async function generateMediaWithFallback(
             if (c.var.model.requested.includes(",") && attempt.entry) {
                 const parsed = parseImageParams(c, body, {
                     ...c.var.model,
+                    requested: attempt.entry.requestedId ?? attempt.id,
                     resolved: attempt.id,
                     definition: attempt.entry.definition,
                     communityEndpoint: attempt.communityEndpoint,

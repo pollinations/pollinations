@@ -869,12 +869,6 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.022, 8);
-    expect(
-        calculateCost("x-ai/grok-imagine-image-quality", {
-            promptImageTokens: 1,
-            completionImageTokens: 1,
-        }).totalCost,
-    ).toBeCloseTo(0.06 * 1.055, 8);
     for (const [quality, resolution, expected] of [
         ["low", "1k", 0.05],
         ["low", "2k", 0.07],

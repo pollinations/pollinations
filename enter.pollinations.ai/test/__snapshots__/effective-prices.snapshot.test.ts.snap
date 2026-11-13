@@ -4979,16 +4979,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01055,
     },
   },
-  "x-ai/grok-imagine-image-quality": {
-    "cost": {
-      "completionImageTokens": 0.05275,
-      "promptImageTokens": 0.01055,
-    },
-    "price": {
-      "completionImageTokens": 0.05275,
-      "promptImageTokens": 0.01055,
-    },
-  },
   "x-ai/grok-imagine-video": {
     "cost": {
       "completionVideoSeconds": 0.07,

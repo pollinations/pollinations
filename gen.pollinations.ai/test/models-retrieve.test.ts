@@ -252,7 +252,8 @@ test("OpenAI-compatible model listings expose required safety checks", async () 
             visibility: "public",
             payload: JSON.stringify({
                 paidOnly: false,
-                bearerTokenCiphertext: "test-placeholder-not-used-for-generation",
+                bearerTokenCiphertext:
+                    "test-placeholder-not-used-for-generation",
                 api: "chat_completions",
                 modality: "text",
                 imagePricing: "request",

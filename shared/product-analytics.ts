@@ -28,6 +28,7 @@ export const productPageViewSchema = z.strictObject({
         "/pollen",
         "/keys",
         "/models",
+        "/agents",
         "/my-models",
         "/quests",
         "/activity",

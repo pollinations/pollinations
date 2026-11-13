@@ -14,25 +14,27 @@ import {
     useRouter,
     useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/types.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import type { ApiKey } from "../components/keys";
-import {
-    CardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { type ApiKey, SidebarKeys } from "../components/keys";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DASHBOARD_AUTH_FAILED_MESSAGE } from "../components/layout/dashboard-session-failure.ts";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import { OutageBanner } from "../components/layout/outage-banner.tsx";
+import { SidebarBalance, SidebarEarnings } from "../components/pollen";
 import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
+import {
+    forgetSandboxCount,
+    SidebarSandboxes,
+} from "../components/sandboxes.tsx";
 import {
     BALANCE_PATH,
     fetchAccountBalance,
@@ -84,7 +86,10 @@ export const Route = createFileRoute("/_dashboard")({
         const user = result.data?.user ?? null;
         // Another tab may have switched accounts: stop calling the account API
         // with the previous account's token.
-        if (user?.id !== lastDashboardSession?.user?.id) forgetSessionToken();
+        if (user?.id !== lastDashboardSession?.user?.id) {
+            forgetSessionToken();
+            forgetSandboxCount();
+        }
         lastDashboardSession = { user };
         return lastDashboardSession;
     },
@@ -166,7 +171,7 @@ function DashboardLayout() {
     const router = useRouter();
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
-    const [isSigningOut, setIsSigningOut] = useState(false);
+    const user = data.user;
     const pathname = useRouterState({ select: (s) => s.location.pathname });
     // The buy page itself needs no pointer to the buy page. Matched by route:
     // the router also serves it as /pollen/ and /Pollen.
@@ -184,18 +189,6 @@ function DashboardLayout() {
         router.invalidate(),
     );
 
-    async function handleSignOut(): Promise<void> {
-        if (isSigningOut) return;
-        setIsSigningOut(true);
-        try {
-            await authClient.signOut();
-            window.location.href = "/news";
-        } catch (error) {
-            console.error("Sign out failed:", error);
-            setIsSigningOut(false);
-        }
-    }
-
     return (
         <DashboardShell
             navItems={
@@ -203,57 +196,102 @@ function DashboardLayout() {
                     ? DASHBOARD_NAV_ITEMS
                     : SIGNED_OUT_NAV_ITEMS
             }
-            accountName={data.user?.name || data.githubUsername}
+            accountName={user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
-            onSignOut={data.user ? handleSignOut : undefined}
             accountArea={
-                data.user ? undefined : data.sessionUnavailable ? (
-                    // Who is signed in is unknown: the outage takes the
-                    // account's place.
-                    <div className="px-1">
-                        <SidebarOutage />
-                    </div>
-                ) : (
+                // Who is signed in is unknown during an outage: nothing here,
+                // the banner at the top of the page explains.
+                data.user || data.sessionUnavailable ? undefined : (
                     <SignedOutAccountArea />
                 )
             }
-            showFooterLinks={Boolean(data.user) || data.sessionUnavailable}
             showQuestStatus={Boolean(data.user)}
             signInBanner={
                 data.user || data.sessionUnavailable ? undefined : (
                     <DashboardSignInBanner />
                 )
             }
-            walletArea={
-                data.user ? (
-                    // Await adds no boundary for a null fallback; without this
-                    // the whole dashboard would wait for the balance.
-                    <Suspense fallback={<CardLoading className="h-11" />}>
-                        <Await promise={data.balance}>
-                            {(balance) =>
-                                balance ? (
-                                    <Await
-                                        promise={data.earnings}
-                                        fallback={
-                                            <SidebarWallet {...balance} />
-                                        }
-                                    >
-                                        {(earnings) => (
-                                            <SidebarWallet
-                                                {...balance}
-                                                {...earnings}
-                                            />
-                                        )}
-                                    </Await>
-                                ) : (
-                                    <WalletLoadError onRetry={retry} />
-                                )
-                            }
-                        </Await>
-                    </Suspense>
+            rowStatus={
+                user
+                    ? {
+                          pollen: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance ? (
+                                              <SidebarBalance
+                                                  kind="paid"
+                                                  balance={balance.packBalance}
+                                              />
+                                          ) : (
+                                              <BalanceOutage />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          quests: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.balance}>
+                                      {(balance) =>
+                                          balance && (
+                                              <SidebarBalance
+                                                  kind="tier"
+                                                  balance={balance.tierBalance}
+                                                  restricted={
+                                                      balance.questPollenRestricted
+                                                  }
+                                              />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          "my-models": (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.earnings}>
+                                      {(earnings) =>
+                                          earnings && (
+                                              <SidebarEarnings {...earnings} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                          sandboxes: <SidebarSandboxes />,
+                          keys: (
+                              <Suspense fallback={null}>
+                                  <Await promise={data.apiKeys}>
+                                      {(apiKeys) =>
+                                          apiKeys && (
+                                              <SidebarKeys apiKeys={apiKeys} />
+                                          )
+                                      }
+                                  </Await>
+                              </Suspense>
+                          ),
+                      }
+                    : undefined
+            }
+            accountCard={
+                user ? (
+                    <>
+                        {/* Await adds no boundary for a null fallback;
+                            without this the whole dashboard would wait. */}
+                        <Suspense fallback={null}>
+                            <Await promise={data.balance}>
+                                {(balance) =>
+                                    !balance && (
+                                        <WalletLoadError onRetry={retry} />
+                                    )
+                                }
+                            </Await>
+                        </Suspense>
+                    </>
                 ) : undefined
             }
         >
+            <OutageBanner />
             {data.user && !onPollenPage && (
                 <Suspense fallback={null}>
                     <Await promise={data.balance}>
@@ -274,14 +312,18 @@ function DashboardLayout() {
     );
 }
 
-/** The drawer's compact outage rows, or the usual error when it is not one. */
+/** The Credits row's warning while the balance is down; the banner explains. */
+function BalanceOutage() {
+    return useOutage([BALANCE_PATH]) ? <SidebarBalance kind="paid" /> : null;
+}
+
+/** The usual balance error, or nothing during an outage: the Credits row
+ * shows the warning then. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
     // The same resource as the Pollen page's balance: one retry for both.
     useOutageRetry(outage, BALANCE_PATH, onRetry);
-    return outage ? (
-        <SidebarOutage />
-    ) : (
+    return outage ? null : (
         <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
             Couldn’t load your balance.
         </LoadError>

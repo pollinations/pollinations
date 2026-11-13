@@ -1,31 +1,12 @@
-import {
-    Button,
-    ClockIcon,
-    InlineLink,
-    TerminalIcon,
-    WalletIcon,
-} from "@pollinations/ui";
+import { Button, ClockIcon, TerminalIcon, WalletIcon } from "@pollinations/ui";
 import {
     SANDBOX_PROVIDERS,
     SANDBOX_TEMPLATES,
     type SandboxProvider,
-    sandboxTemplate,
 } from "@shared/registry/sandbox.ts";
-import { useLoaderData, useNavigate } from "@tanstack/react-router";
-import {
-    type FC,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useState,
-} from "react";
-import { genFetch } from "../api.ts";
-import { genDocsUrl } from "../config.ts";
+import type { FC, ReactNode } from "react";
 import { CatalogCard } from "./catalog-card.tsx";
-import { readError } from "./community-endpoints/types.ts";
-import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { BalanceAccessChip } from "./models/model-status-chips.tsx";
-import { Footnotes } from "./pollen/pollen-balance.tsx";
 
 // Two significant digits, as the prices are shown.
 export const amount = (value: number) => String(Number(value.toPrecision(2)));
@@ -170,123 +151,3 @@ export const SandboxTemplateList: FC<{
         ))}
     </div>
 );
-
-type TemplateRates = {
-    cpuCount: number;
-    memoryMB: number;
-    vcpuSecond: number;
-    gibSecond: number;
-};
-
-// The Models page's Sandboxes tab: every template gen can start, with gen's
-// own hourly price. Signed in, Create opens the create dialog on your
-// Sandboxes page for that template; signed out it's the price list.
-export const SandboxTemplateCatalog: FC<{ query: string }> = ({ query }) => {
-    const { user } = useLoaderData({ from: "/_dashboard" });
-    const navigate = useNavigate();
-    const [prices, setPrices] = useState<Record<string, number>>();
-    const [error, setError] = useState<string | null>(null);
-
-    const load = useCallback(async () => {
-        setError(null);
-        try {
-            const response = await genFetch("/alpha/e2b/pricing");
-            if (!response.ok) throw new Error(await readError(response));
-            const { templates } = (await response.json()) as {
-                templates: Record<string, TemplateRates>;
-            };
-            setPrices(
-                Object.fromEntries(
-                    Object.entries(templates).map(([id, rates]) => [
-                        id,
-                        (rates.cpuCount * rates.vcpuSecond +
-                            (rates.memoryMB / 1024) * rates.gibSecond) *
-                            3600,
-                    ]),
-                ),
-            );
-        } catch (thrown) {
-            setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Couldn’t load sandbox prices.",
-            );
-        }
-    }, []);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    const search = query.trim().toLowerCase();
-    const shown =
-        prices &&
-        Object.fromEntries(
-            Object.entries(prices).filter(([id]) => {
-                const template = sandboxTemplate(id);
-                return (
-                    !search ||
-                    [
-                        id,
-                        template?.name,
-                        template && SANDBOX_PROVIDERS[template.provider].name,
-                    ].some((value) => value?.toLowerCase().includes(search))
-                );
-            }),
-        );
-
-    return (
-        <div className="flex flex-col gap-4">
-            {error && (
-                <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
-                    {error}
-                </LoadError>
-            )}
-            <SectionContent loading={!prices && !error}>
-                {shown &&
-                    (Object.keys(shown).length === 0 ? (
-                        <p className="py-8 text-center text-sm text-theme-text-muted">
-                            No sandbox templates match “{query.trim()}”.
-                        </p>
-                    ) : (
-                        <SandboxTemplateList
-                            prices={shown}
-                            create={
-                                user
-                                    ? {
-                                          label: "Create",
-                                          disabled: false,
-                                          onCreate: (template) =>
-                                              void navigate({
-                                                  to: "/sandboxes",
-                                                  search: { create: template },
-                                              }),
-                                      }
-                                    : undefined
-                            }
-                        />
-                    ))}
-            </SectionContent>
-            <Footnotes>
-                <p className="flex items-start gap-1.5">
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Paid 10 minutes at a time.
-                        {LAUNCH_DISCOUNT > 0 &&
-                            ` Launch price: ${LAUNCH_DISCOUNT}% off.`}
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        A Linux computer in the cloud. See the{" "}
-                        <InlineLink href={genDocsUrl("#tag/sandboxes")}>
-                            Sandboxes docs
-                        </InlineLink>
-                        .
-                    </span>
-                </p>
-            </Footnotes>
-        </div>
-    );
-};

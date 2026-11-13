@@ -1,5 +1,6 @@
 import {
     CardIcon,
+    Chip,
     CopyButton,
     CopyStateIcon,
     cn,
@@ -9,10 +10,8 @@ import {
     MailIcon,
     ReceiptIcon,
     RefreshIcon,
-    ShieldCheckIcon,
     SproutIcon,
     Surface,
-    useOnline,
     WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
@@ -251,96 +250,72 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     );
 };
 
-type SidebarWalletProps = {
-    tierBalance: number;
-    packBalance: number;
-    questPollenRestricted?: boolean;
-    paidWeek?: number;
-    tierWeek?: number;
-    onClick?: () => void;
-};
-
-export const SidebarWallet: FC<SidebarWalletProps> = ({
-    tierBalance,
-    packBalance,
-    questPollenRestricted = false,
-    paidWeek = 0,
-    tierWeek = 0,
+/**
+ * What your listings earned in the last 7 days, paid and Quest together, on
+ * the drawer's My listings row: the same chip as Quests' "claimable", only
+ * when it is above zero.
+ */
+export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
+    paidWeek,
+    tierWeek,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
-
+    const earned = normalizeDisplayBalance(paidWeek + tierWeek);
+    if (earned <= 0) return null;
     return (
-        <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="paid" />
-                    Paid
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatUsd(displayPaidBalance)}
-                    </span>
-                    {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatUsd(paidWeek)}
-                        </span>
-                    )}
-                </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="tier" />
-                    Quest
-                    {questPollenRestricted && (
-                        <LockIcon
-                            aria-hidden={false}
-                            role="img"
-                            aria-label="Quest pollen needs verification"
-                            className="h-3 w-3 shrink-0 text-theme-text-muted"
-                        />
-                    )}
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatUsd(displayTierBalance)}
-                    </span>
-                    {!questPollenRestricted && tierWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatUsd(tierWeek)}
-                        </span>
-                    )}
-                </span>
-            </div>
-        </div>
-    );
-};
-
-/** The drawer wallet while Pollinations is down: two rows, like the balances. */
-export const SidebarOutage: FC = () => {
-    const online = useOnline();
-    return (
-        <div
-            data-theme="accent"
-            className="px-3 py-1 flex flex-col gap-1 text-xs font-bold"
+        <Chip
+            intent="neutral"
+            size="sm"
+            title="Earned in the last 7 days"
+            className="ml-auto bg-transparent text-theme-text-soft"
         >
-            <span className="flex items-center gap-1.5 text-intent-warning-text">
-                <WarningIcon
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 shrink-0"
-                />
-                {online ? "Temporary outage" : "You’re offline"}
-            </span>
-            <span className="flex items-center gap-1.5 text-theme-text-soft">
-                <ShieldCheckIcon
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 shrink-0"
-                />
-                Your pollen is safe
-            </span>
-        </div>
+            +{formatUsd(earned)}
+            <span className="sr-only"> earned in the last 7 days</span>
+        </Chip>
     );
 };
+
+/**
+ * One balance on its drawer row: Credits' paid, Quests' Quest Pollen. Without
+ * a balance, Pollinations is down: a warning takes the amount's place and the
+ * page's outage banner explains.
+ */
+export const SidebarBalance: FC<{
+    kind: "paid" | "tier";
+    balance?: number;
+    restricted?: boolean;
+}> = ({ kind, balance, restricted = false }) => (
+    <Chip
+        intent="neutral"
+        size="sm"
+        className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
+    >
+        <WalletKindIcon kind={kind} />
+        {balance === undefined ? (
+            <WarningIcon
+                role="img"
+                aria-hidden={false}
+                aria-label="Unavailable during the outage"
+                className="h-3.5 w-3.5 shrink-0 text-intent-warning-text"
+            />
+        ) : (
+            <>
+                {formatUsd(normalizeDisplayBalance(balance))}
+                <span className="sr-only">
+                    {kind === "paid" ? " paid" : " Quest"} pollen
+                </span>
+            </>
+        )}
+        {/* Quest pollen that waits on verification. */}
+        {restricted && (
+            <LockIcon
+                aria-hidden={false}
+                role="img"
+                aria-label="Quest pollen needs verification"
+                className="h-3 w-3 shrink-0 text-theme-text-muted"
+            />
+        )}
+    </Chip>
+);
 
 type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;

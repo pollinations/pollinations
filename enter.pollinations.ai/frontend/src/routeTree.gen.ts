@@ -30,6 +30,7 @@ import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-mo
 import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
@@ -137,6 +138,11 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-apps': typeof DashboardMyAppsRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-apps': typeof DashboardMyAppsRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/agents': typeof DashboardAgentsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-apps': typeof DashboardMyAppsRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
     | '/keys'
     | '/models'
     | '/my-apps'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
     | '/keys'
     | '/models'
     | '/my-apps'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/top-up'
     | '/_dashboard/account'
     | '/_dashboard/activity'
+    | '/_dashboard/agents'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-apps'
@@ -462,6 +474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/agents': {
+      id: '/_dashboard/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof DashboardAgentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/activity': {
       id: '/_dashboard/activity'
       path: '/activity'
@@ -482,6 +501,7 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardAgentsRoute: typeof DashboardAgentsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyAppsRoute: typeof DashboardMyAppsRoute
@@ -496,6 +516,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
+  DashboardAgentsRoute: DashboardAgentsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyAppsRoute: DashboardMyAppsRoute,

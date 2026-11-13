@@ -799,7 +799,7 @@ describe("resolveModelConfig", () => {
         "inception-mercury",
         "inception",
     ])("rejects removed Inception Mercury model or alias %s", (model) => {
-        expect(findModelByName(model)).toBeUndefined();
+        expect(findModelByName(model)).toBeNull();
         expect(() => resolveModelConfig(messages, { model })).toThrow(
             `Model configuration not found for: ${model}`,
         );

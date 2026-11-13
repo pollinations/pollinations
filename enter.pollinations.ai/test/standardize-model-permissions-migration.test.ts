@@ -203,8 +203,15 @@ const retiredNovaAliases: Record<string, string> = {
     "nova-reel": "amazon/nova-reel-v1",
 };
 const retiredNovaCanonicalIds = new Set(Object.values(retiredNovaAliases));
+// The 0062 migration must retain its original Mercury mapping even after
+// the model and alias have been retired from the live registry.
+const retiredMercuryNames: Record<string, string> = {
+    mercury: "inception/mercury-2",
+    "inception/mercury-2": "inception/mercury-2",
+};
 const historicalModelName = (id: string): string =>
     retiredNovaAliases[id] ??
+    retiredMercuryNames[id] ??
     (retiredNovaCanonicalIds.has(id) ? id : resolveModelName(id));
 const publishedMappings = retiredPublicIds.map(
     (id) => [id, historicalModelName(id)] as const,
@@ -289,6 +296,10 @@ describe("standardize model permissions migration", () => {
             if (retiredNovaAliases[retiredId]) {
                 expect(canonicalId).toBe(retiredNovaAliases[retiredId]);
                 expect(() => resolveModelName(retiredId)).toThrow();
+            } else if (retiredId === "mercury") {
+                expect(canonicalId).toBe(retiredMercuryNames[retiredId]);
+                expect(() => resolveModelName(retiredId)).toThrow();
+                expect(() => resolveModelName(canonicalId)).toThrow();
             } else if (retiredId !== "zimage-fal") {
                 const currentId = resolveModelName(canonicalId);
                 expect(resolveModelName(retiredId)).toBe(currentId);

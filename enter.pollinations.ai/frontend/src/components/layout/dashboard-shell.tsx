@@ -78,10 +78,10 @@ type FooterLink = {
     href: string;
 };
 
+// Refunds sits by the purchase on Credits, where it matters.
 const footerLinks: readonly FooterLink[] = [
     { label: "Terms", href: "https://pollinations.ai/terms" },
     { label: "Privacy", href: "https://pollinations.ai/privacy" },
-    { label: "Refunds", href: "https://pollinations.ai/refunds" },
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
@@ -227,7 +227,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     )}
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-3">
-                        {signInBanner}
+                        {/* The open drawer has its own sign-in; the banner
+                            keeps its space so the page doesn't move. */}
+                        {signInBanner && (
+                            <div className={isDrawerOpen ? "invisible" : ""}>
+                                {signInBanner}
+                            </div>
+                        )}
                         {children}
                     </main>
                 </ScrollArea>
@@ -346,6 +352,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
+            {/* Signed out, a thin line sets the sign-in buttons apart from
+                the pages, as the one above the footer does. */}
+            {!accountName && <hr className={cn("mb-2", NAV_LINE_CLASS)} />}
             {navItems.some((item) => item.group === "yours") && (
                 <>
                     <nav aria-label="Yours" className="flex flex-col gap-0.5">
@@ -536,28 +545,21 @@ const DocGuides: FC = () => (
     </SubLines>
 );
 
-// The logo and the colour toggle sign off the rail; the small print sits
-// under them on its own line, so it never wraps between them.
+// One line signs off the rail: the logo, the small print, the colour toggle.
 const DashboardFooter: FC = () => (
-    <div className="flex flex-col gap-2 pl-1">
-        <div className="flex items-center justify-between gap-2">
-            <a
-                href="https://pollinations.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex shrink-0 text-theme-text-strong"
-                aria-label="Pollinations"
-            >
-                <BrandMark variant="mark" className="h-6 w-6" />
-            </a>
-            {/* accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="accent" className="shrink-0">
-                <ColorModeToggle />
-            </span>
-        </div>
+    <div className="flex items-center gap-3 pl-1">
+        <a
+            href="https://pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex shrink-0 text-theme-text-strong"
+            aria-label="Pollinations"
+        >
+            <BrandMark variant="mark" className="h-6 w-6" />
+        </a>
         <nav
             aria-label="Legal"
-            className="flex items-center gap-1.5 text-[11px] leading-none text-theme-text-muted"
+            className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] leading-none text-theme-text-muted"
         >
             {footerLinks.map((link, index) => (
                 <Fragment key={link.href}>
@@ -573,6 +575,10 @@ const DashboardFooter: FC = () => (
                 </Fragment>
             ))}
         </nav>
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="shrink-0">
+            <ColorModeToggle />
+        </span>
     </div>
 );
 

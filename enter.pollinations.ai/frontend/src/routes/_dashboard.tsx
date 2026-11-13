@@ -31,7 +31,8 @@ import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import { SidebarOutage, SidebarWallet } from "../components/pollen";
+import { OutageBanner } from "../components/layout/outage-banner.tsx";
+import { SidebarWallet } from "../components/pollen";
 import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
 import {
     BALANCE_PATH,
@@ -207,13 +208,9 @@ function DashboardLayout() {
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={
-                data.user ? undefined : data.sessionUnavailable ? (
-                    // Who is signed in is unknown: the outage takes the
-                    // account's place.
-                    <div className="px-1">
-                        <SidebarOutage />
-                    </div>
-                ) : (
+                // Who is signed in is unknown during an outage: nothing here,
+                // the banner at the top of the page explains.
+                data.user || data.sessionUnavailable ? undefined : (
                     <SignedOutAccountArea />
                 )
             }
@@ -254,6 +251,7 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
+            <OutageBanner />
             {data.user && !onPollenPage && (
                 <Suspense fallback={null}>
                     <Await promise={data.balance}>
@@ -274,13 +272,14 @@ function DashboardLayout() {
     );
 }
 
-/** The drawer's compact outage rows, or the usual error when it is not one. */
+/** The drawer wallet with a warning per amount, or the usual error when it is
+ * not an outage. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
     // The same resource as the Pollen page's balance: one retry for both.
     useOutageRetry(outage, BALANCE_PATH, onRetry);
     return outage ? (
-        <SidebarOutage />
+        <SidebarWallet />
     ) : (
         <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
             Couldn’t load your balance.

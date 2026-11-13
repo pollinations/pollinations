@@ -9,10 +9,8 @@ import {
     MailIcon,
     ReceiptIcon,
     RefreshIcon,
-    ShieldCheckIcon,
     SproutIcon,
     Surface,
-    useOnline,
     WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
@@ -252,13 +250,40 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 };
 
 type SidebarWalletProps = {
-    tierBalance: number;
-    packBalance: number;
+    /** Both missing while Pollinations is down: the page's outage banner
+     * explains, and each row shows a warning instead of its amount. */
+    tierBalance?: number;
+    packBalance?: number;
     questPollenRestricted?: boolean;
     paidWeek?: number;
     tierWeek?: number;
     onClick?: () => void;
 };
+
+/** One wallet amount with this week's gain, or a warning when it can't load. */
+const WalletAmount: FC<{ balance?: number; week: number }> = ({
+    balance,
+    week,
+}) =>
+    balance === undefined ? (
+        <WarningIcon
+            role="img"
+            aria-hidden={false}
+            aria-label="Unavailable during the outage"
+            className="h-3.5 w-3.5 shrink-0 text-intent-warning-text"
+        />
+    ) : (
+        <span className="flex items-baseline gap-1.5">
+            <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
+                {formatUsd(normalizeDisplayBalance(balance))}
+            </span>
+            {week > 0 && (
+                <span className="text-micro font-bold tabular-nums text-intent-success-text">
+                    +{formatUsd(week)}
+                </span>
+            )}
+        </span>
+    );
 
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
@@ -267,9 +292,6 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     paidWeek = 0,
     tierWeek = 0,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
-
     return (
         <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
@@ -277,16 +299,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     <WalletKindIcon kind="paid" />
                     Paid
                 </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatUsd(displayPaidBalance)}
-                    </span>
-                    {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatUsd(paidWeek)}
-                        </span>
-                    )}
-                </span>
+                <WalletAmount balance={packBalance} week={paidWeek} />
             </div>
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
@@ -301,43 +314,11 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         />
                     )}
                 </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatUsd(displayTierBalance)}
-                    </span>
-                    {!questPollenRestricted && tierWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatUsd(tierWeek)}
-                        </span>
-                    )}
-                </span>
+                <WalletAmount
+                    balance={tierBalance}
+                    week={questPollenRestricted ? 0 : tierWeek}
+                />
             </div>
-        </div>
-    );
-};
-
-/** The drawer wallet while Pollinations is down: two rows, like the balances. */
-export const SidebarOutage: FC = () => {
-    const online = useOnline();
-    return (
-        <div
-            data-theme="accent"
-            className="px-3 py-1 flex flex-col gap-1 text-xs font-bold"
-        >
-            <span className="flex items-center gap-1.5 text-intent-warning-text">
-                <WarningIcon
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 shrink-0"
-                />
-                {online ? "Temporary outage" : "You’re offline"}
-            </span>
-            <span className="flex items-center gap-1.5 text-theme-text-soft">
-                <ShieldCheckIcon
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 shrink-0"
-                />
-                Your pollen is safe
-            </span>
         </div>
     );
 };

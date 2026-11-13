@@ -354,6 +354,18 @@ describe("locked Quest pollen display", () => {
     });
 });
 
+describe("drawer wallet during an outage", () => {
+    it("shows a warning per row instead of an amount", () => {
+        const sidebar = renderToStaticMarkup(createElement(SidebarWallet));
+        expect(sidebar).toContain("Paid");
+        expect(sidebar).toContain("Quest");
+        expect(
+            sidebar.match(/aria-label="Unavailable during the outage"/g),
+        ).toHaveLength(2);
+        expect(sidebar).not.toContain("$");
+    });
+});
+
 describe("dollar amounts", () => {
     it.each([
         [0, "$0.00"],

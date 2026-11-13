@@ -38,6 +38,7 @@ import {
 import { refreshCommunityModelRegistryCache } from "./community-models.ts";
 import { nameD1Caller, withD1Calls } from "./d1-calls.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { authMd } from "./routes/auth-md.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
     buildMergedOpenApiSpec,
@@ -179,6 +180,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Account
 
+- [auth.md](${origin}/auth.md): Which key to use, the device flow, scoped keys, x402 prepaid keys, and what 401/402/403 mean.
 - [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
 - [Buy a prepaid key with USDC (x402)](${origin}/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
@@ -238,6 +240,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .get("/robots.txt", (c) => robotsTxt(c))
     .get("/sitemap.xml", (c) => sitemapXml(c))
     .get("/llms.txt", (c) => llmsTxt(c))
+    .get("/auth.md", (c) => authMd(c))
     .get("/llms-full.txt", (c) =>
         c.text(LLMS_FULL_TEXT, 200, {
             "Cache-Control": "public, max-age=3600",

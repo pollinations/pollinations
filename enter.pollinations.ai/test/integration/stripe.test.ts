@@ -116,6 +116,8 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
 import { expect, vi } from "vitest";
+import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../../src/services/quests/index.ts";
 import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing/index.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
@@ -4712,3 +4714,256 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
         country: "EE",
     });
 });
+
+const REFUNDED_PACK_BOUGHT_AT = Date.UTC(2026, 0, 15);
+// How Stripe finds the checkout session of a refunded payment.
+const REFUNDED_SESSION = {
+    id: "cs_refunded",
+    object: "checkout.session",
+    mode: "payment",
+    customer: "cus_refunded",
+    url: null,
+    status: "complete",
+    payment_intent: "pi_refunded",
+    amount_subtotal: 1000,
+};
+
+/** A paid p10 checkout from January, credited through the webhook, that Stripe can find by its payment. Auto top-up is on. */
+async function buyRefundablePack(stripeState: MockStripeState) {
+    const userId = await getSeededUserId();
+    const balanceBefore = (await readRefundState(userId)).packBalance;
+    const { event: purchase } = await completeCheckoutWithCard(stripeState, {
+        id: "refunded",
+        allowRedisplay: "always",
+    });
+    stripeState.checkoutSessions.push(REFUNDED_SESSION);
+    await env.DB.batch([
+        env.DB.prepare(
+            "UPDATE stripe_checkout_credits SET created_at = ? WHERE user_id = ?",
+        ).bind(REFUNDED_PACK_BOUGHT_AT, userId),
+        env.DB.prepare(
+            "UPDATE user SET auto_top_up_enabled = 1 WHERE id = ?",
+        ).bind(userId),
+    ]);
+    return { userId, balanceBefore, purchase };
+}
+
+function chargeRefundedEvent(
+    eventId: string,
+    amountRefunded: number,
+    paymentIntent = "pi_refunded",
+): Record<string, unknown> {
+    return {
+        id: eventId,
+        type: "charge.refunded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_refunded",
+                object: "charge",
+                payment_intent: paymentIntent,
+                amount_captured: 1000,
+                amount_refunded: amountRefunded,
+            },
+        },
+    };
+}
+
+async function readRefundState(userId: string) {
+    const state = await env.DB.prepare(
+        `SELECT COALESCE(pack_balance, 0) AS packBalance,
+            auto_top_up_enabled AS autoTopUp,
+            (SELECT COALESCE(SUM(pollen_credited), 0) FROM stripe_checkout_credits
+             WHERE user_id = user.id) AS netCredited
+        FROM user WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{
+            packBalance: number;
+            autoTopUp: number;
+            netCredited: number;
+        }>();
+    if (!state) throw new Error("Expected seeded test user");
+    return state;
+}
+
+test("charge.refunded takes a fully refunded pack back once, and the next purchase asks for 3DS again", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const { userId, balanceBefore, purchase } = await buyRefundablePack(
+        mocks.stripe.state,
+    );
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: balanceBefore + 10,
+        autoTopUp: 1,
+        netCredited: 10,
+    });
+
+    // Stripe delivers an event again when it gets no answer in time.
+    for (const eventId of ["evt_refund_full", "evt_refund_full_again"]) {
+        const response = await postSignedStripeWebhook(
+            chargeRefundedEvent(eventId, 1000),
+        );
+        expect(response.status).toBe(200);
+    }
+    // That holds for the purchase too: it must not give the pack back.
+    expect((await postSignedStripeWebhook(purchase)).status).toBe(200);
+    // Auto top-up goes off: the lower balance must not charge the card again.
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: balanceBefore,
+        autoTopUp: 0,
+        netCredited: 0,
+    });
+    // Quests count the credits since a launch date, so the reversal carries
+    // its purchase's date and cancels it in the same window.
+    const { results: creditTimes } = await env.DB.prepare(
+        "SELECT DISTINCT created_at AS createdAt FROM stripe_checkout_credits WHERE user_id = ?",
+    )
+        .bind(userId)
+        .all();
+    expect(creditTimes).toEqual([{ createdAt: REFUNDED_PACK_BOUGHT_AT }]);
+
+    mocks.stripe.state.requests.length = 0;
+    await SELF.fetch(`${base}/checkout/p10`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
+        "any",
+    );
+});
+
+test.for([
+    ["a partial refund", chargeRefundedEvent("evt_refund_partial", 500)],
+    [
+        "a refund of a payment that bought no pack",
+        chargeRefundedEvent("evt_refund_other", 1000, "pi_auto_top_up"),
+    ],
+] as const)(
+    "charge.refunded leaves %s for a manual adjustment",
+    async ([, event], { sessionToken, mocks }) => {
+        void sessionToken;
+        await mocks.enable("stripe", "tinybird");
+        const { userId, balanceBefore } = await buyRefundablePack(
+            mocks.stripe.state,
+        );
+
+        const response = await postSignedStripeWebhook(event);
+
+        expect(response.status).toBe(200);
+        expect(await readRefundState(userId)).toEqual({
+            packBalance: balanceBefore + 10,
+            autoTopUp: 1,
+            netCredited: 10,
+        });
+    },
+);
+
+// The top-up quests count the purchases since their launch. This pack is
+// older, so its refund must not cancel a later purchase.
+test("charge.refunded for an older pack leaves a later purchase its top-up quest", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const { userId } = await buyRefundablePack(mocks.stripe.state);
+    const refund = chargeRefundedEvent("evt_refund_older", 1000);
+    expect((await postSignedStripeWebhook(refund)).status).toBe(200);
+    await completeCheckoutWithCard(mocks.stripe.state, {
+        id: "after_refund",
+        allowRedisplay: "always",
+    });
+
+    await checkQuestsForUser(env, userId, [ACCOUNT_SETUP_QUEST_GROUP]);
+
+    const earned = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM rewards WHERE user_id = ? AND quest_id = 'top_up_since_launch'",
+    )
+        .bind(userId)
+        .first<{ count: number }>();
+    expect(earned?.count).toBe(1);
+});
+
+// Stripe does not order its events. Answering 200 to an early refund would
+// lose it: the purchase is credited when its own event arrives.
+test("charge.refunded fails until its purchase is credited, then takes the pack back once", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const before = await readRefundState(userId);
+    mocks.stripe.state.checkoutSessions.push({
+        ...REFUNDED_SESSION,
+        metadata: { userId, packKey: "p10" },
+    });
+    const refund = chargeRefundedEvent("evt_refund_early", 1000);
+
+    expect((await postSignedStripeWebhook(refund)).status).toBe(500);
+
+    await completeCheckoutWithCard(mocks.stripe.state, {
+        id: "refunded",
+        allowRedisplay: "always",
+    });
+    // Stripe sends the event again until it is answered, and may repeat it.
+    expect((await postSignedStripeWebhook(refund)).status).toBe(200);
+    expect((await postSignedStripeWebhook(refund)).status).toBe(200);
+    expect(await readRefundState(userId)).toMatchObject({
+        packBalance: before.packBalance,
+        netCredited: 0,
+    });
+});
+
+// Sent again only while the purchase can still be credited: these never are.
+test.for<
+    [
+        string,
+        (userId: string) => {
+            metadata: Record<string, string>;
+            amount_subtotal?: number;
+        },
+    ]
+>([
+    ["has no buyer", () => ({ metadata: { packKey: "p10" } })],
+    [
+        "has an unknown pack",
+        (userId) => ({ metadata: { userId, packKey: "p_gone" } }),
+    ],
+    [
+        "belongs to a deleted account",
+        () => ({ metadata: { userId: "deleted-account", packKey: "p10" } }),
+    ],
+    [
+        "paid nothing",
+        (userId) => ({
+            metadata: { userId, packKey: "p10" },
+            amount_subtotal: 0,
+        }),
+    ],
+])(
+    "charge.refunded is acknowledged when its uncredited checkout %s",
+    async ([, session], { sessionToken, mocks }) => {
+        void sessionToken;
+        await mocks.enable("stripe", "tinybird");
+        const userId = await getSeededUserId();
+        const before = await readRefundState(userId);
+        mocks.stripe.state.checkoutSessions.push({
+            ...REFUNDED_SESSION,
+            ...session(userId),
+        });
+
+        const response = await postSignedStripeWebhook(
+            chargeRefundedEvent("evt_refund_never", 1000),
+        );
+
+        expect(response.status).toBe(200);
+        expect(await readRefundState(userId)).toEqual(before);
+    },
+);

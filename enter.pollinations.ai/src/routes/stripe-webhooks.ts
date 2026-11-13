@@ -1,6 +1,6 @@
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPackByKey } from "@shared/pollen-packs.ts";
+import { getPollenPackByKey, type PollenPack } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -460,20 +460,18 @@ function emitPaymentIntentAnalytics(
 }
 
 /**
- * Handle successful checkout session completion.
- * Credits pollen to user's packBalance and persists observability fields.
- * Pollen amount is derived from the selected pack metadata.
+ * The buyer and pack a paid checkout session credits, or why it never will.
+ * The refund handler asks the same question before it waits for a purchase.
  */
-const handleCheckoutSessionCompleted = async (
-    event: Stripe.Event,
+async function readCheckoutPurchase(
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
-): Promise<CheckoutSessionResult> => {
+): Promise<{ userId: string; pack: PollenPack } | { rejected: string }> {
     const metadata = session.metadata;
 
     if (!metadata?.userId) {
         console.error("Missing userId in checkout session:", session.id);
-        return { success: false, message: "Missing required metadata" };
+        return { rejected: "Missing required metadata" };
     }
 
     const userId = metadata.userId;
@@ -488,7 +486,7 @@ const handleCheckoutSessionCompleted = async (
 
     if (presentmentSubtotal <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
-        return { success: false, message: "Invalid payment amount" };
+        return { rejected: "Invalid payment amount" };
     }
 
     if (!pack) {
@@ -496,10 +494,7 @@ const handleCheckoutSessionCompleted = async (
             sessionId: session.id,
             packKey,
         });
-        return {
-            success: false,
-            message: "Missing or invalid pack metadata",
-        };
+        return { rejected: "Missing or invalid pack metadata" };
     }
 
     // Credit the pack's USD amount (1 pollen ≈ $1). Pack prices are fixed
@@ -514,8 +509,27 @@ const handleCheckoutSessionCompleted = async (
 
     if (!user) {
         console.error("User not found:", userId);
-        return { success: false, message: "User not found" };
+        return { rejected: "User not found" };
     }
+
+    return { userId, pack };
+}
+
+/**
+ * Handle successful checkout session completion.
+ * Credits pollen to user's packBalance and persists observability fields.
+ * Pollen amount is derived from the selected pack metadata.
+ */
+const handleCheckoutSessionCompleted = async (
+    event: Stripe.Event,
+    session: Stripe.Checkout.Session,
+    env: CloudflareBindings,
+): Promise<CheckoutSessionResult> => {
+    const purchase = await readCheckoutPurchase(session, env);
+    if ("rejected" in purchase) {
+        return { success: false, message: purchase.rejected };
+    }
+    const { userId, pack } = purchase;
 
     // Card-issuer country, brand, network, and Radar score arrive on the
     // separate charge.succeeded webhook and are written to Tinybird from
@@ -557,6 +571,95 @@ const handleCheckoutSessionCompleted = async (
         presentmentAmount: presentment.presentmentAmount,
     };
 };
+
+// A full refund of a pack bought at checkout is recorded as a negative credit
+// row keyed by the refunded session, so a repeated event hits the primary key
+// and changes nothing. Partial refunds, failed refunds and refunded automatic
+// top-ups are corrected by hand.
+async function reversePollenForRefund(
+    env: CloudflareBindings,
+    stripe: Stripe,
+    event: Stripe.Event,
+    charge: Stripe.Charge,
+): Promise<void> {
+    if (charge.amount_refunded < charge.amount_captured) {
+        console.warn(
+            `Stripe refund: partial refund on charge ${charge.id} needs a manual Pollen adjustment`,
+        );
+        return;
+    }
+    const paymentIntent =
+        typeof charge.payment_intent === "string"
+            ? charge.payment_intent
+            : charge.payment_intent?.id;
+    const sessions = paymentIntent
+        ? await stripe.checkout.sessions.list({
+              payment_intent: paymentIntent,
+              limit: 1,
+          })
+        : null;
+    const session = sessions?.data[0];
+    const sessionId = session?.id;
+    const credit = sessionId
+        ? await env.DB.prepare(
+              "SELECT user_id AS userId, pollen_credited AS pollen, created_at AS createdAt FROM stripe_checkout_credits WHERE session_id = ?",
+          )
+              .bind(sessionId)
+              .first<{ userId: string; pollen: number; createdAt: number }>()
+        : null;
+    if (!credit) {
+        // Stripe does not order its events: a purchase that can still be
+        // credited is credited when its own event arrives. Failing makes
+        // Stripe send the refund again.
+        if (
+            session &&
+            !("rejected" in (await readCheckoutPurchase(session, env)))
+        ) {
+            throw new Error(
+                `Stripe refund: checkout session ${sessionId} is not credited yet`,
+            );
+        }
+        console.warn(
+            `Stripe refund: no credited checkout for charge ${charge.id}, adjust Pollen by hand if it paid for any`,
+        );
+        return;
+    }
+
+    // The row carries its purchase's date: quests sum the credits since a
+    // launch date, and the two have to cancel in the same window. Auto top-up
+    // goes off so the lower balance does not charge the card again.
+    try {
+        await env.DB.batch([
+            env.DB.prepare(
+                `INSERT INTO stripe_checkout_credits (
+                    session_id, event_id, event_type, user_id, pollen_credited, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                `refund:${sessionId}`,
+                event.id,
+                event.type,
+                credit.userId,
+                -credit.pollen,
+                credit.createdAt,
+            ),
+            env.DB.prepare(
+                `UPDATE user
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) - ?,
+                    ${POLLEN_BILLING_PRECISION}
+                ),
+                auto_top_up_enabled = 0
+                WHERE id = ?`,
+            ).bind(credit.pollen, credit.userId),
+        ]);
+    } catch (error) {
+        if (isUniqueConstraintError(error)) return;
+        throw error;
+    }
+    console.log(
+        `Stripe refund: reversed ${credit.pollen} pollen from user ${credit.userId} (charge ${charge.id})`,
+    );
+}
 
 export const stripeWebhooksRoutes = new Hono<Env>()
     /**
@@ -835,6 +938,16 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     customerEmail: paymentIntent.receipt_email || "",
                     recordFailedCardFingerprint: true,
                 });
+                break;
+            }
+
+            case "charge.refunded": {
+                await reversePollenForRefund(
+                    c.env,
+                    stripe,
+                    event,
+                    event.data.object as Stripe.Charge,
+                );
                 break;
             }
 

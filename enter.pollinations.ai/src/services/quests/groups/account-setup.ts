@@ -203,6 +203,7 @@ export async function evaluateUser(
         WHERE apikey.user_id = ${user.id}
         LIMIT 1`)
             : [],
+        // Refunds are negative rows, so a fully refunded top-up earns nothing.
         rewardableQuestIds.has(topUpSinceLaunchQuest.id) ||
         rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id)
             ? db.all<TopUpSummaryRow>(sql`
@@ -221,6 +222,7 @@ export async function evaluateUser(
             )
           )
         GROUP BY stripe_checkout_credits.user_id
+        HAVING SUM(stripe_checkout_credits.pollen_credited) > 0
         LIMIT 1`)
             : [],
         // Only another account's GitHub-linked app counts, so a fresh

@@ -24,18 +24,12 @@
     "18932": {
       "merge_sha": "c9fec633514496b00f3fb4e05dbed603d55c8599",
       "merged_at": "2026-11-13T02:19:17Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     },
     "19624": {
       "merge_sha": "9109e964382348f1b769236274790ba72daa104f",
       "merged_at": "2026-11-13T00:51:22Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "95a6fc0c489b93c4fac63ba6a709d6e47f8c0d21",

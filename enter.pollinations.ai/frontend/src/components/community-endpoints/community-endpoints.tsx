@@ -58,7 +58,9 @@ type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
-    canPublish: boolean;
+    // null: the publisher profile didn't load.
+    canPublish: boolean | null;
+    onProfileRetry: () => unknown;
     // Public community models offered as fallback targets in the dialog.
     fallbackOptions: FallbackModelOption[];
     healthByModelId: Record<string, ApiModelInfo["health"]> | null;
@@ -108,39 +110,21 @@ const LISTING_TABS = [
     { value: "apps", label: "Apps" },
 ] as const;
 
-export function DeploymentsPlaceholder({
-    error,
-    onRetry,
-}: {
-    error?: string | null;
-    onRetry?: () => void;
-}) {
-    if (!error) return <PageLoading titles={["My listings"]} />;
-    return (
-        <Section title="My listings">
-            {/* The page first loads the publisher profile; when that fails,
-                the listings are never asked for. */}
-            <LoadError
-                onRetry={onRetry}
-                paths={[
-                    "/account/profile",
-                    "/account/my-models",
-                    "/account/agents",
-                ]}
-            >
-                {error}
-            </LoadError>
-        </Section>
-    );
-}
+export const DeploymentsPlaceholder = () => (
+    <PageLoading titles={["My listings"]} />
+);
 
 export function CommunityEndpoints({
     onChange,
-    canPublish,
+    canPublish: publishAccess,
+    onProfileRetry,
     fallbackOptions,
     healthByModelId,
     appsTab,
 }: CommunityEndpointsProps) {
+    const canPublish = publishAccess === true;
+    // No profile, no listings: they wait for it, while the Apps tab works.
+    const profileFailed = publishAccess === null;
     // The tab lives in the address, so /my-apps can open the Apps tab.
     const listingTab =
         useSearch({ from: "/_dashboard/my-models" }).tab ?? "agents";
@@ -210,8 +194,8 @@ export function CommunityEndpoints({
     }, []);
 
     useEffect(() => {
-        void loadEndpoints();
-    }, [loadEndpoints]);
+        if (!profileFailed) void loadEndpoints();
+    }, [loadEndpoints, profileFailed]);
 
     async function handleCreateAgent(form: AgentFormState): Promise<void> {
         const response = await accountClient.agents.$post({
@@ -488,6 +472,13 @@ export function CommunityEndpoints({
                 </div>
                 {listingTab === "apps" ? (
                     appsTab.content
+                ) : profileFailed ? (
+                    <LoadError
+                        onRetry={onProfileRetry}
+                        paths={["/account/profile"]}
+                    >
+                        Couldn’t load publisher details.
+                    </LoadError>
                 ) : endpointsPending ? (
                     <SectionContent loading={isLoading}>
                         <LoadError

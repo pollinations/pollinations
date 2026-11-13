@@ -70,19 +70,15 @@ function MyModelsPage() {
     };
     return (
         <Await promise={profile} fallback={<DeploymentsPlaceholder />}>
-            {(details) =>
-                details ? (
-                    <Deployments
-                        canPublish={details.communityEndpointsAllowed}
-                        appsTab={appsTab}
-                    />
-                ) : (
-                    <DeploymentsPlaceholder
-                        onRetry={retry}
-                        error="Couldn’t load publisher details."
-                    />
-                )
-            }
+            {(details) => (
+                // Without the profile, Agents and Models show its error; the
+                // Apps tab doesn't need it.
+                <Deployments
+                    canPublish={details?.communityEndpointsAllowed ?? null}
+                    onProfileRetry={retry}
+                    appsTab={appsTab}
+                />
+            )}
         </Await>
     );
 }

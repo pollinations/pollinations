@@ -13,9 +13,11 @@ import {
 
 export function Deployments({
     canPublish,
+    onProfileRetry,
     appsTab,
 }: {
-    canPublish: boolean;
+    canPublish: boolean | null;
+    onProfileRetry: () => unknown;
     appsTab: { action: ReactNode; content: ReactNode };
 }) {
     const [fallbackOptions, setFallbackOptions] = useState<
@@ -55,6 +57,7 @@ export function Deployments({
     return (
         <CommunityEndpoints
             canPublish={canPublish}
+            onProfileRetry={onProfileRetry}
             appsTab={appsTab}
             fallbackOptions={fallbackOptions}
             healthByModelId={healthByModelId}

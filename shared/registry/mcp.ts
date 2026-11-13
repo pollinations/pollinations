@@ -58,7 +58,8 @@ export type McpBindingName =
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
-    | "RESEARCH_MCP";
+    | "RESEARCH_MCP"
+    | "WEATHER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -311,6 +312,20 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "weather",
+        alpha: true,
+        name: "Weather",
+        description:
+            "Place search, current conditions, and hourly and daily forecasts worldwide.",
+        binding: "WEATHER_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Open-Meteo data is free with attribution. No Pollen charge.",
             rates: [],
         },
     },

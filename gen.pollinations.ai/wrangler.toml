@@ -28,6 +28,7 @@ services = [
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "CALCULATORS_MCP", service = "pollinations-calculators-mcp" },
+    { binding = "WEATHER_MCP", service = "pollinations-weather-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -163,6 +164,10 @@ service = "pollinations-machines-mcp"
 [[env.production.services]]
 binding = "CALCULATORS_MCP"
 service = "pollinations-calculators-mcp"
+
+[[env.production.services]]
+binding = "WEATHER_MCP"
+service = "pollinations-weather-mcp"
 
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -323,6 +328,10 @@ service = "pollinations-machines-mcp-staging"
 binding = "CALCULATORS_MCP"
 service = "pollinations-calculators-mcp-staging"
 
+[[env.staging.services]]
+binding = "WEATHER_MCP"
+service = "pollinations-weather-mcp-staging"
+
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
@@ -451,6 +460,10 @@ service = "pollinations-machines-mcp"
 [[env.test.services]]
 binding = "CALCULATORS_MCP"
 service = "pollinations-calculators-mcp"
+
+[[env.test.services]]
+binding = "WEATHER_MCP"
+service = "pollinations-weather-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

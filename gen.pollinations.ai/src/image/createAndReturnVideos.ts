@@ -14,6 +14,7 @@ import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
+import { callLtxVideo } from "./models/ltxVideoModel.ts";
 import {
     callMinimaxH3API,
     callMinimaxH3MaxAPI,
@@ -114,6 +115,10 @@ export async function createAndReturnVideo(
             break;
         case "kwaivgi/kling-v3.0-std":
             result = await callKlingVideoAPI(prompt, safeParams);
+            break;
+        case "lightricks/ltx-2.5-pro":
+        case "lightricks/ltx-2.5-pro:azure":
+            result = await callLtxVideo(prompt, safeParams);
             break;
         case "black-forest-labs/flux-3-max":
             result = await callFluxMaxVideoAPI(prompt, safeParams);

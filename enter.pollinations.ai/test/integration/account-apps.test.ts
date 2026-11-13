@@ -99,6 +99,32 @@ describe("/api/account/apps", () => {
         expect(await response.json()).toEqual({ apps: [] });
     });
 
+    test("refuses an API key that tries to change an app", async ({
+        accountToken,
+        apiKey,
+    }) => {
+        await importApps(env.DB, [entry("mine")]);
+        const withKey = (method: string, body?: unknown) =>
+            SELF.fetch(`${APPS_URL}/mine`, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+
+        expect((await withKey("PATCH", { name: "Taken" })).status).toBe(403);
+        expect((await withKey("DELETE")).status).toBe(403);
+
+        const response = await SELF.fetch(APPS_URL, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(await response.json()).toMatchObject({
+            apps: [{ id: "mine", name: "mine" }],
+        });
+    });
+
     test("returns an empty list for an account that has no app", async ({
         accountToken,
     }) => {

@@ -78,6 +78,15 @@ const listedAppsResponseSchema = z.object({
     apps: z.array(listedAppSchema).describe("The caller's apps"),
 });
 
+/** App changes are the owner's own act: no API key, whatever its permissions. */
+function requireDashboardSession(apiKey: unknown) {
+    if (apiKey) {
+        throw new HTTPException(403, {
+            message: "App changes require a dashboard session",
+        });
+    }
+}
+
 /**
  * The GitHub account an app's owner is matched on. The OAuth callback alone
  * writes it, so it is read from the row, not trusted from the session user.
@@ -1313,6 +1322,7 @@ export const accountRoutes = new Hono<Env>()
         validator("json", updateAppSchema),
         async (c) => {
             await c.var.auth.requireAuthorization();
+            requireDashboardSession(c.var.auth.apiKey);
             const user = c.var.auth.requireUser();
             const updated = await updateApp(
                 c.env.DB,
@@ -1328,6 +1338,7 @@ export const accountRoutes = new Hono<Env>()
     )
     .delete("/apps/:id", describeRoute({ hide: true }), async (c) => {
         await c.var.auth.requireAuthorization();
+        requireDashboardSession(c.var.auth.apiKey);
         const user = c.var.auth.requireUser();
         const deleted = await deleteApp(
             c.env.DB,

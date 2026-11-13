@@ -70,6 +70,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "json_pointer",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -609,6 +610,72 @@ test("diff_text produces a minimal unified diff with line counts", async (t) => 
     });
     assert.equal(moved.added, 1);
     assert.equal(moved.removed, 1);
+});
+
+test("json_pointer follows RFC 6901 for object keys, arrays and the root", async (t) => {
+    const client = await clientFor(t);
+    const json = JSON.stringify({
+        "a/b": { "~key": [{ value: null }, "second"] },
+        "": "empty-key",
+        "~1": "literal",
+    });
+
+    const nested = await call(client, "json_pointer", {
+        json,
+        pointer: "/a~1b/~0key/0/value",
+    });
+    assert.deepEqual(nested, {
+        pointer: "/a~1b/~0key/0/value",
+        found: true,
+        value: null,
+    });
+
+    assert.deepEqual(
+        await call(client, "json_pointer", {
+            json,
+            pointer: "/a~1b/~0key/1",
+        }),
+        { pointer: "/a~1b/~0key/1", found: true, value: "second" },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/" }),
+        { pointer: "/", found: true, value: "empty-key" },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "" }),
+        { pointer: "", found: true, value: JSON.parse(json) },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/~01" }),
+        { pointer: "/~01", found: true, value: "literal" },
+    );
+});
+
+test("json_pointer distinguishes missing paths and rejects invalid pointers", async (t) => {
+    const client = await clientFor(t);
+    const json = '{"items":[1,2],"present":null}';
+
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/present" }),
+        { pointer: "/present", found: true, value: null },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/missing" }),
+        { pointer: "/missing", found: false },
+    );
+    for (const pointer of ["/items/01", "/items/-", "/items/2"]) {
+        assert.deepEqual(
+            await call(client, "json_pointer", { json, pointer }),
+            { pointer, found: false },
+        );
+    }
+    for (const pointer of ["items/0", "/items/~2"]) {
+        const result = await client.callTool({
+            name: "json_pointer",
+            arguments: { json, pointer },
+        });
+        assert.equal(result.isError, true, pointer);
+    }
 });
 
 test("diff_text reports a missing final newline the way diff(1) does", async (t) => {

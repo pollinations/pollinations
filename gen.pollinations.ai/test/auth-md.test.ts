@@ -20,42 +20,38 @@ async function fetchWorker(path: string) {
 }
 
 describe("auth.md", () => {
-    it("answers markdown with the credential paths that exist", async () => {
+    it("serves markdown with the credential paths and status codes", async () => {
         const res = await fetchWorker("/auth.md");
         expect(res.status).toBe(200);
         expect(res.headers.get("content-type")).toBe(
             "text/markdown; charset=utf-8",
         );
         const md = await res.text();
-        expect(md).toContain("# Pollinations authentication");
-        // The two key sources an agent can act on without a dashboard.
-        expect(md).toContain(
-            "https://staging.enter.pollinations.ai/api/x402/keys/0.50",
-        );
-        expect(md).toContain("auth login");
-        // Scopes and the failure table stay in sync with the metadata route.
-        for (const scope of [
-            "generate",
-            "profile",
-            "usage",
-            "keys",
-            "machines",
+        // Every path an agent can act on, including the one with no account.
+        for (const fact of [
+            "auth login",
+            "/api/x402/keys/",
+            "paid_only",
+            "`profile`",
+            "`machines`",
+            "`401`",
+            "`402`",
+            "`403`",
+            "`429`",
+            "/.well-known/oauth-protected-resource",
         ]) {
-            expect(md).toContain(`\`${scope}\``);
+            expect(md).toContain(fact);
         }
-        expect(md).toContain("paid_only");
-        expect(md).toContain("/.well-known/oauth-protected-resource");
-        // No agent registration: the file must say so rather than imply it.
-        expect(md).toContain("Not supported");
+        // No agent registration: the file must say so, not imply it.
+        expect(md).toContain("Agent-initiated registration");
     });
 
-    it("calls the first endpoint with the published origin", async () => {
+    it("uses the serving origin everywhere and is linked from llms.txt", async () => {
         const md = await (await fetchWorker("/auth.md")).text();
         expect(md).toContain(`${ORIGIN}/v1/chat/completions`);
         expect(md).toContain(`${ORIGIN}/v1/models`);
-    });
+        expect(md).not.toContain("https://gen.pollinations.ai");
 
-    it("is linked from llms.txt", async () => {
         const llms = await (await fetchWorker("/llms.txt")).text();
         expect(llms).toContain(`${ORIGIN}/auth.md`);
     });

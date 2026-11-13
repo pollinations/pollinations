@@ -9,7 +9,11 @@ import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
-import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
+import {
+    type GenerationCacheVariables,
+    ignoreStreamFlagInCacheIdentity,
+    prepareGenerationRequest,
+} from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
@@ -451,5 +455,41 @@ describe("media cache", () => {
         expect(cached.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
+    });
+
+    it("serves a stray stream flag in a speech body from the same cache entry", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .post(
+                "/speech",
+                prepareGenerationRequest,
+                ignoreStreamFlagInCacheIdentity,
+                audioCache,
+                () =>
+                    new Response(`origin:${++originHits}`, {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    }),
+            );
+        const env = createMediaCacheEnv();
+        const post = async (body: object) => {
+            const result = await dispatch(
+                app,
+                "/speech",
+                { method: "POST", body: JSON.stringify(body) },
+                env,
+            );
+            await consumeAndWait(result);
+            return result.response.headers.get("X-Cache");
+        };
+
+        expect(await post({ input: "hello" })).toBe("MISS");
+        expect(await post({ input: "hello", stream: true })).toBe("HIT");
+        expect(await post({ input: "goodbye" })).toBe("MISS");
+        expect(originHits).toBe(2);
     });
 });

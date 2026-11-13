@@ -39,7 +39,10 @@ import { z } from "zod";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import {
+    ignoreStreamFlagInCacheIdentity,
+    prepareGenerationRequest,
+} from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -4755,6 +4758,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         track("generate.audio"),
         prepareGenerationRequest,
+        ignoreStreamFlagInCacheIdentity,
         speechAudioCache,
         generationAccess,
         deduplicateGeneration,
@@ -4879,6 +4883,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         track("generate.audio"),
         prepareGenerationRequest,
+        ignoreStreamFlagInCacheIdentity,
         textCache,
         generationAccess,
         deduplicateGeneration,

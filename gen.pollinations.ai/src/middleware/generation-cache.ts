@@ -177,6 +177,32 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
     },
 );
 
+/**
+ * For routes that never stream: a `stream` flag changes no output byte, so it
+ * must not split one request across cache entries or coordinator jobs. Runs
+ * after `prepareGenerationRequest`; the replayable body keeps the field.
+ */
+export const ignoreStreamFlagInCacheIdentity =
+    createMiddleware<GenerationCacheEnv>(async (c, next) => {
+        const identity = c.var.generationCacheBody;
+        if (identity) {
+            try {
+                const parsed = JSON.parse(identity);
+                if (
+                    parsed &&
+                    typeof parsed === "object" &&
+                    "stream" in parsed
+                ) {
+                    delete parsed.stream;
+                    c.set("generationCacheBody", stableStringify(parsed));
+                }
+            } catch {
+                // A binary body's identity is a hash, not JSON: nothing to drop.
+            }
+        }
+        return next();
+    });
+
 function replaceCapturedResponse(
     c: Context<GenerationCacheEnv>,
     captured: Response,

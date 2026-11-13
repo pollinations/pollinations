@@ -14,7 +14,10 @@ import { Hono } from "hono";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import {
+    ignoreStreamFlagInCacheIdentity,
+    prepareGenerationRequest,
+} from "@/middleware/generation-cache.ts";
 import {
     audioExecutionCache,
     imageExecutionCache,
@@ -278,6 +281,7 @@ generationExecutorRoutes.post(
     }),
     track("generate.audio"),
     prepareGenerationRequest,
+    ignoreStreamFlagInCacheIdentity,
     audioExecutionCache,
     apiKeyBudgetReservation,
     handleSpeech,
@@ -291,6 +295,7 @@ generationExecutorRoutes.post(
     }),
     track("generate.audio"),
     prepareGenerationRequest,
+    ignoreStreamFlagInCacheIdentity,
     textExecutionCache,
     apiKeyBudgetReservation,
     handleSpeechWithTimestamps,

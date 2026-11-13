@@ -9,7 +9,7 @@ import {
     LockIcon,
     McpIcon,
     NewspaperIcon,
-    SparkleIcon,
+    SproutIcon,
     TerminalIcon,
     TrendUpIcon,
     WalletIcon,
@@ -35,7 +35,7 @@ export const DASHBOARD_NAV_ITEMS = [
         id: "quests",
         to: "/quests",
         label: "Quests",
-        icon: SparkleIcon,
+        icon: SproutIcon,
         group: "yours",
     },
     {

@@ -28,11 +28,8 @@ import {
     DASHBOARD_NAV_ITEMS,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
-import {
-    SidebarBalance,
-    SidebarEarnings,
-    SidebarOutage,
-} from "../components/pollen";
+import { OutageBanner } from "../components/layout/outage-banner.tsx";
+import { SidebarBalance, SidebarEarnings } from "../components/pollen";
 import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
 import { SidebarSandboxes } from "../components/sandboxes.tsx";
 import {
@@ -196,13 +193,9 @@ function DashboardLayout() {
             accountName={user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             accountArea={
-                data.user ? undefined : data.sessionUnavailable ? (
-                    // Who is signed in is unknown: the outage takes the
-                    // account's place.
-                    <div className="px-1">
-                        <SidebarOutage />
-                    </div>
-                ) : (
+                // Who is signed in is unknown during an outage: nothing here,
+                // the banner at the top of the page explains.
+                data.user || data.sessionUnavailable ? undefined : (
                     <SignedOutAccountArea />
                 )
             }
@@ -219,11 +212,13 @@ function DashboardLayout() {
                               <Suspense fallback={null}>
                                   <Await promise={data.balance}>
                                       {(balance) =>
-                                          balance && (
+                                          balance ? (
                                               <SidebarBalance
                                                   kind="paid"
                                                   balance={balance.packBalance}
                                               />
+                                          ) : (
+                                              <BalanceOutage />
                                           )
                                       }
                                   </Await>
@@ -290,6 +285,7 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
+            <OutageBanner />
             {data.user && !onPollenPage && (
                 <Suspense fallback={null}>
                     <Await promise={data.balance}>
@@ -310,14 +306,18 @@ function DashboardLayout() {
     );
 }
 
-/** The drawer's compact outage rows, or the usual error when it is not one. */
+/** The Credits row's warning while the balance is down; the banner explains. */
+function BalanceOutage() {
+    return useOutage([BALANCE_PATH]) ? <SidebarBalance kind="paid" /> : null;
+}
+
+/** The usual balance error, or nothing during an outage: the Credits row
+ * shows the warning then. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
     // The same resource as the Pollen page's balance: one retry for both.
     useOutageRetry(outage, BALANCE_PATH, onRetry);
-    return outage ? (
-        <SidebarOutage />
-    ) : (
+    return outage ? null : (
         <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>
             Couldn’t load your balance.
         </LoadError>

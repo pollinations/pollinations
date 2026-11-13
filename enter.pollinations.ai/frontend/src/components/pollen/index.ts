@@ -5,5 +5,4 @@ export {
     PollenBalance,
     SidebarBalance,
     SidebarEarnings,
-    SidebarOutage,
 } from "./pollen-balance.tsx";

@@ -119,9 +119,15 @@ export function DeploymentsPlaceholder({
     if (!error) return <PageLoading titles={["My listings"]} />;
     return (
         <Section title="My listings">
+            {/* The page first loads the publisher profile; when that fails,
+                the listings are never asked for. */}
             <LoadError
                 onRetry={onRetry}
-                paths={["/account/my-models", "/account/agents"]}
+                paths={[
+                    "/account/profile",
+                    "/account/my-models",
+                    "/account/agents",
+                ]}
             >
                 {error}
             </LoadError>

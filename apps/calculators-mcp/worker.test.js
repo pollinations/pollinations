@@ -70,6 +70,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "json_merge_patch",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -609,6 +610,80 @@ test("diff_text produces a minimal unified diff with line counts", async (t) => 
     });
     assert.equal(moved.added, 1);
     assert.equal(moved.removed, 1);
+});
+
+test("json_merge_patch recursively merges objects and removes null members", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "json_merge_patch", {
+        target: JSON.stringify({
+            title: "Goodbye!",
+            author: { givenName: "John", familyName: "Doe" },
+            tags: ["example", "sample"],
+            content: "unchanged",
+        }),
+        patch: JSON.stringify({
+            title: "Hello!",
+            author: { familyName: null },
+        }),
+    });
+    assert.deepEqual(result, {
+        title: "Hello!",
+        author: { givenName: "John" },
+        tags: ["example", "sample"],
+        content: "unchanged",
+    });
+});
+
+test("json_merge_patch replaces arrays and non-object values per RFC 7396", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "json_merge_patch", {
+            target: '{"items":[1,2],"keep":true}',
+            patch: '{"items":[3,null]}',
+        }),
+        { items: [3, null], keep: true },
+    );
+    assert.deepEqual(
+        await call(client, "json_merge_patch", {
+            target: '{"a":1}',
+            patch: '[1,2]',
+        }),
+        [1, 2],
+    );
+    assert.equal(
+        await call(client, "json_merge_patch", {
+            target: '{"a":1}',
+            patch: 'null',
+        }),
+        null,
+    );
+    assert.deepEqual(
+        await call(client, "json_merge_patch", {
+            target: '"scalar"',
+            patch: '{"a":{"b":null},"c":2}',
+        }),
+        { a: {}, c: 2 },
+    );
+});
+
+test("json_merge_patch safely handles special object keys and malformed JSON", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "json_merge_patch", {
+        target: '{"__proto__":{"safe":true},"constructor":{"old":1}}',
+        patch: '{"__proto__":{"extra":2},"constructor":{"new":2}}',
+    });
+    assert.equal(Object.getPrototypeOf(result), Object.prototype);
+    assert.deepEqual(
+        result,
+        JSON.parse('{"__proto__":{"safe":true,"extra":2},"constructor":{"old":1,"new":2}}'),
+    );
+    assert.equal(({}).extra, undefined);
+
+    const invalid = await client.callTool({
+        name: "json_merge_patch",
+        arguments: { target: "{", patch: "{}" },
+    });
+    assert.equal(invalid.isError, true);
 });
 
 test("diff_text reports a missing final newline the way diff(1) does", async (t) => {

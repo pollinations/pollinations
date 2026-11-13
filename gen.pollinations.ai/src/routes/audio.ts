@@ -2976,6 +2976,9 @@ export async function readOpenRouterSpeechUsage(
     }
     throw new UpstreamError(502, {
         message: "OpenRouter speech usage is not available",
+        requestUrl: new URL(endpoint),
+        upstreamStatus: 404,
+        upstreamHeaders: { "x-generation-id": generationId },
     });
 }
 

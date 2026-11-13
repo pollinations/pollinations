@@ -392,6 +392,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
         output_modalities: entry.info.output_modalities,
+        required_safety: entry.info.required_safety,
         supported_endpoints: entry.supportedEndpoints,
         ...(entry.info.agent && { agent: true }),
         ...(entry.info.base_model && {

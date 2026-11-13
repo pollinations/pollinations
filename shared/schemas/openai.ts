@@ -810,6 +810,9 @@ export const OpenAIModelSchema = z
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
+        required_safety: ModelInfoSchema.shape.required_safety.describe(
+            "Safety checks the gateway always applies to text input for this model; callers cannot disable them.",
+        ),
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
         base_model: z

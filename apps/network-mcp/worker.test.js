@@ -56,6 +56,7 @@ for (const modern of [false, true])
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "asn_whois",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "asn_whois",
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -285,6 +292,9 @@ test("RDAP follows registry redirects, normalizes domain and network records, an
         return Response.json({
             ldhName: "EXAMPLE.ORG",
             handle: "fixture-handle",
+            name: "EXAMPLE-AS",
+            startAutnum: 15169,
+            endAutnum: 15169,
             startAddress: "192.0.2.0",
             endAddress: "192.0.2.255",
             ipVersion: "v4",
@@ -323,6 +333,13 @@ test("RDAP follows registry redirects, normalizes domain and network records, an
     assert.equal(ip.organization, "Example Registry");
     assert.equal(ip.country, null);
     assert.equal(ip.endAddress, "192.0.2.255");
+    const asn = await read("asn_whois", { asn: "AS15169" });
+    assert.equal(asn.asn, 15169);
+    assert.equal(asn.organization, "Example Registry");
+    assert.equal(asn.startAutnum, 15169);
+    assert.equal(asn.endAutnum, 15169);
+    await read("asn_whois", { asn: 15169 });
+    assert.equal(requests, 3);
 });
 
 test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits without retrying", async (t) => {
@@ -340,6 +357,8 @@ test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits wi
         ["domain_whois", { domain: "https://example.com/path" }],
         ["ip_whois", { ip: "010.0.0.1" }],
         ["ip_whois", { ip: "fe80::1%en0" }],
+        ["asn_whois", { asn: "AS0" }],
+        ["asn_whois", { asn: "AS4294967296" }],
     ]) {
         assert.equal(
             (await c.callTool({ name, arguments: args })).isError,

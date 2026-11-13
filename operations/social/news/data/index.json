@@ -1,1929 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-12T06:08:48.935373+00:00",
+  "generated_at": "2026-11-13T06:14:06.508681+00:00",
   "models": [
-    {
-      "id": "2026-10-13:assemblyai/universal-2",
-      "model_id": "assemblyai/universal-2",
-      "title": "AssemblyAI Universal-2",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:assemblyai/universal-3.5-pro",
-      "model_id": "assemblyai/universal-3.5-pro",
-      "title": "AssemblyAI Universal-3.5 Pro",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:anthropic/claude-haiku-5.5",
-      "model_id": "anthropic/claude-haiku-5.5",
-      "title": "Claude Haiku 5.5",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1000000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 20
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001",
-            "promptCachedTokens": "0.00000001",
-            "promptCacheWriteTokens": "0.000000125",
-            "completionTextTokens": "0.0000005"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:anthropic/claude-opus-5.5:fast",
-      "model_id": "anthropic/claude-opus-5.5:fast",
-      "title": "Claude Opus 5.5 Fast",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1000000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 20
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000844",
-            "promptCachedTokens": "0.000000422",
-            "promptCacheWriteTokens": "0.00001055",
-            "completionTextTokens": "0.0000422"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:anthropic/claude-sonnet-5.5",
-      "model_id": "anthropic/claude-sonnet-5.5",
-      "title": "Claude Sonnet 5.5",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000002",
-            "promptCacheWriteTokens": "0.0000025",
-            "completionTextTokens": "0.00001"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000001",
-            "promptCacheWriteTokens": "0.0000025",
-            "completionTextTokens": "0.00001"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:cohere/command-a-plus",
-      "model_id": "cohere/command-a-plus",
-      "title": "Cohere Command A+",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000006",
-            "completionTextTokens": "0.0000024"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003165",
-            "promptCachedTokens": "0.00000015825",
-            "completionTextTokens": "0.0000015825"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:deepseek/deepseek-v4.1-flash",
-      "model_id": "deepseek/deepseek-v4.1-flash",
-      "title": "DeepSeek V4.1 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000022",
-            "promptCachedTokens": "0.000000007",
-            "completionTextTokens": "0.00000066"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000002",
-            "promptCachedTokens": "0.000000006",
-            "completionTextTokens": "0.0000006"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:elevenlabs/eleven-v4",
-      "model_id": "elevenlabs/eleven-v4",
-      "title": "ElevenLabs v4",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.000022"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.00008"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:elevenlabs/eleven-v4-turbo",
-      "model_id": "elevenlabs/eleven-v4-turbo",
-      "title": "ElevenLabs v4 Turbo",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.000011"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.00004"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:black-forest-labs/flux-3-image",
-      "model_id": "black-forest-labs/flux-3-image",
-      "title": "FLUX.3 Image",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionImageTokens": "0.02532"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.05064"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:openai/gpt-5.6-sol",
-      "model_id": "openai/gpt-5.6-sol",
-      "title": "GPT-5.6 Sol",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000001666667",
-            "promptCachedTokens": "0.000000166667",
-            "promptCacheWriteTokens": "0.000002083333",
-            "completionTextTokens": "0.00001"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000001333333",
-            "promptCachedTokens": "0.000000133333",
-            "promptCacheWriteTokens": "0.000001666667",
-            "completionTextTokens": "0.000006666667"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:openai/gpt-6-luna-decisions",
-      "model_id": "openai/gpt-6-luna-decisions",
-      "title": "GPT-6 Luna Decisions",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "context_length": {
-          "before": null,
-          "after": 1050000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3-flash-preview",
-      "model_id": "google/gemini-3-flash-preview",
-      "title": "Gemini 3 Flash Preview",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000005275",
-            "promptCachedTokens": "0.00000005275",
-            "promptCacheWriteTokens": "0.0000005275",
-            "promptAudioTokens": "0.000001055",
-            "promptImageTokens": "0.0000005275",
-            "promptVideoTokens": "0.0000005275",
-            "completionTextTokens": "0.000003165"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000005",
-            "promptCachedTokens": "0.00000005",
-            "promptCacheWriteTokens": "0.0000005",
-            "promptAudioTokens": "0.000001",
-            "promptImageTokens": "0.0000005",
-            "promptVideoTokens": "0.0000005",
-            "completionTextTokens": "0.000003"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.1-pro-preview",
-      "model_id": "google/gemini-3.1-pro-preview",
-      "title": "Gemini 3.1 Pro Preview",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000211",
-            "promptCachedTokens": "0.000000211",
-            "promptCacheWriteTokens": "0.00000211",
-            "promptAudioTokens": "0.00000211",
-            "promptImageTokens": "0.00000211",
-            "promptVideoTokens": "0.00000211",
-            "completionTextTokens": "0.00001266"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000002",
-            "promptCacheWriteTokens": "0.000002",
-            "promptAudioTokens": "0.000002",
-            "promptImageTokens": "0.000002",
-            "promptVideoTokens": "0.000002",
-            "completionTextTokens": "0.000012"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.5-flash-lite",
-      "model_id": "google/gemini-3.5-flash-lite",
-      "title": "Gemini 3.5 Flash Lite",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003165",
-            "promptCachedTokens": "0.00000003165",
-            "promptCacheWriteTokens": "0.0000003165",
-            "promptAudioTokens": "0.0000003165",
-            "promptImageTokens": "0.0000003165",
-            "promptVideoTokens": "0.0000003165",
-            "completionTextTokens": "0.0000026375"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003",
-            "promptCachedTokens": "0.00000003",
-            "promptCacheWriteTokens": "0.0000003",
-            "promptAudioTokens": "0.0000003",
-            "promptImageTokens": "0.0000003",
-            "promptVideoTokens": "0.0000003",
-            "completionTextTokens": "0.0000025"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.7-flash",
-      "model_id": "google/gemini-3.7-flash",
-      "title": "Gemini 3.7 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000079125",
-            "promptCachedTokens": "0.000000079125",
-            "promptCacheWriteTokens": "0.00000079125",
-            "promptAudioTokens": "0.00000079125",
-            "promptImageTokens": "0.00000079125",
-            "promptVideoTokens": "0.00000079125",
-            "completionTextTokens": "0.00000395625"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000075",
-            "promptCachedTokens": "0.000000075",
-            "promptCacheWriteTokens": "0.00000075",
-            "promptAudioTokens": "0.00000075",
-            "promptImageTokens": "0.00000075",
-            "promptVideoTokens": "0.00000075",
-            "completionTextTokens": "0.00000375"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.8-flash",
-      "model_id": "google/gemini-3.8-flash",
-      "title": "Gemini 3.8 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000079125",
-            "promptCachedTokens": "0.000000079125",
-            "promptCacheWriteTokens": "0.00000079125",
-            "promptAudioTokens": "0.00000079125",
-            "promptImageTokens": "0.00000079125",
-            "promptVideoTokens": "0.00000079125",
-            "completionTextTokens": "0.00000395625"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000075",
-            "promptCachedTokens": "0.000000075",
-            "promptCacheWriteTokens": "0.00000075",
-            "promptAudioTokens": "0.00000075",
-            "promptImageTokens": "0.00000075",
-            "promptVideoTokens": "0.00000075",
-            "completionTextTokens": "0.00000375"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-4-argon",
-      "model_id": "google/gemini-4-argon",
-      "title": "Gemini 4 Argon",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "web_search"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1048576
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image",
-            "audio",
-            "video"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 3600
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000004",
-            "promptCachedTokens": "0.0000002",
-            "promptCacheWriteTokens": "0.000004",
-            "promptAudioTokens": "0.000004",
-            "promptImageTokens": "0.000004",
-            "promptVideoTokens": "0.000004",
-            "completionTextTokens": "0.00002"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:x-ai/grok-4.7",
-      "model_id": "x-ai/grok-4.7",
-      "title": "Grok 4.7",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000001688",
-            "promptCachedTokens": "0.000000422",
-            "completionTextTokens": "0.000005064"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000005",
-            "promptImageTokens": "0.000002",
-            "completionTextTokens": "0.000006"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:x-ai/grok-imagine-image",
-      "model_id": "x-ai/grok-imagine-image",
-      "title": "Grok Imagine",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "max_reference_images": {
-          "before": 1,
-          "after": 5
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:x-ai/grok-imagine-image-quality",
-      "model_id": "x-ai/grok-imagine-image-quality",
-      "title": "Grok Imagine Pro",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "max_reference_images": {
-          "before": 1,
-          "after": 3
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:typesafe/jev-1.13",
-      "model_id": "typesafe/jev-1.13",
-      "title": "Jev",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:kandinskylab/kandinsky-6.0-lite",
-      "model_id": "kandinskylab/kandinsky-6.0-lite",
-      "title": "Kandinsky 6.0 Lite",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "video",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 1
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "video",
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionVideoSeconds": "0.032"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:jaredpalmer/kev-4b",
-      "model_id": "jaredpalmer/kev-4b",
-      "title": "Kev 4B",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:hexgrad/kokoro-82m",
-      "model_id": "hexgrad/kokoro-82m",
-      "title": "Kokoro 82M",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.00000062"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.00000099"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:inclusionai/ling-3.1-flash",
-      "model_id": "inclusionai/ling-3.1-flash",
-      "title": "Ling 3.1 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "per_user_rpm": {
-          "before": null,
-          "after": 8
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003",
-            "promptCachedTokens": "0.00000006",
-            "completionTextTokens": "0.0000009"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:microsoft/mai-image-2.6",
-      "model_id": "microsoft/mai-image-2.6",
-      "title": "MAI Image 2.6",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "max_reference_images": {
-          "before": 1,
-          "after": 5
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:microsoft/mai-image-2.6-flash",
-      "model_id": "microsoft/mai-image-2.6-flash",
-      "title": "MAI Image 2.6 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "max_reference_images": {
-          "before": 1,
-          "after": 5
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:microsoft/mai-transcribe-2",
-      "model_id": "microsoft/mai-transcribe-2",
-      "title": "MAI Transcribe 2",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "audio"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptAudioSeconds": "0.000020833333"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:microsoft/mai-voice-2.1",
-      "model_id": "microsoft/mai-voice-2.1",
-      "title": "MAI-Voice-2.1",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.0000165"
-          }
-        },
-        "voices": {
-          "before": null,
-          "after": [
-            "cs-CZ-Grant",
-            "cs-CZ-Harper",
-            "da-DK-Grant",
-            "da-DK-Harper",
-            "de-DE-Grant",
-            "de-DE-Harper",
-            "de-DE-Klaus",
-            "de-DE-Mia",
-            "en-AU-Isla",
-            "en-GB-Emily",
-            "en-GB-Harry",
-            "en-IN-Dhruv",
-            "en-IN-Priya",
-            "en-US-Ethan",
-            "en-US-Grant",
-            "en-US-Harper",
-            "en-US-Iris",
-            "en-US-Jasper",
-            "en-US-Olivia",
-            "en-US-Sage",
-            "es-ES-Marta",
-            "es-MX-Alejo",
-            "es-MX-Grant",
-            "es-MX-Harper",
-            "es-MX-Valeria",
-            "fi-FI-Grant",
-            "fi-FI-Harper",
-            "fr-FR-Grant",
-            "fr-FR-Harper",
-            "fr-FR-Marc",
-            "fr-FR-Soleil",
-            "hi-IN-Arjun",
-            "hi-IN-Dhruv",
-            "hi-IN-Grant",
-            "hi-IN-Harper",
-            "hi-IN-Kavya",
-            "hi-IN-Priya",
-            "hu-HU-Bence",
-            "hu-HU-Grant",
-            "hu-HU-Harper",
-            "hu-HU-Levente",
-            "hu-HU-Lilla",
-            "hu-HU-Reka",
-            "id-ID-Grant",
-            "id-ID-Harper",
-            "it-IT-Grant",
-            "it-IT-Harper",
-            "it-IT-Luca",
-            "it-IT-Rosa",
-            "ko-KR-Grant",
-            "ko-KR-Haena",
-            "ko-KR-Harper",
-            "ko-KR-Junho",
-            "nb-NO-Grant",
-            "nb-NO-Harper",
-            "nl-NL-Grant",
-            "nl-NL-Harper",
-            "nl-NL-Sander",
-            "pl-PL-Grant",
-            "pl-PL-Harper",
-            "pt-BR-Caio",
-            "pt-BR-Grant",
-            "pt-BR-Harper",
-            "pt-BR-Luana",
-            "pt-BR-Pedro",
-            "pt-BR-Rafael",
-            "pt-PT-Grant",
-            "pt-PT-Harper",
-            "pt-PT-Rui",
-            "ro-RO-Andrei",
-            "ro-RO-Elena",
-            "ro-RO-Grant",
-            "ro-RO-Harper",
-            "ro-RO-Ioana",
-            "ro-RO-Radu",
-            "ru-RU-Grant",
-            "ru-RU-Harper",
-            "ru-RU-Lev",
-            "ru-RU-Masha",
-            "sv-SE-Grant",
-            "sv-SE-Harper",
-            "th-TH-Grant",
-            "th-TH-Harper",
-            "th-TH-Krit",
-            "th-TH-Nattapong",
-            "tr-TR-Aydin",
-            "tr-TR-Elif",
-            "tr-TR-Grant",
-            "tr-TR-Harper",
-            "vi-VN-Grant",
-            "vi-VN-Harper",
-            "zh-CN-Bo",
-            "zh-CN-Grant",
-            "zh-CN-Harper",
-            "zh-CN-Lan",
-            "zh-CN-Mei",
-            "zh-CN-Wei"
-          ]
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:microsoft/mai-voice-2.1-flash",
-      "model_id": "microsoft/mai-voice-2.1-flash",
-      "title": "MAI-Voice-2.1 Flash",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": false
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.00001125"
-          }
-        },
-        "voices": {
-          "before": null,
-          "after": [
-            "cs-CZ-Grant",
-            "cs-CZ-Harper",
-            "da-DK-Grant",
-            "da-DK-Harper",
-            "de-DE-Grant",
-            "de-DE-Harper",
-            "de-DE-Klaus",
-            "de-DE-Mia",
-            "en-AU-Isla",
-            "en-GB-Emily",
-            "en-GB-Harry",
-            "en-IN-Dhruv",
-            "en-IN-Priya",
-            "en-US-Ethan",
-            "en-US-Grant",
-            "en-US-Harper",
-            "en-US-Iris",
-            "en-US-Jasper",
-            "en-US-Olivia",
-            "en-US-Sage",
-            "es-ES-Marta",
-            "es-MX-Alejo",
-            "es-MX-Grant",
-            "es-MX-Harper",
-            "es-MX-Valeria",
-            "fi-FI-Grant",
-            "fi-FI-Harper",
-            "fr-FR-Grant",
-            "fr-FR-Harper",
-            "fr-FR-Marc",
-            "fr-FR-Soleil",
-            "hi-IN-Arjun",
-            "hi-IN-Dhruv",
-            "hi-IN-Grant",
-            "hi-IN-Harper",
-            "hi-IN-Kavya",
-            "hi-IN-Priya",
-            "hu-HU-Bence",
-            "hu-HU-Grant",
-            "hu-HU-Harper",
-            "hu-HU-Levente",
-            "hu-HU-Lilla",
-            "hu-HU-Reka",
-            "id-ID-Grant",
-            "id-ID-Harper",
-            "it-IT-Grant",
-            "it-IT-Harper",
-            "it-IT-Luca",
-            "it-IT-Rosa",
-            "ko-KR-Grant",
-            "ko-KR-Haena",
-            "ko-KR-Harper",
-            "ko-KR-Junho",
-            "nb-NO-Grant",
-            "nb-NO-Harper",
-            "nl-NL-Grant",
-            "nl-NL-Harper",
-            "nl-NL-Sander",
-            "pl-PL-Grant",
-            "pl-PL-Harper",
-            "pt-BR-Caio",
-            "pt-BR-Grant",
-            "pt-BR-Harper",
-            "pt-BR-Luana",
-            "pt-BR-Pedro",
-            "pt-BR-Rafael",
-            "pt-PT-Grant",
-            "pt-PT-Harper",
-            "pt-PT-Rui",
-            "ro-RO-Andrei",
-            "ro-RO-Elena",
-            "ro-RO-Grant",
-            "ro-RO-Harper",
-            "ro-RO-Ioana",
-            "ro-RO-Radu",
-            "ru-RU-Grant",
-            "ru-RU-Harper",
-            "ru-RU-Lev",
-            "ru-RU-Masha",
-            "sv-SE-Grant",
-            "sv-SE-Harper",
-            "th-TH-Grant",
-            "th-TH-Harper",
-            "th-TH-Krit",
-            "th-TH-Nattapong",
-            "tr-TR-Aydin",
-            "tr-TR-Elif",
-            "tr-TR-Grant",
-            "tr-TR-Harper",
-            "vi-VN-Grant",
-            "vi-VN-Harper",
-            "zh-CN-Bo",
-            "zh-CN-Grant",
-            "zh-CN-Harper",
-            "zh-CN-Lan",
-            "zh-CN-Mei",
-            "zh-CN-Wei"
-          ]
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:minimax/minimax-h3-max-turbo",
-      "model_id": "minimax/minimax-h3-max-turbo",
-      "title": "MiniMax H3 Max Turbo",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "video",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionVideoSeconds": "0.025"
-          },
-          "after": {
-            "currency": "pollen"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:mistralai/mistral-large-4",
-      "model_id": "mistralai/mistral-large-4",
-      "title": "Mistral Large 4",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 524288
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000068",
-            "promptCachedTokens": "0.00000007",
-            "completionTextTokens": "0.00000209"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:meta/muse-wonder-1.0",
-      "model_id": "meta/muse-wonder-1.0",
-      "title": "Muse Wonder 1.0",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1048576
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000422",
-            "promptCachedTokens": "0.000000211",
-            "promptImageTokens": "0.00000422",
-            "completionTextTokens": "0.0000211"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-2.5-flash-image",
-      "model_id": "google/gemini-2.5-flash-image",
-      "title": "Nano Banana",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003165",
-            "promptImageTokens": "0.0000003165",
-            "completionTextTokens": "0.0000026375",
-            "completionImageTokens": "0.00003165"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000003",
-            "promptImageTokens": "0.0000003",
-            "completionTextTokens": "0.0000025",
-            "completionImageTokens": "0.00003"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.1-flash-image",
-      "model_id": "google/gemini-3.1-flash-image",
-      "title": "Nano Banana 2",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000005275",
-            "promptImageTokens": "0.0000005275",
-            "completionTextTokens": "0.000003165",
-            "completionImageTokens": "0.0000633"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000005",
-            "promptImageTokens": "0.0000005",
-            "completionTextTokens": "0.000003",
-            "completionImageTokens": "0.00006"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3.1-flash-lite-image",
-      "model_id": "google/gemini-3.1-flash-lite-image",
-      "title": "Nano Banana 2 Lite",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000026375",
-            "promptImageTokens": "0.00000026375",
-            "completionTextTokens": "0.0000015825",
-            "completionImageTokens": "0.00003165"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000025",
-            "promptImageTokens": "0.00000025",
-            "completionTextTokens": "0.0000015",
-            "completionImageTokens": "0.00003"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:google/gemini-3-pro-image",
-      "model_id": "google/gemini-3-pro-image",
-      "title": "Nano Banana Pro",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000211",
-            "promptImageTokens": "0.00000211",
-            "completionTextTokens": "0.00001266",
-            "completionImageTokens": "0.0001266"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptImageTokens": "0.000002",
-            "completionTextTokens": "0.000012",
-            "completionImageTokens": "0.00012"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:nex-agi/nex-n2.5-mini",
-      "model_id": "nex-agi/nex-n2.5-mini",
-      "title": "Nex N2.5 Mini",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 262144
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000026375",
-            "promptCachedTokens": "0.000000002638",
-            "completionTextTokens": "0.0000001055"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:nex-agi/nex-n2.5-pro",
-      "model_id": "nex-agi/nex-n2.5-pro",
-      "title": "Nex N2.5 Pro",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 262144
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000079125",
-            "promptCachedTokens": "0.000000015825",
-            "completionTextTokens": "0.00000026375"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:amazon/nova-2-lite-v1",
-      "model_id": "amazon/nova-2-lite-v1",
-      "title": "Nova 2 Lite",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "input_modalities": {
-          "before": [
-            "text",
-            "image"
-          ],
-          "after": [
-            "text",
-            "image",
-            "video"
-          ]
-        },
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:amazon/nova-micro-v1",
-      "model_id": "amazon/nova-micro-v1",
-      "title": "Nova Micro",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:qwen/qwen-image-2.1-turbo",
-      "model_id": "qwen/qwen-image-2.1-turbo",
-      "title": "Qwen Image 2.1 Turbo",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "image",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 10
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.016"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:qwen/qwen-audio-3.0-tts-flash",
-      "model_id": "qwen/qwen-audio-3.0-tts-flash",
-      "title": "Qwen-Audio 3.0 TTS Flash",
-      "previous_title": "Qwen3-TTS Instruct Flash",
-      "action": "UPDATE",
-      "category": "audio",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.0000115"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionAudioTokens": "0.000015"
-          }
-        },
-        "voices": {
-          "before": null,
-          "after": [
-            "loongeva_v3.6",
-            "loongjohn",
-            "loongmary",
-            "longanfengyue",
-            "longanyuanfei",
-            "longanlingxi",
-            "longanxiaoxin",
-            "longanhuan_v3.6",
-            "longjielidou_v3.6",
-            "longpaopao_v3.6",
-            "longhuohuo_v3.6",
-            "longchuanshu_v3.6"
-          ]
-        },
-        "model_id": {
-          "before": "qwen/qwen3-tts-instruct-flash",
-          "after": "qwen/qwen-audio-3.0-tts-flash"
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:qwen/qwen3-vl-30b-a3b-instruct",
-      "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
-      "title": "Qwen3 VL 30B A3B Instruct",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000013715",
-            "completionTextTokens": "0.0000005486"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015825",
-            "completionTextTokens": "0.000000633"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:qwen/qwen3.8-27b",
-      "model_id": "qwen/qwen3.8-27b",
-      "title": "Qwen3.8 27B",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000002532",
-            "promptCachedTokens": "0.00000002532",
-            "promptImageTokens": "0.0000002532",
-            "promptVideoTokens": "0.0000002532",
-            "completionTextTokens": "0.000002321"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000041145",
-            "promptCachedTokens": "0.000000004115",
-            "promptImageTokens": "0.000000041145",
-            "promptVideoTokens": "0.000000041145",
-            "completionTextTokens": "0.00000131875"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:qwen/qwen3guard-gen-8b",
-      "model_id": "qwen/qwen3guard-gen-8b",
-      "title": "Qwen3Guard 8B",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000001",
-            "completionTextTokens": "0.00000001"
-          },
-          "after": {
-            "currency": "pollen"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:stepfun/step-5-preview",
-      "model_id": "stepfun/step-5-preview",
-      "title": "StepFun Step 5 Preview",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1000000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000001055",
-            "promptCachedTokens": "0.00000005275",
-            "completionTextTokens": "0.0000028485"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:z-ai/glm-5.3-flash",
-      "model_id": "z-ai/glm-5.3-flash",
-      "title": "Z.ai GLM-5.3 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015",
-            "promptCachedTokens": "0.000000029",
-            "promptImageTokens": "0.00000015",
-            "completionTextTokens": "0.0000005"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015",
-            "promptCachedTokens": "0.00000003",
-            "promptImageTokens": "0.00000015",
-            "completionTextTokens": "0.0000005"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-13:z-ai/glm-5.3-flashx",
-      "model_id": "z-ai/glm-5.3-flashx",
-      "title": "Z.ai GLM-5.3 FlashX",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-13",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000039035",
-            "promptCachedTokens": "0.000000079125",
-            "completionTextTokens": "0.00000131875"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000039035",
-            "promptCachedTokens": "0.00000009495",
-            "completionTextTokens": "0.00000131875"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-14:inferenceport-ai/lightning-text-v2",
       "model_id": "inferenceport-ai/lightning-text-v2",
@@ -5322,6 +3400,96 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-12:google/gemini-4-carbon",
+      "model_id": "google/gemini-4-carbon",
+      "title": "Gemini 4 Carbon",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-12",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "web_search"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3000
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000004",
+            "promptAudioTokens": "0.000004",
+            "promptImageTokens": "0.000004",
+            "promptVideoTokens": "0.000004",
+            "completionTextTokens": "0.00002"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-12:qwen/qwen3.8-2.4t-a95b",
+      "model_id": "qwen/qwen3.8-2.4t-a95b",
+      "title": "Qwen3.8 2.4T A95B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-12",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
     }
   ],
   "api": [
@@ -6283,9 +4451,370 @@
       "date": "2026-11-04",
       "pr": 19146,
       "url": "https://github.com/pollinations/pollinations/pull/19146"
+    },
+    {
+      "id": "pr-19610:GET /image/{prompt}",
+      "endpoint": "GET /image/{prompt}",
+      "summary": "Generate Image",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:background",
+          "before": null,
+          "after": {
+            "type": "\"auto\"|\"opaque\"|\"transparent\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:frame_count",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:frame_duration_ms",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:output_format",
+          "before": null,
+          "after": {
+            "type": "\"png\"|\"webp\"|\"gif\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:quality",
+          "before": {
+            "type": "\"low\"|\"medium\"|\"high\"|\"hd\"",
+            "required": false
+          },
+          "after": {
+            "type": "\"low\"|\"medium\"|\"high\"|\"hd\"|\"auto\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-11-12",
+      "pr": 19610,
+      "url": "https://github.com/pollinations/pollinations/pull/19610"
+    },
+    {
+      "id": "pr-19610:GET /video/{prompt}",
+      "endpoint": "GET /video/{prompt}",
+      "summary": "Generate Video",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:background",
+          "before": null,
+          "after": {
+            "type": "\"auto\"|\"opaque\"|\"transparent\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:frame_count",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:frame_duration_ms",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:output_format",
+          "before": null,
+          "after": {
+            "type": "\"png\"|\"webp\"|\"gif\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-11-12",
+      "pr": 19610,
+      "url": "https://github.com/pollinations/pollinations/pull/19610"
+    },
+    {
+      "id": "pr-19610:POST /v1/images/edits",
+      "endpoint": "POST /v1/images/edits",
+      "summary": "Edit Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:background",
+          "before": null,
+          "after": {
+            "type": "\"auto\"|\"opaque\"|\"transparent\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:frame_count",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:frame_duration_ms",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:output_format",
+          "before": null,
+          "after": {
+            "type": "\"png\"|\"webp\"|\"gif\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:quality",
+          "before": {
+            "type": "\"standard\"|\"hd\"|\"low\"|\"medium\"|\"high\"",
+            "required": false
+          },
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-11-12",
+      "pr": 19610,
+      "url": "https://github.com/pollinations/pollinations/pull/19610"
+    },
+    {
+      "id": "pr-19610:POST /v1/images/generations",
+      "endpoint": "POST /v1/images/generations",
+      "summary": "Generate Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:aspect_ratio",
+          "before": null,
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:background",
+          "before": null,
+          "after": {
+            "type": "\"auto\"|\"opaque\"|\"transparent\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:frame_count",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:frame_duration_ms",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:output_format",
+          "before": null,
+          "after": {
+            "type": "\"png\"|\"webp\"|\"gif\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:quality",
+          "before": {
+            "type": "\"standard\"|\"hd\"|\"low\"|\"medium\"|\"high\"",
+            "required": false
+          },
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-11-12",
+      "pr": 19610,
+      "url": "https://github.com/pollinations/pollinations/pull/19610"
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-12",
+      "emoji": "🎨",
+      "title": "Animated GIFs with Flare",
+      "text": "GPT Image 2.6 Flare can return PNG, WebP, or animated GIF. For GIFs, set `frame_count` from 2 to 16 and `frame_duration_ms` from 20 to 2000, within a 10-second total. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19314
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "✨",
+      "title": "Model resolutions in the API",
+      "text": "`/v1/models` and `/v1/models/:model` now include `resolutions` when a model declares supported output sizes. Clients can use the field to choose a valid `resolution`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19456
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🤖",
+      "title": "Research papers for agents",
+      "text": "Research MCP can search arXiv papers and Crossref works, then look up a paper by arXiv ID or a work by DOI. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19252,
+        19290
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🎵",
+      "title": "Voice tools in MCP",
+      "text": "The Pollinations MCP server gained `isolateSpeech` and `changeVoice`. Pass a public HTTPS audio URL, or a video URL for speech isolation, and get an audio resource link back. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19229
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "💡",
+      "title": "Check npm download counts",
+      "text": "The Packages MCP `package_downloads` tool retrieves daily npm downloads for a package. Choose a preset period or a custom date range of up to 18 months. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19210
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🔗",
+      "title": "Look up Go and PHP packages",
+      "text": "Packages MCP can now look up Go modules and PHP Composer packages through `package_lookup`. Results include version details and links to the relevant package registry. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19464,
+        19469
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🔗",
+      "title": "Inspect MAC addresses",
+      "text": "Network MCP's `inspect_mac` accepts common MAC address formats and reports normalized forms, the OUI prefix, and address flags. It runs locally without a network call. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19467
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "💡",
+      "title": "History on this day",
+      "text": "News MCP's `history_on_this_day` looks up selected events, deaths, or holidays for a calendar date using Wikimedia's public feed. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19468
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🤖",
+      "title": "Exact calculations for agents",
+      "text": "Calculators MCP gained `to_fraction` for exact decimal and fraction reduction, `diff_text` for unified diffs, and `compare_versions` for SemVer ordering. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19503,
+        19519,
+        19536
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "🎯",
+      "title": "First auto top-up Quest",
+      "text": "One paid auto top-up completed on or after October 13, 2026 qualifies an account for a one-time reward of 20 Quest Pollen. Existing auto top-up users can qualify with their next paid refill. [Explore Quests](https://pollinations.ai).",
+      "prs": [
+        19439
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "💡",
+      "title": "Out-of-Pollen dashboard banner",
+      "text": "Signed-in accounts with no spendable Pollen now see a dashboard banner linking to Buy Pollen. It also points to Quests when Quest Pollen is not locked.",
+      "prs": [
+        15928
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-12",
+      "emoji": "📱",
+      "title": "One Enter catalog card",
+      "text": "Enter now uses one responsive card layout for models, agents, MCP servers, and sandbox templates. Cards bring descriptions, capabilities, prices, and actions together, with model health shown as labeled bars. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19613
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-11",
       "emoji": "🚀",
@@ -7404,144 +5933,6 @@
         17331
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🎨",
-      "title": "Kandinsky makes short videos",
-      "text": "Make five-second, 480p videos from a prompt or start image with `kandinsky/kandinsky-6.0-lite`. Synchronized audio is on by default and can be turned off. [Browse the model](https://enter.pollinations.ai/models?q=kandinsky/kandinsky-6.0-lite).",
-      "prs": [
-        16995
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🎨",
-      "title": "Qwen Image 2.1 Turbo",
-      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images, a requested size, and a seed. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
-      "prs": [
-        17055
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🤖",
-      "title": "Muse Wonder joins chat",
-      "text": "Try `meta/muse-wonder-1.0` with text or image input, tool calls, structured output, and a 1,048,576-token context window. [Browse the model](https://enter.pollinations.ai/models?q=meta/muse-wonder-1.0).",
-      "prs": [
-        17203
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🤖",
-      "title": "Gemini 4 Argon arrives",
-      "text": "Use `google/gemini-4-argon` with text, images, audio, or video input, plus tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
-      "prs": [
-        17329
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🔗",
-      "title": "Grant only what’s needed",
-      "text": "When a key lacks a model, category, or account permission, its owner can approve that specific access without changing the key’s budget, expiry, or other permissions. Refused requests can point to the grant page.",
-      "prs": [
-        16407
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "✨",
-      "title": "Event codes for Quests",
-      "text": "Got an event code? Redeem it from the Quests page for Quest Pollen. A code link can prefill the form.",
-      "prs": [
-        16921,
-        17299
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🎯",
-      "title": "Discord levels earn Pollen",
-      "text": "Link your Discord account and reach level 10 or 20 to qualify for one-time Quest Pollen rewards at each milestone. Reaching level 20 qualifies for both.",
-      "prs": [
-        17259
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🚀",
-      "title": "Manage sandboxes in Enter",
-      "text": "Create a sandbox from the dashboard, copy its SSH command, and pause, resume, extend, or delete it there. The page shows charges before confirmation and lets you set a time limit for a sandbox running until stopped.",
-      "prs": [
-        17150,
-        17266,
-        17325
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "💡",
-      "title": "More tools for sandboxes",
-      "text": "Sandbox template work adds rclone for mounting bucket storage, plus cron, ffmpeg, uv, git-lfs, and other tools. Cron jobs run while the sandbox is running, not while it is paused.",
-      "prs": [
-        17364,
-        17368
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🎨",
-      "title": "Two frames from polli",
-      "text": "`polli gen video --image` accepts multiple public reference-frame URLs for start and end frames. Requested aspect ratios are no longer overridden by default square dimensions.",
-      "prs": [
-        17081
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🔗",
-      "title": "Find models by kind",
-      "text": "Use the SDK’s `models(kind)` or `getModels(kind)` to list text, image, video, audio, or embeddings models. Calls without `kind` still list all models; the older text- and image-specific helpers have been removed. [Explore the SDK](https://react.pollinations.ai).",
-      "prs": [
-        17087
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🤖",
-      "title": "Declare agent model capabilities",
-      "text": "Endpoint-agent owners can declare traits such as tool calling, reasoning, and web search through the create and update APIs. Those declarations can then appear in model listings and capability filters; owners still need to set them for existing agents.",
-      "prs": [
-        16912
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-13",
-      "emoji": "🔗",
-      "title": "Agent discovery gets easier",
-      "text": "Agents can find API documentation, OAuth metadata, catalogs, and MCP server cards through page headers and well-known endpoints instead of hardcoding every path. [Explore the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16990,
-        17048,
-        17221,
-        17222,
-        17233
-      ],
-      "kind": "api"
     }
   ]
 }

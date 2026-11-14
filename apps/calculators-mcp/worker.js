@@ -5,6 +5,7 @@ import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
+import { jsonMergePatchTools } from "./tools/json-merge-patch.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
@@ -23,6 +24,7 @@ const handler = createMcpHandler(
             ...qrTools,
             ...currencyTools,
             ...hashTools,
+            ...jsonMergePatchTools,
             ...diffTools,
             ...fractionTools,
             ...versionTools,

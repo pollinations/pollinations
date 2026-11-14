@@ -62,6 +62,7 @@ for (const modern of [false, true])
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
+            "peeringdb_lookup",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+                "peeringdb_lookup",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -354,6 +361,122 @@ test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits wi
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /429.*60/);
     assert.equal(stub.mock.callCount(), 1);
+});
+test("PeeringDB lookup returns the network record and rejects bad ASNs before I/O", async (t) => {
+    // Trimmed real fixtures from live PeeringDB /api/net responses (2026-11-15).
+    const network = (asn, name, irr, type, p4, p6, ix, fac, policy) => ({
+        data: [
+            {
+                id: 1,
+                asn,
+                name,
+                aka: "",
+                website: "https://example.org/",
+                looking_glass: "",
+                route_server: "",
+                irr_as_set: irr,
+                info_type: type,
+                info_prefixes4: p4,
+                info_prefixes6: p6,
+                ix_count: ix,
+                fac_count: fac,
+                policy_general: policy,
+            },
+        ],
+        meta: {},
+    });
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.peeringdb.com");
+        assert.equal(url.pathname, "/api/net");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        const asn = url.searchParams.get("asn");
+        if (asn === "15169")
+            return Response.json(
+                network(
+                    15169,
+                    "Google LLC",
+                    "RADB::AS-GOOGLE",
+                    "Content",
+                    15000,
+                    10000,
+                    160,
+                    135,
+                    "Selective",
+                ),
+            );
+        if (asn === "13335")
+            return Response.json(
+                network(
+                    13335,
+                    "Cloudflare",
+                    "ARIN::AS13335:AS-CLOUDFLARE",
+                    "Content",
+                    80000,
+                    30000,
+                    358,
+                    223,
+                    "Open",
+                ),
+            );
+        return new Response(
+            JSON.stringify({
+                data: [],
+                meta: { error: "Entity not found" },
+            }),
+            { status: 404 },
+        );
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "peeringdb_lookup",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    const google = await read({ asn: "AS15169" });
+    assert.equal(google.asn, 15169);
+    assert.equal(google.name, "Google LLC");
+    assert.equal(google.website, "https://example.org/");
+    assert.equal(google.looking_glass, null);
+    assert.equal(google.route_server, null);
+    assert.equal(google.irr_as_set, "RADB::AS-GOOGLE");
+    assert.equal(google.info_type, "Content");
+    assert.equal(google.info_prefixes4, 15000);
+    assert.equal(google.info_prefixes6, 10000);
+    assert.equal(google.ix_count, 160);
+    assert.equal(google.fac_count, 135);
+    assert.equal(google.policy_general, "Selective");
+    const bare = await read({ asn: "15169" });
+    assert.equal(bare.asn, 15169);
+    const cloudflare = await read({ asn: "13335" });
+    assert.equal(cloudflare.name, "Cloudflare");
+    assert.equal(cloudflare.policy_general, "Open");
+    for (const bad of ["notanas", "AS4294967296", "AS-1", ""]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "peeringdb_lookup",
+                    arguments: { asn: bad },
+                })
+            ).isError,
+            true,
+            bad,
+        );
+    }
+    assert.equal(requests, 3);
+    const unknown = await c.callTool({
+        name: "peeringdb_lookup",
+        arguments: { asn: "99999999" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.match(unknown.content[0].text, /404/);
 });
 test("HTTP stops redirect loops and never reads HEAD or binary bodies", async (t) => {
     const stub = t.mock.method(globalThis, "fetch", async (url) =>

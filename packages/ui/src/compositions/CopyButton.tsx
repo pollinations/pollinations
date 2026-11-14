@@ -12,16 +12,28 @@ import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
 import type { IconProps } from "../primitives/icons/types.ts";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
-/** The copy state as an icon: a clipboard, then a check once copied. */
+/** The copy state as an icon: a clipboard, then an amber check once copied.
+ * The icon is the only thing a copy changes: labels and colours stay put. */
 export function CopyStateIcon({
     copied,
+    className,
     ...props
 }: IconProps & { copied: boolean }) {
-    const Icon = copied ? CheckIcon : ClipboardIcon;
-    return <Icon {...props} />;
+    return copied ? (
+        <CheckIcon
+            {...props}
+            data-theme="accent"
+            className={cn(className, "polli:text-theme-text-soft")}
+        />
+    ) : (
+        <ClipboardIcon {...props} className={className} />
+    );
 }
 
 type CopyValue = string | (() => string | Promise<string>);
+
+/** How long the check shows, the same for every copy button. */
+const COPIED_MS = 1500;
 
 export type CopyButtonProps = Omit<
     ButtonHTMLAttributes<HTMLButtonElement>,
@@ -29,12 +41,12 @@ export type CopyButtonProps = Omit<
 > & {
     value: CopyValue;
     children: ReactNode | ((copied: boolean) => ReactNode);
-    copiedTimeoutMs?: number;
+    /** Extra hover content, e.g. the full value behind a short label. Copy
+     * buttons don't need one to say "copy": the icon does. */
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
     tooltipClampToViewport?: boolean;
     tooltipMaxWidth?: number;
-    copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
     variant?: "plain" | "button";
@@ -47,18 +59,10 @@ export type CopyButtonProps = Omit<
 export function CopyButton({
     value,
     children,
-    copiedTimeoutMs = 2000,
-    tooltip = "Click to copy",
+    tooltip,
     tooltipAlign,
     tooltipClampToViewport,
     tooltipMaxWidth,
-    // Icons, never emoji: the check is the package's own CheckIcon.
-    copiedTooltip = (
-        <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-intent-success-text">
-            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
-            Copied
-        </span>
-    ),
     tooltipClassName,
     className,
     variant = "plain",
@@ -85,10 +89,7 @@ export function CopyButton({
             setCopied(true);
             onCopied?.();
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            timeoutRef.current = setTimeout(
-                () => setCopied(false),
-                copiedTimeoutMs,
-            );
+            timeoutRef.current = setTimeout(() => setCopied(false), COPIED_MS);
         } catch (error) {
             onCopyError?.(error);
         }
@@ -110,19 +111,19 @@ export function CopyButton({
             )}
         >
             {typeof children === "function" ? children(copied) : children}
+            {/* Said, not shown: the icon is the visible answer. */}
+            <span className="polli:sr-only" aria-live="polite">
+                {copied ? "Copied" : ""}
+            </span>
         </Control>
     );
 
-    // A copy button with its own visible label doesn't need a hover tooltip —
-    // pass tooltip={null} to opt out of the wrapper entirely.
-    if (tooltip === null) {
-        return button;
-    }
+    if (!tooltip) return button;
 
     return (
         <Tooltip
             triggerAs="span"
-            content={copied ? copiedTooltip : tooltip}
+            content={tooltip}
             align={tooltipAlign}
             clampToViewport={tooltipClampToViewport}
             maxWidth={tooltipMaxWidth}

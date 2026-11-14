@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
-import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -166,7 +165,6 @@ function KeysContent({
                 }
                 {...actions}
             />
-            <CliHint command="keys create --name my-app" />
         </>
     );
 }

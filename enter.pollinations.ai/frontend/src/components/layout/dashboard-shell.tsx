@@ -482,9 +482,7 @@ const DocsRow: FC = () => (
                 const res = await fetch(`${genDocsUrl()}/llm.txt`);
                 return res.text();
             }}
-            copiedTimeoutMs={1500}
             data-theme="accent"
-            tooltip="Copy all docs as text"
             aria-label="Copy all docs as text"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
         >

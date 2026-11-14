@@ -37,21 +37,13 @@ export function KeyChip({
     return (
         <CopyButton
             value={value}
-            tooltip={null}
             aria-label={label}
             className="polli:inline-flex polli:cursor-pointer polli:rounded-lg"
         >
             {(copied) => (
-                <Chip
-                    intent={copied ? "success" : "neutral"}
-                    className={cn(
-                        chipClassName,
-                        "polli:transition-colors",
-                        className,
-                    )}
-                >
+                <Chip intent="neutral" className={cn(chipClassName, className)}>
                     <CopyStateIcon copied={copied} aria-hidden="true" />
-                    {copied ? "Copied" : text}
+                    {text}
                 </Chip>
             )}
         </CopyButton>

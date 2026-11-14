@@ -22,6 +22,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { CopyDocs } from "../copy-docs.tsx";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
@@ -488,16 +489,19 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
             }
             actionClassName="ml-auto"
             action={
-                kind === "models" && (
-                    <InlineLink
-                        href="https://model-monitor.pollinations.ai"
-                        size="sm"
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap"
-                    >
-                        <ModelHealthIcon />
-                        Model health
-                    </InlineLink>
-                )
+                <div className="flex items-center gap-4">
+                    <CopyDocs section={kind === "mcp" ? "mcp" : "api"} />
+                    {kind === "models" && (
+                        <InlineLink
+                            href="https://model-monitor.pollinations.ai"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                            <ModelHealthIcon />
+                            Model health
+                        </InlineLink>
+                    )}
+                </div>
             }
         >
             <div className="flex flex-col items-start gap-3">
@@ -601,7 +605,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                         Avoid sensitive data.
                     </strong>{" "}
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/safety">
                             Privacy filter
                         </InlineLink>
                         <span aria-hidden="true">·</span>

@@ -116,8 +116,6 @@ export function KeyDialogContent({
             <CopyButton
                 value={createdKey}
                 variant="button"
-                copiedTimeoutMs={500}
-                tooltip={null}
                 onCopied={onCopied}
                 onCopyError={onCopyError}
             >
@@ -129,7 +127,7 @@ export function KeyDialogContent({
                         >
                             <CopyStateIcon copied={copied} />
                         </span>
-                        {copied ? "Copied" : "Copy and close"}
+                        Copy and close
                     </span>
                 )}
             </CopyButton>

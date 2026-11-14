@@ -16,7 +16,7 @@ const sizeClasses = {
 
 export type CopyFieldProps = Pick<
     CopyButtonProps,
-    "value" | "onCopied" | "onCopyError" | "copiedTimeoutMs"
+    "value" | "onCopied" | "onCopyError"
 > & {
     /** Accessible name, e.g. "Copy secret key". */
     label: string;
@@ -45,7 +45,6 @@ export function CopyField({
         <CopyButton
             {...copy}
             value={value}
-            tooltip={null}
             aria-label={label}
             className={cn(
                 "polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:text-left polli:font-mono polli:text-xs polli:transition-colors",
@@ -69,10 +68,6 @@ export function CopyField({
                         )}
                     >
                         <CopyStateIcon copied={copied} />
-                    </span>
-                    {/* Said, not shown: the icon is the visible answer. */}
-                    <span className="polli:sr-only" aria-live="polite">
-                        {copied ? "Copied" : ""}
                     </span>
                 </>
             )}

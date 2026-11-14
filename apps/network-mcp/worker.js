@@ -4,6 +4,7 @@ import { cidrTools } from "./tools/cidr.js";
 import { dnsTools } from "./tools/dns.js";
 import { httpTools } from "./tools/http.js";
 import { macTools } from "./tools/mac.js";
+import { peeringdbTools } from "./tools/peeringdb.js";
 import { rdapTools } from "./tools/rdap.js";
 
 const handler = createMcpHandler(
@@ -17,6 +18,7 @@ const handler = createMcpHandler(
             ...httpTools,
             ...cidrTools,
             ...rdapTools,
+            ...peeringdbTools,
             ...macTools,
         ]) {
             server.registerTool(

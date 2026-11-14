@@ -656,6 +656,240 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
     ]);
 });
 
+test("Hackage lookup resolves the latest non-deprecated version and parses the .cabal", async (t) => {
+    // Trimmed real fixtures from live hackage.haskell.org responses
+    // (aeson, 2026-11-14), except "2.3.3.0", which is synthetic: a higher
+    // deprecated version the resolver must skip.
+    const versions = {
+        "0.10.0.0": "deprecated",
+        "2.2.3.0": "normal",
+        "2.3.1.0": "normal",
+        "2.3.2.0": "normal",
+        "2.3.3.0": "deprecated",
+    };
+    const description =
+        "A JSON parsing and encoding library optimized for ease of use\nand high performance.\n\nTo get started, see the documentation for the @Data.Aeson@ module\nbelow.\n\n(A note on naming: in Greek mythology, Aeson was the father of Jason.)";
+    const meta = (uploadedAt, uploader) => ({
+        author: "Bryan O'Sullivan <bos@serpentine.com>",
+        copyright: "(c) 2011-2016 Bryan O'Sullivan",
+        description,
+        homepage: "https://github.com/haskell/aeson",
+        license: "BSD-3-Clause",
+        synopsis: "Fast JSON parsing and encoding",
+        uploaded_at: uploadedAt,
+        uploader,
+    });
+    // Trimmed real library section of aeson 2.3.2.0's .cabal: three
+    // top-level build-depends blocks, conditional blocks nested under
+    // `if` lines, and a test-suite block that must not leak in.
+    const cabalLatest = `library
+  default-language: Haskell2010
+
+  -- GHC bundled libs
+  build-depends:
+    , base              >=4.12.0.0 && <5
+    , bytestring        >=0.10.8.2 && <0.13
+    , containers        >=0.6.0.1  && <0.9
+    , deepseq           >=1.4.4.0  && <1.6
+    , exceptions        >=0.10.4   && <0.11
+    , template-haskell  >=2.14.0.0 && <2.25
+    , text              >=1.2.3.0  && <1.3  || >=2.0 && <2.2
+    , time              >=1.8.0.2  && <1.16
+
+  -- Compat
+  build-depends:
+    , time-compat  >=1.9.6 && <1.10
+
+  if !impl(ghc >=9.4)
+    build-depends: generically >=0.1 && <0.2
+
+  if !impl(ghc >=9.0)
+    build-depends: integer-gmp
+
+  -- Other dependencies
+  build-depends:
+    , character-ps          ^>=0.1
+    , data-fix              ^>=0.3.2
+    , dlist                 ^>=1.0
+    , hashable              ^>=1.4.6.0  || ^>=1.5.0.0
+    , indexed-traversable   ^>=0.1.2
+    , integer-conversion    ^>=0.1
+    , integer-logarithms    ^>=1.0.3.1
+    , network-uri           ^>=2.6.4.1
+    , OneTuple              ^>=0.4.1.1
+    , primitive             ^>=0.8.0.0  || ^>=0.9.0.0
+    , QuickCheck            ^>=2.14.3   || ^>=2.15    || ^>=2.16.0.0 || ^>=2.17.1.0 || ^>=2.18.0.0 || ^>= 2.19.0.0
+    , scientific            ^>=0.3.7.0
+    , semialign             ^>=1.3      || ^>=1.4
+    , strict                ^>=0.5
+    , tagged                ^>=0.8.7
+    , text-iso8601          >=0.1.1 && < 0.3
+    , text-short            ^>=0.1.5
+    , th-abstraction        ^>=0.5.0.0  || ^>=0.6.0.0 || ^>=0.7.0.0
+    , these                 ^>=1.2
+    , unordered-containers  ^>=0.2.10.0
+    , uuid-types            ^>=1.0.5
+    , vector                ^>=0.13.0.0
+    , witherable            ^>=0.4.2    || ^>=0.5
+
+  ghc-options:      -Wall
+
+test-suite aeson-tests
+  build-depends:
+    , tasty
+`;
+    // Trimmed real library section of aeson 2.2.3.0's .cabal: it still
+    // depends on ghc-prim, which 2.3.2.0 dropped.
+    const cabalPinned = `library
+  build-depends:
+    , base              >=4.12.0.0 && <5
+    , ghc-prim          >=0.5.0.0  && <0.14
+    , text              >=1.2.3.0  && <1.3  || >=2.0 && <2.2
+
+  -- Compat
+  build-depends:
+    , generically  >=0.1   && <0.2
+    , time-compat  >=1.9.6 && <0.10
+
+  if !impl(ghc >=9.0)
+    build-depends: integer-gmp
+
+test-suite aeson-tests
+  build-depends:
+    , tasty
+`;
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(String(url));
+        const target = new URL(url);
+        assert.equal(target.hostname, "hackage.haskell.org");
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url === "https://hackage.haskell.org/package/aeson.json")
+            return Response.json(versions);
+        if (url === "https://hackage.haskell.org/package/aeson-2.3.2.0.json")
+            return Response.json(
+                meta("2026-09-17T21:39:03.383320779Z", "lyxia"),
+            );
+        if (url === "https://hackage.haskell.org/package/aeson-2.2.3.0.json")
+            return Response.json(
+                meta("2025-06-17T19:59:02.25842291Z", "phadej"),
+            );
+        if (url.endsWith("aeson-2.3.2.0/aeson.cabal"))
+            return new Response(cabalLatest);
+        if (url.endsWith("aeson-2.2.3.0/aeson.cabal"))
+            return new Response(cabalPinned);
+        return new Response(
+            "Package not found: No such package in package index",
+            {
+                status: 404,
+            },
+        );
+    });
+
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "hackage",
+        name: "aeson",
+    });
+    assert.equal(latest.version, "2.3.2.0");
+    assert.equal(latest.description, "Fast JSON parsing and encoding");
+    assert.equal(latest.longDescription, description);
+    assert.equal(latest.license, "BSD-3-Clause");
+    assert.equal(latest.homepage, "https://github.com/haskell/aeson");
+    assert.equal(latest.author, "Bryan O'Sullivan <bos@serpentine.com>");
+    assert.equal(latest.uploadedAt, "2026-09-17T21:39:03.383320779Z");
+    assert.equal(latest.uploader, "lyxia");
+    assert.equal(latest.deprecated, false);
+    assert.deepEqual(latest.dependencies, {
+        base: ">=4.12.0.0 && <5",
+        bytestring: ">=0.10.8.2 && <0.13",
+        containers: ">=0.6.0.1 && <0.9",
+        deepseq: ">=1.4.4.0 && <1.6",
+        exceptions: ">=0.10.4 && <0.11",
+        "template-haskell": ">=2.14.0.0 && <2.25",
+        text: ">=1.2.3.0 && <1.3 || >=2.0 && <2.2",
+        time: ">=1.8.0.2 && <1.16",
+        "time-compat": ">=1.9.6 && <1.10",
+        "character-ps": "^>=0.1",
+        "data-fix": "^>=0.3.2",
+        dlist: "^>=1.0",
+        hashable: "^>=1.4.6.0 || ^>=1.5.0.0",
+        "indexed-traversable": "^>=0.1.2",
+        "integer-conversion": "^>=0.1",
+        "integer-logarithms": "^>=1.0.3.1",
+        "network-uri": "^>=2.6.4.1",
+        OneTuple: "^>=0.4.1.1",
+        primitive: "^>=0.8.0.0 || ^>=0.9.0.0",
+        QuickCheck:
+            "^>=2.14.3 || ^>=2.15 || ^>=2.16.0.0 || ^>=2.17.1.0 || ^>=2.18.0.0 || ^>= 2.19.0.0",
+        scientific: "^>=0.3.7.0",
+        semialign: "^>=1.3 || ^>=1.4",
+        strict: "^>=0.5",
+        tagged: "^>=0.8.7",
+        "text-iso8601": ">=0.1.1 && < 0.3",
+        "text-short": "^>=0.1.5",
+        "th-abstraction": "^>=0.5.0.0 || ^>=0.6.0.0 || ^>=0.7.0.0",
+        these: "^>=1.2",
+        "unordered-containers": "^>=0.2.10.0",
+        "uuid-types": "^>=1.0.5",
+        vector: "^>=0.13.0.0",
+        witherable: "^>=0.4.2 || ^>=0.5",
+    });
+    assert.equal(
+        latest.registryUrl,
+        "https://hackage.haskell.org/package/aeson-2.3.2.0",
+    );
+
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "hackage",
+        name: "aeson",
+        version: "2.2.3.0",
+    });
+    assert.equal(pinned.version, "2.2.3.0");
+    assert.equal(pinned.uploader, "phadej");
+    assert.equal(pinned.uploadedAt, "2025-06-17T19:59:02.25842291Z");
+    assert.deepEqual(pinned.dependencies, {
+        base: ">=4.12.0.0 && <5",
+        "ghc-prim": ">=0.5.0.0 && <0.14",
+        text: ">=1.2.3.0 && <1.3 || >=2.0 && <2.2",
+        generically: ">=0.1 && <0.2",
+        "time-compat": ">=1.9.6 && <0.10",
+    });
+    assert.equal(
+        pinned.registryUrl,
+        "https://hackage.haskell.org/package/aeson-2.2.3.0",
+    );
+
+    const unknownVersion = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "hackage", name: "aeson", version: "9.9.9" },
+    });
+    assert.equal(unknownVersion.isError, true);
+    const unknownPackage = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "hackage", name: "no-such-package-xyz" },
+    });
+    assert.equal(unknownPackage.isError, true);
+    const badName = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "hackage", name: "not a package!" },
+    });
+    assert.equal(badName.isError, true);
+    assert.deepEqual(urls, [
+        "https://hackage.haskell.org/package/aeson.json",
+        "https://hackage.haskell.org/package/aeson-2.3.2.0.json",
+        "https://hackage.haskell.org/package/aeson-2.3.2.0/aeson.cabal",
+        "https://hackage.haskell.org/package/aeson.json",
+        "https://hackage.haskell.org/package/aeson-2.2.3.0.json",
+        "https://hackage.haskell.org/package/aeson-2.2.3.0/aeson.cabal",
+        "https://hackage.haskell.org/package/aeson.json",
+        "https://hackage.haskell.org/package/no-such-package-xyz.json",
+    ]);
+});
+
 test("package_downloads passes through daily counts and validates names", async (t) => {
     const expected = {
         package: "@scope/pkg",

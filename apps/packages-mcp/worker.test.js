@@ -690,3 +690,216 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("package_downloads reads PyPI counts from pypistats overall", async (t) => {
+    // Trimmed real `overall` response for requests, 2026-11-04..2026-11-13.
+    const overall = {
+        data: [
+            {
+                category: "with_mirrors",
+                date: "2026-11-04",
+                downloads: 58998698,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-05",
+                downloads: 60144116,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-06",
+                downloads: 55554404,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-07",
+                downloads: 35821876,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-08",
+                downloads: 34855440,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-09",
+                downloads: 52345004,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-10",
+                downloads: 56052238,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-11",
+                downloads: 53491901,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-12",
+                downloads: 55662468,
+            },
+            {
+                category: "with_mirrors",
+                date: "2026-11-13",
+                downloads: 53446287,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-04",
+                downloads: 58700559,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-05",
+                downloads: 59789714,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-06",
+                downloads: 55204677,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-07",
+                downloads: 35621843,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-08",
+                downloads: 34683425,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-09",
+                downloads: 52054535,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-10",
+                downloads: 55698180,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-11",
+                downloads: 53167728,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-12",
+                downloads: 55344465,
+            },
+            {
+                category: "without_mirrors",
+                date: "2026-11-13",
+                downloads: 53147899,
+            },
+        ],
+        package: "requests",
+        type: "overall_downloads",
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(
+            url,
+            "https://pypistats.org/api/packages/requests/overall",
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        return Response.json(overall);
+    });
+    const client = await clientFor(t);
+
+    // last-week ends at the latest day with data and sums with_mirrors only.
+    assert.deepEqual(
+        await call(client, "package_downloads", {
+            ecosystem: "pypi",
+            name: "requests",
+        }),
+        {
+            package: "requests",
+            ecosystem: "pypi",
+            range: "last-week",
+            start: "2026-11-07",
+            end: "2026-11-13",
+            total: 341675214,
+            downloads: [
+                { day: "2026-11-07", downloads: 35821876 },
+                { day: "2026-11-08", downloads: 34855440 },
+                { day: "2026-11-09", downloads: 52345004 },
+                { day: "2026-11-10", downloads: 56052238 },
+                { day: "2026-11-11", downloads: 53491901 },
+                { day: "2026-11-12", downloads: 55662468 },
+                { day: "2026-11-13", downloads: 53446287 },
+            ],
+        },
+    );
+
+    // A custom range slices the same series.
+    assert.deepEqual(
+        await call(client, "package_downloads", {
+            ecosystem: "pypi",
+            name: "requests",
+            range: "2026-11-05:2026-11-07",
+        }),
+        {
+            package: "requests",
+            ecosystem: "pypi",
+            range: "2026-11-05:2026-11-07",
+            start: "2026-11-05",
+            end: "2026-11-07",
+            total: 151520396,
+            downloads: [
+                { day: "2026-11-05", downloads: 60144116 },
+                { day: "2026-11-06", downloads: 55554404 },
+                { day: "2026-11-07", downloads: 35821876 },
+            ],
+        },
+    );
+
+    // A range reaching past the available data keeps the available rows and
+    // notes where coverage starts instead of failing.
+    const year = await call(client, "package_downloads", {
+        ecosystem: "pypi",
+        name: "requests",
+        range: "last-year",
+    });
+    assert.equal(year.start, "2025-11-14");
+    assert.equal(year.end, "2026-11-13");
+    assert.equal(year.coverage_start, "2026-11-04");
+    assert.equal(year.downloads.length, 10);
+    assert.equal(year.total, 516372432);
+});
+
+test("package_downloads rejects invalid PyPI names and unknown packages", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        if (
+            url ===
+            "https://pypistats.org/api/packages/this-package-does-not-exist-xyz123/overall"
+        )
+            return new Response("404", { status: 404 });
+        throw new Error(`unexpected fetch ${url}`);
+    });
+    const client = await clientFor(t);
+
+    const bad = await client.callTool({
+        name: "package_downloads",
+        arguments: { ecosystem: "pypi", name: "not a package!" },
+    });
+    assert.equal(bad.isError, true);
+
+    const upper = await client.callTool({
+        name: "package_downloads",
+        arguments: { ecosystem: "pypi", name: "Requests" },
+    });
+    assert.equal(upper.isError, true);
+
+    const unknown = await client.callTool({
+        name: "package_downloads",
+        arguments: {
+            ecosystem: "pypi",
+            name: "this-package-does-not-exist-xyz123",
+        },
+    });
+    assert.equal(unknown.isError, true);
+});

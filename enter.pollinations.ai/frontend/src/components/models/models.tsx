@@ -605,7 +605,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                         Avoid sensitive data.
                     </strong>{" "}
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/safety">
                             Privacy filter
                         </InlineLink>
                         <span aria-hidden="true">·</span>

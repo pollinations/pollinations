@@ -9,7 +9,10 @@ const repoId = z
     .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/);
 const summary = (data) => ({
     id: data.id,
-    task: data.pipeline_tag,
+    task:
+        data.pipeline_tag ??
+        data.cardData?.task_categories?.[0] ??
+        data.tags?.find((t) => t.startsWith("task_categories:"))?.slice(16),
     downloads: data.downloads,
     likes: data.likes,
 });
@@ -34,7 +37,7 @@ async function info(kind, id) {
         stage: data.runtime?.stage,
         tags: data.tags?.slice(0, 20),
         tagsTruncated: (data.tags?.length ?? 0) > 20,
-        url: `https://huggingface.co/${kind === "spaces" ? "spaces/" : ""}${id}`,
+        url: `https://huggingface.co/${kind === "spaces" ? "spaces/" : kind === "datasets" ? "datasets/" : ""}${id}`,
     };
 }
 export const hfTools = [
@@ -66,6 +69,35 @@ export const hfTools = [
         "Inspect public Hugging Face model metadata: task, library, license, parameter count, usage counts and up to 20 tags. Gated metadata is not permission to download a model.",
         { id: repoId },
         ({ id }) => info("models", id),
+    ],
+    [
+        "hf_search_datasets",
+        "Search public Hugging Face datasets by keyword and optional task category (for example question-answering), ordered by downloads. Returns at most 25 matches, not an exhaustive list. No dataset download.",
+        {
+            query: z.string().trim().min(1).max(200),
+            task: z.string().trim().min(1).max(64).optional(),
+            limit: z.number().int().min(1).max(25).default(10),
+        },
+        async ({ query, task, limit }) => {
+            const url = new URL("https://huggingface.co/api/datasets");
+            url.search = new URLSearchParams({
+                search: query,
+                limit: String(limit),
+                sort: "downloads",
+                direction: "-1",
+            });
+            if (task) url.searchParams.set("filter", `task_categories:${task}`);
+            const data = await fetchJson(url);
+            if (!Array.isArray(data))
+                throw new Error("Invalid Hugging Face search response");
+            return { datasets: data.slice(0, limit).map(summary) };
+        },
+    ],
+    [
+        "hf_dataset_info",
+        "Inspect public Hugging Face dataset metadata: task, license, download and like counts and up to 20 tags. Gated metadata is not permission to download a dataset.",
+        { id: repoId },
+        ({ id }) => info("datasets", id),
     ],
     [
         "hf_space_info",

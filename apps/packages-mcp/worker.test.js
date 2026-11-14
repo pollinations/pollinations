@@ -419,6 +419,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "aur", name: "../bad" }],
+        ["package_lookup", { ecosystem: "aur", name: "Yay" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -654,6 +656,107 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
     ]);
+});
+
+test("AUR lookup resolves the latest release from the RPC and rejects unknown packages", async (t) => {
+    const yay = {
+        Depends: ["pacman>6.1", "git"],
+        Description:
+            "Yet another yogurt. Pacman wrapper and AUR helper written in go.",
+        FirstSubmitted: 1475688004,
+        ID: 2316242,
+        Keywords: ["arm", "AUR", "go", "helper", "pacman", "wrapper", "x86"],
+        LastModified: 1793196922,
+        License: ["GPL-3.0-or-later"],
+        Maintainer: "jguer",
+        MakeDepends: ["go>=1.26"],
+        Name: "yay",
+        NumVotes: 2650,
+        OptDepends: ["sudo", "doas"],
+        OutOfDate: null,
+        PackageBase: "yay",
+        PackageBaseID: 115973,
+        Popularity: 13.382708,
+        Submitter: "jguer",
+        URL: "https://github.com/Jguer/yay",
+        URLPath: "/cgit/aur.git/snapshot/yay.tar.gz",
+        Version: "13.1.0-1",
+    };
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const target = new URL(url);
+        assert.equal(target.origin, "https://aur.archlinux.org");
+        assert.equal(target.pathname, "/rpc/v5/info");
+        if (target.searchParams.getAll("arg[]").includes("yay")) {
+            assert.equal(
+                url,
+                "https://aur.archlinux.org/rpc/v5/info?arg[]=yay",
+            );
+            return Response.json({
+                resultcount: 1,
+                results: [yay],
+                type: "multiinfo",
+                version: 5,
+            });
+        }
+        return Response.json({
+            resultcount: 0,
+            results: [],
+            type: "multiinfo",
+            version: 5,
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "aur",
+        name: "yay",
+    });
+    assert.equal(latest.name, "yay");
+    assert.equal(latest.version, "13.1.0-1");
+    assert.equal(
+        latest.description,
+        "Yet another yogurt. Pacman wrapper and AUR helper written in go.",
+    );
+    assert.deepEqual(latest.license, ["GPL-3.0-or-later"]);
+    assert.equal(latest.homepage, "https://github.com/Jguer/yay");
+    assert.equal(latest.maintainer, "jguer");
+    assert.equal(latest.numVotes, 2650);
+    assert.equal(latest.popularity, 13.382708);
+    assert.equal(latest.outOfDate, null);
+    assert.deepEqual(latest.dependencies, ["pacman>6.1", "git"]);
+    assert.deepEqual(latest.makeDependencies, ["go>=1.26"]);
+    assert.deepEqual(latest.optDependencies, ["sudo", "doas"]);
+    assert.equal(
+        latest.downloadUrl,
+        "https://aur.archlinux.org/cgit/aur.git/snapshot/yay.tar.gz",
+    );
+    assert.equal(latest.registryUrl, "https://aur.archlinux.org/packages/yay");
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "aur",
+        name: "yay",
+        version: "13.1.0-1",
+    });
+    assert.equal(pinned.version, "13.1.0-1");
+    assert.equal(
+        (
+            await client.callTool({
+                name: "package_lookup",
+                arguments: { ecosystem: "aur", name: "yay", version: "0.0.0" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "package_lookup",
+                arguments: {
+                    ecosystem: "aur",
+                    name: "this-package-does-not-exist-xyz123",
+                },
+            })
+        ).isError,
+        true,
+    );
 });
 
 test("package_downloads passes through daily counts and validates names", async (t) => {

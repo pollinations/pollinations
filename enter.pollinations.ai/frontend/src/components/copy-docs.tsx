@@ -53,8 +53,6 @@ export const CopyDocs: FC<{ section: DocsSection }> = ({ section }) => {
             </Button>
             <CopyButton
                 value={() => fetchDocs(section)}
-                copiedTimeoutMs={1500}
-                tooltip="Copy as text for AI"
                 aria-label={`Copy ${label} as text`}
                 variant="button"
                 intent="neutral"

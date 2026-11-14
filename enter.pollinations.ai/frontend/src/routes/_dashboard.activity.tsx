@@ -1,4 +1,10 @@
-import { ClockIcon, InlineLink, Section, TerminalIcon } from "@pollinations/ui";
+import {
+    ClockIcon,
+    CodeIcon,
+    CopyField,
+    InlineLink,
+    Section,
+} from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
     ActivityOverview,
@@ -8,7 +14,6 @@ import {
     activityTimezone,
     parseActivityPeriod,
 } from "../components/activity/activity-period";
-import { CopyValue } from "../components/models/copy-value.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
 import { Footnotes } from "../components/pollen/pollen-balance.tsx";
 
@@ -70,18 +75,25 @@ function ActivityPage() {
                             Times shown in your timezone ({activityTimezone()})
                         </span>
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                        <TerminalIcon className="h-3.5 w-3.5 shrink-0" />
-                        <span>Get this history in your terminal:</span>
-                        <CopyValue
-                            value="polli usage --history"
-                            label="Copy CLI command"
-                            showCopyIcon
-                        />
-                        <span aria-hidden="true">·</span>
-                        <InlineLink href="https://gen.pollinations.ai/docs#tag/cli">
-                            CLI docs
-                        </InlineLink>
+                    {/* The Keys footer's terminal line: the catalog's small
+                        copy pill, indented under its text. */}
+                    <div className="flex items-start gap-1.5">
+                        <CodeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span>
+                                From your terminal ·{" "}
+                                <InlineLink href="https://gen.pollinations.ai/docs#tag/cli">
+                                    CLI docs
+                                </InlineLink>
+                            </span>
+                            <div className="w-fit min-w-0 max-w-full">
+                                <CopyField
+                                    label="Copy CLI command"
+                                    value="polli usage --history"
+                                    size="sm"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </Footnotes>
             </Section>

@@ -836,3 +836,26 @@ test("media models advertise the resolutions they accept", async () => {
         expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
     }
 });
+
+test("experimental models advertise that they are alpha", async () => {
+    type ListedModel = { id: string; alpha?: boolean };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.alpha, model.id).toEqual(
+            registry.resolve(model.id)?.info.alpha || undefined,
+        );
+    }
+    const alphaModels = list.data.filter((model) => model.alpha);
+    expect(alphaModels.length).toBeGreaterThan(0);
+    const first = alphaModels[0];
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent(first.id)}`,
+    );
+    expect(response.status, first.id).toBe(200);
+    const retrieved = (await response.json()) as ListedModel;
+    expect(retrieved.alpha, first.id).toBe(true);
+});

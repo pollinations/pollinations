@@ -843,6 +843,9 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        alpha: ModelInfoSchema.shape.alpha.describe(
+            "True for experimental models with potential instability; omitted for stable models.",
+        ),
         supports_streaming: z
             .boolean()
             .optional()

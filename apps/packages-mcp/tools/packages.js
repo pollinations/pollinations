@@ -13,6 +13,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Homebrew formula names are lowercase; versioned formulae carry @major[.minor].
+        homebrew: /^[a-z0-9][a-z0-9._+@-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +168,30 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    // Homebrew publishes one formula document per name; there is no
+    // per-version endpoint, so only the stable version is resolvable.
+    if (ecosystem === "homebrew") {
+        const data = await fetchJson(
+            `https://formulae.brew.sh/api/formula/${encoded}.json`,
+        );
+        const stable = data.versions?.stable;
+        if (version && version !== stable)
+            throw new Error(
+                `Homebrew version ${version} not found for ${name}`,
+            );
+        return {
+            ecosystem,
+            name: data.name,
+            version: stable,
+            description: data.desc,
+            license: data.license,
+            homepage: data.homepage,
+            dependencies: data.dependencies ?? [],
+            buildDependencies: data.build_dependencies ?? [],
+            downloads: data.analytics?.install?.["365d"]?.[data.name] ?? null,
+            registryUrl: `https://formulae.brew.sh/formula/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +229,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or Homebrew formula metadata. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Homebrew stable version (the formulae API has no per-version endpoint). Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +239,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "homebrew",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

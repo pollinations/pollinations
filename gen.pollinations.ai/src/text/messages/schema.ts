@@ -187,7 +187,10 @@ export const CreateMessageRequestSchema = z
                 disable_parallel_tool_use: z.boolean().optional(),
             })
             .superRefine((choice, context) => {
-                if (choice.type === "tool" && !choice.name) {
+                if (
+                    choice.type === "tool" &&
+                    (choice.name == null || choice.name.trim() === "")
+                ) {
                     context.addIssue({
                         code: "custom",
                         path: ["name"],

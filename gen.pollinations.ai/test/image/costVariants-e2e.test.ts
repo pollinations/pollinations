@@ -27,7 +27,10 @@ type ReplicateCall = {
 function createBillingVariantMocks() {
     const replicateState: { calls: ReplicateCall[] } = { calls: [] };
     const openRouterState: { calls: Record<string, unknown>[] } = { calls: [] };
-    const xaiState: { calls: Record<string, unknown>[] } = { calls: [] };
+    const xaiState = {
+        calls: [] as Record<string, unknown>[],
+        unavailable: false,
+    };
     const falState = { submissions: 0 };
     return createFetchMock({
         fal: {
@@ -94,6 +97,8 @@ function createBillingVariantMocks() {
             state: xaiState,
             handlerMap: {
                 "api.x.ai": async (request: Request) => {
+                    if (xaiState.unavailable)
+                        return new Response(null, { status: 503 });
                     xaiState.calls.push(
                         (await request.json()) as Record<string, unknown>,
                     );
@@ -317,6 +322,96 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         tokenPriceCompletionImage: 0.06,
         totalCost: expect.closeTo(0.07, 8),
         totalPrice: 0.07,
+    });
+});
+
+test("Grok Imagine Pro names use Image 2.0 low at 1K", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "xai", "media");
+    syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+        "XAI_API_KEY",
+    ]);
+
+    const names = [
+        "x-ai/grok-imagine-image-quality",
+        "grok-aurora",
+        "aurora",
+        "grok-imagine-image-quality",
+        "grok-imagine-image-pro",
+        "grok-imagine-pro",
+    ];
+    for (const model of names) {
+        await generate(
+            `/image/grok-alias-${model.replaceAll("/", "-")}?model=${model}`,
+            paidApiKey,
+        );
+    }
+    await generate("/v1/images/generations", paidApiKey, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            model: "grok-imagine-pro",
+            prompt: "grok-alias-generate",
+        }),
+    });
+    await generate("/v1/images/edits", paidApiKey, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            model: "grok-imagine-pro",
+            prompt: "grok-alias-edit",
+            image: INPUT_IMAGE_URL,
+        }),
+    });
+
+    expect(mocks.xai.state.calls).toEqual(
+        Array.from({ length: names.length + 2 }, () =>
+            expect.objectContaining({
+                model: "grok-imagine-image-2.0",
+                quality: "low",
+                resolution: "1k",
+            }),
+        ),
+    );
+    expect(mocks.tinybird.state.events).toHaveLength(names.length + 2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            modelUsed: "x-ai/grok-imagine-image-2.0",
+            costVariant: "low_1k",
+            tokenPriceCompletionImage: 0.04,
+            totalPrice: expect.closeTo(
+                event.tokenCountPromptImage ? 0.05 : 0.04,
+                8,
+            ),
+        });
+    }
+
+    await mocks.enable("tinybird", "xai", "openrouter", "media");
+    mocks.xai.state.unavailable = true;
+    syncImageEnv(
+        {
+            OPENROUTER_API_KEY: "openrouter-test-key",
+        } as CloudflareBindings,
+        ["OPENROUTER_API_KEY"],
+    );
+    await generate(
+        "/image/grok-alias-fallback?model=grok-imagine-pro",
+        paidApiKey,
+    );
+    expect(mocks.openrouter.state.calls).toEqual([
+        expect.objectContaining({
+            model: "x-ai/grok-imagine-image-2.0",
+            quality: "low",
+            resolution: "1K",
+            provider: { only: ["xai"], allow_fallbacks: false },
+        }),
+    ]);
+    expect(mocks.tinybird.state.events.at(-1)).toMatchObject({
+        modelUsed: "x-ai/grok-imagine-image-2.0:openrouter",
+        costVariant: "low_1k",
+        totalPrice: 0.04,
     });
 });
 

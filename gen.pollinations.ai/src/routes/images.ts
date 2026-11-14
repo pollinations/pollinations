@@ -22,7 +22,10 @@ import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
-import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    defaultImageQuality,
+    generateImageOrVideoResponse,
+} from "@/image/handler.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
@@ -108,7 +111,7 @@ function resolveParams(opts: {
 }): {
     width?: number;
     height?: number;
-    quality: string;
+    quality?: string;
     seed: number;
 } {
     // Width/height are only emitted when the caller actually passed `size`.
@@ -122,7 +125,9 @@ function resolveParams(opts: {
     return {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
-        quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
+        ...(opts.quality && {
+            quality: QUALITY_MAP[opts.quality] || opts.quality,
+        }),
         seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
     };
 }
@@ -288,7 +293,6 @@ export async function prepareImageEditRequest(
         ...extra,
         ...input,
         model: c.var.model.requested,
-        quality: input.quality || "medium",
         safe: normalizeSafeValue(input.safe),
         prompt: await applySafetyToInput(c, input.prompt, input.safe),
         image: imageUrls.map((image_url) => ({ image_url })),
@@ -380,6 +384,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
                         ? c.var.model.requested
                         : c.var.model.resolved,
                     ...resolved,
+                    quality:
+                        resolved.quality ??
+                        defaultImageQuality(c.var.model.requested),
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),
             ),

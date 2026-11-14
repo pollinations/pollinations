@@ -236,7 +236,7 @@ export type FallbackCandidate = {
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
     /** Serving registry entry. Absent on the model the caller asked for. */
-    entry?: GenerationModelEntry;
+    entry?: GenerationModelEntry & { requestedId?: string };
 };
 
 type PrimaryModel = {

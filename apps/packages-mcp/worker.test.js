@@ -690,3 +690,136 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("Hex lookup resolves the latest stable release from hex.pm and reads its requirements", async (t) => {
+    const pkg = {
+        name: "phoenix",
+        latest_stable_version: "1.8.16",
+        latest_version: "1.8.16",
+        meta: {
+            description: "Peace of mind from prototype to production",
+            licenses: ["MIT"],
+            links: {
+                Changelog: "https://phoenix.hexdocs.pm/changelog.html",
+                GitHub: "https://github.com/phoenixframework/phoenix",
+            },
+        },
+        downloads: {
+            all: 160225575,
+            day: 99149,
+            recent: 6635882,
+            week: 643565,
+        },
+        releases: [
+            {
+                version: "1.8.16",
+                url: "https://hex.pm/api/packages/phoenix/releases/1.8.16",
+                has_docs: true,
+            },
+            {
+                version: "1.8.15",
+                url: "https://hex.pm/api/packages/phoenix/releases/1.8.15",
+                has_docs: true,
+            },
+        ],
+    };
+    const latestRelease = {
+        version: "1.8.16",
+        requirements: {
+            jason: { app: "jason", optional: true, requirement: "~> 1.0" },
+            phoenix_pubsub: {
+                app: "phoenix_pubsub",
+                optional: false,
+                requirement: "~> 2.4",
+            },
+            phoenix_template: {
+                app: "phoenix_template",
+                optional: false,
+                requirement: "~> 1.0",
+            },
+            plug: { app: "plug", optional: false, requirement: "~> 1.14" },
+        },
+        retirement: null,
+    };
+    const pinnedRelease = {
+        version: "1.8.15",
+        requirements: {
+            phoenix_pubsub: {
+                app: "phoenix_pubsub",
+                optional: false,
+                requirement: "~> 2.1",
+            },
+            plug: { app: "plug", optional: false, requirement: "~> 1.14" },
+            telemetry: {
+                app: "telemetry",
+                optional: false,
+                requirement: "~> 0.4 or ~> 1.0",
+            },
+        },
+        retirement: null,
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).endsWith("/api/packages/phoenix"))
+            return new Response(JSON.stringify(pkg), {
+                headers: { "Content-Type": "application/json" },
+            });
+        if (String(url).endsWith("/releases/1.8.16"))
+            return new Response(JSON.stringify(latestRelease), {
+                headers: { "Content-Type": "application/json" },
+            });
+        return new Response(JSON.stringify(pinnedRelease), {
+            headers: { "Content-Type": "application/json" },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "hex",
+        name: "phoenix",
+    });
+    assert.equal(latest.version, "1.8.16");
+    assert.equal(
+        latest.description,
+        "Peace of mind from prototype to production",
+    );
+    assert.deepEqual(latest.licenses, ["MIT"]);
+    assert.equal(
+        latest.homepage,
+        "https://github.com/phoenixframework/phoenix",
+    );
+    assert.equal(latest.downloads, 160225575);
+    assert.equal(latest.retired, null);
+    assert.deepEqual(latest.dependencies, [
+        { name: "jason", requirement: "~> 1.0", optional: true },
+        { name: "phoenix_pubsub", requirement: "~> 2.4", optional: false },
+        { name: "phoenix_template", requirement: "~> 1.0", optional: false },
+        { name: "plug", requirement: "~> 1.14", optional: false },
+    ]);
+    assert.equal(latest.registryUrl, "https://hex.pm/packages/phoenix/1.8.16");
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "hex",
+        name: "phoenix",
+        version: "1.8.15",
+    });
+    assert.equal(pinned.version, "1.8.15");
+    assert.deepEqual(pinned.dependencies, [
+        { name: "phoenix_pubsub", requirement: "~> 2.1", optional: false },
+        { name: "plug", requirement: "~> 1.14", optional: false },
+        { name: "telemetry", requirement: "~> 0.4 or ~> 1.0", optional: false },
+    ]);
+    assert.deepEqual(urls, [
+        "https://hex.pm/api/packages/phoenix",
+        "https://hex.pm/api/packages/phoenix/releases/1.8.16",
+        "https://hex.pm/api/packages/phoenix",
+        "https://hex.pm/api/packages/phoenix/releases/1.8.15",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "hex", name: "Not-A-Name" }),
+        /Invalid hex package name/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "hex", name: "phoenix", version: "9.9.9" }),
+        /Hex version 9.9.9 not found for phoenix/,
+    );
+});

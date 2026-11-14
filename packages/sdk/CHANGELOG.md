@@ -2,6 +2,11 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.29] - 2026-11-14
+
+### Added
+- `ModelInfo.required_safety` exposes the mandatory safety checks applied to a model.
+
 ## [5.1.0-alpha.28] - 2026-11-11
 
 ### Fixed

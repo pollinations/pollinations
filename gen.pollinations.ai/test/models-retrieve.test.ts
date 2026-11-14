@@ -234,42 +234,61 @@ test("every catalog entry states paid_only as a boolean", async () => {
     }
 });
 
-test("OpenAI-compatible model listings expose required safety checks", async () => {
+test("OpenAI-compatible model listings expose required safety checks from primary and fallback models", async () => {
     const owner = `safety-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
     const id = `community/${owner}/safe`;
+    const fallbackId = `community/${owner}/safe-fallback`;
+    const payload = (fallbacks: string[]) =>
+        JSON.stringify({
+            paidOnly: false,
+            bearerTokenCiphertext:
+                "test-placeholder-not-used-for-generation",
+            api: "chat_completions",
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks,
+            prices: {},
+        });
     await drizzle(env.DB)
         .insert(communityEndpoint)
-        .values({
-            id: crypto.randomUUID(),
-            ownerUserId,
-            name: "safe",
-            title: "safe",
-            type: "proxy",
-            baseUrl: "https://provider.example/v1/chat/completions",
-            upstreamModel: "test",
-            requiredSafetyFeatures: ["privacy", "secrets"],
-            visibility: "public",
-            payload: JSON.stringify({
-                paidOnly: false,
-                bearerTokenCiphertext:
-                    "test-placeholder-not-used-for-generation",
-                api: "chat_completions",
-                modality: "text",
-                imagePricing: "request",
-                inputModalities: ["text"],
-                perUserRpm: null,
-                fallbacks: [],
-                prices: {},
-            }),
-        });
+        .values([
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe",
+                title: "safe",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["privacy"],
+                visibility: "public" as const,
+                payload: payload([fallbackId]),
+            },
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe-fallback",
+                title: "safe-fallback",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["secrets"],
+                visibility: "public" as const,
+                payload: payload([]),
+            },
+        ]);
     await resetGenerationModelRegistryCache(env);
 
     const registry = await getGenerationModelRegistry(env);
-    expect(registry.resolve(id)?.info.required_safety).toEqual([
-        "privacy",
-        "secrets",
-    ]);
+    expect(registry.resolve(id)?.info.required_safety).toEqual(["privacy"]);
+    expect(
+        registry.resolve(id)?.fallbackEntries?.map(
+            (fallback) => fallback.info.required_safety,
+        ),
+    ).toEqual([["secrets"]]);
 
     const listResponse = await fetchWorker("/v1/models?reliability=all");
     expect(listResponse.status).toBe(200);

@@ -223,6 +223,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "books",
+                alpha: true,
+                name: "Books",
+                description:
+                    "Book and author metadata, editions and ISBNs from Open Library.",
+                url: "https://gen.pollinations.ai/mcp/books",
+                pricing: {
+                    description:
+                        "Open Library lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

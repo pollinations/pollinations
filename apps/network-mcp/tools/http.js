@@ -96,18 +96,17 @@ export function inspectSecurityHeaders(headers, isHttps) {
     const hsts = read("strict-transport-security");
     const maxAge = hsts?.match(/(?:^|;)\s*max-age\s*=\s*(\d+)(?:\s*;|$)/i);
     const csp = read("content-security-policy");
-    // Headers may coalesce repeated CSP field lines with commas. Each policy is
-    // independently enforced, so parse each policy rather than treating the
-    // following policy's directives as extra sources for the first one.
-    const policies = (csp ?? "").split(/,(?=\\s*[a-z-]+\\s)/i).map((policy) => {
-        const directives = new Map();
+    // Multiple CSP field lines may be coalesced into a comma-separated value.
+    // Each policy is enforced independently; a later policy cannot loosen an earlier one.
+    const policies = (csp ?? "").split(/,(?=\s*[a-z-]+\s)/i).map((policy) => {
+        const map = new Map();
         for (const part of policy.split(";")) {
-            const [name, ...sources] = part.trim().split(/\\s+/);
+            const [name, ...sources] = part.trim().split(/\s+/);
             const key = name?.toLowerCase();
-            if (key && !directives.has(key))
-                directives.set(key, sources.map((source) => source.toLowerCase()));
+            if (key && !map.has(key))
+                map.set(key, sources.map((source) => source.toLowerCase()));
         }
-        return directives;
+        return map;
     });
     const directives = policies[0] ?? new Map();
     const effectiveSources = (policy, names) => {
@@ -117,14 +116,10 @@ export function inspectSecurityHeaders(headers, isHttps) {
         return [];
     };
     const scriptInlineAllowed = policies.length > 0 && policies.every((policy) =>
-        ["script-src-elem", "script-src", "default-src"].some((name) =>
-            effectiveSources(policy, [name]).includes("'unsafe-inline'"),
-        ),
+        effectiveSources(policy, ["script-src-elem", "script-src", "default-src"]).includes("'unsafe-inline'"),
     );
     const styleInlineAllowed = policies.length > 0 && policies.every((policy) =>
-        ["style-src-elem", "style-src", "default-src"].some((name) =>
-            effectiveSources(policy, [name]).includes("'unsafe-inline'"),
-        ),
+        effectiveSources(policy, ["style-src-elem", "style-src", "default-src"]).includes("'unsafe-inline'"),
     );
     const scriptEvalAllowed = policies.length > 0 && policies.every((policy) =>
         effectiveSources(policy, ["script-src", "default-src"]).includes("'unsafe-eval'"),
@@ -166,7 +161,7 @@ export function inspectSecurityHeaders(headers, isHttps) {
             present: csp !== null,
             directives: [...directives.keys()],
             has_default_src: directives.has("default-src"),
-            has_frame_ancestors: directives.has("frame-ancestors"),
+            has_frame_ancestors: policies.some((policy) => policy.has("frame-ancestors")),
             allows_unsafe_inline: scriptInlineAllowed || styleInlineAllowed,
             allows_unsafe_eval: scriptEvalAllowed,
         },

@@ -267,7 +267,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Network",
         description:
-            "Public DNS records, HTTP diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
+            "Public DNS and email-domain checks, certificate-transparency subdomain discovery, HTTP response and security-header diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
         binding: "NETWORK_MCP",
         billing: "downstream",
         pricing: {

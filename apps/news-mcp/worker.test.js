@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { getText } from "./fetch.js";
 import { parseFeed } from "./tools/feeds.js";
+import { summarizeStory } from "./tools/lobsters.js";
 import worker from "./worker.js";
 
 async function client(options = {}) {
@@ -25,7 +26,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +36,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "lobsters_stories",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +61,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -183,6 +185,7 @@ test("invalid arguments fail before fetch", async (t) => {
     const c = await client();
     for (const [name, args] of [
         ["hn_stories", { limit: 21 }],
+        ["lobsters_stories", { limit: 21 }],
         ["hn_item", { id: -1 }],
         ["hn_search", { query: " " }],
     ]) {
@@ -438,4 +441,110 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+// Fixture: first two stories of the live /hottest.json response, fetched
+// 2026-11-14 ~20:53 +08 (HTTP 200, 12,168 B, 0.67 s, 25 stories).
+const lobstersHottest = [
+    {
+        short_id: "lh9pwf",
+        created_at: "2026-11-13T03:16:28.886-06:00",
+        title: "How Not to Build a Music Player",
+        url: "https://alichraghi.github.io/blog/how-not-to-build-a-music-player",
+        score: 96,
+        flags: 3,
+        comment_count: 24,
+        description: "",
+        description_plain: "",
+        submitter_user: "alichraghi",
+        user_is_author: true,
+        tags: ["person", "zig"],
+        short_id_url: "https://lobste.rs/s/lh9pwf",
+        comments_url: "https://lobste.rs/s/lh9pwf/how_not_build_music_player",
+    },
+    {
+        short_id: "9oq6fr",
+        created_at: "2026-11-13T05:36:44.546-06:00",
+        title: "The need for at least a third option",
+        url: "https://blog.ovalerio.net/archives/3359",
+        score: 67,
+        flags: 0,
+        comment_count: 25,
+        description: "",
+        description_plain: "",
+        submitter_user: "dethos",
+        user_is_author: true,
+        tags: ["android", "ios", "mobile"],
+        short_id_url: "https://lobste.rs/s/9oq6fr",
+        comments_url:
+            "https://lobste.rs/s/9oq6fr/need_for_at_least_third_option",
+    },
+];
+
+test("Lobsters lists hottest stories with live-measured values; requests never forward auth/cookies", async (t) => {
+    const mock = t.mock.method(globalThis, "fetch", async (input, init) => {
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.equal(init.redirect, "manual");
+        const url = new URL(input);
+        assert.equal(url.hostname, "lobste.rs");
+        assert.match(url.pathname, /^\/(hottest|newest)\.json$/);
+        return Response.json(lobstersHottest);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "lobsters_stories",
+        arguments: { limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), [
+        {
+            short_id: "lh9pwf",
+            title: "How Not to Build a Music Player",
+            url: "https://alichraghi.github.io/blog/how-not-to-build-a-music-player",
+            score: 96,
+            comment_count: 24,
+            tags: ["person", "zig"],
+            submitter_user: "alichraghi",
+            created_at: "2026-11-13T03:16:28.886-06:00",
+            comments_url:
+                "https://lobste.rs/s/lh9pwf/how_not_build_music_player",
+        },
+        {
+            short_id: "9oq6fr",
+            title: "The need for at least a third option",
+            url: "https://blog.ovalerio.net/archives/3359",
+            score: 67,
+            comment_count: 25,
+            tags: ["android", "ios", "mobile"],
+            submitter_user: "dethos",
+            created_at: "2026-11-13T05:36:44.546-06:00",
+            comments_url:
+                "https://lobste.rs/s/9oq6fr/need_for_at_least_third_option",
+        },
+    ]);
+    const newest = await c.callTool({
+        name: "lobsters_stories",
+        arguments: { list: "newest", limit: 1 },
+    });
+    assert.equal(JSON.parse(newest.content[0].text).length, 1);
+    mock.mock.mockImplementation(async () => Response.json({}));
+    const bad = await c.callTool({
+        name: "lobsters_stories",
+        arguments: {},
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /did not return a story list/);
+});
+
+test("Lobsters summary keeps link fields and drops moderation internals", () => {
+    const [story] = lobstersHottest;
+    const summary = summarizeStory(story);
+    assert.equal(summary.flags, undefined);
+    assert.equal(summary.description, undefined);
+    assert.equal(summary.user_is_author, undefined);
+    assert.equal(summary.short_id_url, undefined);
+    assert.equal(summary.score, 96);
+    assert.deepEqual(summarizeStory({ ...story, tags: undefined }).tags, []);
 });

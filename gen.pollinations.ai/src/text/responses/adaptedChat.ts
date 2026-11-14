@@ -854,7 +854,7 @@ export function chatStreamToResponsesStream(
                 delta.reasoning ??
                 thinkingText(delta.content_blocks, "delta"),
         );
-        output.delta("text", delta.content);
+        output.delta("text", messageText(delta.content));
         output.annotations(delta.annotations);
         output.delta("refusal", delta.refusal);
         for (const call of delta.tool_calls ?? []) {

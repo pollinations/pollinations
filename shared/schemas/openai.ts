@@ -1015,11 +1015,11 @@ export const CreateImageRequestSchema = z
         background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
-        user: z.string().optional().meta({
+        user: z.string().min(1).optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
         image: z
-            .union([z.string(), z.array(z.string())])
+            .union([z.string().min(1), z.array(z.string().min(1))])
             .optional()
             .meta({
                 description:
@@ -1076,10 +1076,10 @@ export const CreateImageEditRequestSchema = z
         }),
         image: z
             .union([
-                z.string().meta({ description: "Image URL" }),
+                z.string().min(1).meta({ description: "Image URL" }),
                 z.array(
                     z.object({
-                        image_url: z.string().meta({
+                        image_url: z.string().min(1).meta({
                             description:
                                 "URL or base64 data URI of the source image",
                         }),

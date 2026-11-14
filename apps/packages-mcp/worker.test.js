@@ -690,3 +690,139 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("Maven lookup resolves the latest release from repo1 metadata and reads the POM", async (t) => {
+    const metadata = `<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <versioning>
+    <latest>3.22.0</latest>
+    <release>3.22.0</release>
+    <versions>
+      <version>3.14.0</version>
+      <version>3.22.0</version>
+    </versions>
+    <lastUpdated>20260101000000</lastUpdated>
+  </versioning>
+</metadata>`;
+    const latestPom = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>commons-lang3</artifactId>
+  <version>3.22.0</version>
+  <name>Apache Commons Lang</name>
+  <description>
+  Apache Commons Lang, a package of Java utility classes.
+  </description>
+  <url>https://commons.apache.org/proper/commons-lang/</url>
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.easymock</groupId>
+      <artifactId>easymock</artifactId>
+      <version>5.2.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>`;
+    const pinnedPom = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>commons-lang3</artifactId>
+  <version>3.14.0</version>
+  <name>Apache Commons Lang</name>
+  <description>Apache Commons Lang, a package of Java utility classes.</description>
+  <url>https://commons.apache.org/proper/commons-lang/</url>
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>`;
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).endsWith("maven-metadata.xml"))
+            return new Response(metadata, {
+                headers: { "Content-Type": "application/xml" },
+            });
+        if (String(url).endsWith("3.22.0/commons-lang3-3.22.0.pom"))
+            return new Response(latestPom, {
+                headers: { "Content-Type": "application/xml" },
+            });
+        return new Response(pinnedPom, {
+            headers: { "Content-Type": "application/xml" },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "maven",
+        name: "org.apache.commons:commons-lang3",
+    });
+    assert.equal(latest.version, "3.22.0");
+    assert.equal(
+        latest.description,
+        "Apache Commons Lang, a package of Java utility classes.",
+    );
+    assert.deepEqual(latest.licenses, ["Apache-2.0"]);
+    assert.equal(
+        latest.homepage,
+        "https://commons.apache.org/proper/commons-lang/",
+    );
+    assert.deepEqual(latest.dependencies, [
+        {
+            group: "org.junit.jupiter",
+            artifact: "junit-jupiter",
+            version: null,
+            scope: "test",
+        },
+        {
+            group: "org.easymock",
+            artifact: "easymock",
+            version: "5.2.0",
+            scope: "test",
+        },
+    ]);
+    assert.equal(
+        latest.registryUrl,
+        "https://central.sonatype.com/artifact/org.apache.commons/commons-lang3/3.22.0",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "maven",
+        name: "org.apache.commons:commons-lang3",
+        version: "3.14.0",
+    });
+    assert.equal(pinned.version, "3.14.0");
+    assert.deepEqual(pinned.licenses, []);
+    assert.deepEqual(urls, [
+        "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/maven-metadata.xml",
+        "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.22.0/commons-lang3-3.22.0.pom",
+        "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/maven-metadata.xml",
+        "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.14.0/commons-lang3-3.14.0.pom",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "maven", name: "not-a-coordinate" }),
+        /Invalid maven package name/,
+    );
+    await assert.rejects(
+        lookup({
+            ecosystem: "maven",
+            name: "org.apache.commons:commons-lang3",
+            version: "9.9.9",
+        }),
+        /Maven version 9.9.9 not found for org.apache.commons:commons-lang3/,
+    );
+});

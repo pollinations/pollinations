@@ -25,8 +25,8 @@ export function createImageCommand() {
         .description("Generate an image from a prompt")
         .argument("<prompt>", "Image description")
         .option("--model <model>", "Image model", "zimage")
-        .option("--width <n>", "Image width", "1024")
-        .option("--height <n>", "Image height", "1024")
+        .option("--width <n>", "Image width (default: model's size)")
+        .option("--height <n>", "Image height (default: model's size)")
         .option("--seed <n>", "Random seed")
         .option("--safe", "Enable safety filters")
         .option(
@@ -42,11 +42,11 @@ export function createImageCommand() {
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
-            const params = new URLSearchParams({
-                model: opts.model,
-                width: opts.width,
-                height: opts.height,
-            });
+            // Sending no size lets gen pick the model's default and keep an
+            // edited image's aspect ratio.
+            const params = new URLSearchParams({ model: opts.model });
+            if (opts.width) params.set("width", opts.width);
+            if (opts.height) params.set("height", opts.height);
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
@@ -66,8 +66,8 @@ export function createImageCommand() {
             if (opts.estimate)
                 return printEstimate(opts.model, {
                     kind: "image",
-                    width: Number(opts.width),
-                    height: Number(opts.height),
+                    width: Number(opts.width ?? 1024),
+                    height: Number(opts.height ?? 1024),
                     references: opts.image?.length ?? 0,
                 });
 

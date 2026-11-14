@@ -13,6 +13,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // CPAN distributions (Moose, DBD-mysql) or module names (Moose::Util).
+        cpan: /^(?:[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+|[A-Za-z0-9][A-Za-z0-9._-]*)$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +168,99 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "cpan") {
+        // MetaCPAN names a release by distribution; a module name resolves
+        // to its distribution first.
+        let distribution = name;
+        if (name.includes("::")) {
+            const module = await fetchJson(
+                `https://fastapi.metacpan.org/v1/module/${encodeURIComponent(name)}`,
+            );
+            distribution = module.distribution;
+            if (!distribution)
+                throw new Error(`MetaCPAN module ${name} not found`);
+        }
+        // /v1/release/<dist> returns the latest release. The
+        // /release/<dist>/<version> path answers {"release": null}, so a
+        // pinned version goes through _search instead.
+        const fields = [
+            "name",
+            "version",
+            "license",
+            "author",
+            "date",
+            "download_url",
+            "abstract",
+            "distribution",
+            "resources",
+            "status",
+            "maturity",
+            "archive",
+            "dependency",
+            "main_module",
+        ].join(",");
+        let data;
+        if (version) {
+            const escapeLucene = (value) =>
+                value.replace(/([+\-=!(){}[\]^"~*?:\\/&|])/g, "\\$1");
+            const query = `distribution:${escapeLucene(distribution)} AND version:${escapeLucene(version)}`;
+            const search = await fetchJson(
+                `https://fastapi.metacpan.org/v1/release/_search?q=${encodeURIComponent(query)}&size=1&_source=${encodeURIComponent(fields)}`,
+            );
+            data = search.hits?.hits?.[0]?._source;
+            // The distribution field is analyzed, so a query for Moose can
+            // also match e.g. Test-Moose; confirm the exact hit.
+            if (
+                !data ||
+                data.distribution?.toLowerCase() !==
+                    distribution.toLowerCase() ||
+                data.version !== version
+            )
+                throw new Error(
+                    `MetaCPAN version ${version} not found for ${distribution}`,
+                );
+        } else {
+            data = await fetchJson(
+                `https://fastapi.metacpan.org/v1/release/${encodeURIComponent(distribution)}`,
+            );
+        }
+        const repository = data.resources?.repository;
+        return {
+            ecosystem,
+            name: data.distribution,
+            version: data.version,
+            description: data.abstract,
+            license: data.license,
+            author: data.author,
+            date: data.date,
+            mainModule: data.main_module,
+            maturity: data.maturity,
+            status: data.status,
+            homepage: data.resources?.homepage,
+            repository:
+                typeof repository === "string"
+                    ? repository
+                    : (repository?.web ?? repository?.url),
+            bugtracker: data.resources?.bugtracker?.web,
+            downloadUrl: data.download_url,
+            // Only runtime requires; configure/test/suggests are dropped.
+            dependencies: Object.fromEntries(
+                (data.dependency ?? [])
+                    .filter(
+                        (dependency) =>
+                            dependency.phase === "runtime" &&
+                            dependency.relationship === "requires",
+                    )
+                    .map((dependency) => [
+                        dependency.module,
+                        dependency.version,
+                    ]),
+            ),
+            registryUrl: data.archive
+                ? `https://metacpan.org/release/${data.author}/${data.archive}`
+                : `https://metacpan.org/dist/${encodeURIComponent(data.distribution)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +298,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/CPAN (Perl) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, CPAN latest release. CPAN takes a distribution name (Moose) or a module name (Moose::Util); dependencies are runtime requires only. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +308,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "cpan",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

@@ -11,11 +11,23 @@ import { test } from "../fixtures.ts";
 
 const endpointUrl = "http://localhost:3000/api/account/my-models";
 
+// An approved publisher: allowlisted, with Discord connected.
 async function approveCommunityModels(): Promise<void> {
-    await drizzle(env.DB)
+    const db = drizzle(env.DB);
+    const [user] = await db
         .update(schema.user)
         .set({ githubId: 36901823 })
-        .where(eq(schema.user.githubUsername, "testuser"));
+        .where(eq(schema.user.githubUsername, "testuser"))
+        .returning({ id: schema.user.id });
+    await db
+        .insert(schema.account)
+        .values({
+            id: `discord-${user.id}`,
+            accountId: "discord-testuser",
+            providerId: "discord",
+            userId: user.id,
+        })
+        .onConflictDoNothing();
 }
 
 async function postModel(

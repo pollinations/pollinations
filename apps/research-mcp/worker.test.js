@@ -350,6 +350,7 @@ for (const modern of [false, true]) {
             [
                 "wikipedia_page",
                 "wikipedia_search",
+                "wikimedia_commons_search",
                 "wiktionary_define",
                 "rfc_search",
                 "rfc_metadata",
@@ -644,4 +645,184 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Wikimedia Commons search formats media files with license and dimensions", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "commons.wikimedia.org");
+        assert.equal(url.searchParams.get("action"), "query");
+        assert.equal(url.searchParams.get("generator"), "search");
+        assert.equal(url.searchParams.get("gsrnamespace"), "6");
+        if (url.searchParams.get("gsrsearch") === "red panda")
+            // Trimmed live response; pages arrive out of rank order (index 2
+            // before index 1) and must be sorted by index.
+            return Response.json({
+                batchcomplete: true,
+                query: {
+                    pages: [
+                        {
+                            pageid: 39790,
+                            ns: 6,
+                            title: "File:Red Panda.JPG",
+                            index: 2,
+                            imageinfo: [
+                                {
+                                    size: 84545,
+                                    width: 1024,
+                                    height: 683,
+                                    mime: "image/jpeg",
+                                    thumburl:
+                                        "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Red_Panda.JPG/330px-Red_Panda.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+                                    url: "https://upload.wikimedia.org/wikipedia/commons/c/c6/Red_Panda.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+                                    descriptionurl:
+                                        "https://commons.wikimedia.org/wiki/File:Red_Panda.JPG",
+                                    extmetadata: {
+                                        ImageDescription: {
+                                            value: "Red panda (<i>Ailurus fulgens</i>) in Munich Zoo",
+                                        },
+                                        Artist: {
+                                            value: 'User <a href="//commons.wikimedia.org/wiki/User:Baerni" title="User:Baerni">Bernard Landgraf</a>',
+                                        },
+                                        LicenseShortName: {
+                                            value: "CC BY-SA 3.0",
+                                        },
+                                        LicenseUrl: {
+                                            value: "http://creativecommons.org/licenses/by-sa/3.0/",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            pageid: 123456,
+                            ns: 6,
+                            title: "File:Red Panda (24986761703).jpg",
+                            index: 1,
+                            imageinfo: [
+                                {
+                                    size: 1234567,
+                                    width: 3900,
+                                    height: 2583,
+                                    mime: "image/jpeg",
+                                    thumburl:
+                                        "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/Red_Panda_%2824986761703%29.jpg/320px-Red_Panda_%2824986761703%29.jpg",
+                                    url: "https://upload.wikimedia.org/wikipedia/commons/e/e6/Red_Panda_%2824986761703%29.jpg",
+                                    descriptionurl:
+                                        "https://commons.wikimedia.org/wiki/File:Red_Panda_(24986761703).jpg",
+                                    extmetadata: {
+                                        ImageDescription: {
+                                            value: "Red Panda at a zoo",
+                                        },
+                                        Artist: {
+                                            value: '<a rel="nofollow" class="external text" href="https://www.flickr.com/people/91501748@N07">Mathias Appel</a>',
+                                        },
+                                        LicenseShortName: { value: "CC0" },
+                                        LicenseUrl: {
+                                            value: "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            });
+        if (url.searchParams.get("gsrsearch") === "beethoven")
+            return Response.json({
+                batchcomplete: true,
+                query: {
+                    pages: [
+                        {
+                            pageid: 789,
+                            ns: 6,
+                            title: "File:Beethoven Moonlight 2nd movement.ogg",
+                            index: 1,
+                            imageinfo: [
+                                {
+                                    size: 2317258,
+                                    width: 0,
+                                    height: 0,
+                                    mime: "application/ogg",
+                                    thumburl:
+                                        "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+                                    url: "https://upload.wikimedia.org/wikipedia/commons/1/12/Beethoven_Moonlight_2nd_movement.ogg",
+                                    descriptionurl:
+                                        "https://commons.wikimedia.org/wiki/File:Beethoven_Moonlight_2nd_movement.ogg",
+                                    extmetadata: {
+                                        ImageDescription: { value: "" },
+                                        Artist: {
+                                            value: "<bdi>Ludwig van Beethoven</bdi>",
+                                        },
+                                        LicenseShortName: {
+                                            value: "CC BY-SA 2.0 de",
+                                        },
+                                        LicenseUrl: {
+                                            value: "https://creativecommons.org/licenses/by-sa/2.0/de/deed.en",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            });
+        return Response.json({ batchcomplete: true });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "wikimedia_commons_search", {
+        query: "red panda",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const { query, results } = value(result);
+    assert.equal(query, "red panda");
+    assert.equal(results.length, 2);
+    // Rank order restored: index 1 first, despite arriving second.
+    assert.equal(results[0].title, "Red Panda (24986761703).jpg");
+    assert.equal(results[0].license, "CC0");
+    assert.equal(
+        results[0].licenseUrl,
+        "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    );
+    assert.equal(results[0].author, "Mathias Appel");
+    assert.equal(results[0].width, 3900);
+    assert.equal(results[0].height, 2583);
+    assert.equal(results[0].mime, "image/jpeg");
+    assert.equal(results[0].description, "Red Panda at a zoo");
+    assert.match(
+        results[0].pageUrl,
+        /commons\.wikimedia\.org\/wiki\/File:Red_Panda_\(24986761703\)\.jpg/,
+    );
+    assert.equal(results[1].title, "Red Panda.JPG");
+    assert.equal(results[1].license, "CC BY-SA 3.0");
+    assert.equal(results[1].author, "User Bernard Landgraf");
+    assert.equal(results[1].width, 1024);
+    assert.equal(results[1].height, 683);
+    assert.equal(
+        results[1].description,
+        "Red panda (Ailurus fulgens) in Munich Zoo",
+    );
+    // Tracking params stripped from file URLs.
+    assert.doesNotMatch(results[1].url, /utm_source/);
+    assert.doesNotMatch(results[1].thumbnail, /utm_source/);
+    assert.match(results[1].thumbnail, /330px-Red_Panda\.JPG$/);
+
+    // Audio has no dimensions; empty description becomes null.
+    const audio = value(
+        await call(c, "wikimedia_commons_search", { query: "beethoven" }),
+    );
+    assert.equal(audio.results.length, 1);
+    assert.equal(audio.results[0].mime, "application/ogg");
+    assert.equal(audio.results[0].width, null);
+    assert.equal(audio.results[0].height, null);
+    assert.equal(audio.results[0].description, null);
+    assert.equal(audio.results[0].license, "CC BY-SA 2.0 de");
+
+    // No matches is a clean empty result, not an error.
+    const empty = value(
+        await call(c, "wikimedia_commons_search", { query: "zzzqqqxxyyww" }),
+    );
+    assert.deepEqual(empty.results, []);
 });

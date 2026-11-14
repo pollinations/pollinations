@@ -4,9 +4,17 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { applySafetyToInput } from "@/middleware/safety.ts";
 
-type SafetyTextTarget = { text: string; set: (value: string) => void };
+type SafetyTextTarget = {
+    text: string;
+    shieldExempt?: boolean;
+    set: (value: string) => void;
+};
 
-function collectTextParts(value: unknown, targets: SafetyTextTarget[]): void {
+function collectTextParts(
+    value: unknown,
+    targets: SafetyTextTarget[],
+    shieldExempt = false,
+): void {
     if (!Array.isArray(value)) return;
     for (const rawPart of value) {
         if (!rawPart || typeof rawPart !== "object") continue;
@@ -17,6 +25,7 @@ function collectTextParts(value: unknown, targets: SafetyTextTarget[]): void {
         ) {
             targets.push({
                 text: part.text,
+                ...(shieldExempt ? { shieldExempt } : {}),
                 set: (text) => {
                     part.text = text;
                 },
@@ -36,6 +45,7 @@ export async function applySafetyToResponseRequest(
     if (typeof next.instructions === "string") {
         targets.push({
             text: next.instructions,
+            shieldExempt: true,
             set: (value) => {
                 next.instructions = value;
             },
@@ -52,6 +62,8 @@ export async function applySafetyToResponseRequest(
         for (const rawItem of next.input) {
             if (!rawItem || typeof rawItem !== "object") continue;
             const item = rawItem as Record<string, unknown>;
+            const itemShieldExempt =
+                item.role === "system" || item.role === "developer";
             if (typeof item.output === "string") {
                 targets.push({
                     text: item.output,
@@ -65,20 +77,26 @@ export async function applySafetyToResponseRequest(
             if (typeof item.content === "string") {
                 targets.push({
                     text: item.content,
+                    ...(itemShieldExempt ? { shieldExempt: true } : {}),
                     set: (value) => {
                         item.content = value;
                     },
                 });
                 continue;
             }
-            collectTextParts(item.content, targets);
+            collectTextParts(item.content, targets, itemShieldExempt);
         }
     }
 
+    const shieldExemptIndexes = new Set<number>();
+    for (const [index, target] of targets.entries()) {
+        if (target.shieldExempt) shieldExemptIndexes.add(index);
+    }
     const safeTexts = await applySafetyToInput(
         c,
         targets.map((target) => target.text),
         body.safe as SafeValue,
+        shieldExemptIndexes.size ? shieldExemptIndexes : undefined,
     );
     let changed = false;
     for (const [index, target] of targets.entries()) {

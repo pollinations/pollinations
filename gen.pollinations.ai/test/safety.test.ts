@@ -662,6 +662,147 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
         });
     });
 
+    it("ignores shield triggers from system text but still scans user text", async () => {
+        guardrailResponse = {
+            action: "GUARDRAIL_INTERVENED",
+            assessments: [
+                {
+                    contentPolicy: {
+                        filters: [{ action: "BLOCKED", type: "PROMPT_ATTACK" }],
+                    },
+                },
+                { contentPolicy: { filters: [] } },
+            ],
+            outputs: [{ text: "You are a helpful assistant." }, { text: "hi" }],
+        };
+
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "shield",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are a helpful assistant.",
+                        },
+                        { role: "user", content: "hi" },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a helpful assistant.",
+                },
+                { role: "user", content: "hi" },
+            ],
+        });
+    });
+
+    it("ignores shield triggers from Responses instructions", async () => {
+        guardrailResponse = {
+            action: "GUARDRAIL_INTERVENED",
+            assessments: [
+                {
+                    contentPolicy: {
+                        filters: [{ action: "BLOCKED", type: "PROMPT_ATTACK" }],
+                    },
+                },
+                { contentPolicy: { filters: [] } },
+            ],
+            outputs: [{ text: "You are a helpful assistant." }, { text: "hi" }],
+        };
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "shield",
+                    instructions: "You are a helpful assistant.",
+                    input: [{ role: "user", content: "hi" }],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            instructions: "You are a helpful assistant.",
+            input: [{ role: "user", content: "hi" }],
+        });
+    });
+
+    it("still blocks shield for user text", async () => {
+        guardrailResponse = intervened({
+            contentPolicy: {
+                filters: [{ action: "BLOCKED", type: "PROMPT_ATTACK" }],
+            },
+        });
+
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "shield",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "You are a helpful assistant.",
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+    });
+
+    it("still blocks secrets in system text", async () => {
+        guardrailResponse = intervened({
+            sensitiveInformationPolicy: {
+                regexes: [
+                    {
+                        action: "BLOCKED",
+                        name: "POLLINATIONS_SECRET_KEY",
+                    },
+                ],
+            },
+        });
+
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "secrets",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "sk_live_should_not_be_here",
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+    });
+
     it("checks array-form function outputs in Responses requests", async () => {
         guardrailResponse = intervened(
             {

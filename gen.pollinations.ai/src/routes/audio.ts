@@ -2314,11 +2314,12 @@ async function parseSpeechRequest(
             });
         }
 
-        const parsed: CreateSpeechRequest = {
+        const parsed: z.input<typeof CreateSpeechRequestSchema> = {
             model: (formData.get("model") as string | null) || undefined,
             input: typeof input === "string" ? input : "",
             safe: (formData.get("safe") as string | undefined) || undefined,
-            voice: (formData.get("voice") as string | null) || "alloy",
+            // The schema defaults a missing voice and rejects an empty one.
+            voice: (formData.get("voice") as string | null) ?? undefined,
             response_format:
                 (formData.get("response_format") as
                     | "wav"

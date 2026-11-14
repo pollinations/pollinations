@@ -690,3 +690,95 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("CRAN lookup resolves the latest release from crandb with dependencies and exact versions", async (t) => {
+    const latest = {
+        Package: "ggplot2",
+        Version: "4.0.4",
+        Title: "Create Elegant Data Visualisations Using the Grammar of Graphics",
+        Description:
+            "A system for 'declaratively' creating graphics, based on \"The\nGrammar of Graphics\". You provide the data, tell 'ggplot2' how to map\nvariables to aesthetics, what graphical primitives to use, and it\ntakes care of the details.",
+        License: "MIT + file LICENSE",
+        Maintainer: "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
+        URL: "https://ggplot2.tidyverse.org,\nhttps://github.com/tidyverse/ggplot2",
+        BugReports: "https://github.com/tidyverse/ggplot2/issues",
+        Depends: { R: ">= 4.1" },
+        Imports: {
+            cli: "*",
+            grDevices: "*",
+            grid: "*",
+            gtable: ">= 0.3.6",
+            isoband: "*",
+            lifecycle: ">\n1.0.1",
+            rlang: ">= 1.1.0",
+            S7: "*",
+            scales: ">= 1.4.0",
+            stats: "*",
+            vctrs: ">= 0.6.0",
+            withr: ">= 2.5.0",
+        },
+        Suggests: { broom: "*", dplyr: "*", knitr: "*" },
+        LinkingTo: null,
+        "Date/Publication": "2026-11-14 00:20:15 UTC",
+        NeedsCompilation: "no",
+    };
+    const exact = {
+        ...latest,
+        Version: "3.4.4",
+        Imports: { cli: "*", glue: "*", rlang: ">= 1.1.0" },
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        if (url === "https://crandb.r-pkg.org/nosuchpkg")
+            return new Response('{"error":"not_found"}', { status: 404 });
+        return Response.json(url.endsWith("/ggplot2/3.4.4") ? exact : latest);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "cran",
+        name: "ggplot2",
+    });
+    assert.equal(data.version, "4.0.4");
+    assert.equal(
+        data.title,
+        "Create Elegant Data Visualisations Using the Grammar of Graphics",
+    );
+    assert.equal(data.license, "MIT + file LICENSE");
+    assert.equal(
+        data.maintainer,
+        "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
+    );
+    assert.equal(data.homepage, "https://ggplot2.tidyverse.org");
+    assert.equal(
+        data.bugReports,
+        "https://github.com/tidyverse/ggplot2/issues",
+    );
+    assert.equal(data.dependencies.rlang, ">= 1.1.0");
+    assert.equal(data.depends.R, ">= 4.1");
+    assert.equal(data.suggests.dplyr, "*");
+    assert.equal(
+        data.registryUrl,
+        "https://cran.r-project.org/package=ggplot2",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "cran",
+        name: "ggplot2",
+        version: "3.4.4",
+    });
+    assert.equal(pinned.version, "3.4.4");
+    assert.equal(pinned.dependencies.glue, "*");
+    await assert.rejects(
+        lookup({ ecosystem: "cran", name: "nosuchpkg" }),
+        /crandb.r-pkg.org returned HTTP 404/,
+    );
+    assert.deepEqual(urls, [
+        "https://crandb.r-pkg.org/ggplot2",
+        "https://crandb.r-pkg.org/ggplot2/3.4.4",
+        "https://crandb.r-pkg.org/nosuchpkg",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "cran", name: "not a package" }),
+        /Invalid cran package name/,
+    );
+});

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "datacite_search",
             ].sort(),
         );
     });
@@ -644,4 +645,118 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("DataCite search formats dataset and software DOIs", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.datacite.org");
+        assert.equal(url.pathname, "/dois");
+        const query = url.searchParams.get("query");
+        if (query === "climate") {
+            assert.equal(url.searchParams.get("page[size]"), "2");
+            return Response.json({
+                data: [
+                    {
+                        id: "10.17605/osf.io/aybqs",
+                        attributes: {
+                            doi: "10.17605/osf.io/aybqs",
+                            titles: [
+                                {
+                                    title: "Economic Costs of Heat-Related Illness: A Scoping Review Protocol",
+                                },
+                            ],
+                            creators: [
+                                { name: "Septiara Putri" },
+                                { name: "Tsabitah Addinni" },
+                            ],
+                            publisher: "OSF Registries",
+                            publicationYear: 2026,
+                            subjects: [
+                                { subject: "Medicine and Health Sciences" },
+                                { subject: "climate change" },
+                            ],
+                            types: {
+                                resourceTypeGeneral: "StudyRegistration",
+                                resourceType: "Pre-registration",
+                            },
+                            url: "https://osf.io/aybqs/",
+                        },
+                    },
+                    {
+                        id: "10.5281/zenodo.21493697",
+                        attributes: {
+                            doi: "10.5281/zenodo.21493697",
+                            titles: [
+                                {
+                                    title: "SARA Android Edge AI: Code and Experimental Results",
+                                },
+                            ],
+                            creators: [{ name: "Anonymous" }],
+                            publisher: "Zenodo",
+                            publicationYear: 2026,
+                            subjects: [
+                                { subject: "Android" },
+                                { subject: "edge AI" },
+                                { subject: "TensorFlow Lite" },
+                            ],
+                            types: {
+                                resourceTypeGeneral: "Software",
+                                resourceType: "",
+                            },
+                            url: "https://zenodo.org/doi/10.5281/zenodo.21493697",
+                        },
+                    },
+                ],
+                meta: { total: 2, totalPages: 1, page: 1 },
+            });
+        }
+        return Response.json({
+            data: [],
+            meta: { total: 0, totalPages: 0, page: 1 },
+        });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "datacite_search", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 2);
+    assert.equal(searchVal.query, "climate");
+    assert.equal(searchVal.results[0].doi, "10.17605/osf.io/aybqs");
+    assert.equal(
+        searchVal.results[0].title,
+        "Economic Costs of Heat-Related Illness: A Scoping Review Protocol",
+    );
+    assert.deepEqual(searchVal.results[0].creators, [
+        "Septiara Putri",
+        "Tsabitah Addinni",
+    ]);
+    assert.equal(searchVal.results[0].publisher, "OSF Registries");
+    assert.equal(searchVal.results[0].year, 2026);
+    assert.deepEqual(searchVal.results[0].subjects, [
+        "Medicine and Health Sciences",
+        "climate change",
+    ]);
+    assert.equal(searchVal.results[0].resourceType, "StudyRegistration");
+    assert.equal(searchVal.results[0].type, "Pre-registration");
+    assert.equal(searchVal.results[0].url, "https://osf.io/aybqs/");
+    assert.equal(searchVal.results[1].doi, "10.5281/zenodo.21493697");
+    assert.equal(searchVal.results[1].resourceType, "Software");
+    assert.equal(searchVal.results[1].type, null);
+    assert.deepEqual(searchVal.results[1].subjects, [
+        "Android",
+        "edge AI",
+        "TensorFlow Lite",
+    ]);
+
+    const emptyRes = await call(c, "datacite_search", {
+        query: "zzzzqqqqnonexistentterm",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).results, []);
 });

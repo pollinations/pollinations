@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
+                "json_format",
                 "next_cron_runs",
                 "rank_palette",
                 "time_convert",
@@ -674,4 +675,95 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("json_format pretty-prints, minifies, sorts keys and validates", async (t) => {
+    const client = await clientFor(t);
+    const nested = '{"b":1,"a":{"d":4,"c":3}}';
+    assert.deepEqual(
+        await call(client, "json_format", {
+            input: nested,
+            mode: "pretty",
+            indent: 2,
+        }),
+        {
+            valid: true,
+            mode: "pretty",
+            output: '{\n  "b": 1,\n  "a": {\n    "d": 4,\n    "c": 3\n  }\n}',
+        },
+    );
+    assert.deepEqual(
+        await call(client, "json_format", {
+            input: nested,
+            mode: "pretty",
+            indent: 4,
+            sort_keys: true,
+        }),
+        {
+            valid: true,
+            mode: "pretty",
+            output: '{\n    "a": {\n        "c": 3,\n        "d": 4\n    },\n    "b": 1\n}',
+        },
+    );
+    // Sorting is recursive; arrays keep their order.
+    assert.equal(
+        (
+            await call(client, "json_format", {
+                input: '{"z":[{"b":1,"a":2}]}',
+                mode: "pretty",
+                sort_keys: true,
+            })
+        ).output,
+        '{\n  "z": [\n    {\n      "a": 2,\n      "b": 1\n    }\n  ]\n}',
+    );
+    assert.deepEqual(
+        await call(client, "json_format", {
+            input: '{ "b" : 1 , "a" : [ 1 , 2 ] }',
+            mode: "minify",
+        }),
+        { valid: true, mode: "minify", output: '{"b":1,"a":[1,2]}' },
+    );
+    assert.deepEqual(
+        await call(client, "json_format", {
+            input: '{"a":[1,{"z":9,"y":8}]}',
+            mode: "validate",
+        }),
+        { valid: true, mode: "validate", output: null },
+    );
+    // Top-level primitives format too.
+    assert.equal(
+        (await call(client, "json_format", { input: "42", mode: "pretty" }))
+            .output,
+        "42",
+    );
+});
+
+test("json_format rejects invalid JSON with a position and oversize input", async (t) => {
+    const client = await clientFor(t);
+    for (const [input, position] of [
+        ['{"a":1,}', "position 7"],
+        ['{"a" }', "position 5"],
+        ['{"a":1} extra', "position 8"],
+    ]) {
+        const result = await client.callTool({
+            name: "json_format",
+            arguments: { input, mode: "pretty" },
+        });
+        assert.equal(result.isError, true, input);
+        assert.match(result.content[0].text, /Invalid JSON/);
+        assert.match(result.content[0].text, new RegExp(position), input);
+    }
+    // No position is available for this one, but the error is still clear.
+    const bare = await client.callTool({
+        name: "json_format",
+        arguments: { input: "not json", mode: "pretty" },
+    });
+    assert.equal(bare.isError, true);
+    assert.match(bare.content[0].text, /Invalid JSON/);
+    // Over the 512 KiB cap: rejected before any parsing.
+    const oversize = await client.callTool({
+        name: "json_format",
+        arguments: { input: "x".repeat(524289), mode: "pretty" },
+    });
+    assert.equal(oversize.isError, true);
 });

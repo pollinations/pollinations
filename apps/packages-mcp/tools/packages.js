@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // R package names start with a letter and contain only letters,
+        // digits and dots, never a trailing dot.
+        cran: /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,36 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "cran") {
+        // crandb serves the package DESCRIPTION as JSON: latest at
+        // /{name}, an exact version at /{name}/{version}; unknown
+        // package or version 404s.
+        const data = await fetchJson(
+            version
+                ? `https://crandb.r-pkg.org/${encoded}/${encodeURIComponent(version)}`
+                : `https://crandb.r-pkg.org/${encoded}`,
+        );
+        // URL is a comma-separated list, sometimes line-wrapped.
+        const homepage = data.URL?.split(/[\s,]+/).find(Boolean) ?? null;
+        return {
+            ecosystem,
+            name: data.Package,
+            version: data.Version,
+            title: data.Title,
+            description: data.Description,
+            license: data.License,
+            maintainer: data.Maintainer,
+            homepage,
+            bugReports: data.BugReports,
+            dependencies: data.Imports ?? {},
+            depends: data.Depends ?? {},
+            suggests: data.Suggests ?? {},
+            linkingTo: data.LinkingTo ?? {},
+            published: data["Date/Publication"],
+            needsCompilation: data.NeedsCompilation,
+            registryUrl: `https://cran.r-project.org/package=${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +236,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/CRAN (R) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, CRAN latest version, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +246,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "cran",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Snap names are lowercase, start with a letter or digit, and may
+        // contain hyphens but not end with one (max 64 characters).
+        snapcraft: /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,67 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "snapcraft") {
+        // The store API requires the Snap-Device-Series header (static
+        // value 16, not a credential); without it the API returns 400.
+        // The v2 info response carries no full description (summary only)
+        // and no confinement, so neither is returned.
+        const data = await fetchJson(
+            `https://api.snapcraft.io/v2/snaps/info/${encoded}`,
+            undefined,
+            { "Snap-Device-Series": "16" },
+        );
+        const entries = data["channel-map"] ?? [];
+        // Channel names are the risk alone on the default track
+        // ("stable") and "track/risk" elsewhere ("esr/stable").
+        const track = data["default-track"] ?? "latest";
+        const stableAmd64 = entries.find(
+            (entry) =>
+                entry.channel.track === track &&
+                entry.channel.risk === "stable" &&
+                entry.channel.architecture === "amd64",
+        );
+        const selected = version
+            ? (entries.find(
+                  (entry) =>
+                      entry.version === version &&
+                      entry.channel.track === track &&
+                      entry.channel.risk === "stable" &&
+                      entry.channel.architecture === "amd64",
+              ) ?? entries.find((entry) => entry.version === version))
+            : (stableAmd64 ??
+              entries.find((entry) => entry.channel.risk === "stable") ??
+              entries[0]);
+        if (!selected)
+            throw new Error(
+                version
+                    ? `Snapcraft version ${version} not found for ${name}`
+                    : `Snapcraft snap ${name} has no releases`,
+            );
+        const snap = data.snap ?? {};
+        return {
+            ecosystem,
+            name: data.name,
+            version: selected.version,
+            revision: selected.revision,
+            channel: selected.channel.name,
+            description: snap.summary,
+            license: snap.license,
+            publisher: snap.publisher?.["display-name"],
+            publisherUsername: snap.publisher?.username,
+            publisherValidation: snap.publisher?.validation,
+            homepage: snap["store-url"],
+            downloadSize: selected.download?.size,
+            channels: entries
+                .filter((entry) => entry.channel.architecture === "amd64")
+                .map((entry) => ({
+                    channel: entry.channel.name,
+                    version: entry.version,
+                    revision: entry.revision,
+                })),
+            registryUrl: snap["store-url"],
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +267,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or Snapcraft snap metadata. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Snapcraft latest stable amd64 version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +277,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "snapcraft",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

@@ -826,6 +826,16 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        pricing_variants: ModelInfoSchema.shape.pricing_variants.describe(
+            "Conditional pricing that replaces the base `pricing` rates when the variant applies — e.g. higher rates above a context threshold. Each variant names the condition and its own rates; `pricing_dimensions` says when each applies and `pricing_default_label` says what the base `pricing` covers. Omitted for models with a single price.",
+        ),
+        pricing_default_label:
+            ModelInfoSchema.shape.pricing_default_label.describe(
+                "What the base `pricing` rates cover, e.g. the context range they apply to. Present only when `pricing_variants` exists.",
+            ),
+        pricing_dimensions: ModelInfoSchema.shape.pricing_dimensions.describe(
+            "Request facts that select a pricing variant, e.g. prompt context size. Each dimension maps variant names to display values; the empty key is base pricing. Omitted for models with a single price.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

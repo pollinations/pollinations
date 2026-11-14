@@ -307,7 +307,7 @@ describe("static provider fallbacks", () => {
             provider: "deepinfra",
             hidden: true,
             fallbackOnly: true,
-            paidOnly: false,
+            paidOnly: true,
             aliases: [],
         });
         expect(findModelByName(route)?.config()).toMatchObject({

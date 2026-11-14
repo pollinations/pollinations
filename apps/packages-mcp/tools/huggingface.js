@@ -13,6 +13,16 @@ const summary = (data) => ({
     downloads: data.downloads,
     likes: data.likes,
 });
+const spaceSummary = (data) => ({
+    id: data.id,
+    author: data.id.split("/")[0],
+    likes: data.likes,
+    sdk: data.sdk,
+    tags: data.tags?.slice(0, 20),
+    tagsTruncated: (data.tags?.length ?? 0) > 20,
+    createdAt: data.createdAt,
+    url: `https://huggingface.co/spaces/${data.id}`,
+});
 async function info(kind, id) {
     const data = await fetchJson(
         `https://huggingface.co/api/${kind}/${id.split("/").map(encodeURIComponent).join("/")}`,
@@ -66,6 +76,27 @@ export const hfTools = [
         "Inspect public Hugging Face model metadata: task, library, license, parameter count, usage counts and up to 20 tags. Gated metadata is not permission to download a model.",
         { id: repoId },
         ({ id }) => info("models", id),
+    ],
+    [
+        "hf_search_spaces",
+        "Search public Hugging Face Spaces by keyword, ordered by likes. Returns at most 25 matches, not an exhaustive list. Does not start or execute a Space.",
+        {
+            query: z.string().trim().min(1).max(200),
+            limit: z.number().int().min(1).max(25).default(10),
+        },
+        async ({ query, limit }) => {
+            const url = new URL("https://huggingface.co/api/spaces");
+            url.search = new URLSearchParams({
+                search: query,
+                limit: String(limit),
+                sort: "likes",
+                direction: "-1",
+            });
+            const data = await fetchJson(url);
+            if (!Array.isArray(data))
+                throw new Error("Invalid Hugging Face search response");
+            return { spaces: data.slice(0, limit).map(spaceSummary) };
+        },
     ],
     [
         "hf_space_info",

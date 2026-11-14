@@ -50,12 +50,13 @@ type TestEnv = {
         Partial<ModelVariables & AuthVariables>;
 };
 
-function createTextCacheApp() {
+function createTextCacheApp(model?: ModelVariables["model"]) {
     let originHits = 0;
     const app = new Hono<TestEnv>()
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            if (model) c.set("model", model);
             await next();
         })
         .post(
@@ -319,6 +320,47 @@ describe("text cache", () => {
         await consumeAndWait(missNoAuth);
         expect(missNoAuth.response.status).toBe(401);
         expect(originHits).toBe(1);
+    });
+
+    it("stops replaying cached text when a fallback checkpoint changes", async () => {
+        const env = createTextCacheEnv();
+        const path = "/v1/chat/completions";
+        const body = {
+            model: "openai/gpt-5-nano,qwen/qwen3.8-2.4t-a95b",
+            messages: [{ role: "user", content: "same prompt" }],
+        };
+        const model = {
+            requested: body.model,
+            resolved: "openai/gpt-5-nano",
+            definition: { paidOnly: false },
+            fallbackEntries: [
+                {
+                    id: "qwen/qwen3.8-2.4t-a95b",
+                    definition: { paidOnly: false },
+                },
+            ],
+        } as ModelVariables["model"];
+        const oldApp = createTextCacheApp(model);
+        const warm = await dispatch(oldApp.app, path, chatInit(body), env);
+        await consumeAndWait(warm);
+        const previous = await dispatch(oldApp.app, path, chatInit(body), env);
+        await consumeAndWait(previous);
+        expect(previous.response.headers.get("X-Cache")).toBe("HIT");
+
+        const newApp = createTextCacheApp({
+            ...model,
+            fallbackEntries: model.fallbackEntries?.map((entry) => ({
+                ...entry,
+                definition: {
+                    ...entry.definition,
+                    cacheVersion: "correct-checkpoint",
+                },
+            })),
+        });
+        const changed = await dispatch(newApp.app, path, chatInit(body), env);
+        await consumeAndWait(changed);
+        expect(changed.response.headers.get("X-Cache")).toBe("MISS");
+        expect(newApp.originHits).toBe(1);
     });
 
     it("caches chat completions after JSON validation consumed the body", async () => {

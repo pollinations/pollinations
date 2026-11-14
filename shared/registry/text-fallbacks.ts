@@ -6,6 +6,7 @@ import {
 } from "./cost-variants";
 import {
     openRouterGeminiBilling,
+    reportedTextCost,
     VERCEL_EXA_SEARCH_BILLING,
 } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
@@ -343,11 +344,12 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-flash:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra current 35% discount verified 2026-10-24; callers keep the Novita quote.
+            // DeepInfra standard rates verified 2026-11-11; the 35% discount ended.
+            // Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.091),
-                promptCachedTokens: perMillion(0.00182),
-                completionTextTokens: perMillion(0.182),
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
             },
         },
     },
@@ -421,14 +423,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        "qwen/qwen3.8-2.4t-a95b:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        // SiliconFlow FP8 rates include OpenRouter's 5.5% credit-purchase fee.
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": {
+            provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
         },
     },
@@ -928,9 +929,15 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.004) * 1.055,
-                promptCacheWriteTokens: perMillion(0.125) * 1.055,
                 completionTextTokens: perMillion(0.5) * 1.055,
             },
+        },
+    },
+    "anthropic/claude-fable-5.2": {
+        "anthropic/claude-fable-5.2:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-11-09").getTime(),
+            // Direct Anthropic standard rates match Bedrock global.
         },
     },
     "mistralai/mistral-small-4": {
@@ -1006,6 +1013,30 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 0.5 * 1.055,
             }),
+        },
+    },
+    "google/gemini-4-carbon": {
+        "google/gemini-4-carbon:openrouter:ai-studio": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-11").getTime(),
+            // OpenRouter's posted AI Studio launch rates. Receipt totals also
+            // cover rate changes and the tokens used by the Exa tool loop.
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 7 * 1.055,
+                    storageCostPerMillionTokenHours: 2.25 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
         },
     },
     "google/gemini-4-argon": {

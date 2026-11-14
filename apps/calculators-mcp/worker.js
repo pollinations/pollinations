@@ -2,9 +2,13 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
+import { diffTools } from "./tools/diff.js";
+import { fractionTools } from "./tools/fraction.js";
+import { hashTools } from "./tools/hash.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
+import { versionTools } from "./tools/versions.js";
 
 const handler = createMcpHandler(
     () => {
@@ -18,6 +22,10 @@ const handler = createMcpHandler(
             ...unicodeTools,
             ...qrTools,
             ...currencyTools,
+            ...hashTools,
+            ...diffTools,
+            ...fractionTools,
+            ...versionTools,
         ]) {
             server.registerTool(
                 name,

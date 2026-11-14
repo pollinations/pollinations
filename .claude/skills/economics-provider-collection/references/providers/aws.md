@@ -3,8 +3,9 @@
 Canonical vendor: `aws`
 
 Dashboard routing (verified 2026-09-05): `elliot@myceli.ai` Chrome window;
-Myceli AI payer `301235909293`. Use the registry's Credits link, or Billing and
-Cost Management home → Credits. Do not confuse the payer with linked accounts.
+Myceli AI payer `301235909293`. Use the vendor journal's Credits link, or
+Billing and Cost Management home → Credits. Do not confuse the payer with
+linked accounts.
 
 ## Verified — 2026-08-22
 

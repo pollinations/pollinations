@@ -24,6 +24,7 @@ async function generate3D(params, context) {
     const { prompt, ...options } = params;
     const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/3d/${encodeURIComponent(prompt)}`, options),
+        {},
         context,
     );
     return createMCPResponse([

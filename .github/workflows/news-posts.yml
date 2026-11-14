@@ -245,7 +245,6 @@ jobs:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
           DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
-          DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
         # The morning schedules the Buffer posts of what it wrote; the Sunday
         # afternoon sends the week's Discord post. Every delivery is tried, then
         # the run fails if one did.
@@ -293,7 +292,6 @@ jobs:
         env:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
-          DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
         # Only after Discord has it: the saved post is what went out. A week without
         # changes saves nothing, and a rerun after a save finds it saved.
         run: |

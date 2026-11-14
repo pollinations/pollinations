@@ -141,10 +141,12 @@ export async function postChatCompletion(body, context) {
 
 /**
  * @param {string} url - URL to fetch
+ * @param {Object} [options] - Fetch options, such as method and body
+ * @param {Object} context - Request context carrying the caller's bearer token
  * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and existing public URL
  */
-export async function fetchMediaLink(url, context) {
-    const response = await fetchResponseWithAuth(url, {}, context);
+export async function fetchMediaLink(url, options = {}, context) {
+    const response = await fetchResponseWithAuth(url, options, context);
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
 
@@ -167,8 +169,12 @@ export function parseApiError(status, errorText) {
     try {
         parsed = JSON.parse(errorText);
     } catch {}
+    const rawMessage =
+        parsed?.error?.message ?? parsed?.message ?? parsed?.error ?? errorText;
     const errorMessage =
-        parsed?.error?.message || parsed?.message || parsed?.error || errorText;
+        typeof rawMessage === "string"
+            ? rawMessage
+            : JSON.stringify(rawMessage);
     switch (status) {
         case 400:
             if (

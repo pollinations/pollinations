@@ -90,7 +90,7 @@ function entry(
 // Not E2B's: the opt-in idle pause of a keep.
 const IDLE =
     "With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.";
-const CREATE = `Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. ${IDLE} Enabled \`autoResume\`, an \`iam\` configuration or non-empty \`volumeMounts\` return 400.`;
+const CREATE = `Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. ${IDLE} Enabled \`autoResume\`, an \`iam\` configuration or non-empty \`volumeMounts\` return 400. Pollinations templates come logged in to polli with a key of their own; when your key has a budget, that key starts at 0 Pollen and the response's \`notice\` links the page to give it a budget.`;
 const CONNECT = `Resumes a paused sandbox. Only \`timeout\` and \`idleTimeout\` are used, \`timeout\` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. ${IDLE}`;
 
 const port = {

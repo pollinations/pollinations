@@ -539,3 +539,140 @@ describe("Chat stream to Responses stream", () => {
         );
     });
 });
+
+describe("Responses provider finish errors", () => {
+    it.each(["json", "stream"])(
+        "reports partial %s completions as failed",
+        async (mode) => {
+            const input = request({ input: "hi" });
+            const response =
+                mode === "json"
+                    ? chatCompletionToResponse(input, "m", {
+                          choices: [
+                              {
+                                  message: {
+                                      role: "assistant",
+                                      content: "Partial",
+                                  },
+                                  finish_reason: "error",
+                              },
+                          ],
+                          usage,
+                      } as ChatCompletion)
+                    : (
+                          await events(
+                              chatStreamToResponsesStream(
+                                  sse(
+                                      {
+                                          choices: [
+                                              { delta: { content: "Partial" } },
+                                          ],
+                                      },
+                                      {
+                                          choices: [
+                                              {
+                                                  delta: {},
+                                                  finish_reason: "error",
+                                              },
+                                          ],
+                                      },
+                                      { choices: [], usage },
+                                      "[DONE]",
+                                  ),
+                                  input,
+                                  "m",
+                              ),
+                          )
+                      ).at(-1)?.response;
+            expect(response.status).toBe("failed");
+            expect(response.error?.code).toBe("upstream_error");
+            expect(response.usage).toMatchObject({
+                input_tokens: 9,
+                output_tokens: 4,
+            });
+            expect(response.output[0]).toMatchObject({
+                status: "incomplete",
+                content: [{ type: "output_text", text: "Partial" }],
+            });
+        },
+    );
+});
+
+it("preserves screenshot tool results on the Responses Chat adapter", () => {
+    const chat = responsesToChatRequest(
+        request({
+            input: [
+                {
+                    type: "function_call",
+                    call_id: "screenshot",
+                    name: "browser",
+                    arguments: "{}",
+                },
+                {
+                    type: "function_call_output",
+                    call_id: "screenshot",
+                    output: [
+                        { type: "input_text", text: "Screenshot captured" },
+                        {
+                            type: "input_image",
+                            image_url:
+                                "https://media.pollinations.ai/screenshot.png",
+                        },
+                    ],
+                },
+            ],
+        }),
+    );
+    expect(chat.messages).toContainEqual({
+        role: "user",
+        content: [
+            {
+                type: "image_url",
+                image_url: {
+                    url: "https://media.pollinations.ai/screenshot.png",
+                },
+            },
+        ],
+    });
+    expect(chat.messages).toContainEqual({
+        role: "tool",
+        tool_call_id: "screenshot",
+        content: "Screenshot captured",
+    });
+});
+
+it("keeps tool results together when reasoning sits between them", () => {
+    const call = (call_id: string) => ({
+        type: "function_call",
+        call_id,
+        name: "browser",
+        arguments: "{}",
+    });
+    const chat = responsesToChatRequest(
+        request({
+            input: [
+                call("a"),
+                call("b"),
+                {
+                    type: "function_call_output",
+                    call_id: "a",
+                    output: [
+                        {
+                            type: "input_image",
+                            image_url:
+                                "https://media.pollinations.ai/screenshot.png",
+                        },
+                    ],
+                },
+                { type: "reasoning", id: "rs_1", summary: [] },
+                { type: "function_call_output", call_id: "b", output: "done" },
+            ],
+        }),
+    );
+    expect(chat.messages.map((message) => message.role)).toEqual([
+        "assistant",
+        "tool",
+        "tool",
+        "user",
+    ]);
+});

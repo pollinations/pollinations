@@ -53,10 +53,18 @@ const textCacheAdapter: GenerationCacheAdapter = {
             : variables.model?.requested?.includes(",")
               ? `caller-list:${callerCacheScope(variables.auth)}`
               : undefined;
+        const cacheVersions = [
+            variables.model?.definition.cacheVersion,
+            ...(variables.model?.fallbackEntries?.map(
+                ({ definition }) => definition.cacheVersion,
+            ) ?? []),
+        ].filter((version): version is string => version !== undefined);
         return generateCacheKey(
             c.req.raw,
             bodyText,
-            partition,
+            cacheVersions.length
+                ? JSON.stringify([partition, ...new Set(cacheVersions)])
+                : partition,
             getRequiredSafetyFeatures(variables.model),
         );
     },

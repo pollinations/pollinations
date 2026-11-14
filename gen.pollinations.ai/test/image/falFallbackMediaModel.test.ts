@@ -687,8 +687,8 @@ describe("Grok Replicate primary", () => {
                 usage: result.trackingData.usage,
                 servedBy: IMAGE_SERVICES["x-ai/grok-imagine-video"],
             });
-            expect(billing.cost.totalCost).toBeCloseTo(0.0521, 12);
-            expect(billing.price.totalPrice).toBe(0.0521);
+            expect(billing.cost.totalCost).toBeCloseTo(0.07294, 12);
+            expect(billing.price.totalPrice).toBe(0.07294);
         },
     );
 
@@ -785,6 +785,6 @@ describe("Grok Replicate primary", () => {
             input: { providerBilling: result.trackingData.providerBilling },
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.07, 12);
-        expect(billing.price.totalPrice).toBe(0.05208335);
+        expect(billing.price.totalPrice).toBe(0.07291669);
     });
 });

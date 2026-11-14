@@ -277,8 +277,13 @@ const respond = async (
         signal,
     });
     const output: Item[] = [];
+    let refused = false;
     for await (const event of sseEvents(response)) {
-        if (event.type === "response.output_text.delta") {
+        if (
+            event.type === "response.output_text.delta" ||
+            event.type === "response.refusal.delta"
+        ) {
+            if (event.type === "response.refusal.delta") refused = true;
             await update({
                 sessionUpdate: "agent_message_chunk",
                 content: { type: "text", text: String(event.delta) },
@@ -289,7 +294,7 @@ const respond = async (
             const itemEvent = itemUpdate(item, session.tools);
             if (itemEvent) await update(itemEvent);
         } else if (event.type === "response.completed") {
-            return { output };
+            return { output, ...(refused && { stop: "refusal" as const }) };
         } else if (event.type === "response.incomplete") {
             const response = event.response as {
                 incomplete_details?: { reason?: string };

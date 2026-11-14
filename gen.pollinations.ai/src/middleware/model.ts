@@ -224,6 +224,26 @@ export async function resolveModelDefinition(
 }
 
 /**
+ * An explicit empty model must fail instead of silently using the default;
+ * only an absent field may fall back. A value of any other type is a caller
+ * error too: passing it on used to reach string methods and surface as a 500.
+ */
+function parseRawModel(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== "string") {
+        throw new HTTPException(400, {
+            message: "model: Invalid input: expected string",
+        });
+    }
+    if (value === "") {
+        throw new HTTPException(400, {
+            message: "model: Too small: expected string to have >=1 characters",
+        });
+    }
+    return value;
+}
+
+/**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run after auth and before track so private endpoints can be owner-gated.
  */
@@ -243,27 +263,31 @@ export function resolveModel(
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";
             if (contentType.includes("multipart/form-data")) {
+                let formData: FormData | undefined;
                 try {
-                    const formData = await c.req.formData();
-                    rawModel = (formData.get("model") as string) || null;
-                    // Store formData to avoid re-parsing in route handlers
-                    c.set("formData", formData);
+                    formData = await c.req.formData();
                 } catch {
                     // Form parsing failed, use default
                 }
+                if (formData) {
+                    rawModel = parseRawModel(formData.get("model"));
+                    // Store formData to avoid re-parsing in route handlers
+                    c.set("formData", formData);
+                }
             } else if (hasJsonContentType(contentType)) {
+                let body: { model?: string } | undefined;
                 try {
-                    const body =
+                    body =
                         getValidatedJsonBody<{ model?: string }>(c.req) ||
                         ((await c.req.raw.clone().json()) as
                             | { model?: string }
                             | undefined);
-                    rawModel = body?.model || null;
                 } catch {
                     throw new HTTPException(400, {
                         message: "Invalid JSON body",
                     });
                 }
+                rawModel = parseRawModel(body?.model);
             }
         }
 

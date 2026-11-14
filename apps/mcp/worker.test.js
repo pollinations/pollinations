@@ -8,6 +8,7 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
+    "changeVoice",
     "createEmbeddings",
     "createKey",
     "deleteSite",
@@ -21,6 +22,7 @@ const EXPECTED_TOOLS = [
     "getEarnings",
     "getModelStatus",
     "getUsage",
+    "isolateSpeech",
     "listKeys",
     "listModels",
     "listQuests",

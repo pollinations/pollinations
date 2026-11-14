@@ -225,31 +225,6 @@ function AccountPage() {
                 </Surface>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
-                <span>© 2026 Myceli.AI OÜ</span>
-                <InlineLink
-                    href="https://pollinations.ai/terms"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Terms of Service
-                </InlineLink>
-                <InlineLink
-                    href="https://pollinations.ai/privacy"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Privacy Policy
-                </InlineLink>
-                <InlineLink
-                    href="https://pollinations.ai/refunds"
-                    tone="quiet"
-                    size="footer"
-                >
-                    Refund Policy
-                </InlineLink>
-            </footer>
-
             <DeleteAccountDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
@@ -263,14 +238,11 @@ function ContactEmail({ email }: { email: string }) {
         <CopyButton
             value={email}
             aria-label={`Copy ${email}`}
-            tooltip="Copy email address"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
-                    <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied" : email}
-                    </span>
+                    <span className="min-w-0 break-all">{email}</span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
                         aria-hidden="true"

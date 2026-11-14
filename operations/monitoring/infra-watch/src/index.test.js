@@ -166,7 +166,23 @@ async function fake(input, init = {}) {
 
 beforeAll(() => applyD1Migrations(env.DB, env.TEST_MIGRATIONS));
 
-beforeEach(() => {
+const gpuHeartbeat = (pool, id, at = Date.now(), environment = "production") =>
+    env.GEN_KV.put(
+        `image:server:${environment}:${pool}:${id}`,
+        JSON.stringify({
+            url: `https://${id}.test`,
+            lastHeartbeat: at,
+        }),
+    );
+const healthyGpuPools = () =>
+    Promise.all([
+        gpuHeartbeat("flux", "flux"),
+        gpuHeartbeat("zimage", "zimage"),
+        gpuHeartbeat("sana", "sana1"),
+        gpuHeartbeat("sana", "sana2"),
+    ]);
+
+beforeEach(async () => {
     world = {
         rows: [],
         regular: [],
@@ -195,6 +211,7 @@ beforeEach(() => {
         answers: 0,
     };
     vi.stubGlobal("fetch", fake);
+    await healthyGpuPools();
 });
 afterEach(() => {
     vi.restoreAllMocks();
@@ -218,6 +235,42 @@ const edits = (id) =>
     world.writes.filter(
         (w) => w.ok && w.method === "PATCH" && w.path.endsWith(`/${id}`),
     );
+
+it("labels cached caller counts when a newer status read reports final success", async () => {
+    const stub = watch();
+    world.rows = BAD;
+    await stub.check();
+    await settle(stub);
+    const sampledAt = (await stored(stub, "state")).open[KEY].enriched.at;
+
+    world.rows = [
+        row(10, 10),
+        {
+            ...row(5, 10),
+            is_rollup: 0,
+            provider: "openrouter",
+            fallback_used: false,
+        },
+        {
+            ...row(5, 5),
+            is_rollup: 0,
+            provider: "deepinfra",
+            fallback_used: true,
+        },
+    ];
+    world.failingCallers = 0;
+    await stub.check();
+    await settle(stub);
+
+    const incident = (await stored(stub, "state")).open[KEY];
+    expect(incident.enriched.at).toBe(sampledAt);
+    const text = edits("m1").at(-1).text;
+    expect(text).toMatch(/FINAL\s+100\.0% of 10 reqs 15m/);
+    expect(text).toMatch(/CALLERS\s+3 of 3 failing/);
+    expect(text).toContain(
+        `Caller counts: separate 15m sample, checked <t:${Math.round(sampledAt / 1000)}:f>`,
+    );
+});
 
 it("never edits a closed card back to open", async () => {
     const stub = watch();
@@ -978,6 +1031,7 @@ const answers = (broken, reported) => (path, body) => {
 };
 // A check, and the community cycle it started.
 const cycled = async (stub) => {
+    await healthyGpuPools();
     await stub.check();
     await runInDurableObject(stub, (instance) => instance.cycle);
 };
@@ -1048,7 +1102,7 @@ it("opens a payments card on the first unpaid payment with a ping, keeps it whil
             id: "pi_3UZX8i7rcjS3l7tr1Scu896L",
             ref: "in_1UZX8g7rcjS3l7trEyyzuUj8",
             amount_cents: 1065,
-            reason: "unknown auto top-up attempt",
+            reason: "",
             n: 1,
             at: "2026-11-08 14:32:15",
         },
@@ -1109,7 +1163,13 @@ it("opens an early-errors card on the first bad minute with a ping, keeps it whi
     await stub.check();
     await settle(stub);
     expect(await early()).toBeUndefined();
-    expect(over(edits(card.messageId).at(-1))).toBe(true);
+    // Like a model card: it keeps its box, and ends on a green AI line under
+    // the red opening one.
+    const last = edits(card.messageId).at(-1);
+    expect(over(last)).toBe(true);
+    expect(last.text).toContain("236 reqs failed in 1 min");
+    expect(last.text).toMatch(/🔴 <t:\d+:t> Line 1\.\n🟢 <t:\d+:t> Line 2\./);
+    expect(last.text.split("\n").at(-1)).toBe("### ⏱️ 1 min");
 });
 
 it("opens a community monitor card when no cycle gets done for 90 minutes, says why, and closes it once one does", async () => {
@@ -1735,3 +1795,65 @@ it("a gen cron whose heartbeat is too old opens a stale card; one that never bea
         undefined,
     );
 });
+
+it("an expired GPU opens a ping after three checks; failed reads interrupt three-check recovery", async () => {
+    const stub = watch();
+    const key = "gpu:sana";
+    await gpuHeartbeat("sana", "sana2", Date.now() - 180_000);
+    // A fresh staging GPU must not cover a missing production worker.
+    await gpuHeartbeat("sana", "staging", Date.now(), "staging");
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open[key]).toBeUndefined();
+    await stub.check();
+    await settle(stub);
+    const { messageId } = (await stored(stub, "state")).open[key];
+    const posted = world.writes.find((w) => w.ok && w.method === "POST");
+    expect(posted.text).toContain("GPU MISSING: DreamShaper GPU pool");
+    expect(posted.text).toContain("1 of 2 registered");
+    expect(posted.users.length).toBeGreaterThan(0);
+
+    await gpuHeartbeat("sana", "sana2");
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).clears[key]).toBe(2);
+    await runInDurableObject(stub, async (instance) => {
+        const read = vi
+            .spyOn(instance.env.GEN_KV, "list")
+            .mockRejectedValueOnce(new Error("KV unavailable"));
+        await instance.check();
+        read.mockRestore();
+    });
+    expect((await stored(stub, "state")).open[key]).toBeDefined();
+    expect((await stored(stub, "state")).clears[key]).toBeUndefined();
+    await checks(stub, 2);
+    expect((await stored(stub, "state")).open[key]).toBeDefined();
+    await stub.check();
+    await settle(stub);
+    expect((await stored(stub, "state")).open[key]).toBeUndefined();
+    expect(over(edits(messageId).at(-1))).toBe(true);
+});
+
+it.each(["gen", "analytics"])(
+    "GPU alerts open and recover independently of %s failures",
+    async (source) => {
+        const stub = watch();
+        vi.stubGlobal("fetch", (input, init) => {
+            const url = new URL(
+                input instanceof Request ? input.url : String(input),
+            );
+            if (url.pathname === (source === "gen" ? "/" : "/models/status"))
+                return new Response("unavailable", { status: 503 });
+            return fake(input, init);
+        });
+        await env.GEN_KV.delete("image:server:production:flux:flux");
+        await checks(stub, 3);
+        let { open } = await stored(stub, "state");
+        expect(open[source]).toBeDefined();
+        expect(open["gpu:flux"]).toBeDefined();
+        await gpuHeartbeat("flux", "flux");
+        await checks(stub, 3);
+        ({ open } = await stored(stub, "state"));
+        expect(open[source]).toBeDefined();
+        expect(open["gpu:flux"]).toBeUndefined();
+        await settle(stub);
+    },
+);

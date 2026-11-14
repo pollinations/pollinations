@@ -5,6 +5,11 @@ import {
 } from "cloudflare:test";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+    hashGenerationCacheIdentity,
+    normalizedJsonBody,
+} from "@/middleware/generation-cache.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
 import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
@@ -32,6 +37,19 @@ afterEach(() => {
 });
 
 describe("ElevenLabs Text to Dialogue", () => {
+    it("rejects FLAC before calling the dialogue provider", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        await expect(
+            generateElevenLabsDialogue({
+                inputs: [{ text: "Hello.", voice: "nova" }],
+                responseFormat: "flac",
+                apiKey: "test-eleven-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("maps preset voices and bills all input characters", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {
@@ -68,6 +86,81 @@ describe("ElevenLabs Text to Dialogue", () => {
         );
     });
 });
+
+workerTest.for(["GET", "JSON", "multipart"] as const)(
+    "rejects FLAC dialogue before serving cached PCM (%s)",
+    async (encoding, { paidApiKey }) => {
+        const fields = {
+            model: "elevenlabs/eleven-v3:dialogue",
+            input: "nova: Cached dialogue.",
+            voice: "alloy",
+            response_format: "flac",
+            safe: "false",
+        };
+        const url = new URL(
+            encoding === "GET"
+                ? `/audio/${encodeURIComponent(fields.input)}?model=dialogue&response_format=flac&safe=false`
+                : "/v1/audio/speech",
+            "https://gen.pollinations.ai",
+        );
+        const cacheUrl = new URL(url);
+        const headers = new Headers({ Authorization: `Bearer ${paidApiKey}` });
+        let body: FormData | string | undefined;
+        if (encoding !== "GET") {
+            let cacheBody: string;
+            if (encoding === "multipart") {
+                body = new FormData();
+                for (const [name, value] of Object.entries(fields)) {
+                    body.set(name, value);
+                }
+                cacheBody = JSON.stringify(
+                    Object.fromEntries(
+                        Object.entries(fields).map(([name, value]) => [
+                            name,
+                            [value],
+                        ]),
+                    ),
+                );
+            } else {
+                headers.set("Content-Type", "application/json");
+                body = JSON.stringify(fields);
+                cacheBody = body;
+            }
+            cacheUrl.searchParams.set(
+                "__request_body",
+                await hashGenerationCacheIdentity(
+                    "media",
+                    normalizedJsonBody(cacheBody),
+                ),
+            );
+        }
+
+        await env.MEDIA.put(
+            await generateCacheKey(cacheUrl),
+            new Response(new Uint8Array([1, 0, 2, 0]), {
+                headers: { "Content-Type": "audio/pcm" },
+            }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, {
+                method: encoding === "GET" ? "GET" : "POST",
+                headers,
+                body,
+            }),
+            env,
+            ctx,
+        );
+        expect(response.status).toBe(400);
+        expect(response.headers.get("x-cache")).toBeNull();
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining("flac is not supported"),
+            },
+        });
+        await waitOnExecutionContext(ctx);
+    },
+);
 
 workerTest("advertises the simple route for every speech model", async () => {
     const response = await fetchGen("https://gen.pollinations.ai/v1/models");

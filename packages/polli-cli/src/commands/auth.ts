@@ -283,14 +283,25 @@ export async function showAuthStatus(): Promise<void> {
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
+    const rejectedKey = (error: unknown) =>
+        error instanceof ApiError && error.status === 401 ? error : null;
     const [profile, balance] = await Promise.all([
         gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
     ]);
+
+    if (profile instanceof ApiError || balance instanceof ApiError) {
+        printResult({
+            authenticated: false,
+            key: masked,
+            status: "API key rejected. Run: polli auth login",
+        });
+        return;
+    }
 
     if (!profile) {
         printResult({

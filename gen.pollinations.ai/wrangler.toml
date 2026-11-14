@@ -80,6 +80,12 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Azure sandboxes: local dev uses staging's login and group (its secret is in
+# secrets/dev.vars.json), so Azure templates can be tried before they ship.
+AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
+AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
+AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-staging"
+AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
 [dev]
 port = 8788
 

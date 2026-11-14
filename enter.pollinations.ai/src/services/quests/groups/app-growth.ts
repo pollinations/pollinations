@@ -86,7 +86,7 @@ const appListedQuest: QuestDefinition = {
     id: "app_listed",
     title: "App listed on Pollinations",
     description:
-        "Submit your [app](https://enter.pollinations.ai/my-apps) for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps). Needs a [connected GitHub account](https://enter.pollinations.ai/account).",
+        "Submit your [app](https://enter.pollinations.ai/my-models?tab=apps) for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps). Needs a [connected GitHub account](https://enter.pollinations.ai/account).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,

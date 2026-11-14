@@ -1,17 +1,14 @@
 import {
     Alert,
-    BeakerIcon,
     BotIcon,
     ClockIcon,
     EditableCombobox,
     ImageIcon,
     InlineLink,
-    McpIcon,
     Section,
     SparklesIcon,
     SpeakerIcon,
     TabButton,
-    TerminalIcon,
     TokensIcon,
     UsageIcon,
 } from "@pollinations/ui";
@@ -25,6 +22,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { CopyDocs } from "../copy-docs.tsx";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
@@ -53,7 +51,7 @@ import {
     removeModelQueryFilterToken,
     replaceModelQueryFilterToken,
 } from "./model-query.ts";
-import type { ModelSort } from "./model-search.ts";
+import type { ModelSearch, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import { ModelSortMenu } from "./model-sort-menu.tsx";
 import { ModelHealthIcon } from "./model-status-chips.tsx";
@@ -62,7 +60,6 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
-import { SandboxTemplateList } from "./sandbox-template-list.tsx";
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
@@ -78,32 +75,17 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-type PrimaryTab = "models" | "agent" | "mcp" | "sandbox";
-type SearchParam = "q" | "agentQ" | "mcpQ" | "sandboxQ";
-
-const PRIMARY_TABS = [
-    { value: "models", label: "Models", Icon: BeakerIcon },
-    { value: "agent", label: "Agents", Icon: BotIcon },
-    { value: "mcp", label: "MCP", Icon: McpIcon },
-    { value: "sandbox", label: "Sandboxes", Icon: TerminalIcon },
-] as const;
+/** Catalog pages: /models, and /agents showing agents or MCP servers. */
+export type CatalogKind = "models" | "agent" | "mcp";
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
-const NO_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
-const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
-    models: "q",
-    agent: "agentQ",
-    mcp: "mcpQ",
-    sandbox: "sandboxQ",
-};
-const QUERY_FILTER_KEYS_BY_TAB: Record<
-    PrimaryTab,
+const QUERY_FILTER_KEYS_BY_KIND: Record<
+    CatalogKind,
     readonly ModelQueryFilterKey[]
 > = {
     models: MODEL_QUERY_FILTER_KEYS,
     agent: AGENT_QUERY_FILTER_KEYS,
-    mcp: NO_QUERY_FILTER_KEYS,
-    sandbox: NO_QUERY_FILTER_KEYS,
+    mcp: [],
 };
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -156,22 +138,16 @@ const isSourceSuggestion = (option: string): boolean =>
         .toLowerCase()
         .startsWith("source:");
 
-export const Models: FC = () => {
-    const navigate = useNavigate({ from: "/models" });
-    const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeTab = modelSearch.category ?? "all";
-    const activePrimaryTab: PrimaryTab =
-        activeTab === "agent" || activeTab === "mcp" || activeTab === "sandbox"
-            ? activeTab
-            : "models";
+export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
+    const navigate = useNavigate();
+    const modelSearch: ModelSearch = useSearch({ strict: false });
+    const activeTab: SectionType =
+        kind === "models" ? (modelSearch.category ?? "all") : kind;
     const activeSort = modelSearch.sort ?? "popular";
-    const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
-    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
-    const urlSearch = modelSearch[searchParam] ?? "";
+    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_KIND[kind];
+    const urlSearch = modelSearch.q ?? "";
     const initialSearch =
-        activePrimaryTab === "models"
-            ? ensureModelQueryDefaults(urlSearch)
-            : urlSearch;
+        kind === "models" ? ensureModelQueryDefaults(urlSearch) : urlSearch;
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
         ModelQueryDraftFilter | undefined
@@ -186,7 +162,6 @@ export const Models: FC = () => {
     >();
     const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
-    const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogLoading, setCatalogLoading] = useState(true);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -223,11 +198,17 @@ export const Models: FC = () => {
         [query, supportedFilterKeys],
     );
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
-    const visibleSearch = getModelQueryVisibleSearch(
+    const visibleSearchText = getModelQueryVisibleSearch(
         search,
         filterTokens,
         draftFilter,
     );
+    // Keep the space while the user types the next word. The query sent to
+    // the router and the filters above still use the trimmed value.
+    const visibleSearch =
+        visibleSearchText && search.endsWith(" ")
+            ? `${visibleSearchText} `
+            : visibleSearchText;
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(() => {
@@ -249,7 +230,7 @@ export const Models: FC = () => {
         [modelModels],
     );
     const activeTabModels = useMemo(() => {
-        if (activeTab === "mcp" || activeTab === "sandbox") return [];
+        if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
         return modelSections[activeTab];
     }, [activeTab, agentModels, modelSections]);
@@ -329,17 +310,15 @@ export const Models: FC = () => {
     const searchTarget =
         activeTab === "mcp"
             ? "MCP servers"
-            : activeTab === "sandbox"
-              ? "sandbox templates"
-              : activeTab === "agent"
-                ? "agents"
-                : activeTab === "all"
-                  ? explicitModelSource
-                      ? `${explicitModelSource} models`
-                      : "models"
-                  : [explicitModelSource, searchLabel, "models"]
-                        .filter(Boolean)
-                        .join(" ");
+            : activeTab === "agent"
+              ? "agents"
+              : activeTab === "all"
+                ? explicitModelSource
+                    ? `${explicitModelSource} models`
+                    : "models"
+                : [explicitModelSource, searchLabel, "models"]
+                      .filter(Boolean)
+                      .join(" ");
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -348,14 +327,15 @@ export const Models: FC = () => {
 
             lastPushedSearchRef.current = normalizedSearch;
             void navigate({
+                to: ".",
                 search: (previous) => ({
                     ...previous,
-                    [searchParam]: normalizedSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
         },
-        [navigate, searchParam],
+        [navigate],
     );
 
     const setVisibleSearch = (nextSearch: string) => {
@@ -370,7 +350,7 @@ export const Models: FC = () => {
               ]
                   .filter(Boolean)
                   .join(" ")
-            : [...preservedFilters, nextSearch.trim()]
+            : [...preservedFilters, nextSearch.trimStart()]
                   .filter(Boolean)
                   .join(" ");
 
@@ -455,25 +435,18 @@ export const Models: FC = () => {
     };
 
     useEffect(() => {
-        const primaryTabChanged =
-            activePrimaryTab !== previousPrimaryTabRef.current;
-        previousPrimaryTabRef.current = activePrimaryTab;
-
-        if (!primaryTabChanged && urlSearch === lastPushedSearchRef.current)
-            return;
+        if (urlSearch === lastPushedSearchRef.current) return;
 
         lastPushedSearchRef.current = urlSearch;
         setPendingRemovalIndex(undefined);
         setEditingFilterToken(undefined);
         const nextSearch =
-            activePrimaryTab === "models"
-                ? ensureModelQueryDefaults(urlSearch)
-                : urlSearch;
+            kind === "models" ? ensureModelQueryDefaults(urlSearch) : urlSearch;
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
         );
         setSearch(nextSearch);
-    }, [activePrimaryTab, supportedFilterKeys, urlSearch]);
+    }, [kind, supportedFilterKeys, urlSearch]);
 
     useEffect(() => {
         if (query === lastPushedSearchRef.current) return;
@@ -487,6 +460,7 @@ export const Models: FC = () => {
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
+            to: ".",
             search: (previous) => ({
                 ...previous,
                 category: category === "all" ? undefined : category,
@@ -496,6 +470,7 @@ export const Models: FC = () => {
 
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
+            to: ".",
             search: (previous) => ({
                 ...previous,
                 sort: sort === "popular" ? undefined : sort,
@@ -504,20 +479,19 @@ export const Models: FC = () => {
     };
 
     return (
-        <>
-            <Section
-                title={
-                    activePrimaryTab === "agent"
-                        ? "Agents"
-                        : activePrimaryTab === "mcp"
-                          ? "MCP"
-                          : activePrimaryTab === "sandbox"
-                            ? "Sandboxes"
-                            : "Models"
-                }
-                actionClassName="ml-auto"
-                action={
-                    activePrimaryTab === "models" && (
+        <Section
+            title={
+                kind === "models"
+                    ? "Models"
+                    : kind === "agent"
+                      ? "Agents"
+                      : "MCP"
+            }
+            actionClassName="ml-auto"
+            action={
+                <div className="flex items-center gap-4">
+                    <CopyDocs section={kind === "mcp" ? "mcp" : "api"} />
+                    {kind === "models" && (
                         <InlineLink
                             href="https://model-monitor.pollinations.ai"
                             size="sm"
@@ -526,250 +500,217 @@ export const Models: FC = () => {
                             <ModelHealthIcon />
                             Model health
                         </InlineLink>
-                    )
-                }
-            >
-                <div className="flex flex-col items-start gap-3">
-                    <fieldset
-                        className="flex min-w-0 flex-wrap gap-1.5"
-                        aria-label="Catalog type"
-                    >
-                        {PRIMARY_TABS.map(({ value, label, Icon }) => (
-                            <TabButton
-                                key={value}
-                                active={activePrimaryTab === value}
+                    )}
+                </div>
+            }
+        >
+            <div className="flex flex-col items-start gap-3">
+                {kind === "models" && (
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {MODEL_SECTION_ORDER.filter(
+                                (section) =>
+                                    section === "all" ||
+                                    modelSections[section].length > 0,
+                            ).map((section) => (
+                                <TabButton
+                                    key={section}
+                                    active={activeTab === section}
+                                    onClick={() => setActiveTab(section)}
+                                    ariaLabel={sectionLabels[section]}
+                                >
+                                    {sectionLabels[section]}
+                                </TabButton>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                    <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
+                        <div>
+                            <EditableCombobox
+                                value={visibleSearch}
+                                options={searchOptions}
+                                onChange={setVisibleSearch}
+                                open={searchOpen}
+                                onOpenChange={setSearchOpen}
                                 onClick={() =>
-                                    setActiveTab(
-                                        value === "models" ? "all" : value,
-                                    )
+                                    setPendingRemovalIndex(undefined)
                                 }
-                                ariaLabel={label}
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <Icon
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
+                                onKeyDown={handleSearchKeyDown}
+                                onBlur={() => {
+                                    const normalizedSearch =
+                                        draftFilter && !draftFilter.value
+                                            ? getCancelledDraftSearch()
+                                            : search.trim();
+                                    setDraftFilter(undefined);
+                                    setEditingFilterToken(undefined);
+                                    setSearch(normalizedSearch);
+                                    pushSearch(normalizedSearch);
+                                }}
+                                placeholder={
+                                    renderedDraftFilter
+                                        ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
+                                        : `Search ${searchTarget}…`
+                                }
+                                aria-label={`Search ${searchTarget}`}
+                                autoComplete="off"
+                                contentClassName="catalog-search-panel"
+                                startContent={
+                                    <ModelFilterTokens
+                                        tokens={renderedFilterTokens}
+                                        draft={renderedDraftFilter}
+                                        pendingRemovalIndex={
+                                            pendingRemovalIndex
+                                        }
+                                        onEdit={editFilter}
+                                        onChange={(token, value) => {
+                                            setSearch(
+                                                replaceModelQueryFilterToken(
+                                                    getCancelledDraftSearch(),
+                                                    token.index,
+                                                    `${token.filter.key}:${value}`,
+                                                ),
+                                            );
+                                            setDraftFilter(undefined);
+                                            setEditingFilterToken(undefined);
+                                            setPendingRemovalIndex(undefined);
+                                            setSearchOpen(false);
+                                        }}
                                     />
-                                    {label}
-                                </span>
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                    {activePrimaryTab === "models" && (
-                        <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap gap-1.5">
-                                {MODEL_SECTION_ORDER.filter(
-                                    (section) =>
-                                        section === "all" ||
-                                        modelSections[section].length > 0,
-                                ).map((section) => (
-                                    <TabButton
-                                        key={section}
-                                        active={activeTab === section}
-                                        onClick={() => setActiveTab(section)}
-                                        ariaLabel={sectionLabels[section]}
-                                    >
-                                        {sectionLabels[section]}
-                                    </TabButton>
-                                ))}
-                            </div>
+                                }
+                            />
+                        </div>
+                    </div>
+                    {activeTab !== "mcp" && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <ModelSortMenu
+                                value={activeSort}
+                                onChange={setActiveSort}
+                            />
                         </div>
                     )}
-                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
-                            <div>
-                                <EditableCombobox
-                                    value={visibleSearch}
-                                    options={searchOptions}
-                                    onChange={setVisibleSearch}
-                                    open={searchOpen}
-                                    onOpenChange={setSearchOpen}
-                                    onClick={() =>
-                                        setPendingRemovalIndex(undefined)
-                                    }
-                                    onKeyDown={handleSearchKeyDown}
-                                    onBlur={() => {
-                                        const normalizedSearch =
-                                            draftFilter && !draftFilter.value
-                                                ? getCancelledDraftSearch()
-                                                : search.trim();
-                                        setDraftFilter(undefined);
-                                        setEditingFilterToken(undefined);
-                                        setSearch(normalizedSearch);
-                                        pushSearch(normalizedSearch);
-                                    }}
-                                    placeholder={
-                                        renderedDraftFilter
-                                            ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
-                                            : `Search ${searchTarget}…`
-                                    }
-                                    aria-label={`Search ${searchTarget}`}
-                                    autoComplete="off"
-                                    contentClassName="catalog-search-panel"
-                                    startContent={
-                                        <ModelFilterTokens
-                                            tokens={renderedFilterTokens}
-                                            draft={renderedDraftFilter}
-                                            pendingRemovalIndex={
-                                                pendingRemovalIndex
-                                            }
-                                            onEdit={editFilter}
-                                            onChange={(token, value) => {
-                                                setSearch(
-                                                    replaceModelQueryFilterToken(
-                                                        getCancelledDraftSearch(),
-                                                        token.index,
-                                                        `${token.filter.key}:${value}`,
-                                                    ),
-                                                );
-                                                setDraftFilter(undefined);
-                                                setEditingFilterToken(
-                                                    undefined,
-                                                );
-                                                setPendingRemovalIndex(
-                                                    undefined,
-                                                );
-                                                setSearchOpen(false);
-                                            }}
-                                        />
-                                    }
-                                />
-                            </div>
-                        </div>
-                        {activePrimaryTab !== "mcp" &&
-                            activePrimaryTab !== "sandbox" && (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <ModelSortMenu
-                                        value={activeSort}
-                                        onChange={setActiveSort}
-                                    />
-                                </div>
-                            )}
-                    </div>
                 </div>
-                {(activePrimaryTab === "agent" ||
-                    (activePrimaryTab === "models" &&
-                        explicitModelSource !== "official")) && (
-                    <Alert
-                        intent="advisory"
-                        title="Community privacy"
-                        className="polli:bg-transparent"
-                    >
-                        Independent providers and configured fallbacks process
-                        requests under their own policies.{" "}
-                        <strong className="font-semibold text-theme-text-strong">
-                            Avoid sensitive data.
-                        </strong>{" "}
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                            <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
-                                Privacy filter
-                            </InlineLink>
-                            <span aria-hidden="true">·</span>
-                            <InlineLink href="https://pollinations.ai/privacy">
-                                Privacy Policy
-                            </InlineLink>
+            </div>
+            {(kind === "agent" ||
+                (kind === "models" && explicitModelSource !== "official")) && (
+                <Alert
+                    intent="advisory"
+                    title="Community privacy"
+                    className="polli:bg-transparent"
+                >
+                    Independent providers and configured fallbacks process
+                    requests under their own policies.{" "}
+                    <strong className="font-semibold text-theme-text-strong">
+                        Avoid sensitive data.
+                    </strong>{" "}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/safety">
+                            Privacy filter
+                        </InlineLink>
+                        <span aria-hidden="true">·</span>
+                        <InlineLink href="https://pollinations.ai/privacy">
+                            Privacy Policy
+                        </InlineLink>
+                    </span>
+                </Alert>
+            )}
+            {activeTab === "mcp" ? (
+                <McpServerList query={query} />
+            ) : (
+                <SectionContent loading={catalogLoading}>
+                    {catalogError ? (
+                        <LoadError
+                            paths={["/models"]}
+                            onRetry={loadModelCatalog}
+                        >
+                            {catalogError}
+                        </LoadError>
+                    ) : query && sectionModels[activeTab].length === 0 ? (
+                        <p className="py-8 text-center text-sm text-theme-text-muted">
+                            No {searchTarget.toLowerCase()} match{" "}
+                            {visibleSearch.trim()
+                                ? `“${visibleSearch.trim()}”`
+                                : "the selected filters"}
+                            .
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            <UnifiedModelTable
+                                listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
+                                allModels={sectionModels.all}
+                                imageModels={sectionModels.image}
+                                videoModels={sectionModels.video}
+                                model3dModels={sectionModels["3d"]}
+                                audioModels={sectionModels.audio}
+                                realtimeModels={sectionModels.realtime}
+                                textModels={sectionModels.text}
+                                decisionModels={sectionModels.decision}
+                                embeddingModels={sectionModels.embedding}
+                                agentModels={sectionModels.agent}
+                                activeTab={activeTab}
+                            />
+                        </div>
+                    )}
+                </SectionContent>
+            )}
+            {activeTab !== "mcp" && (
+                <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>agent pricing:</strong> listed rates are
+                                for the agent&apos;s base model running its
+                                saved instructions.
+                            </span>
+                        </p>
+                    )}
+                    <p className="flex items-start gap-1.5">
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/gen:</strong> flat rate per image or audio
+                            generation.
                         </span>
-                    </Alert>
-                )}
-                {activeTab === "mcp" ? (
-                    <McpServerList query={query} />
-                ) : activeTab === "sandbox" ? (
-                    <SandboxTemplateList query={query} />
-                ) : (
-                    <SectionContent loading={catalogLoading}>
-                        {catalogError ? (
-                            <LoadError
-                                paths={["/models"]}
-                                onRetry={loadModelCatalog}
-                            >
-                                {catalogError}
-                            </LoadError>
-                        ) : query && sectionModels[activeTab].length === 0 ? (
-                            <p className="py-8 text-center text-sm text-theme-text-muted">
-                                No {searchTarget.toLowerCase()} match{" "}
-                                {visibleSearch.trim()
-                                    ? `“${visibleSearch.trim()}”`
-                                    : "the selected filters"}
-                                .
-                            </p>
-                        ) : (
-                            <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                <UnifiedModelTable
-                                    listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
-                                    allModels={sectionModels.all}
-                                    imageModels={sectionModels.image}
-                                    videoModels={sectionModels.video}
-                                    model3dModels={sectionModels["3d"]}
-                                    audioModels={sectionModels.audio}
-                                    realtimeModels={sectionModels.realtime}
-                                    textModels={sectionModels.text}
-                                    decisionModels={sectionModels.decision}
-                                    embeddingModels={sectionModels.embedding}
-                                    agentModels={sectionModels.agent}
-                                    activeTab={activeTab}
-                                />
-                            </div>
-                        )}
-                    </SectionContent>
-                )}
-                {activeTab !== "mcp" && activeTab !== "sandbox" && (
-                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        {activeTab === "agent" && (
-                            <p className="flex items-start gap-1.5">
-                                <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    <strong>agent pricing:</strong> listed rates
-                                    are for the agent&apos;s base model running
-                                    its saved instructions.
-                                </span>
-                            </p>
-                        )}
-                        <p className="flex items-start gap-1.5">
-                            <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/gen:</strong> flat rate per image or
-                                audio generation.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/K · /M:</strong> rates per thousand or
-                                million tokens.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/sec · /hr:</strong> per second of video
-                                or audio; sub-cent audio rates use per hour.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/MP · /image:</strong> per megapixel, or
-                                per reference image.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/K chars · /K bytes:</strong> speech
-                                priced per thousand characters or UTF-8 bytes of
-                                input text.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>requests /$1:</strong> estimated from
-                                the median observed cost over the last 7 days.
-                            </span>
-                        </p>
-                    </div>
-                )}
-            </Section>
-        </>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/K · /M:</strong> rates per thousand or
+                            million tokens.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/sec · /hr:</strong> per second of video or
+                            audio; sub-cent audio rates use per hour.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/MP · /image:</strong> per megapixel, or per
+                            reference image.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/K chars · /K bytes:</strong> speech priced
+                            per thousand characters or UTF-8 bytes of input
+                            text.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>requests /$1:</strong> estimated from the
+                            median observed cost over the last 7 days.
+                        </span>
+                    </p>
+                </div>
+            )}
+        </Section>
     );
 };

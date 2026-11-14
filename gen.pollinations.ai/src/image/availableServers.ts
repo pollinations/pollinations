@@ -1,4 +1,10 @@
 import { UpstreamError } from "@shared/error.ts";
+import {
+    gpuLatencyKey,
+    gpuServerPrefix,
+    readGpuServers,
+    type GpuServerEntry as ServerEntry,
+} from "@shared/gpu-registry.ts";
 import debug from "debug";
 import { isNetworkFailure } from "../fallback.ts";
 
@@ -12,17 +18,6 @@ const logServer = debug("pollinations:server");
 export const VALID_TYPES = ["flux", "zimage", "sana"] as const;
 export type ServerType = (typeof VALID_TYPES)[number];
 
-type ServerEntry = {
-    url: string;
-    lastHeartbeat: number;
-    // Last observed /generate latency (ms), measured by the gen worker. Used to
-    // weight load balancing toward faster backends so a slow GPU (e.g. a 3090
-    // next to a 4090) does not get an equal share and drown. Absent until the
-    // first request to that server has completed.
-    lastMs?: number;
-};
-
-const SERVER_TIMEOUT = 180000;
 const REGISTRY_TTL_SECONDS = 240;
 const REGISTRY_WRITE_THROTTLE_MS = 30_000;
 // Persist a server's latest latency at most this often (KV ~1 write/sec/key).
@@ -56,14 +51,14 @@ export function isValidType(type: string): type is ServerType {
 }
 
 function prefix(type: ServerType): string {
-    return `image:server:${registryEnvironment}:${type}:`;
+    return gpuServerPrefix(registryEnvironment, type);
 }
 
 // Latency is stored under a separate key from the heartbeat entry so the two
 // writers (registerServer heartbeats vs recordLatency samples) never touch the
 // same key. That makes lastMs impossible to clobber via a stale heartbeat read.
 function latencyKey(type: ServerType, hash: string): string {
-    return `image:latency:${registryEnvironment}:${type}:${hash}`;
+    return gpuLatencyKey(registryEnvironment, type, hash);
 }
 
 async function urlHash(url: string): Promise<string> {
@@ -105,24 +100,7 @@ export const registerServer = async (
 export async function getRegisteredServers(
     type: ServerType,
 ): Promise<ServerEntry[]> {
-    const kv = getServerRegistry();
-    const { keys } = await kv.list({ prefix: prefix(type) });
-    if (keys.length === 0) return [];
-
-    const now = Date.now();
-    const entries = await Promise.all(
-        keys.map(async (k) => {
-            const entry = await kv.get<ServerEntry>(k.name, "json");
-            if (!entry || now - entry.lastHeartbeat >= SERVER_TIMEOUT) {
-                return null;
-            }
-            // Merge the latency recorded under the separate latency key.
-            const hash = k.name.slice(prefix(type).length);
-            const lastMs = await kv.get<number>(latencyKey(type, hash), "json");
-            return lastMs != null ? { ...entry, lastMs } : entry;
-        }),
-    );
-    return entries.filter((e): e is ServerEntry => e !== null);
+    return readGpuServers(getServerRegistry(), registryEnvironment, type);
 }
 
 // Weighted-random pick over active servers, weighted by 1/lastMs so faster

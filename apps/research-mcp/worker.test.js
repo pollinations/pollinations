@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "clinicaltrials_search",
+                "clinicaltrials_study",
             ].sort(),
         );
     });
@@ -644,4 +646,194 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ClinicalTrials.gov search and study lookup formats NCT ids, phases and capped text", async (t) => {
+    let requests = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        requests += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "clinicaltrials.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        if (url.pathname === "/api/v2/studies") {
+            assert.equal(url.searchParams.get("fields").split(",")[0], "NCTId");
+            if (url.searchParams.get("query.term") === "zzzzqqq") {
+                return Response.json({ studies: [] });
+            }
+            if (url.searchParams.get("filter.overallStatus")) {
+                assert.equal(
+                    url.searchParams.get("filter.overallStatus"),
+                    "RECRUITING",
+                );
+            }
+            return Response.json({
+                studies: [
+                    {
+                        protocolSection: {
+                            identificationModule: {
+                                nctId: "NCT06819371",
+                                briefTitle:
+                                    "Impact of Dual vs. Single Task Exercise on Cognitive Function, Balance, and Functionality in Type 2 Diabetes",
+                            },
+                            statusModule: {
+                                overallStatus: "COMPLETED",
+                                startDateStruct: { date: "2025-09-10" },
+                                primaryCompletionDateStruct: {
+                                    date: "2026-04-15",
+                                },
+                            },
+                            sponsorCollaboratorsModule: {
+                                leadSponsor: {
+                                    name: "Izmir Democracy University",
+                                },
+                            },
+                            conditionsModule: {
+                                conditions: ["Diabetes Mellitus Type 2"],
+                            },
+                            designModule: { phases: ["NA"] },
+                            contactsLocationsModule: {
+                                locations: [{ country: "Turkey (Türkiye)" }],
+                            },
+                        },
+                    },
+                    {
+                        protocolSection: {
+                            identificationModule: {
+                                nctId: "NCT04315909",
+                                briefTitle:
+                                    "The Effect of Platelet-Rich Plasma-Fibrin Glue in Combination With Vitamin E and C for Treatment of Non-healing Diabetic Foot Ulcers",
+                            },
+                            statusModule: {
+                                overallStatus: "UNKNOWN",
+                                startDateStruct: { date: "2019-08-28" },
+                                primaryCompletionDateStruct: {
+                                    date: "2020-06-23",
+                                },
+                            },
+                            sponsorCollaboratorsModule: {
+                                leadSponsor: {
+                                    name: "Mashhad University of Medical Sciences",
+                                },
+                            },
+                            conditionsModule: {
+                                conditions: [
+                                    "Diabetic Foot Ulcers",
+                                    "Diabetic Wound",
+                                ],
+                            },
+                            designModule: { phases: ["PHASE2", "PHASE3"] },
+                            contactsLocationsModule: {
+                                locations: [{ country: "Iran" }],
+                            },
+                        },
+                    },
+                ],
+                nextPageToken: "abc",
+            });
+        }
+        if (url.pathname === "/api/v2/studies/NCT06819371") {
+            return Response.json({
+                protocolSection: {
+                    identificationModule: {
+                        nctId: "NCT06819371",
+                        briefTitle:
+                            "Impact of Dual vs. Single Task Exercise on Cognitive Function, Balance, and Functionality in Type 2 Diabetes",
+                    },
+                    statusModule: {
+                        overallStatus: "COMPLETED",
+                        startDateStruct: { date: "2025-09-10" },
+                        primaryCompletionDateStruct: { date: "2026-04-15" },
+                    },
+                    sponsorCollaboratorsModule: {
+                        leadSponsor: { name: "Izmir Democracy University" },
+                    },
+                    conditionsModule: {
+                        conditions: ["Diabetes Mellitus Type 2"],
+                    },
+                    designModule: {
+                        studyType: "INTERVENTIONAL",
+                        phases: ["NA"],
+                    },
+                    descriptionModule: { briefSummary: "S".repeat(2500) },
+                    armsInterventionsModule: {
+                        interventions: [
+                            { name: "Single Task Exercise" },
+                            { name: "Dual Task Exercise" },
+                        ],
+                    },
+                    eligibilityModule: {
+                        eligibilityCriteria: "E".repeat(2100),
+                    },
+                    contactsLocationsModule: {
+                        locations: [{ country: "Turkey (Türkiye)" }],
+                    },
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "clinicaltrials_search", {
+        query: "diabetes",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.results.length, 2);
+    assert.equal(searchVal.results[0].nctId, "NCT06819371");
+    assert.equal(searchVal.results[0].status, "COMPLETED");
+    assert.equal(searchVal.results[0].sponsor, "Izmir Democracy University");
+    assert.deepEqual(searchVal.results[0].conditions, [
+        "Diabetes Mellitus Type 2",
+    ]);
+    assert.deepEqual(searchVal.results[0].phases, ["NA"]);
+    assert.deepEqual(searchVal.results[0].countries, ["Turkey (Türkiye)"]);
+    assert.equal(
+        searchVal.results[0].url,
+        "https://clinicaltrials.gov/study/NCT06819371",
+    );
+    assert.deepEqual(searchVal.results[1].phases, ["PHASE2", "PHASE3"]);
+    assert.equal(searchVal.hasMore, true);
+
+    const filteredRes = await call(c, "clinicaltrials_search", {
+        query: "diabetes",
+        overallStatus: "RECRUITING",
+        limit: 1,
+    });
+    assert.notEqual(filteredRes.isError, true, JSON.stringify(filteredRes));
+
+    const emptyRes = await call(c, "clinicaltrials_search", {
+        query: "zzzzqqq",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes).results, []);
+    assert.equal(value(emptyRes).hasMore, false);
+
+    const studyRes = await call(c, "clinicaltrials_study", {
+        nctId: "https://clinicaltrials.gov/study/nct06819371/",
+    });
+    assert.notEqual(studyRes.isError, true, JSON.stringify(studyRes));
+    const studyVal = value(studyRes);
+    assert.equal(studyVal.study.nctId, "NCT06819371");
+    assert.equal(studyVal.study.studyType, "INTERVENTIONAL");
+    assert.deepEqual(studyVal.study.interventions, [
+        "Single Task Exercise",
+        "Dual Task Exercise",
+    ]);
+    assert.equal(studyVal.study.summary.length, 2000);
+    assert.equal(studyVal.study.eligibility.length, 2000);
+
+    const before = requests;
+    const badRes = await call(c, "clinicaltrials_study", {
+        nctId: "notanct",
+    });
+    assert.equal(badRes.isError, true);
+    assert.equal(requests, before);
+
+    const unknownRes = await call(c, "clinicaltrials_study", {
+        nctId: "NCT99999999",
+    });
+    assert.equal(unknownRes.isError, true);
 });

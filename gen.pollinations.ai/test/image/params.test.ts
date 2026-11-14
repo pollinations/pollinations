@@ -103,6 +103,15 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("treats background=transparent as a transparent request", () => {
+        expect(
+            ImageParamsSchema.parse({
+                model: "openai/gpt-image-1.5",
+                background: "transparent",
+            }).transparent,
+        ).toBe(true);
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({

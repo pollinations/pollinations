@@ -690,3 +690,76 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("Homebrew lookup resolves the stable formula with license, dependencies and install counts", async (t) => {
+    const wget = {
+        name: "wget",
+        desc: "Internet file retriever",
+        license: "GPL-3.0-or-later",
+        homepage: "https://www.gnu.org/software/wget/",
+        versions: { stable: "1.25.0", head: "HEAD", bottle: true },
+        dependencies: [
+            "libidn2",
+            "libpsl",
+            "openssl@4",
+            "gettext",
+            "libunistring",
+        ],
+        build_dependencies: ["pkgconf"],
+        analytics: {
+            install: {
+                "365d": { wget: 323481 },
+            },
+        },
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).endsWith("/api/formula/wget.json"))
+            return Response.json(wget);
+        return new Response("Not Found", { status: 404 });
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "homebrew",
+        name: "wget",
+    });
+    assert.equal(data.version, "1.25.0");
+    assert.equal(data.description, "Internet file retriever");
+    assert.equal(data.license, "GPL-3.0-or-later");
+    assert.equal(data.homepage, "https://www.gnu.org/software/wget/");
+    assert.deepEqual(data.dependencies, [
+        "libidn2",
+        "libpsl",
+        "openssl@4",
+        "gettext",
+        "libunistring",
+    ]);
+    assert.deepEqual(data.buildDependencies, ["pkgconf"]);
+    assert.equal(data.downloads, 323481);
+    assert.equal(data.registryUrl, "https://formulae.brew.sh/formula/wget");
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "homebrew",
+        name: "wget",
+        version: "1.25.0",
+    });
+    assert.equal(pinned.version, "1.25.0");
+    await assert.rejects(
+        lookup({ ecosystem: "homebrew", name: "wget", version: "1.24.0" }),
+        /Homebrew version 1.24.0 not found for wget/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "homebrew", name: "not a formula!" }),
+        /Invalid homebrew package name/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "homebrew", name: "thisdoesnotexist12345" }),
+        /formulae.brew.sh returned HTTP 404/,
+    );
+    assert.deepEqual(urls, [
+        "https://formulae.brew.sh/api/formula/wget.json",
+        "https://formulae.brew.sh/api/formula/wget.json",
+        "https://formulae.brew.sh/api/formula/wget.json",
+        "https://formulae.brew.sh/api/formula/thisdoesnotexist12345.json",
+    ]);
+});

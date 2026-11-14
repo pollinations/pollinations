@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
+                "convert_number_base",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -674,4 +675,81 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("convert_number_base is exact past the safe integer range", async (t) => {
+    const client = await clientFor(t);
+    // 2^128, a value a hash or key conversion would carry. Number loses this.
+    const big = await call(client, "convert_number_base", {
+        value: "340282366920938463463374607431768211456",
+        from_base: 10,
+        to_base: 16,
+    });
+    assert.equal(big.value, "100000000000000000000000000000000");
+    assert.equal(big.decimal, "340282366920938463463374607431768211456");
+});
+
+test("convert_number_base handles signs and mixed alphabets", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "FF",
+                from_base: 16,
+            })
+        ).value,
+        "ff",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "-255",
+                from_base: 10,
+                to_base: 8,
+            })
+        ).value,
+        "-377",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "11111111",
+                from_base: 2,
+                to_base: 8,
+            })
+        ).value,
+        "377",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_number_base", {
+                value: "z",
+                from_base: 36,
+                to_base: 10,
+            })
+        ).value,
+        "35",
+    );
+});
+
+test("convert_number_base rejects digits that do not exist in the source base", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "12", from_base: 2 },
+        { value: "ff", from_base: 10 },
+        { value: "", from_base: 10 },
+        { value: "10", from_base: 1 },
+        { value: "10", to_base: 37 },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "convert_number_base",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

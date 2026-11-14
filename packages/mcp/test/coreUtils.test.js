@@ -104,3 +104,13 @@ test("parseApiError returns a string when a 4xx body has no message", () => {
         assert.doesNotMatch(message, /\[object Object\]/, `status ${status}`);
     }
 });
+
+test("parseApiError displays gateway 404 and 5xx messages unchanged", () => {
+    for (const [status, text] of [
+        [404, "API key not found"],
+        [503, "Unable to verify balance. Please try again shortly."],
+    ]) {
+        const errorJson = JSON.stringify({ error: { message: text } });
+        assert.equal(parseApiError(status, errorJson), text);
+    }
+});

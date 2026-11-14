@@ -836,3 +836,27 @@ test("media models advertise the resolutions they accept", async () => {
         expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
     }
 });
+
+test("model listings expose flat_rate so agents can tell per-image from per-unit prices", async () => {
+    type ListedModel = { id: string; flat_rate?: boolean };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.flat_rate, model.id).toEqual(
+            registry.resolve(model.id)?.info.flat_rate || undefined,
+        );
+    }
+    const flatRateModels = list.data.filter((model) => model.flat_rate);
+    expect(flatRateModels.length).toBeGreaterThan(0);
+    const zImageTurbo = flatRateModels.find(
+        (model) => model.id === "tongyi-mai/z-image-turbo",
+    );
+    expect(zImageTurbo?.flat_rate, "tongyi-mai/z-image-turbo").toBe(true);
+    const response = await fetchWorker("/v1/models/tongyi-mai%2Fz-image-turbo");
+    expect(response.status, "tongyi-mai/z-image-turbo").toBe(200);
+    const retrieved = (await response.json()) as ListedModel;
+    expect(retrieved.flat_rate, "tongyi-mai/z-image-turbo").toBe(true);
+});

@@ -40,7 +40,7 @@ function parseMx(response) {
         return match
             ? {
                   priority: Number(match[1]),
-                  exchange: match[2].replace(/\.$/, "").toLowerCase(),
+                  exchange: match[2] === "." ? "." : match[2].replace(/\.$/, "").toLowerCase(),
               }
             : { priority: null, exchange: null, raw };
     });
@@ -123,6 +123,7 @@ export async function inspectEmailDomain(input) {
     const dmarc = dmarcRecords.length === 1 ? parseDmarc(dmarcRecords[0]) : null;
     const findings = [];
     const domainMissing = mxDns.code === 3;
+    const nullMx = mxRecords.length === 1 && mxRecords[0].priority === 0 && mxRecords[0].exchange === ".";
 
     if (mxQuery.error || ![0, 3].includes(mxDns.code)) {
         finding(
@@ -137,6 +138,13 @@ export async function inspectEmailDomain(input) {
             "domain_not_found",
             "error",
             "The domain returned NXDOMAIN for its MX lookup.",
+        );
+    } else if (nullMx) {
+        finding(
+            findings,
+            "null_mx",
+            "info",
+            "The domain publishes an RFC 7505 null MX (0 .) and explicitly does not accept email.",
         );
     } else if (mxRecords.length === 0) {
         finding(
@@ -229,6 +237,7 @@ export async function inspectEmailDomain(input) {
         domain,
         mx: {
             dns: queryInfo(mxQuery, mxDns),
+            null_mx: nullMx,
             records: mxRecords.sort(
                 (a, b) =>
                     (a.priority ?? Infinity) - (b.priority ?? Infinity) ||

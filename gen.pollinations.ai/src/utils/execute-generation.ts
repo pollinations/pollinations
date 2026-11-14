@@ -25,12 +25,29 @@ const ERROR_BODY_BYTES = 64 * 1024;
 const ERROR_HEADERS = new Set(["content-type", "retry-after"]);
 const ERROR_HEADER_PREFIXES = ["x-moderation-", "x-safety-"];
 
-async function captureError(
+export async function captureError(
     response: Response,
 ): Promise<GenerationErrorSnapshot> {
-    const body = new Uint8Array(
-        (await response.arrayBuffer()).slice(0, ERROR_BODY_BYTES),
-    );
+    const body = new Uint8Array(ERROR_BODY_BYTES);
+    let length = 0;
+    const reader = response.body?.getReader();
+    if (reader) {
+        try {
+            while (length < ERROR_BODY_BYTES) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                const chunk = value.subarray(0, ERROR_BODY_BYTES - length);
+                body.set(chunk, length);
+                length += chunk.byteLength;
+            }
+            if (length === ERROR_BODY_BYTES) {
+                // Cleanup must not delay or replace the captured error.
+                void reader.cancel().catch(() => {});
+            }
+        } finally {
+            reader.releaseLock();
+        }
+    }
     return {
         httpStatus: response.status,
         headers: [...response.headers.entries()].filter(([name]) => {
@@ -42,7 +59,7 @@ async function captureError(
                 )
             );
         }),
-        body,
+        body: body.slice(0, length),
     };
 }
 

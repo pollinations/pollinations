@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "unpaywall_lookup",
             ].sort(),
         );
     });
@@ -644,4 +645,58 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Unpaywall lookup returns the best open-access PDF and rejects unknown DOIs", async (t) => {
+    const requested = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requested.push(url);
+        assert.equal(url.hostname, "api.unpaywall.org");
+        assert.equal(url.searchParams.get("email"), "hello@pollinations.ai");
+        if (url.pathname.includes("10.1038")) {
+            return Response.json({
+                doi: "10.1038/nature12373",
+                title: "Nanometre-scale thermometry in a living cell",
+                is_oa: true,
+                oa_status: "bronze",
+                best_oa_location: {
+                    url: "https://www.nature.com/articles/nature12373.pdf",
+                    url_for_pdf:
+                        "https://www.nature.com/articles/nature12373.pdf",
+                    url_for_landing_page: "https://doi.org/10.1038/nature12373",
+                    version: "publishedVersion",
+                    license: null,
+                    host_type: "publisher",
+                },
+            });
+        }
+        return new Response("<title>404 Not Found</title>", { status: 404 });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "unpaywall_lookup", {
+        doi: "https://doi.org/10.1038/nature12373",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.doi, "10.1038/nature12373");
+    assert.equal(val.title, "Nanometre-scale thermometry in a living cell");
+    assert.equal(val.is_oa, true);
+    assert.equal(val.oa_status, "bronze");
+    assert.equal(
+        val.best_oa_location.url,
+        "https://www.nature.com/articles/nature12373.pdf",
+    );
+    assert.equal(val.best_oa_location.version, "publishedVersion");
+    assert.equal(val.best_oa_location.license, null);
+    assert.equal(val.best_oa_location.host_type, "publisher");
+    assert.match(requested[0].pathname, /^\/v2\/10\.1038/);
+
+    const missing = await call(c, "unpaywall_lookup", {
+        doi: "10.9999/does-not-exist-12345",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /404/);
+    assert.doesNotMatch(missing.content[0].text, /Not Found/);
 });

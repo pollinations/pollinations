@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollen Canvas",
+    "url": "https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD",
+    "description": "Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "baimoyan2005",
+    "githubUserId": "286565108",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19652",
+    "approvedDate": "2026-11-14",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3f2192c5-2d7f-43fc-88c1-fb693ef1d7ba"
+  },
+  {
     "emoji": "✍️",
     "name": "Voiceprint",
     "url": "https://llm-voiceprint.jm716111.chatgpt.site",

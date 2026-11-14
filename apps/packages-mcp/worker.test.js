@@ -690,3 +690,149 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("package_downloads reads crates.io counts from version downloads", async (t) => {
+    // Trimmed real `downloads` response for serde, 2026-11-05..2026-11-14:
+    // per-day rows for the two most-downloaded versions plus
+    // meta.extra_downloads (downloads not tied to a version).
+    const downloads = {
+        version_downloads: [
+            { version: 1748414, downloads: 2197747, date: "2026-11-05" },
+            { version: 2817185, downloads: 3968679, date: "2026-11-05" },
+            { version: 1748414, downloads: 2047637, date: "2026-11-06" },
+            { version: 2817185, downloads: 3875204, date: "2026-11-06" },
+            { version: 1748414, downloads: 1291616, date: "2026-11-07" },
+            { version: 2817185, downloads: 2825877, date: "2026-11-07" },
+            { version: 1748414, downloads: 1145043, date: "2026-11-08" },
+            { version: 2817185, downloads: 2709135, date: "2026-11-08" },
+            { version: 1748414, downloads: 1932878, date: "2026-11-09" },
+            { version: 2817185, downloads: 3813846, date: "2026-11-09" },
+            { version: 1748414, downloads: 2209998, date: "2026-11-10" },
+            { version: 2817185, downloads: 4135210, date: "2026-11-10" },
+            { version: 1748414, downloads: 2050750, date: "2026-11-11" },
+            { version: 2817185, downloads: 3908731, date: "2026-11-11" },
+            { version: 1748414, downloads: 2297189, date: "2026-11-12" },
+            { version: 2817185, downloads: 4389239, date: "2026-11-12" },
+            { version: 1748414, downloads: 2232868, date: "2026-11-13" },
+            { version: 2817185, downloads: 4325989, date: "2026-11-13" },
+            { version: 1748414, downloads: 447464, date: "2026-11-14" },
+            { version: 2817185, downloads: 861794, date: "2026-11-14" },
+        ],
+        meta: {
+            extra_downloads: [
+                { date: "2026-11-05", downloads: 582008 },
+                { date: "2026-11-06", downloads: 573979 },
+                { date: "2026-11-07", downloads: 400602 },
+                { date: "2026-11-08", downloads: 389392 },
+                { date: "2026-11-09", downloads: 596791 },
+                { date: "2026-11-10", downloads: 626240 },
+                { date: "2026-11-11", downloads: 555078 },
+                { date: "2026-11-12", downloads: 599161 },
+                { date: "2026-11-13", downloads: 681687 },
+                { date: "2026-11-14", downloads: 176863 },
+            ],
+        },
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(url, "https://crates.io/api/v1/crates/serde/downloads");
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        return Response.json(downloads);
+    });
+    const client = await clientFor(t);
+
+    // last-week ends at the latest day with data and sums version rows
+    // plus extra_downloads per day.
+    assert.deepEqual(
+        await call(client, "package_downloads", {
+            ecosystem: "crates",
+            name: "serde",
+        }),
+        {
+            package: "serde",
+            ecosystem: "crates",
+            range: "last-week",
+            start: "2026-11-08",
+            end: "2026-11-14",
+            total: 40085346,
+            downloads: [
+                { day: "2026-11-08", downloads: 4243570 },
+                { day: "2026-11-09", downloads: 6343515 },
+                { day: "2026-11-10", downloads: 6971448 },
+                { day: "2026-11-11", downloads: 6514559 },
+                { day: "2026-11-12", downloads: 7285589 },
+                { day: "2026-11-13", downloads: 7240544 },
+                { day: "2026-11-14", downloads: 1486121 },
+            ],
+        },
+    );
+
+    // A custom range slices the same series.
+    assert.deepEqual(
+        await call(client, "package_downloads", {
+            ecosystem: "crates",
+            name: "serde",
+            range: "2026-11-05:2026-11-07",
+        }),
+        {
+            package: "serde",
+            ecosystem: "crates",
+            range: "2026-11-05:2026-11-07",
+            start: "2026-11-05",
+            end: "2026-11-07",
+            total: 17763349,
+            downloads: [
+                { day: "2026-11-05", downloads: 6748434 },
+                { day: "2026-11-06", downloads: 6496820 },
+                { day: "2026-11-07", downloads: 4518095 },
+            ],
+        },
+    );
+
+    // A range reaching past the available data keeps the available rows and
+    // notes where coverage starts instead of failing.
+    const year = await call(client, "package_downloads", {
+        ecosystem: "crates",
+        name: "serde",
+        range: "last-year",
+    });
+    assert.equal(year.start, "2025-11-15");
+    assert.equal(year.end, "2026-11-14");
+    assert.equal(year.coverage_start, "2026-11-05");
+    assert.equal(year.downloads.length, 10);
+    assert.equal(year.total, 57848695);
+});
+
+test("package_downloads rejects invalid crates names and unknown crates", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        if (
+            url ===
+            "https://crates.io/api/v1/crates/this-crate-does-not-exist-xyz123/downloads"
+        )
+            return new Response("404", { status: 404 });
+        throw new Error(`unexpected fetch ${url}`);
+    });
+    const client = await clientFor(t);
+
+    const bad = await client.callTool({
+        name: "package_downloads",
+        arguments: { ecosystem: "crates", name: "not a crate!" },
+    });
+    assert.equal(bad.isError, true);
+
+    const digit = await client.callTool({
+        name: "package_downloads",
+        arguments: { ecosystem: "crates", name: "1serde" },
+    });
+    assert.equal(digit.isError, true);
+
+    const unknown = await client.callTool({
+        name: "package_downloads",
+        arguments: {
+            ecosystem: "crates",
+            name: "this-crate-does-not-exist-xyz123",
+        },
+    });
+    assert.equal(unknown.isError, true);
+});

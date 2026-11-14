@@ -211,7 +211,7 @@ monitor offline.
 
 All model-list endpoints use one rule for public community proxy models: more than 80%
 success across the latest 50 eligible final requests within seven days. Official
-models, agents, and private owner-only models are unaffected. No minimum sample. No observations
+models, agents, and private owner-only models are unaffected. Models with fewer than 5 requests, no observations
 or unavailable analytics means unknown and visible. Successful fallbacks count
 for the requested model. Final 4xx are excluded; owner requests and monitor
 probes count. A text answer with prompt tokens but no output

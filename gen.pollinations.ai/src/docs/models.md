@@ -58,7 +58,7 @@ catalog header.
 
 Lists default to `reliability=reliable`: public community proxy models need more than
 80% success across the last 50 eligible final requests within seven days.
-Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
+Official models, agents, and owner-only private models are unaffected. Models with fewer than 5 requests remain listed.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
 monitor probes count. A text answer that reports prompt tokens but no output

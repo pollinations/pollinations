@@ -59,7 +59,7 @@ export function CommunityEndpointCard({
     const filteredByReliability =
         isPublic &&
         endpoint.type === "proxy" &&
-        !isModelReliable(health?.success_rate);
+        !isModelReliable(health?.success_rate, health?.requests);
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =

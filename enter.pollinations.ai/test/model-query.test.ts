@@ -126,6 +126,19 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
         expect(matches(candidate, "status:reliable")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
     }
+    // Models with fewer than 5 requests remain visible even with low success rate
+    const fewRequestsModel = model({
+        community: true,
+        health: {
+            status: "degraded",
+            requests: 3,
+            success_rate: 66.67,
+        },
+    });
+    expect(matches(fewRequestsModel, "source:community status:reliable")).toBe(
+        true,
+    );
+    expect(matches(fewRequestsModel, "status:reliable")).toBe(true);
     const official = model({
         health: { status: "down", requests: 50, success_rate: 0 },
     });

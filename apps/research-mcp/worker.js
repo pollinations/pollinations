@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fetchJson } from "./fetch.js";
 import { arxivTools } from "./tools/arxiv.js";
 import { crossRefTools } from "./tools/crossref.js";
+import { dataciteTools } from "./tools/datacite.js";
 import { europePmcTools } from "./tools/europe-pmc.js";
 import { rfcTools } from "./tools/rfc.js";
 import { wikidataTools } from "./tools/wikidata.js";
@@ -26,6 +27,7 @@ const handler = () =>
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,
+                ...dataciteTools,
             ]) {
                 server.registerTool(
                     name,

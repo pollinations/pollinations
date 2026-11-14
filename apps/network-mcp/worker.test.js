@@ -56,6 +56,7 @@ for (const modern of [false, true])
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "announced_prefixes",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "announced_prefixes",
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -418,4 +425,182 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("RIPEstat announced prefixes summarizes counts and the first 20, and rejects bad ASNs before I/O", async (t) => {
+    // Trimmed real fixture from the live announced-prefixes response for
+    // AS15169 (2026-11-14): 25 of the real 1,441 prefixes. The first one
+    // carries its real 4 gapped timelines; the rest share one window.
+    const window = [
+        { starttime: "2026-10-31T16:00:00", endtime: "2026-11-14T16:00:00" },
+    ];
+    const googlePrefixes = [
+        {
+            prefix: "35.206.9.0/24",
+            timelines: [
+                {
+                    starttime: "2026-10-31T16:00:00",
+                    endtime: "2026-11-02T08:00:00",
+                },
+                {
+                    starttime: "2026-11-03T00:00:00",
+                    endtime: "2026-11-04T08:00:00",
+                },
+                {
+                    starttime: "2026-11-05T00:00:00",
+                    endtime: "2026-11-05T08:00:00",
+                },
+                {
+                    starttime: "2026-11-06T00:00:00",
+                    endtime: "2026-11-14T16:00:00",
+                },
+            ],
+        },
+        ...[
+            "74.125.128.0/24",
+            "172.217.169.0/24",
+            "142.250.17.0/24",
+            "74.125.23.0/24",
+            "172.217.192.0/24",
+            "2800:3f0:4005::/48",
+            "34.1.71.0/24",
+            "192.179.32.0/24",
+            "34.4.96.0/22",
+            "172.217.204.0/24",
+            "142.251.33.0/24",
+            "2001:4860:4823::/48",
+            "108.177.15.0/24",
+            "172.253.129.0/24",
+            "173.194.216.0/24",
+            "192.178.234.0/24",
+            "2600:1902:40::/44",
+            "108.177.119.0/24",
+            "152.65.247.0/24",
+            "192.179.17.0/24",
+            "142.250.16.0/24",
+            "172.217.200.0/24",
+            "172.217.114.0/24",
+            "74.125.127.0/24",
+        ].map((prefix) => ({ prefix, timelines: window })),
+    ];
+    const google = {
+        messages: [],
+        status: "ok",
+        status_code: 200,
+        data: {
+            prefixes: googlePrefixes,
+            query_starttime: "2026-10-31T16:00:00",
+            query_endtime: "2026-11-14T16:00:00",
+            resource: "15169",
+            latest_time: "2026-11-14T16:00:00",
+            earliest_time: "2000-08-01T00:00:00",
+        },
+    };
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "stat.ripe.net");
+        assert.equal(url.pathname, "/data/announced-prefixes/data.json");
+        assert.equal(url.searchParams.get("resource"), "AS15169");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        return Response.json(google);
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "announced_prefixes",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    const data = await read({ asn: "AS15169" });
+    assert.equal(data.asn, 15169);
+    assert.equal(data.total_prefixes, 25);
+    assert.equal(data.ipv4_prefixes, 22);
+    assert.equal(data.ipv6_prefixes, 3);
+    assert.equal(data.query_starttime, "2026-10-31T16:00:00");
+    assert.equal(data.query_endtime, "2026-11-14T16:00:00");
+    assert.equal(data.prefixes_returned, 20);
+    assert.equal(data.prefixes_truncated, true);
+    assert.deepEqual(data.prefixes[0], {
+        prefix: "35.206.9.0/24",
+        first_seen: "2026-10-31T16:00:00",
+        last_seen: "2026-11-14T16:00:00",
+    });
+    assert.deepEqual(data.prefixes[1], {
+        prefix: "74.125.128.0/24",
+        first_seen: "2026-10-31T16:00:00",
+        last_seen: "2026-11-14T16:00:00",
+    });
+    await read({ asn: "15169" });
+    assert.equal(requests, 2);
+});
+
+test("RIPEstat announced prefixes handles empty results, upstream errors and bad ASNs", async (t) => {
+    let requests = 0;
+    const stub = t.mock.method(globalThis, "fetch", async (input) => {
+        requests++;
+        const url = new URL(input);
+        if (url.searchParams.get("resource") === "AS99999999")
+            return Response.json({
+                messages: [],
+                status: "ok",
+                status_code: 200,
+                data: {
+                    prefixes: [],
+                    query_starttime: "2026-10-31T16:00:00",
+                    query_endtime: "2026-11-14T16:00:00",
+                    resource: "99999999",
+                },
+            });
+        if (url.searchParams.get("resource") === "AS15169")
+            return Response.json({
+                messages: [["error", "upstream is having a bad day"]],
+                status: "error",
+                status_code: 200,
+                data: {},
+            });
+        return new Response(null, { status: 400 });
+    });
+    const c = await clientFor(t);
+    const empty = await c.callTool({
+        name: "announced_prefixes",
+        arguments: { asn: "99999999" },
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    const emptyData = JSON.parse(empty.content[0].text);
+    assert.equal(emptyData.total_prefixes, 0);
+    assert.deepEqual(emptyData.prefixes, []);
+    assert.equal(emptyData.prefixes_truncated, false);
+    const error = await c.callTool({
+        name: "announced_prefixes",
+        arguments: { asn: "15169" },
+    });
+    assert.equal(error.isError, true);
+    assert.match(error.content[0].text, /upstream is having a bad day/);
+    for (const asn of ["notanas", "AS4294967296", "AS-1", ""]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "announced_prefixes",
+                    arguments: { asn },
+                })
+            ).isError,
+            true,
+        );
+    }
+    assert.equal(requests, 2);
+    stub.mock.mockImplementation(
+        async () => new Response(null, { status: 400 }),
+    );
+    const bad = await c.callTool({
+        name: "announced_prefixes",
+        arguments: { asn: "15169" },
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /400/);
 });

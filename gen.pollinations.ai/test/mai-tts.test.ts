@@ -187,6 +187,43 @@ describe("MAI Azure SSML", () => {
     });
 });
 
+describe("MAI zh-CN voices", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    const send = async (voice: string) => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response(new Uint8Array([1, 2, 3])));
+        await generateMaiSpeech({
+            modelName: "microsoft/mai-voice-2.1-flash",
+            routeId: "microsoft/mai-voice-2.1-flash",
+            provider: "azure",
+            text: "兩份蚵仔煎，帥哥！乾杯",
+            voice,
+            responseFormat: "mp3",
+            apiKey: "test-key",
+            log,
+        });
+        return new Request(
+            fetchMock.mock.calls[0][0],
+            fetchMock.mock.calls[0][1],
+        ).text();
+    };
+
+    it("sends Traditional text to zh-CN voices as Simplified", async () => {
+        // 乾 has two Simplified forms, so it is left alone.
+        expect(await send("zh-CN-Mei")).toContain(
+            ">两份蚵仔煎，帅哥！乾杯</voice>",
+        );
+    });
+
+    it("leaves text for other voices unchanged", async () => {
+        expect(await send("en-US-Harper")).toContain(
+            ">兩份蚵仔煎，帥哥！乾杯</voice>",
+        );
+    });
+});
+
 describe("MAI caller choices", () => {
     afterEach(() => vi.restoreAllMocks());
 

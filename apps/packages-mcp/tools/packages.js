@@ -11,6 +11,8 @@ export async function lookup({ ecosystem, name, version }) {
         rubygems: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
         // Go path elements allow letters, digits and -._~ but cannot start with a dot.
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
+        // Pub.dev names are lowercase, start with a letter or underscore.
+        pubdev: /^[a-z_][a-z0-9_]*$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
     };
@@ -166,6 +168,49 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "pubdev") {
+        // A pinned version has its own small document (~0.8 KB); the package
+        // document is ~75 KB because it lists every version, so only fetch
+        // it for latest and read `latest`, never the versions array.
+        const [selected, score] = await Promise.all([
+            version
+                ? fetchJson(
+                      `https://pub.dev/api/packages/${encoded}/versions/${encodeURIComponent(version)}`,
+                  )
+                : fetchJson(`https://pub.dev/api/packages/${encoded}`).then(
+                      (data) => data.latest,
+                  ),
+            // Score (likes, downloads, pub points) is best-effort: a package
+            // without an analysis yet must not fail the lookup.
+            fetchJson(`https://pub.dev/api/packages/${encoded}/score`).catch(
+                () => null,
+            ),
+        ]);
+        const pubspec = selected.pubspec;
+        return {
+            ecosystem,
+            name,
+            version: selected.version,
+            description: pubspec.description,
+            licenses: score
+                ? score.tags
+                      .filter((tag) => tag.startsWith("license:"))
+                      .map((tag) => tag.slice("license:".length))
+                : null,
+            homepage: pubspec.homepage ?? pubspec.repository ?? null,
+            repository: pubspec.repository,
+            topics: pubspec.topics,
+            sdk: pubspec.environment?.sdk,
+            dependencies: pubspec.dependencies ?? {},
+            devDependencies: pubspec.dev_dependencies,
+            likes: score?.likeCount ?? null,
+            downloads30Days: score?.downloadCount30Days ?? null,
+            pubPoints: score?.grantedPoints ?? null,
+            pubPointsMax: score?.maxPoints ?? null,
+            published: selected.published,
+            registryUrl: `https://pub.dev/packages/${encoded}/versions/${encodeURIComponent(selected.version)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +248,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/Pub.dev (Dart/Flutter) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Pub.dev latest, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +258,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "pubdev",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

@@ -690,3 +690,176 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("Pub.dev lookup resolves the latest package with likes, points and dependencies", async (t) => {
+    const httpDoc = {
+        name: "http",
+        latest: {
+            version: "1.6.0",
+            pubspec: {
+                name: "http",
+                version: "1.6.0",
+                description:
+                    "A composable, multi-platform, Future-based API for HTTP requests.",
+                repository:
+                    "https://github.com/dart-lang/http/tree/master/pkgs/http",
+                topics: ["http", "network", "protocols"],
+                environment: { sdk: "^3.4.0" },
+                dependencies: {
+                    async: "^2.5.0",
+                    http_parser: "^4.0.0",
+                    meta: "^1.3.0",
+                    web: ">=0.5.0 <2.0.0",
+                },
+                dev_dependencies: { test: "^1.21.2" },
+            },
+            archive_url: "https://pub.dev/api/archives/http-1.6.0.tar.gz",
+            published: "2025-11-10T18:27:56.434747Z",
+        },
+    };
+    const httpScore = {
+        grantedPoints: 160,
+        maxPoints: 160,
+        likeCount: 8481,
+        downloadCount30Days: 14967051,
+        tags: [
+            "publisher:dart.dev",
+            "sdk:dart",
+            "sdk:flutter",
+            "license:bsd-3-clause",
+            "license:fsf-libre",
+            "license:osi-approved",
+            "topic:http",
+        ],
+    };
+    const http150 = {
+        version: "1.5.0",
+        pubspec: {
+            name: "http",
+            version: "1.5.0",
+            description:
+                "A composable, multi-platform, Future-based API for HTTP requests.",
+            repository:
+                "https://github.com/dart-lang/http/tree/master/pkgs/http",
+            topics: ["http", "network", "protocols"],
+            environment: { sdk: "^3.4.0" },
+            dependencies: {
+                async: "^2.5.0",
+                http_parser: "^4.0.0",
+                meta: "^1.3.0",
+                web: ">=0.5.0 <2.0.0",
+            },
+        },
+        published: "2025-08-07T22:35:23.863279Z",
+    };
+    const unscoredDoc = {
+        name: "unscored",
+        latest: {
+            version: "0.1.0",
+            pubspec: {
+                name: "unscored",
+                version: "0.1.0",
+                description: "Not analysed yet.",
+                environment: { sdk: ">=3.0.0 <4.0.0" },
+                dependencies: {},
+            },
+            published: "2026-01-01T00:00:00.000000Z",
+        },
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url) === "https://pub.dev/api/packages/http")
+            return Response.json(httpDoc);
+        if (String(url) === "https://pub.dev/api/packages/http/score")
+            return Response.json(httpScore);
+        if (String(url) === "https://pub.dev/api/packages/http/versions/1.5.0")
+            return Response.json(http150);
+        if (String(url) === "https://pub.dev/api/packages/unscored")
+            return Response.json(unscoredDoc);
+        return new Response("Not Found", { status: 404 });
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "pubdev",
+        name: "http",
+    });
+    assert.equal(data.version, "1.6.0");
+    assert.equal(
+        data.description,
+        "A composable, multi-platform, Future-based API for HTTP requests.",
+    );
+    // No homepage in the pubspec: falls back to the repository URL.
+    assert.equal(
+        data.homepage,
+        "https://github.com/dart-lang/http/tree/master/pkgs/http",
+    );
+    assert.equal(
+        data.repository,
+        "https://github.com/dart-lang/http/tree/master/pkgs/http",
+    );
+    assert.deepEqual(data.topics, ["http", "network", "protocols"]);
+    assert.equal(data.sdk, "^3.4.0");
+    assert.deepEqual(data.dependencies, {
+        async: "^2.5.0",
+        http_parser: "^4.0.0",
+        meta: "^1.3.0",
+        web: ">=0.5.0 <2.0.0",
+    });
+    assert.deepEqual(data.devDependencies, { test: "^1.21.2" });
+    assert.deepEqual(data.licenses, [
+        "bsd-3-clause",
+        "fsf-libre",
+        "osi-approved",
+    ]);
+    assert.equal(data.likes, 8481);
+    assert.equal(data.downloads30Days, 14967051);
+    assert.equal(data.pubPoints, 160);
+    assert.equal(data.pubPointsMax, 160);
+    assert.equal(data.published, "2025-11-10T18:27:56.434747Z");
+    assert.equal(
+        data.registryUrl,
+        "https://pub.dev/packages/http/versions/1.6.0",
+    );
+    // A pinned version fetches the small per-version document, not the
+    // full package document with its 130-version list.
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "pubdev",
+        name: "http",
+        version: "1.5.0",
+    });
+    assert.equal(pinned.version, "1.5.0");
+    assert.equal(pinned.published, "2025-08-07T22:35:23.863279Z");
+    assert.equal(pinned.likes, 8481);
+    // A missing score must not fail the lookup; score fields stay null.
+    const unscored = await lookup({ ecosystem: "pubdev", name: "unscored" });
+    assert.equal(unscored.version, "0.1.0");
+    assert.equal(unscored.likes, null);
+    assert.equal(unscored.downloads30Days, null);
+    assert.equal(unscored.pubPoints, null);
+    assert.equal(unscored.licenses, null);
+    await assert.rejects(
+        lookup({ ecosystem: "pubdev", name: "Not a package!" }),
+        /Invalid pubdev package name/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "pubdev", name: "thisdoesnotexist12345" }),
+        /pub.dev returned HTTP 404/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "pubdev", name: "http", version: "9.9.9" }),
+        /pub.dev returned HTTP 404/,
+    );
+    assert.deepEqual(urls, [
+        "https://pub.dev/api/packages/http",
+        "https://pub.dev/api/packages/http/score",
+        "https://pub.dev/api/packages/http/versions/1.5.0",
+        "https://pub.dev/api/packages/http/score",
+        "https://pub.dev/api/packages/unscored",
+        "https://pub.dev/api/packages/unscored/score",
+        "https://pub.dev/api/packages/thisdoesnotexist12345",
+        "https://pub.dev/api/packages/thisdoesnotexist12345/score",
+        "https://pub.dev/api/packages/http/versions/9.9.9",
+        "https://pub.dev/api/packages/http/score",
+    ]);
+});

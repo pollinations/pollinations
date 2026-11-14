@@ -107,7 +107,7 @@ export async function inspectEmailDomain(input) {
     const [mxQuery, spfQuery, dmarcQuery] = await Promise.all([
         queryDns(domain, "MX"),
         queryDns(domain, "TXT"),
-        queryDns(\`_dmarc.\${domain}\`, "TXT"),
+        queryDns("_dmarc." + domain, "TXT"),
     ]);
     const mxDns = statusOf(mxQuery.response);
     const spfDns = statusOf(spfQuery.response);

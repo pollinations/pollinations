@@ -475,7 +475,7 @@ test("email domain check reads MX, SPF and DMARC records", async (t) => {
     ]);
     assert.equal(result.spf.status, "present");
     assert.deepEqual(result.spf.records, [
-        "v=spf1 include:_spf.example.com  -all",
+        "v=spf1 include:_spf.example.com -all",
     ]);
     assert.equal(result.dmarc.status, "valid");
     assert.equal(result.dmarc.policy, "reject");

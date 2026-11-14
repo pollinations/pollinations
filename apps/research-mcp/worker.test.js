@@ -612,7 +612,7 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
                     DOI: "10.1038/nature12373",
                     title: ["CRISPR-Cas9 System for Genome Engineering"],
                     author: [{ given: "Jennifer", family: "Doudna" }],
-                    "container-title": ["Nature"],
+                    "container-title": ["Genes &amp; Development"],
                     published: { "date-parts": [[2020, 10, 21]] },
                     type: "journal-article",
                     "is-referenced-by-count": 4820,
@@ -643,5 +643,5 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     assert.notEqual(workRes.isError, true, JSON.stringify(workRes));
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
-    assert.equal(workVal.work.container, "Nature");
+    assert.equal(workVal.work.container, "Genes & Development");
 });

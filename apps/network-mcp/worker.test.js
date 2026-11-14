@@ -56,6 +56,7 @@ for (const modern of [false, true])
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "as_overview",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "as_overview",
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -388,6 +395,90 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
             true,
         );
     }
+});
+test("RIPEstat AS overview returns holder and block, and rejects bad ASNs before I/O", async (t) => {
+    // Trimmed real fixtures from live as-overview responses (2026-11-14).
+    const overview = (resource, holder, announced, block) => ({
+        messages: [],
+        status: "ok",
+        status_code: 200,
+        data: { type: "as", resource, block, holder, announced },
+    });
+    let requests = 0;
+    const stub = t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "stat.ripe.net");
+        assert.equal(url.pathname, "/data/as-overview/data.json");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        const resource = url.searchParams.get("resource");
+        if (resource === "AS15169")
+            return Response.json(
+                overview("15169", "GOOGLE - Google LLC", true, {
+                    resource: "13312-15359",
+                    desc: "Assigned by ARIN",
+                    name: "IANA 16-bit Autonomous System (AS) Numbers Registry",
+                }),
+            );
+        if (resource === "AS99999999")
+            return Response.json(
+                overview("99999999", "", false, {
+                    resource: "404381-4199999999",
+                    desc: "Unallocated",
+                    name: "IANA 32-bit Autonomous System (AS) Numbers Registry",
+                }),
+            );
+        return new Response(null, { status: 400 });
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "as_overview",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    const google = await read({ asn: "AS15169" });
+    assert.equal(google.asn, 15169);
+    assert.equal(google.holder, "GOOGLE - Google LLC");
+    assert.equal(google.announced, true);
+    assert.equal(google.block.range, "13312-15359");
+    assert.equal(google.block.description, "Assigned by ARIN");
+    assert.equal(
+        google.block.registry,
+        "IANA 16-bit Autonomous System (AS) Numbers Registry",
+    );
+    const bare = await read({ asn: "15169" });
+    assert.equal(bare.asn, 15169);
+    const unallocated = await read({ asn: "99999999" });
+    assert.equal(unallocated.holder, null);
+    assert.equal(unallocated.announced, false);
+    assert.equal(unallocated.block.description, "Unallocated");
+    for (const bad of ["notanas", "AS4294967296", "AS-1", ""]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "as_overview",
+                    arguments: { asn: bad },
+                })
+            ).isError,
+            true,
+            bad,
+        );
+    }
+    assert.equal(requests, 3);
+    stub.mock.mockImplementation(
+        async () => new Response(null, { status: 400 }),
+    );
+    const upstream = await c.callTool({
+        name: "as_overview",
+        arguments: { asn: "15169" },
+    });
+    assert.equal(upstream.isError, true);
+    assert.match(upstream.content[0].text, /400/);
 });
 test("inspect_mac parses and normalizes MAC addresses across formats", async (t) => {
     const client = await clientFor(t);

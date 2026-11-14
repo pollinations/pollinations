@@ -14,7 +14,7 @@ function parseJsonPreservingNumbers(json) {
             return value;
 
         const source = context.source;
-        const isZeroLiteral = /^-?0(?:\\.0*)?(?:[eE][+-]?\\d+)?$/.test(source);
+        const isZeroLiteral = /^-?0(?:\.0*)?(?:[eE][+-]?\d+)?$/.test(source);
         if (
             !Number.isFinite(value) ||
             (Number.isInteger(value) && !Number.isSafeInteger(value)) ||

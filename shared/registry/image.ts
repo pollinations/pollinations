@@ -76,7 +76,8 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
-        paidOnly: false,
+        // The active Azure route has 50 RPM, below twice the observed 87 RPM peak.
+        paidOnly: true,
         cost: {
             completionImageTokens: 0.04, // per image
         },

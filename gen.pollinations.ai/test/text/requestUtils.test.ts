@@ -4,11 +4,44 @@ import { GenerateTextRequestQueryParamsSchema } from "../../src/schemas/text.js"
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    requestsAudioOutput,
+    withoutAudioParams,
 } from "../../src/text/requestUtils.js";
 import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
 import { SENTINEL_SEED } from "../../src/util.js";
 
 afterEach(() => vi.restoreAllMocks());
+
+describe("audio request params", () => {
+    it("detects explicit audio output", () => {
+        expect(requestsAudioOutput({ modalities: ["text", "audio"] })).toBe(
+            true,
+        );
+        expect(requestsAudioOutput({ audio: { voice: "alloy" } })).toBe(true);
+        expect(requestsAudioOutput({ modalities: ["text"] })).toBe(false);
+        expect(requestsAudioOutput({})).toBe(false);
+    });
+
+    it("strips audio fields for text-only models", () => {
+        const request = {
+            model: "openai",
+            messages: [],
+            modalities: ["text"],
+            audio: { voice: "alloy", format: "mp3" },
+            temperature: 0.2,
+        };
+        expect(withoutAudioParams(request)).toEqual({
+            model: "openai",
+            messages: [],
+            temperature: 0.2,
+        });
+    });
+
+    it("keeps objects without audio fields unchanged", () => {
+        const request = { model: "openai", messages: [] };
+        expect(withoutAudioParams(request)).toBe(request);
+    });
+});
 
 describe("getChatRequestData", () => {
     it.each([undefined, false, true])(

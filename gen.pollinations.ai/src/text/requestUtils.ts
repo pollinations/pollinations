@@ -11,6 +11,24 @@ export function requestsJson(json: unknown, jsonMode: unknown): boolean {
     );
 }
 
+/** Whether the caller asked for spoken output, explicitly or via `audio`. */
+export function requestsAudioOutput(request: Record<string, unknown>): boolean {
+    return (
+        request.audio !== undefined ||
+        (Array.isArray(request.modalities) &&
+            request.modalities.includes("audio"))
+    );
+}
+
+/** Drop audio fields before sending a request to a model without audio output. */
+export function withoutAudioParams<T extends Record<string, unknown>>(
+    request: T,
+): T {
+    if (!("modalities" in request) && !("audio" in request)) return request;
+    const { modalities: _modalities, audio: _audio, ...rest } = request;
+    return rest as T;
+}
+
 export function getChatRequestData(
     body: CreateChatCompletionRequest & Record<string, unknown>,
 ): RequestData {

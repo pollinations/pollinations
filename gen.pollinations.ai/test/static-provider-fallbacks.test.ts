@@ -2101,6 +2101,24 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("rejects audio output on text-only models but allows audio models", () => {
+        const text = TEXT_SERVICES["openai/gpt-5.4-nano"];
+        expect(
+            textCapabilityError(text, { modalities: ["text"] }),
+        ).toBeUndefined();
+        expect(
+            textCapabilityError(text, { modalities: ["text", "audio"] }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(text, { audio: { voice: "alloy" } }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-audio-mini"], {
+                modalities: ["text", "audio"],
+            }),
+        ).toBeUndefined();
+    });
+
     it.each([
         [{ usage: { payg_credits_charged: 0.0001 } }, 0.0001],
         [{ usage: { payg_credits_charged: 0 } }, 0],

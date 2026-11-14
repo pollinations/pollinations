@@ -229,8 +229,9 @@ export const packageTools = [
     ],
     [
         "package_downloads",
-        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only.",
+        "Read npm or PyPI download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). PyPI data covers roughly the last 6 months and lags about a day.",
         {
+            ecosystem: z.enum(["npm", "pypi"]).default("npm"),
             name: z.string().trim().min(1).max(214),
             range: z
                 .string()
@@ -240,7 +241,68 @@ export const packageTools = [
                 )
                 .default("last-week"),
         },
-        async ({ name, range }) => {
+        async ({ ecosystem, name, range }) => {
+            if (ecosystem === "pypi") {
+                if (!/^[a-z0-9][a-z0-9._-]*$/.test(name))
+                    throw new Error("Invalid PyPI package name");
+                const data = await fetchJson(
+                    `https://pypistats.org/api/packages/${encodeURIComponent(name)}/overall`,
+                );
+                // pypistats has no working per-period endpoint (last-day,
+                // last-week and last-month all 404), so filter the overall
+                // series client-side. It returns one row per day per
+                // category; with_mirrors is the total download count.
+                const rows = data.data
+                    .filter((row) => row.category === "with_mirrors")
+                    .sort((a, b) =>
+                        a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+                    );
+                if (rows.length === 0)
+                    throw new Error(`No PyPI download data for ${name}`);
+                const earliest = rows[0].date;
+                const latest = rows[rows.length - 1].date;
+                const days = {
+                    "last-day": 1,
+                    "last-week": 7,
+                    "last-month": 30,
+                    "last-year": 365,
+                }[range];
+                let start;
+                let end;
+                if (days) {
+                    // Named ranges end at the latest day with data, since
+                    // pypistats lags about a day behind today.
+                    end = latest;
+                    start = new Date(
+                        Date.parse(`${latest}T00:00:00Z`) -
+                            (days - 1) * 86400000,
+                    )
+                        .toISOString()
+                        .slice(0, 10);
+                } else {
+                    [start, end] = range.split(":");
+                }
+                const downloads = rows
+                    .filter((row) => row.date >= start && row.date <= end)
+                    .map((row) => ({
+                        day: row.date,
+                        downloads: row.downloads,
+                    }));
+                const result = {
+                    package: name,
+                    ecosystem: "pypi",
+                    range,
+                    start,
+                    end,
+                    total: downloads.reduce(
+                        (sum, row) => sum + row.downloads,
+                        0,
+                    ),
+                    downloads,
+                };
+                if (start < earliest) result.coverage_start = earliest;
+                return result;
+            }
             if (
                 !/^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/.test(
                     name,

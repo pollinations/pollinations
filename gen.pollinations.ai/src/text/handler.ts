@@ -44,6 +44,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    withoutCallerMetadata,
 } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -74,16 +75,22 @@ async function gatewayContext(
     const candidateRequest = candidate.entry
         ? { ...requestData, model: candidate.id }
         : requestData;
+    // Agent metadata is part of the agent contract; static and proxy providers
+    // reject the field.
+    const providerRequest =
+        communityEndpoint && communityEndpoint.type !== "proxy"
+            ? candidateRequest
+            : withoutCallerMetadata(candidateRequest);
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, candidateRequest);
+        return withGatewayContext(c, providerRequest);
     }
     const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
-        requestData: candidateRequest,
+        requestData: providerRequest,
         secret: c.env.BETTER_AUTH_SECRET,
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
         userApiKey: c.var.auth?.apiKey?.rawKey || "",

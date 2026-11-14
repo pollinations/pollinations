@@ -20,6 +20,7 @@ import {
     communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
+    communityDecisionsUrl,
     communityEmbeddingsUrl,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -1288,6 +1289,15 @@ describe("community endpoint helpers", () => {
         expect(
             communityEmbeddingsUrl("https://example.com/v1/embeddings"),
         ).toBe("https://example.com/v1/embeddings");
+    });
+
+    it("builds the community decisions upstream URL from the endpoint base URL", () => {
+        expect(communityDecisionsUrl("https://example.com/v1")).toBe(
+            "https://example.com/v1/alpha/decisions",
+        );
+        expect(
+            communityDecisionsUrl("https://example.com/v1/alpha/decisions"),
+        ).toBe("https://example.com/v1/alpha/decisions");
     });
 
     it("keeps zero prices as explicit zero rates in the price definition", () => {

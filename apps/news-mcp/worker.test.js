@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { getText } from "./fetch.js";
+import { summarizeArticle } from "./tools/devto.js";
 import { parseFeed } from "./tools/feeds.js";
 import worker from "./worker.js";
 
@@ -25,9 +26,10 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
+        "devto_articles",
         "earthquake_event",
         "earthquake_search",
         "feed_read",
@@ -59,7 +61,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -183,6 +185,7 @@ test("invalid arguments fail before fetch", async (t) => {
     const c = await client();
     for (const [name, args] of [
         ["hn_stories", { limit: 21 }],
+        ["devto_articles", { limit: 21 }],
         ["hn_item", { id: -1 }],
         ["hn_search", { query: " " }],
     ]) {
@@ -438,4 +441,148 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+// Fixture: first two articles of the live /api/articles response, fetched
+// 2026-11-14 ~21:00 +08 (HTTP 200, 13,239 B for 5 articles, 0.93 s).
+const devtoLatest = [
+    {
+        id: 5025610,
+        title: "Congrats to the Hacktoberfest Open-Source AI Challenge Week 4: Ghost in the Machine Winners!",
+        description:
+            "The results are in for the final week of our Hacktoberfest DEV Challenges! For Ghost in the Machine,...",
+        url: "https://dev.to/devteam/congrats-to-the-hacktoberfest-open-source-ai-challenge-week-4-ghost-in-the-machine-winners-nok",
+        user: {
+            name: "Jem",
+            username: "heyitsjem",
+            twitter_username: null,
+            github_username: "GemHell",
+            user_id: 1875101,
+            website_url: null,
+            profile_image:
+                "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1875101%2Ffed41ffa-3228-4a95-8381-2562d87d01ba.jpg",
+            profile_image_90:
+                "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1875101%2Ffed41ffa-3228-4a95-8381-2562d87d01ba.jpg",
+        },
+        tag_list: ["devchallenge", "hf26challenge", "hacktoberfest", "ai"],
+        public_reactions_count: 82,
+        comments_count: 36,
+        published_at: "2026-11-13T15:56:26Z",
+        reading_time_minutes: 4,
+        cover_image:
+            "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fg9n66rugp217ye18xdzh.png",
+        social_image:
+            "https://media2.dev.to/dynamic/image/width=1200,height=627,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fg9n66rugp217ye18xdzh.png",
+        canonical_url:
+            "https://dev.to/devteam/congrats-to-the-hacktoberfest-open-source-ai-challenge-week-4-ghost-in-the-machine-winners-nok",
+    },
+    {
+        id: 5024286,
+        title: "Long Live Rails",
+        description:
+            'When DHH took the stage at Rails World 2026 and talked openly about going "pencils down" on...',
+        url: "https://dev.to/ben/long-live-rails-3p21",
+        user: {
+            name: "Ben Halpern",
+            username: "ben",
+            twitter_username: "bendhalpern",
+            github_username: "benhalpern",
+            user_id: 1,
+            website_url: "http://benhalpern.com",
+            profile_image:
+                "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1%2Fbabb96d0-9cd2-49bc-a412-2dc4caf94c2a.png",
+            profile_image_90:
+                "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F1%2Fbabb96d0-9cd2-49bc-a412-2dc4caf94c2a.png",
+        },
+        tag_list: ["rails", "ruby", "rust", "ai"],
+        public_reactions_count: 122,
+        comments_count: 19,
+        published_at: "2026-11-12T15:30:50Z",
+        reading_time_minutes: 5,
+        cover_image:
+            "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fqb9kfsla99mu47xwg4z0.jpg",
+        social_image:
+            "https://media2.dev.to/dynamic/image/width=1200,height=627,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fqb9kfsla99mu47xwg4z0.jpg",
+        canonical_url: "https://dev.to/ben/long-live-rails-3p21",
+    },
+];
+
+test("Dev.to lists latest articles with live-measured values; requests never forward auth/cookies", async (t) => {
+    const mock = t.mock.method(globalThis, "fetch", async (input, init) => {
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.equal(init.redirect, "manual");
+        const url = new URL(input);
+        assert.equal(url.hostname, "dev.to");
+        assert.equal(url.pathname, "/api/articles");
+        return Response.json(devtoLatest);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "devto_articles",
+        arguments: { limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), [
+        {
+            id: 5025610,
+            title: "Congrats to the Hacktoberfest Open-Source AI Challenge Week 4: Ghost in the Machine Winners!",
+            url: "https://dev.to/devteam/congrats-to-the-hacktoberfest-open-source-ai-challenge-week-4-ghost-in-the-machine-winners-nok",
+            description:
+                "The results are in for the final week of our Hacktoberfest DEV Challenges! For Ghost in the Machine,...",
+            author: "heyitsjem",
+            tags: ["devchallenge", "hf26challenge", "hacktoberfest", "ai"],
+            reactions: 82,
+            comments: 36,
+            reading_time_minutes: 4,
+            published_at: "2026-11-13T15:56:26Z",
+        },
+        {
+            id: 5024286,
+            title: "Long Live Rails",
+            url: "https://dev.to/ben/long-live-rails-3p21",
+            description:
+                'When DHH took the stage at Rails World 2026 and talked openly about going "pencils down" on...',
+            author: "ben",
+            tags: ["rails", "ruby", "rust", "ai"],
+            reactions: 122,
+            comments: 19,
+            reading_time_minutes: 5,
+            published_at: "2026-11-12T15:30:50Z",
+        },
+    ]);
+    const top = await c.callTool({
+        name: "devto_articles",
+        arguments: { list: "top", limit: 1 },
+    });
+    assert.equal(JSON.parse(top.content[0].text).length, 1);
+    const latestUrl = new URL(mock.mock.calls[0].arguments[0]);
+    assert.equal(latestUrl.searchParams.has("top"), false);
+    assert.equal(latestUrl.searchParams.get("per_page"), "2");
+    const topUrl = new URL(mock.mock.calls[1].arguments[0]);
+    assert.equal(topUrl.searchParams.get("top"), "7");
+    assert.equal(topUrl.searchParams.get("per_page"), "1");
+    mock.mock.mockImplementation(async () => Response.json({}));
+    const bad = await c.callTool({
+        name: "devto_articles",
+        arguments: {},
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /did not return an article list/);
+});
+
+test("Dev.to summary keeps link fields and drops heavy internals", () => {
+    const [article] = devtoLatest;
+    const summary = summarizeArticle(article);
+    assert.equal(summary.cover_image, undefined);
+    assert.equal(summary.social_image, undefined);
+    assert.equal(summary.user, undefined);
+    assert.equal(summary.canonical_url, undefined);
+    assert.equal(summary.author, "heyitsjem");
+    assert.equal(summary.reactions, 82);
+    assert.deepEqual(
+        summarizeArticle({ ...article, tag_list: undefined }).tags,
+        [],
+    );
 });

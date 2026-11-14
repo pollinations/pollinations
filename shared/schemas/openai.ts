@@ -826,6 +826,9 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
+            "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

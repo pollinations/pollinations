@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "zenodo_search",
+                "zenodo_record",
             ].sort(),
         );
     });
@@ -644,4 +646,151 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Zenodo search formats repository records with DOI and capped description", async (t) => {
+    const longDescription =
+        'This study documents the complex environment and early evolution of the remarkable derecho that traversed portions of the central United States on 8 May 2009. Central to this study is the comparison of the 8 May 2009 derecho environment to that of other mesoscale convective systems (MCSs) that occurred in the central United States during a similar time of year. Synoptic-scale forcing was weak and thermodynamic instability was limited during the development of the initial convection, but several mesoscale features of the environment appeared to contribute to initiation and upscale growth, including a mountain wave, a midlevel jet streak, a weak midlevel vorticity maximum, a "Denver cyclone," and a region of upper-tropospheric inertial instability. The subsequent MCS developed in an environment with an unusually strong and deep low-level jet (LLJ), which transported exceptionally high amounts of low-level moisture northward very rapidly, destabilized the lower troposphere, and enhanced frontogenetical circulations that appeared to aid convective development. The thermodynamic environment ahead of the developing MCS contained unusually high precipitable water (PW) and very large midtropospheric lapse rates, compared to other central plains MCSs. Values of downdraft convective available potential energy (DCAPE), mean winds, and 0-6-km vertical wind shear were not as anomalously large as the PW, lapse rates, and LLJ. In fact, the DCAPE values were lower than the mean values in the comparison dataset. These results suggest that the factors contributing to updraft strength over a relatively confined area played a significant role in generating the strong outflow winds at the surface, by providing a large volume of hydrometeors to drive the downdrafts.';
+    const recordFixture = {
+        id: 1234567,
+        doi: "10.1175/2010mwr3413.1",
+        metadata: {
+            title: "Environment and Early Evolution of the 8 May 2009 Derecho-Producing Convective System",
+            creators: [
+                { name: "Coniglio, Michael C." },
+                { name: "Corfidi, Stephen F." },
+                { name: "Kain, John S." },
+            ],
+            publication_date: "2011-04-01",
+            resource_type: {
+                title: "Journal article",
+                type: "publication",
+                subtype: "article",
+            },
+            doi: "10.1175/2010mwr3413.1",
+            access_right: "open",
+            license: { id: "cc-zero" },
+            description: longDescription,
+        },
+        links: { self_html: "https://zenodo.org/records/1234567" },
+        stats: { downloads: 8853, views: 10540 },
+        files: [{ key: "article.pdf", size: 12106287 }],
+    };
+
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "zenodo.org");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        if (url.pathname === "/api/records/999999999999") {
+            return Response.json(
+                {
+                    status: 404,
+                    message: "The persistent identifier does not exist.",
+                },
+                { status: 404 },
+            );
+        }
+        if (url.pathname === "/api/records/1234567") {
+            return Response.json(recordFixture);
+        }
+        assert.equal(url.pathname, "/api/records");
+        if (url.searchParams.get("q") === "climate change") {
+            assert.equal(url.searchParams.get("size"), "2");
+            return Response.json({
+                hits: {
+                    total: 257102,
+                    hits: [
+                        {
+                            id: 14611580,
+                            doi: "10.5281/zenodo.14611580",
+                            metadata: {
+                                title: "climatechange-ai-tutorials/commonpower-safe-rl",
+                                creators: [{ name: "Climate Change AI" }],
+                                publication_date: "2025-01-07",
+                                resource_type: {
+                                    title: "Software",
+                                    type: "software",
+                                },
+                                doi: "10.5281/zenodo.14611580",
+                                access_right: "open",
+                                description:
+                                    "<p>This tutorial introduces the CommonPower library, designed to benchmark safe reinforcement learning (RL) algorithms on control problems for power systems. We highlight two crucial issues in RL for power systems: the need for realistic benchmarks and the importance of safety constraints. CommonPower provides a set of environments and tools to evaluate RL algorithms under safety constraints.</p>",
+                            },
+                            links: {
+                                self_html:
+                                    "https://zenodo.org/records/14611580",
+                            },
+                        },
+                        recordFixture,
+                    ],
+                },
+            });
+        }
+        return Response.json({ hits: { total: 0, hits: [] } });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "zenodo_search", {
+        query: "climate change",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.totalResults, 257102);
+    assert.equal(val.query, "climate change");
+    const first = val.records[0];
+    assert.equal(first.id, 14611580);
+    assert.equal(first.title, "climatechange-ai-tutorials/commonpower-safe-rl");
+    assert.deepEqual(first.creators, ["Climate Change AI"]);
+    assert.equal(first.year, "2025");
+    assert.equal(first.resourceType, "Software");
+    assert.equal(first.doi, "10.5281/zenodo.14611580");
+    assert.equal(first.url, "https://zenodo.org/records/14611580");
+    assert.equal(first.accessRight, "open");
+    assert.match(
+        first.description,
+        /^This tutorial introduces the CommonPower library/,
+    );
+    assert.doesNotMatch(first.description, /</);
+    // Second hit carries the long real description: capped at exactly 500 chars.
+    assert.equal(val.records[1].description.length, 500);
+    assert.match(val.records[1].description, /^This study documents/);
+
+    const empty = await call(c, "zenodo_search", {
+        query: "zzzqqqxjjjnonexistentterm",
+        limit: 5,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.equal(value(empty).totalResults, 0);
+    assert.deepEqual(value(empty).records, []);
+
+    const detail = await call(c, "zenodo_record", { id: 1234567 });
+    assert.notEqual(detail.isError, true, JSON.stringify(detail));
+    const record = value(detail).record;
+    assert.equal(record.id, 1234567);
+    assert.equal(
+        record.title,
+        "Environment and Early Evolution of the 8 May 2009 Derecho-Producing Convective System",
+    );
+    assert.deepEqual(record.creators, [
+        "Coniglio, Michael C.",
+        "Corfidi, Stephen F.",
+        "Kain, John S.",
+    ]);
+    assert.equal(record.year, "2011");
+    assert.equal(record.resourceType, "Journal article");
+    assert.equal(record.doi, "10.1175/2010mwr3413.1");
+    assert.equal(record.url, "https://zenodo.org/records/1234567");
+    assert.equal(record.license, "cc-zero");
+    assert.equal(record.version, null);
+    assert.deepEqual(record.keywords, []);
+    assert.equal(record.description.length, 1774);
+    assert.deepEqual(record.stats, { downloads: 8853, views: 10540 });
+    assert.deepEqual(record.files, [{ name: "article.pdf", size: 12106287 }]);
+    assert.equal(record.fileCount, 1);
+
+    const missing = await call(c, "zenodo_record", { id: 999999999999 });
+    assert.equal(missing.isError, true);
 });

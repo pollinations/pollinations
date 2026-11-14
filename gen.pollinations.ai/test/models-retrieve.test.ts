@@ -407,6 +407,82 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
+test("model listings expose pricing variants so agents can price long-context calls", async () => {
+    type ListedModel = {
+        id: string;
+        pricing?: Record<string, string>;
+        pricing_variants?: {
+            name: string;
+            label: string;
+            description: string;
+            pricing: Record<string, string>;
+        }[];
+        pricing_default_label?: string;
+        pricing_dimensions?: {
+            key: string;
+            label: string;
+            unit?: string;
+            values: Record<string, string>;
+        }[];
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.pricing_variants, model.id).toEqual(
+            info?.pricing_variants,
+        );
+        expect(model.pricing_default_label, model.id).toEqual(
+            info?.pricing_default_label,
+        );
+        expect(model.pricing_dimensions, model.id).toEqual(
+            info?.pricing_dimensions,
+        );
+    }
+
+    const withVariants = list.data.filter(
+        (model) => model.pricing_variants?.length,
+    );
+    expect(withVariants.length).toBeGreaterThan(0);
+    // The variant must actually change the price, or it is noise: Haiku 5.5
+    // bills 5x past 100K prompt tokens, so a 150K-token call priced from the
+    // base rate alone would underestimate cost 5x.
+    const haiku = withVariants.find(
+        (model) => model.id === "anthropic/claude-haiku-5.5",
+    );
+    expect(haiku, "claude-haiku-5.5 listed with variants").toBeDefined();
+    expect(haiku?.pricing_default_label).toBe("≤100K context");
+    expect(haiku?.pricing_dimensions?.[0]?.key).toBe("context");
+    const longContext = haiku?.pricing_variants?.find(
+        (variant) => variant.name === "long_context",
+    );
+    expect(longContext?.label).toBe("Long context (>100K)");
+    const baseRate = Number(haiku?.pricing?.promptTextTokens);
+    const variantRate = Number(longContext?.pricing.promptTextTokens);
+    expect(baseRate).toBeGreaterThan(0);
+    expect(variantRate / baseRate).toBeCloseTo(5, 5);
+
+    for (const model of withVariants) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_variants, model.id).toEqual(
+            model.pricing_variants,
+        );
+        expect(retrieved.pricing_default_label, model.id).toEqual(
+            model.pricing_default_label,
+        );
+        expect(retrieved.pricing_dimensions, model.id).toEqual(
+            model.pricing_dimensions,
+        );
+    }
+});
+
 test("model listings expose reference media limits on /v1/models", async () => {
     type ListedModel = {
         id: string;

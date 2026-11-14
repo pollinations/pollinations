@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
+import { imageTags } from "./tools/docker.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
 
@@ -80,6 +81,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
@@ -689,4 +691,83 @@ test("package_downloads passes through daily counts and validates names", async 
         arguments: { name: "zod", range: "since-forever" },
     });
     assert.equal(badRange.isError, true);
+});
+
+test("Docker Hub tags resolve official images under library and drop build attestations", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        return Response.json({
+            count: 9303,
+            results: [
+                {
+                    name: "22-alpine",
+                    last_updated: "2026-11-11T20:38:25.168462Z",
+                    tag_last_pushed: "2026-11-11T20:38:21.732094Z",
+                    full_size: 61366182,
+                    digest: "sha256:5b05da3f",
+                    images: [
+                        { architecture: "amd64", os: "linux", variant: null },
+                        { architecture: "arm64", os: "linux", variant: "v8" },
+                        { architecture: "arm", os: "linux", variant: "v7" },
+                        {
+                            architecture: "unknown",
+                            os: "unknown",
+                            variant: null,
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const filtered = await call(client, "container_image_tags", {
+        image: "node",
+        filter: "22-alpine",
+        limit: 5,
+    });
+    await call(client, "container_image_tags", { image: "node" });
+    assert.deepEqual(urls, [
+        "https://hub.docker.com/v2/repositories/library/node/tags?page_size=5&ordering=last_updated&name=22-alpine",
+        "https://hub.docker.com/v2/repositories/library/node/tags?page_size=25&ordering=last_updated",
+    ]);
+    assert.equal(filtered.repository, "library/node");
+    assert.equal(filtered.tag_count, 9303);
+    assert.deepEqual(filtered.tags, [
+        {
+            tag: "22-alpine",
+            last_pushed: "2026-11-11T20:38:21.732094Z",
+            size_bytes: 61366182,
+            digest: "sha256:5b05da3f",
+            platforms: ["linux/amd64", "linux/arm/v7", "linux/arm64/v8"],
+        },
+    ]);
+});
+test("Docker Hub exact tag and rejected repository names", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json({
+            name: "13.2-slim",
+            last_updated: "2026-11-10T17:48:43.383832Z",
+            full_size: 324679011,
+            digest: "sha256:fa7bcee8",
+            images: [{ architecture: "amd64", os: "linux" }],
+        });
+    });
+    const client = await clientFor(t);
+    const one = await call(client, "container_image_tags", {
+        image: "grafana/grafana",
+        tag: "13.2-slim",
+    });
+    assert.deepEqual(urls, [
+        "https://hub.docker.com/v2/repositories/grafana/grafana/tags/13.2-slim",
+    ]);
+    assert.equal(one.tag_count, 1);
+    assert.equal(one.tags[0].last_pushed, "2026-11-10T17:48:43.383832Z");
+    assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
+    for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
+        await assert.rejects(imageTags({ image }), /tag|repository/i);
 });

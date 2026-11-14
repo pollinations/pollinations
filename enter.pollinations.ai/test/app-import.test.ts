@@ -1,9 +1,16 @@
-import { env } from "cloudflare:test";
+import {
+    createExecutionContext,
+    createScheduledController,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { app } from "@shared/db/apps.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect, it } from "vitest";
+import worker from "../src/index.ts";
 import { importApps } from "../src/services/app-import.ts";
+import { test } from "./fixtures.ts";
 
 // One entry as operations/app-management/app.json holds it.
 const entry = (id: string, overrides: Record<string, unknown> = {}) => ({
@@ -80,4 +87,22 @@ it("refuses a catalog with a malformed app", async () => {
 
     await expect(importApps(env.DB, catalog)).rejects.toThrow();
     expect(await drizzle(env.DB).$count(app)).toBe(0);
+});
+
+test("the 15-minute job imports the catalog GitHub serves", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    mocks.github.state.appCatalog = [entry("from-github")];
+
+    const ctx = createExecutionContext();
+    await worker.scheduled(createScheduledController(), env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(
+        await drizzle(env.DB)
+            .select({ name: app.name })
+            .from(app)
+            .where(eq(app.id, "from-github")),
+    ).toEqual([{ name: "App from-github" }]);
 });

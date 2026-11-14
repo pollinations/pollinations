@@ -168,7 +168,11 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(await buildQuestLeaderboard(env, 0, 1)).toEqual(payload);
 });
 
-test("visitors read the scheduled leaderboard copy until the next run", async () => {
+test("visitors read the scheduled leaderboard copy until the next run", async ({
+    mocks,
+}) => {
+    // The same run imports the app catalog from GitHub.
+    await mocks.enable("github");
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.user).values({
         id: "scheduled-builder",

@@ -826,6 +826,9 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        flat_rate: ModelInfoSchema.shape.flat_rate.describe(
+            "True when the price is a flat rate per image rather than per unit. Omitted when the model is not flat-rate.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

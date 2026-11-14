@@ -2,6 +2,53 @@ import { prerelease, rcompare, valid } from "semver";
 import { z } from "zod";
 import { fetchJson, fetchText } from "../fetch.js";
 
+// Library dependencies from a .cabal file: one or more `build-depends:`
+// blocks in the library section. Conditional blocks nested under `if`
+// lines are more indented than the section's fields, so only blocks at
+// the field indent count; continuation lines start with a comma.
+function parseCabalDependencies(cabal) {
+    const lines = cabal.split("\n");
+    const start = lines.findIndex((line) => /^library(\s|$)/.test(line));
+    if (start === -1) return {};
+    let end = lines.length;
+    for (let i = start + 1; i < lines.length; i++) {
+        if (
+            /^(executable|test-suite|benchmark|flag|source-repository|library|common)\b/.test(
+                lines[i],
+            )
+        ) {
+            end = i;
+            break;
+        }
+    }
+    const section = lines.slice(start + 1, end);
+    const dependencies = {};
+    let fieldIndent = null;
+    for (let i = 0; i < section.length; i++) {
+        const match = section[i].match(/^(\s*)build-depends:\s*(.*)$/);
+        if (!match) continue;
+        if (fieldIndent === null) fieldIndent = match[1].length;
+        if (match[1].length !== fieldIndent) continue;
+        const chunks = [match[2]];
+        for (let j = i + 1; j < section.length; j++) {
+            const next = section[j];
+            if (!next.trim() || !/^\s/.test(next)) break;
+            if (next.match(/^\s*/)[0].length <= fieldIndent) break;
+            chunks.push(next.trim());
+        }
+        // Entries are comma-separated; continuation lines start with a
+        // comma or sit on their own line, so split on both.
+        for (const chunk of chunks.join("\n").split(/[,\n]+/)) {
+            const entry = chunk.trim();
+            if (!entry) continue;
+            const [pkg, ...rest] = entry.split(/\s+/);
+            if (!/^[A-Za-z][A-Za-z0-9-]*$/.test(pkg)) continue;
+            dependencies[pkg] = rest.join(" ") || null;
+        }
+    }
+    return dependencies;
+}
+
 // Registry metadata selection from xiaotian1171 (#17699).
 export async function lookup({ ecosystem, name, version }) {
     const patterns = {
@@ -13,6 +60,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Hackage names start with a letter and hold letters, digits, hyphens.
+        hackage: /^[A-Za-z][A-Za-z0-9-]{0,127}$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +215,63 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "hackage") {
+        // /package/<name>.json maps every version to "normal" or "deprecated".
+        const versions = await fetchJson(
+            `https://hackage.haskell.org/package/${encoded}.json`,
+        );
+        const available = Object.keys(versions);
+        if (available.length === 0)
+            throw new Error(`Hackage package ${name} not found`);
+        // Hackage versions are dot-separated numbers (PVP), not semver:
+        // "2.3.2.0" has four components, so compare numerically per component.
+        const byNewest = (a, b) => {
+            const x = a.split(".").map(Number);
+            const y = b.split(".").map(Number);
+            for (let i = 0; i < Math.max(x.length, y.length); i++)
+                if ((x[i] ?? 0) !== (y[i] ?? 0))
+                    return (y[i] ?? 0) - (x[i] ?? 0);
+            return 0;
+        };
+        let resolved;
+        if (version) {
+            if (!available.includes(version))
+                throw new Error(
+                    `Hackage version ${version} not found for ${name}`,
+                );
+            resolved = version;
+        } else {
+            const normal = available.filter((v) => versions[v] === "normal");
+            resolved = [...(normal.length ? normal : available)].sort(
+                byNewest,
+            )[0];
+        }
+        const [meta, cabal] = await Promise.all([
+            fetchJson(
+                `https://hackage.haskell.org/package/${encoded}-${encodeURIComponent(resolved)}.json`,
+            ),
+            // The .cabal file carries the dependencies the metadata JSON omits.
+            // A missing or unparsable .cabal must not kill the lookup.
+            fetchText(
+                `https://hackage.haskell.org/package/${encoded}-${encodeURIComponent(resolved)}/${encoded}.cabal`,
+            ).catch(() => null),
+        ]);
+        return {
+            ecosystem,
+            name,
+            version: resolved,
+            description: meta.synopsis ?? null,
+            longDescription: meta.description ?? null,
+            license: meta.license ?? null,
+            homepage: meta.homepage ?? null,
+            author: meta.author ?? null,
+            uploadedAt: meta.uploaded_at ?? null,
+            uploader: meta.uploader ?? null,
+            deprecated: versions[resolved] === "deprecated",
+            dependencies: parseCabalDependencies(cabal ?? ""),
+            registryUrl: `https://hackage.haskell.org/package/${encoded}-${encodeURIComponent(resolved)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +309,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/Hackage (Haskell) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Haskell highest non-deprecated version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +319,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "hackage",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

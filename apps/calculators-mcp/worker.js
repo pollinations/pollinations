@@ -4,6 +4,7 @@ import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
+import { geoTools } from "./tools/geo.js";
 import { hashTools } from "./tools/hash.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
@@ -26,6 +27,7 @@ const handler = createMcpHandler(
             ...diffTools,
             ...fractionTools,
             ...versionTools,
+            ...geoTools,
         ]) {
             server.registerTool(
                 name,

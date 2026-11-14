@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "compare_versions",
+                "distance_between",
                 "to_fraction",
                 "diff_text",
                 "create_qr",
@@ -674,4 +675,67 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("distance_between returns kilometres, bearing and the midpoint", async (t) => {
+    const c = await clientFor(t);
+    const data = await call(c, "distance_between", {
+        from_latitude: 55.7558,
+        from_longitude: 37.6173,
+        to_latitude: 59.9343,
+        to_longitude: 30.3351,
+    });
+    assert.equal(data.kilometers, 633.021);
+    assert.equal(data.miles, 393.341);
+    assert.equal(data.nautical_miles, 341.804);
+    assert.equal(data.initial_bearing_degrees, 320.2);
+    assert.equal(data.compass, "NW");
+    assert.ok(
+        data.midpoint.latitude > 57 && data.midpoint.latitude < 59,
+        JSON.stringify(data.midpoint),
+    );
+    assert.ok(
+        data.midpoint.longitude > 33 && data.midpoint.longitude < 35,
+        JSON.stringify(data.midpoint),
+    );
+});
+
+test("distance_between follows the shortest path across the antimeridian", async (t) => {
+    const c = await clientFor(t);
+    const data = await call(c, "distance_between", {
+        from_latitude: 0,
+        from_longitude: 170,
+        to_latitude: 0,
+        to_longitude: -170,
+    });
+    assert.equal(data.kilometers, 2223.902);
+    assert.equal(data.initial_bearing_degrees, 90);
+    assert.equal(data.compass, "E");
+    assert.equal(data.midpoint.latitude, 0);
+    assert.equal(Math.abs(data.midpoint.longitude), 180);
+});
+
+test("distance_between returns zero for the same point and rejects bad latitudes", async (t) => {
+    const c = await clientFor(t);
+    const data = await call(c, "distance_between", {
+        from_latitude: 10,
+        from_longitude: 20,
+        to_latitude: 10,
+        to_longitude: 20,
+    });
+    assert.equal(data.kilometers, 0);
+    assert.equal(data.initial_bearing_degrees, 0);
+    assert.equal(data.compass, "N");
+
+    const invalid = await c.callTool({
+        name: "distance_between",
+        arguments: {
+            from_latitude: 95,
+            from_longitude: 20,
+            to_latitude: 10,
+            to_longitude: 20,
+        },
+    });
+    assert.equal(invalid.isError, true);
+    assert.match(invalid.content[0].text, /latitude|90/i);
 });

@@ -1,107 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-13T06:14:06.508681+00:00",
+  "generated_at": "2026-11-14T06:06:12.594734+00:00",
   "models": [
-    {
-      "id": "2026-10-14:inferenceport-ai/lightning-text-v2",
-      "model_id": "inferenceport-ai/lightning-text-v2",
-      "title": "Lightning Text v2",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-14",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 128000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000075",
-            "completionTextTokens": "0.00000075"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-14:inferenceport-ai/lightning-text-v2.1",
-      "model_id": "inferenceport-ai/lightning-text-v2.1",
-      "title": "Lightning Text v2.1",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-14",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 128000
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000075",
-            "completionTextTokens": "0.00000075"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-15:perplexity/pplx-decider-v1.1-27b",
       "model_id": "perplexity/pplx-decider-v1.1-27b",
@@ -3494,48 +3394,6 @@
   ],
   "api": [
     {
-      "id": "pr-17507:POST /account/my-models/endpoint-agents",
-      "endpoint": "POST /account/my-models/endpoint-agents",
-      "summary": "Create Endpoint Agent",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:capabilities",
-          "before": null,
-          "after": {
-            "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-14",
-      "pr": 17507,
-      "url": "https://github.com/pollinations/pollinations/pull/17507"
-    },
-    {
-      "id": "pr-17507:POST /account/my-models/{id}/update",
-      "endpoint": "POST /account/my-models/{id}/update",
-      "summary": "Update My Model",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "body:capabilities",
-          "before": null,
-          "after": {
-            "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-14",
-      "pr": 17507,
-      "url": "https://github.com/pollinations/pollinations/pull/17507"
-    },
-    {
       "id": "pr-17526:GET /v1/jobs/{id}",
       "endpoint": "GET /v1/jobs/{id}",
       "summary": "Get Media Job Status",
@@ -4691,6 +4549,36 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-13",
+      "emoji": "🤖",
+      "title": "Agents get their own page",
+      "text": "Browse Agents and MCP on dedicated pages. Manage your Agents, Models and Apps together in My listings.",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-13",
+      "emoji": "✨",
+      "title": "Browse sandbox starters",
+      "text": "Browse sandbox starter templates and prices without signing in. Sign in to create a sandbox or view yours.",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-13",
+      "emoji": "🔗",
+      "title": "Keys in two tabs",
+      "text": "Switch between Secret and App keys in one card. Open the App tab directly with `/keys?tab=app`. [Open Keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-12",
       "emoji": "🎨",
@@ -5873,66 +5761,6 @@
         17492
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "🤖",
-      "title": "Lightning Text v2 and v2.1",
-      "text": "Try two InferencePort text models with 128,000-token context windows, image input, tool use and JSON output. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        16265
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "🎨",
-      "title": "3D generation in the SDK",
-      "text": "Use `model3d()` to generate a 3D file from a public reference image, with options for resolution, seed and safety. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        17310
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "🎵",
-      "title": "Speech with word timings",
-      "text": "Use `audioSpeechWithTimestamps()` to get speech audio, character alignments and derived word timings in one SDK response. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        17310
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "💡",
-      "title": "Model health in the SDK",
-      "text": "Query model health and metadata with `modelStatus()`, including traffic and rolling-window filters. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        17310
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "✨",
-      "title": "React generation hooks",
-      "text": "Build with headless hooks for image, text, audio, video and transcription generation. Each provides loading and error state, plus run, rerun and cancel controls. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        17331
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "🔗",
-      "title": "Pollinations transport for useChat",
-      "text": "Connect AI SDK `useChat` to streaming Pollinations responses with `usePollinationsChatTransport`, including usage and server-run MCP tool results. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        17331
-      ],
-      "kind": "product"
     }
   ]
 }

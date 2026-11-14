@@ -80,6 +80,12 @@ async function generateText(params, context) {
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
 
+        // The gateway returns 200 with finish_reason "error" when generation
+        // fails part way; don't hand the partial text back as a success.
+        if (result.choices?.some((c) => c?.finish_reason === "error")) {
+            throw new Error("Chat completion failed");
+        }
+
         const responseContent = [];
 
         if (assistantMessage?.content) {

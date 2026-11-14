@@ -175,6 +175,59 @@ describe("API Key Management", () => {
             });
         });
 
+        test("rejects non-zero budgets when updating publishable keys", async ({
+            accountToken,
+        }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "update-budget-publishable",
+                        type: "publishable",
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const created = await response.json();
+
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${created.id}`,
+                {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify({ pollenBudget: 5 }),
+                },
+            );
+            expect(update.status).toBe(400);
+            await expect(update.json()).resolves.toMatchObject({
+                error: {
+                    message: "Publishable keys must have a pollen budget of 0",
+                },
+            });
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(stored?.pollenBalance).toBe(0);
+
+            const zero = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${created.id}`,
+                {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify({ pollenBudget: 0 }),
+                },
+            );
+            expect(zero.status).toBe(200);
+        });
+
         test("should create publishable key metadata in one step", async ({
             accountToken,
         }) => {

@@ -2,15 +2,16 @@
 
 Generate 3D models from text prompts and images via a simple GET request.
 Returns glTF Binary in GLB format by default. Depending on the model, certain
-models ignore text inputs. Any text prompt passed to the Trellis 2/Asset Harvester family will
-be ignored; only the image URL is used.
+models ignore text inputs. Prompts sent to TripoSR, Trellis 2, or Asset Harvester
+are ignored; these models use only the reference image.
 
 https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftrellis-2&resolution=low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
 
 **Available models:** {{3D_MODELS}}
 
-> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen. `microsoft/trellis-2` (the default)
-> supports `low`, `medium`, and `high` resolution and works with Quest Pollen.
+> **Note:** All InferencePort-backed 3D models including `stability-ai/triposr`,
+> `microsoft/trellis-2`, and `nvidia/asset-harvester` require Paid Pollen.
+> `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution.
 
 ### NVIDIA Asset Harvester
 
@@ -18,3 +19,23 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftr
 models in PLY format. Unlike other 3D models that return GLB, Asset Harvester
 returns raw PLY binary suitable for real-time rendering in Gaussian Splat
 viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).
+
+### Stability AI TripoSR (InferencePort AI)
+
+`stability-ai/triposr` (alias `tripoSR`) produces a downloadable GLB from one
+reference image, with no text prompt. It requires Paid Pollen and is priced
+at **0.07 Pollen per generation** (matching InferencePort upstream list cost, with no markup).
+
+```bash
+curl -X POST 'https://gen.pollinations.ai/3d' \
+  -H 'Authorization: Bearer YOUR_POLLINATIONS_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"tripoSR","image_urls":["https://example.com/reference.png"]}' \
+  --output model.glb
+```
+
+JSON requests also accept an image as `image` (string or URL array), or a
+base64-encoded PNG/JPEG/WebP data URI. Supply exactly one image for TripoSR.
+The server submits and polls InferencePort's asynchronous job API, returning
+only a completed GLB. Failed and refunded jobs do not generate a Pollinations
+usage charge. The provider API key stays on the server.

@@ -329,6 +329,19 @@ const yamlClient = (adapter: {
     };
 };
 
+// Zed reads %APPDATA%\Zed on Windows and ~/.config/zed on macOS; only
+// Linux honors XDG_CONFIG_HOME (zed crates/paths config_dir).
+const zedConfigDir = (ctx: McpContext): string => {
+    if (process.platform === "win32") {
+        return join(
+            ctx.env.APPDATA ?? join(ctx.home, "AppData", "Roaming"),
+            "Zed",
+        );
+    }
+    if (process.platform === "darwin") return join(ctx.home, ".config", "zed");
+    return join(ctx.env.XDG_CONFIG_HOME ?? join(ctx.home, ".config"), "zed");
+};
+
 const vscodeUserDir = (ctx: McpContext): string => {
     if (process.platform === "win32") {
         return join(
@@ -456,12 +469,7 @@ const jsonClients: McpClientAdapter[] = [
         label: "Zed",
         description: "Zed (native HTTP context_servers)",
         target: {
-            file: (ctx) =>
-                join(
-                    ctx.env.XDG_CONFIG_HOME ?? join(ctx.home, ".config"),
-                    "zed",
-                    "settings.json",
-                ),
+            file: (ctx) => join(zedConfigDir(ctx), "settings.json"),
             table: "context_servers",
             entry: urlEntry,
         },

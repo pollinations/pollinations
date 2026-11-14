@@ -47,7 +47,7 @@ export type ModelVariables = {
          */
         cacheScope?: string;
         /** Entry that serves the request when this model's upstream fails. */
-        fallbackEntries?: (GenerationModelEntry & { requestedId?: string })[];
+        fallbackEntries?: GenerationModelEntry[];
     };
     formData?: FormData;
 };
@@ -179,8 +179,7 @@ export async function resolveModelDefinition(
     supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
-    const ids = requestedModelIds(model);
-    const entries = ids.map((id) =>
+    const entries = requestedModelIds(model).map((id) =>
         resolveModelEntry(
             registry,
             id,
@@ -201,10 +200,7 @@ export async function resolveModelDefinition(
     }
     // Explicit lists replace configured fallbacks, preserving order and repeats.
     const fallbackEntries = model.includes(",")
-        ? alternates.map((alternate, index) => ({
-              ...alternate,
-              requestedId: ids[index + 1],
-          }))
+        ? alternates
         : (entry.fallbackEntries ?? []);
     // An agent run executes tools and spends the caller's balance, so its
     // answer belongs to that caller and must never be replayed to another —

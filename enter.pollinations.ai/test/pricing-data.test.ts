@@ -1852,8 +1852,10 @@ test("quality and resolution changes preserve the other pricing choice", () => {
             .find((control) => control.key === key)
             ?.options.find((option) => option.label === label)?.value;
     expect(choose("low_2k", "quality", "Medium")).toBe("medium_2k");
-    expect(choose("medium_2k", "resolution", "1K")).toBe("");
-    expect(choose("", "quality", "Low")).toBe("low_1k");
+    expect(choose("medium_2k", "resolution", "1K")).toBe("medium_1k");
+    expect(choose("medium_2k", "quality", "Low")).toBe("low_2k");
+    expect(choose("low_2k", "resolution", "1K")).toBe("");
+    expect(choose("", "quality", "Medium")).toBe("medium_1k");
 });
 
 test("dependent video choices select existing prices without impossible combinations", () => {

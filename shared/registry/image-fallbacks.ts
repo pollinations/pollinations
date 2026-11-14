@@ -344,14 +344,14 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-10-24").getTime(),
             cost: {
                 promptImageTokens: 0.01 * 1.055,
-                completionImageTokens: 0.06 * 1.055, // medium, 1K
+                completionImageTokens: 0.04 * 1.055, // low, 1K
             },
             costVariants: {
-                low_1k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.04 * 1.055,
-                },
                 low_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
+                },
+                medium_1k: {
                     promptImageTokens: 0.01 * 1.055,
                     completionImageTokens: 0.06 * 1.055,
                 },

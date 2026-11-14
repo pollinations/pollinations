@@ -963,6 +963,9 @@ const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high", "auto"])
     .optional()
     .meta({
+        // Documents the fallback only: a model's own `defaultQuality` applies
+        // when the caller omits it, so the schema must not inject a value.
+        default: "medium",
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });

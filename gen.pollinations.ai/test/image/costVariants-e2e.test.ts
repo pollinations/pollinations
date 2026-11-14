@@ -325,7 +325,7 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     });
 });
 
-test("Grok Imagine Pro names use Image 2.0 low at 1K", async ({
+test("Grok Imagine Image 2.0 and its Pro aliases default to low at 1K", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -335,6 +335,8 @@ test("Grok Imagine Pro names use Image 2.0 low at 1K", async ({
     ]);
 
     const names = [
+        "x-ai/grok-imagine-image-2.0",
+        "grok-imagine-image-2.0",
         "x-ai/grok-imagine-image-quality",
         "grok-aurora",
         "aurora",
@@ -379,7 +381,6 @@ test("Grok Imagine Pro names use Image 2.0 low at 1K", async ({
     for (const event of mocks.tinybird.state.events) {
         expect(event).toMatchObject({
             modelUsed: "x-ai/grok-imagine-image-2.0",
-            costVariant: "low_1k",
             tokenPriceCompletionImage: 0.04,
             totalPrice: expect.closeTo(
                 event.tokenCountPromptImage ? 0.05 : 0.04,
@@ -410,9 +411,43 @@ test("Grok Imagine Pro names use Image 2.0 low at 1K", async ({
     ]);
     expect(mocks.tinybird.state.events.at(-1)).toMatchObject({
         modelUsed: "x-ai/grok-imagine-image-2.0:openrouter",
-        costVariant: "low_1k",
+        tokenPriceCompletionImage: 0.04,
         totalPrice: 0.04,
     });
+});
+
+test("Grok Imagine Image 2.0 bills medium only when requested", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "xai", "media");
+    syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+        "XAI_API_KEY",
+    ]);
+
+    await generate(
+        "/image/grok-medium-1k?model=grok-imagine-pro&quality=medium",
+        paidApiKey,
+    );
+    await generate("/v1/images/generations", paidApiKey, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            model: "grok-imagine-image-2.0",
+            prompt: "grok-medium-2k",
+            quality: "medium",
+            resolution: "2k",
+        }),
+    });
+
+    expect(mocks.xai.state.calls).toEqual([
+        expect.objectContaining({ quality: "medium", resolution: "1k" }),
+        expect.objectContaining({ quality: "medium", resolution: "2k" }),
+    ]);
+    expect(mocks.tinybird.state.events).toMatchObject([
+        { costVariant: "medium_1k", totalPrice: 0.06 },
+        { costVariant: "medium_2k", totalPrice: 0.08 },
+    ]);
 });
 
 test("H3 Max bills reference provider units without inflating video duration", async ({

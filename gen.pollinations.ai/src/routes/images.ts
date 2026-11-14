@@ -22,10 +22,7 @@ import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
-import {
-    defaultImageQuality,
-    generateImageOrVideoResponse,
-} from "@/image/handler.ts";
+import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
@@ -386,7 +383,8 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
                     ...resolved,
                     quality:
                         resolved.quality ??
-                        defaultImageQuality(c.var.model.requested),
+                        c.var.model.definition.defaultQuality ??
+                        "medium",
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),
             ),

@@ -4,15 +4,6 @@ import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { BillingRules, ModelDefinition } from "./registry";
 
-export const GROK_IMAGINE_PRO_ALIASES = [
-    "x-ai/grok-imagine-image-quality",
-    "grok-aurora",
-    "aurora",
-    "grok-imagine-image-quality",
-    "grok-imagine-image-pro",
-    "grok-imagine-pro",
-];
-
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
@@ -1625,7 +1616,16 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
     "x-ai/grok-imagine-image-2.0": {
-        aliases: ["grok-imagine-image-2.0", ...GROK_IMAGINE_PRO_ALIASES],
+        aliases: [
+            "grok-imagine-image-2.0",
+            // Retired Grok Imagine Pro: xAI redirects it to 2.0 at low quality.
+            "x-ai/grok-imagine-image-quality",
+            "grok-aurora",
+            "aurora",
+            "grok-imagine-image-quality",
+            "grok-imagine-image-pro",
+            "grok-imagine-pro",
+        ],
         provider: "xai",
         publisher: "xAI",
         category: "image",
@@ -1633,17 +1633,18 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         // xAI direct API rates; a low 1K probe cost $0.04 (2026-10-24).
+        defaultQuality: "low",
         cost: {
             promptImageTokens: 0.01,
-            completionImageTokens: 0.06, // medium, 1K
+            completionImageTokens: 0.04, // low, 1K
         },
         ...defineCostVariants(
             {
-                low_1k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.04,
-                },
                 low_2k: {
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
+                },
+                medium_1k: {
                     promptImageTokens: 0.01,
                     completionImageTokens: 0.06,
                 },
@@ -1653,34 +1654,35 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             ({ input }) => {
-                if (input?.quality === "low") {
-                    return input.resolution === "2k" ? "low_2k" : "low_1k";
+                const is2k = input?.resolution === "2k";
+                if (input?.quality === "medium") {
+                    return is2k ? "medium_2k" : "medium_1k";
                 }
-                return input?.resolution === "2k" ? "medium_2k" : undefined;
+                return is2k ? "low_2k" : undefined;
             },
             {
-                low_1k: {
-                    label: "Low · 1K",
-                    description: "Applies to low-quality 1K requests.",
-                },
                 low_2k: {
                     label: "Low · 2K",
                     description: "Applies to low-quality 2K requests.",
+                },
+                medium_1k: {
+                    label: "Medium · 1K",
+                    description: "Applies to medium-quality 1K requests.",
                 },
                 medium_2k: {
                     label: "Medium · 2K",
                     description: "Applies to medium-quality 2K requests.",
                 },
             },
-            "Medium · 1K",
+            "Low · 1K",
             [
                 {
                     "key": "quality",
                     "label": "Quality",
                     "values": {
-                        "": "Medium",
-                        "low_1k": "Low",
+                        "": "Low",
                         "low_2k": "Low",
+                        "medium_1k": "Medium",
                         "medium_2k": "Medium",
                     },
                 },
@@ -1689,8 +1691,8 @@ const IMAGE_BASE_SERVICES = {
                     "label": "Resolution",
                     "values": {
                         "": "1K",
-                        "low_1k": "1K",
                         "low_2k": "2K",
+                        "medium_1k": "1K",
                         "medium_2k": "2K",
                     },
                 },

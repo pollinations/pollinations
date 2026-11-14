@@ -75,6 +75,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "unit_convert",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -280,6 +281,145 @@ test("contrast uses real ratios, with shorthand and sorted palette", async (t) =
         palette.colors.map((c) => c.color),
         ["#000000", "#aaaaaa", "#ffffff"],
     );
+});
+test("unit_convert converts exactly across length, mass, volume, temperature, area, speed and data", async (t) => {
+    const client = await clientFor(t);
+    // Exact factors: 1 mi is 1609.344 m by definition, 1 cup is 236.5882365 mL.
+    for (const [value, from_unit, to_unit, category, result] of [
+        [1, "mi", "km", "length", 1.609344],
+        [1, "km", "m", "length", 1000],
+        [12, "in", "ft", "length", 1],
+        [1, "yd", "ft", "length", 3],
+        [100, "cm", "m", "length", 1],
+        [1, "mm", "km", "length", 0.000001],
+        [1, "kg", "lb", "mass", 2.204622622],
+        [16, "oz", "lb", "mass", 1],
+        [1, "t", "kg", "mass", 1000],
+        [500, "g", "kg", "mass", 0.5],
+        [1, "cup", "ml", "volume", 236.5882365],
+        [1, "L", "ml", "volume", 1000],
+        [1, "gal", "l", "volume", 3.785411784],
+        [2, "tbsp", "ml", "volume", 29.57352956],
+        [3, "tsp", "ml", "volume", 14.78676478],
+        [1, "qt", "l", "volume", 0.946352946],
+        [1, "floz", "ml", "volume", 29.57352956],
+        [0, "C", "F", "temperature", 32],
+        [100, "C", "F", "temperature", 212],
+        [32, "F", "C", "temperature", 0],
+        [212, "F", "C", "temperature", 100],
+        [273.15, "K", "C", "temperature", 0],
+        [0, "K", "F", "temperature", -459.67],
+        [-40, "C", "F", "temperature", -40],
+        [0, "K", "C", "temperature", -273.15],
+        [1, "m2", "ft2", "area", 10.76391042],
+        [1, "acre", "m2", "area", 4046.856422],
+        [1, "ha", "acre", "area", 2.471053815],
+        [1, "km2", "m2", "area", 1000000],
+        [60, "mph", "km/h", "speed", 96.56064],
+        [100, "km/h", "m/s", "speed", 27.77777778],
+        [1, "kn", "km/h", "speed", 1.852],
+        // Data sizes are SI decimal: 1 GB is 1000 MB, so 1024 B is 1.024 KB.
+        [1, "GB", "MB", "data", 1000],
+        [1, "TB", "GB", "data", 1000],
+        [1024, "B", "KB", "data", 1.024],
+        [1, "MB", "KB", "data", 1000],
+    ]) {
+        assert.deepEqual(
+            await call(client, "unit_convert", { value, from_unit, to_unit }),
+            {
+                value,
+                from_unit: from_unit.toLowerCase(),
+                to_unit: to_unit.toLowerCase(),
+                category,
+                result,
+            },
+        );
+    }
+    // Same-unit identity and full-name aliases resolve to the same result.
+    assert.equal(
+        (
+            await call(client, "unit_convert", {
+                value: 42,
+                from_unit: "m",
+                to_unit: "m",
+            })
+        ).result,
+        42,
+    );
+    assert.equal(
+        (
+            await call(client, "unit_convert", {
+                value: 1,
+                from_unit: "miles",
+                to_unit: "km",
+            })
+        ).result,
+        1.609344,
+    );
+    assert.equal(
+        (
+            await call(client, "unit_convert", {
+                value: 1,
+                from_unit: "kilogram",
+                to_unit: "lb",
+            })
+        ).result,
+        2.204622622,
+    );
+    // Round-trips return to the exact original value.
+    const km = (
+        await call(client, "unit_convert", {
+            value: 5,
+            from_unit: "mi",
+            to_unit: "km",
+        })
+    ).result;
+    assert.equal(km, 8.04672);
+    assert.equal(
+        (
+            await call(client, "unit_convert", {
+                value: km,
+                from_unit: "km",
+                to_unit: "mi",
+            })
+        ).result,
+        5,
+    );
+    const celsius = (
+        await call(client, "unit_convert", {
+            value: 100,
+            from_unit: "F",
+            to_unit: "C",
+        })
+    ).result;
+    assert.equal(
+        (
+            await call(client, "unit_convert", {
+                value: celsius,
+                from_unit: "C",
+                to_unit: "F",
+            })
+        ).result,
+        100,
+    );
+});
+test("unit_convert rejects unknown units, cross-category conversions and impossible temperatures", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: 1, from_unit: "parsec", to_unit: "m" },
+        { value: 1, from_unit: "m", to_unit: "furlong" },
+        { value: 1, from_unit: "m", to_unit: "kg" },
+        { value: 1, from_unit: "l", to_unit: "m" },
+        { value: -300, from_unit: "C", to_unit: "F" },
+        { value: -500, from_unit: "F", to_unit: "C" },
+        { value: -1, from_unit: "K", to_unit: "C" },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "unit_convert", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
 });
 test("Unicode flags lookalikes and invisible characters without calling the network", async (t) => {
     const client = await clientFor(t);

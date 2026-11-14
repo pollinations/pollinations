@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "openlibrary_search",
+                "openlibrary_work",
             ].sort(),
         );
     });
@@ -644,4 +646,134 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Open Library search and work detail format books, covers and edition counts", async (t) => {
+    let requests = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests++;
+        assert.equal(url.hostname, "openlibrary.org");
+        if (url.pathname === "/search.json") {
+            assert.equal(
+                url.searchParams.get("fields"),
+                "key,title,author_name,first_publish_year,edition_count,cover_i",
+            );
+            if (url.searchParams.get("q") === "zzqxwvjklmnop12345")
+                return Response.json({ numFound: 0, docs: [] });
+            assert.equal(url.searchParams.get("q"), "pride and prejudice");
+            return Response.json({
+                numFound: 2364,
+                docs: [
+                    {
+                        key: "/works/OL66554W",
+                        title: "Pride and Prejudice",
+                        author_name: ["Jane Austen"],
+                        first_publish_year: 1813,
+                        edition_count: 4042,
+                        cover_i: 14348537,
+                    },
+                    {
+                        key: "/works/OL15093171W",
+                        title: "Pride and Prejudice and Zombies",
+                        author_name: [
+                            "Seth Grahame-Smith",
+                            "Jane Austen",
+                            "Katherine Kellgren",
+                        ],
+                        first_publish_year: 2009,
+                        edition_count: 19,
+                        cover_i: 6260257,
+                    },
+                ],
+            });
+        }
+        if (url.pathname === "/works/OL66554W.json") {
+            return Response.json({
+                key: "/works/OL66554W",
+                title: "Pride and Prejudice",
+                description:
+                    "Pride and Prejudice is an 1813 novel of manners written by Jane Austen. The novel follows the character development of Elizabeth Bennet.",
+                subjects: [
+                    "Fiction, Romance, Historical, Regency",
+                    "Courtship",
+                    "English fiction",
+                    ...Array.from({ length: 25 }, (_, i) => `Subject ${i}`),
+                ],
+                first_publish_date: "1813",
+                covers: [14348537, 8748572],
+            });
+        }
+        if (url.pathname === "/works/OL66554W/editions.json") {
+            assert.equal(url.searchParams.get("limit"), "1");
+            return Response.json({ size: 4042, entries: [{}] });
+        }
+        return new Response(JSON.stringify({ error: "notfound" }), {
+            status: 404,
+            headers: { "content-type": "application/json" },
+        });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "openlibrary_search", {
+        query: "pride and prejudice",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 2364);
+    assert.equal(searchVal.results[0].key, "/works/OL66554W");
+    assert.equal(searchVal.results[0].title, "Pride and Prejudice");
+    assert.deepEqual(searchVal.results[0].authors, ["Jane Austen"]);
+    assert.equal(searchVal.results[0].firstPublishYear, 1813);
+    assert.equal(searchVal.results[0].editions, 4042);
+    assert.equal(
+        searchVal.results[0].coverUrl,
+        "https://covers.openlibrary.org/b/id/14348537-M.jpg",
+    );
+    assert.equal(searchVal.results[1].firstPublishYear, 2009);
+
+    const emptyRes = await call(c, "openlibrary_search", {
+        query: "zzqxwvjklmnop12345",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).results, []);
+
+    // Full URL and bare key both normalize to the same work.
+    for (const key of [
+        "OL66554W",
+        "/works/OL66554W",
+        "https://openlibrary.org/works/OL66554W",
+    ]) {
+        const workRes = await call(c, "openlibrary_work", { key });
+        assert.notEqual(workRes.isError, true, JSON.stringify(workRes));
+        const work = value(workRes).work;
+        assert.equal(work.key, "/works/OL66554W");
+        assert.equal(work.title, "Pride and Prejudice");
+        assert.match(work.description, /1813 novel of manners/);
+        assert.equal(work.subjects.length, 20);
+        assert.ok(work.subjects.includes("Courtship"));
+        assert.equal(work.firstPublishDate, "1813");
+        assert.equal(work.editionsCount, 4042);
+        assert.equal(
+            work.coverUrl,
+            "https://covers.openlibrary.org/b/id/14348537-M.jpg",
+        );
+    }
+
+    const unknownRes = await call(c, "openlibrary_work", {
+        key: "OL99999999W",
+    });
+    assert.equal(unknownRes.isError, true);
+    assert.match(unknownRes.content[0].text, /404/);
+    assert.doesNotMatch(unknownRes.content[0].text, /notfound/);
+
+    const before = requests;
+    const malformedRes = await call(c, "openlibrary_work", {
+        key: "notakey",
+    });
+    assert.equal(malformedRes.isError, true);
+    assert.match(malformedRes.content[0].text, /Use an Open Library work key/);
+    assert.equal(requests, before);
 });

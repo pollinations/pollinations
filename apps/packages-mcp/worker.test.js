@@ -690,3 +690,224 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("Conda lookup resolves the latest release from the Anaconda release API", async (t) => {
+    const latestRelease = {
+        distributions: [
+            {
+                attrs: {
+                    arch: "x86_64",
+                    build: "py312he827f4e_0",
+                    build_number: 0,
+                    depends: [
+                        "python",
+                        "libstdcxx >=15",
+                        "libgcc >=15",
+                        "__glibc >=2.17,<3.0.a0",
+                        "liblapack >=3.9.0,<4.0a0",
+                        "python_abi 3.12.* *_cp312",
+                        "libblas >=3.9.0,<4.0a0",
+                        "libcblas >=3.9.0,<4.0a0",
+                    ],
+                    license: "BSD-3-Clause",
+                    platform: "linux",
+                    subdir: "linux-64",
+                },
+                basename: "linux-64/numpy-2.5.4-py312he827f4e_0.conda",
+                download_url:
+                    "//conda.anaconda.org/conda-forge/linux-64/numpy-2.5.4-py312he827f4e_0.conda",
+                full_name:
+                    "conda-forge/numpy/2.5.4/linux-64/numpy-2.5.4-py312he827f4e_0.conda",
+                ndownloads: 1344098,
+                owner: "conda-forge",
+                size: 9240540,
+                type: "conda",
+                upload_time: "2026-10-10 23:47:24.968000+00:00",
+                version: "2.5.4",
+            },
+            {
+                attrs: {
+                    arch: "arm64",
+                    build: "py312hff34920_0",
+                    build_number: 0,
+                    depends: [
+                        "python",
+                        "libcxx >=21",
+                        "__osx >=11.0",
+                        "python_abi 3.12.* *_cp312",
+                        "libcblas >=3.9.0,<4.0a0",
+                        "liblapack >=3.9.0,<4.0a0",
+                        "libblas >=3.9.0,<4.0a0",
+                    ],
+                    license: "BSD-3-Clause",
+                    platform: "osx",
+                    subdir: "osx-arm64",
+                },
+                basename: "osx-arm64/numpy-2.5.4-py312hff34920_0.conda",
+                download_url:
+                    "//conda.anaconda.org/conda-forge/osx-arm64/numpy-2.5.4-py312hff34920_0.conda",
+                full_name:
+                    "conda-forge/numpy/2.5.4/osx-arm64/numpy-2.5.4-py312hff34920_0.conda",
+                ndownloads: 91009,
+                owner: "conda-forge",
+                size: 7122982,
+                type: "conda",
+                upload_time: "2026-10-10 23:37:45.408000+00:00",
+                version: "2.5.4",
+            },
+            {
+                attrs: {
+                    arch: "x86_64",
+                    build: "py312ha3f287d_0",
+                    build_number: 0,
+                    depends: [
+                        "python",
+                        "vc >=14.3,<15",
+                        "vc14_runtime >=14.44.35208",
+                        "ucrt >=10.0.20348.0",
+                        "python_abi 3.12.* *_cp312",
+                        "libcblas >=3.9.0,<4.0a0",
+                        "libblas >=3.9.0,<4.0a0",
+                        "liblapack >=3.9.0,<4.0a0",
+                    ],
+                    license: "BSD-3-Clause",
+                    platform: "win",
+                    subdir: "win-64",
+                },
+                basename: "win-64/numpy-2.5.4-py312ha3f287d_0.conda",
+                download_url:
+                    "//conda.anaconda.org/conda-forge/win-64/numpy-2.5.4-py312ha3f287d_0.conda",
+                full_name:
+                    "conda-forge/numpy/2.5.4/win-64/numpy-2.5.4-py312ha3f287d_0.conda",
+                ndownloads: 104730,
+                owner: "conda-forge",
+                size: 7377160,
+                type: "conda",
+                upload_time: "2026-10-10 23:46:04.046000+00:00",
+                version: "2.5.4",
+            },
+        ],
+    };
+    const pinnedRelease = {
+        distributions: [
+            {
+                attrs: {
+                    arch: "x86_64",
+                    build: "py310hb13e2d6_0",
+                    build_number: 0,
+                    depends: [
+                        "libblas >=3.9.0,<4.0a0",
+                        "libcblas >=3.9.0,<4.0a0",
+                        "libgcc-ng >=12",
+                        "liblapack >=3.9.0,<4.0a0",
+                        "libstdcxx-ng >=12",
+                        "python >=3.10,<3.11.0a0",
+                        "python_abi 3.10.* *_cp310",
+                    ],
+                    license: "BSD-3-Clause",
+                    platform: "linux",
+                    subdir: "linux-64",
+                },
+                basename: "linux-64/numpy-1.26.4-py310hb13e2d6_0.conda",
+                download_url:
+                    "//conda.anaconda.org/conda-forge/linux-64/numpy-1.26.4-py310hb13e2d6_0.conda",
+                full_name:
+                    "conda-forge/numpy/1.26.4/linux-64/numpy-1.26.4-py310hb13e2d6_0.conda",
+                ndownloads: 5256140,
+                owner: "conda-forge",
+                size: 7009070,
+                type: "conda",
+                upload_time: "2024-02-06 13:34:18.314000+00:00",
+                version: "1.26.4",
+            },
+            {
+                attrs: {
+                    arch: "x86_64",
+                    build: "py310h4bfa8fc_0",
+                    build_number: 0,
+                    depends: [
+                        "libblas >=3.9.0,<4.0a0",
+                        "libcblas >=3.9.0,<4.0a0",
+                        "libcxx >=16",
+                        "liblapack >=3.9.0,<4.0a0",
+                        "python >=3.10,<3.11.0a0",
+                        "python_abi 3.10.* *_cp310",
+                    ],
+                    license: "BSD-3-Clause",
+                    platform: "osx",
+                    subdir: "osx-64",
+                },
+                basename: "osx-64/numpy-1.26.4-py310h4bfa8fc_0.conda",
+                download_url:
+                    "//conda.anaconda.org/conda-forge/osx-64/numpy-1.26.4-py310h4bfa8fc_0.conda",
+                full_name:
+                    "conda-forge/numpy/1.26.4/osx-64/numpy-1.26.4-py310h4bfa8fc_0.conda",
+                ndownloads: 138956,
+                owner: "conda-forge",
+                size: 6491938,
+                type: "conda",
+                upload_time: "2024-02-06 13:39:02.457000+00:00",
+                version: "1.26.4",
+            },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).endsWith("/release/conda-forge/numpy/latest"))
+            return Response.json(latestRelease);
+        if (String(url).endsWith("/release/conda-forge/numpy/1.26.4"))
+            return Response.json(pinnedRelease);
+        return new Response(
+            JSON.stringify({ error: "release does not exist" }),
+            { status: 404 },
+        );
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "conda",
+        name: "numpy",
+    });
+    assert.equal(latest.version, "2.5.4");
+    assert.equal(latest.license, "BSD-3-Clause");
+    assert.deepEqual(latest.dependencies, [
+        "python",
+        "libstdcxx >=15",
+        "libgcc >=15",
+        "__glibc >=2.17,<3.0.a0",
+        "liblapack >=3.9.0,<4.0a0",
+        "python_abi 3.12.* *_cp312",
+        "libblas >=3.9.0,<4.0a0",
+        "libcblas >=3.9.0,<4.0a0",
+    ]);
+    assert.deepEqual(latest.platforms, ["linux-64", "osx-arm64", "win-64"]);
+    assert.equal(
+        latest.downloadUrl,
+        "https://conda.anaconda.org/conda-forge/linux-64/numpy-2.5.4-py312he827f4e_0.conda",
+    );
+    assert.equal(latest.downloads, 1344098);
+    assert.equal(latest.registryUrl, "https://anaconda.org/conda-forge/numpy");
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "conda",
+        name: "numpy",
+        version: "1.26.4",
+    });
+    assert.equal(pinned.version, "1.26.4");
+    assert.deepEqual(pinned.platforms, ["linux-64", "osx-64"]);
+    assert.equal(
+        pinned.downloadUrl,
+        "https://conda.anaconda.org/conda-forge/linux-64/numpy-1.26.4-py310hb13e2d6_0.conda",
+    );
+    assert.deepEqual(urls, [
+        "https://api.anaconda.org/release/conda-forge/numpy/latest",
+        "https://api.anaconda.org/release/conda-forge/numpy/1.26.4",
+    ]);
+    await assert.rejects(
+        lookup({ ecosystem: "conda", name: "not a package!" }),
+        /Invalid conda package name/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "conda", name: "numpy", version: "9.9.9" }),
+        /api\.anaconda\.org returned HTTP 404/,
+    );
+});

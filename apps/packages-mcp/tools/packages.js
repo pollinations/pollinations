@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // AUR names are lowercase; they start alphanumerically and may
+        // contain @ . _ + - between alphanumerics.
+        aur: /^[a-z0-9]+(?:[@._+-][a-z0-9]+)*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,40 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "aur") {
+        // The RPC only ever returns the current version: a pinned version
+        // must equal it, otherwise there is nothing to resolve. Unknown
+        // packages answer 200 with an empty results list, not a 404.
+        const data = await fetchJson(
+            `https://aur.archlinux.org/rpc/v5/info?arg[]=${encoded}`,
+        );
+        const result = data.results?.[0];
+        if (!result) throw new Error(`AUR package ${name} not found`);
+        if (version && version !== result.Version)
+            throw new Error(`AUR version ${version} not found for ${name}`);
+        return {
+            ecosystem,
+            name: result.Name,
+            version: result.Version,
+            description: result.Description,
+            license: result.License,
+            homepage: result.URL,
+            maintainer: result.Maintainer,
+            submitter: result.Submitter,
+            numVotes: result.NumVotes,
+            popularity: result.Popularity,
+            outOfDate: result.OutOfDate,
+            firstSubmitted: result.FirstSubmitted,
+            lastModified: result.LastModified,
+            packageBase: result.PackageBase,
+            keywords: result.Keywords,
+            dependencies: result.Depends ?? [],
+            makeDependencies: result.MakeDepends ?? [],
+            optDependencies: result.OptDepends ?? [],
+            downloadUrl: `https://aur.archlinux.org${result.URLPath}`,
+            registryUrl: `https://aur.archlinux.org/packages/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +240,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, AUR package metadata, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, AUR latest version (the RPC returns only the current version; a pinned version must equal it). Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +250,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "aur",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

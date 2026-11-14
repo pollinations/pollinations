@@ -678,6 +678,28 @@ test("json_pointer distinguishes missing paths and rejects invalid pointers", as
     }
 });
 
+test("json_pointer preserves unsafe, overflowed and underflowed numeric tokens", async (t) => {
+    const client = await clientFor(t);
+    const json = '{"large":9007199254740993,"overflow":1e400,"underflow":1e-400,"safe":42}';
+
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/large" }),
+        { pointer: "/large", found: true, value: "9007199254740993" },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/overflow" }),
+        { pointer: "/overflow", found: true, value: "1e400" },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/underflow" }),
+        { pointer: "/underflow", found: true, value: "1e-400" },
+    );
+    assert.deepEqual(
+        await call(client, "json_pointer", { json, pointer: "/safe" }),
+        { pointer: "/safe", found: true, value: 42 },
+    );
+});
+
 test("diff_text reports a missing final newline the way diff(1) does", async (t) => {
     const client = await clientFor(t);
 

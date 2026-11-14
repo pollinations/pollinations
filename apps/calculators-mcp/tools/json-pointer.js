@@ -8,6 +8,25 @@ function decodeToken(token) {
     );
 }
 
+function parseJsonPreservingNumbers(json) {
+    return JSON.parse(json, (_key, value, context) => {
+        if (typeof value !== "number" || typeof context?.source !== "string")
+            return value;
+
+        const source = context.source;
+        const isZeroLiteral = /^-?0(?:\\.0*)?(?:[eE][+-]?\\d+)?$/.test(source);
+        if (
+            !Number.isFinite(value) ||
+            (Number.isInteger(value) && !Number.isSafeInteger(value)) ||
+            Object.is(value, -0) ||
+            (value === 0 && !isZeroLiteral)
+        ) {
+            return source;
+        }
+        return value;
+    });
+}
+
 function resolvePointer(document, pointer) {
     if (pointer === "") return { pointer, found: true, value: document };
     if (!pointer.startsWith("/"))
@@ -39,7 +58,7 @@ function resolvePointer(document, pointer) {
 export const jsonPointerTools = [
     [
         "json_pointer",
-        "Read a value from JSON using a JSON Pointer (RFC 6901). Use an empty pointer for the whole document, or slash-separated tokens such as /items/0/name. Escape '/' in object keys as '~1' and '~' as '~0'. Returns found=false for a missing path; found=true with value=null for an explicit JSON null. No network or model calls.",
+        "Read a value from JSON using a JSON Pointer (RFC 6901). Use an empty pointer for the whole document, or slash-separated tokens such as /items/0/name. Escape '/' in object keys as '~1' and '~' as '~0'. Returns found=false for a missing path; found=true with value=null for an explicit JSON null. Unsafe integer, overflow and underflow numeric tokens are returned as exact source strings instead of rounded Numbers. No network or model calls.",
         {
             json: z.string().min(1).max(100000).describe("JSON document text."),
             pointer: z
@@ -47,6 +66,6 @@ export const jsonPointerTools = [
                 .max(2048)
                 .describe("RFC 6901 JSON Pointer; empty string selects the root."),
         },
-        ({ json, pointer }) => resolvePointer(JSON.parse(json), pointer),
+        ({ json, pointer }) => resolvePointer(parseJsonPreservingNumbers(json), pointer),
     ],
 ];

@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Conda package names use letters, digits, dots, hyphens and
+        // underscores; the channel is fixed to conda-forge.
+        conda: /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,46 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    // Conda packages live on conda-forge; the Anaconda API serves release
+    // metadata per version, and "latest" resolves server-side. The package
+    // endpoint is deliberately not used: for popular packages it returns
+    // several megabytes in 15-30+ seconds, past the fetch timeout.
+    if (ecosystem === "conda") {
+        const data = await fetchJson(
+            `https://api.anaconda.org/release/conda-forge/${encoded}/${version ? encodeURIComponent(version) : "latest"}`,
+        );
+        const distributions = data.distributions ?? [];
+        if (distributions.length === 0)
+            throw new Error(
+                version
+                    ? `Conda version ${version} not found for ${name}`
+                    : `Conda package ${name} has no release`,
+            );
+        const resolved = distributions[0].version;
+        // Prefer a linux-64 build for dependencies and license; fall back
+        // to the first distribution when a package ships no linux-64 build.
+        const chosen =
+            distributions.find((d) => d.attrs?.subdir === "linux-64") ??
+            distributions[0];
+        const attrs = chosen.attrs ?? {};
+        return {
+            ecosystem,
+            name,
+            version: resolved,
+            license: attrs.license ?? null,
+            dependencies: attrs.depends ?? [],
+            platforms: [
+                ...new Set(
+                    distributions.map((d) => d.attrs?.subdir).filter(Boolean),
+                ),
+            ].sort(),
+            downloadUrl: chosen.download_url
+                ? `https:${chosen.download_url}`
+                : null,
+            downloads: chosen.ndownloads ?? null,
+            registryUrl: `https://anaconda.org/conda-forge/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +246,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, Conda (conda-forge) release metadata, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Conda latest release, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Conda descriptive metadata (description/homepage) is at registryUrl; the release API returns version, license, dependencies and platforms. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +256,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "conda",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

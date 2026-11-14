@@ -229,8 +229,9 @@ export const packageTools = [
     ],
     [
         "package_downloads",
-        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only.",
+        "Read npm or crates.io download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). crates.io data covers roughly the last 90 days; the latest day may be partial.",
         {
+            ecosystem: z.enum(["npm", "crates"]).default("npm"),
             name: z.string().trim().min(1).max(214),
             range: z
                 .string()
@@ -240,7 +241,80 @@ export const packageTools = [
                 )
                 .default("last-week"),
         },
-        async ({ name, range }) => {
+        async ({ ecosystem, name, range }) => {
+            if (ecosystem === "crates") {
+                if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(name))
+                    throw new Error("Invalid crates package name");
+                const data = await fetchJson(
+                    `https://crates.io/api/v1/crates/${encodeURIComponent(name)}/downloads`,
+                );
+                // crates.io returns one row per day per version, plus
+                // meta.extra_downloads (downloads not tied to a version);
+                // the daily total is the sum of both, which is what
+                // crates.io's own charts show.
+                const byDay = new Map();
+                for (const row of data.version_downloads ?? []) {
+                    byDay.set(
+                        row.date,
+                        (byDay.get(row.date) ?? 0) + row.downloads,
+                    );
+                }
+                for (const row of data.meta?.extra_downloads ?? []) {
+                    byDay.set(
+                        row.date,
+                        (byDay.get(row.date) ?? 0) + row.downloads,
+                    );
+                }
+                const rows = [...byDay.entries()]
+                    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+                    .map(([date, downloads]) => ({ date, downloads }));
+                if (rows.length === 0)
+                    throw new Error(`No crates download data for ${name}`);
+                const earliest = rows[0].date;
+                const latest = rows[rows.length - 1].date;
+                const days = {
+                    "last-day": 1,
+                    "last-week": 7,
+                    "last-month": 30,
+                    "last-year": 365,
+                }[range];
+                let start;
+                let end;
+                if (days) {
+                    // Named ranges end at the latest day with data. Unlike
+                    // pypistats, crates.io includes today, but that row is
+                    // partial until the day ends.
+                    end = latest;
+                    start = new Date(
+                        Date.parse(`${latest}T00:00:00Z`) -
+                            (days - 1) * 86400000,
+                    )
+                        .toISOString()
+                        .slice(0, 10);
+                } else {
+                    [start, end] = range.split(":");
+                }
+                const downloads = rows
+                    .filter((row) => row.date >= start && row.date <= end)
+                    .map((row) => ({
+                        day: row.date,
+                        downloads: row.downloads,
+                    }));
+                const result = {
+                    package: name,
+                    ecosystem: "crates",
+                    range,
+                    start,
+                    end,
+                    total: downloads.reduce(
+                        (sum, row) => sum + row.downloads,
+                        0,
+                    ),
+                    downloads,
+                };
+                if (start < earliest) result.coverage_start = earliest;
+                return result;
+            }
             if (
                 !/^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/.test(
                     name,

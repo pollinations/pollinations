@@ -1,10 +1,4 @@
-import {
-    ClockIcon,
-    CodeIcon,
-    CopyField,
-    InlineLink,
-    Section,
-} from "@pollinations/ui";
+import { ClockIcon, CodeIcon, CopyField, Section } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
     ActivityOverview,
@@ -80,12 +74,7 @@ function ActivityPage() {
                     <div className="flex items-start gap-1.5">
                         <CodeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <span>
-                                From your terminal ·{" "}
-                                <InlineLink href="https://gen.pollinations.ai/docs#tag/cli">
-                                    CLI docs
-                                </InlineLink>
-                            </span>
+                            <span>From your terminal:</span>
                             <div className="w-fit min-w-0 max-w-full">
                                 <CopyField
                                     label="Copy CLI command"

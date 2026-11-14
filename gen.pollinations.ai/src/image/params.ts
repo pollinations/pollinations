@@ -383,7 +383,19 @@ export const ImageParamsSchema = z
             ? (data.quality as (typeof validQualities)[number])
             : "medium";
 
-        return { ...data, quality, width, height, dimensionsExplicit };
+        // OpenAI clients ask for transparency with `background`; the
+        // support check and PNG preservation read `transparent`.
+        const transparent =
+            data.transparent || data.background === "transparent";
+
+        return {
+            ...data,
+            quality,
+            width,
+            height,
+            dimensionsExplicit,
+            transparent,
+        };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

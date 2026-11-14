@@ -6,6 +6,7 @@ import { crossRefTools } from "./tools/crossref.js";
 import { europePmcTools } from "./tools/europe-pmc.js";
 import { rfcTools } from "./tools/rfc.js";
 import { wikidataTools } from "./tools/wikidata.js";
+import { wikimediaCommonsTools } from "./tools/wikimedia.js";
 import { wikipediaTools } from "./tools/wikipedia.js";
 import { wiktionaryTools } from "./tools/wiktionary.js";
 import { worldBankTools } from "./tools/worldbank.js";
@@ -19,6 +20,7 @@ const handler = () =>
             });
             for (const [name, description, schema, run] of [
                 ...wikipediaTools,
+                ...wikimediaCommonsTools,
                 ...wiktionaryTools,
                 ...rfcTools,
                 ...wikidataTools,

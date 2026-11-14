@@ -787,13 +787,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            A Linux computer in the cloud. See the{" "}
-                            <InlineLink href={genDocsUrl("#tag/sandboxes")}>
-                                Sandboxes docs
-                            </InlineLink>
-                            .
-                        </span>
+                        <span>A Linux computer in the cloud.</span>
                     </p>
                 </Footnotes>
             </Section>

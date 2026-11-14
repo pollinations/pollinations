@@ -8,7 +8,7 @@ import {
 } from "@pollinations/ui";
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
-import { config, genDocsUrl } from "../../config.ts";
+import { config } from "../../config.ts";
 import { CatalogCard } from "../catalog-card.tsx";
 import { UsagePriceRows } from "./price-badge.tsx";
 
@@ -114,12 +114,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
             </div>
             <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                 <KeyIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>
-                    Connect with your Pollinations API key. See the{" "}
-                    <InlineLink href={genDocsUrl("#tag/mcp-servers")}>
-                        MCP docs
-                    </InlineLink>
-                </span>
+                <span>Connect with your Pollinations API key.</span>
             </p>
         </div>
     );

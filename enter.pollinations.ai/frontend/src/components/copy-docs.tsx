@@ -1,18 +1,29 @@
-import { CopyButton, CopyStateIcon } from "@pollinations/ui";
+import {
+    Button,
+    CopyButton,
+    CopyStateIcon,
+    ExternalLinkIcon,
+} from "@pollinations/ui";
 import type { FC } from "react";
 import { genDocsUrl } from "../config.ts";
 
-/** Sections of gen's `/docs/llm.txt`, each with its button label. */
-const DOCS_LABELS = {
-    api: "API docs",
-    byop: "Pollinations Pay docs",
-    "publish-a-model": "Model publishing docs",
-    "publish-an-agent": "Agent publishing docs",
-    mcp: "MCP docs",
-    sandboxes: "Sandbox docs",
+/** Sections of gen's `/docs/llm.txt`: the button label and the docs page. */
+const DOCS = {
+    api: { label: "API docs", tag: "quick-start" },
+    byop: { label: "Pollinations Pay docs", tag: "pollinations-pay" },
+    "publish-a-model": {
+        label: "Model publishing docs",
+        tag: "publish-a-model",
+    },
+    "publish-an-agent": {
+        label: "Agent publishing docs",
+        tag: "publish-an-agent",
+    },
+    mcp: { label: "MCP docs", tag: "mcp-servers" },
+    sandboxes: { label: "Sandbox docs", tag: "sandboxes" },
 } as const;
 
-export type DocsSection = keyof typeof DOCS_LABELS;
+export type DocsSection = keyof typeof DOCS;
 
 const fetchDocs = async (section: DocsSection) => {
     const res = await fetch(genDocsUrl(`/llm.txt?section=${section}`));
@@ -20,24 +31,37 @@ const fetchDocs = async (section: DocsSection) => {
     return res.text();
 };
 
-// A card's docs as plain text for an AI chat: a quiet grey button, since
-// copying changes nothing. The copy icon says what it does, so the label only
-// names the docs; the icon turns into a check, briefly, once copied.
-export const CopyDocs: FC<{ section: DocsSection }> = ({ section }) => (
-    <CopyButton
-        value={() => fetchDocs(section)}
-        copiedTimeoutMs={1500}
-        tooltip={null}
-        variant="button"
-        intent="neutral"
-        aria-label={`Copy ${DOCS_LABELS[section]}`}
-        className="gap-1.5 whitespace-nowrap"
-    >
-        {(copied) => (
-            <>
-                {DOCS_LABELS[section]}
-                <CopyStateIcon copied={copied} className="h-3.5 w-3.5" />
-            </>
-        )}
-    </CopyButton>
-);
+// A card's docs in one quiet grey pill, like the rail's Docs row: the name
+// opens them, the icon copies them as plain text for an AI chat and turns into
+// a check, briefly.
+export const CopyDocs: FC<{ section: DocsSection }> = ({ section }) => {
+    const { label, tag } = DOCS[section];
+    return (
+        <span className="inline-flex">
+            <Button
+                as="a"
+                href={genDocsUrl(`#tag/${tag}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                intent="neutral"
+                className="h-9 gap-1.5 whitespace-nowrap rounded-r-none py-0 pr-3"
+            >
+                {label}
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
+            </Button>
+            <CopyButton
+                value={() => fetchDocs(section)}
+                copiedTimeoutMs={1500}
+                tooltip="Copy as text for AI"
+                aria-label={`Copy ${label} as text`}
+                variant="button"
+                intent="neutral"
+                className="h-9 rounded-l-none border-l-theme-text-muted/25 py-0 pr-3.5 pl-3"
+            >
+                {(copied) => (
+                    <CopyStateIcon copied={copied} className="h-3.5 w-3.5" />
+                )}
+            </CopyButton>
+        </span>
+    );
+};

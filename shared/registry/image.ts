@@ -297,7 +297,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
     },
     "microsoft/mai-image-2.6-flash": {
-        aliases: ["microsoft/mai-image-2.5-flash"],
+        aliases: [],
         provider: "azure",
         publisher: "Microsoft",
         category: "image",

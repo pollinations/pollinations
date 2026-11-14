@@ -229,8 +229,9 @@ export const packageTools = [
     ],
     [
         "package_downloads",
-        "Read npm download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). npm packages only.",
+        "Read npm or RubyGems download counts for a package per day over a period: last-day, last-week, last-month, last-year, or a custom YYYY-MM-DD:YYYY-MM-DD range (npm caps ranges at 18 months). RubyGems daily data comes from BestGems, which tracks rubygems.org downloads daily back to 2013 and lags about a day; occasional days with no data count as 0.",
         {
+            ecosystem: z.enum(["npm", "rubygems"]).default("npm"),
             name: z.string().trim().min(1).max(214),
             range: z
                 .string()
@@ -240,7 +241,73 @@ export const packageTools = [
                 )
                 .default("last-week"),
         },
-        async ({ name, range }) => {
+        async ({ ecosystem, name, range }) => {
+            if (ecosystem === "rubygems") {
+                if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name))
+                    throw new Error("Invalid RubyGems package name");
+                // rubygems.org publishes no per-day download endpoint: its
+                // downloads endpoints return totals only, and the old
+                // per-day endpoint returns 410. BestGems tracks rubygems.org
+                // downloads daily; its daily_downloads series is
+                // newest-first, one row per day, with null on days it did
+                // not track (counted as 0).
+                const data = await fetchJson(
+                    `https://bestgems.org/api/v1/gems/${encodeURIComponent(name)}/daily_downloads.json`,
+                );
+                const rows = data
+                    .map((row) => ({
+                        date: row.date,
+                        downloads: row.daily_downloads ?? 0,
+                    }))
+                    .sort((a, b) =>
+                        a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+                    );
+                if (rows.length === 0)
+                    throw new Error(`No RubyGems download data for ${name}`);
+                const earliest = rows[0].date;
+                const latest = rows[rows.length - 1].date;
+                const days = {
+                    "last-day": 1,
+                    "last-week": 7,
+                    "last-month": 30,
+                    "last-year": 365,
+                }[range];
+                let start;
+                let end;
+                if (days) {
+                    // Named ranges end at the latest day with data, since
+                    // BestGems lags about a day behind today.
+                    end = latest;
+                    start = new Date(
+                        Date.parse(`${latest}T00:00:00Z`) -
+                            (days - 1) * 86400000,
+                    )
+                        .toISOString()
+                        .slice(0, 10);
+                } else {
+                    [start, end] = range.split(":");
+                }
+                const downloads = rows
+                    .filter((row) => row.date >= start && row.date <= end)
+                    .map((row) => ({
+                        day: row.date,
+                        downloads: row.downloads,
+                    }));
+                const result = {
+                    package: name,
+                    ecosystem: "rubygems",
+                    range,
+                    start,
+                    end,
+                    total: downloads.reduce(
+                        (sum, row) => sum + row.downloads,
+                        0,
+                    ),
+                    downloads,
+                };
+                if (start < earliest) result.coverage_start = earliest;
+                return result;
+            }
             if (
                 !/^(?:@[a-z0-9_~-][a-z0-9._~-]*\/)?[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/.test(
                     name,

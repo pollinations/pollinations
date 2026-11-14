@@ -7196,11 +7196,14 @@ fixtureTest(
                 "/image/{prompt}",
             ]),
         );
+        // Identical seed-less generations join one execution: "blue flower"
+        // hd at the default size resolves one identity across response
+        // formats, so its two calls share a single upstream generation.
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(5);
+        ).toHaveLength(4);
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageEditsRequest(new Request(input, init)),
@@ -7211,7 +7214,7 @@ fixtureTest(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
-        ).toHaveLength(4);
+        ).toHaveLength(3); // one of the two seed-less "blue flower" calls joins the other's flight
 
         const maximumImagePriceResponse = await fetchEnterApi(
             enterApi,

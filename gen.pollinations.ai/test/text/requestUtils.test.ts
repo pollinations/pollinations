@@ -178,22 +178,43 @@ describe("getSimpleTextRequestData", () => {
 
     it("leaves numeric normalization to the provider pipeline", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
-            temperature: "4",
-            top_p: "-1 trailing",
-            presence_penalty: "3",
-            frequency_penalty: "-3",
-            max_tokens: "16 tokens",
-            repetition_penalty: "invalid",
+            temperature: "1.5",
+            top_p: "0.5",
+            presence_penalty: "1",
+            frequency_penalty: "-1",
+            max_tokens: "16",
+            repetition_penalty: "0.5",
         });
         expect(
             getSimpleTextRequestData("hello", "resolved-model", query),
         ).toMatchObject({
-            temperature: 4,
-            top_p: -1,
-            presence_penalty: 3,
-            frequency_penalty: -3,
+            temperature: 1.5,
+            top_p: 0.5,
+            presence_penalty: 1,
+            frequency_penalty: -1,
             max_tokens: 16,
         });
-        expect(query.repetition_penalty).toBeUndefined();
+        expect(query.repetition_penalty).toBe(0.5);
+    });
+
+    it("rejects out-of-range temperature", () => {
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                temperature: "4",
+            }),
+        ).toThrow();
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                temperature: "-1",
+            }),
+        ).toThrow();
+    });
+
+    it("rejects invalid repetition_penalty", () => {
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                repetition_penalty: "invalid",
+            }),
+        ).toThrow();
     });
 });

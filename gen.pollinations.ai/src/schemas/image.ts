@@ -14,15 +14,10 @@ export const FLUX_SIZE_DESCRIPTION =
 const imageSizeConstraints = `For images, model-specific constraints apply. ${FLUX_SIZE_DESCRIPTION} \`flux-2-pro\`, \`flux-2-flex\`, and \`microsoft/mai-image-2.6-flash\` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). \`tongyi-mai/z-image-turbo\` and \`black-forest-labs/flux.2-klein-4b\` need at least 256 px per side and at most 2,359,296 total pixels. \`black-forest-labs/flux.1.1-pro\` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use \`resolution\` to select a resolution tier.`;
 
 const modelSchema = (defaultModel: string) =>
-    z
-        .preprocess(
-            (val) => (val === "" ? undefined : val),
-            z.string().trim().min(1).optional().default(defaultModel),
-        )
-        .meta({
-            description:
-                "Model to use. See /image/models for the current canonical IDs and aliases.",
-        });
+    z.string().trim().min(1).optional().default(defaultModel).meta({
+        description:
+            "Model to use. See /image/models for the current canonical IDs and aliases.",
+    });
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params

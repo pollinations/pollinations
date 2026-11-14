@@ -7,7 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { inspect } from "./tools/cidr.js";
 import { lookup, readText } from "./tools/dns.js";
-import { probe, publicUrl } from "./tools/http.js";
+import { probe, publicUrl, inspectSecurityHeaders } from "./tools/http.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -59,6 +59,7 @@ for (const modern of [false, true])
             "dns_lookup",
             "domain_whois",
             "http_probe",
+            "http_security_headers",
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "http_security_headers",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -255,6 +262,74 @@ test("HTTP redirect chain strips caller credentials and bounds text", async (t) 
     assert.deepEqual(data.headers["set-cookie"], ["fresh=1"]);
     assert.equal(calls.length, 2);
 });
+test("HTTP security-header inspection is protocol-aware and conservative", () => {
+    const https = inspectSecurityHeaders(
+        {
+            "strict-transport-security":
+                "max-age=31536000; includeSubDomains; preload",
+            "content-security-policy":
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none'",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=()",
+            "cross-origin-opener-policy": "same-origin",
+            "cross-origin-resource-policy": "same-origin",
+            "cross-origin-embedder-policy": "require-corp",
+        },
+        true,
+    );
+    assert.equal(https.strict_transport_security.max_age_seconds, 31536000);
+    assert.equal(https.strict_transport_security.include_subdomains, true);
+    assert.equal(https.strict_transport_security.preload, true);
+    assert.equal(https.content_security_policy.has_default_src, true);
+    assert.equal(https.content_security_policy.has_frame_ancestors, true);
+    assert.equal(https.content_security_policy.allows_unsafe_inline, true);
+    assert.equal(https.content_security_policy.allows_unsafe_eval, true);
+    assert.equal(https.x_content_type_options.nosniff, true);
+    assert.equal(https.x_frame_options.recognized, true);
+    assert.equal(https.referrer_policy.recognized, true);
+    assert.equal(https.permissions_policy.present, true);
+    assert.equal(https.cross_origin_opener_policy.recognized, true);
+    assert.equal(https.cross_origin_resource_policy.recognized, true);
+    assert.equal(https.cross_origin_embedder_policy.recognized, true);
+
+    const http = inspectSecurityHeaders({}, false);
+    assert.equal(http.strict_transport_security.applicable, false);
+    assert.equal(http.strict_transport_security.present, false);
+    assert.equal(http.content_security_policy.present, false);
+});
+test("HTTP security-header tool uses a public HEAD request and returns parsed headers", async (t) => {
+    let calls = 0;
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        calls++;
+        assert.equal(url.href, "https://example.com/");
+        assert.equal(init.method, "HEAD");
+        assert.equal(init.redirect, "manual");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        return new Response(null, {
+            status: 200,
+            headers: {
+                "strict-transport-security": "max-age=86400",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "default-src 'self'",
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const result = await client.callTool({
+        name: "http_security_headers",
+        arguments: { url: "https://example.com" },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const data = JSON.parse(result.content[0].text);
+    assert.equal(data.status, 200);
+    assert.equal(data.headers.strict_transport_security.max_age_seconds, 86400);
+    assert.equal(data.headers.x_content_type_options.nosniff, true);
+    assert.equal(data.headers.content_security_policy.has_default_src, true);
+    assert.equal(calls, 1);
+});
 test("HTTP rejects unsafe redirects without fetching the redirect target or doing DNS preflights", async (t) => {
     let targets = 0;
     t.mock.method(globalThis, "fetch", async (url) => {
@@ -381,6 +456,7 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
         ["dns_lookup", { name: "a".repeat(255) }],
         ["dns_lookup", { name: "example.com", type: "65536" }],
         ["http_probe", { url: "https://example.com", method: "POST" }],
+        ["http_security_headers", { url: "x".repeat(2049) }],
         ["inspect_cidr", { cidr: "::/0", addresses: Array(21).fill("::1") }],
     ]) {
         assert.equal(

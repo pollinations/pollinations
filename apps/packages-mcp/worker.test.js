@@ -80,7 +80,9 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "hf_dataset_info",
                 "hf_model_info",
+                "hf_search_datasets",
                 "hf_search_models",
                 "hf_space_info",
                 "osv_query",
@@ -411,6 +413,80 @@ test("HF search forwards task and limit; info exposes license and Space stage", 
         assert.equal(data.tagsTruncated, true);
     }
 });
+test("HF dataset search forwards task and limit; info exposes task and license", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.origin, "https://huggingface.co");
+        if (url.pathname === "/api/datasets") {
+            assert.equal(
+                url.searchParams.get("filter"),
+                "task_categories:question-answering",
+            );
+            assert.equal(url.searchParams.get("search"), "squad");
+            assert.equal(url.searchParams.get("limit"), "1");
+            assert.equal(url.searchParams.get("sort"), "downloads");
+            assert.equal(url.searchParams.get("direction"), "-1");
+            return Response.json([
+                {
+                    id: "rajpurkar/squad",
+                    downloads: 158068,
+                    likes: 891,
+                    tags: [
+                        "task_categories:question-answering",
+                        "license:cc-by-sa-4.0",
+                    ],
+                },
+                { id: "extra" },
+            ]);
+        }
+        assert.equal(url.pathname, "/api/datasets/rajpurkar/squad");
+        return Response.json({
+            id: "rajpurkar/squad",
+            cardData: {
+                license: "cc-by-sa-4.0",
+                task_categories: ["question-answering"],
+            },
+            downloads: 158068,
+            likes: 891,
+            gated: false,
+            lastModified: "2024-01-15T00:00:00.000Z",
+            tags: [
+                "task_categories:question-answering",
+                "license:cc-by-sa-4.0",
+                ...Array.from({ length: 20 }, (_, i) => `tag-${i}`),
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "hf_search_datasets", {
+            query: "squad",
+            task: "question-answering",
+            limit: 1,
+        }),
+        {
+            datasets: [
+                {
+                    id: "rajpurkar/squad",
+                    task: "question-answering",
+                    downloads: 158068,
+                    likes: 891,
+                },
+            ],
+        },
+    );
+    const data = await call(client, "hf_dataset_info", {
+        id: "rajpurkar/squad",
+    });
+    assert.equal(data.task, "question-answering");
+    assert.equal(data.license, "cc-by-sa-4.0");
+    assert.equal(data.downloads, 158068);
+    assert.equal(data.likes, 891);
+    assert.equal(data.gated, false);
+    assert.equal(data.tags.length, 20);
+    assert.equal(data.tagsTruncated, true);
+    assert.equal(data.url, "https://huggingface.co/datasets/rajpurkar/squad");
+});
 test("invalid input cannot escape provider paths and makes no upstream request", async (t) => {
     t.mock.method(globalThis, "fetch", () => {
         assert.fail("Unexpected upstream call");
@@ -420,8 +496,10 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
         ["hf_model_info", { id: "org/../bad" }],
+        ["hf_dataset_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["hf_search_datasets", { query: "squad", limit: 26 }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(

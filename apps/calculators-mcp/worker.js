@@ -3,6 +3,7 @@ import { z } from "zod";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
+import { expressionTools } from "./tools/expression.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { qrTools } from "./tools/qr.js";
@@ -24,6 +25,7 @@ const handler = createMcpHandler(
             ...currencyTools,
             ...hashTools,
             ...diffTools,
+            ...expressionTools,
             ...fractionTools,
             ...versionTools,
         ]) {

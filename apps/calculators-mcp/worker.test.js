@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
+                "evaluate_expression",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -674,4 +675,119 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("evaluate_expression is exact where a float would drift", async (t) => {
+    const client = await clientFor(t);
+    // 0.1 + 0.2 is 0.30000000000000004 in Number, and 0.3 here.
+    assert.deepEqual(
+        await call(client, "evaluate_expression", {
+            expression: "0.1 + 0.2",
+        }),
+        { expression: "0.1 + 0.2", value: "0.3", exact: true },
+    );
+    // Above 2^53 Number loses the last digit; BigInt keeps it.
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "9007199254740993 + 1",
+            })
+        ).value,
+        "9007199254740994",
+    );
+    // Precedence, unary signs and parentheses.
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "-2 + 3 * (4 - 1)",
+            })
+        ).value,
+        "7",
+    );
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "1e3 - 0.25",
+            })
+        ).value,
+        "999.75",
+    );
+    // A non-terminating result is rounded to the requested places and carries
+    // the exact fraction alongside.
+    assert.deepEqual(
+        await call(client, "evaluate_expression", {
+            expression: "1 / 3",
+            digits: 4,
+        }),
+        {
+            expression: "1 / 3",
+            value: "0.3333",
+            exact: false,
+            fraction: "1/3",
+        },
+    );
+    // Half away from zero, not banker's rounding.
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "2 / 3",
+                digits: 2,
+            })
+        ).value,
+        "0.67",
+    );
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "-2 / 3",
+                digits: 2,
+            })
+        ).value,
+        "-0.67",
+    );
+    // digits: 0 gives a bare integer.
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "10 / 4",
+                digits: 0,
+            })
+        ).value,
+        "3",
+    );
+    // A value smaller than the printed precision is not "-0".
+    assert.equal(
+        (
+            await call(client, "evaluate_expression", {
+                expression: "0 - 1 / 1000",
+                digits: 2,
+            })
+        ).value,
+        "0",
+    );
+});
+
+test("evaluate_expression rejects malformed expressions and division by zero", async (t) => {
+    const client = await clientFor(t);
+    for (const expression of [
+        "",
+        "1 +",
+        "+",
+        "()",
+        "1 2",
+        "2(3)",
+        "1 / 0",
+        "1 / (2 - 2)",
+        "1 $ 2",
+        "1..2",
+        "1e999",
+        "(((((((((((((((((((((1)))))))))))))))))))))",
+        "1 + 2)",
+    ]) {
+        const result = await client.callTool({
+            name: "evaluate_expression",
+            arguments: { expression },
+        });
+        assert.equal(result.isError, true, JSON.stringify(expression));
+    }
 });

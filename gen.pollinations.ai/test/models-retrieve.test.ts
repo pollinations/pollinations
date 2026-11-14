@@ -836,3 +836,55 @@ test("media models advertise the resolutions they accept", async () => {
         expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
     }
 });
+
+test("model listings expose pricing adjustments so agents can see Gemini surcharges", async () => {
+    type Adjustment = {
+        name: string;
+        price: string;
+        quantity: number;
+        unit: string;
+    };
+    type ListedModel = { id: string; pricing_adjustments?: Adjustment[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.pricing_adjustments, model.id).toEqual(
+            registry.resolve(model.id)?.info.pricing_adjustments,
+        );
+    }
+    const withAdjustments = list.data.filter(
+        (model) => model.pricing_adjustments,
+    );
+    expect(withAdjustments.length).toBeGreaterThan(0);
+    // Gemini search grounding carries a per-query surcharge on top of the
+    // token price; an agent must see it before choosing the model.
+    const search = withAdjustments.find((model) =>
+        model.pricing_adjustments?.some(
+            (adjustment) =>
+                adjustment.name === "google.gemini_3.search_query.v1",
+        ),
+    );
+    expect(
+        search,
+        "a listed model carries the Gemini search surcharge",
+    ).toBeDefined();
+    const searchCharge = search?.pricing_adjustments?.find(
+        (adjustment) => adjustment.name === "google.gemini_3.search_query.v1",
+    );
+    expect(searchCharge?.price).toBe("14");
+    expect(searchCharge?.quantity).toBe(1000);
+    expect(searchCharge?.unit).toBe("search queries");
+    for (const model of withAdjustments) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_adjustments, model.id).toEqual(
+            model.pricing_adjustments,
+        );
+    }
+});

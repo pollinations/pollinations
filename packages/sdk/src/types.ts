@@ -1275,6 +1275,8 @@ export interface ModelInfo {
     base_model?: string;
     input_modalities?: ModelInputModality[];
     output_modalities?: ModelOutputModality[];
+    /** Safety checks the gateway always applies to text input; callers cannot disable them. */
+    required_safety?: string[];
     video_capabilities?: VideoCapability[];
     resolutions?: string[];
     min_duration?: number;

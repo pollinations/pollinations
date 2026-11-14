@@ -234,6 +234,81 @@ test("every catalog entry states paid_only as a boolean", async () => {
     }
 });
 
+test("OpenAI-compatible model listings expose required safety checks from primary and fallback models", async () => {
+    const owner = `safety-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    const id = `community/${owner}/safe`;
+    const fallbackId = `community/${owner}/safe-fallback`;
+    const payload = (fallbacks: string[]) =>
+        JSON.stringify({
+            paidOnly: false,
+            bearerTokenCiphertext:
+                "test-placeholder-not-used-for-generation",
+            api: "chat_completions",
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks,
+            prices: {},
+        });
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values([
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe",
+                title: "safe",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["privacy"],
+                visibility: "public" as const,
+                payload: payload([fallbackId]),
+            },
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe-fallback",
+                title: "safe-fallback",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["secrets"],
+                visibility: "public" as const,
+                payload: payload([]),
+            },
+        ]);
+    await resetGenerationModelRegistryCache(env);
+
+    const registry = await getGenerationModelRegistry(env);
+    expect(registry.resolve(id)?.info.required_safety).toEqual(["privacy"]);
+    expect(
+        registry.resolve(id)?.fallbackEntries?.map(
+            (fallback) => fallback.info.required_safety,
+        ),
+    ).toEqual([["secrets"]]);
+
+    const listResponse = await fetchWorker("/v1/models?reliability=all");
+    expect(listResponse.status).toBe(200);
+    const list = (await listResponse.json()) as {
+        data: { id: string; required_safety?: string[] }[];
+    };
+    expect(
+        list.data.find((model) => model.id === id)?.required_safety,
+    ).toEqual(["privacy", "secrets"]);
+
+    const detailResponse = await fetchWorker(
+        `/v1/models/${encodeURIComponent(id)}`,
+    );
+    expect(detailResponse.status).toBe(200);
+    const detail = (await detailResponse.json()) as {
+        required_safety?: string[];
+    };
+    expect(detail.required_safety).toEqual(["privacy", "secrets"]);
+});
+
 test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });

@@ -8,7 +8,7 @@ import { balance } from "@/middleware/balance.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { imageCache, model3dCache } from "@/middleware/media-cache.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { getRequiredSafetyFeatures, resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
@@ -392,6 +392,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
         output_modalities: entry.info.output_modalities,
+        required_safety: getRequiredSafetyFeatures(entry),
         supported_endpoints: entry.supportedEndpoints,
         ...(entry.info.agent && { agent: true }),
         ...(entry.info.base_model && {

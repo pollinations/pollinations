@@ -1065,6 +1065,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "google/gemini-decision-1",
+        config: portkeyConfig["google/gemini-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "google/gemini-decision-1:openrouter",
+        config: portkeyConfig["google/gemini-decision-1:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "microsoft/microsoft-decision-1",
         config: portkeyConfig["microsoft-decision-1-azure"],
         useSystemOneApi: true,

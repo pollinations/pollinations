@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-13",
+  "period_start": "2026-11-13",
+  "period_end": "2026-11-13",
+  "title": "Agents and listings get their own places",
+  "summary": "Enter gave Agents, listings, keys and sandboxes clearer homes, then tidied up its outage notices.\n\nEnter moved Agents and MCP off the Models page and brought Agents, Models and Apps together under My listings. The dashboard drawer now separates account pages from the catalog, while old addresses redirect to the new pages.\n\nSigned-out visitors can browse sandbox starter templates and prices. Viewing your own sandboxes and creating one still require sign-in. Keys now has Secret and App tabs, including a direct link to the App tab.\n\nEnter now shows one outage notice at the top when an Enter or gen request fails. Panels keep their own retry controls, while timeout-only failures keep their panel message without adding a page-wide banner.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 18932,
+      "date": "2026-11-13"
+    },
+    {
+      "number": 19624,
+      "date": "2026-11-13"
+    }
+  ],
+  "generated_at": "2026-11-14T06:05:14.778657+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Agents get their own page",
+      "text": "Browse Agents and MCP on dedicated pages. Manage your Agents, Models and Apps together in My listings.",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Browse sandbox starters",
+      "text": "Browse sandbox starter templates and prices without signing in. Sign in to create a sandbox or view yours.",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Keys in two tabs",
+      "text": "Switch between Secret and App keys in one card. Open the App tab directly with `/keys?tab=app`. [Open Keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        18932
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

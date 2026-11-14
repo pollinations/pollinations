@@ -65,6 +65,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "color_convert",
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
@@ -280,6 +281,187 @@ test("contrast uses real ratios, with shorthand and sorted palette", async (t) =
         palette.colors.map((c) => c.color),
         ["#000000", "#aaaaaa", "#ffffff"],
     );
+});
+test("color_convert converts exactly between hex, rgb, hsl and hsv", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#ff0000" }),
+        {
+            hex: "#ff0000",
+            rgb: { r: 255, g: 0, b: 0 },
+            hsl: { h: 0, s: 100, l: 50 },
+            hsv: { h: 0, s: 100, v: 100 },
+        },
+    );
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#00ff00" }),
+        {
+            hex: "#00ff00",
+            rgb: { r: 0, g: 255, b: 0 },
+            hsl: { h: 120, s: 100, l: 50 },
+            hsv: { h: 120, s: 100, v: 100 },
+        },
+    );
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#0000ff" }),
+        {
+            hex: "#0000ff",
+            rgb: { r: 0, g: 0, b: 255 },
+            hsl: { h: 240, s: 100, l: 50 },
+            hsv: { h: 240, s: 100, v: 100 },
+        },
+    );
+    // Fractional hues are the case models get wrong: orange is 30.12, not 30.
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#ff8000" }),
+        {
+            hex: "#ff8000",
+            rgb: { r: 255, g: 128, b: 0 },
+            hsl: { h: 30.12, s: 100, l: 50 },
+            hsv: { h: 30.12, s: 100, v: 100 },
+        },
+    );
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#00ff80" }),
+        {
+            hex: "#00ff80",
+            rgb: { r: 0, g: 255, b: 128 },
+            hsl: { h: 150.12, s: 100, l: 50 },
+            hsv: { h: 150.12, s: 100, v: 100 },
+        },
+    );
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#000000" }),
+        {
+            hex: "#000000",
+            rgb: { r: 0, g: 0, b: 0 },
+            hsl: { h: 0, s: 0, l: 0 },
+            hsv: { h: 0, s: 0, v: 0 },
+        },
+    );
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#ffffff" }),
+        {
+            hex: "#ffffff",
+            rgb: { r: 255, g: 255, b: 255 },
+            hsl: { h: 0, s: 0, l: 100 },
+            hsv: { h: 0, s: 0, v: 100 },
+        },
+    );
+    // Grey has no hue or saturation; 128/255 rounds to 50.2, not 50.
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#808080" }),
+        {
+            hex: "#808080",
+            rgb: { r: 128, g: 128, b: 128 },
+            hsl: { h: 0, s: 0, l: 50.2 },
+            hsv: { h: 0, s: 0, v: 50.2 },
+        },
+    );
+    // An arbitrary color, exact to two decimals in every format.
+    assert.deepEqual(
+        await call(client, "color_convert", { color: "#123456" }),
+        {
+            hex: "#123456",
+            rgb: { r: 18, g: 52, b: 86 },
+            hsl: { h: 210, s: 65.38, l: 20.39 },
+            hsv: { h: 210, s: 79.07, v: 33.73 },
+        },
+    );
+    // Shorthand hex expands, and every input format reaches the same color.
+    assert.equal(
+        (await call(client, "color_convert", { color: "#f00" })).hex,
+        "#ff0000",
+    );
+    assert.equal(
+        (await call(client, "color_convert", { color: "rgb(255, 128, 0)" }))
+            .hex,
+        "#ff8000",
+    );
+    assert.equal(
+        (
+            await call(client, "color_convert", {
+                color: "hsl(120, 100%, 50%)",
+            })
+        ).hex,
+        "#00ff00",
+    );
+    assert.equal(
+        (
+            await call(client, "color_convert", {
+                color: "hsv(240, 100%, 100%)",
+            })
+        ).hex,
+        "#0000ff",
+    );
+    // Hue 360 is red, the same as hue 0.
+    assert.equal(
+        (
+            await call(client, "color_convert", {
+                color: "hsl(360, 100%, 50%)",
+            })
+        ).hex,
+        "#ff0000",
+    );
+    // Round-trip: hex -> hsl -> hex and hex -> hsv -> hex return the original.
+    for (const hex of [
+        "#ff0000",
+        "#00ff00",
+        "#0000ff",
+        "#ff8000",
+        "#00ff80",
+        "#000000",
+        "#ffffff",
+        "#808080",
+    ]) {
+        const converted = await call(client, "color_convert", { color: hex });
+        assert.equal(
+            (
+                await call(client, "color_convert", {
+                    color: `hsl(${converted.hsl.h}, ${converted.hsl.s}%, ${converted.hsl.l}%)`,
+                })
+            ).hex,
+            hex,
+            `${hex} via hsl`,
+        );
+        assert.equal(
+            (
+                await call(client, "color_convert", {
+                    color: `hsv(${converted.hsv.h}, ${converted.hsv.s}%, ${converted.hsv.v}%)`,
+                })
+            ).hex,
+            hex,
+            `${hex} via hsv`,
+        );
+    }
+});
+test("color_convert rejects malformed colors and out-of-range values", async (t) => {
+    const client = await clientFor(t);
+    for (const color of [
+        "",
+        "#ff",
+        "#ff00000",
+        "#gggggg",
+        "red",
+        "rgb(256, 0, 0)",
+        "rgb(255, 0)",
+        "rgb(255,0,0,0.5)",
+        "rgb(-1, 0, 0)",
+        "hsl(361, 50%, 50%)",
+        "hsl(0, 101%, 50%)",
+        "hsl(0, 50, 50)",
+        "hsv(0, 50%, 101%)",
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "color_convert",
+                    arguments: { color },
+                })
+            ).isError,
+            true,
+            JSON.stringify(color),
+        );
 });
 test("Unicode flags lookalikes and invisible characters without calling the network", async (t) => {
     const client = await clientFor(t);

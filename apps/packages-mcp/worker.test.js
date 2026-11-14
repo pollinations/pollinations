@@ -82,6 +82,7 @@ for (const modern of [false, true])
             [
                 "hf_model_info",
                 "hf_search_models",
+                "hf_search_spaces",
                 "hf_space_info",
                 "osv_query",
                 "osv_vulnerability",
@@ -352,7 +353,7 @@ test("OSV preserves advisories, affected ranges and pagination without claiming 
         advisory,
     );
 });
-test("HF search forwards task and limit; info exposes license and Space stage", async (t) => {
+test("HF search forwards task and limit; spaces search orders by likes; info exposes license and Space stage", async (t) => {
     t.mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
         assert.equal(url.origin, "https://huggingface.co");
@@ -370,6 +371,28 @@ test("HF search forwards task and limit; info exposes license and Space stage", 
                     downloads: 12,
                 },
                 { id: "extra" },
+            ]);
+        }
+        if (url.pathname === "/api/spaces") {
+            assert.equal(url.searchParams.get("search"), "gradio");
+            assert.equal(url.searchParams.get("limit"), "1");
+            assert.equal(url.searchParams.get("sort"), "likes");
+            assert.equal(url.searchParams.get("direction"), "-1");
+            return Response.json([
+                {
+                    id: "BlinkDL/RWKV-Gradio-2",
+                    likes: 670,
+                    sdk: "gradio",
+                    tags: ["gradio", "region:us"],
+                    createdAt: "2023-03-25T16:40:29.000Z",
+                },
+                {
+                    id: "BlinkDL/RWKV-Gradio-1",
+                    likes: 506,
+                    sdk: "gradio",
+                    tags: ["gradio", "region:us"],
+                    createdAt: "2023-03-25T16:35:00.000Z",
+                },
             ]);
         }
         assert.ok(
@@ -399,6 +422,26 @@ test("HF search forwards task and limit; info exposes license and Space stage", 
             ],
         },
     );
+    assert.deepEqual(
+        await call(client, "hf_search_spaces", {
+            query: "gradio",
+            limit: 1,
+        }),
+        {
+            spaces: [
+                {
+                    id: "BlinkDL/RWKV-Gradio-2",
+                    author: "BlinkDL",
+                    likes: 670,
+                    sdk: "gradio",
+                    tags: ["gradio", "region:us"],
+                    tagsTruncated: false,
+                    createdAt: "2023-03-25T16:40:29.000Z",
+                    url: "https://huggingface.co/spaces/BlinkDL/RWKV-Gradio-2",
+                },
+            ],
+        },
+    );
     for (const [name, id] of [
         ["hf_model_info", "org/model"],
         ["hf_space_info", "org/demo"],
@@ -422,6 +465,7 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["hf_search_spaces", { query: "gradio", limit: 26 }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(

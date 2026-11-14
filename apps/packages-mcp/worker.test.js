@@ -690,3 +690,102 @@ test("package_downloads passes through daily counts and validates names", async 
     });
     assert.equal(badRange.isError, true);
 });
+
+test("package_downloads reads RubyGems counts from BestGems daily downloads", async (t) => {
+    // Trimmed real daily_downloads fixture for rails (newest-first, as
+    // BestGems returns it), including a null day (2026-07-22) that the
+    // handler counts as 0.
+    const fixture = [
+        { date: "2026-11-13", daily_downloads: 573888 },
+        { date: "2026-11-12", daily_downloads: 563057 },
+        { date: "2026-11-11", daily_downloads: 650564 },
+        { date: "2026-11-10", daily_downloads: 633009 },
+        { date: "2026-11-09", daily_downloads: 411743 },
+        { date: "2026-11-08", daily_downloads: 205434 },
+        { date: "2026-11-07", daily_downloads: 343202 },
+        { date: "2026-11-06", daily_downloads: 583239 },
+        { date: "2026-11-05", daily_downloads: 715176 },
+        { date: "2026-11-04", daily_downloads: 594958 },
+        { date: "2026-07-22", daily_downloads: null },
+    ];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(
+            url,
+            "https://bestgems.org/api/v1/gems/rails/daily_downloads.json",
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "package_downloads", {
+            ecosystem: "rubygems",
+            name: "rails",
+        }),
+        {
+            package: "rails",
+            ecosystem: "rubygems",
+            range: "last-week",
+            start: "2026-11-07",
+            end: "2026-11-13",
+            total: 3380897,
+            downloads: [
+                { day: "2026-11-07", downloads: 343202 },
+                { day: "2026-11-08", downloads: 205434 },
+                { day: "2026-11-09", downloads: 411743 },
+                { day: "2026-11-10", downloads: 633009 },
+                { day: "2026-11-11", downloads: 650564 },
+                { day: "2026-11-12", downloads: 563057 },
+                { day: "2026-11-13", downloads: 573888 },
+            ],
+        },
+    );
+    const custom = await call(client, "package_downloads", {
+        ecosystem: "rubygems",
+        name: "rails",
+        range: "2026-11-05:2026-11-07",
+    });
+    assert.equal(custom.downloads.length, 3);
+    assert.equal(custom.total, 1641617);
+    assert.equal(custom.start, "2026-11-05");
+    assert.equal(custom.end, "2026-11-07");
+    const year = await call(client, "package_downloads", {
+        ecosystem: "rubygems",
+        name: "rails",
+        range: "last-year",
+    });
+    assert.equal(year.downloads.length, 11);
+    assert.equal(year.total, 5274270);
+    assert.equal(year.coverage_start, "2026-07-22");
+    assert.deepEqual(year.downloads[0], {
+        day: "2026-07-22",
+        downloads: 0,
+    });
+});
+
+test("package_downloads rejects invalid RubyGems names and unknown gems", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return new Response("Not Found", { status: 404 });
+    });
+    const client = await clientFor(t);
+    for (const name of ["not a gem!", "-rails"]) {
+        const bad = await client.callTool({
+            name: "package_downloads",
+            arguments: { ecosystem: "rubygems", name },
+        });
+        assert.equal(bad.isError, true);
+    }
+    assert.deepEqual(urls, []);
+    const unknown = await client.callTool({
+        name: "package_downloads",
+        arguments: { ecosystem: "rubygems", name: "this-gem-does-not-exist" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.deepEqual(urls, [
+        "https://bestgems.org/api/v1/gems/this-gem-does-not-exist/daily_downloads.json",
+    ]);
+});

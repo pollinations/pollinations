@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { readText } from "./dns.js";
 
-export async function lookupCtSubdomains(domainInput, limit = 50, offset = 0, filter) {
+export async function lookupCtSubdomains(
+    domainInput,
+    limit = 50,
+    offset = 0,
+    filter,
+) {
     const domain = domainInput.trim().toLowerCase().replace(/\.$/, "");
     if (
         !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(
@@ -45,8 +50,11 @@ export async function lookupCtSubdomains(domainInput, limit = 50, offset = 0, fi
     } catch {
         throw new Error("Certificate transparency service returned invalid JSON");
     }
-    if (!data || typeof data !== "object" || !Array.isArray(data.names))
-        throw new Error("Certificate transparency service returned an invalid response");
+    if (!data || typeof data !== "object" || !Array.isArray(data.names)) {
+        throw new Error(
+            "Certificate transparency service returned an invalid response",
+        );
+    }
 
     const names = data.names.map((entry) => {
         if (
@@ -54,7 +62,9 @@ export async function lookupCtSubdomains(domainInput, limit = 50, offset = 0, fi
             typeof entry.name !== "string" ||
             typeof entry.first_seen !== "string"
         ) {
-            throw new Error("Certificate transparency service returned an invalid hostname entry");
+            throw new Error(
+                "Certificate transparency service returned an invalid hostname entry",
+            );
         }
         return { name: entry.name, first_seen: entry.first_seen };
     });
@@ -76,14 +86,16 @@ export async function lookupCtSubdomains(domainInput, limit = 50, offset = 0, fi
 export const ctTools = [
     [
         "ct_subdomains",
-        "List hostnames observed in public Certificate Transparency logs under a registrable domain, newest observations first. Each first_seen value is a date, not a timestamp. A certificate observation does not prove that a hostname currently resolves or is active. Uses the public crt.live API; no caller credentials are sent. Respect 429 Retry-After responses.",
+        "List hostnames seen in public Certificate Transparency logs under a domain, newest first. first_seen is a date, not a timestamp. A CT observation does not prove a hostname is active. Uses crt.live; no caller credentials are sent. Respect 429 Retry-After responses.",
         {
             domain: z
                 .string()
                 .trim()
                 .min(1)
                 .max(254)
-                .describe("Plain domain name, for example example.com; IDNs must be supplied as ASCII/punycode"),
+                .describe(
+                    "Plain domain name, for example example.com; IDNs must be supplied as ASCII/punycode",
+                ),
             limit: z.number().int().min(1).max(100).default(50),
             offset: z.number().int().min(0).max(1000000).default(0),
             filter: z

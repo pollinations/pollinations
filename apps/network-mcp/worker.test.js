@@ -70,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["ct_subdomains", "dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "ct_subdomains",
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -420,7 +426,6 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
 });
-
 
 test("CT subdomain lookup returns recent public observations without forwarding credentials", async (t) => {
     const requests = [];

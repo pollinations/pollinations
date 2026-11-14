@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "doaj_articles_search",
             ].sort(),
         );
     });
@@ -644,4 +645,114 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("DOAJ search formats open-access articles with journal, DOI and capped abstract", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "doaj.org");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        if (url.pathname.endsWith("zzzqqqxjjjnonexistentterm")) {
+            return Response.json({
+                total: 0,
+                page: 1,
+                pageSize: 5,
+                results: [],
+            });
+        }
+        assert.equal(url.pathname, "/api/search/articles/climate%20change");
+        assert.equal(url.searchParams.get("pageSize"), "2");
+        return Response.json({
+            total: 149365,
+            page: 1,
+            pageSize: 2,
+            results: [
+                {
+                    id: "000004687a3a411cb466625281f2ceb0",
+                    bibjson: {
+                        identifier: [
+                            { id: "2045-7758", type: "eissn" },
+                            { id: "10.1002/ece3.8411", type: "doi" },
+                        ],
+                        journal: {
+                            volume: "11",
+                            number: "24",
+                            country: "GB",
+                            publisher: "Wiley",
+                            language: ["EN"],
+                            title: "Ecology and Evolution",
+                        },
+                        keywords: [
+                            "Atlantic herring",
+                            "climate change",
+                            "ecosystem",
+                            "ecosystem\u2010based",
+                            "egg predation",
+                            "exploitation",
+                        ],
+                        year: "2021",
+                        author: [
+                            { name: "Daniel G. Boyce" },
+                            { name: "Brian Petrie" },
+                            { name: "Kenneth T. Frank" },
+                        ],
+                        link: [
+                            {
+                                content_type: "HTML",
+                                type: "fulltext",
+                                url: "https://doi.org/10.1002/ece3.8411",
+                            },
+                        ],
+                        abstract:
+                            "Abstract Since 1960, landings of Atlantic herring have been the greatest of any marine species in Canada, surpassing Atlantic cod and accounting for 24% of the total seafood harvested in Atlantic Canada. The Scotian Shelf\u2010Bay of Fundy herring fisheries (NAFO Division 4VWX) is among Canada's oldest and drives this productivity, accounting for up to 75% of the total herring catch in some years. The stocks\u2019 productivity and overall health have declined since 1965. Despite management measures to promote recovery implem",
+                        title: "Fishing, predation, and temperature drive herring decline in a large marine ecosystem",
+                    },
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "doaj_articles_search", {
+        query: "climate change",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.totalResults, 149365);
+    assert.equal(val.query, "climate change");
+    const article = val.articles[0];
+    assert.equal(
+        article.title,
+        "Fishing, predation, and temperature drive herring decline in a large marine ecosystem",
+    );
+    assert.deepEqual(article.authors, [
+        "Daniel G. Boyce",
+        "Brian Petrie",
+        "Kenneth T. Frank",
+    ]);
+    assert.equal(article.journal, "Ecology and Evolution");
+    assert.equal(article.publisher, "Wiley");
+    assert.equal(article.year, "2021");
+    assert.equal(article.doi, "10.1002/ece3.8411");
+    assert.equal(article.url, "https://doi.org/10.1002/ece3.8411");
+    assert.deepEqual(article.keywords, [
+        "Atlantic herring",
+        "climate change",
+        "ecosystem",
+        "ecosystem\u2010based",
+        "egg predation",
+    ]);
+    assert.equal(article.abstract.length, 500);
+    assert.match(article.abstract, /^Abstract Since 1960, landings/);
+
+    const empty = await call(c, "doaj_articles_search", {
+        query: "zzzqqqxjjjnonexistentterm",
+        limit: 5,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.equal(value(empty).totalResults, 0);
+    assert.deepEqual(value(empty).articles, []);
 });

@@ -656,6 +656,197 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
     ]);
 });
 
+test("Snapcraft lookup resolves the latest stable snap with channels and revisions", async (t) => {
+    // Trimmed real api.snapcraft.io/v2/snaps/info/firefox response
+    // (2026-11-14): snap object kept whole, channel-map trimmed to the
+    // amd64 channels plus one arm64 entry to prove the amd64 filter.
+    const fixture = {
+        name: "firefox",
+        "snap-id": "3wdHCAVyZEmYsCMFDE9qt92UV8rC8Wdk",
+        "default-track": null,
+        snap: {
+            license: "MPL-2.0",
+            name: "firefox",
+            prices: {},
+            publisher: {
+                "display-name": "Mozilla",
+                id: "OgeoZuqQpVvSr9eGKJzNCrFGSaKXpkey",
+                username: "mozilla",
+                validation: "verified",
+            },
+            "snap-id": "3wdHCAVyZEmYsCMFDE9qt92UV8rC8Wdk",
+            "store-url": "https://snapcraft.io/firefox",
+            summary: "Mozilla Firefox web browser",
+            title: "firefox",
+        },
+        "channel-map": [
+            {
+                channel: {
+                    name: "stable",
+                    track: "latest",
+                    risk: "stable",
+                    architecture: "amd64",
+                },
+                download: { size: 312287232 },
+                revision: 9181,
+                type: "app",
+                version: "160.0-1",
+            },
+            {
+                channel: {
+                    name: "stable",
+                    track: "latest",
+                    risk: "stable",
+                    architecture: "arm64",
+                },
+                download: { size: 300000000 },
+                revision: 9180,
+                type: "app",
+                version: "160.0-1",
+            },
+            {
+                channel: {
+                    name: "candidate",
+                    track: "latest",
+                    risk: "candidate",
+                    architecture: "amd64",
+                },
+                download: { size: 312287232 },
+                revision: 9181,
+                type: "app",
+                version: "160.0-1",
+            },
+            {
+                channel: {
+                    name: "beta",
+                    track: "latest",
+                    risk: "beta",
+                    architecture: "amd64",
+                },
+                download: { size: 315000000 },
+                revision: 9204,
+                type: "app",
+                version: "161.0b2-1",
+            },
+            {
+                channel: {
+                    name: "edge",
+                    track: "latest",
+                    risk: "edge",
+                    architecture: "amd64",
+                },
+                download: { size: 318000000 },
+                revision: 9210,
+                type: "app",
+                version: "162.0a1",
+            },
+            {
+                channel: {
+                    name: "esr/stable",
+                    track: "esr",
+                    risk: "stable",
+                    architecture: "amd64",
+                },
+                download: { size: 300000000 },
+                revision: 9172,
+                type: "app",
+                version: "153.7.0esr-1",
+            },
+            {
+                channel: {
+                    name: "esr/candidate",
+                    track: "esr",
+                    risk: "candidate",
+                    architecture: "amd64",
+                },
+                download: { size: 300000000 },
+                revision: 9172,
+                type: "app",
+                version: "153.7.0esr-1",
+            },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(url, "https://api.snapcraft.io/v2/snaps/info/firefox");
+        // The store API returns 400 without this static header.
+        assert.equal(init.headers["Snap-Device-Series"], "16");
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "snapcraft",
+        name: "firefox",
+    });
+    assert.equal(data.version, "160.0-1");
+    assert.equal(data.revision, 9181);
+    assert.equal(data.channel, "stable");
+    assert.equal(data.description, "Mozilla Firefox web browser");
+    assert.equal(data.license, "MPL-2.0");
+    assert.equal(data.publisher, "Mozilla");
+    assert.equal(data.publisherUsername, "mozilla");
+    assert.equal(data.publisherValidation, "verified");
+    assert.equal(data.downloadSize, 312287232);
+    assert.equal(data.registryUrl, "https://snapcraft.io/firefox");
+    assert.deepEqual(data.channels, [
+        { channel: "stable", version: "160.0-1", revision: 9181 },
+        { channel: "candidate", version: "160.0-1", revision: 9181 },
+        { channel: "beta", version: "161.0b2-1", revision: 9204 },
+        { channel: "edge", version: "162.0a1", revision: 9210 },
+        { channel: "esr/stable", version: "153.7.0esr-1", revision: 9172 },
+        { channel: "esr/candidate", version: "153.7.0esr-1", revision: 9172 },
+    ]);
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "snapcraft",
+        name: "firefox",
+        version: "161.0b2-1",
+    });
+    assert.equal(pinned.version, "161.0b2-1");
+    assert.equal(pinned.channel, "beta");
+    assert.equal(pinned.revision, 9204);
+    assert.deepEqual(urls, [
+        "https://api.snapcraft.io/v2/snaps/info/firefox",
+        "https://api.snapcraft.io/v2/snaps/info/firefox",
+    ]);
+    await assert.rejects(
+        lookup({
+            ecosystem: "snapcraft",
+            name: "firefox",
+            version: "0.0.0",
+        }),
+        /Snapcraft version 0.0.0 not found/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "snapcraft", name: "Not A Snap" }),
+        /Invalid snapcraft package name/,
+    );
+});
+
+test("Snapcraft unknown snap surfaces the store 404", async (t) => {
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(
+                JSON.stringify({
+                    "error-list": [
+                        {
+                            code: "resource-not-found",
+                            message:
+                                "No snap named 'no-such-snap' found in series '16'.",
+                        },
+                    ],
+                }),
+                { status: 404 },
+            ),
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "snapcraft", name: "no-such-snap" }),
+        /api.snapcraft.io returned HTTP 404/,
+    );
+});
+
 test("package_downloads passes through daily counts and validates names", async (t) => {
     const expected = {
         package: "@scope/pkg",

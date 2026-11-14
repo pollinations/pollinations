@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
+                "loan_payment",
                 "next_cron_runs",
                 "rank_palette",
                 "time_convert",
@@ -556,6 +557,105 @@ test("to_fraction rejects malformed input", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "to_fraction", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("loan_payment computes monthly payments, totals and schedules", async (t) => {
+    const client = await clientFor(t);
+    // Expected values were computed independently with Python Decimal
+    // (50-digit precision), not copied from the tool's own output. Totals
+    // are asserted within a cent: the schedule simulation accumulates
+    // floating-point interest month by month.
+    const close = (actual, expected, label) =>
+        assert.ok(
+            Math.abs(actual - expected) < 0.01,
+            `${label}: got ${actual}, expected ${expected}`,
+        );
+
+    const standard = await call(client, "loan_payment", {
+        principal: 100000,
+        annual_rate: 5,
+        years: 30,
+    });
+    assert.equal(standard.monthly_payment, 536.821623);
+    assert.equal(standard.months, 360);
+    assert.equal(standard.payoff_months, 360);
+    close(standard.total_interest, 93255.78, "30y total interest");
+    close(standard.total_paid, 193255.78, "30y total paid");
+    assert.equal(standard.schedule, undefined);
+
+    const free = await call(client, "loan_payment", {
+        principal: 10000,
+        annual_rate: 0,
+        years: 2,
+    });
+    assert.equal(free.monthly_payment, 416.6666667);
+    assert.equal(free.total_interest, 0);
+    assert.equal(free.total_paid, 10000);
+    assert.equal(free.payoff_months, 24);
+
+    const fractional = await call(client, "loan_payment", {
+        principal: 50000,
+        annual_rate: 7.2,
+        years: 7.5,
+    });
+    assert.equal(fractional.months, 90);
+    assert.equal(fractional.monthly_payment, 720.6156437);
+
+    const big = await call(client, "loan_payment", {
+        principal: 250000,
+        annual_rate: 6.5,
+        years: 30,
+    });
+    assert.equal(big.monthly_payment, 1580.170059);
+    close(big.total_interest, 318861.22, "250k total interest");
+
+    const extra = await call(client, "loan_payment", {
+        principal: 100000,
+        annual_rate: 5,
+        years: 30,
+        extra_payment: 100,
+    });
+    assert.equal(extra.payoff_months, 256);
+    close(extra.total_interest, 62675.53, "extra-payment total interest");
+    assert.equal(extra.monthly_payment, 536.821623);
+
+    const scheduled = await call(client, "loan_payment", {
+        principal: 100000,
+        annual_rate: 5,
+        years: 30,
+        include_schedule: true,
+    });
+    assert.equal(scheduled.schedule.length, 360);
+    assert.deepEqual(scheduled.schedule[0], {
+        month: 1,
+        payment: 536.821623,
+        principal: 120.1549563,
+        interest: 416.6666667,
+        balance: 99879.84504,
+    });
+    assert.equal(scheduled.schedule[359].balance, 0);
+});
+
+test("loan_payment rejects invalid input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { principal: 0, annual_rate: 5, years: 30 },
+        { principal: -1000, annual_rate: 5, years: 30 },
+        { principal: 100000, annual_rate: -1, years: 30 },
+        { principal: 100000, annual_rate: 1001, years: 30 },
+        { principal: 100000, annual_rate: 5, years: 0 },
+        { principal: 100000, annual_rate: 5, years: -5 },
+        { principal: 100000, annual_rate: 5, years: 101 },
+        { principal: 100000, annual_rate: 5, years: 0.04 },
+        { principal: 100000, annual_rate: 5, years: 30, extra_payment: -50 },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "loan_payment", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

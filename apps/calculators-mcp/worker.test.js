@@ -75,6 +75,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "base_convert",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -561,6 +562,78 @@ test("to_fraction rejects malformed input", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("base_convert converts integers and fractions between bases 2-36", async (t) => {
+    const client = await clientFor(t);
+    // Expected values verified independently with plain BigInt arithmetic
+    // (node one-liner), not taken from the tool under test.
+    for (const [value, from_base, to_base, result, exact, precision] of [
+        ["255", 10, 16, "ff", true],
+        ["1010", 2, 10, "10", true],
+        ["ff", 16, 10, "255", true],
+        ["777", 8, 10, "511", true],
+        ["z", 36, 10, "35", true],
+        ["35", 10, 36, "z", true],
+        ["deadbeef", 16, 10, "3735928559", true],
+        ["FF", 16, 10, "255", true],
+        ["-42", 10, 16, "-2a", true],
+        ["007", 10, 2, "111", true],
+        ["ff", 16, 16, "ff", true],
+        ["0", 10, 2, "0", true],
+        ["-0", 10, 16, "0", true],
+        ["0.5", 10, 2, "0.1", true],
+        ["0.1", 2, 10, "0.5", true],
+        ["0.ff", 16, 10, "0.99609375", true],
+        ["0.1", 10, 2, "0.000110011001", false],
+        ["0.1", 10, 2, "0.00011001100110011001", false, 20],
+        ["0.1", 10, 2, "0.0001", false, 4],
+        ["0.1", 3, 10, "0.333333333333", false],
+        // Exact through BigInt: past the float safe range, 2^63 + 1 stays exact.
+        ["12345678901234567890", 10, 16, "ab54a98ceb1f0ad2", true],
+    ]) {
+        assert.deepEqual(
+            await call(client, "base_convert", {
+                value,
+                from_base,
+                to_base,
+                ...(precision === undefined ? {} : { precision }),
+            }),
+            { value, from_base, to_base, result, exact },
+            `${value} base ${from_base} -> base ${to_base}`,
+        );
+    }
+});
+
+test("base_convert rejects invalid digits, malformed numbers and bad bases", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "", from_base: 10, to_base: 16 },
+        { value: "2", from_base: 2, to_base: 10 },
+        { value: "ff", from_base: 10, to_base: 16 },
+        { value: "1.2.3", from_base: 10, to_base: 2 },
+        { value: ".", from_base: 10, to_base: 2 },
+        { value: "+.", from_base: 10, to_base: 2 },
+        { value: "-", from_base: 10, to_base: 2 },
+        { value: "1 0", from_base: 10, to_base: 2 },
+        { value: "0x10", from_base: 16, to_base: 10 },
+        { value: "1..5", from_base: 10, to_base: 2 },
+        { value: "10", from_base: 1, to_base: 2 },
+        { value: "10", from_base: 10, to_base: 37 },
+        { value: "0.1", from_base: 10, to_base: 2, precision: 0 },
+        { value: "0.1", from_base: 10, to_base: 2, precision: 65 },
+        { value: "1".repeat(201), from_base: 10, to_base: 2 },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "base_convert",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
 });
 
 test("diff_text produces a minimal unified diff with line counts", async (t) => {

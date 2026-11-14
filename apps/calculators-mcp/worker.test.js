@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
+                "slugify",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -674,4 +675,43 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("slugify produces URL‑friendly slugs", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "slugify", { value: "Hello World" }), {
+        slug: "hello-world",
+    });
+    assert.deepEqual(await call(client, "slugify", { value: "  Trim me!  " }), {
+        slug: "trim-me",
+    });
+    assert.deepEqual(await call(client, "slugify", { value: "Café résumé" }), {
+        slug: "caf-r-sum",
+    });
+    assert.deepEqual(await call(client, "slugify", { value: "already-123" }), {
+        slug: "already-123",
+    });
+    assert.deepEqual(
+        await call(client, "slugify", { value: "   multiple   spaces   " }),
+        {
+            slug: "multiple-spaces",
+        },
+    );
+});
+
+test("slugify rejects input with no alphanumerics", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "---" },
+        { value: "!!!" },
+        { value: "   " },
+        { value: "" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "slugify", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });

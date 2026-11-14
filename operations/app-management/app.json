@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Susurros de Buda · storybook art CLI",
+    "url": "https://github.com/Deheroesytumbas/susurros-de-buda-pollinations",
+    "description": "A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed.",
+    "language": "es",
+    "category": "image",
+    "platform": "cli",
+    "githubUsername": "Deheroesytumbas",
+    "githubUserId": "268655041",
+    "repositoryUrl": "https://github.com/Deheroesytumbas/susurros-de-buda-pollinations",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19435",
+    "approvedDate": "2026-11-14",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1fc3f62f-9d0e-466d-8deb-5f5d980610e8"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollen Canvas",
     "url": "https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD",
     "description": "Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser.",

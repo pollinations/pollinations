@@ -1333,6 +1333,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/minimax-m3p1-flash",
             serviceTier: "default",
         }),
+    "minimax/minimax-m3.1-flash:novita": () =>
+        createNovitaModelConfig({ model: "minimax/minimax-m3.1-flash" }),
     "MiniMaxAI/MiniMax-M3": () =>
         createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
     "azure/Nemotron-3.5-Lightning": () =>

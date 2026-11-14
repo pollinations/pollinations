@@ -862,6 +862,35 @@ describe("withModelFallback", () => {
                 : attempt.candidate.id,
         );
 
+    it("uses MiniMax Flash Novita only on 429 and preserves Fireworks context on rejection", async () => {
+        const primary = candidate("minimax/minimax-m3.1-flash");
+        const novita = candidate("minimax/minimax-m3.1-flash:novita");
+        const fireworks = rateLimited();
+        const oversized = Object.assign(
+            new Error("Input too long: context window exceeds limit"),
+            { status: 400, upstreamStatus: 400 },
+        );
+        const attempts: FallbackAttempt[] = [];
+        const attempt = vi
+            .fn()
+            .mockRejectedValueOnce(fireworks)
+            .mockRejectedValueOnce(oversized);
+        await expect(
+            withModelFallback([primary, novita], attempt, attempts),
+        ).rejects.toBe(fireworks);
+        expect(attempt.mock.calls).toEqual([[primary], [novita]]);
+        expect(attempts.map(({ settled }) => settled)).toEqual([true, false]);
+
+        const unavailable = Object.assign(new Error("unavailable"), {
+            status: 503,
+        });
+        attempt.mockReset().mockRejectedValueOnce(unavailable);
+        await expect(
+            withModelFallback([primary, novita], attempt),
+        ).rejects.toBe(unavailable);
+        expect(attempt.mock.calls).toEqual([[primary]]);
+    });
+
     it("reports every failure, marking the one that ended the request", async () => {
         const attempts: FallbackAttempt[] = [];
         const attempt = vi.fn(async () => {

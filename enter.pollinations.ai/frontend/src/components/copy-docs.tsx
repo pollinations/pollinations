@@ -7,7 +7,8 @@ import {
 import type { FC } from "react";
 import { genDocsUrl } from "../config.ts";
 
-/** Sections of gen's `/docs/llm.txt`: the button label and the docs page. */
+/** Sections of gen's `/docs/llm.txt`: their name for screen readers and the
+ * docs page. */
 const DOCS = {
     api: { label: "API docs", tag: "quick-start" },
     byop: { label: "Pollinations Pay docs", tag: "pollinations-pay" },
@@ -31,9 +32,9 @@ const fetchDocs = async (section: DocsSection) => {
     return res.text();
 };
 
-// A card's docs in one quiet grey pill, like the rail's Docs row: the name
-// opens them, the icon copies them as plain text for an AI chat and turns into
-// a check, briefly.
+// A card's docs in one quiet grey pill, like the rail's Docs row: "Docs" opens
+// them, the icon copies them as plain text for an AI chat and turns into a
+// check, briefly. The card's title already says which docs they are.
 export const CopyDocs: FC<{ section: DocsSection }> = ({ section }) => {
     const { label, tag } = DOCS[section];
     return (
@@ -44,9 +45,10 @@ export const CopyDocs: FC<{ section: DocsSection }> = ({ section }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 intent="neutral"
+                aria-label={`Open ${label}`}
                 className="h-9 gap-1.5 whitespace-nowrap rounded-r-none py-0 pr-3"
             >
-                {label}
+                Docs
                 <ExternalLinkIcon className="h-3.5 w-3.5" />
             </Button>
             <CopyButton

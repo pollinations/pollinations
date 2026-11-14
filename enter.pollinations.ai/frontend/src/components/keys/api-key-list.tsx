@@ -2,6 +2,8 @@ import {
     AppIcon,
     Button,
     Chip,
+    CodeIcon,
+    CopyField,
     GlobeIcon,
     IconButton,
     InlineLink,
@@ -406,6 +408,25 @@ export const ApiKeyList: FC<
                             </p>
                         </>
                     )}
+                    {/* The same Create from a terminal, in the catalog's small
+                        copy pill. */}
+                    <div className="flex items-start gap-1.5">
+                        <CodeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span>From your terminal:</span>
+                            <div className="w-fit min-w-0 max-w-full">
+                                <CopyField
+                                    label="Copy CLI command"
+                                    value={
+                                        secret
+                                            ? "polli keys create --name my-bot"
+                                            : "polli keys create --name my-app --type publishable"
+                                    }
+                                    size="sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </Section>
             <DeleteConfirmation

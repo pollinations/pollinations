@@ -400,6 +400,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         pricing_units: entry.info.pricing_units,
+        ...(entry.info.pricing_adjustments && {
+            pricing_adjustments: entry.info.pricing_adjustments,
+        }),
         top_provider: {
             max_completion_tokens: entry.info.max_completion_tokens ?? null,
         },

@@ -12,7 +12,6 @@ import {
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
-import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
 import { mediaToBedrock } from "./transforms/mediaToBedrock.ts";
 import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
@@ -1160,12 +1159,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "thinkingmachines/inkling",
-        config: portkeyConfig["accounts/fireworks/models/inkling"],
-        transform: pipe(
-            stripFireworksCacheControl,
-            inputAudioToFireworks,
-            mandatoryReasoning,
-        ),
+        config: portkeyConfig["thinkingmachines/inkling"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "thinkingmachines/inkling:vercel:togetherai",
+        config: portkeyConfig["thinkingmachines/inkling:vercel:togetherai"],
+        transform: pipe(mediaToVercelFiles, mandatoryReasoning),
     },
     {
         name: "nvidia/nemotron-3-ultra",

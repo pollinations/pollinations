@@ -1316,17 +1316,23 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(64000);
     });
 
-    it("routes full Inkling directly to Fireworks without fallback", () => {
-        const result = resolveModelConfig(messages, {
+    it("pins full Inkling to Together on OpenRouter with a Vercel backup", () => {
+        const primary = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling",
         });
-
-        expect(result.options.model).toBe("accounts/fireworks/models/inkling");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+        expect(primary.options.model).toBe("thinkingmachines/inkling");
+        expect(primary.options.provider).toEqual({
+            only: ["together"],
+            allow_fallbacks: false,
         });
-        expect(result.options.provider).toBeUndefined();
+
+        const fallback = resolveModelConfig(messages, {
+            model: "thinkingmachines/inkling:vercel:togetherai",
+        });
+        expect(fallback.options.model).toBe("thinkingmachines/inkling");
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["togetherai"] },
+        });
     });
 
     it("routes GLM-5.3 Flash directly to Fireworks without fallback", () => {

@@ -2940,30 +2940,35 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        // Together enforces json_schema on this route (2026-11-04).
+        supportedParameters: [
+            ...CHAT_PARAMETERS.inklingSmall,
+            "response_format",
+        ],
         aliases: [],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "Thinking Machines",
         category: "text",
         addedDate: new Date("2026-08-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-08-30).
+        // OpenRouter Together route rates (2026-11-04). Image and audio inputs
+        // are reported inside prompt_tokens.
         cost: {
-            promptTextTokens: perMillion(1),
-            promptCachedTokens: perMillion(0.17),
-            promptAudioTokens: perMillion(1),
-            promptImageTokens: perMillion(1),
-            completionTextTokens: perMillion(4.05),
+            promptTextTokens: perMillion(1) * 1.055,
+            promptCachedTokens: perMillion(0.17) * 1.055,
+            promptAudioTokens: perMillion(1) * 1.055,
+            promptImageTokens: perMillion(1) * 1.055,
+            completionTextTokens: perMillion(4.05) * 1.055,
         },
         title: "Inkling",
         description:
-            "Flagship million-token multimodal reasoning for agents, coding, visual analysis and audio understanding",
+            "Flagship multimodal reasoning for agents, coding, visual analysis and audio understanding",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {

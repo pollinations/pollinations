@@ -23,6 +23,7 @@ describe("provider transform passthrough", () => {
         "glm",
         "inception/mercury-2.5-preview",
         "deepseek/deepseek-v4.1-flash",
+        "thinkingmachines/inkling",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -38,7 +39,6 @@ describe("provider transform passthrough", () => {
         "moonshotai/kimi-k3",
         "moonshotai/kimi-k3:fireworks",
         "moonshotai/kimi-k3:deepinfra",
-        "thinkingmachines/inkling",
         "nvidia/nemotron-3-ultra",
         "nvidia/nemotron-3.5-lightning",
         "z-ai/glm-5.3",

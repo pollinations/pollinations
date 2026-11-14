@@ -23,7 +23,7 @@ then choose a server:
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 | Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, SHA text hashes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
 | Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
-| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
+| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems/NuGet package search and versions, npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 | Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
 
@@ -41,7 +41,7 @@ propagation or safety check. CIDR and MAC inspection are local and do not scan h
 RDAP uses authoritative registries; cached results last ten minutes and missing
 country or ownership fields remain null.
 
-Packages lookups are free but require a key. Queries go to the named public
+Packages lookups are free but require a key. NuGet search discovers its SearchQueryService from the V3 service index and returns package metadata, download counts, prefix verification, reported vulnerabilities and version samples. Queries go to the named public
 registry; caller credentials are not forwarded. OSV preserves pagination and
 advisories: no findings is not proof of safety. Rust uses the crates.io sparse
 index (versions, dependencies and runtime requirements); follow `registryUrl`

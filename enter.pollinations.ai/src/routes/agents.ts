@@ -42,6 +42,7 @@ import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
 } from "./community-endpoints/schemas.ts";
+import { ensureModelLimit } from "./community-endpoints.ts";
 
 const ListingFieldsSchema = z.object({
     name: z
@@ -206,9 +207,8 @@ async function requireValidBaseModel(
         ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
         : undefined;
     if (
-        !target ||
-        (target.type === "proxy" &&
-            parseListingPayload("proxy", target.payload)?.modality !== "text")
+        target?.type !== "proxy" ||
+        parseListingPayload("proxy", target.payload)?.modality !== "text"
     ) {
         throw invalid();
     }
@@ -460,6 +460,7 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountPermission(c, "keys");
             const db = drizzle(c.env.DB, { schema });
+            await ensureModelLimit(db, user.id);
             const id = crypto.randomUUID();
             let payload: string;
             let listing: {

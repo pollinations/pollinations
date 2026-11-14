@@ -41,6 +41,29 @@ describe("ElevenLabs TTS model routing", () => {
         });
     });
 
+    it.each([
+        "elevenlabs/eleven-v3",
+        "elevenlabs/eleven-flash-v2.5",
+        "elevenlabs/eleven-multilingual-v2",
+    ] as const)(
+        "rejects flac on %s instead of returning PCM under the wrong format",
+        async (modelName) => {
+            const fetchMock = vi.spyOn(globalThis, "fetch");
+
+            await expect(
+                generateElevenLabsSpeech({
+                    modelName,
+                    text: "Hello",
+                    voice: "nova",
+                    responseFormat: "flac",
+                    apiKey: "test-eleven-key",
+                    log,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
+
     it("accepts custom voice IDs on the simple audio endpoint", () => {
         const customVoiceId = "custom-elevenlabs-voice-id";
 

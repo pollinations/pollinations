@@ -35,6 +35,7 @@ const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
 const InputModalitiesSchema = z
     .array(InputModalitySchema)
     .min(1)
+    .max(MODEL_INPUT_MODALITIES.length)
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
@@ -119,18 +120,20 @@ const EndpointFieldsSchema = {
         .optional(),
     baseUrl: z
         .string()
+        .max(2048)
         .url()
         .describe(
             "Media API base URL or full endpoint URL. For video, the exact generation URL.",
         ),
     url: z
         .string()
+        .max(2048)
         .url()
         .describe(
             "Exact upstream endpoint URL for the selected text API, including its path and query parameters.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
-    bearerToken: z.string().min(1),
+    bearerToken: z.string().min(1).max(4096),
 } as const;
 
 function validateEndpointUpdate(

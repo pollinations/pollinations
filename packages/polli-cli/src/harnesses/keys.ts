@@ -7,7 +7,8 @@ import { printInfo, printSuccess } from "../lib/output.js";
  * Key the harness will call gen with: the one already in its config if still
  * valid, otherwise a child key named after the harness, minted from the polli
  * login (logging in first if needed). A login that can't create keys, like the
- * one gen writes into a sandbox, is the harness's key itself.
+ * one gen writes into a sandbox, is the harness's key itself, and so is one
+ * with a pollen budget, which a key it creates would have to split.
  *
  * `accountPermissions` are forwarded to the key creation endpoint. Harness
  * integrations that surface usage or balance (like the Pollinations OpenCode
@@ -33,13 +34,19 @@ export const resolveHarnessKey = async (
     const accountKey =
         resolveApiKey() ??
         (await loginWithDeviceFlow({ browser: options.browser }));
-    const login = await gen<{ permissions: { account: string[] | null } }>(
-        "/account/key",
-        { apiKey: accountKey },
-    );
+    const login = await gen<{
+        permissions: { account: string[] | null };
+        pollenBudget: number | null;
+    }>("/account/key", { apiKey: accountKey });
     if (!login.permissions.account?.includes("keys")) {
         printInfo(
             `${harness.label} uses the polli login, which can't create keys.`,
+        );
+        return accountKey;
+    }
+    if (login.pollenBudget != null) {
+        printInfo(
+            `${harness.label} uses the polli login and its pollen budget.`,
         );
         return accountKey;
     }

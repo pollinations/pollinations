@@ -46,6 +46,7 @@ interface RequestOptions {
     method?: string;
     body?: unknown;
     apiKey?: string;
+    signal?: AbortSignal;
 }
 
 const send = async (
@@ -53,7 +54,7 @@ const send = async (
     path: string,
     options: RequestOptions = {},
 ): Promise<Response> => {
-    const { method = "GET", body, apiKey } = options;
+    const { method = "GET", body, apiKey, signal } = options;
     const key = resolveApiKey(apiKey);
 
     const headers: Record<string, string> = {
@@ -66,6 +67,7 @@ const send = async (
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        signal,
     });
 
     if (!res.ok) {
@@ -97,3 +99,7 @@ export const gen = <T>(path: string, options?: RequestOptions) =>
  * (e.g. `format=csv` exports). */
 export const genText = async (path: string, options?: RequestOptions) =>
     (await send(BASE_URL, path, options)).text();
+
+/** Same as `gen`, but returns the response itself, e.g. to read a stream. */
+export const genResponse = (path: string, options?: RequestOptions) =>
+    send(BASE_URL, path, options);

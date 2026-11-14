@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { safeMcpModelOutput } from "../../../shared/agents/mcp-output.ts";
 import {
+    awaitsCaller,
     createAgentModelProvider,
     openAIFinishReason,
     strictAgentUsage,
@@ -104,6 +105,7 @@ export function createCodeAgentAI(
             signal,
             stream,
             onPart,
+            tools,
         }) => {
             const { promptCacheBreakpoint, ...generation } = settings;
             const agent = new ToolLoopAgent<never, ToolSet>({
@@ -111,6 +113,8 @@ export function createCodeAgentAI(
                 stopWhen: stepCountIs(8),
                 ...config,
                 ...generation,
+                // The author's tools plus the caller's function tools.
+                tools,
                 providerOptions: {
                     ...config.providerOptions,
                     ...generation.providerOptions,
@@ -144,7 +148,8 @@ export function createCodeAgentAI(
                 stream,
                 onPart,
             });
-            const stoppedWithoutAnswer = reason === "tool-calls";
+            const stoppedWithoutAnswer =
+                reason === "tool-calls" && !awaitsCaller(steps, tools);
             if (stoppedWithoutAnswer) {
                 onPart({
                     type: "text-delta",

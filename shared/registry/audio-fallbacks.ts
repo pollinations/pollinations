@@ -1,6 +1,12 @@
 import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
+    "elevenlabs/eleven-text-to-sound-v3": {
+        "elevenlabs/eleven-text-to-sound-v3:fal": {
+            provider: "fal",
+            cost: { completionAudioSeconds: 0.002 },
+        },
+    },
     "microsoft/mai-transcribe-2": {
         "microsoft/mai-transcribe-2:vercel": {
             provider: "vercel",

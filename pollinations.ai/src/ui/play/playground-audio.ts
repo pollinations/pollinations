@@ -20,6 +20,17 @@ export function audioEndpoint(model: AudioModel) {
     );
 }
 
+export function supportsAudioLength(model: {
+    id: string;
+    allowedDurations: number[];
+}) {
+    // Lyria 3.5 takes approximate length in the prompt. Fixed-length models
+    // choose their only duration when the parameter is omitted.
+    return (
+        model.id !== "google/lyria-3.5" && model.allowedDurations.length !== 1
+    );
+}
+
 export function audioInputError(
     model: AudioModel,
     prompt: string,

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Economics update"
+  short_description: "Monthly close with up to three vendor subchats"
+  default_prompt: "Use $economics-provider-collection to trigger the monthly Economics update with up to three vendor subchats at once, keeping finished subchats open."

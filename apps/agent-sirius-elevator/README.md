@@ -1,6 +1,6 @@
 # Sirius Elevator: The Descent
 
-A prompt agent for chapter one of the [Sirius Cybernetics Elevator Challenge](../sirius-cybernetics-elevator-challenge/): talk a cheerful but neurotic elevator down from Floor 3 to Floor 1.
+A prompt agent for chapter one of the [Sirius Cybernetics Elevator Challenge](https://sirius-elevator.pollinations.app/): talk a cheerful but neurotic elevator down from Floor 3 to Floor 1.
 
 ## How it plays
 
@@ -15,7 +15,7 @@ A prompt agent for chapter one of the [Sirius Cybernetics Elevator Challenge](..
 npx @pollinations/cli agents create --config agent.json
 ```
 
-Or **My Models → Add Agent** at https://enter.pollinations.ai/my-models and paste `agent.json`.
+Or **My listings → Create** at https://enter.pollinations.ai/my-models and paste `agent.json`.
 
 ## Call it
 

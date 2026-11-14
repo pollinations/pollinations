@@ -16,8 +16,8 @@ import {
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Bumped to v30: the app-spend quest is worth 10 Pollen.
-const CACHE_KEY = "quests:catalog:v30";
+// Bumped to v32: quest bounties come from reward-N labels.
+const CACHE_KEY = "quests:catalog:v32";
 const CACHE_TTL = 60;
 
 export type QuestCatalogResponse = {
@@ -118,9 +118,9 @@ async function buildQuestCatalog(
 
     // Preserve definition order from listQuestCards (group + within-group), so
     // each lane reads in its intended sequence, e.g. Setup: API key -> text ->
-    // image -> audio. The frontend still sorts every lane by lifecycle + reward;
-    // this order is only the stable tiebreak for equal-reward quests. (Was
-    // sorted alphabetically by title, which placed "audio" before "image".)
+    // image -> audio. The frontend groups every lane by lifecycle and keeps
+    // this order within each group. (Was sorted alphabetically by title, which
+    // placed "audio" before "image".)
     return {
         quests: cards,
     };

@@ -6,10 +6,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
-import {
-    resolveGrokAspectRatio,
-    resolveGrokDuration,
-} from "./openRouterVideoModel.ts";
+import { resolveGrokAspectRatio } from "./openRouterVideoModel.ts";
 
 export async function callGrokReplicateVideoAPI(
     prompt: string,
@@ -17,7 +14,7 @@ export async function callGrokReplicateVideoAPI(
 ): Promise<VideoGenerationResult> {
     const input = {
         prompt,
-        duration: resolveGrokDuration(params.duration),
+        duration: params.duration ?? 5,
         resolution: "720p",
         aspect_ratio: resolveGrokAspectRatio(params),
         ...(params.seed === undefined ? {} : { seed: params.seed }),

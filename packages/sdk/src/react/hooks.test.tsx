@@ -1,5 +1,7 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { isOutageError } from "../error-response.js";
+import type { PollinationsError } from "../types.js";
 import {
     AuthContext,
     type AuthContextValue,
@@ -8,6 +10,7 @@ import {
 import {
     type UseAccountKeyValue,
     useAccountKey,
+    useAccountKeyUsage,
     useAuthState,
     useTextGeneration,
 } from "./hooks.js";
@@ -105,6 +108,33 @@ describe("account hooks", () => {
         expect(read<UseAccountKeyValue>(latest).error).toBeNull();
     });
 
+    it("forwards the usage page cursor to the key usage endpoint", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(jsonResponse({ usage: [], count: 0 }));
+
+        function Probe() {
+            useAccountKeyUsage({
+                before: "2026-11-01 00:00:00",
+                before_event_id: "evt_1",
+            });
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        await waitFor(() => fetchMock.mock.calls.length > 0);
+        const url = new URL(String(fetchMock.mock.calls[0][0]));
+        expect(url.searchParams.get("before")).toBe("2026-11-01 00:00:00");
+        expect(url.searchParams.get("before_event_id")).toBe("evt_1");
+    });
+
     it("exposes a temporary account failure and recovers on refresh without disconnecting", async () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
@@ -146,6 +176,84 @@ describe("account hooks", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(logout).not.toHaveBeenCalled();
         await act(async () => renderer.unmount());
+    });
+
+    it.each([
+        [
+            "a 5xx",
+            () => Promise.resolve(jsonResponse({}, { status: 500 })),
+            500,
+        ],
+        [
+            "a network failure",
+            () => Promise.reject(new TypeError("Failed to fetch")),
+            0,
+        ],
+    ])(
+        "retries %s on its own until Pollinations is back",
+        async (_name, fail, status) => {
+            vi.useFakeTimers();
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(fail)
+                .mockResolvedValueOnce(jsonResponse({ pollenBudget: 5 }));
+            let key: UseAccountKeyValue | null = null;
+            function Probe() {
+                key = useAccountKey();
+                return null;
+            }
+            let renderer: ReactTestRenderer;
+            await act(async () => {
+                renderer = create(
+                    <AuthContext.Provider value={authValue()}>
+                        <Probe />
+                    </AuthContext.Provider>,
+                );
+            });
+            await waitFor(() => !!key?.error);
+            const { error } = read<UseAccountKeyValue>(key);
+            expect(isOutageError(error)).toBe(true);
+            expect((error as PollinationsError).status).toBe(status);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(30_000);
+            });
+            await waitFor(() => key?.data?.pollenBudget === 5);
+            expect(read<UseAccountKeyValue>(key).error).toBeNull();
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            await act(async () => renderer.unmount());
+            vi.useRealTimers();
+        },
+    );
+
+    it("keeps a 403 as a plain error without retrying", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(jsonResponse({}, { status: 403 }));
+        const logout = vi.fn();
+        let key: UseAccountKeyValue | null = null;
+        function Probe() {
+            key = useAccountKey();
+            return null;
+        }
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue({ logout })}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await waitFor(() => !!key?.error);
+        expect(isOutageError(read<UseAccountKeyValue>(key).error)).toBe(false);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(60_000);
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(logout).not.toHaveBeenCalled();
+        await act(async () => renderer.unmount());
+        vi.useRealTimers();
     });
 
     it("logs out when an account hook receives 401", async () => {

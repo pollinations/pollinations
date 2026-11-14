@@ -1,6 +1,6 @@
-# Connect User Wallets
+# Pollinations Pay
 
-Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -8,7 +8,7 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Apps** → **Create**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys?tab=app) → **App** → **Create**:
 
 <p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
@@ -25,10 +25,10 @@ Once signed in, they review the requested access and confirm:
 ## 🧩 Drop-in Button (No Build Step)
 
 One script tag adds a Connect button that runs the OAuth code flow below for you.
-Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
+Use one `<polli-connect>` per page; additional elements show an error instead of a Connect button.
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
 
 <polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
 
@@ -62,7 +62,7 @@ For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around
 ></polli-connect>
 ```
 
-Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; Connect still works.
 
 The key stays in `sessionStorage`, so it lasts until the tab closes.
 
@@ -86,6 +86,8 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
+
+New users who sign up through your app count as your referrals. You earn 2 Quest Pollen for each one who buys more than 2 Pollen. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
@@ -190,8 +192,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
-[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

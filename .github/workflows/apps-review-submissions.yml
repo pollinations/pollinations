@@ -9,13 +9,18 @@ on:
         description: Issue number to process
         required: true
         type: number
+      dry_run:
+        description: Only log the review, even for an invalid form; post nothing
+        type: boolean
+        default: false
 
 concurrency:
   group: app-pre-review-${{ github.event.issue.number || inputs.issue_number }}
   cancel-in-progress: true
 
 jobs:
-  pre-review:
+  # Reads untrusted pages and repositories, so it holds no write token.
+  review:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.issue.state == 'open' &&
@@ -25,39 +30,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
+      issues: read
+    outputs:
+      number: ${{ steps.issue.outputs.number }}
+      validation: ${{ steps.validate.outputs.result }}
+      review: ${{ steps.agent.outputs.result }}
 
     steps:
-      - name: Generate app token
-        id: token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - name: Resolve issue
         id: issue
         env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_ISSUE: ${{ github.event.issue.number }}
-          INPUT_ISSUE: ${{ inputs.issue_number }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
         run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            ISSUE_NUMBER="$INPUT_ISSUE"
-          else
-            ISSUE_NUMBER="$EVENT_ISSUE"
-          fi
-          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label APP-SUBMISSION
-          ISSUE_AUTHOR=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" --jq .user.login)
           echo "number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "author=$ISSUE_AUTHOR" >> "$GITHUB_OUTPUT"
-          BOT_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
-          echo "bot-id=$BOT_ID" >> "$GITHUB_OUTPUT"
+          echo "author=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" --jq .user.login)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v5
         with:
-          ref: main
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
@@ -69,17 +60,10 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/sharp" --no-audit --no-fund sharp@0.34.5
           echo "NODE_PATH=$RUNNER_TEMP/sharp/node_modules" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Install reviewer dependency
-        run: pip install requests
-
       - name: Validate submission
         id: validate
         env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
         run: |
@@ -97,11 +81,70 @@ jobs:
             exit 1
           fi
 
-      - name: Run AI pre-review
+      # The agent runs in a container without secrets or private networks. The
+      # key stays in the proxy on this host, which the container can call but not read.
+      - name: Review with an agent
+        id: agent
+        if: inputs.dry_run || fromJSON(steps.validate.outputs.result).valid
+        timeout-minutes: 12
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+        run: |
+          node operations/app-management/ingestion/model-proxy.js &
+          # Only the proxy on this host, and no private or Azure addresses (168.63.129.16
+          # also serves VM settings, so the container gets public DNS instead).
+          sudo iptables -I INPUT -i docker0 -j REJECT
+          sudo iptables -I INPUT -i docker0 -p tcp --dport 8711 -j ACCEPT
+          sudo iptables -I DOCKER-USER -i docker0 -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,100.64.0.0/10,168.63.129.16 -j REJECT
+          { cat operations/app-management/ingestion/review-prompt.txt; jq .submission "$RUNNER_TEMP/app-validation.json"; } > "$RUNNER_TEMP/prompt.txt"
+          docker run --rm -i -w /review --dns 1.1.1.1 \
+            -e ANTHROPIC_BASE_URL=http://172.17.0.1:8711 -e ANTHROPIC_API_KEY=proxy \
+            -e CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+            node:22 sh -c 'npm install -g --no-audit --no-fund @anthropic-ai/claude-code@2.1.301 < /dev/null >&2 &&
+              exec claude -p --bare --model openai/gpt-6-luna --max-turns 40 --permission-mode dontAsk --output-format stream-json --verbose \
+                --tools Bash,Read,Grep,Glob --allowedTools "Bash(curl:*),Bash(git clone:*),Bash(grep:*),Read,Grep,Glob"' \
+            < "$RUNNER_TEMP/prompt.txt" > "$RUNNER_TEMP/agent.jsonl" || true
+          # Log each tool call and failure, then the verdict.
+          jq -r 'if .type == "assistant" then .message.content[]? | select(.type == "tool_use") | "\(.name): \(.input | tostring | .[0:200])"
+            elif .type == "user" then .message.content[]? | select(.is_error? == true) | "  failed: \(.content | tostring | .[0:200])"
+            elif .type == "result" then "turns: \(.num_turns)", .result else empty end' "$RUNNER_TEMP/agent.jsonl"
+          echo "result=$(jq -r 'select(.type == "result") | .result' "$RUNNER_TEMP/agent.jsonl" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          jq -e 'select(.type == "result") | .result' "$RUNNER_TEMP/agent.jsonl" > /dev/null
+
+  post:
+    needs: review
+    if: ${{ !cancelled() && needs.review.result != 'skipped' && !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate app token
+        id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install poster dependency
+        run: pip install requests
+
+      - name: Post review
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-          GH_BOT_ID: ${{ steps.issue.outputs.bot-id }}
-          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
-        run: python operations/app-management/ingestion/review-agent.py
+          ISSUE_NUMBER: ${{ needs.review.outputs.number }}
+          VALIDATION_RESULT: ${{ needs.review.outputs.validation }}
+          REVIEW_RESULT: ${{ needs.review.outputs.review }}
+        run: |
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label APP-SUBMISSION
+          GH_BOT_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          export GH_BOT_ID
+          python operations/app-management/ingestion/post-review.py

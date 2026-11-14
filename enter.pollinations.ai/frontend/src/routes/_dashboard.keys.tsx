@@ -3,11 +3,11 @@ import {
     Await,
     createFileRoute,
     redirect,
+    useNavigate,
     useRouter,
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
-import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -26,11 +26,23 @@ import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
+    // Secret is the default tab; App is named in the address.
+    validateSearch: (search: Record<string, unknown>): { tab?: "app" } => ({
+        tab: search.tab === "app" ? "app" : undefined,
+    }),
     beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+        if (!context.user && !context.sessionUnavailable) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
+            });
+        }
+        // App keys had their own card, #app-keys.
+        if (location.hash === "app-keys") {
+            throw redirect({
+                to: "/keys",
+                search: { tab: "app" },
+                replace: true,
             });
         }
     },
@@ -95,10 +107,7 @@ function KeysPage() {
     }
 
     return (
-        <Await
-            promise={apiKeys}
-            fallback={<PageLoading titles={["Secrets", "Apps"]} />}
-        >
+        <Await promise={apiKeys} fallback={<PageLoading titles={["Keys"]} />}>
             {(keys) => (
                 <KeysContent
                     key={user?.id}
@@ -122,6 +131,8 @@ function KeysContent({
     apiKeys: ApiKey[] | null;
     onRetry: () => Promise<unknown>;
 }) {
+    const tab = Route.useSearch().tab ?? "secret";
+    const navigate = useNavigate({ from: "/keys" });
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.
     if (apiKeys !== null && apiKeys !== lastKeys) setLastKeys(apiKeys);
@@ -129,27 +140,31 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <>
-                {["Secrets", "Apps"].map((title) => (
-                    <Section key={title} title={title}>
-                        <LoadError onRetry={onRetry}>
-                            Couldn’t load keys.
-                        </LoadError>
-                    </Section>
-                ))}
-            </>
+            <Section title="Keys">
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
+                    Couldn’t load keys.
+                </LoadError>
+            </Section>
         );
     }
 
     return (
         <>
             {apiKeys === null && (
-                <LoadError onRetry={onRetry}>
+                <LoadError onRetry={onRetry} paths={["/account/keys"]}>
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
-            <ApiKeyList apiKeys={keys} {...actions} />
-            <CliHint command="keys create --name my-app" />
+            <ApiKeyList
+                apiKeys={keys}
+                tab={tab}
+                onTabChange={(next) =>
+                    void navigate({
+                        search: { tab: next === "secret" ? undefined : next },
+                    })
+                }
+                {...actions}
+            />
         </>
     );
 }

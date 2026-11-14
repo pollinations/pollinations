@@ -6,6 +6,7 @@ import {
     callCohereAzureImageEmbed,
     extractCohereAzureUsage,
 } from "./cohereAzure.ts";
+import { callCohereBedrockEmbed } from "./cohereBedrock.ts";
 import { callHostedEmbed, extractHostedUsage } from "./hosted.ts";
 import {
     applyGeminiTaskInstruction,
@@ -38,7 +39,7 @@ const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "openai/text-embedding-3-large": "text-embedding-3-large",
     "openai/text-embedding-3-large:openai": "text-embedding-3-large",
     "cohere/embed-v4.0": "embed-v-4-0",
-    "cohere/embed-v4.0:azure:sweden": "embed-v-4-0",
+    "cohere/embed-v4.0:aws": "global.cohere.embed-v4:0",
     "qwen/qwen3-embedding-8b": "Qwen/Qwen3-Embedding-8B",
     "qwen/qwen3-embedding-8b:fireworks":
         "accounts/fireworks/models/qwen3-embedding-8b",
@@ -65,7 +66,7 @@ const EMBEDDING_DIMENSIONS: Record<
     "openai/text-embedding-3-large": { max: 3072 },
     "openai/text-embedding-3-large:openai": { max: 3072 },
     "cohere/embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
-    "cohere/embed-v4.0:azure:sweden": {
+    "cohere/embed-v4.0:aws": {
         max: 1536,
         allowed: [256, 512, 1024, 1536],
     },
@@ -96,8 +97,13 @@ export async function generateEmbeddings(
             serviceDef.provider,
         );
     }
-    if (serviceDef.provider === "azure") {
-        return await generateCohereAzureEmbeddings(env, request, responseModel);
+    if (serviceDef.provider === "azure" || serviceDef.provider === "aws") {
+        return await generateCohereEmbeddings(
+            env,
+            request,
+            responseModel,
+            serviceDef.provider,
+        );
     }
 
     if (
@@ -115,10 +121,11 @@ export async function generateEmbeddings(
     throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
 }
 
-async function generateCohereAzureEmbeddings(
+async function generateCohereEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
+    provider: "azure" | "aws",
 ): Promise<Response> {
     validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
@@ -131,14 +138,22 @@ async function generateCohereAzureEmbeddings(
         inputs.length === 1 ? await inputToCohereImage(inputs[0]) : undefined;
 
     if (imageInput) {
-        const result = await callCohereAzureImageEmbed(
-            env,
-            responseModel,
-            request.model,
-            [imageInput],
-            request.dimensions,
-            request.input_type,
-        );
+        const result =
+            provider === "aws"
+                ? await callCohereBedrockEmbed(
+                      env,
+                      request.model,
+                      imageInput,
+                      request.dimensions,
+                      request.input_type,
+                  )
+                : await callCohereAzureImageEmbed(
+                      env,
+                      request.model,
+                      [imageInput],
+                      request.dimensions,
+                      request.input_type,
+                  );
         return cohereEmbeddingsResponse(
             result,
             request,
@@ -153,14 +168,22 @@ async function generateCohereAzureEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callCohereAzureEmbed(
-        env,
-        responseModel,
-        request.model,
-        textInputs,
-        request.dimensions,
-        request.input_type,
-    );
+    const result =
+        provider === "aws"
+            ? await callCohereBedrockEmbed(
+                  env,
+                  request.model,
+                  textInputs,
+                  request.dimensions,
+                  request.input_type,
+              )
+            : await callCohereAzureEmbed(
+                  env,
+                  request.model,
+                  textInputs,
+                  request.dimensions,
+                  request.input_type,
+              );
     return cohereEmbeddingsResponse(result, request, responseModel, "text");
 }
 

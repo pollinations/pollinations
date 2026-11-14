@@ -19,7 +19,6 @@ const CREDENTIALS_FILE = join(
 
 export interface PolliCredentials {
     apiKey?: string;
-    keyType?: "pk" | "sk";
 }
 
 export const loadCredentials = (): PolliCredentials => {

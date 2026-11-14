@@ -2,7 +2,7 @@
 
 Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
-Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
+Model publishing and [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
 ## Supported Models
 
@@ -63,7 +63,7 @@ Publishing a model or changing its public prices takes effect after 3 hours.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
-- Text models use the token categories reported by the upstream endpoint.
+- Text models use the token categories reported by the upstream endpoint. A call that reports more than 2,000,000 prompt tokens or 200,000 completion tokens is not billed.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.
@@ -74,8 +74,8 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 ## Register in the Dashboard
 
-1. Open [My Models](https://enter.pollinations.ai/my-models).
-2. Under **Models**, choose **Create**.
+1. Open [My listings](https://enter.pollinations.ai/my-models?tab=models).
+2. On the **Models** tab, choose **Create**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
 5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.

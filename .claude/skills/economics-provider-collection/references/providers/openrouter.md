@@ -7,7 +7,7 @@ Canonical accounts:
 - `myceli` — Myceli.AI organization.
 - `pollinations` — PollinationsAI organization.
 
-Dashboard routing (verified 2026-09-05): PollinationsAI credits use the registry
+Dashboard routing (verified 2026-09-05): PollinationsAI credits use the journal
 URL in the `elliot@pollinations.ai` Chrome window, not `elliot@myceli.ai`.
 Verify Org Account: PollinationsAI. Credit Grants shows remaining amount,
 expiry, and restrictions; keep purchased credit separate from grants.

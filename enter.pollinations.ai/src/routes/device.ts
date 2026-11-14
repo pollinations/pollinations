@@ -1,4 +1,5 @@
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { findPublishableClientKey } from "@shared/auth/api-key-creation.ts";
 import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -10,6 +11,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
@@ -19,7 +21,7 @@ type AuthedContext = Context<{
     Variables: Env["Variables"] & AuthVariables;
 }>;
 
-const KV_TTL = 600; // 10 minutes
+const KV_MIN_TTL = 60;
 const DEVICE_CODE_LENGTH = 40;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
@@ -59,6 +61,24 @@ async function requirePendingDevice(
         throw new HTTPException(400, { message: "Device code expired" });
     }
     return device;
+}
+
+/**
+ * Reject client ids that cannot be approved. Issuing a code for an unknown or
+ * revoked app key only fails later on the consent page with an opaque error,
+ * after the CLI has already told the user to approve it.
+ */
+async function isKnownDeviceClient(
+    c: Context<Env>,
+    clientId: string,
+): Promise<boolean> {
+    const db = drizzle(c.env.DB, { schema });
+    const key = await findPublishableClientKey(
+        createAuth(c.env, c.executionCtx),
+        db,
+        clientId,
+    );
+    return key !== null;
 }
 
 /** Generate a cryptographically random alphanumeric string. */
@@ -110,6 +130,15 @@ export async function parseFormOrJsonBody<TEnv extends Env>(
 export const deviceRoutes = new Hono<Env>()
     .post("/code", async (c) => {
         const body = await parseFormOrJsonBody(c);
+        if (body.client_id && !(await isKnownDeviceClient(c, body.client_id))) {
+            return c.json(
+                {
+                    error: "invalid_client",
+                    error_description: "Unknown or revoked client_id",
+                },
+                400,
+            );
+        }
 
         const deviceCode = generateCode(DEVICE_CODE_LENGTH);
         const userCode = generateUserCode(USER_CODE_LENGTH);
@@ -195,7 +224,17 @@ export const deviceRoutes = new Hono<Env>()
                         // stored at issuance ("" = narrowed to zero)
                         scope: body.scope ?? null,
                     }),
-                    { expirationTtl: KV_TTL },
+                    // Kept until the device code expires, so a CLI that
+                    // polls late still gets the key. KV's minimum is 60s.
+                    {
+                        expirationTtl: Math.max(
+                            KV_MIN_TTL,
+                            Math.ceil(
+                                (device.expiresAt.getTime() - Date.now()) /
+                                    1000,
+                            ),
+                        ),
+                    },
                 ),
                 db
                     .update(schema.deviceCode)
@@ -327,6 +366,8 @@ export async function exchangeDeviceCode(
                 scope?: string | null;
             } | null;
 
+            // KV may not show a fresh write from another location yet, so
+            // keep polling; the key now lives until the code expires.
             if (!stored) {
                 return c.json({ error: "authorization_pending" }, 400);
             }

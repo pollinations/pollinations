@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Hex package names are lowercase, start with a letter, and use
+        // letters, digits, underscores and hyphens.
+        hex: /^[a-z][a-z0-9_-]{0,99}$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,47 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    // hex.pm serves public package and release metadata with no key.
+    if (ecosystem === "hex") {
+        const data = await fetchJson(`https://hex.pm/api/packages/${encoded}`);
+        const versions = (data.releases ?? []).map(
+            (release) => release.version,
+        );
+        const resolved = version
+            ? versions.includes(version)
+                ? version
+                : null
+            : (data.latest_stable_version ?? data.latest_version ?? null);
+        if (!resolved)
+            throw new Error(
+                version
+                    ? `Hex version ${version} not found for ${name}`
+                    : `Hex package ${name} has no stable version`,
+            );
+        const release = await fetchJson(
+            `https://hex.pm/api/packages/${encoded}/releases/${encodeURIComponent(resolved)}`,
+        );
+        const meta = data.meta ?? {};
+        const links = meta.links ?? {};
+        return {
+            ecosystem,
+            name: data.name,
+            version: resolved,
+            description: meta.description ?? null,
+            licenses: meta.licenses ?? [],
+            homepage: links.GitHub ?? links.Github ?? links.Homepage ?? null,
+            downloads: data.downloads?.all ?? null,
+            dependencies: Object.entries(release.requirements ?? {}).map(
+                ([dep, requirement]) => ({
+                    name: dep,
+                    requirement: requirement.requirement,
+                    optional: requirement.optional ?? false,
+                }),
+            ),
+            retired: release.retirement ?? null,
+            registryUrl: `https://hex.pm/packages/${encoded}/${encodeURIComponent(resolved)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +247,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, Hex package metadata and release requirements, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Hex latest stable version, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +257,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "hex",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

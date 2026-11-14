@@ -342,6 +342,149 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Internet Archive search and item lookup formats identifiers, media types and file formats", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "archive.org");
+        if (url.pathname === "/advancedsearch.php") {
+            assert.deepEqual(url.searchParams.getAll("fl[]"), [
+                "identifier",
+                "title",
+                "creator",
+                "year",
+                "mediatype",
+                "downloads",
+            ]);
+            assert.equal(url.searchParams.get("output"), "json");
+            return Response.json({
+                response: {
+                    numFound: 977,
+                    start: 0,
+                    docs: [
+                        {
+                            creator: "Jane Austen",
+                            downloads: 4,
+                            identifier: "bwb_Y0-BWG-052",
+                            mediatype: "texts",
+                            title: "Pride and prejudice",
+                            year: 1961,
+                        },
+                        {
+                            creator: "Austen, Jane, 1775-1817",
+                            downloads: 84,
+                            identifier: "prideprejudice0000aust_e1w4",
+                            mediatype: "texts",
+                            title: "Pride and prejudice",
+                            year: 2000,
+                        },
+                    ],
+                },
+            });
+        }
+        if (url.pathname === "/metadata/prideprejudice0000aust_a4w0") {
+            return Response.json({
+                files_count: 31,
+                item_size: 556784777,
+                files: [
+                    {
+                        name: "prideprejudice0000aust_a4w0.epub",
+                        format: "EPUB",
+                    },
+                    {
+                        name: "prideprejudice0000aust_a4w0.pdf",
+                        format: "Text PDF",
+                    },
+                    { name: "__ia_thumb.jpg", format: "Item Tile" },
+                ],
+                metadata: {
+                    identifier: "prideprejudice0000aust_a4w0",
+                    title: "Pride and prejudice",
+                    creator: "Austen, Jane, 1775-1817",
+                    date: "1995",
+                    mediatype: "texts",
+                    description: "215 pages ; 24 cm",
+                    publisher: "Woodbridge : Henderson",
+                    language: "eng",
+                    collection: [
+                        "internetarchivebooks",
+                        "inlibrary",
+                        "printdisabled",
+                    ],
+                },
+            });
+        }
+        return Response.json({});
+    });
+
+    const c = await client(t);
+    let result = await call(c, "archive_search", {
+        query: "pride and prejudice",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const searchVal = value(result);
+    assert.equal(searchVal.totalResults, 977);
+    assert.equal(searchVal.results[0].identifier, "bwb_Y0-BWG-052");
+    assert.equal(searchVal.results[0].creator, "Jane Austen");
+    assert.equal(searchVal.results[0].year, "1961");
+    assert.equal(searchVal.results[0].mediatype, "texts");
+    assert.equal(searchVal.results[0].downloads, 4);
+    assert.equal(
+        searchVal.results[0].url,
+        "https://archive.org/details/bwb_Y0-BWG-052",
+    );
+
+    result = await call(c, "archive_search", {
+        query: "beatles",
+        mediatype: "audio",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        requests[1].searchParams.get("q"),
+        "mediatype:(audio) AND (beatles)",
+    );
+
+    result = await call(c, "archive_item", {
+        identifier: "https://archive.org/details/prideprejudice0000aust_a4w0",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const item = value(result).item;
+    assert.equal(item.identifier, "prideprejudice0000aust_a4w0");
+    assert.equal(item.title, "Pride and prejudice");
+    assert.equal(item.creator, "Austen, Jane, 1775-1817");
+    assert.equal(item.date, "1995");
+    assert.equal(item.mediatype, "texts");
+    assert.equal(item.description, "215 pages ; 24 cm");
+    assert.equal(item.publisher, "Woodbridge : Henderson");
+    assert.equal(item.language, "eng");
+    assert.deepEqual(item.collections, [
+        "internetarchivebooks",
+        "inlibrary",
+        "printdisabled",
+    ]);
+    assert.equal(item.filesCount, 31);
+    assert.equal(item.itemSize, 556784777);
+    assert.deepEqual(item.formats, ["EPUB", "Text PDF", "Item Tile"]);
+    assert.equal(
+        item.url,
+        "https://archive.org/details/prideprejudice0000aust_a4w0",
+    );
+
+    result = await call(c, "archive_item", {
+        identifier: "this-identifier-does-not-exist-xyz123",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /not found/);
+
+    result = await call(c, "archive_item", { identifier: "not an id!!" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Use an Internet Archive identifier/);
+    assert.equal(requests.length, 4);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +507,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "archive_search",
+                "archive_item",
             ].sort(),
         );
     });

@@ -34,6 +34,6 @@ export const jsonMergePatchTools = [
             patch: z.string().min(1).max(100000).describe("JSON Merge Patch document (RFC 7396)."),
         },
         ({ target, patch }) =>
-            mergePatch(JSON.parse(target), JSON.parse(patch)),
+            JSON.stringify(mergePatch(JSON.parse(target), JSON.parse(patch))),
     ],
 ];

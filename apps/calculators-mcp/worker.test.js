@@ -664,6 +664,13 @@ test("json_merge_patch replaces arrays and non-object values per RFC 7396", asyn
         }),
         { a: {}, c: 2 },
     );
+    assert.equal(
+        await call(client, "json_merge_patch", {
+            target: "{}",
+            patch: '"hello"',
+        }),
+        "hello",
+    );
 });
 
 test("json_merge_patch safely handles special object keys and malformed JSON", async (t) => {

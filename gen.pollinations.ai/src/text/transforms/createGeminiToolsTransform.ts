@@ -51,6 +51,23 @@ export function isGoogleSearchTool(tool: unknown): boolean {
     return tool.function.name === "google_search";
 }
 
+/** Vercel's Responses endpoint maps web_search to Google grounding. */
+export const adaptGoogleSearchToolForVercel: TransformFn = (
+    messages,
+    options,
+) => ({
+    messages,
+    options: {
+        ...options,
+        tools: options.tools?.map((tool) =>
+            isGoogleSearchTool(tool) ? { type: "web_search" } : tool,
+        ),
+        tool_choice: isGoogleSearchTool(options.tool_choice)
+            ? "required"
+            : options.tool_choice,
+    },
+});
+
 /** Converts Pollinations' public Gemini search tool to OpenRouter's native tool. */
 export const createOpenRouterGoogleSearchTransform =
     (engine: "native" | "exa"): TransformFn =>

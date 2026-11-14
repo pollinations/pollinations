@@ -5,6 +5,7 @@ import {
     totalPromptTokens,
 } from "./cost-variants";
 import {
+    GEMINI_3_SEARCH_BILLING,
     openRouterGeminiBilling,
     reportedTextCost,
     VERCEL_EXA_SEARCH_BILLING,
@@ -1001,6 +1002,26 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 0.5 * 1.055,
             }),
+        },
+    },
+    "google/gemini-4-hydrogen": {
+        // Vercel AI Gateway route for the Vertex model. Its rate mirrors the
+        // Gemini API paid tier until Vercel publishes its own rate.
+        "google/gemini-4-hydrogen:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelGemini4,
+            provider: "vercel",
+            addedDate: new Date("2026-11-12").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.5),
+                promptAudioTokens: perMillion(1.5),
+                promptImageTokens: perMillion(1.5),
+                promptVideoTokens: perMillion(1.5),
+                completionTextTokens: perMillion(7.5),
+            },
+            // Vercel's web_search is $14 per 1K queries, the same as Google's.
+            billing: GEMINI_3_SEARCH_BILLING,
         },
     },
     "google/gemini-4-carbon": {

@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { inspect } from "./tools/cidr.js";
 import { lookup, readText } from "./tools/dns.js";
+import { inspectEmailDomain } from "./tools/email.js";
 import { probe, publicUrl } from "./tools/http.js";
 import worker from "./worker.js";
 
@@ -58,6 +59,7 @@ for (const modern of [false, true])
         assert.deepEqual(tools.map((x) => x.name).sort(), [
             "dns_lookup",
             "domain_whois",
+            "email_domain_check",
             "http_probe",
             "inspect_cidr",
             "inspect_mac",
@@ -69,7 +71,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "dns_lookup",
+                "domain_whois",
+                "email_domain_check",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -418,4 +426,139 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("email domain check reads MX, SPF and DMARC records", async (t) => {
+    const calls = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        calls.push([url.searchParams.get("name"), url.searchParams.get("type")]);
+        assert.equal(url.hostname, "cloudflare-dns.com");
+        assert.deepEqual(init.headers, { Accept: "application/dns-json" });
+        const name = url.searchParams.get("name");
+        const type = url.searchParams.get("type");
+        if (type === "MX")
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    { type: 15, data: "20 mx2.example.com." },
+                    { type: 15, data: "10 mx1.example.com." },
+                ],
+            });
+        if (name.startsWith("_dmarc."))
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    {
+                        type: 16,
+                        data: '"v=DMARC1; p=reject; rua=mailto:reports@example.com"',
+                    },
+                ],
+            });
+        return Response.json({
+            Status: 0,
+            Answer: [
+                {
+                    type: 16,
+                    data: '"v=spf1 include:_spf.example.com " "-all"',
+                },
+                { type: 16, data: '"google-site-verification=abc123"' },
+            ],
+        });
+    });
+
+    const result = await inspectEmailDomain("Example.COM.");
+    assert.equal(result.domain, "example.com");
+    assert.deepEqual(result.mx.records, [
+        { priority: 10, exchange: "mx1.example.com" },
+        { priority: 20, exchange: "mx2.example.com" },
+    ]);
+    assert.equal(result.spf.status, "present");
+    assert.deepEqual(result.spf.records, [
+        "v=spf1 include:_spf.example.com  -all",
+    ]);
+    assert.equal(result.dmarc.status, "valid");
+    assert.equal(result.dmarc.policy, "reject");
+    assert.deepEqual(result.dmarc.rua, ["mailto:reports@example.com"]);
+    assert.deepEqual(result.findings, []);
+    assert.deepEqual(calls.sort(), [
+        ["_dmarc.example.com", "TXT"],
+        ["example.com", "MX"],
+        ["example.com", "TXT"],
+    ]);
+});
+
+test("email domain check reports absent and duplicate records without guessing", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        const name = url.searchParams.get("name");
+        const type = url.searchParams.get("type");
+        if (type === "MX") return Response.json({ Status: 0, Answer: [] });
+        if (name.startsWith("_dmarc."))
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    { type: 16, data: '"v=DMARC1; rua=mailto:reports@example.com"' },
+                ],
+            });
+        return Response.json({
+            Status: 0,
+            Answer: [
+                { type: 16, data: '"v=spf1 -all"' },
+                { type: 16, data: '"v=spf1 ~all"' },
+            ],
+        });
+    });
+
+    const result = await inspectEmailDomain("example.com");
+    assert.equal(result.mx.records.length, 0);
+    assert.equal(result.spf.status, "multiple");
+    assert.equal(result.dmarc.status, "invalid");
+    assert.ok(result.findings.some((item) => item.code === "no_explicit_mx_records"));
+    assert.ok(result.findings.some((item) => item.code === "multiple_spf_records"));
+    assert.ok(result.findings.some((item) => item.code === "invalid_dmarc_record"));
+});
+
+test("email domain check preserves DNS lookup failures and rejects URL input", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        const name = url.searchParams.get("name");
+        const type = url.searchParams.get("type");
+        if (type === "MX")
+            return new Response("temporary failure", { status: 503 });
+        if (name.startsWith("_dmarc."))
+            return Response.json({ Status: 2, Answer: [] });
+        return Response.json({
+            Status: 0,
+            Answer: [{ type: 16, data: '"v=spf1 -all"' }],
+        });
+    });
+
+    await assert.rejects(
+        inspectEmailDomain("https://example.com/path"),
+        /plain ASCII\/punycode domain name/,
+    );
+    assert.equal(stub.mock.callCount(), 0);
+
+    const result = await inspectEmailDomain("example.com");
+    assert.equal(result.mx.dns.status, "UNKNOWN");
+    assert.match(result.mx.dns.error, /HTTP 503/);
+    assert.equal(result.spf.status, "present");
+    assert.equal(result.dmarc.status, "lookup_failed");
+    assert.ok(result.findings.some((item) => item.code === "mx_lookup_failed"));
+    assert.ok(result.findings.some((item) => item.code === "dmarc_lookup_failed"));
+});
+
+test("email domain check distinguishes an NXDOMAIN domain from missing mail records", async (t) => {
+    t.mock.method(globalThis, "fetch", async () =>
+        Response.json({ Status: 3, Answer: [] }),
+    );
+    const result = await inspectEmailDomain("does-not-exist.example");
+    assert.equal(result.mx.dns.status, "NXDOMAIN");
+    assert.equal(result.spf.status, "domain_not_found");
+    assert.equal(result.dmarc.status, "domain_not_found");
+    assert.deepEqual(
+        result.findings.map((item) => item.code),
+        ["domain_not_found"],
+    );
 });

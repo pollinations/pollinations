@@ -826,6 +826,9 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        is_specialized: ModelInfoSchema.shape.is_specialized.describe(
+            "True when the model is a specialist (decision, guard, or other narrow-purpose model) rather than a general-purpose model. Omitted when the model is not marked specialized.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

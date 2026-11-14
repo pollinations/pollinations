@@ -419,6 +419,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "cpan", name: "Moose::" }],
+        ["package_lookup", { ecosystem: "cpan", name: "../bad" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -653,6 +655,187 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("CPAN lookup resolves the latest release, module names and exact versions from MetaCPAN", async (t) => {
+    const latest = {
+        name: "Moose-2.4001",
+        version: "2.4001",
+        license: ["perl_5"],
+        author: "ETHER",
+        date: "2026-10-01T00:35:44",
+        abstract: "A postmodern object system for Perl 5",
+        download_url:
+            "https://cpan.metacpan.org/authors/id/E/ET/ETHER/Moose-2.4001.tar.gz",
+        distribution: "Moose",
+        resources: {
+            bugtracker: {
+                mailto: "bug-Moose@rt.cpan.org",
+                web: "https://rt.cpan.org/Dist/Display.html?Name=Moose",
+            },
+            homepage: "http://moose.perl.org/",
+            repository: {
+                type: "git",
+                url: "git://github.com/moose/Moose.git",
+                web: "https://github.com/moose/Moose",
+            },
+        },
+        status: "latest",
+        maturity: "released",
+        archive: "Moose-2.4001.tar.gz",
+        main_module: "Moose",
+        dependency: [
+            {
+                module: "Sub::Exporter",
+                phase: "runtime",
+                relationship: "requires",
+                version: "0.980",
+            },
+            {
+                module: "Carp",
+                phase: "runtime",
+                relationship: "requires",
+                version: "1.22",
+            },
+            {
+                module: "List::Util",
+                phase: "runtime",
+                relationship: "requires",
+                version: "1.56",
+            },
+            {
+                module: "Test::More",
+                phase: "test",
+                relationship: "requires",
+                version: "0.96",
+            },
+            {
+                module: "JSON::PP",
+                phase: "configure",
+                relationship: "suggests",
+                version: "2.27300",
+            },
+        ],
+    };
+    const pinned = {
+        name: "Moose-2.2206",
+        version: "2.2206",
+        license: ["perl_5"],
+        author: "ETHER",
+        date: "2023-07-23T17:16:27",
+        abstract: "A postmodern object system for Perl 5",
+        download_url:
+            "https://cpan.metacpan.org/authors/id/E/ET/ETHER/Moose-2.2206.tar.gz",
+        distribution: "Moose",
+        resources: {
+            homepage: "http://moose.perl.org/",
+            repository: {
+                type: "git",
+                url: "git://github.com/moose/Moose.git",
+                web: "https://github.com/moose/Moose",
+            },
+        },
+        status: "backpan",
+        maturity: "released",
+        archive: "Moose-2.2206.tar.gz",
+        main_module: "Moose",
+        dependency: [
+            {
+                module: "Carp",
+                phase: "runtime",
+                relationship: "requires",
+                version: "1.22",
+            },
+            {
+                module: "Module::Runtime::Conflicts",
+                phase: "runtime",
+                relationship: "requires",
+                version: "0.002",
+            },
+        ],
+    };
+    const fields =
+        "name,version,license,author,date,download_url,abstract,distribution,resources,status,maturity,archive,dependency,main_module";
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        const target = new URL(url);
+        assert.equal(target.hostname, "fastapi.metacpan.org");
+        if (target.pathname === "/v1/release/Moose")
+            return Response.json(latest);
+        if (target.pathname === "/v1/module/Moose%3A%3AUtil")
+            return Response.json({ distribution: "Moose", version: "2.4001" });
+        if (target.pathname === "/v1/release/_search") {
+            assert.equal(target.searchParams.get("size"), "1");
+            assert.equal(target.searchParams.get("_source"), fields);
+            const query = target.searchParams.get("q");
+            if (query === "distribution:Moose AND version:2.2206")
+                return Response.json({
+                    hits: { total: 1, hits: [{ _source: pinned }] },
+                });
+            if (query === "distribution:Moose AND version:0.0.0")
+                return Response.json({ hits: { total: 0, hits: [] } });
+            assert.fail(`Unexpected MetaCPAN search query: ${query}`);
+        }
+        assert.fail(`Unexpected MetaCPAN URL: ${url}`);
+    });
+    const client = await clientFor(t);
+    const moose = await call(client, "package_lookup", {
+        ecosystem: "cpan",
+        name: "Moose",
+    });
+    assert.equal(moose.version, "2.4001");
+    assert.equal(moose.name, "Moose");
+    assert.deepEqual(moose.license, ["perl_5"]);
+    assert.equal(moose.author, "ETHER");
+    assert.equal(moose.homepage, "http://moose.perl.org/");
+    assert.equal(moose.repository, "https://github.com/moose/Moose");
+    assert.equal(
+        moose.bugtracker,
+        "https://rt.cpan.org/Dist/Display.html?Name=Moose",
+    );
+    assert.equal(moose.mainModule, "Moose");
+    assert.deepEqual(moose.dependencies, {
+        "Sub::Exporter": "0.980",
+        Carp: "1.22",
+        "List::Util": "1.56",
+    });
+    assert.equal(
+        moose.registryUrl,
+        "https://metacpan.org/release/ETHER/Moose-2.4001.tar.gz",
+    );
+    const byModule = await call(client, "package_lookup", {
+        ecosystem: "cpan",
+        name: "Moose::Util",
+    });
+    assert.equal(byModule.name, "Moose");
+    assert.equal(byModule.version, "2.4001");
+    const old = await call(client, "package_lookup", {
+        ecosystem: "cpan",
+        name: "Moose",
+        version: "2.2206",
+    });
+    assert.equal(old.version, "2.2206");
+    assert.equal(old.status, "backpan");
+    assert.equal(
+        old.registryUrl,
+        "https://metacpan.org/release/ETHER/Moose-2.2206.tar.gz",
+    );
+    assert.deepEqual(old.dependencies, {
+        Carp: "1.22",
+        "Module::Runtime::Conflicts": "0.002",
+    });
+    await assert.rejects(
+        lookup({ ecosystem: "cpan", name: "Moose", version: "0.0.0" }),
+        /MetaCPAN version 0\.0\.0 not found for Moose/,
+    );
+    assert.deepEqual(urls, [
+        "https://fastapi.metacpan.org/v1/release/Moose",
+        "https://fastapi.metacpan.org/v1/module/Moose%3A%3AUtil",
+        "https://fastapi.metacpan.org/v1/release/Moose",
+        `https://fastapi.metacpan.org/v1/release/_search?q=${encodeURIComponent("distribution:Moose AND version:2.2206")}&size=1&_source=${encodeURIComponent(fields)}`,
+        `https://fastapi.metacpan.org/v1/release/_search?q=${encodeURIComponent("distribution:Moose AND version:0.0.0")}&size=1&_source=${encodeURIComponent(fields)}`,
     ]);
 });
 

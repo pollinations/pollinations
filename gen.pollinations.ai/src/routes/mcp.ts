@@ -1,6 +1,7 @@
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
+import { reportSettlementFailure } from "@shared/billing/settlement.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import {
@@ -113,11 +114,51 @@ async function settleUsage(
         });
     } catch (error) {
         c.var.log.error(
-            "MCP billing deduction failed after response; continuing tracking: {error}",
+            "MCP billing deduction failed after response; recording the missed charge: {error}",
             {
                 error: error instanceof Error ? error.message : String(error),
             },
         );
+        if (usage.cost > 0) {
+            const endedAt = new Date();
+            c.executionCtx.waitUntil(
+                reportSettlementFailure(
+                    db as unknown as Parameters<
+                        typeof handleBalanceDeduction
+                    >[0]["db"],
+                    {
+                        requestId: c.get("requestId"),
+                        userId: user.id,
+                        apiKeyId: c.var.auth.apiKey?.id,
+                        isBilledUsage: true,
+                        totalPrice: usage.cost,
+                        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+                        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+                        modelPaidOnly: false,
+                        questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
+                        requestPath: `/mcp/${server.id}`,
+                        environment: c.env.ENVIRONMENT,
+                    },
+                    {
+                        environment: c.env.ENVIRONMENT,
+                        routePath: `/mcp/${server.id}`,
+                        method: c.req.method,
+                        status: usage.status,
+                        durationMs: endedAt.getTime() - startedAt.getTime(),
+                        error,
+                        userId: user.id,
+                        apiKeyId: c.var.auth.apiKey?.id,
+                        modelRequested: server.id,
+                        resolvedModelRequested: server.id,
+                    },
+                    {
+                        ingestUrl: c.env.TINYBIRD_INGEST_URL,
+                        token: c.env.TINYBIRD_INGEST_TOKEN,
+                        log: c.var.log,
+                    },
+                ),
+            );
+        }
     }
     const endedAt = new Date();
     const event: TinybirdEvent = {

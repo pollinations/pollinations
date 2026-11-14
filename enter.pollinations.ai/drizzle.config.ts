@@ -8,6 +8,7 @@ export default defineConfig({
         "../shared/db/media-catalog.ts",
         "../shared/db/sandbox.ts",
         "../shared/db/sites.ts",
+        "../shared/db/billing-settlement.ts",
     ],
     dialect: "sqlite",
     driver: "d1-http",

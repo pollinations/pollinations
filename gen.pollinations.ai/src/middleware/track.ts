@@ -5,6 +5,7 @@ import {
     LOW_BALANCE_SHARE,
 } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
+import { reportSettlementFailure } from "@shared/billing/settlement.ts";
 import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
@@ -426,12 +427,19 @@ export const track = (eventType: EventType) =>
                     null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
+                // Set once handleBalanceDeduction resolves: from that point on
+                // the payer debit is committed, so any later error in this
+                // block is NOT a missed charge and must not be recorded as a
+                // retryable settlement (that would debit the wallet twice).
+                let payerDebitCommitted = false;
+                // Hoisted so a failed settlement can report the same
+                // served-endpoint reward input the charge would have used.
+                const requestedCommunityEndpoint =
+                    billingModel.communityEndpoint;
+                const servedCommunityEndpoint =
+                    finalCandidate.communityEndpoint;
                 billingStarted = true;
                 try {
-                    const requestedCommunityEndpoint =
-                        billingModel.communityEndpoint;
-                    const servedCommunityEndpoint =
-                        finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -453,6 +461,7 @@ export const track = (eventType: EventType) =>
                             responseTracking.servedPrice,
                         ),
                     });
+                    payerDebitCommitted = true;
                     c.var.balance.apiKeyReservation = undefined;
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
@@ -481,7 +490,7 @@ export const track = (eventType: EventType) =>
                     }
                 } catch (error) {
                     log.error(
-                        "Billing deduction failed after response; continuing tracking: {error}",
+                        "Billing deduction failed after response; recording the missed charge: {error}",
                         {
                             error:
                                 error instanceof Error
@@ -489,7 +498,79 @@ export const track = (eventType: EventType) =>
                                     : String(error),
                         },
                     );
+                    // handleBalanceDeduction rethrows only before the payer
+                    // debit commits: every post-debit step is best effort
+                    // inside it. So an error that reaches this catch before
+                    // the flag is set is a charge that never happened, not a
+                    // maybe, and a request-id retry cannot double-charge it.
+                    // A post-debit failure (the auto top-up lookup, say) must
+                    // not be recorded: the wallet already paid.
+                    const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    if (
+                        !payerDebitCommitted &&
+                        responseTracking.isBilledUsage &&
+                        totalPrice > 0
+                    ) {
+                        // Keep it off the response path: the caller already has
+                        // the generation, and the record is best effort when
+                        // D1 is the failing dependency.
+                        c.executionCtx.waitUntil(
+                            reportSettlementFailure(
+                                balanceDb,
+                                {
+                                    requestId: c.get("requestId"),
+                                    userId,
+                                    apiKeyId: c.var.auth?.apiKey?.id,
+                                    isBilledUsage: true,
+                                    totalPrice,
+                                    apiKeyPollenBalance:
+                                        c.var.auth?.apiKey?.pollenBalance,
+                                    byopClientKeyId:
+                                        c.var.auth?.apiKey?.byopClientKeyId,
+                                    modelPaidOnly:
+                                        c.var.model?.definition.paidOnly,
+                                    questPollenOnly:
+                                        c.var.auth?.apiKey?.questPollenOnly,
+                                    communityModelReward:
+                                        selectCommunityModelReward(
+                                            requestedCommunityEndpoint,
+                                            servedCommunityEndpoint,
+                                            responseTracking.servedPrice,
+                                        ),
+                                    requestPath:
+                                        c.var.generationExecution
+                                            ?.originalPath ?? getRoutePath(c),
+                                    environment: c.env.ENVIRONMENT,
+                                },
+                                {
+                                    environment: c.env.ENVIRONMENT,
+                                    routePath:
+                                        c.var.generationExecution
+                                            ?.originalPath ?? getRoutePath(c),
+                                    method: c.req.method,
+                                    status: response.status,
+                                    durationMs:
+                                        endTime.getTime() - startTime.getTime(),
+                                    error,
+                                    userId,
+                                    apiKeyId: c.var.auth?.apiKey?.id,
+                                    modelRequested:
+                                        requestTracking.modelRequested ??
+                                        undefined,
+                                    resolvedModelRequested:
+                                        requestTracking.resolvedModelRequested ??
+                                        undefined,
+                                },
+                                {
+                                    ingestUrl: c.env.TINYBIRD_INGEST_URL,
+                                    token: c.env.TINYBIRD_INGEST_TOKEN,
+                                    log,
+                                },
+                            ),
+                        );
+                    }
                 }
+
                 const committedBalanceTracking = payerBucket
                     ? {
                           ...balanceTracking(),

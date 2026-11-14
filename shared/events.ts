@@ -4,7 +4,10 @@ import { removeUnset } from "./util.ts";
 
 export type TinybirdErrorEvent = {
     timestamp: string;
-    kind: "server_error" | "d1_call";
+    // `server_error` is the request-failure stream. Billing settlements happen
+    // after the response, so they carry their own kind and are counted the same
+    // way in the `error_event` datasource.
+    kind: "server_error" | "d1_call" | "billing_settlement_failed";
     severity: "error" | "warning";
     request_id?: string;
     environment?: string;

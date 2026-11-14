@@ -15,6 +15,9 @@ type PublishableKeySettingsProps = {
     disabled?: boolean;
 };
 
+export const REDIRECT_URLS_HELP =
+    "Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production.";
+
 /**
  * List editor for redirect URLs registered against a publishable key.
  *
@@ -22,7 +25,7 @@ type PublishableKeySettingsProps = {
  * entries (localhost / 127.0.0.1 / ::1) match any port (RFC 8252 §7.3) so
  * native/CLI apps don't need to register every ephemeral port.
  */
-export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
+export const RedirectUrlsEditor: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
     disabled = false,
@@ -43,73 +46,76 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <AuthInfoCard
-            title={
-                <>
-                    Redirect URLs
-                    <InfoTip
-                        text="Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production."
-                        label="Redirect URLs information"
-                    />
-                </>
-            }
-        >
-            <div className="space-y-2">
-                {redirectUris.map((uri, index) => (
-                    <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
-                        key={index}
-                        className="flex items-center gap-2"
-                    >
-                        <Field.Root className="min-w-0 flex-1">
-                            <Field.Label className="sr-only">
-                                Redirect URL {index + 1}
-                            </Field.Label>
-                            <Field.Input asChild>
-                                <Input
-                                    type="text"
-                                    value={uri}
-                                    onChange={(e) =>
-                                        update(index, e.target.value)
-                                    }
-                                    // Typing over the pre-filled default should
-                                    // replace it, not append to it.
-                                    onFocus={(e) => {
-                                        if (
-                                            uri === DEFAULT_LOCALHOST_REDIRECT
-                                        ) {
-                                            e.currentTarget.select();
-                                        }
-                                    }}
-                                    className="w-full"
-                                    placeholder="https://myapp.com/auth/callback"
-                                    disabled={disabled}
-                                />
-                            </Field.Input>
-                        </Field.Root>
-                        <Button
-                            type="button"
-                            size="sm"
-                            data-theme="neutral"
-                            className="polli:shrink-0"
-                            aria-label={`Remove redirect URL ${index + 1}`}
-                            onClick={() => remove(index)}
-                            disabled={disabled}
-                        >
-                            Remove
-                        </Button>
-                    </div>
-                ))}
-                <Button
-                    type="button"
-                    size="sm"
-                    data-theme="neutral"
-                    onClick={add}
-                    disabled={disabled}
+        <div className="space-y-2">
+            {redirectUris.map((uri, index) => (
+                <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
+                    key={index}
+                    className="flex items-center gap-2"
                 >
-                    Add URL
-                </Button>
-            </div>
-        </AuthInfoCard>
+                    <Field.Root className="min-w-0 flex-1">
+                        <Field.Label className="sr-only">
+                            Redirect URL {index + 1}
+                        </Field.Label>
+                        <Field.Input asChild>
+                            <Input
+                                type="text"
+                                value={uri}
+                                onChange={(e) => update(index, e.target.value)}
+                                // Typing over the pre-filled default should
+                                // replace it, not append to it.
+                                onFocus={(e) => {
+                                    if (uri === DEFAULT_LOCALHOST_REDIRECT) {
+                                        e.currentTarget.select();
+                                    }
+                                }}
+                                className="w-full"
+                                placeholder="https://myapp.com/auth/callback"
+                                disabled={disabled}
+                            />
+                        </Field.Input>
+                    </Field.Root>
+                    <Button
+                        type="button"
+                        size="sm"
+                        data-theme="neutral"
+                        className="polli:shrink-0"
+                        aria-label={`Remove redirect URL ${index + 1}`}
+                        onClick={() => remove(index)}
+                        disabled={disabled}
+                    >
+                        Remove
+                    </Button>
+                </div>
+            ))}
+            <Button
+                type="button"
+                size="sm"
+                data-theme="neutral"
+                onClick={add}
+                disabled={disabled}
+            >
+                Add URL
+            </Button>
+        </div>
     );
 };
+
+/** The editor in its own titled card, as the key dialogs show it. */
+export const PublishableKeySettings: FC<PublishableKeySettingsProps> = (
+    props,
+) => (
+    <AuthInfoCard
+        title={
+            <>
+                Redirect URLs
+                <InfoTip
+                    text={REDIRECT_URLS_HELP}
+                    label="Redirect URLs information"
+                />
+            </>
+        }
+    >
+        <RedirectUrlsEditor {...props} />
+    </AuthInfoCard>
+);

@@ -49,8 +49,14 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import {
+    deleteApp,
+    listApps,
+    listedAppSchema,
+    updateApp,
+    updateAppSchema,
+} from "../services/apps.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
-import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { attributeAppSignup } from "../services/quests/groups/referrals.ts";
@@ -61,7 +67,6 @@ import {
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
-    TinybirdRateLimitError,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
@@ -70,8 +75,33 @@ import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 import { sitesRoutes } from "./sites.ts";
 
 const listedAppsResponseSchema = z.object({
-    apps: z.array(listedAppSchema).describe("The caller's listed apps"),
+    apps: z.array(listedAppSchema).describe("The caller's apps"),
 });
+
+/** App changes are the owner's own act: no API key, whatever its permissions. */
+function requireDashboardSession(apiKey: unknown) {
+    if (apiKey) {
+        throw new HTTPException(403, {
+            message: "App changes require a dashboard session",
+        });
+    }
+}
+
+/**
+ * The GitHub account an app's owner is matched on. The OAuth callback alone
+ * writes it, so it is read from the row, not trusted from the session user.
+ */
+async function githubIdOf(
+    d1: D1Database,
+    userId: string,
+): Promise<number | null> {
+    const [account] = await drizzle(d1)
+        .select({ githubId: userTable.githubId })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+    return account?.githubId ?? null;
+}
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -1262,10 +1292,10 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Apps",
             description:
-                "Community app directory listings owned by the account's linked GitHub user, newest approval first. The directory is public, so no extra permission is required (same as `/account/profile`). Returns an empty list when the account has no linked GitHub user or has not listed an app.",
+                "Apps owned by the account's linked GitHub user, newest approval first. `listed` says whether the app is in the public app catalog. Returns an empty list when the account has no linked GitHub user or has no app.",
             responses: {
                 200: {
-                    description: "The caller's listed apps",
+                    description: "The caller's apps",
                     content: {
                         "application/json": {
                             schema: resolver(listedAppsResponseSchema),
@@ -1273,47 +1303,53 @@ export const accountRoutes = new Hono<Env>()
                     },
                 },
                 401: { description: "Unauthorized" },
-                503: {
-                    description:
-                        "The app directory is temporarily unavailable; retry after the `Retry-After` delay",
-                },
             },
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-
-            // githubId is written by the OAuth callback only, so read it from
-            // the row instead of trusting the session user.
-            const account = await drizzle(c.env.DB)
-                .select({ githubId: userTable.githubId })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1)
-                .then((rows) => rows[0]);
-
-            try {
-                return c.json({
-                    apps: await listListedApps(
-                        c.env,
-                        account?.githubId ?? null,
-                    ),
-                });
-            } catch (error) {
-                // A rate-limited read must not look like "you have no apps",
-                // so the dashboard gets a retry signal instead of an empty list.
-                if (!(error instanceof TinybirdRateLimitError)) throw error;
-                c.header("Retry-After", "60");
-                return c.json(
-                    {
-                        apps: [],
-                        error: "The app directory is temporarily unavailable. Please try again.",
-                    },
-                    503,
-                );
-            }
+            return c.json({
+                apps: await listApps(
+                    c.env.DB,
+                    await githubIdOf(c.env.DB, user.id),
+                ),
+            });
         },
     )
+    .patch(
+        "/apps/:id",
+        describeRoute({ hide: true }),
+        validator("json", updateAppSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            requireDashboardSession(c.var.auth.apiKey);
+            const user = c.var.auth.requireUser();
+            const updated = await updateApp(
+                c.env.DB,
+                await githubIdOf(c.env.DB, user.id),
+                c.req.param("id"),
+                c.req.valid("json"),
+            );
+            if (!updated) {
+                throw new HTTPException(404, { message: "App not found" });
+            }
+            return c.json({ app: updated });
+        },
+    )
+    .delete("/apps/:id", describeRoute({ hide: true }), async (c) => {
+        await c.var.auth.requireAuthorization();
+        requireDashboardSession(c.var.auth.apiKey);
+        const user = c.var.auth.requireUser();
+        const deleted = await deleteApp(
+            c.env.DB,
+            await githubIdOf(c.env.DB, user.id),
+            c.req.param("id"),
+        );
+        if (!deleted) {
+            throw new HTTPException(404, { message: "App not found" });
+        }
+        return c.json({ deleted: true });
+    })
     .get(
         "/quests",
         describeRoute({

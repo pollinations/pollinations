@@ -133,6 +133,7 @@ test("accepts an app URL, a repository, or both", () => {
     );
     assert.deepEqual(validateSubmission(repoOnly), []);
     assert.equal(buildApp(repoOnly, {}).url, null);
+    assert.notEqual(buildApp(repoOnly, {}).id, buildApp(repoOnly, {}).id);
     assert.equal(
         buildApp(repoOnly, {}).repositoryUrl,
         "https://github.com/example/sunflower",
@@ -299,7 +300,9 @@ if (args[0] === "issue" && args[1] === "list") {
     assert.ok(result.stdout.endsWith("\n"));
     const output = JSON.parse(result.stdout);
     assert.equal(output.submission.name, "Sunflower Studio");
+    assert.match(output.app.id, /^[0-9a-f-]{36}$/);
     assert.deepEqual(output.app, {
+        id: output.app.id,
         emoji: "🖼️",
         name: "Sunflower Studio",
         url: "https://example.com/app",

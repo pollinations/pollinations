@@ -9,6 +9,9 @@ interface DeleteConfirmationProps {
     onCancel: () => void;
 }
 
+export const APP_KEY_DELETE_WARNING =
+    "Existing connections keep working, but you stop earning from them. Users won’t be able to connect or authorize again with this app key. Deleting it cannot be undone.";
+
 export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
     app,
     error,
@@ -21,7 +24,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
         title={app ? "Delete app key?" : "Delete secret key?"}
         description={
             app
-                ? "Existing connections keep working, but you stop earning from them. Users won’t be able to connect or authorize again with this app key. Deleting it cannot be undone."
+                ? APP_KEY_DELETE_WARNING
                 : "Requests using this secret key will stop working. Deleting it cannot be undone."
         }
         confirmLabel={pending ? "Deleting…" : "Delete"}

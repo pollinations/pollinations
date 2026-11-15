@@ -419,6 +419,7 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "flathub", name: "firefox" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -653,6 +654,130 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("Flathub lookup resolves the latest stable release and rejects unknown apps", async (t) => {
+    // Trimmed real appstream response for org.gimp.GIMP (2026-11-16).
+    const app = {
+        id: "org.gimp.GIMP",
+        name: "GNU Image Manipulation Program",
+        summary: "High-end image creation and manipulation",
+        description:
+            "<p>GIMP is an acronym for GNU Image Manipulation Program. It is Community-driven Free Software\n      for high-end image creation and manipulation.</p>\n      <p>It has many capabilities. It can be used as a paint program, an expert quality photo retouching\n      program, image composition, an online batch processing system, a mass production image renderer,\n      an image format converter, etc.</p>",
+        project_license: "GPL-3.0+ AND LGPL-3.0+",
+        developer_name: "The GIMP team",
+        categories: ["Graphics", "2DGraphics", "RasterGraphics"],
+        keywords: ["GIMP", "Photoshop"],
+        is_eol: false,
+        urls: { homepage: "https://www.gimp.org/" },
+        bundle: {
+            value: "app/org.gimp.GIMP/x86_64/stable",
+            runtime: "org.gnome.Platform/x86_64/51",
+        },
+        releases: [
+            { version: "3.2.8", type: "stable", timestamp: "1793577600" },
+            { version: "3.2.6", type: "stable", timestamp: "1788998400" },
+            { version: "3.2.4", type: "stable", timestamp: "1776384000" },
+            { version: "3.2.2", type: "stable", timestamp: "1774656000" },
+        ],
+        screenshots: [
+            {
+                // Sizes arrive unsorted upstream (firefox lists 624 before
+                // 1504), so the tool picks the widest one, not the last.
+                sizes: [
+                    {
+                        src: "https://dl.flathub.org/media/org/gimp/GIMP/800933a572869e1c8daee367dc2287cb/screenshots/image-1_orig.png",
+                        width: "1920",
+                        height: "1080",
+                    },
+                    {
+                        src: "https://dl.flathub.org/media/org/gimp/GIMP/800933a572869e1c8daee367dc2287cb/screenshots/image-1_1248x702@1.png",
+                        width: "1248",
+                        height: "702",
+                    },
+                    {
+                        src: "https://dl.flathub.org/media/org/gimp/GIMP/800933a572869e1c8daee367dc2287cb/screenshots/image-1_224x126@1.png",
+                        width: "224",
+                        height: "126",
+                    },
+                ],
+            },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        // Unknown ids 404 upstream; the wrong case is a different id too.
+        if (url !== "https://flathub.org/api/v2/appstream/org.gimp.GIMP")
+            return new Response('{"detail":"App not found"}', { status: 404 });
+        return Response.json(app);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "flathub",
+        name: "org.gimp.GIMP",
+    });
+    assert.equal(data.name, "org.gimp.GIMP");
+    assert.equal(data.displayName, "GNU Image Manipulation Program");
+    assert.equal(data.version, "3.2.8");
+    assert.equal(data.releaseType, "stable");
+    assert.equal(data.releaseTimestamp, "1793577600");
+    assert.equal(data.description, "High-end image creation and manipulation");
+    assert.match(data.longDescription, /^GIMP is an acronym/);
+    assert.doesNotMatch(data.longDescription, /</);
+    assert.equal(data.license, "GPL-3.0+ AND LGPL-3.0+");
+    assert.equal(data.homepage, "https://www.gimp.org/");
+    assert.equal(data.developer, "The GIMP team");
+    assert.deepEqual(data.categories, [
+        "Graphics",
+        "2DGraphics",
+        "RasterGraphics",
+    ]);
+    assert.equal(data.isEol, false);
+    assert.equal(data.bundle, "app/org.gimp.GIMP/x86_64/stable");
+    assert.equal(data.runtime, "org.gnome.Platform/x86_64/51");
+    assert.deepEqual(
+        data.releases.map((r) => r.version),
+        ["3.2.8", "3.2.6", "3.2.4", "3.2.2"],
+    );
+    assert.deepEqual(data.screenshots, [
+        "https://dl.flathub.org/media/org/gimp/GIMP/800933a572869e1c8daee367dc2287cb/screenshots/image-1_orig.png",
+    ]);
+    assert.equal(data.registryUrl, "https://flathub.org/apps/org.gimp.GIMP");
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "flathub",
+        name: "org.gimp.GIMP",
+        version: "3.2.6",
+    });
+    assert.equal(pinned.version, "3.2.6");
+    assert.equal(pinned.releaseTimestamp, "1788998400");
+    await assert.rejects(
+        lookup({
+            ecosystem: "flathub",
+            name: "org.gimp.GIMP",
+            version: "0.0.0",
+        }),
+        /Flathub version 0.0.0 not found/,
+    );
+    await assert.rejects(
+        lookup({
+            ecosystem: "flathub",
+            name: "org.example.doesnotexist123",
+        }),
+        /Flathub app org.example.doesnotexist123 not found/,
+    );
+    // Case-sensitive ids: the wrong case is a different app id upstream.
+    await assert.rejects(
+        lookup({ ecosystem: "flathub", name: "org.gimp.gimp" }),
+        /Flathub app org.gimp.gimp not found/,
+    );
+    assert.deepEqual(urls, [
+        "https://flathub.org/api/v2/appstream/org.gimp.GIMP",
+        "https://flathub.org/api/v2/appstream/org.gimp.GIMP",
+        "https://flathub.org/api/v2/appstream/org.gimp.GIMP",
+        "https://flathub.org/api/v2/appstream/org.example.doesnotexist123",
+        "https://flathub.org/api/v2/appstream/org.gimp.gimp",
     ]);
 });
 

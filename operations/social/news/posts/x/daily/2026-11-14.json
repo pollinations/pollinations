@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-14",
+  "period_start": "2026-11-14",
+  "period_end": "2026-11-14",
+  "generated_at": "2026-11-15T06:05:35.712220+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/00b1f8cb180f48a52560c5502fbf0369f7fa1863cb28f8a799c8757a926a86eb"
+    }
+  ],
+  "text": "Dashboard cards now open or copy relevant docs for AI chats. The Keys card picks docs by key type and shows a copyable app-key CLI command. Pollen Canvas and Susurros de Buda also joined the image app catalog. Less tab archaeology."
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-14",
+  "period_start": "2026-11-14",
+  "period_end": "2026-11-14",
+  "title": "Dashboard docs are easier to find and share",
+  "summary": "Dashboard docs became easier to copy, while two community image tools joined the app catalog.\n\nDashboard cards gained a Docs control that opens the relevant guide or copies it as plain text for an AI chat. The Keys card selects docs based on key type and now shows a copyable CLI command for app keys.\n\nCommunity contributor @Deheroesytumbas added Susurros de Buda, a Spanish-language Python CLI for making consistent storybook illustrations from scenes. It supports square and vertical formats, plus configurable style, model, and seed.\n\nCommunity contributor @baimoyan2005 added Pollen Canvas to the image app catalog. It generates images from text prompts with style and seed controls, and lets people download the results.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 19674,
+      "date": "2026-11-14"
+    },
+    {
+      "number": 19713,
+      "date": "2026-11-14"
+    },
+    {
+      "number": 19752,
+      "date": "2026-11-14"
+    }
+  ],
+  "generated_at": "2026-11-15T06:05:35.712220+00:00",
+  "daily": [
+    {
+      "emoji": "💡",
+      "title": "Copy docs from dashboard cards",
+      "text": "Open the relevant guide from a dashboard card, or copy its text into an AI chat. The Keys card picks docs for your key type.",
+      "prs": [
+        19674
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

@@ -438,6 +438,14 @@ export const CreateChatCompletionRequestSchema = z
                     'tool_choice "required" requires at least one tool in tools.',
             });
         }
+        if (value.top_logprobs != null && value.logprobs !== true) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["top_logprobs"],
+                message:
+                    "`top_logprobs` requires `logprobs` to be true; without it providers return no log probabilities.",
+            });
+        }
     });
 
 export type CreateChatCompletionRequest = z.infer<

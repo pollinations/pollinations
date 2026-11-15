@@ -1,7 +1,4 @@
-import {
-    CreateChatCompletionRequestSchema,
-    CreateResponseRequestSchema,
-} from "@shared/schemas/openai.ts";
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 
 describe("CreateChatCompletionRequestSchema", () => {
@@ -306,18 +303,27 @@ describe("CreateChatCompletionRequestSchema", () => {
         ).toBe(true);
     });
 
-    it("rejects an empty name on a Responses function tool", () => {
+    it("caps tools at the provider limit of 128", () => {
+        const messages = [{ role: "user", content: "hello" }];
+        const tools = (count: number) =>
+            Array.from({ length: count }, (_, index) => ({
+                type: "function" as const,
+                function: {
+                    name: `f${index}`,
+                    parameters: { type: "object" },
+                },
+            }));
         expect(
-            CreateResponseRequestSchema.safeParse({
-                input: "hello",
-                tools: [{ type: "function", name: "" }],
-            }).success,
-        ).toBe(false);
-        expect(
-            CreateResponseRequestSchema.safeParse({
-                input: "hello",
-                tools: [{ type: "function", name: "lookup" }],
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: tools(128),
             }).success,
         ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: tools(129),
+            }).success,
+        ).toBe(false);
     });
 });

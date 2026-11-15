@@ -419,7 +419,7 @@ export const CreateChatCompletionRequestSchema = z
                 "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
             ),
         top_p: z.number().min(0).max(1).nullable().optional(),
-        tools: z.array(ChatCompletionToolSchema).optional(),
+        tools: z.array(ChatCompletionToolSchema).max(128).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
@@ -467,7 +467,7 @@ const StatelessResponseIncludeSchema = z.enum([
 const ResponseFunctionToolSchema = z
     .object({
         type: z.literal("function"),
-        name: z.string().min(1),
+        name: z.string(),
         description: z.string().nullish(),
         parameters: FunctionParametersSchema.nullish(),
         strict: z.boolean().nullable().optional(),

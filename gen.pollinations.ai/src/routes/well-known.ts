@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
 import BYOP_SKILL from "../../../.claude/skills/bring-your-own-pollen/SKILL.md?raw";
+import OPS_SKILL from "../../../.claude/skills/polli-operations/SKILL.md?raw";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
 import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
@@ -23,6 +24,7 @@ const AGENT_SKILLS = [
     { name: "bring-your-own-pollen", markdown: BYOP_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
     { name: "pollinations-sdk", markdown: SDK_SKILL },
+    { name: "polli-operations", markdown: OPS_SKILL },
 ].map((skill) => ({
     ...skill,
     path: `/.well-known/agent-skills/${skill.name}/SKILL.md`,

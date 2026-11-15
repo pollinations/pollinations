@@ -457,6 +457,7 @@ describe("gen worker routing", () => {
             "bring-your-own-pollen",
             "quest-contributor",
             "pollinations-sdk",
+            "polli-operations",
         ]);
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
@@ -466,6 +467,10 @@ describe("gen worker routing", () => {
             body.skills.find((skill) => skill.name === "pollinations-sdk")
                 ?.description,
         ).toMatch(/npm package/);
+        expect(
+            body.skills.find((skill) => skill.name === "polli-operations")
+                ?.description,
+        ).toMatch(/Recover from polli CLI failures/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");

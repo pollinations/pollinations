@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-11-15",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-14",
+  "generated_at": "2026-11-15T06:06:22.025075+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/64dd3b5048b77cdd343b9b0a1153fd98cae889947272b61c4cbed5a1a55e6884"
+    },
+    {
+      "url": "https://media.pollinations.ai/ffc943d234ec94cb000c465e5b8a016effd3d741dfada59ea0804859db891ce5"
+    },
+    {
+      "url": "https://media.pollinations.ai/99ed12cdb368845aec8db14765a9a1091b18e3c71b5940a3596db97fe6cff5dd"
+    }
+  ],
+  "text": "This week's garden got more drawers. MCP added tools for papers, media, packages, and calculations. Gemini Omni 1.2 Flash added 3 to 15 second video with audio; Wan 3.0 gained a 2 to 15 second range, and Flare can make GIFs. Three paid-only ElevenLabs models and Claude Fable 5.2 joined too.\n\nEnter reorganized Agents, MCP, keys, sandboxes, and docs. If the legacy image limiter fails, uncached requests now get a 503 with Retry-After: 10; cached images remain available. Also, 28 community apps joined the catalog. Browse at pollinations.ai.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #mcp #aivideo",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

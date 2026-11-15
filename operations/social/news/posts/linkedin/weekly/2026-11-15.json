@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-11-15",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-14",
+  "generated_at": "2026-11-15T06:06:22.025075+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/06b38eb187fe392162d2ab33c17f861c74f6cf93985617d61128f5ec440054e8"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.46: tools & moving pixels\n\n1. MCP tools now cover research papers, media inspection, voice processing, package registries, hashing, diffs, fractions, and version comparisons. The toolbox may need a toolbox.\n\n2. Gemini Omni 1.2 Flash added paid video generation from text or up to two reference images, with synced audio and 3 to 15 second output. Wan 3.0 supports 2 to 15 second clips. GPT Image 2.6 Flare added animated GIFs.\n\n3. Three paid-only ElevenLabs models added sound effects, batch transcription with word timestamps and speaker labels, and realtime transcription. Claude Fable 5.2 was added.\n\n4. Enter added Agents and MCP pages and brought a user's Agents, Models, and Apps into My listings. 28 community apps joined the catalog.\n\n5. Legacy image limiter failures return 503 with Retry-After: 10; cached images remain available. Responses API and SDK fixes clarify failed or partial output. Catalog and leaderboard caching cuts repeat work; leaderboard totals may lag.\n\nCode and contributions: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

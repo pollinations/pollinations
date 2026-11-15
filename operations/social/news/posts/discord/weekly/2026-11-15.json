@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-11-15",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-14",
+  "generated_at": "2026-11-15T06:06:22.025075+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/d73d23151c54ade5989d1b7486290db4a462a8a30bdd5649d87ce9124e967fde"
+    }
+  ],
+  "text": "## Weekly Update - 2026-11-15\nHey <@&1424461167883194418>, here’s what changed this week.\n\n🧰 **Agents and MCP**\nMCP tools grew across research papers, media inspection, voice processing, package registries, hashing, text diffs, fractions, and version comparisons. Ask Jev gained a model choice. Agents now keep separate Computers across runs.\n\n🎞️ **Media and models**\nGemini Omni 1.2 Flash added paid video generation from text or up to two reference images, with synchronized audio and 3–15 second output. Wan 3.0 now supports 2–15 second clips. GPT Image 2.6 Flare added animated GIFs alongside PNG and WebP. Listings expose declared duration, resolution, and reference-media limits. Claude Fable 5.2 was added too.\n\n🔊 **Audio**\nThree paid-only ElevenLabs models added sound effects, batch transcription with word timestamps and speaker labels, and realtime transcription. MCP tools gained speech isolation and voice changes for public media URLs.\n\n🗂️ **Enter and reliability**\nAgents and MCP got dedicated pages. My listings brings Agents, Models, and Apps together. Sandbox comparisons, Keys tabs, catalog cards, and copyable dashboard guides got updates. Legacy image requests return `503` with `Retry-After: 10` if the per-IP limiter fails; cached images remain available. Text timeout fallback and Responses API and SDK fixes make failed or partial output clearer. Catalog and leaderboard caching cuts repeat work; leaderboard totals may lag.\n\n🌱 **Community**\n28 apps joined the catalog. Quest guidance clarified Connect Polli CLI requirements. One paid auto top-up completed on or after October 13, 2026 qualifies an account for a one-time 20 Quest Pollen reward.\n\nCode and changes: https://github.com/pollinations/pollinations"
+}

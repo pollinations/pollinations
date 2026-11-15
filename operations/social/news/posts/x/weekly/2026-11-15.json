@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-11-15",
+  "period_start": "2026-11-08",
+  "period_end": "2026-11-14",
+  "generated_at": "2026-11-15T06:06:22.025075+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/87b01dc5e0c85d60a6724fce9af5a773943daf63192e9b628555a8a958460f6a"
+    }
+  ],
+  "text": "This week: MCP gained tools for papers, media, packages and math. Gemini Omni 1.2 Flash added paid video with audio (3-15s); Wan 3.0 supports 2-15s clips; GPT Image 2.6 Flare outputs GIFs. 28 community apps joined the catalog. Busy little toolbox."
+}

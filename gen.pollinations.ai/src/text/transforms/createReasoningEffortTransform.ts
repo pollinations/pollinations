@@ -17,8 +17,11 @@ const log = debug("pollinations:transforms:reasoning-effort");
  * - `"strip"`: model has no reasoning mode and errors when the param is
  *   forwarded (mistral-large 500; OpenRouter non-reasoning models 400; the
  *   non-reasoning Grok deployment 500). The param is removed entirely.
+ * - `"high-max"`: model accepts only `"none"`, `"high"` and `"max"` (Azure
+ *   DeepSeek V4). `"minimal"` maps to `"none"`, `"low"`/`"medium"` to
+ *   `"high"`, and `"xhigh"` to `"max"`.
  */
-export type ReasoningCapability = "toggle" | "mandatory" | "strip";
+export type ReasoningCapability = "toggle" | "mandatory" | "strip" | "high-max";
 
 /**
  * Creates a transform that normalizes `reasoning_effort` for a given model
@@ -40,6 +43,17 @@ export function createReasoningEffortTransform(
         }
 
         const wantsOff = effort === "none";
+
+        if (capability === "high-max") {
+            if (wantsOff || effort === "minimal") {
+                updated.reasoning_effort = "none";
+            } else if (effort === "low" || effort === "medium") {
+                updated.reasoning_effort = "high";
+            } else if (effort === "xhigh") {
+                updated.reasoning_effort = "max";
+            }
+            return { messages, options: updated };
+        }
 
         if (capability === "mandatory") {
             // Reasoning can't be disabled; drop off-requests, keep on-levels.

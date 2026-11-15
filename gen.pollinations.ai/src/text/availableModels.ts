@@ -25,6 +25,8 @@ import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
+// Azure DeepSeek V4 accepts only none/high/max for reasoning_effort.
+const azureDeepSeekThinking = createReasoningEffortTransform("high-max");
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Fireworks caches matching prefixes automatically and rejects Anthropic markers.
@@ -592,12 +594,12 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4-flash",
         config: portkeyConfig["DeepSeek-V4-Flash-0731"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekThinking,
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
         config: portkeyConfig["DeepSeek-V4.1-Flash"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekThinking,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:fireworks",

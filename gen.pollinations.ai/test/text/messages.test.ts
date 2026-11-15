@@ -745,10 +745,8 @@ describe("Messages stream translation", () => {
                         "tool_use",
             ),
         ).toBe(false);
-        const delta = events.find(
-            (event) => event.type === "message_delta",
-        ) as { delta: { stop_reason: string } };
-        expect(delta.delta.stop_reason).toBe("max_tokens");
+        const delta = events.find((event) => event.type === "message_delta");
+        expect(delta).toMatchObject({ delta: { stop_reason: "max_tokens" } });
     });
 
     it("streams thinking and text blocks, then tool use and usage", async () => {

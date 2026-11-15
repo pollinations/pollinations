@@ -1,4 +1,7 @@
-import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
+import {
+    CreateChatCompletionRequestSchema,
+    CreateResponseRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 
 describe("CreateChatCompletionRequestSchema", () => {
@@ -256,6 +259,64 @@ describe("CreateChatCompletionRequestSchema", () => {
                 messages: [{ role: "user", content: "hello" }],
                 tool_choice: "auto",
                 tools: [],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects empty names on tools, functions, and response formats", () => {
+        const messages = [{ role: "user", content: "hello" }];
+        const tool = {
+            type: "function",
+            function: { name: "lookup", parameters: { type: "object" } },
+        };
+        for (const body of [
+            { tools: [{ ...tool, function: { name: "" } }] },
+            { functions: [{ name: "", parameters: { type: "object" } }] },
+            {
+                tools: [tool],
+                tool_choice: { type: "function", function: { name: "" } },
+            },
+            { functions: [{ name: "lookup" }], function_call: { name: "" } },
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: { name: "", schema: { type: "object" } },
+                },
+            },
+        ]) {
+            expect(
+                CreateChatCompletionRequestSchema.safeParse({
+                    messages,
+                    ...body,
+                }).success,
+            ).toBe(false);
+        }
+
+        // The same shapes with names parse, so the guard is the empty string only.
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: [tool],
+                tool_choice: { type: "function", function: { name: "lookup" } },
+                response_format: {
+                    type: "json_schema",
+                    json_schema: { name: "answer", schema: { type: "object" } },
+                },
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects an empty name on a Responses function tool", () => {
+        expect(
+            CreateResponseRequestSchema.safeParse({
+                input: "hello",
+                tools: [{ type: "function", name: "" }],
+            }).success,
+        ).toBe(false);
+        expect(
+            CreateResponseRequestSchema.safeParse({
+                input: "hello",
+                tools: [{ type: "function", name: "lookup" }],
             }).success,
         ).toBe(true);
     });

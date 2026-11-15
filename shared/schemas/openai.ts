@@ -14,7 +14,7 @@ const FunctionParametersSchema = z.record(z.string(), z.any());
 
 const FunctionObjectSchema = z.object({
     description: z.string().optional(),
-    name: z.string(),
+    name: z.string().min(1),
     parameters: FunctionParametersSchema.optional(),
     strict: z.boolean().nullable().default(false).optional(),
 });
@@ -22,13 +22,13 @@ const FunctionObjectSchema = z.object({
 const ChatCompletionFunctionsSchema = z
     .object({
         description: z.string().optional(),
-        name: z.string(),
+        name: z.string().min(1),
         parameters: FunctionParametersSchema.optional(),
     })
     .strict();
 
 const ChatCompletionFunctionCallOptionSchema = z.object({
-    name: z.string(),
+    name: z.string().min(1),
 });
 
 // Standard OpenAI function tool
@@ -57,7 +57,7 @@ const ChatCompletionToolSchema = z.union([
 
 const ChatCompletionNamedToolChoiceSchema = z.object({
     type: z.literal("function"),
-    function: z.object({ name: z.string() }),
+    function: z.object({ name: z.string().min(1) }),
 });
 
 const ChatCompletionToolChoiceOptionSchema = z.union([
@@ -311,7 +311,7 @@ const ResponseFormatJsonSchemaSchemaContainer = z.object({
     type: z.literal("json_schema"),
     json_schema: z.object({
         description: z.string().optional(),
-        name: z.string().optional(),
+        name: z.string().min(1).optional(),
         schema: ResponseFormatJsonSchemaSchema,
         strict: z.boolean().nullable().default(false).optional(),
     }),
@@ -467,7 +467,7 @@ const StatelessResponseIncludeSchema = z.enum([
 const ResponseFunctionToolSchema = z
     .object({
         type: z.literal("function"),
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string().nullish(),
         parameters: FunctionParametersSchema.nullish(),
         strict: z.boolean().nullable().optional(),

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Wardrobe",
+    "url": "https://eileen90.github.io/wardrobe",
+    "description": "Your closet on any screen. Photos of your clothes are redrawn by Pollinations image models as clean cut-outs, sized true to life, to mix into outfits.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "eileen90",
+    "githubUserId": "355836363",
+    "repositoryUrl": "https://github.com/eileen90/wardrobe",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19644",
+    "approvedDate": "2026-11-15",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/b5d800a3-94b8-4ab2-b299-615b39b959d5"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Susurros de Buda · storybook art CLI",
     "url": "https://github.com/Deheroesytumbas/susurros-de-buda-pollinations",
     "description": "A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed.",

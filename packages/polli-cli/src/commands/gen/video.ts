@@ -58,8 +58,8 @@ export function createVideoCommand() {
             if (opts.estimate)
                 return printEstimate(opts.model ?? DEFAULT_VIDEO_MODEL, {
                     kind: "video",
-                    width: Number(opts.width),
-                    height: Number(opts.height),
+                    width: opts.width ? Number(opts.width) : undefined,
+                    height: opts.height ? Number(opts.height) : undefined,
                     references: opts.image ? 1 : 0,
                     duration: opts.duration ? Number(opts.duration) : undefined,
                     audio: !!opts.audio,

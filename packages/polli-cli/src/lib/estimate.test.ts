@@ -84,6 +84,21 @@ describe("estimateMediaCost", () => {
         ).toBeCloseTo(0.024);
     });
 
+    it("reports no total for a megapixel model when no size is sent", () => {
+        const model: MediaModel = {
+            name: "flux-2-pro",
+            flat_rate: true,
+            pricing: { currency: "pollen", completionImageTokens: "0.01" },
+            pricing_units: { completionImageTokens: { unit: "megapixel" } },
+        };
+        const result = estimateMediaCost(model, {
+            kind: "image",
+            references: 0,
+        });
+        expect(result.total).toBeNull();
+        expect(result.unpriced).toContain("completionImageTokens");
+    });
+
     it("reports no total for token-billed models", () => {
         const model: MediaModel = {
             name: "gpt-image-2",

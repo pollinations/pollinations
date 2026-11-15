@@ -15,11 +15,15 @@ const code = z
 const day = z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .refine(
-        (value) =>
-            new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value,
-        "not a calendar date",
-    )
+    .refine((value) => {
+        // An out-of-range month or day makes an Invalid Date, where
+        // toISOString() throws RangeError instead of failing the refinement.
+        const parsed = new Date(`${value}T00:00:00Z`);
+        return (
+            !Number.isNaN(parsed.getTime()) &&
+            parsed.toISOString().slice(0, 10) === value
+        );
+    }, "not a calendar date")
     .describe("Date as YYYY-MM-DD");
 
 // Frankfurter answers 404 for an unknown currency or a date outside the ECB

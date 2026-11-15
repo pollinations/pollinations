@@ -64,6 +64,7 @@ for (const modern of [false, true])
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
+                "crypto_price",
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
@@ -394,6 +395,130 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("crypto_price returns Coinbase spot prices with bid/ask spread", async (t) => {
+    // Trimmed live Coinbase ticker responses, saved 2026-11-16.
+    const tickers = {
+        "BTC-USD": {
+            ask: "64584.96",
+            bid: "64584.95",
+            volume: "19074.148262",
+            trade_id: 1129750166,
+            price: "64584.96",
+            size: "0.00097649",
+            time: "2026-11-15T18:38:32.133346137Z",
+            rfq_volume: "296.918423",
+        },
+        "ETH-USD": {
+            ask: "1813.94",
+            bid: "1813.82",
+            volume: "281649.8423338",
+            trade_id: 855558097,
+            price: "1813.71",
+            size: "0.52498403",
+            time: "2026-11-15T18:38:31.644820878Z",
+            rfq_volume: "1858.239423",
+        },
+        "SOL-USD": {
+            ask: "70.96",
+            bid: "70.94",
+            volume: "2296028.72033317",
+            trade_id: 361043298,
+            price: "70.94",
+            size: "0.016",
+            time: "2026-11-15T18:38:31.648919511Z",
+            rfq_volume: "62638.445974",
+        },
+    };
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.exchange.coinbase.com");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        const product = target.pathname.split("/")[2];
+        const ticker = tickers[product];
+        return ticker
+            ? Response.json(ticker)
+            : new Response(JSON.stringify({ message: "NotFound" }), {
+                  status: 404,
+              });
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "crypto_price", { symbol: "BTC" }), {
+        symbol: "BTC",
+        currency: "USD",
+        pair: "BTC-USD",
+        price: 64584.96,
+        bid: 64584.95,
+        ask: 64584.96,
+        spread: 0.01,
+        spread_percent: 0.00001548348219,
+        volume_24h: 19074.14826,
+        time: "2026-11-15T18:38:32.133346137Z",
+    });
+    assert.deepEqual(await call(client, "crypto_price", { symbol: "ETH" }), {
+        symbol: "ETH",
+        currency: "USD",
+        pair: "ETH-USD",
+        price: 1813.71,
+        bid: 1813.82,
+        ask: 1813.94,
+        spread: 0.12,
+        spread_percent: 0.006615652634,
+        volume_24h: 281649.8423,
+        time: "2026-11-15T18:38:31.644820878Z",
+    });
+    const sol = await call(client, "crypto_price", {
+        symbol: "SOL",
+        currency: "USD",
+    });
+    assert.equal(sol.spread, 0.02);
+    assert.equal(sol.spread_percent, 0.0281888654);
+    // Symbols are case-insensitive, and XBT resolves to bitcoin's BTC market.
+    assert.equal(
+        (await call(client, "crypto_price", { symbol: "btc" })).pair,
+        "BTC-USD",
+    );
+    assert.equal(
+        (await call(client, "crypto_price", { symbol: "XBT" })).pair,
+        "BTC-USD",
+    );
+    assert.equal(requests.at(-1).pathname, "/products/BTC-USD/ticker");
+    // An unknown symbol 404s upstream and is reported, not returned empty.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "crypto_price",
+                arguments: { symbol: "XXX" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests.at(-1).pathname, "/products/XXX-USD/ticker");
+    // Malformed symbols and currencies are rejected before any fetch.
+    const fetched = requests.length;
+    for (const args of [
+        { symbol: "B-T-C" },
+        { symbol: "BTC!" },
+        { symbol: "" },
+        { symbol: "BTC", currency: "US" },
+        { symbol: "BTC", currency: "USDD" },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "crypto_price",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    assert.equal(requests.length, fetched);
 });
 
 test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {

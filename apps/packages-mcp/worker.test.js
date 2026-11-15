@@ -87,6 +87,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "package_search",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -422,6 +423,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["package_search", { ecosystem: "pypi", query: "bert" }],
+        ["package_search", { query: "bert", limit: 11 }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(
@@ -656,6 +659,176 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
     ]);
 });
 
+test("package_search projects npm, crates.io and RubyGems results and trims to limit", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.hostname === "registry.npmjs.org") {
+            assert.equal(url.pathname, "/-/v1/search");
+            assert.equal(url.searchParams.get("text"), "react");
+            assert.equal(url.searchParams.get("size"), "1");
+            return Response.json({
+                total: 562562,
+                objects: [
+                    {
+                        package: {
+                            name: "react",
+                            version: "19.3.1",
+                            description:
+                                "React is a JavaScript library for building user interfaces.",
+                            links: {
+                                homepage: "https://react.dev/",
+                                npm: "https://www.npmjs.com/package/react",
+                            },
+                        },
+                        downloads: { monthly: 954915720 },
+                        dependents: 217448,
+                    },
+                    {
+                        package: {
+                            name: "react-is",
+                            version: "19.3.1",
+                            description: "Brand checking for React elements.",
+                            links: { homepage: "https://react.dev/" },
+                        },
+                        downloads: { monthly: 1801639828 },
+                        dependents: 4181,
+                    },
+                ],
+            });
+        }
+        if (url.hostname === "crates.io") {
+            assert.equal(url.pathname, "/api/v1/crates");
+            assert.equal(url.searchParams.get("q"), "serde");
+            assert.equal(url.searchParams.get("per_page"), "1");
+            return Response.json({
+                crates: [
+                    {
+                        name: "serde",
+                        max_version: "1.0.229",
+                        max_stable_version: "1.0.229",
+                        description:
+                            "A generic serialization/deserialization framework",
+                        downloads: 1714189254,
+                        homepage: "https://serde.rs",
+                    },
+                    {
+                        name: "serde-saphyr",
+                        max_version: "2.1.1",
+                        max_stable_version: "2.1.1",
+                        description: "YAML (de)serializer for Serde",
+                        downloads: 19561138,
+                        homepage: null,
+                    },
+                ],
+                meta: { total: 25696 },
+            });
+        }
+        assert.equal(url.hostname, "rubygems.org");
+        assert.equal(url.pathname, "/api/v1/search.json");
+        assert.equal(url.searchParams.get("query"), "rails");
+        return Response.json([
+            {
+                name: "rails",
+                version: "8.1.4.1",
+                info: "Ruby on Rails is a full-stack web framework.",
+                downloads: 816866159,
+                homepage_uri: "https://rubyonrails.org",
+            },
+            {
+                name: "rails-i18n",
+                version: "8.1.0",
+                info: "Rails I18n.",
+                downloads: 147170636,
+                homepage_uri: "https://github.com/svenfuchs/rails-i18n",
+            },
+        ]);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "package_search", { query: "react", limit: 1 }),
+        {
+            ecosystem: "npm",
+            query: "react",
+            total: 562562,
+            results: [
+                {
+                    name: "react",
+                    version: "19.3.1",
+                    description:
+                        "React is a JavaScript library for building user interfaces.",
+                    downloads: 954915720,
+                    dependents: 217448,
+                    homepage: "https://react.dev/",
+                    registryUrl: "https://www.npmjs.com/package/react",
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "package_search", {
+            ecosystem: "crates",
+            query: "serde",
+            limit: 1,
+        }),
+        {
+            ecosystem: "crates",
+            query: "serde",
+            total: 25696,
+            results: [
+                {
+                    name: "serde",
+                    version: "1.0.229",
+                    description:
+                        "A generic serialization/deserialization framework",
+                    downloads: 1714189254,
+                    homepage: "https://serde.rs",
+                    registryUrl: "https://crates.io/crates/serde",
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "package_search", {
+            ecosystem: "rubygems",
+            query: "rails",
+            limit: 1,
+        }),
+        {
+            ecosystem: "rubygems",
+            query: "rails",
+            total: 2,
+            results: [
+                {
+                    name: "rails",
+                    version: "8.1.4.1",
+                    description: "Ruby on Rails is a full-stack web framework.",
+                    downloads: 816866159,
+                    homepage: "https://rubyonrails.org",
+                    registryUrl: "https://rubygems.org/gems/rails",
+                },
+            ],
+        },
+    );
+});
+test("package_search returns empty results for unknown terms", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.hostname === "registry.npmjs.org")
+            return Response.json({ objects: [], total: 0 });
+        if (url.hostname === "crates.io")
+            return Response.json({ crates: [], meta: { total: 0 } });
+        return Response.json([]);
+    });
+    const client = await clientFor(t);
+    for (const ecosystem of ["npm", "crates", "rubygems"])
+        assert.deepEqual(
+            await call(client, "package_search", {
+                ecosystem,
+                query: "zzzznonexistentqqq",
+            }),
+            { ecosystem, query: "zzzznonexistentqqq", total: 0, results: [] },
+        );
+});
 test("package_downloads passes through daily counts and validates names", async (t) => {
     const expected = {
         package: "@scope/pkg",

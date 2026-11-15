@@ -182,6 +182,11 @@ export const CreateSpeechRequestSchema = z
                 "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
             example: 1.25,
         }),
+        stream_format: z.enum(["audio"]).optional().meta({
+            description:
+                'Only "audio" is supported. OpenAI\'s "sse" speech events are not implemented, and the response is always an audio file.',
+            example: "audio",
+        }),
     })
     .meta({ $id: "CreateSpeechRequest" });
 

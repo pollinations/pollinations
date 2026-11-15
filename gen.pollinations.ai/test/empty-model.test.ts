@@ -50,6 +50,31 @@ it.each([
     expect(schema.safeParse(body).success).toBe(false);
 });
 
+// OpenAI defines stream_format, so asking for SSE must fail instead of
+// returning an audio file the caller cannot parse as events.
+it("rejects unsupported speech stream formats", () => {
+    const speechBody = { input: "hello", voice: "alloy" };
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "sse",
+        }).success,
+    ).toBe(false);
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "banana",
+        }).success,
+    ).toBe(false);
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "audio",
+        }).success,
+    ).toBe(true);
+    expect(CreateSpeechRequestSchema.safeParse(speechBody).success).toBe(true);
+});
+
 const speech = { input: "hello", voice: "alloy", model: "" };
 
 test.for([

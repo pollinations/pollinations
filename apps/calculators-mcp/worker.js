@@ -1,6 +1,7 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { contrastTools } from "./tools/contrast.js";
+import { cryptoTools } from "./tools/crypto.js";
 import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
@@ -26,6 +27,7 @@ const handler = createMcpHandler(
             ...diffTools,
             ...fractionTools,
             ...versionTools,
+            ...cryptoTools,
         ]) {
             server.registerTool(
                 name,
@@ -34,7 +36,9 @@ const handler = createMcpHandler(
                     inputSchema: z.object(shape),
                     annotations: {
                         readOnlyHint: true,
-                        openWorldHint: name.startsWith("currency_"),
+                        openWorldHint:
+                            name.startsWith("currency_") ||
+                            name.startsWith("crypto_"),
                     },
                 },
                 async (args) => {

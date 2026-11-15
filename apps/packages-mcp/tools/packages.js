@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Flathub app ids are case-sensitive reverse-DNS names, e.g.
+        // org.mozilla.firefox or org.gimp.GIMP.
+        flathub: /^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9][A-Za-z0-9_-]*)+$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,74 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "flathub") {
+        // The appstream endpoint is the verified GET source; the POST
+        // /api/v2/search route was not verifiable, so it is not used.
+        let data;
+        try {
+            data = await fetchJson(
+                `https://flathub.org/api/v2/appstream/${encoded}`,
+            );
+        } catch (error) {
+            if (error instanceof Error && error.message.includes("HTTP 404"))
+                throw new Error(`Flathub app ${name} not found`);
+            throw error;
+        }
+        const releases = data.releases ?? [];
+        const selected = version
+            ? releases.find((release) => release.version === version)
+            : (releases.find((release) => release.type === "stable") ??
+              releases[0]);
+        if (!selected)
+            throw new Error(
+                version
+                    ? `Flathub version ${version} not found for ${name}`
+                    : `Flathub app ${name} has no releases`,
+            );
+        // The description is HTML; strip tags so the field is plain text.
+        const longDescription = (data.description ?? "")
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 8000);
+        return {
+            ecosystem,
+            name: data.id,
+            displayName: data.name,
+            version: selected.version,
+            releaseType: selected.type,
+            releaseTimestamp: selected.timestamp,
+            description: data.summary,
+            longDescription: longDescription || undefined,
+            license: data.project_license,
+            homepage: data.urls?.homepage,
+            developer: data.developer_name,
+            categories: data.categories,
+            keywords: data.keywords,
+            isEol: data.is_eol,
+            bundle: data.bundle?.value,
+            runtime: data.bundle?.runtime,
+            releases: releases.map((release) => ({
+                version: release.version,
+                type: release.type,
+                timestamp: release.timestamp,
+            })),
+            // Screenshot sizes are not ordered, so take the widest one.
+            screenshots: (data.screenshots ?? [])
+                .map((shot) => {
+                    let largest;
+                    for (const size of shot.sizes ?? [])
+                        if (
+                            largest === undefined ||
+                            Number(size.width) > Number(largest.width)
+                        )
+                            largest = size;
+                    return largest?.src;
+                })
+                .filter(Boolean),
+            registryUrl: `https://flathub.org/apps/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +274,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or Flathub Linux desktop app metadata. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Flathub latest stable release. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +284,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "flathub",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

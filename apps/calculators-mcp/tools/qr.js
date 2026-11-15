@@ -23,10 +23,30 @@ export const qrTools = [
             if (new TextEncoder().encode(text).length > 2953)
                 throw new Error("QR input exceeds 2953 UTF-8 bytes");
             // Force UTF-8 rather than Latin-1 ECI, which common QR readers misdecode.
-            const code = generate(text, {
-                minCorrectionLevel: levels[error_correction],
-                modes: [mode.numeric, mode.alphaNumeric, mode.ascii, mode.utf8],
-            });
+            let code;
+            try {
+                code = generate(text, {
+                    minCorrectionLevel: levels[error_correction],
+                    modes: [
+                        mode.numeric,
+                        mode.alphaNumeric,
+                        mode.ascii,
+                        mode.utf8,
+                    ],
+                });
+            } catch (error) {
+                // 2953 bytes is only the level-low maximum. A longer text at a
+                // higher level does not fit, and lean-qr reports that as the bare
+                // code "lean-qr error 4" instead of naming the level.
+                if (
+                    error instanceof Error &&
+                    error.message === "lean-qr error 4"
+                )
+                    throw new Error(
+                        `QR input is too long for ${error_correction} error correction; shorten the text or lower the error correction`,
+                    );
+                throw error;
+            }
             return toSvgSource(code, {
                 on: "black",
                 off: "white",

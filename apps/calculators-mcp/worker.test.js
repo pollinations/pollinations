@@ -348,6 +348,26 @@ test("QR generates real SVG and rejects empty or oversized UTF-8 payloads", asyn
         });
         assert.equal(result.isError, true);
     }
+    // 2400 bytes fits level low but not the default medium, and the tool must
+    // name the level instead of returning lean-qr's bare "lean-qr error 4".
+    const tooLong = await client.callTool({
+        name: "create_qr",
+        arguments: { text: "a".repeat(2400) },
+    });
+    assert.equal(tooLong.isError, true);
+    assert.match(
+        tooLong.content[0].text,
+        /too long for medium error correction/,
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "create_qr",
+                arguments: { text: "a".repeat(2953), error_correction: "low" },
+            })
+        ).isError,
+        undefined,
+    );
 });
 
 test("time duration preserves nanoseconds", async (t) => {

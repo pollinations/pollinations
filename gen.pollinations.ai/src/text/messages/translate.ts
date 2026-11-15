@@ -397,6 +397,35 @@ export function toolUseInput(argumentsJson: string): unknown {
     return JSON.parse(argumentsJson || "{}");
 }
 
+/**
+ * Anthropic tool_use blocks from provider tool calls.
+ *
+ * When the provider stops at the token limit, a tool call can be cut off inside
+ * its JSON. That is an incomplete turn, not a provider fault: drop the call so
+ * the response keeps `stop_reason: "max_tokens"` instead of failing. Arguments
+ * that are unparseable for any other reason still fail the request.
+ */
+export function toolUseBlocks(
+    calls: { id: string; name: string; arguments: string }[],
+    truncated: boolean,
+): CreateMessageResponse["content"] {
+    return calls.flatMap((call) => {
+        try {
+            return [
+                {
+                    type: "tool_use" as const,
+                    id: call.id,
+                    name: call.name,
+                    input: toolUseInput(call.arguments),
+                },
+            ];
+        } catch (error) {
+            if (truncated) return [];
+            throw error;
+        }
+    });
+}
+
 /** Translate a Chat Completions response into a Messages response. */
 export function chatToMessagesResponse(
     completion: CreateChatCompletionResponse,
@@ -430,15 +459,16 @@ export function chatToMessagesResponse(
             signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
         });
     }
-    for (const call of message?.tool_calls ?? []) {
-        content.push({
-            type: "tool_use",
+    const toolUses = toolUseBlocks(
+        (message?.tool_calls ?? []).map((call) => ({
             id: call.id,
             name: call.function.name,
-            input: toolUseInput(call.function.arguments),
-        });
-    }
-    const hasToolUse = Boolean(message?.tool_calls?.length);
+            arguments: call.function.arguments,
+        })),
+        choice?.finish_reason === "length",
+    );
+    content.push(...toolUses);
+    const hasToolUse = toolUses.length > 0;
     return {
         id: completion.id,
         type: "message",

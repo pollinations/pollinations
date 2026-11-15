@@ -610,6 +610,73 @@ describe("Messages response translation", () => {
             tool_calls: [call("call_a", "AY8/+="), call("call_b")],
         });
     });
+
+    it("drops a tool call the token limit cut off instead of failing", () => {
+        const message = chatToMessagesResponse(
+            {
+                id: "chatcmpl_4",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "length",
+                        message: {
+                            role: "assistant",
+                            content: "Writing.",
+                            tool_calls: [
+                                {
+                                    id: "call_cut",
+                                    type: "function",
+                                    function: {
+                                        name: "Write",
+                                        // Cut off by max_tokens: no closing brace.
+                                        arguments: '{"path":"poem.txt","con',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+                usage,
+            },
+            model,
+        );
+        expect(message.content).toEqual([{ type: "text", text: "Writing." }]);
+        expect(message.stop_reason).toBe("max_tokens");
+    });
+
+    it("still rejects unparseable tool arguments that were not cut off", () => {
+        expect(() =>
+            chatToMessagesResponse(
+                {
+                    id: "chatcmpl_5",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: "tool_calls",
+                            message: {
+                                role: "assistant",
+                                content: null,
+                                tool_calls: [
+                                    {
+                                        id: "call_bad",
+                                        type: "function",
+                                        function: {
+                                            name: "Write",
+                                            arguments: '{"broken":',
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    usage,
+                },
+                model,
+            ),
+        ).toThrow();
+    });
 });
 
 describe("Messages stream translation", () => {
@@ -641,6 +708,47 @@ describe("Messages stream translation", () => {
         expect(events.some((event) => event.type === "message_stop")).toBe(
             false,
         );
+    });
+
+    it("drops a tool call the token limit cut off and stops with max_tokens", async () => {
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "t",
+                                    function: {
+                                        name: "Write",
+                                        arguments: '{"path":"poem.txt","con',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [{ delta: {}, finish_reason: "length" }], usage },
+            "[DONE]",
+        ]);
+        expect(events.some((event) => event.type === "error")).toBe(false);
+        expect(events.some((event) => event.type === "message_stop")).toBe(
+            true,
+        );
+        expect(
+            events.some(
+                (event) =>
+                    event.type === "content_block_start" &&
+                    (event.content_block as { type: string }).type ===
+                        "tool_use",
+            ),
+        ).toBe(false);
+        const delta = events.find(
+            (event) => event.type === "message_delta",
+        ) as { delta: { stop_reason: string } };
+        expect(delta.delta.stop_reason).toBe("max_tokens");
     });
 
     it("streams thinking and text blocks, then tool use and usage", async () => {

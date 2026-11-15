@@ -836,3 +836,22 @@ test("media models advertise the resolutions they accept", async () => {
         expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
     }
 });
+
+test("model listings advertise structured output support on /v1/models", async () => {
+    type ListedModel = {
+        id: string;
+        supports_structured_output?: boolean;
+    };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.supports_structured_output, model.id).toEqual(
+            info?.supports_structured_output,
+        );
+    }
+});

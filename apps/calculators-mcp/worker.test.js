@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "compare_versions",
+                "compound_interest",
                 "to_fraction",
                 "diff_text",
                 "create_qr",
@@ -674,4 +675,190 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("compound_interest computes future value, contributions and interest", async (t) => {
+    const client = await clientFor(t);
+    // Expected values were computed independently with Python Decimal
+    // (50-digit precision), not copied from the tool's own output. Totals
+    // are asserted within a cent: the closed-form float math can differ from
+    // the Decimal reference in the last digit.
+    const close = (actual, expected, label) =>
+        assert.ok(
+            Math.abs(actual - expected) < 0.01,
+            `${label}: got ${actual}, expected ${expected}`,
+        );
+
+    // The survey's canonical case: $10,000 at 5% compounded monthly for
+    // 10 years is $16,470.09.
+    const standard = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 5,
+        years: 10,
+        compounding: "monthly",
+    });
+    assert.equal(standard.future_value, 16470.09498);
+    assert.equal(standard.periods, 120);
+    assert.equal(standard.total_contributions, 0);
+    assert.equal(standard.total_invested, 10000);
+    close(standard.total_interest, 6470.09, "monthly total interest");
+    assert.equal(standard.effective_annual_rate, 5.116189788);
+
+    // Same case with $100 a month: contributions add $12,000 in and earn
+    // interest of their own.
+    const saving = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 5,
+        years: 10,
+        compounding: "monthly",
+        contribution: 100,
+    });
+    assert.equal(saving.future_value, 31998.32292);
+    assert.equal(saving.total_contributions, 12000);
+    assert.equal(saving.total_invested, 22000);
+    close(saving.total_interest, 9998.32, "monthly+contrib total interest");
+
+    // Continuous compounding: $10,000 at 5% for 10 years is $10,000 * e^0.5.
+    const continuous = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 5,
+        years: 10,
+        compounding: "continuous",
+    });
+    assert.equal(continuous.future_value, 16487.21271);
+    assert.equal(continuous.periods, 120);
+    assert.equal(continuous.effective_annual_rate, 5.127109638);
+    close(continuous.total_interest, 6487.21, "continuous total interest");
+
+    // Continuous compounding with monthly contributions.
+    const continuousSaving = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 5,
+        years: 10,
+        compounding: "continuous",
+        contribution: 100,
+    });
+    assert.equal(continuousSaving.future_value, 32024.10967);
+    assert.equal(continuousSaving.total_contributions, 12000);
+    close(
+        continuousSaving.total_interest,
+        10024.11,
+        "continuous+contrib total interest",
+    );
+
+    // Annual compounding over 20 years, and fractional years with
+    // semiannual compounding.
+    const annual = await call(client, "compound_interest", {
+        principal: 5000,
+        annual_rate: 7,
+        years: 20,
+        compounding: "annual",
+    });
+    assert.equal(annual.future_value, 19348.42231);
+    assert.equal(annual.periods, 20);
+    close(annual.total_interest, 14348.42, "annual total interest");
+
+    const semiannual = await call(client, "compound_interest", {
+        principal: 20000,
+        annual_rate: 3.5,
+        years: 7.5,
+        compounding: "semiannual",
+    });
+    assert.equal(semiannual.future_value, 25944.55727);
+    assert.equal(semiannual.periods, 15);
+
+    // Daily and quarterly compounding.
+    const daily = await call(client, "compound_interest", {
+        principal: 1000,
+        annual_rate: 4,
+        years: 5,
+        compounding: "daily",
+    });
+    assert.equal(daily.future_value, 1221.389374);
+    assert.equal(daily.periods, 1825);
+
+    const quarterly = await call(client, "compound_interest", {
+        principal: 2500,
+        annual_rate: 6,
+        years: 15,
+        compounding: "quarterly",
+    });
+    assert.equal(quarterly.future_value, 6108.049439);
+    assert.equal(quarterly.periods, 60);
+
+    // Zero rate: the balance is exactly principal plus contributions.
+    const free = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 0,
+        years: 10,
+        compounding: "monthly",
+        contribution: 100,
+    });
+    assert.equal(free.future_value, 22000);
+    assert.equal(free.total_interest, 0);
+    assert.equal(free.total_invested, 22000);
+
+    // Saving from contributions only: no starting principal.
+    const fromZero = await call(client, "compound_interest", {
+        principal: 0,
+        annual_rate: 6,
+        years: 30,
+        compounding: "monthly",
+        contribution: 200,
+    });
+    assert.equal(fromZero.future_value, 200903.0085);
+    assert.equal(fromZero.total_contributions, 72000);
+    close(fromZero.total_interest, 128903.01, "from-zero total interest");
+
+    // Compounding defaults to monthly when omitted.
+    const byDefault = await call(client, "compound_interest", {
+        principal: 10000,
+        annual_rate: 5,
+        years: 10,
+    });
+    assert.equal(byDefault.compounding, "monthly");
+    assert.equal(byDefault.future_value, 16470.09498);
+});
+
+test("compound_interest rejects invalid input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { principal: -1, annual_rate: 5, years: 10 },
+        { principal: 10000, annual_rate: -1, years: 10 },
+        { principal: 10000, annual_rate: 1001, years: 10 },
+        { principal: 10000, annual_rate: 5, years: 0 },
+        { principal: 10000, annual_rate: 5, years: -5 },
+        { principal: 10000, annual_rate: 5, years: 101 },
+        // Less than one monthly compounding period.
+        { principal: 10000, annual_rate: 5, years: 0.04 },
+        // Less than one daily compounding period.
+        {
+            principal: 10000,
+            annual_rate: 5,
+            years: 0.001,
+            compounding: "daily",
+        },
+        {
+            principal: 10000,
+            annual_rate: 5,
+            years: 10,
+            contribution: -50,
+        },
+        {
+            principal: 10000,
+            annual_rate: 5,
+            years: 10,
+            compounding: "hourly",
+        },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "compound_interest",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
 });

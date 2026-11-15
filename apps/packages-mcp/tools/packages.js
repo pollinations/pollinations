@@ -200,6 +200,77 @@ export async function lookup({ ecosystem, name, version }) {
         registryUrl: `https://crates.io/crates/${encodeURIComponent(selected.name)}/${encodeURIComponent(selected.vers)}`,
     };
 }
+export async function search({ ecosystem, query, limit }) {
+    if (ecosystem === "npm") {
+        const url = new URL("https://registry.npmjs.org/-/v1/search");
+        url.search = new URLSearchParams({
+            text: query,
+            size: String(limit),
+        });
+        const data = await fetchJson(url);
+        if (!Array.isArray(data.objects))
+            throw new Error("Invalid npm search response");
+        return {
+            ecosystem,
+            query,
+            total: data.total,
+            results: data.objects
+                .slice(0, limit)
+                .map(({ package: pkg, downloads, dependents }) => ({
+                    name: pkg.name,
+                    version: pkg.version,
+                    description: pkg.description,
+                    downloads: downloads?.monthly,
+                    dependents,
+                    homepage: pkg.links?.homepage,
+                    registryUrl: pkg.links?.npm,
+                })),
+        };
+    }
+    if (ecosystem === "crates") {
+        const url = new URL("https://crates.io/api/v1/crates");
+        url.search = new URLSearchParams({
+            q: query,
+            per_page: String(limit),
+        });
+        const data = await fetchJson(url);
+        if (!Array.isArray(data.crates))
+            throw new Error("Invalid crates.io search response");
+        return {
+            ecosystem,
+            query,
+            total: data.meta?.total,
+            results: data.crates.slice(0, limit).map((crate) => ({
+                name: crate.name,
+                version: crate.max_stable_version ?? crate.max_version,
+                description: crate.description,
+                downloads: crate.downloads,
+                homepage: crate.homepage,
+                registryUrl: `https://crates.io/crates/${encodeURIComponent(crate.name)}`,
+            })),
+        };
+    }
+    // RubyGems search has no limit parameter: it returns up to 30 full
+    // records (~25 KB), so the tool trims to `limit` client-side.
+    const url = new URL("https://rubygems.org/api/v1/search.json");
+    url.search = new URLSearchParams({ query });
+    const data = await fetchJson(url);
+    if (!Array.isArray(data))
+        throw new Error("Invalid RubyGems search response");
+    return {
+        ecosystem,
+        query,
+        total: data.length,
+        results: data.slice(0, limit).map((gem) => ({
+            name: gem.name,
+            version: gem.version,
+            description: gem.info,
+            downloads: gem.downloads,
+            homepage: gem.homepage_uri,
+            registryUrl: `https://rubygems.org/gems/${encodeURIComponent(gem.name)}`,
+        })),
+    };
+}
 export const packageTools = [
     [
         "package_lookup",
@@ -226,6 +297,16 @@ export const packageTools = [
                 .describe("Exact version, or an npm dist-tag"),
         },
         lookup,
+    ],
+    [
+        "package_search",
+        "Find packages by keyword across npm, crates.io or RubyGems — the discovery complement to package_lookup, which needs an exact name. Returns at most 10 matches with name, version, description, download count and homepage, ordered by relevance. RubyGems search returns at most 30 matches upstream; total is the number returned. No key needed.",
+        {
+            ecosystem: z.enum(["npm", "crates", "rubygems"]).default("npm"),
+            query: z.string().trim().min(1).max(200),
+            limit: z.number().int().min(1).max(10).default(5),
+        },
+        search,
     ],
     [
         "package_downloads",

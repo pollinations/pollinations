@@ -74,7 +74,42 @@ describe("createReasoningEffortTransform — strip", () => {
     });
 });
 
+describe("createReasoningEffortTransform — offHighMax", () => {
+    const offHighMax = createReasoningEffortTransform("offHighMax");
+
+    it.each([
+        ["none", "none"],
+        ["minimal", "none"],
+        ["low", "high"],
+        ["medium", "high"],
+        ["high", "high"],
+        ["xhigh", "max"],
+        ["max", "max"],
+    ])("sends %s as %s", async (sent, expected) => {
+        const { options } = await offHighMax([], { reasoning_effort: sent });
+        expect(options.reasoning_effort).toBe(expected);
+    });
+
+    it("leaves an omitted reasoning_effort to the route default", async () => {
+        const { options } = await offHighMax([], {});
+        expect(options.reasoning_effort).toBeUndefined();
+    });
+});
+
 describe("reasoning_effort model wiring", () => {
+    it.each(["deepseek/deepseek-v4-flash", "deepseek/deepseek-v4.1-flash"])(
+        "maps low to high on Azure DeepSeek %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                { reasoning_effort: "low" },
+            );
+            expect(options.reasoning_effort).toBe("high");
+        },
+    );
+
     it("leaves Inkling reasoning and tool schemas to OpenRouter", () => {
         expect(findModelByName("inkling")?.transform).toBeUndefined();
     });

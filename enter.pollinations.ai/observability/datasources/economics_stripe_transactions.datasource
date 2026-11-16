@@ -12,6 +12,7 @@ SCHEMA >
     `created` DateTime64(3) `json:$.created`,
     `available_on` DateTime64(3) `json:$.available_on`,
     `currency` LowCardinality(String) `json:$.currency`,
+    `balance_type` LowCardinality(String) `json:$.balance_type`,
     `amount` Int64 `json:$.amount`,
     `fee` Int64 `json:$.fee`,
     `net` Int64 `json:$.net`,

@@ -7,6 +7,7 @@ describe("toUsd", () => {
         expect(toUsd(100, "EUR", "2026-07-31")).toBeCloseTo(114.17, 2);
         expect(toUsd(100, "EUR", "2026-08-31")).toBeCloseTo(115.93, 2);
         expect(toUsd(100, "EUR", "2026-09-30")).toBeCloseTo(115.13, 2);
+        expect(toUsd(100, "EUR", "2026-10-31")).toBeCloseTo(112.02, 2);
     });
 
     it("passes USD and POLLEN through 1:1", () => {
@@ -55,6 +56,7 @@ describe("fxEstimatedMonths", () => {
                     eurTxn("2026-06-20"),
                     eurTxn("2026-08-31"),
                     eurTxn("2026-09-30"),
+                    eurTxn("2026-10-31"),
                 ],
             }),
         ).toEqual([]);

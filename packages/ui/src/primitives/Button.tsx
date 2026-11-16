@@ -10,6 +10,7 @@ type ButtonIntent =
     | "danger"
     | "info"
     | "neutral"
+    | "primary"
     | "brand"
     | "commit"
     | "surface";
@@ -66,6 +67,11 @@ const intentClasses: Record<ButtonIntent, string> = {
     surface:
         "polli:bg-surface-opaque polli:text-theme-text-strong " +
         "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
+    // The main control on its screen: the fill / on-fill pair, the same orange
+    // with dark text as a selected tab, in both modes.
+    primary:
+        "polli:bg-theme-fill polli:text-theme-on-fill " +
+        "polli:hover:bg-theme-fill-hover polli:transition-colors",
     // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +

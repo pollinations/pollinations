@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Snackbot",
+    "url": "https://snackbot.pollinations.app",
+    "description": "A vending machine whose brain is a language model: it holds the stock, the credit and the change, and decides what each button press does. BYOP, you pay your own Pollen.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "mhmdrizzzki",
+    "githubUserId": "82577674",
+    "repositoryUrl": "https://github.com/mhmdrizzzki/snackbot",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19190",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/159e5c08-b663-4eb3-946d-3758ac81197a"
+  },
+  {
+    "emoji": "🎮",
     "name": "Hearsay",
     "url": "https://marcus-mok-gh.github.io/hearsay",
     "description": "Two AI models pass a story back and forth until it drifts. Bet whether the meaning survives, and a decision model judges the last retelling with its confidence.",

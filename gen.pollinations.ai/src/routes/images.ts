@@ -109,7 +109,7 @@ function resolveParams(opts: {
     width?: number;
     height?: number;
     quality: string;
-    seed: number;
+    seed?: number;
 } {
     // Width/height are only emitted when the caller actually passed `size`.
     // Leaving them undefined lets the image-param schema fill model-specific
@@ -123,7 +123,10 @@ function resolveParams(opts: {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
-        seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
+        // Keep the caller's seed in the cache identity, but leave a missing
+        // one out: the execution picks a random seed after the cache lookup so
+        // identical seed-less requests join one generation.
+        ...(typeof opts.seed === "number" ? { seed: opts.seed } : {}),
     };
 }
 
@@ -455,10 +458,17 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
+    const resolved = resolveParams(body);
 
     const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
-        ...resolveParams(body),
+        ...resolved,
+        // A seed-less request still needs a random seed for the provider, but
+        // only after the cache lookup: the identity above stays stable so a
+        // retry shares the first generation instead of billing a second one.
+        ...(resolved.seed === undefined
+            ? { seed: Math.floor(Math.random() * 2147483647) }
+            : {}),
         ...collectPassthrough(body, "image"),
         model,
     });

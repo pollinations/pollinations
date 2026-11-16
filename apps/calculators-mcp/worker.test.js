@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "check_digit",
+                "integer_math",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -768,6 +769,103 @@ test("check_digit rejects values that are not the shape of their scheme", async 
     ]) {
         assert.equal(
             (await client.callTool({ name: "check_digit", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("integer_math is exact past the range of a JSON number", async (t) => {
+    const client = await clientFor(t);
+
+    // 2**128, which a float would round and a JSON number could not carry.
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "340282366920938463463374607431768211455",
+                operator: "add",
+                b: "1",
+            })
+        ).result,
+        "340282366920938463463374607431768211456",
+    );
+
+    // 2**256, exact in full.
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "2",
+                operator: "power",
+                b: "256",
+            })
+        ).result,
+        "115792089237316195423570985008687907853269984665640564039457584007913129639936",
+    );
+
+    // 100000000000000000000000000000001 % 97, which no mental arithmetic gets right.
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "100000000000000000000000000000001",
+                operator: "modulo",
+                b: "97",
+            })
+        ).result,
+        "62",
+    );
+});
+
+test("integer_math truncates toward zero and takes the gcd of signed values", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "-7",
+                operator: "divide",
+                b: "2",
+            })
+        ).result,
+        "-3",
+    );
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "-48",
+                operator: "gcd",
+                b: "18",
+            })
+        ).result,
+        "6",
+    );
+    assert.equal(
+        (
+            await call(client, "integer_math", {
+                a: "10",
+                operator: "subtract",
+                b: "25",
+            })
+        ).result,
+        "-15",
+    );
+});
+
+test("integer_math rejects what is not integer arithmetic", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { a: "5", operator: "divide", b: "0" },
+        { a: "5", operator: "modulo", b: "0" },
+        { a: "2", operator: "power", b: "-3" },
+        { a: "7.5", operator: "add", b: "1" },
+        { a: "1e10", operator: "add", b: "1" },
+        { a: "abc", operator: "add", b: "1" },
+        { a: "1", operator: "add", b: "" },
+        { a: "1", operator: "sqrt", b: "2" },
+        // Refused before computing, so the request cannot burn a minute of CPU.
+        { a: "2", operator: "power", b: "999999999" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "integer_math", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

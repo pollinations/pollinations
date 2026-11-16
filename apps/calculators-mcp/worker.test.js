@@ -69,6 +69,7 @@ for (const modern of [false, true])
                 "to_fraction",
                 "convert_number_base",
                 "check_digit",
+                "bitwise",
                 "integer_math",
                 "diff_text",
                 "create_qr",
@@ -944,6 +945,79 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("bitwise is exact past the width of a machine word", async (t) => {
+    const client = await clientFor(t);
+
+    // 2**128 - 1 AND its low byte.
+    assert.equal(
+        (
+            await call(client, "bitwise", {
+                a: "340282366920938463463374607431768211455",
+                operator: "and",
+                b: "255",
+            })
+        ).result,
+        "255",
+    );
+
+    // xor of two disjoint bit ranges is their sum.
+    assert.equal(
+        (await call(client, "bitwise", { a: "240", operator: "xor", b: "15" }))
+            .result,
+        "255",
+    );
+
+    // not follows infinite two's complement, so not of 0 is -1.
+    assert.equal(
+        (await call(client, "bitwise", { a: "0", operator: "not" })).result,
+        "-1",
+    );
+
+    // shifting a small value left keeps every bit of a 128-bit result.
+    assert.equal(
+        (
+            await call(client, "bitwise", {
+                a: "1",
+                operator: "shift_left",
+                b: "128",
+            })
+        ).result,
+        "340282366920938463463374607431768211456",
+    );
+
+    // arithmetic right shift rounds toward negative infinity, like BigInt.
+    assert.equal(
+        (
+            await call(client, "bitwise", {
+                a: "-8",
+                operator: "shift_right",
+                b: "1",
+            })
+        ).result,
+        "-4",
+    );
+});
+
+test("bitwise rejects malformed operands and out-of-range shifts", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { a: "5", operator: "and" },
+        { a: "5", operator: "and", b: "" },
+        { a: "5", operator: "shift_left", b: "-1" },
+        { a: "5", operator: "shift_left", b: "100001" },
+        { a: "7.5", operator: "or", b: "1" },
+        { a: "abc", operator: "and", b: "1" },
+        { a: "1", operator: "nand", b: "1" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "bitwise", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

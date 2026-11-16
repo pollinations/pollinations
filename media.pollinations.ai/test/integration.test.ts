@@ -884,6 +884,27 @@ describe("media.pollinations.ai", () => {
         expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
     });
 
+    it("keeps a Unicode multipart filename through the download header", async () => {
+        // Browsers and curl send filename parameters as raw UTF-8 (RFC 7578).
+        // Busboy's latin1 default used to mangle every non-ASCII name, and the
+        // download header then encoded the mojibake a second time.
+        for (const name of ["日本語.png", "emoji-🎉.png", "dash-—emdash.png"]) {
+            const { status, body } = await uploadViaForm(VALID_KEY, {
+                fileName: name,
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+
+            const getRes = await SELF.fetch(upload.url);
+            expect(getRes.headers.get("content-disposition")).toBe(
+                `inline; filename*=UTF-8''${encodeURIComponent(name)}`,
+            );
+            expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(
+                TINY_PNG,
+            );
+        }
+    });
+
     it("reads raw-upload filenames from filename* before X-File-Name", () => {
         const name = (headers: Record<string, string>) =>
             rawUploadFileName(new Headers(headers));

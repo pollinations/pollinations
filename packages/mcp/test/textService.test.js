@@ -55,6 +55,33 @@ test("generateText returns requested token log probabilities", async (t) => {
     assert.deepEqual(JSON.parse(result.content.at(-1).text).logprobs, logprobs);
 });
 
+test("generateText returns the refusal text of a refusal-only completion", async (t) => {
+    const original = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = original;
+    });
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "test-model" }])
+            : Response.json({
+                  choices: [
+                      {
+                          message: { content: null, refusal: "I can't help" },
+                          finish_reason: "stop",
+                      },
+                  ],
+              });
+    const generateText = textTools.find(([name]) => name === "generateText")[3];
+    const result = await generateText(
+        {
+            model: "test-model",
+            messages: [{ role: "user", content: "Hi" }],
+        },
+        { http: { authInfo: { token: "sk_test" } } },
+    );
+    assert.equal(result.content[0].text, "I can't help");
+});
+
 test("generateText labels MP3 audio with the audio/mpeg media type", async (t) => {
     const original = globalThis.fetch;
     t.after(() => {

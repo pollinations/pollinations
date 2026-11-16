@@ -57,3 +57,36 @@ test("listModels returns the live response without filtering it", async (t) => {
 
     assert.deepEqual(JSON.parse(result.content[0].text), body);
 });
+
+const [, , , listMcpServers] = discoveryTools.find(
+    ([name]) => name === "listMcpServers",
+);
+
+test("listMcpServers returns the hosted catalog unchanged", async (t) => {
+    const catalog = {
+        data: [
+            {
+                id: "ffmpeg",
+                name: "FFmpeg",
+                url: "https://gen.pollinations.ai/mcp/ffmpeg",
+                pricing: { currency: "pollen" },
+            },
+        ],
+    };
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init = {}) => {
+        calls.push({ url: new URL(String(input)), init });
+        return Response.json(catalog);
+    };
+
+    const result = await listMcpServers({}, CONTEXT);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url.pathname, "/mcp");
+    assert.equal(calls[0].init.headers.Authorization, "Bearer sk_test");
+    assert.deepEqual(JSON.parse(result.content[0].text), catalog);
+});

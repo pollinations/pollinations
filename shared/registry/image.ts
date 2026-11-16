@@ -757,6 +757,7 @@ const IMAGE_BASE_SERVICES = {
         provider: "openai",
         publisher: "OpenAI",
         category: "image",
+        cacheVersion: "preserve-output-format-v1",
         addedDate: new Date("2026-11-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
@@ -1772,7 +1773,7 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             promptImageTokens: 0, // included in output-video price
-            completionVideoSeconds: 0.05, // per reported output second at 720p
+            completionVideoSeconds: 0.07, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",

@@ -10,6 +10,7 @@ import {
     duration,
     earlyErrors,
     escalates,
+    gpuPoolsMissing,
     heartbeat,
     jobsStale,
     legacyDown,
@@ -289,7 +290,6 @@ test("payments fail on any row and open on the first check with a ping", () => {
         unpaid("pi_late", "2026-11-08 14:32:15", {
             ref: "in_late",
             amount_cents: 1065,
-            reason: "amount mismatch",
         }),
         unpaid("pi_pack", "2026-11-08 13:00:00"),
         webhook5xx,
@@ -314,7 +314,6 @@ test("payments fail on any row and open on the first check with a ping", () => {
         "pi_late",
         "in_late",
         "$10.65 auto top-up, 11-08 14:32 UTC",
-        "amount mismatch",
     ].map((part) => text.indexOf(part));
     assert.ok(
         order.every((at, i) => at > (order[i - 1] ?? -1)),
@@ -989,4 +988,19 @@ test("a job is stale past its table's max age, after 3 checks, pinging as the ta
         { now: 0 },
     );
     assert.match(plain(card.text), /none in the last day/);
+});
+
+test("GPU pool counts flag capacity below the expected fleet and allow replacements", () => {
+    const found = gpuPoolsMissing({ flux: [], zimage: [{}], sana: [{}] });
+    assert.deepEqual(Object.keys(found), ["gpu:flux", "gpu:sana"]);
+    assert.deepEqual(found["gpu:sana"], {
+        kind: "GPU_MISSING",
+        pool: "sana",
+        active: 1,
+        expected: 2,
+    });
+    assert.deepEqual(
+        gpuPoolsMissing({ flux: [{}], zimage: [{}], sana: [{}, {}, {}] }),
+        {},
+    );
 });

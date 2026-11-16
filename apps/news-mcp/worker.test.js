@@ -25,12 +25,13 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes seven tools using the MCP transport", async () => {
+test("private worker exposes eight tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
         "earthquake_search",
         "feed_read",
+        "history_on_this_day",
         "hn_item",
         "hn_search",
         "hn_stories",
@@ -58,7 +59,7 @@ test("private worker exposes seven tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 7);
+    assert.equal((await c.listTools()).tools.length, 8);
     await c.close();
 });
 
@@ -382,4 +383,59 @@ test("Atom xml:base applies through feed, entry and link", () => {
         result.entries[0].link,
         "https://example.net/base/posts/2026/hello",
     );
+});
+
+test("history_on_this_day reads each offered type under its own key", async (t) => {
+    const paths = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const u = new URL(url);
+        assert.equal(u.hostname, "en.wikipedia.org");
+        paths.push(u.pathname);
+        const type = u.pathname.split("/")[5];
+        return Response.json({
+            [type]: [
+                {
+                    text: `${type} entry`,
+                    ...(type === "holidays" ? {} : { year: 2001 }),
+                    pages: [
+                        {
+                            title: "Wikipedia",
+                            description: "Free online encyclopedia",
+                            content_urls: {
+                                desktop: {
+                                    page: "https://en.wikipedia.org/wiki/Wikipedia",
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+    const c = await client();
+    for (const type of ["selected", "deaths", "holidays"]) {
+        const result = await c.callTool({
+            name: "history_on_this_day",
+            arguments: { month: 1, day: 15, type, limit: 5 },
+        });
+        assert.equal(result.isError, undefined);
+        const parsed = JSON.parse(result.content[0].text);
+        assert.equal(parsed.items[0].text, `${type} entry`);
+        assert.equal(parsed.items[0].year, type === "holidays" ? null : 2001);
+        assert.equal(parsed.items[0].pages[0].title, "Wikipedia");
+    }
+    assert.deepEqual(paths, [
+        "/api/rest_v1/feed/onthisday/selected/01/15",
+        "/api/rest_v1/feed/onthisday/deaths/01/15",
+        "/api/rest_v1/feed/onthisday/holidays/01/15",
+    ]);
+
+    const missing = await c.callTool({
+        name: "history_on_this_day",
+        arguments: { month: 2, day: 30 },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /Month 2 has no day 30/);
+    assert.equal(paths.length, 3);
+    await c.close();
 });

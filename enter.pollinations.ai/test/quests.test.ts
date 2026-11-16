@@ -24,6 +24,7 @@ const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
 const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
 const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
 const TOP_UP_100_SINCE_LAUNCH_QUEST_ID = "top_up_100_since_launch";
+const FIRST_AUTO_TOP_UP_QUEST_ID = "first_auto_top_up";
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
     "2026-06-21T00:00:00.000Z",
 );
@@ -1125,6 +1126,80 @@ test("top-up 100 quest sums multiple Stripe checkout rows", async ({
     expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
+
+test("first auto top-up quest records only a paid auto top-up", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await addAutoTopUp(user.id, "failed", "failed", null);
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([]);
+
+    await addAutoTopUp(user.id, "paid", "paid", Date.now());
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([{ pollenAmount: 20 }]);
+});
+
+test("first auto top-up quest counts auto top-ups paid from launch day", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    // Users already on auto top-up earn it with their next refill.
+    await addAutoTopUp(
+        user.id,
+        "before",
+        "paid",
+        Date.parse("2026-10-01T00:00:00Z"),
+    );
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([]);
+
+    // A charge started before launch but paid after it counts.
+    await addAutoTopUp(
+        user.id,
+        "retried",
+        "paid",
+        Date.parse("2026-10-13T00:01:00Z"),
+        Date.parse("2026-10-12T23:59:00Z"),
+    );
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([{ pollenAmount: 20 }]);
+});
+
+const autoTopUpRewards = () =>
+    drizzle(env.DB, { schema })
+        .select({ pollenAmount: schema.rewards.pollenAmount })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, FIRST_AUTO_TOP_UP_QUEST_ID));
+
+// Timestamps hold milliseconds, as the auto top-up code writes them; drizzle's
+// timestamp mode would write seconds.
+const addAutoTopUp = (
+    userId: string,
+    id: string,
+    status: string,
+    completedAt: number | null,
+    createdAt = completedAt ?? Date.now(),
+) =>
+    env.DB.prepare(
+        `INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status, created_at, updated_at, completed_at)
+        VALUES (?, ?, 5, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `attempt_${userId}_${id}`,
+            userId,
+            status,
+            createdAt,
+            createdAt,
+            completedAt,
+        )
+        .run();
 
 test("POST /account/quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,

@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { readGpuServers } from "../../../../shared/gpu-registry.ts";
 import {
     AGENT_DAILY_LIMIT,
     brief,
@@ -41,6 +42,8 @@ import {
     earlyErrors,
     escalates,
     GEN_HEARTBEATS,
+    GPU_POOLS,
+    gpuPoolsMissing,
     jobsStale,
     lasted,
     legacyDown,
@@ -249,14 +252,17 @@ export class Watch extends DurableObject {
         let data = { recent: [], last10: [], last60: [], official: new Set() };
         // gen's public catalog; null when it couldn't be read.
         let publicModels = null;
-        const [pub, up, enterDown, early, freshness, payments] =
+        const [pub, up, enterDown, early, freshness, payments, gpuPools] =
             await Promise.all([
                 isUp(PUBLIC),
                 isUp(UPSTREAM),
                 enterError(this.env.COMMUNITY_PROBE_KEY),
-                this.early(),
+                // Requests that failed before any model was known, per
+                // minute over the last 30 minutes.
+                this.tinybird("infra_watch_early_errors"),
                 this.freshness(now),
-                this.payments(),
+                this.tinybird("infra_watch_payments"),
+                this.gpuPools(),
             ]);
         const hosts = { public: pub, upstream: up };
         // Read data through whichever hostname answers, public first.
@@ -289,13 +295,13 @@ export class Watch extends DurableObject {
                 console.error(`check failed: ${error.message}`);
                 found = conditions({ hosts, analyticsDown: true });
             }
-        // Enter, the requests failing before any model, the analytics feeds
-        // and payments are checked on their own, so they are judged whatever
-        // gen does.
+        // Enter, early errors, analytics feeds, payments and GPU pools have
+        // independent checks, so they are judged whatever gen does.
         if (enterDown) found.enter = { kind: "ENTER_DOWN", error: enterDown };
         if (early) Object.assign(found, earlyErrors(early));
         if (freshness) Object.assign(found, jobsStale(freshness));
         if (payments) Object.assign(found, paymentsFailing(payments));
+        if (gpuPools) Object.assign(found, gpuPoolsMissing(gpuPools));
 
         const sweeps = await sweepDomains(
             this.env.DB,
@@ -338,15 +344,16 @@ export class Watch extends DurableObject {
                     Boolean(this.cycle),
                 ),
             );
-        // Unknown sign-ups, legacy bridges, early errors, job ages or payments
-        // keep their open cards. A sign-up card Discord hasn't taken yet is
-        // retried until it has: its 24-hour window can end first.
+        // Unknown sources keep their open cards. A sign-up card Discord
+        // hasn't taken yet is retried until it has: its 24-hour window can
+        // end first.
         const unknown = [
             signups === null && "signup:",
             legacy === null && "legacy:",
             early === null && "early",
             freshness === null && "stale:",
             payments === null && "payments",
+            gpuPools === null && "gpu:",
         ].filter(Boolean);
         for (const [key, incident] of Object.entries(open))
             if (unknown.some((prefix) => key.startsWith(prefix)))
@@ -577,18 +584,38 @@ export class Watch extends DurableObject {
         };
     }
 
-    // Requests that failed before any model was known, per minute over the
-    // last 30 minutes, from Tinybird, read every check; null when the read
-    // failed.
-    async early() {
+    // A Tinybird pipe's rows, read every check; null when the read failed.
+    async tinybird(name) {
         try {
             return await pipe(
-                "infra_watch_early_errors",
+                name,
                 {},
                 { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
             );
         } catch (error) {
-            console.error(`early errors: ${error.message}`);
+            console.error(`${name}: ${error.message}`);
+            return null;
+        }
+    }
+
+    // Use the same live registry entries as Gen's image router. A failed
+    // read is unknown, not evidence that a missing GPU has recovered.
+    async gpuPools() {
+        try {
+            return Object.fromEntries(
+                await Promise.all(
+                    Object.keys(GPU_POOLS).map(async (pool) => [
+                        pool,
+                        await readGpuServers(
+                            this.env.GEN_KV,
+                            "production",
+                            pool,
+                        ),
+                    ]),
+                ),
+            );
+        } catch (error) {
+            console.error(`GPU registry: ${error.message}`);
             return null;
         }
     }
@@ -627,21 +654,6 @@ export class Watch extends DurableObject {
             ];
         } catch (error) {
             console.error(`freshness: ${error.message}`);
-            return null;
-        }
-    }
-
-    // Payments in trouble, from Tinybird, read every check; null when the
-    // read failed.
-    async payments() {
-        try {
-            return await pipe(
-                "infra_watch_payments",
-                {},
-                { tinybirdToken: this.env.TINYBIRD_TOKEN, fetchImpl: fetch },
-            );
-        } catch (error) {
-            console.error(`payments: ${error.message}`);
             return null;
         }
     }

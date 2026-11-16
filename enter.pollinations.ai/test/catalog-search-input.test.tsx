@@ -1,7 +1,8 @@
 import { EditableCombobox } from "@pollinations/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
+import { BaseModelInput } from "../frontend/src/components/community-endpoints/base-model-input.tsx";
 import { fetchModelCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import { Models } from "../frontend/src/components/models/models.tsx";
 
@@ -30,7 +31,17 @@ vi.mock("../frontend/src/config.ts", () => ({
 
 afterEach(() => vi.unstubAllGlobals());
 
-it("keeps spaces when typing a multiword catalog search", async () => {
+function BaseModel() {
+    const [value, setValue] = useState("");
+    return (
+        <BaseModelInput value={value} disabled={false} onChange={setValue} />
+    );
+}
+
+it.each([
+    ["catalog", <Models key="catalog" />],
+    ["base model", <BaseModel key="base-model" />],
+])("keeps spaces when typing a multiword %s search", async (_name, element) => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.stubGlobal("requestAnimationFrame", () => 0);
     vi.stubGlobal("cancelAnimationFrame", () => {});
@@ -40,7 +51,7 @@ it("keeps spaces when typing a multiword catalog search", async () => {
     vi.mocked(fetchModelCatalog).mockReturnValue(catalog.promise);
     let renderer: ReactTestRenderer | undefined;
     await act(async () => {
-        renderer = create(<Models />);
+        renderer = create(element);
     });
     await act(async () => catalog.resolve([]));
     const search = () => renderer?.root.findByType(EditableCombobox).props;

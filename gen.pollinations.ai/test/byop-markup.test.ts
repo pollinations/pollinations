@@ -784,7 +784,7 @@ describe("BYOP markup", () => {
             checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),
         ).rejects.toMatchObject({
             status: 402,
-            message: expect.stringContaining("~0.0100"),
+            message: expect.stringContaining("costs about $0.0100"),
         });
     });
 

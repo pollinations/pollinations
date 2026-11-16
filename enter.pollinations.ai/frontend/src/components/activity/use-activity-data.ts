@@ -178,11 +178,17 @@ export const ACTIVITY_SOURCES: Record<
             };
             return {
                 rows: daily.map(earningsRow),
-                download: async () =>
+                // Narrowed by the same picks as the chart and table.
+                download: async (picks) =>
                     downloadActivityCsv(
                         `earnings-${query.period}`,
                         EARNINGS_CSV_COLUMNS,
-                        daily,
+                        daily.filter((row) =>
+                            isPicked("earnings", earningsRow(row), picks, [
+                                "keys",
+                                "models",
+                            ]),
+                        ),
                     ),
             };
         },

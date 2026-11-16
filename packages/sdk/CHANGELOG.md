@@ -2,7 +2,7 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.28] - 2026-11-10
+## [5.1.0-alpha.31] - 2026-11-16
 
 ### Fixed
 - Generation hooks honor the caller's `AbortSignal` like `cancel()`, keeping
@@ -11,6 +11,17 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   storage namespace.
 - `Message` accepts assistant turns with `null` content and `tool_calls`, so
   tool-use history can be passed back without casts.
+
+## [5.1.0-alpha.29] - 2026-11-14
+
+### Added
+- `ModelInfo.required_safety` exposes the mandatory safety checks applied to a model.
+
+## [5.1.0-alpha.28] - 2026-11-11
+
+### Fixed
+- `useAccountKeyUsage` forwards `before_event_id`, so paging with the
+  previous page's cursor no longer skips rows that share its timestamp.
 
 ## [5.1.0-alpha.27] - 2026-11-06
 

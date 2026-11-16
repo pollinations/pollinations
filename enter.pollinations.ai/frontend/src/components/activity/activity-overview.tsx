@@ -383,7 +383,7 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                 className={
                                     entry.selected
                                         ? "cursor-pointer bg-theme-fill text-theme-on-fill hover:bg-theme-fill!"
-                                        : "cursor-pointer hover:bg-theme-fill/40!"
+                                        : "cursor-pointer hover:bg-theme-fill-wash!"
                                 }
                             >
                                 <TableCell className="max-w-64 text-xs [overflow-wrap:anywhere]">

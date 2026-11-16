@@ -172,8 +172,12 @@ function AccountDetails({
                     id={secondaryId}
                     className={cn(
                         "polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4",
+                        // On the honey, icons (e.g. the paid and Quest
+                        // markers) take the pill's text colour; they still
+                        // differ by shape. `!` beats the unlayered wallet
+                        // colour classes.
                         onFill
-                            ? "polli:opacity-80"
+                            ? "polli:opacity-80 polli:[&_svg]:text-current!"
                             : "polli:text-theme-text-base",
                     )}
                 >
@@ -240,7 +244,7 @@ export function AccountMenu({
                         aria-describedby={
                             secondaryContent != null ? statusId : undefined
                         }
-                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full"
+                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full polli:text-theme-on-fill"
                     >
                         {!dashboardHref && avatar}
                         <AccountDetails

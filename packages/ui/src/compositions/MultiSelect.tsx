@@ -32,8 +32,10 @@ const TRIGGER_BASE =
 const ROW_BASE =
     "polli-control polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
 
+// Selection shows by fill, never a border: an empty box is a quiet tint, a
+// ticked box on its honey row a darker tint with the tick.
 const CHECK_BASE =
-    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-border polli:text-xs";
+    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:bg-theme-text-strong/10 polli:text-xs";
 
 export const MultiSelect: FC<MultiSelectProps> = ({
     options,
@@ -158,7 +160,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             ROW_BASE,
                             isAllSelected
                                 ? "polli:bg-theme-fill polli:font-medium polli:text-theme-on-fill"
-                                : "polli:text-theme-text-base polli:hover:bg-theme-fill/40",
+                                : "polli:text-theme-text-base polli:hover:bg-theme-fill-wash",
                         )}
                     >
                         <span
@@ -166,7 +168,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
-                                    "polli:border-theme-on-fill polli:text-theme-on-fill",
+                                    "polli:bg-theme-on-fill/15 polli:text-theme-on-fill",
                             )}
                         >
                             {isAllSelected && "✓"}
@@ -185,7 +187,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     ROW_BASE,
                                     isChecked
                                         ? "polli:bg-theme-fill polli:text-theme-on-fill"
-                                        : "polli:text-theme-text-base polli:hover:bg-theme-fill/40",
+                                        : "polli:text-theme-text-base polli:hover:bg-theme-fill-wash",
                                 )}
                             >
                                 <span
@@ -193,7 +195,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
-                                            "polli:border-theme-on-fill polli:text-theme-on-fill",
+                                            "polli:bg-theme-on-fill/15 polli:text-theme-on-fill",
                                     )}
                                 >
                                     {isChecked && "✓"}

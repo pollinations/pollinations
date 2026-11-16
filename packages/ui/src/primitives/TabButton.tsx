@@ -69,7 +69,7 @@ const variantClasses = {
         active: "polli:bg-theme-fill polli:text-theme-on-fill",
         mixed: "polli:bg-theme-fill/45 polli:text-theme-text-strong polli:hover:bg-theme-fill polli:hover:text-theme-on-fill",
         inactive:
-            "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong",
+            "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
     },
     // Transparent until hovered or selected — for multi-select toggles and
     // inline rows where a filled idle pill would read as a hard selection.
@@ -78,7 +78,7 @@ const variantClasses = {
         active: "polli:bg-theme-fill polli:text-theme-on-fill",
         mixed: "polli:bg-theme-fill/45 polli:text-theme-text-strong polli:hover:bg-theme-fill polli:hover:text-theme-on-fill",
         inactive:
-            "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong",
+            "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
     },
 } as const;
 
@@ -101,7 +101,7 @@ const intentClasses = {
     brand: {
         active: "polli:bg-theme-fill polli:font-bold polli:text-theme-on-fill",
         inactive:
-            "polli:bg-transparent polli:font-bold polli:text-theme-text-strong polli:hover:bg-theme-fill/40",
+            "polli:bg-transparent polli:font-bold polli:text-theme-text-strong polli:hover:bg-theme-fill-wash",
     },
 } as const;
 

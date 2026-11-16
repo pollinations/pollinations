@@ -40,7 +40,7 @@ export const Collapsible: FC<CollapsibleProps> = ({
     disabled = false,
     wrapperClassName,
     triggerClassName,
-    hoverClassName = "polli:hover:bg-theme-fill/40",
+    hoverClassName = "polli:hover:bg-theme-fill-wash",
     focusClassName,
     panelClassName = "polli:border-t polli:border-theme-border polli:px-3 polli:pt-3 polli:pb-3",
     ariaLabel,

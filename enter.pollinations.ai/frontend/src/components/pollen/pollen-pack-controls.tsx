@@ -49,7 +49,7 @@ export const PollenPackButtons: FC<{
                         "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
                         selected
                             ? "bg-theme-fill text-theme-on-fill"
-                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-fill/40",
+                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-fill-wash",
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">

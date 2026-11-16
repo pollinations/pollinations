@@ -53,7 +53,7 @@ const outlined =
     "polli:border polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:text-theme-text-strong " +
     "polli:transition-colors polli:[.dark_&]:bg-transparent";
 const intentClasses: Record<ButtonIntent, string> = {
-    brand: `${outlined} polli:hover:bg-theme-fill/40 polli:[.dark_&]:hover:bg-theme-fill/40`,
+    brand: `${outlined} polli:hover:bg-theme-fill-wash polli:[.dark_&]:hover:bg-theme-fill-wash`,
     commit:
         `${outlined} polli:hover:border-theme-fill polli:hover:bg-theme-fill polli:hover:text-theme-on-fill ` +
         "polli:focus-visible:border-theme-fill polli:focus-visible:bg-theme-fill polli:focus-visible:text-theme-on-fill " +
@@ -69,7 +69,7 @@ const intentClasses: Record<ButtonIntent, string> = {
     // the accent as the ambient button does.
     surface:
         "polli:bg-surface-opaque polli:text-theme-text-strong " +
-        "polli:hover:bg-theme-fill/40 polli:transition-colors",
+        "polli:hover:bg-theme-fill-wash polli:transition-colors",
     // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +

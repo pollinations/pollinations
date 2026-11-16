@@ -42,7 +42,7 @@ const MONTH_LABELS = [
 ];
 
 const NAV_BUTTON =
-    "polli-control polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-subtle";
+    "polli-control polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-fill-wash";
 
 function addUtcMonths(date: Date, months: number): Date {
     return new Date(
@@ -309,7 +309,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                         selected
                                             ? "polli:bg-theme-fill polli:text-theme-on-fill"
-                                            : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
+                                            : "polli:text-ink-700 polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
                                         !selectable &&
                                             "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                     )}
@@ -370,7 +370,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                                 "polli:ring-1 polli:ring-theme-border",
                                             selected
                                                 ? "polli:bg-theme-fill polli:text-theme-on-fill"
-                                                : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
+                                                : "polli:text-ink-700 polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
                                             !selectable &&
                                                 "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                         )}

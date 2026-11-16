@@ -25,7 +25,7 @@ export function DropdownItem<T extends React.ElementType = "button">({
             {...(Component === "button" ? { type: "button" } : undefined)}
             {...rest}
             className={cn(
-                "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong polli:focus-visible:bg-theme-fill/40",
+                "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong polli:focus-visible:bg-theme-fill-wash",
                 className,
             )}
         >

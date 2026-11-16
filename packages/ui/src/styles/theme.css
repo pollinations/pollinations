@@ -56,6 +56,7 @@
     --color-theme-bg-hover: var(--polli-color-bg-hover);
     --color-theme-fill: var(--polli-color-fill);
     --color-theme-fill-hover: var(--polli-color-fill-hover);
+    --color-theme-fill-wash: var(--polli-color-fill-wash);
     --color-theme-on-fill: var(--polli-color-on-fill);
     --color-theme-bg-pale: var(--polli-color-bg-pale);
 

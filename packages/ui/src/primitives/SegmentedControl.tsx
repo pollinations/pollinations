@@ -48,7 +48,7 @@ export function SegmentedControl<T extends string>({
                             "polli-control polli:rounded-full polli:px-3 polli:py-1 polli:text-sm polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200",
                             selected
                                 ? "polli:bg-theme-fill polli:text-theme-on-fill"
-                                : "polli:text-theme-text-base polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong",
+                                : "polli:text-theme-text-base polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
                         )}
                     >
                         {option.label}

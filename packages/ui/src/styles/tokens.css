@@ -136,6 +136,8 @@
     --polli-color-honey:           oklch(0.83 0.15 calc(var(--polli-hue) - 12));
     --polli-color-fill:            var(--polli-color-honey);
     --polli-color-fill-hover:      oklch(0.78 0.16 calc(var(--polli-hue) - 14));
+    /* Wash — the pale fill for hovering something not selected. */
+    --polli-color-fill-wash:       color-mix(in oklab, var(--polli-color-fill) 40%, transparent);
     --polli-color-on-fill:         var(--polli-color-text-strong);
 }
 
@@ -157,6 +159,7 @@
        quiet grey, so it still reads as selected. */
     --polli-color-fill:            color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
     --polli-color-fill-hover:      var(--polli-color-bg-hover);
+    --polli-color-fill-wash:       color-mix(in oklab, var(--polli-color-fill) 40%, transparent);
     --polli-color-on-fill:         var(--polli-color-text-strong);
 }
 
@@ -326,5 +329,8 @@
     --polli-color-honey:           oklch(0.78 0.16 calc(var(--polli-hue) - 14));
     --polli-color-fill:            var(--polli-color-honey);
     --polli-color-fill-hover:      oklch(0.73 0.16 calc(var(--polli-hue) - 16));
+    /* A lighter wash than in light mode: at 40% the honey turns mid-brown
+       under light text (3.8:1); at 25% small text keeps 5.3:1. */
+    --polli-color-fill-wash:       color-mix(in oklab, var(--polli-color-fill) 25%, transparent);
     --polli-color-on-fill:         var(--polli-color-brand-dark);
 }

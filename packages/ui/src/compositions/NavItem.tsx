@@ -15,7 +15,7 @@ type BaseNavItemProps = {
 const base =
     "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
 const activeClasses = "polli:bg-theme-fill polli:text-theme-on-fill";
-const inactiveClasses = "polli:text-ink-800 polli:hover:bg-theme-fill/40";
+const inactiveClasses = "polli:text-ink-800 polli:hover:bg-theme-fill-wash";
 
 export type NavItemProps<T extends React.ElementType = "button"> =
     PropsWithChildren<BaseNavItemProps> & {

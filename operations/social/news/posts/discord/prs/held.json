@@ -3,9 +3,7 @@
     "18816": {
       "merge_sha": "73311dad9465c7ddd0ceb9cdc0f2ab8b171f6dbb",
       "merged_at": "2026-10-30T23:50:15Z",
-      "required": [
-        "deploy-legacy-caches.yml:deploy (text)"
-      ]
+      "required": []
     },
     "19478": {
       "merge_sha": "392828f9092a1f29fc891a01ca827e432b932a43",
@@ -20,8 +18,23 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "19913": {
+      "merge_sha": "c079d437d5f21937546cde9a95dbd03303eccf9c",
+      "merged_at": "2026-11-16T23:14:37Z",
+      "required": []
+    },
+    "19914": {
+      "merge_sha": "0d156885b7aaef426bf6c9d825b1236fafd573d6",
+      "merged_at": "2026-11-16T23:14:46Z",
+      "required": []
+    },
+    "19916": {
+      "merge_sha": "0aa2d1168137e93a10fe3b1330f308c7eb7e1c89",
+      "merged_at": "2026-11-16T23:14:41Z",
+      "required": []
     }
   },
   "production": "2c370c6ad3c92fd06ab9925cc2880b5fd659ab6b",
-  "master": "ba13d3b9b3828a1b990be95229c700859cd0445a"
+  "master": "0d156885b7aaef426bf6c9d825b1236fafd573d6"
 }

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-15T06:09:17.489816+00:00",
+  "generated_at": "2026-11-16T06:07:33.312693+00:00",
   "models": [
     {
       "id": "2026-10-17:anthropic/claude-fable-5.1",
@@ -3258,17 +3258,6 @@
   ],
   "api": [
     {
-      "id": "pr-17739:POST /v1/systemone",
-      "endpoint": "POST /v1/systemone",
-      "summary": "Create Decision (System One path)",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-16",
-      "pr": 17739,
-      "url": "https://github.com/pollinations/pollinations/pull/17739"
-    },
-    {
       "id": "pr-17833:DELETE /alpha/e2b/sandboxes/{id}",
       "endpoint": "DELETE /alpha/e2b/sandboxes/{id}",
       "summary": "Delete sandbox",
@@ -5335,57 +5324,6 @@
         17615
       ],
       "kind": "model"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "🤖",
-      "title": "JavaScript joins Computer MCP",
-      "text": "Agents can run a JavaScript ES module function alongside bash, work with persistent files, and receive its output and return value as JSON. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        16679
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "🔗",
-      "title": "System One gets a v1 path",
-      "text": "Send TypeSafe decision requests to `POST /v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17711,
-        17739
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "🔗",
-      "title": "OAuth scopes become discoverable",
-      "text": "OAuth clients can read the supported generate, profile, usage, keys, and machines scopes from authorization metadata before requesting access. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17621
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "✨",
-      "title": "An SDK skill for agents",
-      "text": "Agents can discover a JavaScript `@pollinations/sdk` quickstart covering authentication, text generation, and saving a generated image. [Explore the SDK](https://react.pollinations.ai).",
-      "prs": [
-        17491
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "🤖",
-      "title": "The homepage speaks Markdown",
-      "text": "Agents requesting `text/markdown` from the pollinations.ai homepage get a short Markdown introduction and a link to the agent entry point. [Visit pollinations.ai](https://pollinations.ai).",
-      "prs": [
-        17669
-      ],
-      "kind": "product"
     }
   ]
 }

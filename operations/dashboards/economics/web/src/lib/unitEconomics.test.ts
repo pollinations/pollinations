@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
+import { infrastructureReport } from "./apiCosts";
 import { dataConfidence } from "./dataConfidence";
 import { modelReconcileRows } from "./modelReconcile";
 import {
     matchesSituation,
     meterMatchPct,
     providerCostCheck,
+    providerEconomicsReport,
     type UnitEconomicsRow,
     unitEconomicsReport,
     unitEconomicsRows,
@@ -56,6 +58,77 @@ const data = (over: Partial<Data>): Data => ({
     vendorLedger: [],
     opPollen: [],
     ...over,
+});
+
+it("adds shared infrastructure to vendor totals without treating it as missing inference usage", () => {
+    const month = "2026-07";
+    const input = data({
+        vendorLedger: [
+            cloud({ paid: -100 }),
+            cloud({
+                vendor: "bedrock",
+                type: "infra",
+                resource_name: "EC2",
+                paid: -30,
+                credit: -15,
+            }),
+            cloud({ type: "infra", resource_name: "EC2", paid: 5 }),
+            cloud({
+                type: "infra",
+                resource_name: "Ignore grant",
+                credit: 500,
+            }),
+            cloud({
+                vendor: "cloudflare",
+                type: "infrastructure",
+                resource_name: "Workers",
+                paid: -10,
+            }),
+            cloud({ vendor: "cloudflare", type: "balance", paid: 100 }),
+        ],
+        opPollen: [pollen({ price_paid: 200, cost_paid: 100 })],
+    });
+    expect(infrastructureReport(input, month)).toMatchObject({
+        summary: { cashUsd: 35, creditUsd: 15, totalUsd: 50 },
+        rows: [
+            {
+                vendor: "aws",
+                service: "EC2",
+                cashUsd: 25,
+                creditUsd: 15,
+                totalUsd: 40,
+            },
+            { vendor: "cloudflare", service: "Workers", totalUsd: 10 },
+        ],
+    });
+    const providers = providerEconomicsReport(input, month);
+    expect(providers.blockers).toEqual([]);
+    expect(providers).toMatchObject({
+        summary: {
+            providerCashUsd: 135,
+            providerCreditUsd: 15,
+            providerUsageUsd: 150,
+        },
+        currentResultUsd: 65,
+        fullCostResultUsd: 50,
+    });
+    expect(providers.rows).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                vendor: "aws",
+                providerUsageUsd: 140,
+                economicContributionUsd: 60,
+            }),
+            expect.objectContaining({
+                vendor: "cloudflare",
+                providerUsageUsd: 10,
+                retainedPaidUsd: null,
+            }),
+        ]),
+    );
+    expect(
+        unitEconomicsReport(input, month, "inference").summary.providerUsageUsd,
+    ).toBe(100);
 });
 
 const economicsRow = (

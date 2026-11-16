@@ -7,6 +7,7 @@ import {
     Chip,
     ColorModeToggle,
     cn,
+    DatabaseIcon,
     DownloadIcon,
     Drawer,
     Dropdown,
@@ -86,6 +87,7 @@ import { unitEconomicsReport } from "./lib/unitEconomics";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
+import { InfrastructureTab } from "./views/InfrastructureTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ReconciliationTab } from "./views/ReconciliationTab";
@@ -108,6 +110,7 @@ type InsightTab =
     | "runway"
     | "vendors"
     | "inference"
+    | "infrastructure"
     | "revenue-share"
     | "balances"
     | "gpu";
@@ -136,6 +139,7 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    infrastructure: ["vendorLedger"],
     gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
 
@@ -159,6 +163,11 @@ const DOWNLOAD_OPTIONS = [
         sources: VIEW_SOURCES.inference,
     },
     { section: "gpus", label: "GPUs", sources: VIEW_SOURCES.gpu },
+    {
+        section: "infrastructure",
+        label: "Infrastructure",
+        sources: VIEW_SOURCES.infrastructure,
+    },
     {
         section: "revenueShare",
         label: "Revenue share",
@@ -229,7 +238,7 @@ const INSIGHT_TABS = [
     {
         id: "vendors",
         label: "Providers",
-        note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
+        note: "Monthly costs by vendor across managed inference, GPU capacity, and infrastructure.",
         icon: GlobeIcon,
     },
     {
@@ -243,6 +252,12 @@ const INSIGHT_TABS = [
         label: "GPUs",
         note: "GPU capacity economics with vendor-pool results above and one direct-cost row per GPU resource below.",
         icon: RocketIcon,
+    },
+    {
+        id: "infrastructure",
+        label: "Infrastructure",
+        note: "Shared service costs by vendor and month, split into cash and credits.",
+        icon: DatabaseIcon,
     },
     {
         id: "revenue-share",
@@ -786,17 +801,16 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ViewInfo>
                 <InfoItem lead="Scope">
-                    One vendor-month across managed inference and GPU capacity.
-                    Shared infrastructure is excluded.
+                    One vendor-month across managed inference, GPU capacity, and
+                    infrastructure. Expand Services for the cost split.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
                     Cards show consumed Paid and Quest value. Retained is after
                     creator shares; Quest is free usage.
                 </InfoItem>
-                <InfoItem lead="Mixed modes">
-                    Vendor totals hold when a vendor serves both modes; the
-                    split stays unallocated until Pollen records delivery mode
-                    per request.
+                <InfoItem lead="Service costs">
+                    The vendor ledger supplies the service split. Pollen usage
+                    and retained value are shown at vendor level.
                 </InfoItem>
                 <InfoItem lead="Result">
                     Result and Performance use full vendor cost, consumed
@@ -823,6 +837,20 @@ function viewInfoContent(activeView: ActiveView) {
                 <InfoItem lead="Result">
                     Retained minus cash and consumed credits. Performance
                     divides that by retained; cost checks stay at vendor level.
+                </InfoItem>
+            </ViewInfo>
+        );
+    }
+    if (activeView === "infrastructure") {
+        return (
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Services such as Workers, databases, storage, networking,
+                    and safety controls, grouped by vendor and service month.
+                </InfoItem>
+                <InfoItem lead="Funding">
+                    Cash and used credits come from the Infrastructure lines of
+                    the vendor ledger, the same source as Runway.
                 </InfoItem>
             </ViewInfo>
         );
@@ -1459,6 +1487,9 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 )}
                 {viewData && activeView === "gpu" && (
                     <GpuTab data={viewData} month={monthFilter} />
+                )}
+                {viewData && activeView === "infrastructure" && (
+                    <InfrastructureTab data={viewData} month={monthFilter} />
                 )}
             </ErrorBoundary>
         </>

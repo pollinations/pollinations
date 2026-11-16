@@ -71,6 +71,7 @@ it("exports all reporting months and aggregate values without source detail", ()
         "vendorBalances",
         "providers",
         "inference",
+        "infrastructure",
         "gpus",
         "revenueShare",
     ] as const) {

@@ -1,4 +1,5 @@
 import type { Data } from "../types";
+import { type ApiCost, apiCosts, sumApiCosts } from "./apiCosts";
 import {
     computeModeIndex,
     directDeliveryData,
@@ -82,23 +83,106 @@ export function unitPerformancePct(
 }
 
 function economicsValues(
-    row: ModelReconcileRow | ModelAllocationRow,
+    row?: ModelReconcileRow | ModelAllocationRow,
 ): EconomicsValues {
     return {
-        meterGapUsd: row.meterGapUsd,
-        netCashContributionUsd: row.netCashContributionUsd,
-        paidContributionUsd: row.paidContributionUsd,
-        paidPollenOnCreditsUsd: row.paidPollenOnCreditsUsd,
-        paidPollenUsd: row.paidPollenUsd,
-        pollenMeterUsd: row.pollenMeterUsd,
-        providerCashUsd: row.providerCashUsd,
-        providerCreditUsd: row.providerCreditUsd,
-        providerUsageUsd: row.providerUsageUsd,
-        questCashSubsidyUsd: row.questCashSubsidyUsd,
-        questPollenOnCreditsUsd: row.questPollenOnCreditsUsd,
-        questPollenUsd: row.questPollenUsd,
-        retainedPaidUsd: row.retainedPaidUsd,
+        meterGapUsd: row?.meterGapUsd ?? null,
+        netCashContributionUsd: row?.netCashContributionUsd ?? null,
+        paidContributionUsd: row?.paidContributionUsd ?? null,
+        paidPollenOnCreditsUsd: row?.paidPollenOnCreditsUsd ?? null,
+        paidPollenUsd: row?.paidPollenUsd ?? null,
+        pollenMeterUsd: row?.pollenMeterUsd ?? null,
+        providerCashUsd: row?.providerCashUsd ?? null,
+        providerCreditUsd: row?.providerCreditUsd ?? null,
+        providerUsageUsd: row?.providerUsageUsd ?? null,
+        questCashSubsidyUsd: row?.questCashSubsidyUsd ?? null,
+        questPollenOnCreditsUsd: row?.questPollenOnCreditsUsd ?? null,
+        questPollenUsd: row?.questPollenUsd ?? null,
+        retainedPaidUsd: row?.retainedPaidUsd ?? null,
     };
+}
+
+// Infrastructure is charged to each vendor's result. The model-meter
+// reconciliation still compares the direct delivery costs it can match.
+export function providerEconomicsReport(data: Data, month: string) {
+    const direct = unitEconomicsReport(data, month, "vendors");
+    const costs = apiCosts(data, month);
+    const byVendor = new Map<string, ApiCost[]>();
+    for (const cost of costs) {
+        const rows = byVendor.get(cost.vendor) ?? [];
+        rows.push(cost);
+        byVendor.set(cost.vendor, rows);
+    }
+    const rows = new Map(
+        unitEconomicsRows(direct.vendorMonths, "provider").map((row) => [
+            row.vendor,
+            row,
+        ]),
+    );
+    for (const [vendor, vendorCosts] of byVendor) {
+        const infra = vendorCosts.filter(
+            (cost) => cost.kind === "infrastructure",
+        );
+        if (!infra.length) continue;
+        const row = rows.get(vendor) ?? {
+            ...economicsValues(),
+            grain: "provider",
+            month,
+            vendor,
+            model: "All models",
+            sourceStatus: "provider only",
+            allocationStatus: null,
+            economicContributionUsd: null,
+        };
+        const totals = sumApiCosts(infra);
+        rows.set(vendor, {
+            ...row,
+            providerCashUsd: (row.providerCashUsd ?? 0) + totals.cashUsd,
+            providerCreditUsd: (row.providerCreditUsd ?? 0) + totals.creditUsd,
+            providerUsageUsd: (row.providerUsageUsd ?? 0) + totals.totalUsd,
+            economicContributionUsd: subtractRecordedCost(
+                row.economicContributionUsd,
+                totals.totalUsd,
+            ),
+            netCashContributionUsd: subtractRecordedCost(
+                row.netCashContributionUsd,
+                totals.cashUsd,
+            ),
+        });
+    }
+    const infrastructure = sumApiCosts(
+        costs.filter((cost) => cost.kind === "infrastructure"),
+    );
+    return {
+        ...direct,
+        rows: [...rows.values()],
+        costsByVendor: byVendor,
+        summary: {
+            ...direct.summary,
+            providerCashUsd:
+                direct.summary.providerCashUsd + infrastructure.cashUsd,
+            providerCreditUsd:
+                direct.summary.providerCreditUsd + infrastructure.creditUsd,
+            providerUsageUsd:
+                direct.summary.providerUsageUsd + infrastructure.totalUsd,
+            netCashContributionUsd: subtractRecordedCost(
+                direct.summary.netCashContributionUsd,
+                infrastructure.cashUsd,
+            ),
+        },
+        currentResultUsd: subtractRecordedCost(
+            direct.currentResultUsd,
+            infrastructure.cashUsd,
+        ),
+        fullCostResultUsd: subtractRecordedCost(
+            direct.fullCostResultUsd,
+            infrastructure.totalUsd,
+        ),
+    };
+}
+
+function subtractRecordedCost(value: number | null, cost: number) {
+    return value == null ? null : value - cost;
 }
 
 export function meterMatchPct(

@@ -1,4 +1,5 @@
 import type { Data } from "../types";
+import { infrastructureReport } from "./apiCosts";
 import { providerMonthComputeMode } from "./computeModes";
 import { gpuWorkloadRows, gpuWorkloadSummary } from "./gpu";
 import { reportingMonths } from "./months";
@@ -9,6 +10,7 @@ import { revenueShareSummary } from "./revenueShareEconomics";
 import { buildRunway, groupRunwayRows } from "./runway";
 import { monthlyPollenTrends, monthlyTrends } from "./trends";
 import {
+    providerEconomicsReport,
     type UnitEconomicsView,
     unitEconomicsReport,
     unitEconomicsRows,
@@ -38,15 +40,21 @@ function exportSections(data: Data, now: Date) {
     const unitEconomics = (view: UnitEconomicsView) => ({
         columns: UNIT_ECONOMICS_COLUMNS,
         months: months.map((month) => {
-            const report = unitEconomicsReport(data, month, view);
-            const grain = view === "vendors" ? "provider" : "model";
+            const providers =
+                view === "vendors"
+                    ? providerEconomicsReport(data, month)
+                    : null;
+            const report = providers ?? unitEconomicsReport(data, month, view);
+            const rows =
+                providers?.rows ??
+                unitEconomicsRows(report.vendorMonths, "model");
             return {
                 month,
-                summary: report.vendorMonths.length ? report.summary : null,
+                summary: rows.length ? report.summary : null,
                 provisional: report.provisional,
                 currentResultUsd: report.currentResultUsd,
                 fullCostResultUsd: report.fullCostResultUsd,
-                rows: unitEconomicsRows(report.vendorMonths, grain).map((row) =>
+                rows: rows.map((row) =>
                     UNIT_ECONOMICS_COLUMNS.map((column) =>
                         column === "computeMode"
                             ? providerMonthComputeMode(
@@ -57,6 +65,9 @@ function exportSections(data: Data, now: Date) {
                             : row[column],
                     ),
                 ),
+                ...(providers && {
+                    serviceCosts: [...providers.costsByVendor.values()].flat(),
+                }),
             };
         }),
     });
@@ -116,6 +127,8 @@ function exportSections(data: Data, now: Date) {
         }),
         providers: () => unitEconomics("vendors"),
         inference: () => unitEconomics("inference"),
+        infrastructure: () =>
+            months.map((month) => infrastructureReport(data, month)),
         vendorBalances: () =>
             providerBalanceRows(data, now).map(
                 ({ access, balanceNote, collectionMethod, ...row }) => row,
@@ -178,6 +191,7 @@ export function dashboardExport(data: Data, now = new Date()) {
         trends: sections.trends(),
         providers: sections.providers(),
         inference: sections.inference(),
+        infrastructure: sections.infrastructure(),
         vendorBalances: sections.vendorBalances(),
         gpus: sections.gpus(),
         revenueShare: sections.revenueShare(),

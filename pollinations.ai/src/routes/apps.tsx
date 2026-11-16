@@ -544,7 +544,7 @@ function AppsPage() {
                                 <Chip
                                     size="lg"
                                     aria-live="polite"
-                                    className="bg-theme-bg-subtle px-3 text-theme-text-base"
+                                    className="bg-theme-bg-subtle px-3 text-theme-text-soft"
                                 >
                                     {/* Sized for "N / N apps", so filtering
                                         never moves the sort button. */}
@@ -575,7 +575,6 @@ function AppsPage() {
                                         <Button
                                             type="button"
                                             size="md"
-                                            intent="primary"
                                             icon={<SortIcon />}
                                             aria-label={`Sort apps: ${SORT_LABELS[sort]}`}
                                             className="whitespace-nowrap"

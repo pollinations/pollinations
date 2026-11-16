@@ -187,7 +187,7 @@ export function EditableCombobox({
                                     className={cn(
                                         "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-hover",
                                         value === option &&
-                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                            "polli:bg-theme-fill polli:text-theme-on-fill",
                                     )}
                                 >
                                     <Combobox.ItemText className="polli:truncate polli:font-mono">

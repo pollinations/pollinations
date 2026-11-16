@@ -309,7 +309,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     className={cn(
                                         "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                         selected
-                                            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                            ? "polli:bg-theme-fill polli:text-theme-on-fill"
                                             : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                         !selectable &&
                                             "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
@@ -370,7 +370,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             sameUtcDay(date, today) &&
                                                 "polli:ring-1 polli:ring-theme-border",
                                             selected
-                                                ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                                ? "polli:bg-theme-fill polli:text-theme-on-fill"
                                                 : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                             !selectable &&
                                                 "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",

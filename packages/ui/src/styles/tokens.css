@@ -112,15 +112,27 @@
 [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
     /* 0.918 keeps quiet fills visible on the cream block (surface-block 0.96). */
-    --polli-color-bg-subtle:       oklch(0.918 0.022 var(--polli-hue) / 0.7);
+    /* The one quiet grey: an unselected tab, a quiet button, and a filled
+       button inside neutral chrome all rest on it. */
+    --polli-color-bg-quiet:        oklch(0.918 0.022 var(--polli-hue) / 0.7);
+    --polli-color-bg-subtle:       var(--polli-color-bg-quiet);
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
-    --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
+    /* Amber text, in the honey family: 5.1:1 on white, 4.6:1 on cream. */
+    --polli-color-text-soft:       oklch(0.54 0.15 calc(var(--polli-hue) - 18));
     /* A step toward orange keeps focus amber, not brown; 3.9:1 on the cream block. */
     --polli-color-focus:           oklch(0.58 0.16 calc(var(--polli-hue) - 10));
     --polli-color-text-hover:      var(--polli-color-text-strong);
+    /* Fill — the one orange for what is selected: a tab, a menu item, an
+       option, a ticked box. Deeper than bg-active and a step toward orange, so
+       it stays warm instead of turning mustard (the same reason focus is
+       shifted). on-fill is the text that sits on it. */
+    --polli-color-honey:           oklch(0.83 0.15 calc(var(--polli-hue) - 12));
+    --polli-color-fill:            var(--polli-color-honey);
+    --polli-color-fill-hover:      oklch(0.78 0.16 calc(var(--polli-hue) - 14));
+    --polli-color-on-fill:         var(--polli-color-text-strong);
 }
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
@@ -130,13 +142,18 @@
 [data-theme="neutral"] {
     --polli-color-bg-pale:         var(--polli-color-surface-opaque);
     --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 10%, transparent);
-    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
+    --polli-color-bg-active:       var(--polli-color-bg-quiet);
     --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-text-muted) 46%, transparent);
     --polli-color-border:          color-mix(in oklab, var(--polli-color-text-muted) 50%, transparent);
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);
     --polli-color-focus:           var(--polli-color-text-soft);
     --polli-color-text-hover:      var(--polli-color-text-strong);
+    /* A selected item in neutral chrome stays one step stronger than the
+       quiet grey, so it still reads as selected. */
+    --polli-color-fill:            color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
+    --polli-color-fill-hover:      var(--polli-color-bg-hover);
+    --polli-color-on-fill:         var(--polli-color-text-strong);
 }
 
 /* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
@@ -290,11 +307,19 @@
 .dark,
 .dark [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
-    --polli-color-bg-subtle:       oklch(0.33 0.014 var(--polli-hue) / 0.7);
+    --polli-color-bg-quiet:        oklch(0.33 0.014 var(--polli-hue) / 0.7);
+    --polli-color-bg-subtle:       var(--polli-color-bg-quiet);
     --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
-    --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
+    --polli-color-text-soft:       oklch(0.82 0.14 calc(var(--polli-hue) - 12));
     --polli-color-focus:           var(--polli-color-text-soft);
+    /* Fill keeps dark text in dark mode too: light text on a deep fill tops
+       out at 4.5:1, dark text on the orange is about 9:1. One step deeper than
+       in light, because the same orange looks paler on black. */
+    --polli-color-honey:           oklch(0.78 0.16 calc(var(--polli-hue) - 14));
+    --polli-color-fill:            var(--polli-color-honey);
+    --polli-color-fill-hover:      oklch(0.73 0.16 calc(var(--polli-hue) - 16));
+    --polli-color-on-fill:         var(--polli-color-brand-dark);
 }

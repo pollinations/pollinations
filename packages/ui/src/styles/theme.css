@@ -53,6 +53,9 @@
     --color-theme-bg-subtle: var(--polli-color-bg-subtle);
     --color-theme-bg-active: var(--polli-color-bg-active);
     --color-theme-bg-hover: var(--polli-color-bg-hover);
+    --color-theme-fill: var(--polli-color-fill);
+    --color-theme-fill-hover: var(--polli-color-fill-hover);
+    --color-theme-on-fill: var(--polli-color-on-fill);
     --color-theme-bg-pale: var(--polli-color-bg-pale);
 
     --color-paid-pale: var(--polli-color-paid-pale);

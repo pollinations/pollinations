@@ -60,25 +60,25 @@ const tabButtonSizeClass = {
 } as const;
 
 const variantClasses = {
-    // The default tab look: borderless and monochrome. Selected uses `bg-active`
-    // — the same light resting fill as the site's normal buttons. Both states
-    // deepen to `bg-hover` and use the theme's hover label color. Non-selected
-    // uses the quiet `bg-subtle` token until then.
+    // The default tab look: borderless and monochrome. Selected is the `fill` /
+    // `on-fill` pair (the orange with dark text, both modes) and does not change
+    // on hover. Non-selected is the quiet `bg-subtle`; hover is a pale wash of
+    // the fill, so it previews the selection without outshining it.
     soft: {
         base: "",
-        active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
-        mixed: "polli:bg-theme-bg-active/45 polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+        active: "polli:bg-theme-fill polli:text-theme-on-fill",
+        mixed: "polli:bg-theme-fill/45 polli:text-theme-text-strong polli:hover:bg-theme-fill polli:hover:text-theme-on-fill",
         inactive:
-            "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+            "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong",
     },
     // Transparent until hovered or selected — for multi-select toggles and
     // inline rows where a filled idle pill would read as a hard selection.
     ghost: {
         base: "polli:border polli:border-transparent",
-        active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
-        mixed: "polli:bg-theme-bg-active/45 polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+        active: "polli:bg-theme-fill polli:text-theme-on-fill",
+        mixed: "polli:bg-theme-fill/45 polli:text-theme-text-strong polli:hover:bg-theme-fill polli:hover:text-theme-on-fill",
         inactive:
-            "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+            "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-fill/40 polli:hover:text-theme-text-strong",
     },
 } as const;
 

@@ -178,7 +178,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
-                                    "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                    "polli:bg-theme-fill polli:text-theme-on-fill",
                             )}
                         >
                             {isAllSelected && "✓"}
@@ -205,7 +205,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
-                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                            "polli:bg-theme-fill polli:text-theme-on-fill",
                                     )}
                                 >
                                     {isChecked && "✓"}

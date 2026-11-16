@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💼 Receipts Tower](https://patbing.github.io/receipts-tower) | A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own. | [@patbing](https://github.com/patbing) |
 | [💬 pollable](https://pollable.kendev.ct8.pl) | Ask every model the same question | [@smplstuff](https://github.com/smplstuff) |
 | [🖼️ FlipBook Mini Historias](https://belumokasl-hub.github.io/flipbook-mini-historias) | Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música. | [@belumokasl-hub](https://github.com/belumokasl-hub) |
 | [🖼️ Susurros de Buda · storybook art CLI](https://github.com/Deheroesytumbas/susurros-de-buda-pollinations) | A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed. | [@Deheroesytumbas](https://github.com/Deheroesytumbas) |
@@ -30,7 +31,6 @@
 | [🎮 Vaultwright](https://vaultwright.rekty-dev.workers.dev) | A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints. | [@rekty](https://github.com/rekty) |
 | [🎮 Empty Room](https://rekty.github.io/empty-room) | Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move. | [@rekty](https://github.com/rekty) |
 | [🖼️ Cover Story](https://rekty.github.io/cover-story) | Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested. | [@rekty](https://github.com/rekty) |
-| [📚 Phenomena Lab](https://phenomena-lab.jm716111.chatgpt.site) | Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

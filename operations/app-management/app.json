@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💼",
+    "name": "Receipts Tower",
+    "url": "https://patbing.github.io/receipts-tower",
+    "description": "A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own.",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/receipts-tower",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-02",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19001",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/855b1f4c-4694-4d0c-bd74-08237d86fd18"
+  },
+  {
     "emoji": "💬",
     "name": "pollable",
     "url": "https://pollable.kendev.ct8.pl",

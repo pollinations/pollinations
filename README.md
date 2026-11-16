@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Plot a Law](https://tomdacatto.github.io/pollinations-plot-a-law) | A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
 | [✍️ Slop Golf](https://slop-golf.pollinations.app) | A writing game about the LLM voice: a mystery model writes a paragraph, you edit out its AI tells in the fewest words, and a judge model checks your putt. | [@cristianbagrin](https://github.com/cristianbagrin) |
 | [🎮 PETI-64](https://rekty.github.io/machine-tui) | A 1980s computer whose OS is a language model: you type shell commands, nothing executes, and the model invents the output while keeping files, processes and clock. | [@rekty](https://github.com/rekty) |
 | [🎬 夜市對話 Night Market Talk](https://night-market-talk.pollinations.app) | Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay with their own Pollen. | [@cristianbagrin](https://github.com/cristianbagrin) |
@@ -30,7 +31,6 @@
 | [💬 pollable](https://pollable.kendev.ct8.pl) | Ask every model the same question | [@smplstuff](https://github.com/smplstuff) |
 | [🖼️ FlipBook Mini Historias](https://belumokasl-hub.github.io/flipbook-mini-historias) | Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música. | [@belumokasl-hub](https://github.com/belumokasl-hub) |
 | [🖼️ Susurros de Buda · storybook art CLI](https://github.com/Deheroesytumbas/susurros-de-buda-pollinations) | A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed. | [@Deheroesytumbas](https://github.com/Deheroesytumbas) |
-| [🖼️ Pollen Canvas](https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD) | Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser. | [@baimoyan2005](https://github.com/baimoyan2005) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

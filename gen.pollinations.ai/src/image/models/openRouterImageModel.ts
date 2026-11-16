@@ -28,7 +28,6 @@ const logOps = debug("pollinations:openrouter-image:ops");
 const logError = debug("pollinations:openrouter-image:error");
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
-const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
@@ -620,62 +619,6 @@ export function callOpenRouterQwenImage21ProAPI(
         safeParams,
         QWEN_IMAGE_2_1_PRO_ROUTE,
     );
-}
-
-export async function callOpenRouterGrokImagineProAPI(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
-    const apiKey = requireOpenRouterImageApiKey();
-    const inputReferences = safeParams.image.map((url) => ({
-        type: "image_url",
-        image_url: { url },
-    }));
-    const requestBody: Record<string, unknown> = {
-        model: GROK_IMAGINE_QUALITY_MODEL,
-        prompt,
-        n: 1,
-        resolution: "1K",
-    };
-
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
-
-    if (inputReferences.length > 0) {
-        requestBody.input_references = inputReferences;
-    }
-
-    const data = await postOpenRouterImage(
-        apiKey,
-        requestBody,
-        "OpenRouter image generation request failed",
-    );
-    const encodedImage = data.data?.[0]?.b64_json;
-    if (!encodedImage) {
-        throw UpstreamError.fromProvider(502, {
-            message: "OpenRouter image API returned no image",
-            responseBody: JSON.stringify(data),
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
-        });
-    }
-
-    logOps("Grok Imagine Pro generation complete", {
-        referenceImages: inputReferences.length,
-        providerCost: data.usage?.cost,
-    });
-
-    return {
-        buffer: base64ToBuffer(encodedImage),
-        trackingData: {
-            actualModel: "x-ai/grok-imagine-image-quality",
-            usage: {
-                ...(inputReferences.length > 0
-                    ? { promptImageTokens: inputReferences.length }
-                    : {}),
-                completionImageTokens: 1,
-            },
-        },
-    };
 }
 
 export async function callOpenRouterGrokImagineImage2API(

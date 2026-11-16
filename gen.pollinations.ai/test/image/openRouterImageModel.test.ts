@@ -6,7 +6,6 @@ import {
     callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
-    callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
@@ -33,7 +32,7 @@ WIDE_PNG.writeUInt32BE(1440, 20);
 const WIDE_PNG_DATA_URI = `data:image/png;base64,${WIDE_PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
-    model: "x-ai/grok-imagine-image-quality",
+    model: "x-ai/grok-imagine-image-2.0",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -71,103 +70,6 @@ function mockOpenRouterFetch(requests: Record<string, unknown>[]) {
 
 afterEach(() => {
     vi.restoreAllMocks();
-});
-
-describe("OpenRouter Grok Imagine Pro", () => {
-    it("generates at the existing 1K tier and tracks one output image", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        const fetchSpy = mockOpenRouterFetch(requests);
-
-        const result = await callOpenRouterGrokImagineProAPI(
-            "test prompt",
-            baseParams,
-        );
-
-        expect(fetchSpy).toHaveBeenCalledWith(
-            OPENROUTER_IMAGE_URL,
-            expect.objectContaining({
-                method: "POST",
-                headers: {
-                    Authorization: "Bearer openrouter-test-key",
-                    "Content-Type": "application/json",
-                },
-            }),
-        );
-        expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-image-quality",
-            prompt: "test prompt",
-            n: 1,
-            resolution: "1K",
-            aspect_ratio: "1:1",
-        });
-        expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
-        expect(result.trackingData).toEqual({
-            actualModel: "x-ai/grok-imagine-image-quality",
-            usage: { completionImageTokens: 1 },
-        });
-    });
-
-    it("forwards every edit image and tracks their input fees", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockOpenRouterFetch(requests);
-
-        const result = await callOpenRouterGrokImagineProAPI("edit prompt", {
-            ...baseParams,
-            width: 1280,
-            height: 720,
-            image: [
-                "https://example.com/input.png",
-                "https://example.com/b.png",
-            ],
-        });
-
-        expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-image-quality",
-            prompt: "edit prompt",
-            n: 1,
-            resolution: "1K",
-            aspect_ratio: "16:9",
-            input_references: [
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/input.png" },
-                },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/b.png" },
-                },
-            ],
-        });
-        expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 2,
-            completionImageTokens: 1,
-        });
-    });
-
-    it("rejects a successful response without image data", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ data: [] }), { status: 200 }),
-        );
-
-        await expect(
-            callOpenRouterGrokImagineProAPI("test prompt", baseParams),
-        ).rejects.toMatchObject({
-            status: 502,
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
-        });
-    });
 });
 
 describe("OpenRouter MAI Image", () => {

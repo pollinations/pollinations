@@ -143,6 +143,7 @@ function parseImageParams(
         ...body,
         model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
+    mergedParams.quality ??= model.definition.defaultQuality;
     delete mergedParams.prompt;
     delete mergedParams.key;
 

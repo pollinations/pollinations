@@ -869,12 +869,6 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.022, 8);
-    expect(
-        calculateCost("x-ai/grok-imagine-image-quality", {
-            promptImageTokens: 1,
-            completionImageTokens: 1,
-        }).totalCost,
-    ).toBeCloseTo(0.06 * 1.055, 8);
     for (const [quality, resolution, expected] of [
         ["low", "1k", 0.05],
         ["low", "2k", 0.07],
@@ -1858,8 +1852,10 @@ test("quality and resolution changes preserve the other pricing choice", () => {
             .find((control) => control.key === key)
             ?.options.find((option) => option.label === label)?.value;
     expect(choose("low_2k", "quality", "Medium")).toBe("medium_2k");
-    expect(choose("medium_2k", "resolution", "1K")).toBe("");
-    expect(choose("", "quality", "Low")).toBe("low_1k");
+    expect(choose("medium_2k", "resolution", "1K")).toBe("medium_1k");
+    expect(choose("medium_2k", "quality", "Low")).toBe("low_2k");
+    expect(choose("low_2k", "resolution", "1K")).toBe("");
+    expect(choose("", "quality", "Medium")).toBe("medium_1k");
 });
 
 test("dependent video choices select existing prices without impossible combinations", () => {

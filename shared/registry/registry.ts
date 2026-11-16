@@ -239,6 +239,7 @@ export type ModelDefinition = {
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
+    defaultQuality?: string; // Image-only: quality when the caller omits it (medium if unset)
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     minDuration?: number; // Video and audio: minimum accepted duration in seconds
     maxDuration?: number; // Video and audio: maximum accepted duration in seconds

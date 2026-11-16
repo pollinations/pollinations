@@ -8,6 +8,7 @@ import {
 import { inspect } from "./tools/cidr.js";
 import { lookup, readText } from "./tools/dns.js";
 import { probe, publicUrl } from "./tools/http.js";
+import { reverseName } from "./tools/reverse-dns.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -62,6 +63,7 @@ for (const modern of [false, true])
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
+            "reverse_dns",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
@@ -69,7 +71,7 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            ["dns_lookup", "domain_whois", "http_probe", "ip_whois", "reverse_dns"],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -87,6 +89,20 @@ for (const modern of [false, true])
             [true, false, false, false],
         );
     });
+test("reverse DNS builds correct IPv4 and IPv6 PTR names", () => {
+    assert.equal(reverseName("8.8.4.4"), "4.4.8.8.in-addr.arpa");
+    assert.equal(
+        reverseName("2001:db8::1"),
+        "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa",
+    );
+    assert.equal(
+        reverseName("2001:db8:0:1::1234"),
+        "4.3.2.1.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa",
+    );
+    for (const ip of ["010.0.0.1", "fe80::1%eth0", "not-an-ip"])
+        assert.throws(() => reverseName(ip), /IPv4 or IPv6/);
+});
+
 test("CIDR preserves IPv6 precision and prefix extremes", () => {
     assert.equal(
         inspect("::/0", []).address_count,
@@ -169,6 +185,45 @@ test("redirect URLs keep the input size limit", () => {
         /2048/,
     );
 });
+test("reverse_dns requests PTR records and returns DNS TTLs without credentials", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(url.origin, "https://cloudflare-dns.com");
+        assert.equal(url.searchParams.get("name"), "4.4.8.8.in-addr.arpa");
+        assert.equal(url.searchParams.get("type"), "PTR");
+        assert.deepEqual(init.headers, { Accept: "application/dns-json" });
+        return Response.json({
+            Status: 0,
+            Answer: [
+                {
+                    name: "4.4.8.8.in-addr.arpa",
+                    type: 12,
+                    TTL: 300,
+                    data: "dns.google.",
+                },
+                {
+                    name: "4.4.8.8.in-addr.arpa",
+                    type: 1,
+                    TTL: 300,
+                    data: "192.0.2.1",
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const response = await client.callTool({
+        name: "reverse_dns",
+        arguments: { ip: "8.8.4.4" },
+    });
+    assert.notEqual(response.isError, true, JSON.stringify(response));
+    assert.deepEqual(JSON.parse(response.content[0].text), {
+        ip: "8.8.4.4",
+        query: "4.4.8.8.in-addr.arpa",
+        status: 0,
+        ptr_records: [{ hostname: "dns.google.", ttl: 300 }],
+    });
+    assert.equal(stub.mock.callCount(), 1);
+});
+
 test("DNS preserves NXDOMAIN and rejects HTTP/oversized responses", async (t) => {
     const expected = {
         Status: 3,
@@ -380,6 +435,7 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
     for (const [name, args] of [
         ["dns_lookup", { name: "a".repeat(255) }],
         ["dns_lookup", { name: "example.com", type: "65536" }],
+        ["reverse_dns", { ip: "010.0.0.1" }],
         ["http_probe", { url: "https://example.com", method: "POST" }],
         ["inspect_cidr", { cidr: "::/0", addresses: Array(21).fill("::1") }],
     ]) {

@@ -8,6 +8,7 @@ import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { integerTools } from "./tools/integer.js";
+import { modularTools } from "./tools/modular.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
@@ -29,6 +30,7 @@ const handler = createMcpHandler(
             ...baseTools,
             ...checkDigitTools,
             ...integerTools,
+            ...modularTools,
             ...diffTools,
             ...fractionTools,
             ...versionTools,

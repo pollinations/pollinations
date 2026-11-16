@@ -2,6 +2,7 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { dockerTools } from "./tools/docker.js";
 import { hfTools } from "./tools/huggingface.js";
+import { nugetTools } from "./tools/nuget.js";
 import { osvTools } from "./tools/osv.js";
 import { packageTools } from "./tools/packages.js";
 
@@ -13,6 +14,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...dockerTools,
+            ...nugetTools,
             ...packageTools,
             ...osvTools,
             ...hfTools,

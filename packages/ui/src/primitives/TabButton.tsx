@@ -96,12 +96,12 @@ const intentClasses = {
         inactive:
             "polli:bg-transparent polli:text-tier-deep polli:hover:bg-tier-pale/60",
     },
-    // Site navigation: the current page is the one full brand pill; hover
-    // only previews it, so "where you are" never doubles up.
+    // Site navigation: the current page is the one full fill pill, like a
+    // selected tab; hover only previews it, so "where you are" never doubles up.
     brand: {
-        active: "polli:bg-brand-accent polli:font-bold polli:text-brand-dark",
+        active: "polli:bg-theme-fill polli:font-bold polli:text-theme-on-fill",
         inactive:
-            "polli:bg-transparent polli:font-bold polli:text-theme-text-strong polli:hover:bg-brand-accent/60 polli:hover:text-brand-dark",
+            "polli:bg-transparent polli:font-bold polli:text-theme-text-strong polli:hover:bg-theme-fill/40",
     },
 } as const;
 

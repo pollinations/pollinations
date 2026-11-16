@@ -405,17 +405,16 @@ export const PaymentHelp: FC = () => (
                 the line breaks after "Payment help:", never inside. */}
             <span className="whitespace-nowrap">
                 {/* Styled like Terms and Refund; a copy icon where theirs
-                    has the arrow. The icon says copy and the text says
-                    Copied, so no tooltip. */}
+                    has the arrow. */}
                 <CopyButton
                     value="billing@pollinations.ai"
+                    aria-label="Copy billing@pollinations.ai"
                     className="polli-link"
                     data-tone="accent"
-                    tooltip={null}
                 >
                     {(copied) => (
                         <>
-                            {copied ? "Copied" : "billing@pollinations.ai"}
+                            billing@pollinations.ai
                             <CopyStateIcon
                                 copied={copied}
                                 aria-hidden="true"

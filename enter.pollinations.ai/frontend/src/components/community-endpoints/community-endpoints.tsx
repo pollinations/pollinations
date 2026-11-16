@@ -29,6 +29,7 @@ import {
 } from "react";
 import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
+import { CopyDocs } from "../copy-docs.tsx";
 import {
     LoadError,
     PageLoading,
@@ -441,7 +442,21 @@ export function CommunityEndpoints({
             )}
             {/* One card: agents, models and apps behind tab buttons, then the
                 tab's note. The open tab's Create sits on the tab row. */}
-            <Section title="My listings" id="listings">
+            <Section
+                title="My listings"
+                id="listings"
+                action={
+                    <CopyDocs
+                        section={
+                            listingTab === "apps"
+                                ? "byop"
+                                : agentsTab
+                                  ? "publish-an-agent"
+                                  : "publish-a-model"
+                        }
+                    />
+                }
+            >
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap gap-1.5">
                         {LISTING_TABS.map(({ value, label }) => (

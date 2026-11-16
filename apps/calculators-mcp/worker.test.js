@@ -73,6 +73,7 @@ for (const modern of [false, true])
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
+                "sunrise_sunset",
                 "time_convert",
                 "time_math",
             ].sort(),
@@ -394,6 +395,138 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("sunrise_sunset returns solar times for coordinates and a date", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.sunrise-sunset.org");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        // Sydney in November: sunrise falls on the previous UTC day.
+        const sydney =
+            target.searchParams.get("lat") === "-33.87" &&
+            target.searchParams.get("lng") === "151.21";
+        return Response.json(
+            sydney
+                ? {
+                      results: {
+                          sunrise: "2026-11-15T18:42:51+00:00",
+                          sunset: "2026-11-16T08:36:50+00:00",
+                          solar_noon: "2026-11-16T01:39:50+00:00",
+                          day_length: 50039,
+                          civil_twilight_begin: "2026-11-15T18:15:25+00:00",
+                          civil_twilight_end: "2026-11-16T09:04:16+00:00",
+                          nautical_twilight_begin: "2026-11-15T17:42:04+00:00",
+                          nautical_twilight_end: "2026-11-16T09:37:37+00:00",
+                          astronomical_twilight_begin:
+                              "2026-11-15T17:06:33+00:00",
+                          astronomical_twilight_end:
+                              "2026-11-16T10:13:08+00:00",
+                      },
+                      status: "OK",
+                      tzid: "UTC",
+                  }
+                : {
+                      results: {
+                          sunrise: "2026-11-16T07:20:15+00:00",
+                          sunset: "2026-11-16T16:10:13+00:00",
+                          solar_noon: "2026-11-16T11:45:14+00:00",
+                          day_length: 31798,
+                          civil_twilight_begin: "2026-11-16T06:43:19+00:00",
+                          civil_twilight_end: "2026-11-16T16:47:09+00:00",
+                          nautical_twilight_begin: "2026-11-16T06:02:30+00:00",
+                          nautical_twilight_end: "2026-11-16T17:27:58+00:00",
+                          astronomical_twilight_begin:
+                              "2026-11-16T05:23:08+00:00",
+                          astronomical_twilight_end:
+                              "2026-11-16T18:07:20+00:00",
+                      },
+                      status: "OK",
+                      tzid: "UTC",
+                  },
+        );
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "sunrise_sunset", {
+            lat: 51.5,
+            lng: -0.12,
+            date: "2026-11-16",
+        }),
+        {
+            latitude: 51.5,
+            longitude: -0.12,
+            date: "2026-11-16",
+            sunrise: "2026-11-16T07:20:15+00:00",
+            sunset: "2026-11-16T16:10:13+00:00",
+            solar_noon: "2026-11-16T11:45:14+00:00",
+            day_length_seconds: 31798,
+            civil_twilight_begin: "2026-11-16T06:43:19+00:00",
+            civil_twilight_end: "2026-11-16T16:47:09+00:00",
+        },
+    );
+    assert.equal(requests[0].searchParams.get("formatted"), "0");
+    assert.equal(requests[0].searchParams.get("date"), "2026-11-16");
+    const sydney = await call(client, "sunrise_sunset", {
+        lat: -33.87,
+        lng: 151.21,
+        date: "2026-11-16",
+    });
+    assert.equal(sydney.sunrise, "2026-11-15T18:42:51+00:00");
+    assert.equal(sydney.day_length_seconds, 50039);
+    // No date: the request omits the parameter and the API answers for today.
+    const today = new Date().toISOString().slice(0, 10);
+    assert.equal(
+        (await call(client, "sunrise_sunset", { lat: 51.5, lng: -0.12 })).date,
+        today,
+    );
+    assert.equal(requests[2].searchParams.has("date"), false);
+});
+
+test("sunrise_sunset rejects invalid input before I/O and surfaces upstream errors", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        requests.push(new URL(url));
+        return new Response(
+            JSON.stringify({ results: "", status: "INVALID_REQUEST" }),
+            {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+            },
+        );
+    });
+    const client = await clientFor(t);
+    for (const args of [
+        { lat: 100, lng: -0.12 },
+        { lat: -91, lng: 0 },
+        { lat: 51.5, lng: 200 },
+        { lat: 51.5, lng: -181 },
+        { lat: 51.5, lng: -0.12, date: "2026-13-40" },
+        { lat: 51.5, lng: -0.12, date: "2026-02-30" },
+        { lat: 51.5, lng: -0.12, date: "16 Nov 2026" },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "sunrise_sunset", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    assert.equal(requests.length, 0);
+    // A valid request that the upstream rejects still errors, with its status.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "sunrise_sunset",
+                arguments: { lat: 51.5, lng: -0.12, date: "2026-11-16" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests.length, 1);
 });
 
 test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {

@@ -54,11 +54,6 @@
         "deploy-cloudflare-production.yml:Deploy apps/calculators-mcp"
       ]
     },
-    "19495": {
-      "merge_sha": "6634680f6b56730adb0780f29f065564d3832341",
-      "merged_at": "2026-11-16T11:37:51Z",
-      "required": []
-    },
     "19524": {
       "merge_sha": "60d2d729b8886909fea154d82f5af3518dce1e51",
       "merged_at": "2026-11-16T10:24:15Z",
@@ -113,11 +108,6 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19682": {
-      "merge_sha": "c2b6af2b7c1c5e276fbd8d7229e328d6b65d5140",
-      "merged_at": "2026-11-14T04:13:26Z",
-      "required": []
-    },
     "19698": {
       "merge_sha": "13e9422d7f1aac7253de68e31fbda971f45766a3",
       "merged_at": "2026-11-16T10:44:33Z",
@@ -127,117 +117,12 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19701": {
-      "merge_sha": "b3d37ea934944851150ac4fef5267740cee42521",
-      "merged_at": "2026-11-14T07:12:12Z",
-      "required": []
-    },
-    "19713": {
-      "merge_sha": "2d6a96053a875ac85d6c855639996f04ed9d4544",
-      "merged_at": "2026-11-14T10:48:20Z",
-      "required": []
-    },
-    "19752": {
-      "merge_sha": "1a5eb95b167397f5fdd373f225fad6fb4597bcd9",
-      "merged_at": "2026-11-14T17:47:28Z",
-      "required": []
-    },
-    "19756": {
-      "merge_sha": "5eccd92e72862db61d9eb015e3f88fdeea86097f",
-      "merged_at": "2026-11-15T04:14:44Z",
-      "required": []
-    },
-    "19768": {
-      "merge_sha": "d8451a36d46c4169761f402413b9103f52d000cb",
-      "merged_at": "2026-11-15T07:11:36Z",
-      "required": []
-    },
-    "19817": {
-      "merge_sha": "33d4811070061f83c8e7fcd8c979c7acf00e69df",
-      "merged_at": "2026-11-16T02:00:44Z",
-      "required": []
-    },
-    "19821": {
-      "merge_sha": "e0f6a5d3f5c8b7ebe5a22ab67db5cea5c05604ba",
-      "merged_at": "2026-11-16T04:15:02Z",
-      "required": []
-    },
-    "19832": {
-      "merge_sha": "e0e4ab867c8e952d097bd648c4927be3e464a160",
-      "merged_at": "2026-11-16T07:20:15Z",
-      "required": []
-    },
-    "19842": {
-      "merge_sha": "7bc2a509e8f1c898f38e6b13846800f0350c84ac",
-      "merged_at": "2026-11-16T08:44:16Z",
-      "required": []
-    },
     "19843": {
       "merge_sha": "f6111749ee30ae3b023002ace5ca162eb03ea580",
       "merged_at": "2026-11-16T08:57:29Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
-    },
-    "19850": {
-      "merge_sha": "de507386cbb15e96e990a82c4eefae554e46838e",
-      "merged_at": "2026-11-16T10:27:48Z",
-      "required": []
-    },
-    "19862": {
-      "merge_sha": "4f75c83197e010b0e98b473a3f3b95a566a78e35",
-      "merged_at": "2026-11-16T14:00:26Z",
-      "required": []
-    },
-    "19863": {
-      "merge_sha": "0b5e8fb049794809a4c428a9d62606d82255da1e",
-      "merged_at": "2026-11-16T14:08:40Z",
-      "required": []
-    },
-    "19865": {
-      "merge_sha": "8787cb83258f220406e8c65122b1ee3b1038176c",
-      "merged_at": "2026-11-16T14:16:21Z",
-      "required": []
-    },
-    "19869": {
-      "merge_sha": "149e2a05ff969fd1f160fefa2c184f903abd64a8",
-      "merged_at": "2026-11-16T14:24:27Z",
-      "required": []
-    },
-    "19870": {
-      "merge_sha": "a423fef3af67235be4eb3c6cfbe4f8caeb7a3686",
-      "merged_at": "2026-11-16T14:33:07Z",
-      "required": []
-    },
-    "19871": {
-      "merge_sha": "f6cc40e3af1402309f5c497569cd6fdf9b6e9f6a",
-      "merged_at": "2026-11-16T14:41:10Z",
-      "required": []
-    },
-    "19872": {
-      "merge_sha": "635a69419817903dd37db2ddbc2caaed65e3e7ba",
-      "merged_at": "2026-11-16T14:49:00Z",
-      "required": []
-    },
-    "19873": {
-      "merge_sha": "0b2e6d11f9a952dc16114f02988cc30031c5a674",
-      "merged_at": "2026-11-16T14:57:07Z",
-      "required": []
-    },
-    "19874": {
-      "merge_sha": "3a4d63f8714173599e02e84385fcb9f1e2db7b5d",
-      "merged_at": "2026-11-16T15:03:28Z",
-      "required": []
-    },
-    "19875": {
-      "merge_sha": "48d2de6baa6aa9c08f93b18acbfd0c4e7f1f816f",
-      "merged_at": "2026-11-16T15:11:39Z",
-      "required": []
-    },
-    "19876": {
-      "merge_sha": "0c851ba5f691c5f1222dda2491c9176f098705f8",
-      "merged_at": "2026-11-16T15:19:47Z",
-      "required": []
     },
     "19882": {
       "merge_sha": "4dea560393d4565fafb9d52e3cbf9963a1a2245d",

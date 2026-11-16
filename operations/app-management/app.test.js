@@ -6,6 +6,7 @@ const test = require("node:test");
 const { prependApp, readApps, validateApps, writeApps } = require("./app.js");
 
 const APP = {
+    id: "0b1c2d3e-4f50-4172-8394-a5b6c7d8e9f0",
     emoji: "🌻",
     name: "Sunflower Studio",
     url: "https://example.com",
@@ -41,7 +42,7 @@ test("prepends a validated catalog app", () => {
     const filePath = path.join(directory, "app.json");
 
     writeApps([APP], filePath);
-    const first = { ...APP, name: "First App" };
+    const first = { ...APP, id: "first-app", name: "First App" };
     prependApp(first, filePath);
     assert.deepEqual(readApps(filePath), [first, APP]);
 
@@ -108,5 +109,14 @@ test("rejects missing and wrong-typed fields", () => {
     assert.throws(
         () => validateApps([{ ...APP, screenshot: "typo" }]),
         /screenshot is not a catalog field/,
+    );
+});
+
+test("requires a unique id on every app", () => {
+    const { id: _id, ...withoutId } = APP;
+    assert.throws(() => validateApps([withoutId]), /id is required/);
+    assert.throws(
+        () => validateApps([APP, { ...APP, name: "Copy" }]),
+        /\[1\]\.id repeats/,
     );
 });

@@ -1,8 +1,17 @@
-import { Await, createFileRoute, redirect } from "@tanstack/react-router";
-import { useDeferredValue } from "react";
+import {
+    Await,
+    createFileRoute,
+    redirect,
+    useRouter,
+} from "@tanstack/react-router";
+import { useDeferredValue, useMemo } from "react";
+import { accountClient } from "../api.ts";
 import { Deployments } from "../components/community-endpoints";
 import { DeploymentsPlaceholder } from "../components/community-endpoints/community-endpoints.tsx";
+import { readError } from "../components/community-endpoints/types.ts";
 import { MyApps, SubmitAppButton } from "../components/my-apps.tsx";
+import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-models")({
@@ -37,10 +46,20 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 function MyModelsPage() {
     const retry = useDashboardRetry("profile");
     const retryApps = useDashboardRetry("apps");
-    const { profile, apps, user } = useDeferredValue(
+    const router = useRouter();
+    const { profile, apps, apiKeys, earnings, user } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
     const githubConnected = Boolean(user?.githubId);
+    const appsData = useMemo(
+        () => Promise.all([apps, apiKeys, earnings]),
+        [apps, apiKeys, earnings],
+    );
+    const refresh = () =>
+        router.invalidate({
+            filter: (match) => match.routeId === DashboardRoute.id,
+            sync: true,
+        });
     const appsTab = {
         action: (
             <Await promise={apps} fallback={null}>
@@ -49,20 +68,74 @@ function MyModelsPage() {
         ),
         content: (
             <Await
-                promise={apps}
+                promise={appsData}
                 fallback={
                     <MyApps
                         apps={undefined}
+                        apiKeys={[]}
+                        earnedByKey={new Map()}
                         githubConnected={githubConnected}
                         onRetry={retryApps}
+                        onUpdateApp={async () => {}}
+                        onUpdateKey={async () => {}}
+                        onCreateKey={async () => {}}
+                        onDeleteKey={async () => {}}
+                        onDeleteApp={async () => {}}
                     />
                 }
             >
-                {(listed) => (
+                {([listed, keys, earned]) => (
                     <MyApps
                         apps={listed}
+                        apiKeys={keys ?? []}
+                        earnedByKey={
+                            new Map(
+                                earned?.perEntity.map((row) => [
+                                    row.entity_id,
+                                    row.paid_earned + row.tier_earned,
+                                ]),
+                            )
+                        }
                         githubConnected={githubConnected}
                         onRetry={retryApps}
+                        onUpdateApp={async (id, changes) => {
+                            const response = await accountClient.apps[
+                                ":id"
+                            ].$patch({ param: { id }, json: changes });
+                            if (!response.ok) {
+                                throw new Error(await readError(response));
+                            }
+                            await refresh();
+                        }}
+                        onUpdateKey={async (id, updates) => {
+                            await updateApiKey(id, updates);
+                            await refresh();
+                        }}
+                        onCreateKey={async (key) => {
+                            await createKeyWithPermissions({
+                                ...key,
+                                prefix: "pk",
+                            });
+                            await refresh();
+                        }}
+                        onDeleteKey={async (id) => {
+                            const response = await accountClient.keys[
+                                ":id"
+                            ].$delete({ param: { id } });
+                            if (!response.ok) {
+                                throw new Error(await readError(response));
+                            }
+                            await refresh();
+                        }}
+                        onDeleteApp={async (id) => {
+                            const response = await accountClient.apps[
+                                ":id"
+                            ].$delete({ param: { id } });
+                            if (!response.ok) {
+                                throw new Error(await readError(response));
+                            }
+                            await refresh();
+                        }}
                     />
                 )}
             </Await>

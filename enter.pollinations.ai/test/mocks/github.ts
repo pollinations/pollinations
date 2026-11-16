@@ -8,6 +8,8 @@ import { createMiddleware } from "hono/factory";
 const REPO = "pollinations/pollinations";
 
 export type MockGithubState = {
+    /** operations/app-management/app.json as raw.githubusercontent.com serves it. */
+    appCatalog: unknown[];
     secretScanningPublicKeys: Array<{
         key_identifier: string;
         key: string;
@@ -69,6 +71,7 @@ export type MockGithubState = {
 
 export function createMockGithub(): MockAPI<MockGithubState> {
     const state: MockGithubState = {
+        appCatalog: [],
         secretScanningPublicKeys: [],
         user: {
             id: 12345,
@@ -304,12 +307,19 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         });
     });
 
+    const githubRaw = new Hono().get(
+        "/pollinations/pollinations/main/operations/app-management/app.json",
+        (c) => c.json(state.appCatalog),
+    );
+
     const handlerMap = {
         "github.com": createHonoMockHandler(githubOAuth),
         "api.github.com": createHonoMockHandler(githubAPI),
+        "raw.githubusercontent.com": createHonoMockHandler(githubRaw),
     };
 
     const reset = () => {
+        state.appCatalog = [];
         state.secretScanningPublicKeys = [];
         state.requests = [];
     };

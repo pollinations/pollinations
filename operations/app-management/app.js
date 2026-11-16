@@ -6,6 +6,7 @@ const path = require("node:path");
 const APP_FILE = path.resolve(__dirname, "app.json");
 
 const REQUIRED_STRING_FIELDS = [
+    "id",
     "emoji",
     "name",
     "description",
@@ -43,11 +44,15 @@ function validateApps(apps, filePath = APP_FILE) {
     if (!Array.isArray(apps))
         throw new Error(`${filePath} must contain an array`);
 
+    // The id is how Enter's database recognises an app it already holds.
+    const ids = new Set();
     for (const [index, app] of apps.entries()) {
         const label = `${filePath}[${index}]`;
         if (!app || typeof app !== "object" || Array.isArray(app)) {
             throw new Error(`${label} must be an object`);
         }
+        if (ids.has(app.id)) throw new Error(`${label}.id repeats`);
+        ids.add(app.id);
 
         for (const field of Object.keys(app)) {
             if (!CATALOG_FIELDS.has(field)) {

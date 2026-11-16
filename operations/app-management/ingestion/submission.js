@@ -1,3 +1,4 @@
+const { randomUUID } = require("node:crypto");
 const { readApps } = require("../app.js");
 
 const CATEGORIES = new Set([
@@ -199,6 +200,7 @@ function findCatalogDuplicate(
 
 function buildApp(submission, metadata) {
     return {
+        id: randomUUID(),
         emoji: submission.emoji,
         name: submission.name,
         url: submission.appUrl || null,

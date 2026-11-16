@@ -15,6 +15,7 @@ import {
     refreshQuestLeaderboard,
 } from "./routes/quest-leaderboard.ts";
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
+import { importCatalogApps } from "./services/app-import.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
 function stripTrailingSlash(path: string): string {
@@ -92,7 +93,9 @@ export default {
         return app.fetch(request, env, ctx);
     },
     // Every 15 minutes (wrangler.toml).
-    async scheduled(_controller, env) {
+    async scheduled(_controller, env, ctx) {
+        // Independent of the leaderboard: neither job can cut the other short.
+        ctx.waitUntil(importCatalogApps(env));
         await refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS);
     },
 } satisfies ExportedHandler<Env["Bindings"]>;

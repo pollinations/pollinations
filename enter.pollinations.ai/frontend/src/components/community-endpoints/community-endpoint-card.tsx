@@ -304,18 +304,19 @@ type CommunityDetailRowProps = {
     label: string;
     value: ReactNode;
     copyLabel?: string;
+    /** What the button copies when the value shown is a shortened form. */
+    copyValue?: string;
 };
 
-function CommunityDetailRow({
+export function CommunityDetailRow({
     icon,
     label,
     value,
     copyLabel,
+    copyValue = typeof value === "string" ? value : undefined,
 }: CommunityDetailRowProps) {
-    const copyValue = typeof value === "string" ? value : null;
-
     return (
-        <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
+        <div className="grid min-h-6 min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
             <span className="inline-flex items-center gap-1.5 font-medium text-theme-text-muted">
                 <span className="text-theme-text-muted">{icon}</span>
                 {label}

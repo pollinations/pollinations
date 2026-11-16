@@ -76,17 +76,15 @@ it.each([true, false])(
                 headers.find((header) => header.includes("September")),
             ).toContain("Provisional");
         const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g) ?? [];
-        for (const label of ["Expenses", "Compute"]) {
-            const row = rows.find((item) =>
-                item.includes(`aria-label="${label} calculation info"`),
-            );
-            const cell = row
-                ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
-                ?.find((item) => item.includes("−300"));
-            const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-            expect(shown).toBe(unknown ? "*−300" : "−300");
-            expect(cell).toContain("text-xs font-normal text-theme-text-muted");
-        }
+        const row = rows.find((item) =>
+            item.includes('aria-label="Expenses calculation info"'),
+        );
+        const cell = row
+            ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
+            ?.find((item) => item.includes("−300"));
+        const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
+        expect(shown).toBe(unknown ? "*−300" : "−300");
+        expect(cell).toContain("text-xs font-normal text-theme-text-muted");
     },
 );
 

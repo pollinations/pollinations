@@ -298,9 +298,9 @@ describe("RunwayTab labels", () => {
         expect(bridgeHtml).toContain("Other cash movements");
         expect(bridgeHtml).toContain("Exchange-rate changes");
         expect(html).not.toContain("Revenue · net after deductions");
-        expect(html).toContain("Customer payments");
-        expect(html).toContain("Stripe fees");
-        expect(html).toContain("Refunds, disputes &amp; chargebacks");
+        expect(html).not.toContain("Customer payments");
+        expect(html).not.toContain('aria-label="Stripe fees calculation info"');
+        expect(html).not.toContain("Refunds, disputes &amp; chargebacks");
         expect(html).not.toContain('aria-label="Refunds calculation info"');
         expect(html).not.toContain(
             'aria-label="Disputes &amp; chargebacks calculation info"',
@@ -497,7 +497,7 @@ describe("RunwayTab labels", () => {
         expect(runwayValueClass(null)).toBe("text-theme-text-soft");
     });
 
-    it("shows category totals while vendor detail starts collapsed", () => {
+    it("shows revenue and expense totals while details start collapsed", () => {
         const data: Data = {
             privateConfig: PRIVATE_CONFIG_FIXTURE,
             opTransactions: [
@@ -565,7 +565,6 @@ describe("RunwayTab labels", () => {
             createElement(RunwayTab, { data, year: "2026" }),
         );
         expect(html).toContain("Revenue");
-        expect(html).toContain("Compute");
         expect(html).not.toContain("Revenue · net after deductions");
         const balanceIndex = html.indexOf(
             'aria-label="Cash balance calculation info"',
@@ -576,13 +575,9 @@ describe("RunwayTab labels", () => {
         const expensesIndex = html.indexOf(
             'aria-label="Expenses calculation info"',
         );
-        const computeIndex = html.indexOf(
-            'aria-label="Compute calculation info"',
-        );
         expect(revenueIndex).toBeLessThan(balanceIndex);
         expect(revenueIndex).toBeLessThan(expensesIndex);
-        expect(expensesIndex).toBeLessThan(computeIndex);
-        expect(html).toContain("runway-subcategory");
+        expect(html).not.toContain("runway-subcategory");
         expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
@@ -594,8 +589,8 @@ describe("RunwayTab labels", () => {
         expect(html).not.toContain("Revenue less expenses");
         expect(html).toContain('aria-label="Cash balance calculation info"');
         expect(html).toContain('aria-label="Revenue calculation info"');
-        expect(html).toContain('aria-label="Compute calculation info"');
-        expect(html).toContain(
+        expect(html).not.toContain('aria-label="Compute calculation info"');
+        expect(html).not.toContain(
             'aria-label="Customer payments calculation info"',
         );
         expect(html).toContain('class="sr-only">Line item</span>');

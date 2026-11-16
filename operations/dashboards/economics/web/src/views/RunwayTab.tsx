@@ -573,7 +573,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             ),
         [runway.columns, year, data.planningError],
     );
-    const [expensesExpanded, setExpensesExpanded] = useState(true);
+    const [expensesExpanded, setExpensesExpanded] = useState(false);
     const [cashAdjustmentsExpanded, setCashAdjustmentsExpanded] =
         useState(false);
     const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -953,7 +953,7 @@ function RunwayCategoryRows({
     currentMonth?: string;
 }) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
-    const [expanded, setExpanded] = useState(group.category === "revenue");
+    const [expanded, setExpanded] = useState(false);
     const [moreExpanded, setMoreExpanded] = useState(false);
     const rows = runwayDetailRows(group.rows).filter(
         (row) =>

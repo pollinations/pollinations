@@ -1,0 +1,35 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: requests that failed before any model was known,
+    per minute over the last 30 minutes, with how many of them were the
+    shared database (D1) failing and the route that failed most. Per-model
+    health never sees these. d1_failures covers every D1 error, whether it
+    surfaced in the message or as the stack's cause, and the balance check
+    that answers 503 when its read fails, model known or not.
+
+NODE infra_watch_early_errors_node
+SQL >
+    SELECT
+        toStartOfMinute(timestamp) AS minute,
+        count() AS failures,
+        countIf(d1) AS d1_failures,
+        topK(1)(route_path)[1] AS top_route
+    FROM (
+        SELECT
+            timestamp,
+            route_path,
+            toInt32(status) >= 500 AS server_error,
+            model_requested IN ('', 'undefined')
+                AND resolved_model_requested IN ('', 'undefined') AS no_model,
+            positionCaseInsensitive(concat(message, ' ', stack), 'D1_ERROR') > 0
+                OR message = 'Unable to verify balance. Please try again shortly.' AS d1
+        FROM error_event
+        WHERE environment = 'production'
+            AND timestamp >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
+    )
+    WHERE d1 OR (server_error AND no_model)
+    GROUP BY minute
+    ORDER BY minute
+
+TYPE endpoint

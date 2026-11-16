@@ -213,7 +213,7 @@ describe("processParameters", () => {
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
-        "openai/gpt-6-astra:azure:datazone",
+        "openai/gpt-6-astra:aws",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
@@ -293,6 +293,8 @@ describe("processParameters", () => {
         "anthropic/claude-fable-5",
         "anthropic/claude-fable-5:openrouter:vertex-global",
         "anthropic/claude-fable-5.1",
+        "anthropic/claude-fable-5.2",
+        "anthropic/claude-fable-5.2:anthropic",
     ])(
         "removes sampling while keeping the model's existing thinking behavior for %s",
         async (model) => {

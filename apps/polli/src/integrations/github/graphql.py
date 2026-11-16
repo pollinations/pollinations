@@ -7,7 +7,7 @@ import aiohttp
 
 from ...core.config import config
 from ...utils.cache import TTLCache
-from .auth import get_github_token
+from .auth import get_github_read_token, get_github_token
 from .projects import ProjectsMixin
 from .repo_overview import RepoOverviewMixin
 
@@ -113,8 +113,9 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         variables: dict | None = None,
         use_sub_issues: bool = False,
         for_projects: bool = False,
+        read_only: bool = False,
     ) -> dict:
-        token = await get_github_token(for_projects=for_projects)
+        token = await get_github_read_token() if read_only else await get_github_token(for_projects=for_projects)
         if not token:
             if for_projects:
                 return {
@@ -574,9 +575,9 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         }
 
     async def _rest_get(self, url: str) -> dict:
-        """GET-only REST request to GitHub API."""
+        """GET-only REST request to GitHub API, with the read-only token (the model writes the URL)."""
         try:
-            token = await get_github_token()
+            token = await get_github_read_token()
             if not token:
                 return {"error": "GitHub token not configured"}
             headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
@@ -607,13 +608,12 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
             return {"error": "author must be a valid GitHub login"}
 
         if graphql_query:
-            lines = [line for line in graphql_query.strip().splitlines() if not line.strip().startswith("#")]
-            operation = "\n".join(lines).strip().lower()
-            if not operation or operation.startswith("mutation"):
-                return {"error": "Mutations not allowed. github_custom is read-only."}
+            # The model writes this query, so it runs with the read-only token: GitHub
+            # refuses writes and other repos, however the query is spelled.
             result = await self._execute(
                 graphql_query,
                 {"owner": self.owner, "repo": self.repo, "limit": min(max(limit, 1), 100)},
+                read_only=True,
             )
             response = {
                 "mode": "graphql",

@@ -32,10 +32,11 @@ export function formatActivityPollen(value: number): string {
     return formatted;
 }
 
+/** Amounts in tables: the shared 5-digit rule, with "<0.0001" for crumbs. */
 export function formatActivityPollenThreshold(value: number): string {
     if (!Number.isFinite(value) || value === 0) return "0";
     if (Math.abs(value) < TINY_POLLEN_THRESHOLD) {
         return value > 0 ? "<0.0001" : ">-0.0001";
     }
-    return formatActivityPollen(value);
+    return formatPollen(value);
 }

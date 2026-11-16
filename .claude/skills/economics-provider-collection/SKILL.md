@@ -1,6 +1,6 @@
 ---
 name: economics-provider-collection
-description: Run a full Pollinations Economics monthly close, or collect and reconcile a scoped provider's balances, usage, invoices, and model costs through its documented connector.
+description: Start or resume the Pollinations monthly close when the user says "Trigger economics update", or collect and reconcile a scoped provider's balances, usage, invoices, and model costs through its documented connector.
 ---
 
 # Economics provider collection
@@ -8,12 +8,37 @@ description: Run a full Pollinations Economics monthly close, or collect and rec
 Use this skill when the user asks to refresh vendor data, inspect provider
 accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 
+## Trigger economics update
+
+`Trigger economics update` starts or resumes the whole monthly close below.
+An optional `for YYYY-MM` selects a completed month. Without it, use the last
+completed UTC calendar month: on 3 November 2026, close October 2026 and refresh
+current balances and November forecasts. Resolve the date anew on every run.
+If an unfinished close is already in progress in this chat, resume its recorded
+month unless the user explicitly selects another one.
+
+Reusable starting prompt:
+
+> Use $economics-provider-collection to start or resume the monthly Economics
+> close. Read the current workflow, vendor journals, connector guides and
+> dashboard contracts. Collect and reconcile every in-scope vendor and account,
+> original invoices, usage and model breakdowns; archive evidence in Google
+> Drive and prepare the Tinybird updates. Coordinate one subchat per vendor,
+> with at most three running at once, and keep finished subchats open. Continue
+> all independent work through staging dashboard verification, requesting the
+> existing exact-batch approvals when needed. Surface concrete blockers and
+> next actions, and improve verified collection instructions for next month.
+
+This is an on-demand job, not a recurring schedule. A request to draft or edit
+this prompt does not start collection. Invocation authorizes the collection
+workflow, not blanket ledger writes, production publication or secret changes;
+retain the approval gates below. Do not stop after presenting a plan.
+
 ## Monthly Economics close entrypoint
 
-When asked to close Economics, use the requested completed UTC calendar month,
-or the last completed UTC month if none is named. Run the whole app close. Do
-not interpret the request as a single-vendor refresh or stop after a staging
-endpoint count.
+Use the resolved close month from the trigger rules above. Run the whole app
+close. Do not interpret the request as a single-vendor refresh or stop after a
+staging endpoint count.
 
 The first goal is a review-ready local app: collect all available evidence,
 verify its Drive archive, import approved data into Tinybird staging, and open
@@ -23,7 +48,7 @@ review; an import milestone is not that handoff.
 
 1. Open the Economics dashboard's Close, Runway, Unit Economics, and Ledgers
    views and record what is missing or stale. Read the current registry and
-   the app's source contracts in `operations/economics/web/src/App.tsx` and
+   the app's source contracts in `operations/dashboards/economics/web/src/App.tsx` and
    `worker/economics.ts`. Create a private task-specific `<collection-dir>`
    outside Git with `evidence/` and a resumable upload manifest.
 2. Read the production and staging Economics endpoints with their respective
@@ -69,6 +94,59 @@ review; an import milestone is not that handoff.
    the evidence and after-snapshot. Record any verified procedure changes in
    the relevant connector guide so the next close starts from current facts.
 
+## Vendor subchat coordination
+
+For a full close, this chat is the coordinator. Use collaboration subagents
+for the vendor subchats; do not create separate sidebar chats unless the user
+explicitly requests them. A scoped vendor request stays in its existing chat.
+
+- Build the queue from the current Drive vendor journals joined to the
+  repository's canonical IDs, applying vendor and account month bounds. Keep
+  one subchat per canonical vendor for this close, covering all its active
+  accounts. Record the agent ID, month, assigned accounts, artifact path and
+  execution state in the private close checklist; reuse it on resume.
+- Run at most three vendor subchats at once, in addition to the coordinator,
+  or fewer if runtime capacity is lower. Vendor workers must not spawn further
+  agents. When one returns its collected evidence or a concrete blocker, verify
+  and record the handoff, then start the next queued vendor in that free slot.
+  Do not wait for all three to finish before advancing the queue. Keep returned
+  subchats open and idle; do not close, archive or repurpose them for another
+  vendor. Resume the same subchat for follow-up only when a slot is available.
+- Give each worker the resolved UTC month, canonical vendor/account scope,
+  absolute paths to this skill and its connector guide in the coordinator's
+  checkout, Drive journal/archive locations and a private
+  `<collection-dir>/vendors/<vendor-id>/` output directory. Instruct it to
+  complete the scoped collection procedure, not restart the whole close.
+  Use the same instruction files for every worker; collection does not need
+  separate worktrees that may contain an older skill revision.
+  Pass credential locations rather than values. Each worker returns component
+  statuses, verified evidence links, exact proposed rows, reconciliation
+  residuals, blockers with next actions/recheck dates, and verified guide fixes.
+- Workers own their vendor's evidence, proposed rows and Drive journal updates.
+  The coordinator owns the master checklist, shared registry/skill edits,
+  cross-vendor reconciliation, batch approvals and all Tinybird writes. Review
+  handoffs against evidence before combining rows; a worker returning is not
+  proof that its provider-month is complete. No worker may import a batch or
+  edit another vendor's files. Apply verified guide fixes in their owning file
+  and report what will make next month's collection easier.
+- Serialize browser work through the coordinator so workers never navigate a
+  shared browser session concurrently. Preserve the repository's account and
+  window-selection rules. Other workers can continue API, CLI, archive and
+  local analysis work. An access failure or pending invoice leaves that
+  component open; the worker finishes its independent checks and returns the
+  handoff so another vendor can run.
+- Keep shared Wise/Bank, Stripe, Pollen, Revenue Share, user-balance, forecast
+  and dashboard checks on the coordinator's checklist. If Wise or Stripe has
+  a vendor subchat, assign its collection there once and consume that handoff;
+  do not collect the same account twice. The coordinator handles shared checks
+  while vendor workers run, then validates the combined staging result.
+- Keep coordinating until no authorized actionable work remains. Ask promptly
+  for missing access or decisions while other workers continue. A blocked
+  vendor does not block the queue. Preserve all subchats at the provisional or
+  complete handoff, with each outstanding dependency and its next action.
+  If delegation is unavailable, state the limitation and continue independent
+  coordinator work; never claim vendor subchats are running when they are not.
+
 ## Execute and resume the whole close
 
 Maintain one private close checklist in `<collection-dir>`, at canonical
@@ -98,14 +176,14 @@ only usage; it cannot mark the account complete.
   and `not found after archive check`; keep access failures separate from empty
   searches. On resume, read those records before collecting the same data again.
   Never clear a financial gap merely because a file was found or uploaded.
-- Open each active provider's documented registry/guide link and verify the
+- Open each active provider's documented journal/guide link and verify the
   account and page. Record every failed link, changed route, login failure or
   connector error and report it with its consequence; do not silently skip the
   provider. Use visible provider navigation to find a replacement, verify it,
-  then replace the stale URL in its owning registry/guide and briefly report
+  then replace the stale URL in its owning journal/guide and briefly report
   the correction. A working link to the wrong account is an account blocker,
   not a reason to rewrite the account target. Record lifecycle exclusions from
-  the registry; unfamiliar providers and failed links are not exclusions.
+  the vendor journal; unfamiliar providers and failed links are not exclusions.
 - Turn each dashboard alert and reconciliation residual into a checklist action.
   Keep actionable gaps separate from expected billing notices. A postpaid
   estimate already included in the forecast is pending reconciliation, not
@@ -141,7 +219,7 @@ after a check, update that same file with account, service period, checked date,
 outcome, evidence links and next action. Preserve earlier checks. A balance
 snapshot and a monthly evidence review remain separate facts.
 
-`operations/economics/provider-registry.json` retains canonical vendor
+`operations/dashboards/economics/provider-registry.json` retains canonical vendor
 IDs/aliases and model compatibility mappings; join by vendor ID. Do not restore
 vendor definitions or account details into the repository.
 
@@ -165,8 +243,9 @@ vendor definitions or account details into the repository.
 
 For a monthly close, read each active account's vendor guide as you work through
 the checklist; for a scoped request, read that vendor's guide. Guides live in
-`references/providers/<connector>.md`; the registry's `connector` field gives
-the filename. Dots in vendor IDs use dashes when the registry says so.
+`references/providers/<connector>.md`; the private vendor journal's
+`vendor.connector` field gives the filename. Use that explicit value rather
+than deriving a connector name from the vendor ID.
 
 ## Collection order
 
@@ -181,19 +260,30 @@ data:
 Do not build a permanent provider integration for a bounded monthly task. Run
 the documented command or use the dashboard directly.
 
-For dashboard collection, group registry access targets by `workspace`. Open
-all URLs for one workspace together. First enumerate the connected browser
-windows, then use only the window whose visible email and organization match
-the registry target. When the user has authorized reopening links in a selected
-window, reopen absent tabs there and verify the account. Use the registry account
-email (cross-checked with balance evidence) to select an existing Google Workspace
-login. When workspace switching or opening a new window is authorized, do that
-autonomously; ask only when the matching login fails, requires the user, or is
-ambiguous. If the matching Chrome profile has no connected window, use Chrome
-Profiles to open its existing workspace, then refresh the connector inventory
-and verify the provider login. Never substitute an agent profile with a similar
-name. Never store browser-window IDs or copy cookies, passwords, session tokens,
-or credential-reveal URLs.
+Use regular Chrome for dashboard collection, not the embedded browser: the
+user's saved passwords and interactive sign-in are in Chrome. Before driving
+the user's Chrome, ask the user in the current session; a grant from an earlier
+session does not carry over. If they decline, leave the dashboard components
+open and continue with the other sources. Once granted, the workflow may use
+multiple existing Google Workspace Chrome windows/profiles and prepare provider
+sign-ins. First enumerate all connected Chrome instances
+and their tabs. Group the private vendor journal's access targets by `workspace`
+and use its account `loginEmail` to choose the intended provider login. Prefer
+an existing matching provider tab; otherwise open the documented URL in an
+existing Workspace profile, opening its Chrome window if needed. Do not stop
+merely because no billing tab is open or ask the user to select one global
+profile for every vendor.
+
+A Chrome profile's email need not equal the provider login email. Verify the
+provider's visible account and organization against the journal before collecting
+data; permission to use a window does not make its current provider session the
+right account. Keep that vendor's work in its verified tab and instance. Prepare
+sign-in using the recorded login, then ask the user to complete any required
+password, MFA or consent step in Chrome; continue independent work meanwhile.
+Ask about account ambiguity only when the journal and visible account cannot
+resolve it. Never substitute an agent profile with a similar name. Never store
+browser-window IDs or copy cookies, passwords, session tokens or credential-reveal
+URLs. This sign-in permission does not authorize secret mutations.
 
 Use only existing authorized credentials. Creating, rotating, synchronizing,
 or deploying a credential is outside collection and requires the repository's
@@ -205,7 +295,7 @@ For each active vendor and each active account, collect:
 
 - the current cash/prepaid and promotional-credit balance when
   `balanceTracking` is true;
-- the last completed UTC calendar month's usage at the deepest source-backed
+- the resolved close month's usage at the deepest source-backed
   grain available: model, GPU instance/workload, service/SKU, then provider
   total;
 - the invoice, statement, receipt, or provider export that proves the billed
@@ -213,10 +303,12 @@ For each active vendor and each active account, collect:
 
 Store one balance snapshot per canonical account. Multiple grant lots use the
 same checked timestamp and distinct resource IDs (`current-balance-lot`), not
-an additional account-total row. A snapshot collected during
-the current calendar month closes the previous month; do not require repeated
-checks during that same close cycle. Account aliases only collapse IDs that are
-explicitly listed in the registry.
+an additional account-total row. Balance snapshots describe collection-time
+state, independently of the selected usage month. Reuse verified snapshots
+from the current UTC calendar month; after rollover, collect fresh current
+snapshots and refresh the current month's forecast while retaining the resolved
+close month. Never relabel current balances as historical month-end balances.
+Account aliases only collapse IDs explicitly listed in the vendor journal.
 
 Keep provider usage, provider balance, and bank payment as separate facts. A
 top-up is not usage. An invoice date is not automatically the usage month. A
@@ -281,12 +373,12 @@ name or an undocumented ratio.
   Enter `stripe_event` only for payment identity. Do not append monthly summaries
   to legacy `economics_stripe_sales`; its staging rows were archived and removed.
   Production retains the old source until separately migrated. Use the validated
-  collector in `operations/economics/ingest/stripe-sync.mjs`.
+  collector in `operations/dashboards/economics/ingest/stripe-sync.mjs`.
 - `economics_pollen_usage` stores internal Paid and Quest consumption. Reconcile
   it at provider-month grain. Pollen model ids are accounting identities as
   recorded: today's registry aliases never merge them. A provider label joins
   a Pollen model only when it equals that month's Pollen id or through the
-  reviewed `modelLabels` table in `operations/economics/provider-registry.json`.
+  reviewed `modelLabels` table in `operations/dashboards/economics/provider-registry.json`.
   Add a label with the Pollen id it billed at the time, or `null` when it has
   no Pollen model. Group several ids in one entry only when they are the same
   model at the same provider billed on one line (a persona, resolution, or
@@ -339,7 +431,7 @@ the affected IDs and correct only rejected rows. Never resend accepted rows.
 Validate staging first; production requires separate approval.
 
 Staging verification uses
-`operations/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.
+`operations/dashboards/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.
 Never use deprecated `TINYBIRD_OPS_READ_TOKEN` to verify the Economics staging
 app; it can resolve to another workspace. Use the scoped ingest token only for
 raw datasource backup/read and the approved append.
@@ -348,7 +440,7 @@ raw datasource backup/read and the approved append.
 
 Maintain the workflow as it is used: replace an outdated procedure in its
 owning guide after verifying the correction. Keep shared rules here, provider
-routes in their guides/registry, and task facts in the private checklist. Remove
+routes in their guides/journals, and task facts in the private checklist. Remove
 superseded or duplicate instructions; do not accumulate incident narratives.
 Updates should state the action, required evidence and stopping condition.
 

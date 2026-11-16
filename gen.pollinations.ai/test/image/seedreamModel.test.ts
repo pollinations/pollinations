@@ -1,4 +1,6 @@
 import { env } from "cloudflare:test";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/image/utils/imageDownload", () => {
@@ -17,6 +19,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "../../src/image/models/seedreamReplicateModel.ts";
+import { callSeedream5ProVercelAPI } from "../../src/image/models/seedreamVercelModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 interface ReplicateRequest {
@@ -77,6 +80,7 @@ beforeEach(() => {
     syncImageEnvironment({
         ...env,
         REPLICATE_API_TOKEN: "r8_test_token",
+        AI_GATEWAY_API_KEY: "test-gateway-key",
     } as CloudflareBindings);
 });
 
@@ -349,6 +353,23 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
 });
 
 describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
+    it("attributes the Replicate backup to its own route while retaining the Vercel quote", async () => {
+        mockReplicateFetch([]);
+        const model = "bytedance/seedream-5.0-pro:replicate";
+        const result = await callSeedream5ProAPI("test", {
+            ...baseParams,
+            model,
+        });
+        expect(result.trackingData.actualModel).toBe(model);
+        const billed = calculateUsageBilling({
+            model: "bytedance/seedream-5.0-pro",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES[model],
+            quotedBy: IMAGE_SERVICES["bytedance/seedream-5.0-pro"],
+        });
+        expect(billed.cost.totalCost).toBe(0.09);
+        expect(billed.price.totalPrice).toBe(0.035);
+    });
     it("posts to bytedance/seedream-5-pro with paid pro tracking label", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
@@ -391,5 +412,117 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
         expect(input.size).toBe("2K");
+    });
+});
+
+describe("Seedream 5 Pro via Vercel", () => {
+    function mockGateway(cost: unknown = "0.035") {
+        return vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                images: [Buffer.from(JPEG_BYTES).toString("base64")],
+                providerMetadata: { gateway: { cost } },
+            }),
+        );
+    }
+
+    it.each([
+        [undefined, 1024, 1024, "2000x2000"],
+        [undefined, 1920, 1080, "2672x1504"],
+        ["9:16", 1024, 1024, "1504x2672"],
+    ] as const)(
+        "preserves the 2K canvas for ratio %s and dimensions %sx%s",
+        async (aspectRatio, width, height, size) => {
+            const fetch = mockGateway();
+            await callSeedream5ProVercelAPI("test", {
+                ...baseParams,
+                model: "bytedance/seedream-5.0-pro",
+                aspectRatio,
+                width,
+                height,
+            });
+            const [url, init] = fetch.mock.calls[0];
+            expect(url).toBe("https://ai-gateway.vercel.sh/v4/ai/image-model");
+            expect(new Headers(init?.headers).get("ai-model-id")).toBe(
+                "bytedance/seedream-5.0-pro",
+            );
+            expect(JSON.parse(init?.body as string)).toMatchObject({
+                n: 1,
+                size,
+                providerOptions: {
+                    gateway: { only: ["bytedance"] },
+                    bytedance: { watermark: false },
+                },
+            });
+            expect(JSON.parse(init?.body as string)).not.toHaveProperty(
+                "aspectRatio",
+            );
+        },
+    );
+
+    it("preserves all ten references and matches the first image's aspect ratio", async () => {
+        const fetch = mockGateway();
+        const png = Buffer.alloc(24);
+        png.set([137, 80, 78, 71, 13, 10, 26, 10]);
+        png.writeUInt32BE(1024, 16);
+        png.writeUInt32BE(512, 20);
+        const reference = `data:image/png;base64,${png.toString("base64")}`;
+        await callSeedream5ProVercelAPI("edit", {
+            ...baseParams,
+            model: "bytedance/seedream-5.0-pro",
+            image: Array.from({ length: 10 }, () => reference),
+            aspectRatio: "adaptive",
+        });
+        const body = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+        expect(body.files).toHaveLength(10);
+        expect(body.files[0]).toMatchObject({
+            type: "file",
+            mediaType: "image/png",
+        });
+        expect(body.size).toBe("2832x1408");
+    });
+
+    it("settles the complete reported charge rather than reconstructing it from the quote", async () => {
+        mockGateway("0.037");
+        const model = "bytedance/seedream-5.0-pro";
+        const result = await callSeedream5ProVercelAPI("test", {
+            ...baseParams,
+            model,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES[model],
+            input: { providerBilling: result.trackingData.providerBilling },
+        });
+        expect(result.buffer).toEqual(Buffer.from(JPEG_BYTES));
+        expect(billed.cost.totalCost).toBe(0.037);
+        expect(billed.price.totalPrice).toBe(0.037);
+    });
+
+    it.each([null, "", "invalid", -1])(
+        "rejects invalid billed cost %s",
+        async (cost) => {
+            mockGateway(cost);
+            await expect(
+                callSeedream5ProVercelAPI("test", {
+                    ...baseParams,
+                    model: "bytedance/seedream-5.0-pro",
+                }),
+            ).rejects.toThrow("valid billed cost");
+        },
+    );
+
+    it("rejects an image with no provider receipt", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                images: [Buffer.from(JPEG_BYTES).toString("base64")],
+            }),
+        );
+        await expect(
+            callSeedream5ProVercelAPI("test", {
+                ...baseParams,
+                model: "bytedance/seedream-5.0-pro",
+            }),
+        ).rejects.toThrow("valid billed cost");
     });
 });

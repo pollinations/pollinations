@@ -27,6 +27,7 @@ type ReplicateCall = {
 function createBillingVariantMocks() {
     const replicateState: { calls: ReplicateCall[] } = { calls: [] };
     const openRouterState: { calls: Record<string, unknown>[] } = { calls: [] };
+    const xaiState: { calls: Record<string, unknown>[] } = { calls: [] };
     const falState = { submissions: 0 };
     return createFetchMock({
         fal: {
@@ -87,6 +88,20 @@ function createBillingVariantMocks() {
             },
             reset: () => {
                 openRouterState.calls = [];
+            },
+        },
+        xai: {
+            state: xaiState,
+            handlerMap: {
+                "api.x.ai": async (request: Request) => {
+                    xaiState.calls.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({ data: [{ url: OUTPUT_IMAGE_URL }] });
+                },
+            },
+            reset: () => {
+                xaiState.calls = [];
             },
         },
         replicate: {
@@ -265,11 +280,10 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "openrouter");
-    syncImageEnv(
-        { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-        ["OPENROUTER_API_KEY"],
-    );
+    await mocks.enable("tinybird", "xai", "media");
+    syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+        "XAI_API_KEY",
+    ]);
 
     await generate("/v1/images/edits", paidApiKey, {
         method: "POST",
@@ -284,18 +298,12 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         }),
     });
 
-    expect(mocks.openrouter.state.calls).toEqual([
+    expect(mocks.xai.state.calls).toEqual([
         expect.objectContaining({
-            model: "x-ai/grok-imagine-image-2.0",
+            model: "grok-imagine-image-2.0",
             quality: "low",
-            resolution: "2K",
-            provider: { only: ["xai"], allow_fallbacks: false },
-            input_references: [
-                {
-                    type: "image_url",
-                    image_url: { url: INPUT_IMAGE_URL },
-                },
-            ],
+            resolution: "2k",
+            images: [{ url: INPUT_IMAGE_URL, type: "image_url" }],
         }),
     ]);
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -304,11 +312,11 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         modelUsed: "x-ai/grok-imagine-image-2.0",
         costVariant: "low_2k",
         tokenCountPromptImage: 1,
-        tokenPricePromptImage: 0.01 * 1.055,
+        tokenPricePromptImage: 0.01,
         tokenCountCompletionImage: 1,
-        tokenPriceCompletionImage: 0.06 * 1.055,
-        totalCost: expect.closeTo(0.07 * 1.055, 8),
-        totalPrice: 0.07385,
+        tokenPriceCompletionImage: 0.06,
+        totalCost: expect.closeTo(0.07, 8),
+        totalPrice: 0.07,
     });
 });
 

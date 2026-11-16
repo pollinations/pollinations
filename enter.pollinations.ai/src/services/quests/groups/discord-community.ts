@@ -17,7 +17,8 @@ const joinDiscordQuest: QuestDefinition = {
     id: "join_discord",
     title: "Join the Pollinations Discord",
     description: `[Connect Discord](/account), then [join the Pollinations community server](${DISCORD_INVITE_URL}).`,
-    category: "community",
+    // Onboarding: quick to do, so held with the other setup quests.
+    category: "setup",
     scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "tier",

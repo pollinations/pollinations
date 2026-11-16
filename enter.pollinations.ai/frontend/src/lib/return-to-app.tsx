@@ -18,13 +18,19 @@ export function parseAppUrl(value: unknown): string | null {
  * only the origin for cross-site links unless the app relaxes its referrer
  * policy (Open WebUI's worker does, so its chat URL comes through). Pages
  * store it in their own URL on first load, because after a Stripe round
- * trip the referrer is Stripe.
+ * trip the referrer is Stripe. Signing in comes back from GitHub or Google,
+ * which are never the app.
  */
 export function referrerAppUrl(): string | null {
     const referrer = parseAppUrl(document.referrer);
     if (!referrer) return null;
     const url = new URL(referrer);
-    if (url.origin === window.location.origin) return null;
+    if (
+        url.origin === window.location.origin ||
+        url.hostname === "github.com" ||
+        url.hostname === "accounts.google.com"
+    )
+        return null;
     url.hash = "";
     return url.href;
 }

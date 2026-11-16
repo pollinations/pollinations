@@ -88,7 +88,6 @@ describe("reasoning_effort model wiring", () => {
         "qwen3.7-flash",
         "qwen/qwen3.8-flash",
         "qwen3.8-27b",
-        "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
         "nemotron-3.5-lightning",
@@ -118,8 +117,12 @@ describe("reasoning_effort model wiring", () => {
         "step-3.5-flash",
         "step-flash",
         "qwen-vision-pro",
+        "qwen3.8-2.4t-a95b",
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
         "thinkingmachines/inkling",
         "kimi-code",
+        "meta/muse-spark-open",
+        "meta/muse-spark-open:vercel:baseten",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

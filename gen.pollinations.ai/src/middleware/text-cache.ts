@@ -12,6 +12,7 @@ import {
 } from "@/utils/text-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -41,6 +42,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
+        // seed -1 asks for a fresh generation, so each request gets its own entry.
         const seed =
             c.req.method === "GET" || c.req.method === "HEAD"
                 ? Number(c.req.query("seed"))
@@ -49,23 +51,41 @@ const textCacheAdapter: GenerationCacheAdapter = {
                           | { seed?: number }
                           | undefined
                   )?.seed;
-        if (seed === -1) {
-            c.set("textSeedScope", c.var.textSeedScope ?? crypto.randomUUID());
+        if (variables.model?.requested?.includes(",") || seed === -1) {
+            c.set("generationCachePrivate", true);
         }
-        // Agent runs and random seeds get their own entries. Keep the entry
-        // so the coordinator can still deliver a non-streaming result.
+        // Agent runs are unique; caller lists are stable per key because their
+        // choices depend on that key's permissions and available budget.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.textSeedScope ?? c.var.requestId}`
-            : c.var.textSeedScope;
+            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
+            : seed === -1
+              ? `random-seed:${crypto.randomUUID()}`
+              : variables.model?.requested?.includes(",")
+                ? `caller-list:${callerCacheScope(variables.auth)}`
+                : undefined;
+        const cacheVersions = [
+            variables.model?.definition.cacheVersion,
+            ...(variables.model?.fallbackEntries?.map(
+                ({ definition }) => definition.cacheVersion,
+            ) ?? []),
+        ].filter((version): version is string => version !== undefined);
         return generateCacheKey(
             c.req.raw,
             bodyText,
-            partition,
+            cacheVersions.length
+                ? JSON.stringify([partition, ...new Set(cacheVersions)])
+                : partition,
             getRequiredSafetyFeatures(variables.model),
         );
     },
-    get: getCachedResponse,
+    async get(c, cacheKey) {
+        const response = await getCachedResponse(c, cacheKey);
+        if (response && c.var.generationCachePrivate) {
+            response.headers.set("Cache-Control", "private, no-store");
+        }
+        return response;
+    },
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
@@ -78,18 +98,16 @@ const textCacheAdapter: GenerationCacheAdapter = {
         });
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
-        captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+        captured.headers.set(
+            "Cache-Control",
+            c.var.generationCachePrivate
+                ? "private, no-store"
+                : IMMUTABLE_CACHE_CONTROL,
+        );
         return { response: captured, write: capture.write };
     },
 };
 
-const cacheText = createGenerationCache(textCacheAdapter);
-export const textCache: typeof cacheText = async (c, next) => {
-    const response = await cacheText(c, next);
-    if (response) c.res = response;
-    if (c.var.textSeedScope) {
-        c.header("Cache-Control", "private, no-store");
-    }
-};
+export const textCache = createGenerationCache(textCacheAdapter);
 export const textExecutionCache =
     createGenerationExecutionCache(textCacheAdapter);

@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { FinishReason } from "ai";
+import type { FinishReason, ToolSet } from "ai";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -60,6 +60,23 @@ export function createAgentModelProvider({
             },
         },
     });
+}
+
+/** Whether the run stopped on calls only the caller can answer (no execute). */
+export function awaitsCaller(
+    steps: { toolCalls: { toolName: string; invalid?: boolean }[] }[],
+    tools: ToolSet,
+): boolean {
+    return (
+        steps
+            .at(-1)
+            ?.toolCalls.some(
+                (call) =>
+                    !call.invalid &&
+                    Object.hasOwn(tools, call.toolName) &&
+                    !tools[call.toolName].execute,
+            ) ?? false
+    );
 }
 
 export function openAIFinishReason(reason: FinishReason): string {

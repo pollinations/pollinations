@@ -57,7 +57,7 @@ export const ContentPartSchema = z.union([
 
 export const CreateEmbeddingRequestSchema = z
     .object({
-        model: z.string().default(DEFAULT_EMBEDDING_MODEL).meta({
+        model: z.string().min(1).default(DEFAULT_EMBEDDING_MODEL).meta({
             description: "Embedding model to use",
             example: "google/gemini-embedding-2",
         }),

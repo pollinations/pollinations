@@ -1,4 +1,4 @@
-export { ApiKeyList } from "./api-key-list.tsx";
+export { ApiKeyList, SidebarKeys } from "./api-key-list.tsx";
 export type {
     ApiKey,
     ApiKeyManagerProps,

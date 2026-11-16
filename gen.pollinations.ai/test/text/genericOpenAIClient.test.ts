@@ -1,6 +1,9 @@
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isRetryableFallbackError } from "../../src/fallback.ts";
+import {
+    isRetryableFallbackError,
+    withModelFallback,
+} from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 import { resolveModelConfig } from "../../src/text/utils/modelResolver.js";
@@ -10,9 +13,72 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
-    it.each([false, true])(
-        "normalizes configured Mistral thinking chunks and preserves usage (stream=%s)",
-        async (stream) => {
+    it.each([503, 429])(
+        "rejects an opening SSE provider error (%s) before accepting the stream",
+        async (code) => {
+            const details = {
+                code,
+                message:
+                    "Service temporarily unavailable due to high load, please retry.",
+                metadata: { error_type: "provider_overloaded" },
+            };
+            const event = JSON.stringify({
+                model: "unknown",
+                choices: [],
+                error: details,
+            });
+            const encoder = new TextEncoder();
+            const cancel = vi.fn();
+            const fragments = [
+                `data: ${event.slice(0, 30)}`,
+                `${event.slice(30)}\r\n\r\n`,
+            ];
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    const fragment = fragments.shift();
+                    if (fragment) controller.enqueue(encoder.encode(fragment));
+                },
+                cancel,
+            });
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "mistralai/mistral-small-2603", stream: true },
+                {
+                    endpoint: "https://openrouter.ai/api/v1/chat/completions",
+                    fetcher: async () =>
+                        new Response(body, {
+                            headers: {
+                                "content-type": "text/event-stream",
+                                "x-request-id": "failed-stream",
+                            },
+                        }),
+                },
+            ).catch((error) => error);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error).toMatchObject({
+                status: code === 429 ? 502 : 503,
+                upstreamStatus: code,
+                message: details.message,
+                responseBody: event,
+                requestUrl: new URL(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                ),
+            });
+            expect(isRetryableFallbackError(error)).toBe(true);
+            expect(cancel).toHaveBeenCalledOnce();
+        },
+    );
+
+    it.each([
+        ["mistralai/mistral-large-4", false],
+        ["mistralai/mistral-large-4", true],
+        // Reasoning on Mistral Small 4 also returns content as thinking chunks.
+        ["mistralai/mistral-small-4", false],
+        ["mistralai/mistral-small-4", true],
+    ] as const)(
+        "normalizes configured Mistral thinking chunks and preserves usage (%s stream=%s)",
+        async (model, stream) => {
             const usage = {
                 prompt_tokens: 2,
                 completion_tokens: 7,
@@ -39,7 +105,7 @@ describe("genericOpenAIClient", () => {
                 usage,
             };
             const resolved = resolveModelConfig([], {
-                model: "mistralai/mistral-large-4",
+                model,
                 stream,
             });
             const completion = await genericOpenAIClient(
@@ -71,6 +137,118 @@ describe("genericOpenAIClient", () => {
             expect(result.usage).toEqual(usage);
         },
     );
+
+    it("does not retry an opening SSE content-policy rejection", async () => {
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    new Response(
+                        'data: {"error":{"code":403,"message":"PROHIBITED_CONTENT"}}\n\n',
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ status: 422, upstreamStatus: 403 });
+        expect(isRetryableFallbackError(error)).toBe(false);
+    });
+
+    it.each([
+        'data: {"choices":[{"delta":{"content":"Hello café"}}]}\n\n',
+        ": OPENROUTER PROCESSING\n\n",
+    ])(
+        "preserves a late SSE error after the opening frame, even in the same chunk: %s",
+        async (first) => {
+            const wire =
+                first +
+                'data: {"error":{"code":503,"message":"provider stopped"}}\n\n' +
+                "data: [DONE]\n\n";
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () =>
+                        new Response(wire, {
+                            headers: { "content-type": "text/event-stream" },
+                        }),
+                },
+            );
+            await expect(
+                new Response(completion.responseStream).text(),
+            ).resolves.toBe(wire);
+        },
+    );
+
+    it.each([
+        'data: {"choices":[{"delta":{"role":"assistant"}}]}\n\n',
+        ": OPENROUTER PROCESSING\n\n",
+    ])(
+        "forwards the opening frame without waiting for completion and cancels upstream: %s",
+        async (first) => {
+            const cancel = vi.fn();
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () =>
+                        new Response(
+                            new ReadableStream({
+                                start(controller) {
+                                    controller.enqueue(
+                                        new TextEncoder().encode(first),
+                                    );
+                                },
+                                cancel,
+                            }),
+                            {
+                                headers: {
+                                    "content-type": "text/event-stream",
+                                },
+                            },
+                        ),
+                },
+            );
+            if (!completion.responseStream)
+                throw new Error("Expected a stream");
+            const reader = completion.responseStream.getReader();
+            const chunk = await reader.read();
+            expect(new TextDecoder().decode(chunk.value)).toBe(first);
+            await reader.cancel("client disconnected");
+            expect(cancel).toHaveBeenCalledWith("client disconnected");
+        },
+    );
+
+    it("stops looking ahead when an opening SSE frame is oversized", async () => {
+        const prefix = `: ${"x".repeat(70_000)}`;
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                controller.enqueue(
+                                    new TextEncoder().encode(prefix),
+                                );
+                            },
+                        }),
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            },
+        );
+        if (!completion.responseStream) throw new Error("Expected a stream");
+        const reader = completion.responseStream.getReader();
+        expect(new TextDecoder().decode((await reader.read()).value)).toBe(
+            prefix,
+        );
+        await reader.cancel();
+    });
 
     it("translates Mistral request controls while hiding reasoning locally", async () => {
         const resolved = resolveModelConfig([], {
@@ -261,6 +439,30 @@ describe("genericOpenAIClient", () => {
         expect(isRetryableFallbackError(error)).toBe(true);
     });
 
+    it.each([400, 429, 503])(
+        "does not classify an echoed prompt as moderation in an HTTP %s error",
+        async (status) => {
+            const responseBody = JSON.stringify({
+                error: { message: "Provider returned error", code: status },
+                request: { prompt: "Explain the NSFW label" },
+            });
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "Explain the NSFW label" }],
+                { model: "test-model" },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () => new Response(responseBody, { status }),
+                },
+            ).catch((error) => error);
+            expect(error).toMatchObject({
+                status: status === 429 ? 502 : status,
+                upstreamStatus: status,
+                responseBody,
+            });
+            expect(isRetryableFallbackError(error)).toBe(status !== 400);
+        },
+    );
+
     it.each([200, 429])(
         "retains the complete raw provider envelope at HTTP %s",
         async (status) => {
@@ -312,7 +514,7 @@ describe("genericOpenAIClient", () => {
         });
     });
 
-    it("reports Portkey's exhausted deadline as 504 without starting a fallback", async () => {
+    it("reports Portkey's timeout as a 504 that starts a fallback", async () => {
         const details = {
             error: {
                 type: "timeout_error",
@@ -333,7 +535,7 @@ describe("genericOpenAIClient", () => {
             upstreamStatus: 408,
             details,
         });
-        expect(isRetryableFallbackError(failure)).toBe(false);
+        expect(isRetryableFallbackError(failure)).toBe(true);
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
@@ -882,6 +1084,56 @@ describe("genericOpenAIClient", () => {
                 details: status === 200 ? details : body,
             });
             expect(isRetryableFallbackError(error)).toBe(false);
+        },
+    );
+
+    it.each([
+        { status: 400, details: undefined },
+        {
+            status: 422,
+            details: {
+                message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            },
+        },
+    ])(
+        "preserves embedded $status errors whose message matches Workerd",
+        async ({ status, details }) => {
+            const providerError = {
+                message: "Network connection lost.",
+                code: 400,
+                ...(details === undefined ? {} : { details }),
+            };
+            const responseBody = JSON.stringify({ error: providerError });
+            const fetcher = vi.fn(
+                async () =>
+                    new Response(responseBody, {
+                        headers: { "content-type": "application/json" },
+                    }),
+            );
+            const attempts: string[] = [];
+            const error = await withModelFallback(
+                [{ id: "primary" }, { id: "fallback" }],
+                (candidate) => {
+                    attempts.push(candidate.id);
+                    return genericOpenAIClient(
+                        [{ role: "user", content: "hello" }],
+                        { model: candidate.id },
+                        { endpoint: "https://portkey.test/chat", fetcher },
+                    );
+                },
+            ).catch((error) => error);
+
+            expect(attempts).toEqual(["primary"]);
+            expect(fetcher).toHaveBeenCalledOnce();
+            expect(error).toMatchObject({
+                message: providerError.message,
+                status,
+                upstreamStatus: 400,
+                details: details ?? providerError,
+                responseBody,
+                model: "primary",
+                requestUrl: new URL("https://portkey.test/chat"),
+            });
         },
     );
 

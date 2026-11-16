@@ -226,7 +226,7 @@ export const sitesRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "machines");
+            requireAccountPermission(c, "machines");
             const rows = await drizzle(c.env.DB)
                 .select()
                 .from(site)
@@ -284,7 +284,7 @@ export const sitesRoutes = new Hono<Env>()
         ),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "machines");
+            requireAccountPermission(c, "machines");
             const { name } = c.req.valid("param");
             await claimSite(c.env.DB, name, user.id);
             return c.json(
@@ -351,7 +351,7 @@ export const sitesRoutes = new Hono<Env>()
         ),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "machines");
+            requireAccountPermission(c, "machines");
             const { name } = c.req.valid("param");
             const body = c.req.valid("json");
             const db = drizzle(c.env.DB);
@@ -405,7 +405,7 @@ export const sitesRoutes = new Hono<Env>()
         ),
         async (c) => {
             const user = c.var.auth.requireUser();
-            requireAccountPermission(c.var.auth.apiKey, "machines");
+            requireAccountPermission(c, "machines");
             const { name } = c.req.valid("param");
             const db = drizzle(c.env.DB);
             const row = await findSite(db, name);

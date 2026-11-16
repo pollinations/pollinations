@@ -33,6 +33,8 @@ it("opens the editor with the key's current budget, not the one loaded with the 
             renderer = create(
                 <ApiKeyList
                     apiKeys={[key(5)]}
+                    tab="secret"
+                    onTabChange={vi.fn()}
                     onCreate={vi.fn()}
                     onUpdate={vi.fn()}
                     onDelete={vi.fn()}

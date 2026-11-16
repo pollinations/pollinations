@@ -11,7 +11,11 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 **Available models:** {{TEXT_MODELS}}
 
-For Chat Completions and simple text requests, `seed: -1` requests a fresh random seed and generation each time. Other explicit seeds remain reproducible on models that support them; omitted seeds retain the existing cache behavior.
+### Caller-selected fallbacks
+
+Set `model` to a comma-separated list of up to four model IDs or aliases, such as `"model-a,model-b,model-a"`. Models are tried in the supplied order on retryable upstream failures; repeated entries request separate attempts. All entries must have the same model category and support the requested endpoint. Listed alternatives excluded by the API key's permissions are skipped. List requests are cached per API key or signed-in session user because their alternatives depend on that caller’s permissions and budget.
+
+An explicit list replaces each model's configured fallback routes. The model that serves determines the price and whether Paid Pollen is required; balance checks, key budgets and rate limits apply before its attempt. A single-model request keeps its configured fallback routes and original pricing rules. Find model IDs, categories and supported endpoints in [`GET /v1/models`](https://gen.pollinations.ai/v1/models).
 
 ### Responses API
 
@@ -176,9 +180,9 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev-1.13`)
+### Typed decisions (`typesafe/jev-1.14`)
 
-`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
+`typesafe/jev-1.14` (aliases `jev`, `typesafe/jev`, and `typesafe/jev-1.13`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
 
 ```json
 {
@@ -199,7 +203,7 @@ The response carries `answers`, one field per question, each with `type` and its
 ```json
 {
   "id": "dec-…",
-  "model": "typesafe/jev-1.13",
+  "model": "typesafe/jev-1.14",
   "provider": "TypeSafe",
   "answers": {
     "department": {

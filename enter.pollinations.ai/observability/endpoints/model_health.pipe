@@ -1,4 +1,3 @@
-TOKEN tinybird_read_public READ
 TOKEN tinybird_read READ
 
 DESCRIPTION >
@@ -22,6 +21,8 @@ SQL >
         countIf(is_final) as total_requests,
         countIf(is_final AND response_status >= 200 AND response_status < 300) as status_2xx,
         countIf(is_final AND response_status >= 400 AND response_status < 500) as errors_4xx,
+        -- Refused for balance or key budget before the model ran; see model_route_health.
+        countIf(is_final AND response_status = 402) as errors_402,
         countIf(is_final AND response_status >= 500) as errors_5xx,
         -- Whether this model's OWN upstream works, which the columns above
         -- cannot show: a model rescued on every request reads 100% healthy up

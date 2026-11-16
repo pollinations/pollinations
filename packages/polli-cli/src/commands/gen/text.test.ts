@@ -193,4 +193,19 @@ describe("gen text truncation warning", () => {
             expect(stderr.includes("output token limit")).toBe(warns);
         }
     });
+
+    it("prints a refusal-only completion instead of empty output", async () => {
+        const refusal = "I cannot help with that request.";
+        const buffered = await run([], false, true, {
+            completion: {
+                ...completion,
+                choices: [{ message: { content: null, refusal } }],
+            },
+        });
+        const streamed = await run(["--stream"], false, true, {
+            stream: sse([{ choices: [{ delta: { refusal } }] }]),
+        });
+        for (const { output } of [buffered, streamed])
+            expect(JSON.parse(output).content).toBe(refusal);
+    });
 });

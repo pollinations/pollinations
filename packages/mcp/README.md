@@ -32,6 +32,8 @@ For all Pollinations-hosted MCP servers, see the
 | `generateVideo` | Generate video | `/video/{prompt}` |
 | `generateAudio` | Generate speech, music, or sound | `/audio/{text}` |
 | `transcribeAudio` | Transcribe a public HTTPS audio URL | `/v1/audio/transcriptions` |
+| `isolateSpeech` | Remove background noise from a spoken audio or video URL | `/v1/audio/voice-isolator` |
+| `changeVoice` | Transform the speaker identity of an audio URL | `/v1/audio/voice-changer` |
 | `generate3D` | Generate a GLB model | `/3d/{prompt}` |
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
 | `listModels` | Search and list live models, capabilities, voices, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |

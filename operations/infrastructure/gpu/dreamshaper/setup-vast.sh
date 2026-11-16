@@ -28,13 +28,6 @@ fi
 apt-get update -qq
 apt-get install -y -qq curl dnsutils git psmisc screen python3.12-venv python3.12-dev
 
-if ! command -v cloudflared >/dev/null || \
-    ! cloudflared tunnel run --help 2>&1 | grep -q -- '--token-file'; then
-    curl -fsSL --retry 5 -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    dpkg -i /tmp/cloudflared.deb >/dev/null
-fi
-
 install -d -m 755 "$(dirname "$WORK_DIR")"
 if [ -d "$WORK_DIR/.git" ]; then
     git -C "$WORK_DIR" fetch --depth 1 origin "$GIT_BRANCH"
@@ -43,6 +36,8 @@ else
     git clone --depth 1 --branch "$GIT_BRANCH" \
         https://github.com/pollinations/pollinations.git "$WORK_DIR"
 fi
+
+bash "$WORK_DIR/operations/infrastructure/gpu/install-cloudflared.sh"
 
 if [ ! -d "$VENV" ]; then
     python3.12 -m venv "$VENV"

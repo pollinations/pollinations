@@ -5,14 +5,8 @@ import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
+import { DEFAULT_LOCALHOST_REDIRECT } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
-
-/**
- * Pre-filled callback for app keys so local dev works out of the box. Loopback
- * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
- * dev sees it in the editor and should remove it before production.
- */
-const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
@@ -144,7 +138,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <KeyDialogContent
                 mode="create"
                 app={simplified}
-                publishable={simplified}
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}

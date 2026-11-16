@@ -166,6 +166,31 @@ test("preserves multiline textarea content", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
+test("rejects a description longer than the catalog shows", () => {
+    const long = "x".repeat(253);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${long}\n`,
+        ),
+    );
+    assert.equal(submission.description.length, 253);
+    assert.deepEqual(validateSubmission(submission), [
+        "App Description is 253 characters; the catalog shows 200. Shorten it.",
+    ]);
+});
+
+test("accepts a description that fits the catalog", () => {
+    const exact = "y".repeat(200);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${exact}\n`,
+        ),
+    );
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
 test("parses the optional quest reference", () => {
     const withQuest = (value) =>
         parseSubmission(`${BODY}\n\n### Quest\n${value}`);
@@ -175,6 +200,36 @@ test("parses the optional quest reference", () => {
     assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
         "Quest must be a quest issue number such as #15600.",
     ]);
+});
+
+test("parses quest before the trailing credit footer", () => {
+    const submission = parseSubmission(
+        `${BODY}\n\n### Quest\n\n#17246\n\n---\n\n**Made with pollinations.ai**`,
+    );
+    assert.equal(submission.quest, "17246");
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
+test("reads single-line fields before a trailing note", () => {
+    const expected = parseSubmission(BODY);
+    for (const [label, key] of [
+        ["App Name", "name"],
+        ["App URL", "appUrl"],
+        ["GitHub Repository URL", "repoUrl"],
+        ["App Category", "category"],
+        ["Platform", "platform"],
+        ["App Language", "language"],
+        ["Discord Username", "discord"],
+    ]) {
+        const submission = parseSubmission(
+            BODY.replace(
+                new RegExp(`(### ${label}\\n.*)`),
+                "$1\n\n---\nHosted on Pollinations Sites.",
+            ),
+        );
+        assert.equal(submission[key], expected[key], label);
+        assert.deepEqual(validateSubmission(submission), [], label);
+    }
 });
 
 test("builds the canonical catalog app", () => {

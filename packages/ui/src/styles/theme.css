@@ -47,6 +47,7 @@
     --color-theme-text-base: var(--polli-color-text-base);
     --color-theme-text-strong: var(--polli-color-text-strong);
     --color-theme-text-soft: var(--polli-color-text-soft);
+    --color-theme-text-display: var(--polli-color-text-display);
     --color-theme-text-muted: var(--polli-color-text-muted);
     --color-theme-text-hover: var(--polli-color-text-hover);
     --color-theme-border: var(--polli-color-border);

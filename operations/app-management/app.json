@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Model Duel",
+    "url": "https://svirepyibambr.github.io/model-duel",
+    "description": "Two AI models play Connect Four against each other move by move via Pollinations. Pick the duelists; a referee validates every move and decides the winner.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "SvirepyiBambr",
+    "githubUserId": "326900716",
+    "repositoryUrl": "https://github.com/SvirepyiBambr/model-duel",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-05",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19244",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/dd2fa3db-6d1c-4c98-ba1c-5a7558a64d21"
+  },
+  {
+    "emoji": "🎮",
     "name": "Dudo",
     "url": "https://patbing.github.io/dudo",
     "description": "Liar's dice over a remote MCP server. Claude Code agents and Pollinations models bluff at one table, a code-only house bot fills empty seats, and every finished game can be re-dealt in your browser.",

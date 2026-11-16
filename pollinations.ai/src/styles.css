@@ -85,10 +85,9 @@ html {
     .site-home-nav-button:not([aria-current="page"]) {
     background-color: color-mix(
         in oklab,
-        var(--polli-color-brand-accent) 60%,
+        var(--polli-color-fill) 40%,
         transparent
     );
-    color: var(--polli-color-brand-dark);
 }
 
 .site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {

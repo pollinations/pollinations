@@ -1,8 +1,6 @@
 import {
-    AppIcon,
     Button,
     ChevronIcon,
-    Chip,
     ClockIcon,
     ContentHeader,
     cn,
@@ -513,59 +511,57 @@ function AppsPage() {
                     />
 
                     <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0 max-w-md flex-1 basis-[280px]">
-                            <AppSearchInput
-                                query={q ?? ""}
-                                platforms={platform}
-                                pollenPay={pollenPay}
-                                onQueryChange={(next) =>
-                                    updateSearch({
-                                        q: next || undefined,
-                                    })
-                                }
-                                onPlatformsChange={(next) =>
-                                    updateSearch({
-                                        platform:
-                                            next.length > 0
-                                                ? next.join(",")
-                                                : undefined,
-                                    })
-                                }
-                                onPollenPayChange={(next) =>
-                                    updateSearch({ pollen: next })
-                                }
-                            />
+                        {/* The count sits right by the search, as plain text:
+                            it is what the search and filters leave. */}
+                        <div className="flex min-w-0 max-w-xl flex-1 basis-[280px] items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                                <AppSearchInput
+                                    query={q ?? ""}
+                                    platforms={platform}
+                                    pollenPay={pollenPay}
+                                    onQueryChange={(next) =>
+                                        updateSearch({
+                                            q: next || undefined,
+                                        })
+                                    }
+                                    onPlatformsChange={(next) =>
+                                        updateSearch({
+                                            platform:
+                                                next.length > 0
+                                                    ? next.join(",")
+                                                    : undefined,
+                                        })
+                                    }
+                                    onPollenPayChange={(next) =>
+                                        updateSearch({ pollen: next })
+                                    }
+                                />
+                            </div>
+                            {loading ? (
+                                <Skeleton shape="text" className="h-5 w-20" />
+                            ) : (
+                                // Sized for "N / N apps", so filtering never
+                                // moves anything.
+                                <span
+                                    aria-live="polite"
+                                    className="shrink-0 text-sm tabular-nums text-theme-text-muted"
+                                >
+                                    <StableLabel
+                                        text={
+                                            filtered.length === apps.length
+                                                ? `${apps.length} apps`
+                                                : `${filtered.length} / ${apps.length} apps`
+                                        }
+                                        options={[
+                                            `${apps.length} apps`,
+                                            `${apps.length} / ${apps.length} apps`,
+                                        ]}
+                                    />
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex min-h-11 items-center gap-3">
-                            {loading ? (
-                                <Skeleton shape="text" className="h-7 w-37" />
-                            ) : (
-                                <Chip
-                                    size="lg"
-                                    aria-live="polite"
-                                    className="bg-theme-bg-subtle px-3 text-theme-text-soft"
-                                >
-                                    {/* Sized for "N / N apps", so filtering
-                                        never moves the sort button. */}
-                                    <span className="tabular-nums">
-                                        <StableLabel
-                                            prefix={
-                                                <AppIcon className="mr-0.5 size-4" />
-                                            }
-                                            text={
-                                                filtered.length === apps.length
-                                                    ? `${apps.length} apps`
-                                                    : `${filtered.length} / ${apps.length} apps`
-                                            }
-                                            options={[
-                                                `${apps.length} apps`,
-                                                `${apps.length} / ${apps.length} apps`,
-                                            ]}
-                                        />
-                                    </span>
-                                </Chip>
-                            )}
                             <Dropdown
                                 align="end"
                                 className="min-w-40 p-1"

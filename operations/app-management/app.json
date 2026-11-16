@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Decisio Arena",
+    "url": "https://bsod4ik.github.io/pollinations-decision-arena",
+    "description": "Tactical battle drones where AI models compete via /alpha/decisions and chat completions with calibrated probabilities and BYOP.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "bsod4ik",
+    "githubUserId": "356660482",
+    "repositoryUrl": "https://github.com/bsod4ik/pollinations-decision-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19787",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/5681426e-8206-4891-9814-f9c67973cf3a"
+  },
+  {
+    "emoji": "🎮",
     "name": "Model Duel",
     "url": "https://svirepyibambr.github.io/model-duel",
     "description": "Two AI models play Connect Four against each other move by move via Pollinations. Pick the duelists; a referee validates every move and decides the winner.",

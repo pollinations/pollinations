@@ -7099,6 +7099,9 @@ fixtureTest(
             }),
         );
         expect(urlImageResponse.status).toBe(200);
+        // The earlier b64_json request has the same prompt, model, size and
+        // quality; response_format is not part of the media identity.
+        expect(urlImageResponse.headers.get("x-cache")).toBe("HIT");
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
@@ -7200,7 +7203,7 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(5);
+        ).toHaveLength(4);
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageEditsRequest(new Request(input, init)),
@@ -7211,7 +7214,7 @@ fixtureTest(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
-        ).toHaveLength(4);
+        ).toHaveLength(3);
 
         const maximumImagePriceResponse = await fetchEnterApi(
             enterApi,

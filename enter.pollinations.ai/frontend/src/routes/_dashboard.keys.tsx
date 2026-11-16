@@ -82,7 +82,8 @@ function KeysPage() {
             },
         });
 
-        await refreshKeys();
+        // The key is shown only once: hand it over even if the refresh fails.
+        void refreshKeys().catch(() => {});
         return {
             id: created.id,
             key: created.key,

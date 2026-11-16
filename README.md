@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💼 Receipts Tower](https://patbing.github.io/receipts-tower) | A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own. | [@patbing](https://github.com/patbing) |
+| [💬 pollable](https://pollable.kendev.ct8.pl) | Ask every model the same question | [@smplstuff](https://github.com/smplstuff) |
+| [🖼️ FlipBook Mini Historias](https://belumokasl-hub.github.io/flipbook-mini-historias) | Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música. | [@belumokasl-hub](https://github.com/belumokasl-hub) |
+| [🖼️ Susurros de Buda · storybook art CLI](https://github.com/Deheroesytumbas/susurros-de-buda-pollinations) | A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed. | [@Deheroesytumbas](https://github.com/Deheroesytumbas) |
 | [🖼️ Pollen Canvas](https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD) | Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser. | [@baimoyan2005](https://github.com/baimoyan2005) |
 | [✍️ Voiceprint](https://llm-voiceprint.jm716111.chatgpt.site) | Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a zero-Pollen local scan. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [💬 Ask Them All](https://ask-them-all.pollinations.app) | Ask one question and several labs answer it in parallel through a single Pollinations key, side by side, with a summary of where they agree and differ. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🎮 Vaultwright](https://vaultwright.rekty-dev.workers.dev) | A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints. | [@rekty](https://github.com/rekty) |
 | [🎮 Empty Room](https://rekty.github.io/empty-room) | Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move. | [@rekty](https://github.com/rekty) |
 | [🖼️ Cover Story](https://rekty.github.io/cover-story) | Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested. | [@rekty](https://github.com/rekty) |
-| [📚 Phenomena Lab](https://phenomena-lab.jm716111.chatgpt.site) | Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [📚 Unfold](https://sugamdeol.github.io/unfold) | Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [🎮 Model Machine](https://sugamdeol.github.io/model-machine) | A computer with no CPU: a Pollinations model returns each next machine state, one instruction per call, while a reference core runs beside it to show where it drifts. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [📚 Pixel Letter](https://pixel-letter-studio.cris16esl.chatgpt.site) | Pollinations LLM-designed PNG postcards with locally hidden messages, optional AES-GCM encryption and OAuth BYOP. Secrets stay on the device; recipients decode without API calls. Includes a free demo. | [@CristopherSalazar](https://github.com/CristopherSalazar) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -54,6 +54,7 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Copy docs from dashboard cards** <sub>Nov 14</sub><br>Open the relevant guide from a dashboard card, or copy its text into an AI chat. The Keys card picks docs for your key type.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Agents get their own page** <sub>Nov 13</sub><br>Browse Agents and MCP on dedicated pages. Manage your Agents, Models and Apps together in My listings.
 - <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Browse sandbox starters** <sub>Nov 13</sub><br>Browse sandbox starter templates and prices without signing in. Sign in to create a sandbox or view yours.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Keys in two tabs**](https://enter.pollinations.ai/keys) <sub>Nov 13</sub><br>Switch between Secret and App keys in one card. Open the App tab directly with `/keys?tab=app`.
@@ -63,7 +64,6 @@
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Voice tools in MCP**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 12</sub><br>The Pollinations MCP server gained `isolateSpeech` and `changeVoice`. Pass a public HTTPS audio URL, or a video URL for speech isolation, and get an audio resource link back.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Check npm download counts**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 12</sub><br>The Packages MCP `package_downloads` tool retrieves daily npm downloads for a package. Choose a preset period or a custom date range of up to 18 months.
 - [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Look up Go and PHP packages**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 12</sub><br>Packages MCP can now look up Go modules and PHP Composer packages through `package_lookup`. Results include version details and links to the relevant package registry.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Inspect MAC addresses**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 12</sub><br>Network MCP's `inspect_mac` accepts common MAC address formats and reports normalized forms, the OUI prefix, and address flags. It runs locally without a network call.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)

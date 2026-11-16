@@ -19,6 +19,7 @@ import {
     providerMeteringBasis,
     resolveProvider,
 } from "./providerRegistry";
+import { isToolUsage, toolUsageRows } from "./toolUsage";
 import {
     CALIB_DRIFT_ABS_ALARM_USD,
     hasCalibDrift,
@@ -121,7 +122,7 @@ export function providerEconomicsReport(data: Data, month: string) {
     );
     for (const [vendor, vendorCosts] of byVendor) {
         const infra = vendorCosts.filter(
-            (cost) => cost.kind === "infrastructure",
+            (cost) => cost.kind === "infrastructure" || cost.kind === "tools",
         );
         if (!infra.length) continue;
         const row = rows.get(vendor) ?? {
@@ -150,15 +151,81 @@ export function providerEconomicsReport(data: Data, month: string) {
             ),
         });
     }
+    const tools = toolUsageRows(data, month);
+    for (const usage of tools) {
+        const row = rows.get(usage.vendor) ?? {
+            ...economicsValues(),
+            grain: "provider" as const,
+            month,
+            vendor: usage.vendor,
+            model: "All models",
+            sourceStatus: "pollen only" as const,
+            allocationStatus: null,
+            economicContributionUsd: null,
+        };
+        // Display observed tool consumption once. Meter calibration and funding
+        // allocations remain scoped to inference/GPU; no shared-cost allocation.
+        rows.set(usage.vendor, {
+            ...row,
+            sourceStatus:
+                row.providerUsageUsd == null ? "pollen only" : "both sources",
+            paidPollenUsd: (row.paidPollenUsd ?? 0) + usage.paidPollenUsd,
+            questPollenUsd: (row.questPollenUsd ?? 0) + usage.questPollenUsd,
+            retainedPaidUsd: (row.retainedPaidUsd ?? 0) + usage.retainedPaidUsd,
+            economicContributionUsd:
+                row.providerUsageUsd == null
+                    ? null
+                    : (row.retainedPaidUsd ?? 0) +
+                      usage.retainedPaidUsd -
+                      row.providerUsageUsd,
+            netCashContributionUsd:
+                row.providerCashUsd == null
+                    ? null
+                    : (row.retainedPaidUsd ?? 0) +
+                      usage.retainedPaidUsd -
+                      row.providerCashUsd,
+        });
+    }
+    const toolPaid = tools.reduce((sum, row) => sum + row.paidPollenUsd, 0);
+    const toolQuest = tools.reduce((sum, row) => sum + row.questPollenUsd, 0);
+    const toolRetained = tools.reduce(
+        (sum, row) => sum + row.retainedPaidUsd,
+        0,
+    );
+    const missingToolCosts = tools.some(
+        (usage) => rows.get(usage.vendor)?.providerUsageUsd == null,
+    );
     const infrastructure = sumApiCosts(
-        costs.filter((cost) => cost.kind === "infrastructure"),
+        costs.filter(
+            (cost) => cost.kind === "infrastructure" || cost.kind === "tools",
+        ),
     );
     return {
         ...direct,
+        blockers: [
+            ...direct.blockers,
+            ...tools
+                .filter(
+                    (usage) => rows.get(usage.vendor)?.providerUsageUsd == null,
+                )
+                .map(
+                    (usage): ResultBlocker => ({
+                        month,
+                        vendor: usage.vendor,
+                        kind: "costs",
+                        amountUsd: null,
+                        message:
+                            "Tool or sandbox usage is recorded, but the vendor bill is missing.",
+                    }),
+                ),
+        ],
         rows: [...rows.values()],
         costsByVendor: byVendor,
         summary: {
             ...direct.summary,
+            paidPollenUsd: direct.summary.paidPollenUsd + toolPaid,
+            questPollenUsd: direct.summary.questPollenUsd + toolQuest,
+            retainedPaidUsd: direct.summary.retainedPaidUsd + toolRetained,
             providerCashUsd:
                 direct.summary.providerCashUsd + infrastructure.cashUsd,
             providerCreditUsd:
@@ -166,17 +233,17 @@ export function providerEconomicsReport(data: Data, month: string) {
             providerUsageUsd:
                 direct.summary.providerUsageUsd + infrastructure.totalUsd,
             netCashContributionUsd: subtractRecordedCost(
-                direct.summary.netCashContributionUsd,
-                infrastructure.cashUsd,
+                missingToolCosts ? null : direct.summary.netCashContributionUsd,
+                infrastructure.cashUsd - toolRetained,
             ),
         },
         currentResultUsd: subtractRecordedCost(
-            direct.currentResultUsd,
-            infrastructure.cashUsd,
+            missingToolCosts ? null : direct.currentResultUsd,
+            infrastructure.cashUsd - toolRetained,
         ),
         fullCostResultUsd: subtractRecordedCost(
-            direct.fullCostResultUsd,
-            infrastructure.totalUsd,
+            missingToolCosts ? null : direct.fullCostResultUsd,
+            infrastructure.totalUsd - toolRetained,
         ),
     };
 }
@@ -473,6 +540,7 @@ export function unitEconomicsReport(
         for (const row of data.opPollen ?? []) {
             if (
                 row.month !== month ||
+                isToolUsage(row) ||
                 row.vendor === "community" ||
                 resolveProvider(row.vendor)?.category === "infrastructure" ||
                 (row.price_paid === 0 && row.price_quests === 0)

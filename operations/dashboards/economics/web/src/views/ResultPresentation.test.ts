@@ -1,9 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
+import { ReconcileProContext } from "../components/ReconcilePro";
 import type { ReconciliationIssue } from "../lib/reconciliation";
 import { unitEconomicsReport } from "../lib/unitEconomics";
 import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
+import { InfrastructureTab } from "./InfrastructureTab";
 import { TrendsTab } from "./TrendsTab";
 import { ManagedInferenceTab } from "./UnitEconomicsTab";
 
@@ -115,4 +117,37 @@ it("keeps a complete Pollen comparison available despite an unrelated invoice ch
     ]);
     expect(chart).toContain("+100%");
     expect(chart).not.toContain("Provisional · comparison pending");
+});
+
+it("uses the global Pro precision for tool usage and rented service costs", () => {
+    const data: Data = {
+        opPollen: [
+            {
+                ...usage("2026-10", 27.125),
+                vendor: "e2b",
+                model: "sandbox",
+                price_quests: 0.375,
+            },
+        ],
+        vendorLedger: [{ ...cost("2026-10", "e2b", -10.625), type: "infra" }],
+    };
+    const render = (pro: boolean) =>
+        renderToStaticMarkup(
+            createElement(
+                ReconcileProContext.Provider,
+                { value: pro },
+                createElement(InfrastructureTab, {
+                    data,
+                    month: "2026-10",
+                    kind: "tools",
+                }),
+            ),
+        );
+    const normal = render(false);
+    expect(normal).toContain("$27");
+    expect(normal).toContain("$11");
+    expect(normal).not.toMatch(/\$(27\.125|10\.625|0\.375)/);
+    const pro = render(true);
+    for (const amount of ["$27.125", "$10.625", "$0.375"])
+        expect(pro).toContain(amount);
 });

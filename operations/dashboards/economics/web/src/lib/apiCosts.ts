@@ -11,6 +11,7 @@ import {
 export const API_COST_LABELS = {
     inference: "Inference",
     gpu: "GPUs",
+    tools: "Tools & sandboxes",
     infrastructure: "Infrastructure",
 } as const;
 
@@ -36,16 +37,23 @@ export function apiCosts(data: Data, month: string): ApiCost[] {
             continue;
         const vendor = canonicalVendor(row.vendor);
         const type = row.type.trim().toLowerCase();
+        // Dedicated sandbox/search bills are attributable. Shared Azure and
+        // Cloudflare invoices need resource evidence before moving any cost.
         const kind =
             type === "gpu" || type === "inference"
                 ? type
                 : ledgerCategory(row) === "infrastructure"
-                  ? "infrastructure"
+                  ? vendor === "e2b" || vendor === "exa"
+                      ? "tools"
+                      : "infrastructure"
                   : null;
-        if (!kind || (kind !== "infrastructure" && vendor === "community"))
+        if (
+            !kind ||
+            ((kind === "inference" || kind === "gpu") && vendor === "community")
+        )
             continue;
         const service =
-            kind === "infrastructure"
+            kind === "infrastructure" || kind === "tools"
                 ? row.resource_name.trim() ||
                   row.resource_sku.trim() ||
                   "Unspecified service"
@@ -83,10 +91,12 @@ export function sumApiCosts(costs: readonly ApiCost[]) {
     );
 }
 
-export function infrastructureReport(data: Data, month: string) {
-    const rows = apiCosts(data, month).filter(
-        (row) => row.kind === "infrastructure",
-    );
+export function infrastructureReport(
+    data: Data,
+    month: string,
+    kind: "infrastructure" | "tools" = "infrastructure",
+) {
+    const rows = apiCosts(data, month).filter((row) => row.kind === kind);
     return {
         month,
         summary: rows.length ? sumApiCosts(rows) : null,

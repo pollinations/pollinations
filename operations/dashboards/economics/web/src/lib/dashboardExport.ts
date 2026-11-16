@@ -8,6 +8,7 @@ import { providerBalanceRows } from "./providerBalances";
 import { reconciliationState } from "./reconciliation";
 import { revenueShareSummary } from "./revenueShareEconomics";
 import { buildRunway, groupRunwayRows } from "./runway";
+import { toolUsageRows } from "./toolUsage";
 import { monthlyPollenTrends, monthlyTrends } from "./trends";
 import {
     providerEconomicsReport,
@@ -127,6 +128,15 @@ function exportSections(data: Data, now: Date) {
         }),
         providers: () => unitEconomics("vendors"),
         inference: () => unitEconomics("inference"),
+        tools: () =>
+            months.map((month) => ({
+                ...infrastructureReport(data, month, "tools"),
+                usage: toolUsageRows(data, month),
+                costScope:
+                    "Attributed vendor bills only. Shared Azure and Cloudflare costs remain in Infrastructure until resource attribution is verified.",
+                usageBasis:
+                    "Paid and Quest Pollen consumed, not Stripe cash sales.",
+            })),
         infrastructure: () =>
             months.map((month) => infrastructureReport(data, month)),
         vendorBalances: () =>
@@ -191,6 +201,7 @@ export function dashboardExport(data: Data, now = new Date()) {
         trends: sections.trends(),
         providers: sections.providers(),
         inference: sections.inference(),
+        tools: sections.tools(),
         infrastructure: sections.infrastructure(),
         vendorBalances: sections.vendorBalances(),
         gpus: sections.gpus(),

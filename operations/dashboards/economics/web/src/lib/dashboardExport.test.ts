@@ -72,6 +72,7 @@ it("exports all reporting months and aggregate values without source detail", ()
         "providers",
         "inference",
         "infrastructure",
+        "tools",
         "gpus",
         "revenueShare",
     ] as const) {

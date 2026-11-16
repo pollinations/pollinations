@@ -110,6 +110,7 @@ type InsightTab =
     | "runway"
     | "vendors"
     | "inference"
+    | "tools"
     | "infrastructure"
     | "revenue-share"
     | "balances"
@@ -139,6 +140,7 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    tools: ["vendorLedger", "opPollen"],
     infrastructure: ["vendorLedger"],
     gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
@@ -163,6 +165,11 @@ const DOWNLOAD_OPTIONS = [
         sources: VIEW_SOURCES.inference,
     },
     { section: "gpus", label: "GPUs", sources: VIEW_SOURCES.gpu },
+    {
+        section: "tools",
+        label: "Tools & sandboxes",
+        sources: VIEW_SOURCES.tools,
+    },
     {
         section: "infrastructure",
         label: "Infrastructure",
@@ -238,7 +245,7 @@ const INSIGHT_TABS = [
     {
         id: "vendors",
         label: "Providers",
-        note: "Monthly costs by vendor across managed inference, GPU capacity, and infrastructure.",
+        note: "Monthly costs by vendor across inference, GPUs, tools, sandboxes, and shared infrastructure.",
         icon: GlobeIcon,
     },
     {
@@ -251,6 +258,12 @@ const INSIGHT_TABS = [
         id: "gpu",
         label: "GPUs",
         note: "GPU capacity economics with vendor-pool results above and one direct-cost row per GPU resource below.",
+        icon: RocketIcon,
+    },
+    {
+        id: "tools",
+        label: "Tools & sandboxes",
+        note: "Sandbox and MCP usage, with attributable service costs split into cash and credits.",
         icon: RocketIcon,
     },
     {
@@ -801,8 +814,9 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ViewInfo>
                 <InfoItem lead="Scope">
-                    One vendor-month across managed inference, GPU capacity, and
-                    infrastructure. Expand Services for the cost split.
+                    One vendor-month across inference, GPUs, tools, sandboxes,
+                    and shared infrastructure. Expand Services for the cost
+                    split.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
                     Cards show consumed Paid and Quest value. Retained is after
@@ -841,6 +855,27 @@ function viewInfoContent(activeView: ActiveView) {
             </ViewInfo>
         );
     }
+    if (activeView === "tools") {
+        return (
+            <ViewInfo>
+                <InfoItem lead="Usage">
+                    Paid and Quest Pollen consumed by sandbox leases and
+                    receipt-billed MCP calls. Machines MCP adds no charge to the
+                    sandbox lease.
+                </InfoItem>
+                <InfoItem lead="Costs">
+                    Only attributable vendor bills appear here. Metered costs in
+                    Gen events are not additional invoice expenses. Shared Azure
+                    and Cloudflare bills remain in Infrastructure pending
+                    resource attribution.
+                </InfoItem>
+                <InfoItem lead="Runway">
+                    Tools &amp; sandboxes and shared Infrastructure together
+                    equal Runway’s Infrastructure category.
+                </InfoItem>
+            </ViewInfo>
+        );
+    }
     if (activeView === "infrastructure") {
         return (
             <ViewInfo>
@@ -850,7 +885,8 @@ function viewInfoContent(activeView: ActiveView) {
                 </InfoItem>
                 <InfoItem lead="Funding">
                     Cash and used credits come from the Infrastructure lines of
-                    the vendor ledger, the same source as Runway.
+                    the vendor ledger. Add Tools &amp; sandboxes costs to
+                    reconcile to Runway’s Infrastructure category.
                 </InfoItem>
             </ViewInfo>
         );
@@ -1488,9 +1524,16 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 {viewData && activeView === "gpu" && (
                     <GpuTab data={viewData} month={monthFilter} />
                 )}
-                {viewData && activeView === "infrastructure" && (
-                    <InfrastructureTab data={viewData} month={monthFilter} />
-                )}
+                {viewData &&
+                    (activeView === "infrastructure" ||
+                        activeView === "tools") && (
+                        <InfrastructureTab
+                            key={activeView}
+                            data={viewData}
+                            month={monthFilter}
+                            kind={activeView}
+                        />
+                    )}
             </ErrorBoundary>
         </>
     );

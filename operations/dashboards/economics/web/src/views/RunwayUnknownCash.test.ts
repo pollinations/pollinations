@@ -100,5 +100,5 @@ it("withholds forecast cards and columns when planning is unavailable", () => {
     );
     expect(html).not.toContain("Cash runway");
     expect(html).not.toContain(">Plan<");
-    expect(html).toContain("Cash balance");
+    expect(html).toContain("Cash reconciliation");
 });

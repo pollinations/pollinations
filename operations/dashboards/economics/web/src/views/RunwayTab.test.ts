@@ -239,7 +239,9 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("Revenue calculation info");
         expect(html).not.toContain("Plan baseline:");
         expect(html).not.toContain("Provisional runway —");
-        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash adjustments/s);
+        expect(html).toMatch(
+            /aria-expanded="false"[^>]*>.*?Cash reconciliation/s,
+        );
         expect(html).not.toMatch(/<button[^>]*>Cash change<\/button>/);
         const bridgeHtml = renderToStaticMarkup(
             createElement(
@@ -566,8 +568,11 @@ describe("RunwayTab labels", () => {
         );
         expect(html).toContain("Revenue");
         expect(html).not.toContain("Revenue · net after deductions");
-        const balanceIndex = html.indexOf(
-            'aria-label="Cash balance calculation info"',
+        const resultIndex = html.indexOf(
+            'aria-label="Operating result calculation info"',
+        );
+        const reconciliationIndex = html.indexOf(
+            'aria-label="Cash reconciliation calculation info"',
         );
         const revenueIndex = html.indexOf(
             'aria-label="Revenue calculation info"',
@@ -575,19 +580,20 @@ describe("RunwayTab labels", () => {
         const expensesIndex = html.indexOf(
             'aria-label="Expenses calculation info"',
         );
-        expect(revenueIndex).toBeLessThan(balanceIndex);
         expect(revenueIndex).toBeLessThan(expensesIndex);
+        expect(expensesIndex).toBeLessThan(resultIndex);
+        expect(resultIndex).toBeLessThan(reconciliationIndex);
         expect(html).not.toContain("runway-subcategory");
         expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
         expect(html).toContain('aria-label="Expenses calculation info"');
-        expect(
-            html.match(/aria-label="Cash change calculation info"/g),
-        ).toHaveLength(1);
+        expect(html).not.toContain('aria-label="Cash change calculation info"');
         expect(html).not.toContain("Revenue less expenses");
-        expect(html).toContain('aria-label="Cash balance calculation info"');
+        expect(html).not.toContain(
+            'aria-label="Cash balance calculation info"',
+        );
         expect(html).toContain('aria-label="Revenue calculation info"');
         expect(html).not.toContain('aria-label="Compute calculation info"');
         expect(html).not.toContain(

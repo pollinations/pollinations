@@ -89,7 +89,7 @@ const SUMMARY_HELP: Record<string, string[]> = {
         "Revenue + cash-funded expenses + cash adjustments = cash change.",
         "Plan: expected cash increase or decrease that month.",
     ],
-    "Cash adjustments": [
+    "Cash reconciliation": [
         "Differences between recorded revenue or expenses and bank movements, plus other cash movements and exchange-rate changes.",
         "Plan: scheduled movements outside revenue and expenses, such as returned deposits.",
     ],
@@ -394,6 +394,7 @@ function SummaryRow({
     credit,
     expanded,
     onToggle,
+    treatment,
 }: {
     label: string;
     columns: RunwayColumn[];
@@ -401,11 +402,25 @@ function SummaryRow({
     credit?: (column: RunwayColumn) => number | null;
     expanded?: boolean;
     onToggle?: () => void;
+    treatment?: "subtotal" | "quiet" | "detail";
 }) {
     const { fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
     return (
-        <TableRow className="runway-summary font-semibold">
-            <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque">
+        <TableRow
+            className={cn(
+                "runway-summary",
+                treatment === "subtotal" && "runway-operating-result",
+                treatment === "detail"
+                    ? "text-theme-text-muted"
+                    : "font-semibold",
+            )}
+        >
+            <TableCell
+                className={cn(
+                    "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque",
+                    treatment === "detail" && "pl-8",
+                )}
+            >
                 {onToggle ? (
                     <TableDisclosureButton
                         expanded={expanded ?? false}
@@ -425,7 +440,9 @@ function SummaryRow({
                     numeric
                     className={cn(
                         MONTH_COLUMN_CLASS,
-                        runwayValueClass(value(column)),
+                        treatment === "quiet" || treatment === "detail"
+                            ? "text-theme-text-muted"
+                            : runwayValueClass(value(column)),
                     )}
                 >
                     {showCash(value(column), credit?.(column))
@@ -606,6 +623,11 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             : null;
     const recordedDate =
         runway.latestTransactionDate ?? runway.openingBalanceDate;
+    const recordedMonth = recordedDate?.slice(0, 7);
+    const recordedChange = runway.columns.find(
+        (column) =>
+            column.month === recordedMonth && column.kind !== "forecast",
+    )?.netUsd;
     const [cashYear, cashMonth] = runway.currentMonth.split("-").map(Number);
     const monthEnd = new Date(Date.UTC(cashYear, cashMonth, 0))
         .toISOString()
@@ -660,6 +682,17 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                             ? "neg"
                                             : "base",
                                 },
+                                ...(recordedMonth && recordedChange != null
+                                    ? [
+                                          {
+                                              label: `${monthName(recordedMonth)} cash change`,
+                                              value: fmtRunwayUsd(
+                                                  recordedChange,
+                                              ),
+                                              tone: "base" as const,
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: (
                                         <span>
@@ -845,7 +878,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             ))}
                         </TableRow>
                     </TableHead>
-                    <TableBody className="runway-activity">
+                    <TableBody>
                         {groups
                             .filter((group) => group.category === "revenue")
                             .map((group) => (
@@ -887,6 +920,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                 ))}
                         <SummaryRow
                             label="Operating result"
+                            treatment="subtotal"
                             columns={columns}
                             value={(column) =>
                                 column.forecastComplete === false
@@ -894,8 +928,11 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     : column.operatingResultUsd
                             }
                         />
+                    </TableBody>
+                    <TableBody>
                         <SummaryRow
-                            label="Cash adjustments"
+                            label="Cash reconciliation"
+                            treatment="quiet"
                             columns={columns}
                             value={(column) =>
                                 cashAdjustmentValue(
@@ -913,27 +950,29 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             }
                         />
                         {cashAdjustmentsExpanded && (
-                            <CashAdjustmentRows
-                                columns={columns}
-                                plannedValues={plannedAdjustments}
-                            />
+                            <>
+                                <CashAdjustmentRows
+                                    columns={columns}
+                                    plannedValues={plannedAdjustments}
+                                />
+                                <SummaryRow
+                                    label="Cash change"
+                                    treatment="detail"
+                                    columns={columns}
+                                    value={(column) =>
+                                        column.forecastComplete === false
+                                            ? null
+                                            : column.netUsd
+                                    }
+                                />
+                                <SummaryRow
+                                    label="Cash balance"
+                                    treatment="detail"
+                                    columns={columns}
+                                    value={(column) => column.runningCashUsd}
+                                />
+                            </>
                         )}
-                    </TableBody>
-                    <TableBody>
-                        <SummaryRow
-                            label="Cash change"
-                            columns={columns}
-                            value={(column) =>
-                                column.forecastComplete === false
-                                    ? null
-                                    : column.netUsd
-                            }
-                        />
-                        <SummaryRow
-                            label="Cash balance"
-                            columns={columns}
-                            value={(column) => column.runningCashUsd}
-                        />
                     </TableBody>
                 </DataTable>
             </TableScroller>

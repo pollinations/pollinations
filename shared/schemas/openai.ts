@@ -843,6 +843,10 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_structured_output:
+            ModelInfoSchema.shape.supports_structured_output.describe(
+                "Whether JSON and JSON-schema output are supported; omitted when unverified.",
+            ),
         supports_streaming: z
             .boolean()
             .optional()

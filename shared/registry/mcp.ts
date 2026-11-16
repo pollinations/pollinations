@@ -49,6 +49,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "AIR_QUALITY_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -139,6 +140,20 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "air-quality",
+        alpha: true,
+        forwardAuthorization: true,
+        name: "Air Quality",
+        description:
+            "Current air quality, AQI, PM2.5/PM10, ozone, NO2, and pollen levels via Open-Meteo.",
+        binding: "AIR_QUALITY_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free public air quality data. No Pollen charge.",
             rates: [],
         },
     },

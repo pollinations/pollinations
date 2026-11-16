@@ -13,11 +13,10 @@ Last updated: 2026-11-16
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
 The five serving Vast workers cost **$1.129870/hr** in total
-(**$813.51 per 720 hours**). Drained Korea instance `51216212` is still running
-as a rollback option at **$0.057778/hr**. Stopped Matrix test instance
-`57109379` retains 100 GB at **$0.027778/hr ($20.00/720h)**.
-Total retained Vast compute and storage is **$1.215426/hr ($875.11/720h)**,
-excluding bandwidth and metered fallbacks.
+(**$813.51 per 720 hours**). Stopped Matrix test instance `57109379` retains
+100 GB at **$0.027778/hr ($20.00/720h)**. Total retained Vast compute and
+storage is **$1.157648/hr ($833.51/720h)**, excluding bandwidth and metered
+fallbacks.
 
 ### 2026-11-16 — DreamShaper Austria replacement
 
@@ -42,7 +41,9 @@ connections and handled authenticated renders and live traffic on the existing
 hostname. In the next three minutes, Gen recorded **1 final 503 in 979
 requests (0.10%)** and successful-request p95 of **2.982s**. The nine-minute
 baseline had **1 final 503 in 3,365 requests (0.03%)** and p95 of **2.827s**.
-Korea remains allocated for rollback with its production connector disabled.
+Vast confirmed Korea instance `51216212` and its local storage were removed
+by **11:30:43 UTC**. Both production replicas had fresh heartbeats, and an
+authenticated Gen image request returned 200 after retirement.
 
 ### 2026-11-11 — DreamShaper US network-fault replacement
 

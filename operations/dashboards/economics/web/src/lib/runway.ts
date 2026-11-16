@@ -13,6 +13,7 @@ import {
 
 export { pnlSource } from "./categories";
 
+import { hasArchivedEvidence } from "./documents";
 import {
     automaticForecastRule,
     type ForecastMethod,
@@ -519,7 +520,34 @@ function accountBalanceForecasts(
     const baseline = usage.filter(
         (row) => row.start.slice(0, 7) === baselineMonth,
     );
-    if (!coversCalendarMonth(baseline, baselineMonth, statements)) {
+    const completeUsage = coversCalendarMonth(
+        baseline,
+        baselineMonth,
+        statements,
+    );
+    const provider = resolveProvider(vendor);
+    const account = canonicalProviderAccountId(
+        provider,
+        cloudRows[0].account_id,
+    );
+    const invoiceBudget = completeUsage
+        ? undefined
+        : statements.find(
+              (row) =>
+                  row.vendor === vendor &&
+                  canonicalProviderAccountId(provider, row.account_id) ===
+                      account &&
+                  row.source === "invoice" &&
+                  row.comparison_basis === "cost" &&
+                  row.comparison_month === baselineMonth &&
+                  row.start.slice(0, 10) === `${baselineMonth}-01` &&
+                  row.end.slice(0, 10) === `${currentMonth}-01` &&
+                  canConvertToUsd(row.currency) &&
+                  (row.statement_amount ?? 0) > 0 &&
+                  hasArchivedEvidence(row.evidence) &&
+                  row.evidence.includes("forecast_basis=credit_funded_invoice"),
+          );
+    if (!completeUsage && !invoiceBudget) {
         return {
             facts: [],
             flags: [
@@ -553,6 +581,20 @@ function accountBalanceForecasts(
             vendorLedgerPaidBurnUsd(row) + vendorLedgerCreditBurnUsd(row);
         rates.set(category, rate);
     }
+    if (invoiceBudget) {
+        // An approved invoice is a forecast-only fallback for the whole payer.
+        // Do not add partial usage to the aggregate invoice budget.
+        rates.clear();
+        rates.set("compute", {
+            paid: 0,
+            total: toUsd(
+                invoiceBudget.statement_amount ?? 0,
+                invoiceBudget.currency,
+                baselineMonth,
+            ),
+            timing: "postpaid",
+        });
+    }
     const facts: DerivedForecastFact[] = [];
     const fundingGaps: string[] = [];
     const notices: string[] = [];
@@ -581,7 +623,7 @@ function accountBalanceForecasts(
     // Only opening-day funding supports depletion calculations. Without it,
     // budget the baseline cash/credit split without consuming a later snapshot.
     const openingDate = `${currentMonth}-01`;
-    const balance = providerAccountBalanceRows(
+    const openingBalance = providerAccountBalanceRows(
         { vendorLedger: cloudRows },
         new Date(`${openingDate}T23:59:59Z`),
     ).find((row) => row.active && row.balanceStatus === "checked");
@@ -594,6 +636,7 @@ function accountBalanceForecasts(
         { vendorLedger: cloudRows },
         new Date(`${review.asOf}T23:59:59Z`),
     ).find((row) => row.active && row.balanceStatus === "checked");
+    const balance = invoiceBudget ? reviewedBalance : openingBalance;
     const creditLots = reviewedBalance?.fundingLots.filter(
         (lot) => lot.creditUsd > 0,
     );
@@ -607,6 +650,14 @@ function accountBalanceForecasts(
     const fundedRates = [...rates].filter(
         ([, rate]) => rate.timing !== "direct" && rate.total > 0,
     );
+    if (invoiceBudget && !balance?.creditTermsKnown) {
+        return {
+            facts: [],
+            flags: [
+                `${vendor}: the approved invoice budget requires a checked credit balance with known expiry.`,
+            ],
+        };
+    }
     if (fundedRates.length && !balance) {
         fundingGaps.push(
             latestBalanceDate
@@ -657,15 +708,18 @@ function accountBalanceForecasts(
         let credits = 0;
         if (fundingGaps.length === 0 && totalRate > 0) {
             for (let day = 1; day <= days; day++) {
+                const date = `${month}-${String(day).padStart(2, "0")}`;
+                if (invoiceBudget && date < anchor) {
+                    // The later snapshot already reflects earlier spend.
+                    // Assume those elapsed days retained October's funding split.
+                    credits += totalRate / days;
+                    continue;
+                }
                 const beforeCredits = lots.reduce(
                     (sum, lot) => sum + lot.creditUsd,
                     0,
                 );
-                newCash += consumeBalanceLots(
-                    lots,
-                    totalRate / days,
-                    `${month}-${String(day).padStart(2, "0")}`,
-                );
+                newCash += consumeBalanceLots(lots, totalRate / days, date);
                 credits +=
                     beforeCredits -
                     lots.reduce((sum, lot) => sum + lot.creditUsd, 0);
@@ -687,7 +741,9 @@ function accountBalanceForecasts(
                     : fundingGaps.length
                       ? `provisional baseline cash/credit split; funding depletion unverified${lastCreditExpiry ? `; credit stops after reviewed expiry ${lastCreditExpiry}` : ""}`
                       : `full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
-            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; ${funding}`;
+            const evidence = invoiceBudget
+                ? `Provisional combined ${vendor.toUpperCase()} usage budget from ${baselineMonth} invoice ${invoiceBudget.resource_id}: ${fmtNumber(rate.total)} USD/month; credits and expiries checked ${anchor}. Usage before the snapshot is assumed credit funded. Uncovered usage settles the following month. ${invoiceBudget.evidence}`
+                : `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; ${funding}`;
             if (rate.timing === "direct" || rate.total === 0) {
                 add(category, month, rate.total, 0, evidence);
                 continue;

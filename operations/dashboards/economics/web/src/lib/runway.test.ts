@@ -1586,6 +1586,46 @@ describe("buildRunway", () => {
         expect(result.runwayMonths).not.toBeNull();
     });
 
+    it("forecasts an approved AWS invoice against the reviewed credits without posting the invoice", () => {
+        const invoice = cloud({
+            entry_id: "aws-invoice",
+            vendor: "aws",
+            account_id: "301235909293",
+            type: "statement",
+            source: "invoice",
+            start: "2026-07-01 00:00:00",
+            end: "2026-08-01 00:00:00",
+            paid: 0,
+            comparison_basis: "cost",
+            comparison_month: "2026-07",
+            statement_amount: 310,
+            evidence:
+                "https://drive.google.com/file/d/issued-invoice/view; forecast_basis=credit_funded_invoice",
+        });
+        const result = calculateRunway(
+            [opening()],
+            NOW,
+            [
+                {
+                    ...balance("aws", 0, 160),
+                    account_id: invoice.account_id,
+                    start: "2026-08-16 00:00:00",
+                    end: "2026-08-31 23:59:59",
+                },
+            ],
+            undefined,
+            [stripeSales()],
+            { baselineMonth: "2026-07", asOf: "2026-08-25" },
+            [invoice],
+        );
+        const aws = result.rows.find((row) => row.vendor === "aws");
+        expect(aws?.forecastIssue).toBeUndefined();
+        expect(aws?.values["2026-07:actual"]).toBeNull();
+        expect(aws?.values["2026-09:forecast"]).toBeCloseTo(0, 8);
+        expect(aws?.creditValues?.["2026-08:forecast"]).toBeCloseTo(-310, 8);
+        expect(aws?.values["2026-10:forecast"]).toBeCloseTo(-310, 8);
+    });
+
     it("explains settlement timing without claiming the supplier invoice is missing", () => {
         const result = buildRunway([opening()], NOW, [
             cloud({

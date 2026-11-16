@@ -265,9 +265,30 @@ export function ConnectedApps() {
             </div>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}
-            {connectionsError && <LoadError>{connectionsError}</LoadError>}
+            {connectionsError && (
+                <LoadError
+                    onRetry={() =>
+                        loadConnections().then(() => setConnectionsError(null))
+                    }
+                    paths={["/account/integrations"]}
+                >
+                    {connectionsError}
+                </LoadError>
+            )}
 
-            {toolkitsError && <LoadError>{toolkitsError}</LoadError>}
+            {toolkitsError && (
+                <LoadError
+                    onRetry={() =>
+                        loadToolkits(search.trim()).then((results) => {
+                            setToolkits(results);
+                            setToolkitsError(null);
+                        })
+                    }
+                    paths={["/account/integrations/toolkits"]}
+                >
+                    {toolkitsError}
+                </LoadError>
+            )}
 
             <SectionContent
                 loading={

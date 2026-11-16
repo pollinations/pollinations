@@ -135,6 +135,14 @@ const KEY_IDENTITIES: Record<
         userId: "user_bob",
         byopApp: null,
     },
+    // An agent run token reports its parent key's identity, type included.
+    ag_alice: {
+        valid: true,
+        type: "secret",
+        name: "alice-secret",
+        userId: "user_alice",
+        byopApp: null,
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
@@ -149,19 +157,20 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        ENTER: env.ENTER,
     };
 }
 
-// Answers Gen's key check and refuses every other outbound request.
+// Answers Enter's key check on the ENTER binding and refuses every public
+// outbound request.
 function mockAuth() {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        throw new Error(`Unexpected fetch: ${new Request(input, init).url}`);
+    });
+    vi.spyOn(env.ENTER, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        const url = new URL(request.url);
-        if (
-            url.origin !== "https://gen.pollinations.ai" ||
-            url.pathname !== "/account/key"
-        ) {
-            throw new Error(`Unexpected fetch: ${request.url}`);
+        if (new URL(request.url).pathname !== "/api/account/key") {
+            throw new Error(`Unexpected Enter call: ${request.url}`);
         }
         const key = (request.headers.get("authorization") ?? "").replace(
             /^Bearer /,
@@ -487,26 +496,47 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
-    it.each([429, 500])(
-        "answers 503, not 401, when the key check returns %i",
-        async (status) => {
-            vi.mocked(globalThis.fetch).mockResolvedValueOnce(
-                new Response(null, { status }),
-            );
-            const res = await SELF.fetch(
-                "https://media.pollinations.ai/upload",
-                {
-                    method: "POST",
-                    body: TINY_PNG,
-                    headers: {
-                        Authorization: `Bearer ${VALID_KEY}`,
-                        "Content-Type": "image/png",
-                    },
-                },
-            );
-            expect(res.status).toBe(503);
-        },
-    );
+    it.each([
+        ["is throttled", () => new Response(null, { status: 429 })],
+        ["fails", () => new Response(null, { status: 500 })],
+        ["redirects", () => new Response(null, { status: 302 })],
+        ["sends no JSON", () => new Response("not json")],
+        ["omits valid", () => Response.json({})],
+    ])("answers 503, not 401, when the key check %s", async (_, response) => {
+        vi.mocked(env.ENTER.fetch).mockResolvedValueOnce(response());
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(503);
+    });
+
+    // A public fetch through Gen would share the Workers egress IP's limit.
+    it("checks keys with Enter over the service binding, not through Gen", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(200);
+        const [input, init] = vi.mocked(env.ENTER.fetch).mock.calls[0];
+        const request = new Request(input, init);
+        expect(request.url).toBe(
+            "https://enter.pollinations.ai/api/account/key",
+        );
+        expect(request.headers.get("authorization")).toBe(
+            `Bearer ${VALID_KEY}`,
+        );
+        expect(request.headers.has("cf-connecting-ip")).toBe(false);
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
 
     it("upload and retrieve", async () => {
         const form = new FormData();
@@ -1915,6 +1945,88 @@ describe("media.pollinations.ai", () => {
         expect(publicGallery.status).toBe(200);
     });
 
+    // R2 rejects more than 8,192 bytes of object metadata, so an uncapped
+    // filename past that made the upload 500.
+    describe("upload filename cap", () => {
+        const longName = `${"n".repeat(9000)}.png`;
+
+        it("multipart upload with a 9 KB filename succeeds with a truncated name", async () => {
+            const { status, body } = await uploadViaForm("sk_app_alice", {
+                fileName: longName,
+                bytes: variant(60),
+            });
+            expect(status).toBe(200);
+            const uploaded = body as UploadResponse;
+            expect(uploaded.id).not.toBe("");
+
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${uploaded.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            const disposition = getRes.headers.get("content-disposition") || "";
+            expect(disposition.length).toBeLessThan(600);
+            expect(disposition).toContain("n".repeat(200));
+        });
+
+        it("JSON upload with a 9 KB name succeeds with a truncated name", async () => {
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        data: Buffer.from(variant(61)).toString("base64"),
+                        contentType: "image/png",
+                        name: longName,
+                    }),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+            expect(res.status).toBe(200);
+            const uploaded = (await res.json()) as UploadResponse;
+
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${uploaded.id}`,
+            );
+            expect(getRes.status).toBe(200);
+            const disposition = getRes.headers.get("content-disposition") || "";
+            expect(disposition.length).toBeLessThan(600);
+            expect(disposition).toContain("n".repeat(200));
+        });
+
+        it("cuts the name between characters, not inside an emoji", async () => {
+            const kept = `${"a".repeat(252)}😀`;
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        data: Buffer.from(variant(63)).toString("base64"),
+                        contentType: "image/png",
+                        name: `${kept}.png`,
+                    }),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+            expect(res.status).toBe(200);
+            const { id } = (await res.json()) as UploadResponse;
+
+            const stored = await env.MEDIA_BUCKET.head(id);
+            expect(stored?.customMetadata?.originalName).toBe(kept);
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${id}`,
+            );
+            expect(getRes.headers.get("content-disposition")).toContain(
+                encodeURIComponent(kept),
+            );
+        });
+    });
+
     describe("DELETE /media/:id", () => {
         it("owner deletes with a secret key: unpublished and gone", async () => {
             const { status, body } = await uploadViaForm("sk_app_alice", {
@@ -2001,6 +2113,14 @@ describe("media.pollinations.ai", () => {
                 headers: { Authorization: "Bearer pk_alice" },
             });
             expect(publishable.status).toBe(403);
+
+            // Agent run tokens are handed to generated code, so they can't
+            // delete the owner's media even though they report "secret".
+            const agentToken = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer ag_alice" },
+            });
+            expect(agentToken.status).toBe(403);
 
             const nonOwner = await SELF.fetch(url, {
                 method: "DELETE",
@@ -2124,7 +2244,7 @@ describe("media.pollinations.ai", () => {
         }
 
         function send(
-            mediaEnv: ReturnType<typeof limitedEnv>,
+            mediaEnv: ReturnType<typeof createMediaEnv>,
             method: string,
             path: string,
             { key, ip }: { key: string; ip: string },
@@ -2138,6 +2258,9 @@ describe("media.pollinations.ai", () => {
                         Authorization: `Bearer ${key}`,
                         "CF-Connecting-IP": ip,
                         "Content-Type": "image/png",
+                        ...(method === "POST" && {
+                            "Content-Length": String(TINY_PNG.length),
+                        }),
                     },
                 },
                 mediaEnv,
@@ -2155,7 +2278,7 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 401, 429, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(3);
 
             const otherIp = await send(mediaEnv, "POST", "/upload", {
                 key: "sk_fake5",
@@ -2175,7 +2298,43 @@ describe("media.pollinations.ai", () => {
                 statuses.push(res.status);
             }
             expect(statuses).toEqual([401, 401, 429]);
-            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+            expect(env.ENTER.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it("caps uploads per account across its keys", async () => {
+            const bucket = createTestR2Bucket();
+            const mediaEnv = {
+                ...createMediaEnv(bucket),
+                UPLOAD_RATE_LIMITER: limiter(2),
+            };
+            const upload = (key: string) =>
+                send(mediaEnv, "POST", "/upload", { key, ip: "203.0.113.7" });
+            const statuses = [];
+            for (const key of ["sk_app_alice", "sk_alice", "sk_app_alice"]) {
+                statuses.push((await upload(key)).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await upload("sk_alice")).headers.get("retry-after")).toBe(
+                "60",
+            );
+            expect((await upload("sk_bob")).status).toBe(200);
+            expect(bucket.putCount).toBe(3);
+        });
+
+        it("caps public gallery reads per IP before D1", async () => {
+            const mediaEnv = limitedEnv();
+            const list = (ip: string) =>
+                app.request(
+                    "/media?tag=flood",
+                    { headers: { "CF-Connecting-IP": ip } },
+                    mediaEnv,
+                );
+            const statuses = [];
+            for (let i = 0; i < 3; i++) {
+                statuses.push((await list("203.0.113.7")).status);
+            }
+            expect(statuses).toEqual([200, 200, 429]);
+            expect((await list("198.51.100.1")).status).toBe(200);
         });
     });
 });

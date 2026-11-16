@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+    communityEndpointPrices,
+    staticFallbackRejection,
+} from "../../shared/community-endpoints.ts";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     calculateCost,
@@ -48,22 +52,50 @@ afterEach(() => {
 
 describe("long-context cost variants", () => {
     it.each([
-        [198_999, undefined, 0.399698],
-        [199_000, "long_context", 0.7994],
+        [198_999, undefined, 0.399698, 0.399698],
+        [199_000, "long_context", 0.3997, 0.7994],
+        [199_001, "long_context", 0.399702, 0.799404],
     ] as const)(
         "Grok reprices all billed tokens at %s uncached prompt tokens",
-        (prompt, variant, price) => {
-            const billing = bill("x-ai/grok-4.7", {
-                promptTextTokens: prompt,
+        (prompt, variant, cost, price) => {
+            const usage = {
+                promptTextTokens: prompt - 100,
+                promptImageTokens: 100,
                 promptCachedTokens: 1000,
                 completionTextTokens: 100,
                 completionReasoningTokens: 100,
-            });
+            };
+            const billing = bill("x-ai/grok-4.7", usage);
             expect(billing.costVariant).toBe(variant);
-            expect(billing.cost.totalCost).toBeCloseTo(price, 10);
+            expect(billing.cost.totalCost).toBeCloseTo(cost, 10);
             expect(billing.price.totalPrice).toBeCloseTo(price, 8);
+            const fallback = fallbackBill(
+                "x-ai/grok-4.7",
+                "x-ai/grok-4.7:xai",
+                usage,
+            );
+            expect(fallback.cost.totalCost).toBeCloseTo(price, 10);
+            expect(fallback.price).toEqual(billing.price);
+            expect(fallback.servedPrice).toBeCloseTo(price, 8);
+            expect(fallback.priceDefinition).toEqual(billing.priceDefinition);
         },
     );
+
+    it("publishes Grok's unchanged long-context customer rates", () => {
+        const info = modelInfoFromDefinition(
+            "x-ai/grok-4.7",
+            getRegistryModelDefinition("x-ai/grok-4.7"),
+        );
+        const direct = modelInfoFromDefinition(
+            "x-ai/grok-4.7:xai",
+            getRegistryModelDefinition("x-ai/grok-4.7:xai"),
+        );
+        expect(info.pricing).toEqual(direct.pricing);
+        expect(info.pricing_variants?.[0].pricing).toEqual(
+            direct.pricing_variants?.[0].pricing,
+        );
+        expect(info.pricing_variants?.[0].pricing).not.toEqual(info.pricing);
+    });
 
     it.each([
         ["openai/gpt-5.4", 272_000],
@@ -293,10 +325,10 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 1 / 3],
+        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 0.75],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
-        ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
     ] satisfies [ModelName, number, number, number, number, number][])(
         "%s applies every Azure long-context meter to the full request",
         (model, input, cached, cacheWrite, output, multiplier) => {
@@ -831,6 +863,58 @@ describe("selection safety and composition", () => {
         expect(billing.servedPrice).toBeCloseTo(0.006, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
         expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+    });
+
+    it.each([0, 2])(
+        "applies a variant multiplier of %s to provider-reported totals",
+        (multiplier) => {
+            const servedBy = fakeModel({
+                priceMultiplier: 1,
+                costVariants: { tier: {} },
+                priceMultiplierVariants: { tier: multiplier },
+                selectCostVariant: () => "tier",
+                billing: { resolveTotalCost: () => 0.1 },
+            });
+            const args = {
+                model: "test-model",
+                usage: { promptTextTokens: 1000 },
+                servedBy,
+            };
+            const reported = calculateUsageBilling(args);
+            expect(reported.cost.totalCost).toBe(0.1);
+            expect(reported.price.totalPrice).toBe(0.1 * multiplier);
+            const receipt = calculateUsageBilling({
+                ...args,
+                input: { providerBilling: { units: 2, unitCost: 0.1 } },
+            });
+            expect(receipt.cost.totalCost).toBe(0.2);
+            expect(receipt.price.totalPrice).toBe(0.2 * multiplier);
+        },
+    );
+
+    it("includes variant markups when allowing a community fallback", () => {
+        const primary = {
+            modality: "text" as const,
+            imagePricing: "request" as const,
+            paidOnly: false,
+            prices: communityEndpointPrices({
+                promptTextPrice: 1e-6,
+                completionTextPrice: 2e-6,
+            }),
+        };
+        const target = fakeModel({
+            inputModalities: ["text"],
+            outputModalities: ["text"],
+            paidOnly: false,
+        });
+        expect(staticFallbackRejection(primary, target)).toBeNull();
+        expect(
+            staticFallbackRejection(primary, {
+                ...target,
+                costVariants: { long: {} },
+                priceMultiplierVariants: { long: 2 },
+            }),
+        ).toBe("costs more than this model");
     });
 
     it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {

@@ -22,7 +22,7 @@ import {
     withModelFallback,
 } from "../../fallback.ts";
 import { textResponseStream } from "../../media/response-output.ts";
-import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../../utils/generation-access.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
@@ -120,6 +120,7 @@ async function responsesClientForAttempt(
         secret: c.env.BETTER_AUTH_SECRET,
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;
@@ -282,7 +283,7 @@ async function handleDirectResponse(
                 return { ...result, usage: parsed.data.usage };
             },
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", result.requestUrl);
 

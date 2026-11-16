@@ -5,6 +5,7 @@ export class PaymentRequiredError extends HTTPException {
         readonly errorCode:
             | "KEY_BUDGET_EXHAUSTED"
             | "INSUFFICIENT_BALANCE"
+            | "QUEST_POLLEN_RESTRICTED"
             | "QUEST_POLLEN_ONLY",
         message: string,
         /** The page where the key's owner fixes this. */

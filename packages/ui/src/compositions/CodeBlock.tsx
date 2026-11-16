@@ -1,7 +1,6 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton } from "./CopyButton.tsx";
+import { CopyButton, CopyStateIcon } from "./CopyButton.tsx";
 
 type CodeBlockOwnProps = {
     code: string;
@@ -35,18 +34,16 @@ export const CodeBlock: FC<CodeBlockProps> = ({
                 </span>
                 <CopyButton
                     value={code}
-                    tooltip={null}
                     aria-label="Copy code"
                     className="polli:flex polli:items-center polli:gap-1.5 polli:rounded-md polli:px-2 polli:py-1 polli:text-xs polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover"
                 >
                     {(copied) => (
                         <>
-                            {copied ? (
-                                <CheckIcon className="polli:size-3.5" />
-                            ) : (
-                                <ClipboardIcon className="polli:size-3.5" />
-                            )}
-                            <span>{copied ? "Copied" : "Copy"}</span>
+                            <CopyStateIcon
+                                copied={copied}
+                                className="polli:size-3.5"
+                            />
+                            <span>Copy</span>
                         </>
                     )}
                 </CopyButton>

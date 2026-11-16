@@ -9,7 +9,7 @@ Read the repository `AGENTS.md` and inspect the current route before diagnosing 
 
 ## Trace the failure
 
-1. Check the [Model Monitor](https://monitor.pollinations.ai) and the current definitions of `enter.pollinations.ai/observability/endpoints/model_health.pipe` and `recent_server_errors.pipe`. The monitor shows aggregated health; the error pipe contains recent actionable server-side failures.
+1. Check the [Model Monitor](https://model-monitor.pollinations.ai) and the current definitions of `enter.pollinations.ai/observability/endpoints/model_health.pipe` and `recent_server_errors.pipe`. The monitor shows aggregated health; the error pipe contains recent actionable server-side failures.
 2. Trace a request ID through the enter and gen Workers, then the provider. Use the relevant Worker's logs or `wrangler tail` for live events. Verify the target environment before querying it.
 3. For production SQL, use `enter.pollinations.ai/observability/scripts/tb-prod.sh`. It loads the existing read token without printing it. Use `--check` to verify access and fresh events. Keep queries bounded by time and row count.
 4. Compare the affected user's requests with other users of the same model and route. Group by status, upstream status, provider, request shape, and time. Reproduce the exact request with an existing authorized test credential when needed; use a unique prompt to avoid mistaking a cached response for a healthy upstream.

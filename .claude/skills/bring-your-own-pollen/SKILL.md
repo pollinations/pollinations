@@ -1,6 +1,6 @@
 ---
 name: bring-your-own-pollen
-description: Add Bring Your Own Pollen (BYOP) sign-in to an app so each user pays with their own Pollen instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
+description: Add Bring Your Own Pollen (BYOP) to an app with Pollinations Connect so each user pays with their own Pollen instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
 ---
 # bring-your-own-pollen — user-paid Pollinations apps
 
@@ -27,7 +27,7 @@ work; it keeps `sk_...` out of the browser callback URL.
 
 ## Step 1 — App Key (`client_id`)
 
-Create one at `https://enter.pollinations.ai/keys` → **Apps** → **Create**,
+Create one at `https://enter.pollinations.ai/keys?tab=app` → **App** → **Create**,
 or via the API:
 
 ```bash

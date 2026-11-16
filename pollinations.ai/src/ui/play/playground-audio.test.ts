@@ -4,6 +4,7 @@ import {
     audioEndpoint,
     audioInputError,
     generatePlaygroundAudio,
+    supportsAudioLength,
 } from "./playground-audio";
 
 const client = new Pollinations({
@@ -26,6 +27,27 @@ describe("catalog-driven audio requests", () => {
         expect(audioEndpoint(model("/future/audio"))).toBeUndefined();
     });
 
+    it("offers length only for music models with adjustable duration", () => {
+        expect(
+            supportsAudioLength({
+                id: "google/lyria-3.5",
+                allowedDurations: [],
+            }),
+        ).toBe(false);
+        expect(
+            supportsAudioLength({
+                id: "google/lyria-3-clip-preview",
+                allowedDurations: [30],
+            }),
+        ).toBe(false);
+        expect(
+            supportsAudioLength({
+                id: "elevenlabs/eleven-text-to-sound-v3",
+                allowedDurations: [],
+            }),
+        ).toBe(true);
+    });
+
     it("uploads a reference track and sends its URL with the prompt", async () => {
         const fetchRequest = vi
             .fn()
@@ -46,7 +68,7 @@ describe("catalog-driven audio requests", () => {
             {
                 prompt: "  a piano melody  ",
                 file,
-                duration: 12,
+                duration: 12.5,
             },
         );
         const [uploadUrl, upload] = fetchRequest.mock.calls[0];
@@ -57,7 +79,7 @@ describe("catalog-driven audio requests", () => {
         expect(JSON.parse(request.body)).toEqual({
             input: "a piano melody",
             model: "new-model-from-catalog",
-            duration: 12,
+            duration: 12.5,
             reference_audio: "https://media.pollinations.ai/reference",
         });
         expect(result.type).toBe("audio");

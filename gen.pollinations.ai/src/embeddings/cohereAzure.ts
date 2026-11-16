@@ -1,17 +1,7 @@
-import { ensureUpstreamOk } from "@shared/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import type { OpenAIEmbeddingResponse } from "./openai.ts";
 
-const COHERE_AZURE_ROUTES = {
-    "cohere/embed-v4.0": {
-        host: "https://myceli-prod-eastus.cognitiveservices.azure.com",
-        key: "AZURE_MYCELI_PROD_API_KEY",
-    },
-    "cohere/embed-v4.0:azure:sweden": {
-        host: "https://myceli-prod-swedencentral.cognitiveservices.azure.com",
-        key: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    },
-} as const;
 // This Cohere deployment exposes image embeddings only on this Azure preview
 // contract; the 2025-04-01 image route returns 404.
 const COHERE_AZURE_IMAGE_ENDPOINT =
@@ -35,7 +25,6 @@ type CohereAzureImageEmbeddingRequest = {
 
 export async function callCohereAzureEmbed(
     env: CloudflareBindings,
-    routeId: string,
     modelId: string,
     input: string[],
     dimensions?: number,
@@ -48,12 +37,11 @@ export async function callCohereAzureEmbed(
         ...(dimensions ? { dimensions } : {}),
     };
 
-    return callCohereAzure(env, routeId, "/openai/v1/embeddings", body);
+    return callCohereAzure(env, "/openai/v1/embeddings", body);
 }
 
 export async function callCohereAzureImageEmbed(
     env: CloudflareBindings,
-    routeId: string,
     modelId: string,
     input: CohereAzureImageEmbeddingRequest["input"],
     dimensions?: number,
@@ -66,21 +54,18 @@ export async function callCohereAzureImageEmbed(
         ...(dimensions ? { dimensions } : {}),
     };
 
-    return callCohereAzure(env, routeId, COHERE_AZURE_IMAGE_ENDPOINT, body);
+    return callCohereAzure(env, COHERE_AZURE_IMAGE_ENDPOINT, body);
 }
 
 async function callCohereAzure(
     env: CloudflareBindings,
-    routeId: string,
     path: string,
     body: CohereAzureEmbeddingRequest | CohereAzureImageEmbeddingRequest,
 ): Promise<OpenAIEmbeddingResponse> {
-    const route =
-        COHERE_AZURE_ROUTES[routeId as keyof typeof COHERE_AZURE_ROUTES];
-    const endpoint = `${route.host}${path}`;
-    const apiKey = env[route.key];
+    const endpoint = `https://myceli-prod-eastus.cognitiveservices.azure.com${path}`;
+    const apiKey = env.AZURE_MYCELI_PROD_API_KEY;
     if (!apiKey) {
-        throw new Error(`${route.key} is not configured`);
+        throw new Error("AZURE_MYCELI_PROD_API_KEY is not configured");
     }
 
     const response = await fetch(endpoint, {
@@ -90,6 +75,12 @@ async function callCohereAzure(
             "api-key": apiKey,
         },
         body: JSON.stringify(body),
+    }).catch((cause: unknown) => {
+        throw new UpstreamError(502, {
+            message: "Cohere Azure request failed",
+            requestUrl: new URL(endpoint),
+            cause,
+        });
     });
 
     await ensureUpstreamOk(response, endpoint);

@@ -3,6 +3,7 @@ import {
     Chip,
     ContentHeader,
     EarningsIcon,
+    formatCount,
     Heading,
     IconTile,
     type IconTileProps,
@@ -53,8 +54,8 @@ export function MoneyMoves() {
                         models, or building an app or agent.{" "}
                         {quests ? (
                             <>
-                                {quests.totals.contributors.toLocaleString()}{" "}
-                                people have completed Quests.{" "}
+                                {formatCount(quests.totals.contributors)} people
+                                have completed Quests.{" "}
                             </>
                         ) : null}
                         <InlineLink href="https://enter.pollinations.ai/quests">
@@ -69,7 +70,7 @@ export function MoneyMoves() {
                         and{" "}
                         {/* Keep the link's arrow and the full stop on its line. */}
                         <span className="whitespace-nowrap">
-                            <InlineLink href="https://gen.pollinations.ai/docs#tag/connect-user-wallets">
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/pollinations-pay">
                                 apps
                             </InlineLink>
                             .

@@ -2,6 +2,7 @@ import {
     type CSSProperties,
     cloneElement,
     type FC,
+    type FocusEvent,
     Fragment,
     isValidElement,
     type KeyboardEvent,
@@ -112,7 +113,9 @@ export const Tooltip: FC<TooltipProps> = ({
         closeTimeoutRef.current = setTimeout(() => {
             if (
                 !tapPinnedRef.current &&
-                !triggerRef.current?.matches(":hover, :focus-within") &&
+                !triggerRef.current?.matches(
+                    ":hover, :focus-visible, :has(:focus-visible)",
+                ) &&
                 !popupRef.current?.matches(":hover")
             ) {
                 setShowTooltip(false);
@@ -268,7 +271,13 @@ export const Tooltip: FC<TooltipProps> = ({
             tapPinnedRef.current = true;
             openTooltip();
         },
-        onFocus: openTooltip,
+        // Keyboard focus opens the tooltip. A click also focuses the trigger;
+        // counting that would keep the tooltip up after the pointer leaves.
+        onFocus: (event: FocusEvent) => {
+            if ((event.target as HTMLElement).matches(":focus-visible")) {
+                openTooltip();
+            }
+        },
         onBlur: () => {
             tapPinnedRef.current = false;
             scheduleCloseTooltip();

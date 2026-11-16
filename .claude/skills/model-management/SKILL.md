@@ -226,7 +226,7 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
 - Every new canonical provider, including free and fallback providers, must be
   onboarded to Economics in the same change: add its identity/model mappings
-  to `operations/economics/provider-registry.json` and create or update its
+  to `operations/dashboards/economics/provider-registry.json` and create or update its
   single `<vendor-id>.json` in the private Drive Vendor journals folder, using
   the [Economics collection workflow](../economics-provider-collection/SKILL.md).
   Verify category, collection method, review/balance tracking and known accounts;

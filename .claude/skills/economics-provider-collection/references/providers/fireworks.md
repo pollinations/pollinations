@@ -26,7 +26,7 @@ Canonical accounts:
 - The Neoglyph key reads account usage. Model-grouped usage returned
   `PermissionDenied`; use its dashboard for model detail.
 - Browser identity (verified 2026-09-05): `elliot@neoglyph.ai`, displayed
-  organization `NGLPH OÜ`, provider Account ID `elliot-neoglyph`; the registry
+  organization `NGLPH OÜ`, provider Account ID `elliot-neoglyph`; the journal
   key remains `neoglyph`. Confirm in Account settings, not from the tab title.
   If the profile is absent from connected tabs, inspect the native Chrome
   window title and signed-in email before asking the user to reopen it.
@@ -101,7 +101,7 @@ Collection steps:
 - Fireworks account IDs (pass with `-a`; `firectl account list --api-key`
   prints the ID the key can reach):
 
-  | Registry id | Fireworks account ID | Display name | Key (sops `operations/economics/ingest/secrets/env.json`) |
+  | Journal id | Fireworks account ID | Display name | Key (sops `operations/dashboards/economics/ingest/secrets/env.json`) |
   |---|---|---|---|
   | `myceli` | `elliot-l6mb8f24ewds` | Myceli AI | `FIREWORKS_API_KEY_MYCELI` |
   | `pollinations` | `pollinations` | Pollinations.AI | `FIREWORKS_API_KEY` |

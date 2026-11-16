@@ -24,7 +24,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -202,6 +202,24 @@ async function ensureModelNameAvailable(
     if (!existing || existing.id === currentId) return;
     throw new HTTPException(400, {
         message: "Community model name is already registered",
+    });
+}
+
+// Gen loads every community model and agent into one cached catalog, so each
+// account's share of it must stay bounded.
+const MAX_MODELS_PER_ACCOUNT = 100;
+
+export async function ensureModelLimit(
+    db: Db,
+    ownerUserId: string,
+): Promise<void> {
+    const [{ owned }] = await db
+        .select({ owned: count() })
+        .from(schema.communityEndpoint)
+        .where(eq(schema.communityEndpoint.ownerUserId, ownerUserId));
+    if (owned < MAX_MODELS_PER_ACCOUNT) return;
+    throw new HTTPException(400, {
+        message: `An account can register at most ${MAX_MODELS_PER_ACCOUNT} community models and agents. Delete one to add another.`,
     });
 }
 
@@ -615,6 +633,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
@@ -688,6 +707,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerGithubUsername,
                 input.name,
             );
+            await ensureModelLimit(db, user.id);
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const modelId = communityModelId(ownerGithubUsername, input.name);

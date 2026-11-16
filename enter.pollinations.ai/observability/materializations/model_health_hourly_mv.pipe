@@ -29,6 +29,8 @@ SQL >
     WHERE is_final
         AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
         AND start_time >= now() - INTERVAL 8 DAY
+        -- Feeds public catalog health; owner-only models stay out.
+        AND NOT private_model
     GROUP BY hour, model, event_type
 
 TYPE MATERIALIZED

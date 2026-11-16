@@ -1,4 +1,7 @@
-import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
@@ -34,11 +37,13 @@ import type { RequestData, TransformOptions } from "./types.js";
 async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
+    parentRunExpiresAt,
     parentRequestId,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
+    parentRunExpiresAt?: number;
     parentRequestId: string;
     secret: string;
 }): Promise<string | undefined> {
@@ -53,6 +58,21 @@ async function mintDelegatedToken({
             `Community endpoint '${endpoint.modelId}' delegates generation but the request has no API key to bill`,
         );
     }
+    // A token minted inside an agent run expires when that run does. Clock
+    // skew can put that expiry just behind us (the run token is accepted for a
+    // few seconds past it) or just over a full lifetime ahead, so the issue
+    // time is clamped rather than the expiry moved.
+    const now = Math.floor(Date.now() / 1000);
+    const issuedAt =
+        parentRunExpiresAt === undefined
+            ? now
+            : Math.min(
+                  Math.max(
+                      now,
+                      parentRunExpiresAt - AGENT_RUN_TOKEN_TTL_SECONDS,
+                  ),
+                  parentRunExpiresAt - 1,
+              );
     return signAgentRunToken({
         secret,
         parentApiKeyId,
@@ -64,6 +84,11 @@ async function mintDelegatedToken({
                 ? endpoint.id
                 : undefined,
         agentModelId: endpoint.modelId,
+        now: issuedAt,
+        expiresIn:
+            parentRunExpiresAt === undefined
+                ? undefined
+                : parentRunExpiresAt - issuedAt,
     });
 }
 
@@ -76,6 +101,7 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
+    parentRunExpiresAt,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -85,6 +111,7 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentRunExpiresAt?: number;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const modelConfig = await communityEndpointModelConfig({
@@ -92,6 +119,7 @@ export async function communityEndpointGatewayContext({
         secret,
         parentRequestId,
         parentApiKeyId,
+        parentRunExpiresAt,
     });
     return {
         ...requestDataWithoutMessages,
@@ -108,15 +136,18 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
+    parentRunExpiresAt,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    parentRunExpiresAt?: number;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
+        parentRunExpiresAt,
         parentRequestId,
         secret,
     });

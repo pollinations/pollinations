@@ -1,7 +1,6 @@
 import {
     getKeyAccessContext,
     isAppKey,
-    isPublishableKey,
     readRedirectUris,
 } from "@frontend/components/keys/key-type.ts";
 import type { ApiKey } from "@frontend/components/keys/types.ts";
@@ -103,7 +102,10 @@ describe("one shared predicate for list grouping and dialog gating", () => {
             redirectUris: ["https://a.example/cb"],
             earningsEnabled: true,
         });
-        expect(isPublishableKey(key)).toBe(false);
         expect(isAppKey(key)).toBe(false);
+    });
+
+    it("counts a pk_ key with no redirect URIs or earnings as an app key", () => {
+        expect(isAppKey(makeKey({ keyType: "publishable" }))).toBe(true);
     });
 });

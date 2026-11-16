@@ -68,26 +68,27 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "mt-2 flex w-full flex-wrap items-start gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-theme-text-muted",
+                "mt-2 flex w-full items-start gap-1.5 pt-6 text-[13px] leading-snug text-theme-text-muted",
                 className,
             )}
         >
-            {/* Placed like every footnote line; the taller logos hang
-                below the text instead of pushing the line down. */}
-            <span className="inline-flex items-start gap-1.5">
-                <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            {/* Placed like every footnote line; the logos share the text's
+                column, so when they wrap they line up under it, and the
+                taller logos hang below instead of pushing the line down. */}
+            <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2 gap-y-1">
                 <span>Secure checkout by Stripe</span>
-            </span>
-            <span className="-mb-1.5 inline-flex flex-wrap items-center gap-1.5">
-                {paymentMethods(country).map((method) => (
-                    <img
-                        key={method}
-                        src={`/payment-icons/${method}.svg`}
-                        alt={NAMES[method]}
-                        className="h-6 w-auto opacity-70"
-                        loading="lazy"
-                    />
-                ))}
+                <span className="-mb-1.5 inline-flex flex-wrap items-center gap-1.5">
+                    {paymentMethods(country).map((method) => (
+                        <img
+                            key={method}
+                            src={`/payment-icons/${method}.svg`}
+                            alt={NAMES[method]}
+                            className="h-6 w-auto opacity-70"
+                            loading="lazy"
+                        />
+                    ))}
+                </span>
             </span>
         </div>
     );

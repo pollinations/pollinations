@@ -1,6 +1,11 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
+import {
+    type BedrockCredentials,
+    bedrockCredentials,
+    signBedrockHeaders,
+} from "../auth/bedrock.js";
 import { findModelByName } from "../availableModels.js";
 import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
 import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
@@ -18,6 +23,7 @@ export type DirectResponsesTarget = {
     disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
+    aws?: BedrockCredentials;
     model: string;
     defaults: JsonObject;
     serviceTier?: string;
@@ -39,6 +45,7 @@ export function responsesTargetFromConfig(
     if (typeof endpoint !== "string") return null;
 
     const authKey = config.authKey;
+    const aws = bedrockCredentials(config);
     const authHeader: Record<string, string> =
         typeof authKey !== "string" || !authKey
             ? {}
@@ -50,7 +57,9 @@ export function responsesTargetFromConfig(
         : {};
 
     return {
-        authConfigured: typeof authKey === "string" && authKey.length > 0,
+        authConfigured:
+            !!aws || (typeof authKey === "string" && authKey.length > 0),
+        ...(aws ? { aws } : {}),
         ...(config.responsesDisableReasoningForForcedTools === true
             ? { disableReasoningForForcedTools: true as const }
             : {}),
@@ -205,16 +214,26 @@ export async function callDirectResponses(
 
     let response: Response;
     try {
+        const body = JSON.stringify(
+            buildDirectResponsesRequestBody(request, target),
+        );
+        let headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...target.headers,
+        };
+        if (target.aws) {
+            headers = await signBedrockHeaders(
+                requestUrl,
+                body,
+                headers,
+                target.aws,
+            );
+        }
         response = await fetcher(target.endpoint, {
             method: "POST",
             redirect: "manual",
-            headers: {
-                "Content-Type": "application/json",
-                ...target.headers,
-            },
-            body: JSON.stringify(
-                buildDirectResponsesRequestBody(request, target),
-            ),
+            headers,
+            body,
         });
     } catch (thrown) {
         const error =

@@ -869,6 +869,73 @@ describe("GenerationCoordinator", () => {
         expect(await env.TEXT_BUCKET.head(key)).toBeNull();
     });
 
+    it.each(["text", "media"] as const)(
+        "recovers an interrupted alarm from its completed %s cache entry",
+        async (storage) => {
+            const now = Date.now() + 60_000;
+            vi.spyOn(Date, "now").mockReturnValue(now);
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockRejectedValue(
+                    new Error("Recovery must not call the provider"),
+                );
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `recovery-${crypto.randomUUID()}`,
+            );
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = { ...testJob(key, "POST"), cache: { storage, key } };
+            const recovered = await runInDurableObject(
+                stub,
+                async (coordinator, state) => {
+                    const waiting = coordinator.startAndWait(
+                        job,
+                        new Response("request body").body ?? undefined,
+                    );
+                    await waitForAlarm(state);
+                    await coordinator.submit(job);
+                    // The executor saved its result, then the alarm died
+                    // before finish() cleared the claimed job and record.
+                    await state.storage.put("job", {
+                        ...(await state.storage.get<object>("job")),
+                        started: true,
+                    });
+                    if (storage === "text") {
+                        await env.TEXT_BUCKET.put(key, "completed result");
+                    } else {
+                        await env.MEDIA.put(
+                            key,
+                            new Response("completed result", {
+                                headers: { "content-type": "image/png" },
+                            }),
+                        );
+                    }
+
+                    await coordinator.alarm();
+                    const outcome = await waiting;
+                    const record = await coordinator.status("user-1");
+                    const expiresAt = await state.storage.getAlarm();
+                    expect([...(await state.storage.list()).keys()]).toEqual([
+                        "async",
+                    ]);
+                    // A further alarm delivery must not execute anything.
+                    await coordinator.alarm();
+                    await state.storage.deleteAlarm();
+                    return { outcome, record, expiresAt };
+                },
+            );
+
+            expect(recovered.outcome).toEqual({ status: "cached" });
+            expect(recovered.record).toMatchObject({
+                status: "succeeded",
+                ownerIds: ["user-1"],
+                completedAt: now,
+            });
+            expect(recovered.record).not.toHaveProperty("error");
+            expect(recovered.expiresAt).toBe(now + 24 * 60 * 60 * 1_000);
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
+
     it("settles a pending async record when a sync join cancels its alarm", async () => {
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,
@@ -929,6 +996,111 @@ describe("GenerationCoordinator", () => {
             ownerIds: ["async-owner"],
         });
     });
+
+    it.each(["startAndWait", "submit"] as const)(
+        "%s wakes existing callers when a cache hit cancels the recovery alarm",
+        async (method) => {
+            const now = Date.now() + 60_000;
+            vi.spyOn(Date, "now").mockReturnValue(now);
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockRejectedValue(
+                    new Error("Cache recovery must not call the provider"),
+                );
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `cache-hit-waiters-${crypto.randomUUID()}`,
+            );
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = {
+                ...testJob(key, "POST"),
+                cache: { storage: "media" as const, key },
+            };
+            await runInDurableObject(stub, async (_coordinator, state) => {
+                // A restarted coordinator still has a claimed job; its
+                // public executor has not finished writing the cache yet.
+                await state.storage.put({
+                    job: { ...job, bodyChunks: 1, started: true },
+                    "body:0": new TextEncoder().encode("request body"),
+                    async: {
+                        ownerIds: ["async-owner"],
+                        cache: job.cache,
+                        status: "pending",
+                        createdAt: now,
+                    },
+                });
+                await state.storage.setAlarm(now);
+            });
+            const waiting = Promise.all([
+                stub.startAndWait(job),
+                stub.startAndWait(job),
+            ]);
+            let outcomes: Awaited<typeof waiting> | null = null;
+            try {
+                await vi.waitFor(() =>
+                    runInDurableObject(stub, (coordinator) => {
+                        expect(Reflect.get(coordinator, "waiters").size).toBe(
+                            2,
+                        );
+                    }),
+                );
+                await env.MEDIA.put(
+                    key,
+                    new Response("completed result", {
+                        headers: { "content-type": "image/png" },
+                    }),
+                );
+                expect(await stub[method](job)).toEqual(
+                    method === "submit" ? "succeeded" : { status: "cached" },
+                );
+                outcomes = await Promise.race([
+                    waiting,
+                    new Promise<null>((resolve) =>
+                        setTimeout(() => resolve(null), 1_000),
+                    ),
+                ]);
+                await runInDurableObject(stub, async (coordinator, state) => {
+                    expect(Reflect.get(coordinator, "waiters").size).toBe(0);
+                    expect([...(await state.storage.list()).keys()]).toEqual([
+                        "async",
+                    ]);
+                    expect(await state.storage.getAlarm()).toBe(
+                        now + 24 * 60 * 60 * 1_000,
+                    );
+                    expect(
+                        await coordinator.status("async-owner"),
+                    ).toMatchObject({
+                        status: "succeeded",
+                        ownerIds:
+                            method === "submit"
+                                ? ["async-owner", "user-1"]
+                                : ["async-owner"],
+                    });
+                    expect(
+                        await coordinator.status("unrelated-user"),
+                    ).toBeNull();
+                });
+            } finally {
+                await runInDurableObject(stub, async (coordinator, state) => {
+                    // Clean up pending RPCs on the unfixed implementation,
+                    // so the regression fails an assertion, not a timeout.
+                    if (Reflect.get(coordinator, "waiters").size) {
+                        await Reflect.get(coordinator, "finish").call(
+                            coordinator,
+                            { status: "cached" },
+                            0,
+                        );
+                    }
+                    await state.storage.deleteAlarm();
+                });
+                await waiting;
+            }
+            expect(outcomes).toEqual([
+                { status: "cached" },
+                { status: "cached" },
+            ]);
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
 
     it("streams request bodies above the 32 MiB RPC limit into storage", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);

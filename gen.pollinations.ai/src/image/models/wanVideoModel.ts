@@ -47,20 +47,13 @@ interface WanVariantConfig {
         safeParams: ImageParams,
         frames: string[],
     ): Record<string, unknown>;
-    /** Resolve the duration to request AND bill (seconds). */
-    resolveDuration(safeParams: ImageParams): number;
 }
 
 // wan-2.2-fast: aspect_ratio enum is landscape/portrait only.
 const WAN_FAST_RATIOS = ["16:9", "9:16"] as const;
 // wan-2.7-t2v aspect_ratio enum.
 const WAN_PRO_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
-// wan-2.2-fast is a fixed ~5s clip (81 frames @ 16fps); bill a flat 5s.
-const WAN_FAST_FIXED_SECONDS = 5;
-// wan-2.6 duration is an enum; wan-2.7 a free integer we clamp.
-const WAN_26_DURATIONS = [5, 10, 15] as const;
-const WAN_PRO_MIN_DURATION = 2;
-const WAN_PRO_MAX_DURATION = 15;
+// The registry bounds duration; wan-2.7 R2V alone stops at 10 seconds.
 const WAN_PRO_R2V_MAX_DURATION = 10;
 const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
 
@@ -83,17 +76,6 @@ function pickAspect<T extends string>(
     return ratios[0];
 }
 
-/** Snap a requested duration to the nearest value in an allowed set. */
-function snapDuration(
-    requested: number | undefined,
-    allowed: readonly number[],
-): number {
-    const target = requested ?? allowed[0];
-    return allowed.reduce((best, d) =>
-        Math.abs(d - target) < Math.abs(best - target) ? d : best,
-    );
-}
-
 function withSeed(
     input: Record<string, unknown>,
     safeParams: ImageParams,
@@ -109,7 +91,6 @@ const WAN_FAST_CONFIG: WanVariantConfig = {
     i2vModel: "wan-video/wan-2.2-i2v-fast",
     trackingName: "alibaba/wan-2.2-fast",
     displayName: "Wan 2.2",
-    resolveDuration: () => WAN_FAST_FIXED_SECONDS,
     buildInput(mode, prompt, safeParams, frames) {
         if (mode === "i2v") {
             return withSeed(
@@ -138,9 +119,8 @@ const WAN_26_CONFIG: WanVariantConfig = {
     i2vModel: "wan-video/wan-2.6-i2v",
     trackingName: "alibaba/wan-2.6",
     displayName: "Wan 2.6",
-    resolveDuration: (p) => snapDuration(p.duration, WAN_26_DURATIONS),
     buildInput(mode, prompt, safeParams, frames) {
-        const duration = snapDuration(safeParams.duration, WAN_26_DURATIONS);
+        const duration = safeParams.duration ?? 5;
         if (mode === "i2v") {
             return withSeed(
                 { prompt, image: frames[0], resolution: "720p", duration },
@@ -169,13 +149,8 @@ function makeWan27Config(
         trackingName,
         displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
         predictionDeadlineMinutes: WAN_PRO_PREDICTION_DEADLINE_MINUTES,
-        resolveDuration: (p) =>
-            Math.max(
-                WAN_PRO_MIN_DURATION,
-                Math.min(WAN_PRO_MAX_DURATION, Math.floor(p.duration ?? 5)),
-            ),
         buildInput(mode, prompt, safeParams, frames) {
-            const duration = this.resolveDuration(safeParams);
+            const duration = safeParams.duration ?? 5;
             if (mode === "i2v") {
                 return withSeed(
                     {
@@ -224,7 +199,7 @@ async function generateWanVideo(
 
     let model: string;
     let input: Record<string, unknown>;
-    let requestedDuration: number;
+    const requestedDuration = safeParams.duration ?? 5;
     let mode: string;
 
     if (hasReference) {
@@ -235,13 +210,11 @@ async function generateWanVideo(
         }
         model = config.r2vModel;
         mode = "r2v";
-        requestedDuration = Math.max(
-            WAN_PRO_MIN_DURATION,
-            Math.min(
-                WAN_PRO_R2V_MAX_DURATION,
-                Math.floor(safeParams.duration ?? 5),
-            ),
-        );
+        if (requestedDuration > WAN_PRO_R2V_MAX_DURATION) {
+            throw UpstreamError.fromProvider(400, {
+                message: `${config.displayName} reference-to-video supports at most ${WAN_PRO_R2V_MAX_DURATION} seconds.`,
+            });
+        }
         input = withSeed(
             {
                 prompt,
@@ -265,7 +238,6 @@ async function generateWanVideo(
             ? await Promise.all(images.map(toDataUri))
             : [];
         input = config.buildInput(frameMode, prompt, safeParams, frames);
-        requestedDuration = config.resolveDuration(safeParams);
     }
 
     logOps(`${config.displayName} (${mode}) input:`, {

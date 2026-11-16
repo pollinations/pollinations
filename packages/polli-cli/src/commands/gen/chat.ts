@@ -139,6 +139,7 @@ export function createChatCommand() {
                     process.stderr.write("\n\n");
                     messages.push({ role: "assistant", content });
                 } catch (err) {
+                    process.exitCode = 1;
                     messages.pop();
                     printError(
                         err instanceof Error ? err.message : "Request failed",

@@ -4,6 +4,8 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { calculatePrice } from "@shared/registry/registry.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -158,18 +160,35 @@ async function chatThroughHandler(
     wire: string | ((request: Request) => Promise<Response>),
     stream = true,
     prompt = `Hello ${crypto.randomUUID()}`,
+    request?: { path: string; body: Record<string, unknown> },
 ) {
     const { key, userId } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
     let calls = 0;
+    const events: TinybirdEvent[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        // Custom-host providers go out through the Portkey gateway.
+        if (new URL(request.url).hostname === "tinybird.test") {
+            events.push(
+                ...(await request.text())
+                    .trim()
+                    .split("\n")
+                    .map((line) => JSON.parse(line)),
+            );
+            return Response.json({});
+        }
+        // Portkey identifies Azure by resource; other custom providers by host.
+        const azureResource = request.headers.get(
+            "x-portkey-azure-resource-name",
+        );
         const target =
             request.headers.get("x-portkey-custom-host") ?? request.url;
-        if ([host].flat().includes(new URL(target).host)) {
+        const targetHost = azureResource
+            ? `${azureResource}.openai.azure.com`
+            : new URL(target).host;
+        if ([host].flat().includes(targetHost)) {
             calls++;
             if (typeof wire === "function") return wire(request);
             return new Response(wire, {
@@ -184,26 +203,346 @@ async function chatThroughHandler(
     });
     const context = createExecutionContext();
     const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                authorization: `Bearer ${key}`,
-                "content-type": "application/json",
+        new Request(
+            `https://gen.pollinations.ai${request?.path ?? "/v1/chat/completions"}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(
+                    request?.body ?? {
+                        model,
+                        stream,
+                        messages: [{ role: "user", content: prompt }],
+                    },
+                ),
             },
-            body: JSON.stringify({
-                model,
-                stream,
-                messages: [{ role: "user", content: prompt }],
-            }),
+        ),
+        withInlineGenerationCoordinator({
+            ...env,
+            AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
         }),
-        withInlineGenerationCoordinator(env),
         context,
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    return { response, text, calls, balance };
+    return { response, text, calls, balance, events };
 }
+
+it.each([
+    {
+        path: "/v1/chat/completions",
+        model: "qwen/qwen3guard-gen-8b",
+        stream: false,
+    },
+    { path: "/v1/chat/completions", model: "qwen-safety", stream: true },
+    { path: "/v1/responses", model: "qwen/qwen3guard-gen-8b", stream: true },
+    { path: "/v1/messages", model: "qwen3guard-gen-8b", stream: true },
+])(
+    "preserves QwenGuard context errors without billing on $path ($model, stream=$stream)",
+    async ({ path, model, stream }) => {
+        const message =
+            "This model's maximum context length is 32768 tokens. However, your request has 70331 input tokens. Please reduce the length of the input messages.";
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                model,
+                "oai.endpoints.kepler.ai.cloud.ovh.net",
+                async (request) => {
+                    const body = (await request.json()) as { stream?: boolean };
+                    // OVH loses the context error when asked for SSE.
+                    return body.stream
+                        ? new Response("data: [DONE]\n\n", {
+                              headers: { "content-type": "text/event-stream" },
+                          })
+                        : Response.json(
+                              {
+                                  message: JSON.stringify({
+                                      error: {
+                                          message,
+                                          type: "BadRequestError",
+                                          code: 400,
+                                      },
+                                  }),
+                              },
+                              { status: 400 },
+                          );
+                },
+                stream,
+                undefined,
+                {
+                    path,
+                    body: {
+                        model,
+                        stream,
+                        ...(path === "/v1/responses"
+                            ? {
+                                  input: "Oversized input",
+                                  max_output_tokens: 10000,
+                              }
+                            : {
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content: "Oversized input",
+                                      },
+                                  ],
+                                  max_tokens: 10000,
+                              }),
+                    },
+                },
+            );
+        expect(response.status, text).toBe(400);
+        expect(JSON.parse(text).error.message).toContain(message);
+        expect(calls).toBe(1);
+        expect(balance.packBalance).toBe(100);
+        expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                responseStatus: 400,
+                isBilledUsage: false,
+            }),
+        );
+    },
+);
+
+it("rejects buffered QwenGuard classifications without usage before starting SSE", async () => {
+    const { response, text, balance, events } = await chatThroughHandler(
+        "qwen/qwen3guard-gen-8b",
+        "oai.endpoints.kepler.ai.cloud.ovh.net",
+        async () =>
+            Response.json({
+                choices: [
+                    {
+                        message: { role: "assistant", content: "Safety: Safe" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+    );
+    expect(response.status, text).toBe(502);
+    expect(JSON.parse(text).error.code).toBe("BAD_GATEWAY");
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(balance.packBalance).toBe(100);
+    expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+});
+
+it.each([false, true])(
+    "preserves Gemini Search source annotations in Responses (stream=%s)",
+    async (stream) => {
+        const model = "google/gemini-2.5-flash-lite:search";
+        const answer = "Source [1]";
+        const source = {
+            url: "https://example.com/article",
+            title: "An example source",
+            start_index: 7,
+            end_index: 10,
+        };
+        const annotations = [
+            {
+                type: "url_citation",
+                url_citation: { ...source, content: "Excerpt" },
+            },
+        ];
+        const prompt = `Find a source for today's news ${crypto.randomUUID()}`;
+        const { response, text, calls } = await chatThroughHandler(
+            model,
+            "openrouter.ai",
+            async (request) => {
+                expect(new URL(request.url).pathname).toBe(
+                    "/api/v1/chat/completions",
+                );
+                expect(await request.json()).toMatchObject({
+                    plugins: [{ id: "web", engine: "exa" }],
+                });
+                if (!stream) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: answer,
+                                    annotations,
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage,
+                    });
+                }
+                return new Response(
+                    [
+                        { choices: [{ delta: { annotations } }] },
+                        { choices: [{ delta: { content: answer } }] },
+                        { choices: [{ delta: {}, finish_reason: "stop" }] },
+                        { choices: [], usage },
+                        "[DONE]",
+                    ]
+                        .map((chunk) =>
+                            chunk === "[DONE]"
+                                ? "data: [DONE]\n\n"
+                                : `data: ${JSON.stringify(chunk)}\n\n`,
+                        )
+                        .join(""),
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            },
+            stream,
+            prompt,
+            { path: "/v1/responses", body: { model, input: prompt, stream } },
+        );
+        expect(response.status, text).toBe(200);
+        expect(calls).toBe(1);
+        const annotation = { type: "url_citation", ...source };
+        const expectedText = {
+            type: "output_text",
+            text: answer,
+            annotations: [annotation],
+        };
+        if (!stream) {
+            expect(JSON.parse(text).output[0].content[0]).toMatchObject(
+                expectedText,
+            );
+            return;
+        }
+        const events = text
+            .split("\n")
+            .filter((line) => line.startsWith("data: {"))
+            .map((line) => JSON.parse(line.slice(6)));
+        const completed = events.find(
+            (event) => event.type === "response.completed",
+        );
+        const message = completed.response.output[0];
+        expect(message.content[0]).toMatchObject(expectedText);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                type: "response.output_text.annotation.added",
+                annotation,
+                annotation_index: 0,
+                content_index: 0,
+                output_index: 0,
+                item_id: message.id,
+            }),
+        );
+    },
+);
+
+it.each([false, true])(
+    "classifies Gemini search errors by the provider reason, not echoed input (policy=%s)",
+    async (policy) => {
+        let attempt = 0;
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                "google/gemini-2.5-flash-lite:search",
+                ["openrouter.ai", "ai-gateway.vercel.sh"],
+                async () => {
+                    if (attempt++ === 0) {
+                        return Response.json(
+                            {
+                                error: {
+                                    code: policy ? 403 : 429,
+                                    message: policy
+                                        ? "Gemini blocked the request: PROHIBITED_CONTENT"
+                                        : "Provider returned error",
+                                },
+                                request: { prompt: "Explain the NSFW label" },
+                            },
+                            { status: policy ? 403 : 429 },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "Recovered",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage,
+                    });
+                },
+                false,
+            );
+        expect(response.status, text).toBe(policy ? 422 : 200);
+        expect(calls).toBe(policy ? 1 : 2);
+        const final = events.filter((event) => event.isFinal);
+        expect(final).toHaveLength(1);
+        if (policy) {
+            expect(JSON.parse(text).error.code).toBe("UNPROCESSABLE_ENTITY");
+            expect(balance.packBalance).toBe(100);
+            expect(final[0].isBilledUsage).toBe(false);
+        } else {
+            expect(JSON.parse(text).choices[0].message.content).toBe(
+                "Recovered",
+            );
+            expect(events).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        isFinal: false,
+                        responseStatus: 502,
+                        fallbackUsed: false,
+                    }),
+                    expect.objectContaining({
+                        isFinal: true,
+                        responseStatus: 200,
+                        fallbackUsed: true,
+                        isBilledUsage: true,
+                    }),
+                ]),
+            );
+            expect(events.filter((event) => event.isBilledUsage)).toHaveLength(
+                1,
+            );
+            expect(final[0].totalPrice).toBeCloseTo(
+                100 - balance.packBalance,
+                10,
+            );
+        }
+    },
+);
+
+it.each([
+    { status: 400, details: undefined },
+    {
+        status: 422,
+        details: { message: "Gemini blocked the request: PROHIBITED_CONTENT" },
+    },
+])(
+    "does not retry or bill embedded $status errors matching Workerd",
+    async ({ status, details }) => {
+        const { response, text, calls, balance, events } =
+            await chatThroughHandler(
+                "openai/gpt-5-nano",
+                ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+                JSON.stringify({
+                    error: {
+                        message: "Network connection lost.",
+                        code: 400,
+                        details,
+                    },
+                }),
+                false,
+            );
+        expect(response.status, text).toBe(status);
+        expect(calls).toBe(1);
+        expect(balance.packBalance).toBe(100);
+        expect(events.filter((event) => event.isBilledUsage)).toHaveLength(0);
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                responseStatus: status,
+                isBilledUsage: false,
+            }),
+        );
+    },
+);
 
 it("drops OpenRouter's provider cost from client streams", async () => {
     const model = "inception/mercury-3";
@@ -331,6 +670,378 @@ it.each([null, "", " \n\t"])(
     },
 );
 
+const chatProtocolCases = [
+    {
+        path: "/v1/chat/completions",
+        model: "openai/gpt-5-nano" as const,
+        host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        limit: 60,
+        limitField: "max_tokens",
+    },
+    {
+        path: "/v1/messages",
+        model: "openai/gpt-5-nano" as const,
+        host: ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        limit: 1,
+        limitField: "max_tokens",
+    },
+    {
+        path: "/v1/responses",
+        model: "xiaomi/mimo-v2.6-pro" as const,
+        host: ["api.novita.ai", "api.deepinfra.com"],
+        limit: 60,
+        limitField: "max_output_tokens",
+    },
+];
+
+it("keeps a stop-truncated empty answer as a 200 completion", async () => {
+    const model = "openai/gpt-5-nano";
+    const host = ["myceli-prod-eastus.openai.azure.com", "api.openai.com"];
+    const wire = JSON.stringify({
+        id: "stop-truncated",
+        object: "chat.completion",
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: { prompt_tokens: 12, completion_tokens: 1, total_tokens: 13 },
+    });
+    const prompt = `Stop truncation ${crypto.randomUUID()}`;
+
+    const stopped = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        prompt,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                stop: ["1"],
+                messages: [{ role: "user", content: prompt }],
+            },
+        },
+    );
+    expect(stopped.response.status, stopped.text).toBe(200);
+    const stoppedBody = JSON.parse(stopped.text);
+    expect(stoppedBody.choices[0].message.content).toBe("");
+    expect(stoppedBody.choices[0].finish_reason).toBe("stop");
+
+    // Without a configured stop sequence the empty answer is still an error.
+    const bare = await chatThroughHandler(
+        model,
+        host,
+        async () =>
+            new Response(wire, {
+                headers: { "content-type": "application/json" },
+            }),
+        false,
+        `${prompt} bare`,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                stream: false,
+                max_tokens: 40,
+                messages: [{ role: "user", content: `${prompt} bare` }],
+            },
+        },
+    );
+    expect(bare.response.status, bare.text).toBe(502);
+    expect(JSON.parse(bare.text).error).toMatchObject({
+        code: "empty_response",
+    });
+});
+
+it.each([
+    ...chatProtocolCases,
+    { ...chatProtocolCases[0], limitField: "max_completion_tokens" },
+])(
+    "reports exhausted reasoning budgets on $path ($limitField=$limit) without fallback or caching, retaining usage and error metrics",
+    async ({ path, model, host, limit, limitField }) => {
+        const completionTokens = Math.max(limit, 16);
+        const wire = JSON.stringify({
+            id: "reasoning-budget-exhausted",
+            object: "chat.completion",
+            model,
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "" },
+                    finish_reason: "length",
+                },
+            ],
+            usage: {
+                prompt_tokens: 50,
+                completion_tokens: completionTokens,
+                total_tokens: 50 + completionTokens,
+                completion_tokens_details: {
+                    reasoning_tokens: completionTokens,
+                },
+            },
+        });
+        const prompt = `Exhausted reasoning budget ${crypto.randomUUID()}`;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const { response, text, calls, balance, events } =
+                await chatThroughHandler(
+                    model,
+                    host,
+                    async (request) => {
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        expect(
+                            body.max_completion_tokens ?? body.max_tokens,
+                        ).toBe(completionTokens);
+                        expect(body).not.toHaveProperty("reasoning_effort");
+                        return new Response(wire, {
+                            headers: { "content-type": "application/json" },
+                        });
+                    },
+                    false,
+                    prompt,
+                    {
+                        path,
+                        body: {
+                            model,
+                            stream: false,
+                            [limitField]: limit,
+                            ...(path === "/v1/responses"
+                                ? { input: prompt }
+                                : {
+                                      messages: [
+                                          { role: "user", content: prompt },
+                                      ],
+                                  }),
+                        },
+                    },
+                );
+            expect(response.status, text).toBe(400);
+            expect(JSON.parse(text).error).toMatchObject({
+                ...(path === "/v1/messages"
+                    ? { type: "invalid_request_error" }
+                    : { code: "output_token_limit_exceeded" }),
+                message: expect.stringContaining("Increase the token limit"),
+            });
+            expect(calls).toBe(1);
+            expect(response.headers.get("x-cache")).not.toBe("HIT");
+            expect(balance.packBalance).toBeCloseTo(
+                100 -
+                    calculatePrice(model, {
+                        promptTextTokens: 50,
+                        completionReasoningTokens: completionTokens,
+                    }).totalPrice,
+                8,
+            );
+            const generations = events.filter(
+                (event) => event.eventType === "generate.text",
+            );
+            expect(generations).toHaveLength(1);
+            expect(generations[0]).toMatchObject({
+                isFinal: true,
+                isBilledUsage: true,
+                responseStatus: 400,
+                errorResponseCode: "output_token_limit_exceeded",
+                resolvedModelRequested: model,
+                modelUsed: model,
+            });
+        }
+    },
+);
+
+it.each([
+    { limit: undefined, fallbackAnswer: "" },
+    { limit: null, fallbackAnswer: "" },
+    { limit: undefined, fallbackAnswer: "Recovered answer" },
+])(
+    "keeps default token exhaustion retryable ($limit, fallback=$fallbackAnswer)",
+    async ({ limit, fallbackAnswer }) => {
+        const model = "openai/gpt-5-nano";
+        const prompt = `Default budget ${crypto.randomUUID()}`;
+        const { response, text, calls, events } = await chatThroughHandler(
+            model,
+            ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+            async (request) => {
+                const body = (await request.json()) as Record<string, unknown>;
+                expect(
+                    body.max_tokens ?? body.max_completion_tokens,
+                ).toBeUndefined();
+                const content =
+                    new URL(request.url).hostname === "api.openai.com"
+                        ? fallbackAnswer
+                        : "";
+                return Response.json({
+                    id: "default-budget",
+                    object: "chat.completion",
+                    model,
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content },
+                            finish_reason: content ? "stop" : "length",
+                        },
+                    ],
+                    usage,
+                });
+            },
+            false,
+            prompt,
+            {
+                path: "/v1/chat/completions",
+                body: {
+                    model,
+                    max_tokens: limit,
+                    max_completion_tokens: limit,
+                    messages: [{ role: "user", content: prompt }],
+                },
+            },
+        );
+        expect(response.status, text).toBe(fallbackAnswer ? 200 : 502);
+        if (fallbackAnswer)
+            expect(JSON.parse(text).choices[0].message.content).toBe(
+                fallbackAnswer,
+            );
+        else expect(JSON.parse(text).error.code).toBe("empty_response");
+        expect(calls).toBe(2);
+        const attempts = events.filter(
+            (event) => event.eventType === "generate.text",
+        );
+        expect(attempts).toHaveLength(2);
+        expect(attempts[0]).toMatchObject({
+            isFinal: false,
+            responseStatus: 502,
+            errorResponseCode: "empty_response",
+            modelUsed: model,
+        });
+        expect(attempts[1]).toMatchObject({
+            isFinal: true,
+            responseStatus: fallbackAnswer ? 200 : 502,
+            fallbackUsed: true,
+        });
+    },
+);
+
+it.each([0, 1])(
+    "preserves an answered choice at index %s alongside an empty length choice",
+    async (answeredIndex) => {
+        const model = "openai/gpt-4o-mini";
+        const choices = [0, 1].map((index) => ({
+            index,
+            message: {
+                role: "assistant",
+                content: index === answeredIndex ? "An answer" : "",
+            },
+            finish_reason: "length",
+        }));
+        const { response, text, calls } = await chatThroughHandler(
+            model,
+            "api.openai.com",
+            async (request) => {
+                expect(((await request.json()) as { n: number }).n).toBe(2);
+                return Response.json({
+                    id: "multiple-choices",
+                    object: "chat.completion",
+                    model,
+                    choices,
+                    usage,
+                });
+            },
+            false,
+            "Two choices",
+            {
+                path: "/v1/chat/completions",
+                body: {
+                    model,
+                    n: 2,
+                    max_tokens: 20,
+                    messages: [{ role: "user", content: "Two choices" }],
+                },
+            },
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text).choices).toEqual(choices);
+        expect(calls).toBe(1);
+    },
+);
+
+it.each(chatProtocolCases)(
+    "preserves a partial answer at the output token limit on $path",
+    async ({ path, model, host }) => {
+        const prompt = `Partial answer ${crypto.randomUUID()}`;
+        const { response, text } = await chatThroughHandler(
+            model,
+            host,
+            JSON.stringify({
+                id: "partial-completion",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: "A partial answer",
+                        },
+                        finish_reason: "length",
+                    },
+                ],
+                usage,
+            }),
+            false,
+            prompt,
+            {
+                path,
+                body: {
+                    model,
+                    stream: false,
+                    ...(path === "/v1/responses"
+                        ? { input: prompt, max_output_tokens: 20 }
+                        : {
+                              messages: [{ role: "user", content: prompt }],
+                              max_tokens: 20,
+                          }),
+                },
+            },
+        );
+        expect(response.status, text).toBe(200);
+        const body = JSON.parse(text);
+        if (path === "/v1/messages") {
+            expect(body).toMatchObject({
+                content: [{ type: "text", text: "A partial answer" }],
+                stop_reason: "max_tokens",
+            });
+        } else if (path === "/v1/responses") {
+            expect(body).toMatchObject({
+                status: "incomplete",
+                incomplete_details: { reason: "max_output_tokens" },
+                output: [
+                    {
+                        type: "message",
+                        content: [
+                            { type: "output_text", text: "A partial answer" },
+                        ],
+                    },
+                ],
+            });
+        } else {
+            expect(body.choices[0]).toMatchObject({
+                message: { content: "A partial answer" },
+                finish_reason: "length",
+            });
+        }
+    },
+);
+
 it.each([
     { content: null, refusal: "I cannot help with that request." },
     {
@@ -388,7 +1099,10 @@ it("rejects the news failure's empty Responses completion through the Chat adapt
     };
     const { response, text, calls } = await chatThroughHandler(
         "openai/gpt-6-sol",
-        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        [
+            "myceli-prod-eastus.openai.azure.com",
+            "bedrock-runtime.us-east-1.amazonaws.com",
+        ],
         async (request) => {
             const body = (await request.json()) as { stream?: boolean };
             return body.stream

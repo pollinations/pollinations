@@ -2,6 +2,42 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.29] - 2026-11-14
+
+### Added
+- `ModelInfo.required_safety` exposes the mandatory safety checks applied to a model.
+
+## [5.1.0-alpha.28] - 2026-11-11
+
+### Fixed
+- `useAccountKeyUsage` forwards `before_event_id`, so paging with the
+  previous page's cursor no longer skips rows that share its timestamp.
+
+## [5.1.0-alpha.27] - 2026-11-06
+
+### Fixed
+- `chat()` and `text()` reject buffered completions ending with
+  `finish_reason: "error"` instead of returning a partial answer as a success.
+
+## [5.1.0-alpha.26] - 2026-10-31
+
+### Removed
+- `KeyInfo.rateLimitEnabled`. `GET /account/key` no longer returns it: from
+  2026-11-01 publishable (`pk_`) App Keys only identify an app and can't
+  authenticate requests, so no key is rate limited per IP.
+
+## [5.1.0-alpha.25] - 2026-10-29
+
+### Added
+- `isOutageError(error)` tells a Pollinations outage (a 5xx, or no response)
+  from a request error such as 401 or 403. Exported from `@pollinations/sdk`
+  and `@pollinations/sdk/react`.
+
+### Changed
+- Account hooks retry on their own every 30 seconds while an outage lasts. A
+  network failure is a `PollinationsError` with status `0` and code
+  `NETWORK_ERROR`, so `isOutageError` recognises it.
+
 ## [5.1.0-alpha.24] - 2026-10-28
 
 ### Fixed

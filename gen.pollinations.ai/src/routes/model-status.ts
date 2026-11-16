@@ -1,8 +1,13 @@
+import { COMMUNITY_MODEL_PREFIX } from "@shared/community-endpoints.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
+import {
+    type GenerationModelRegistry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 
 // Public read token: the pipe is anonymous and read-only, and the same token
 // is documented for client-side use in docs/public-stats.md.
@@ -37,6 +42,18 @@ export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     return fetchHealthRows(url);
 }
 
+// Private community models are owner-only, so a public listing must not name
+// one, as the model asked for or as a fallback route that served it. Any ID or
+// alias of a community model must resolve to a public one; a community ID the
+// registry cannot resolve is dropped too, so a degraded registry hides rows
+// instead of leaking them.
+function isListedPublicly(registry: GenerationModelRegistry, id = ""): boolean {
+    const community = registry.resolve(id)?.communityEndpoint;
+    return community
+        ? community.visibility === "public"
+        : !id.startsWith(COMMUNITY_MODEL_PREFIX);
+}
+
 // Exists only for the shared edge cache: Tinybird runs the query on every
 // call, so browsers in one colo share one query per minute instead of each
 // paying for a 24-hour scan.
@@ -46,7 +63,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
         tags: ["🤖 Models"],
         summary: "Model Health Status",
         description: [
-            "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.",
+            "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the response of the public Tinybird `model_route_health` pipe without private community models: a `data` array of rows plus a `meta` array typing each column.",
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
@@ -107,13 +124,25 @@ export const modelStatusRoutes = new Hono<Env>().get(
         const upstream = await fetch(url, {
             cf: { cacheTtl: 60, cacheEverything: true },
         });
-        return new Response(upstream.body, {
-            status: upstream.status,
-            headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "public, max-age=60",
-            },
-        });
+        const headers = {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=60",
+        };
+        if (!upstream.ok)
+            return new Response(upstream.body, {
+                status: upstream.status,
+                headers,
+            });
+        const body = (await upstream.json()) as {
+            data?: { model?: string; model_used?: string }[];
+        };
+        const registry = await getGenerationModelRegistry(c.env);
+        body.data = body.data?.filter(
+            (row) =>
+                isListedPublicly(registry, row.model) &&
+                isListedPublicly(registry, row.model_used),
+        );
+        return new Response(JSON.stringify(body), { headers });
     },
 );
 
@@ -125,7 +154,7 @@ export const modelStatsRoutes = new Hono<Env>().get(
         description: [
             "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",
             "",
-            "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.",
+            "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers. Private community models are never listed.",
             "",
             "Refreshed hourly.",
         ].join("\n"),
@@ -135,6 +164,13 @@ export const modelStatsRoutes = new Hono<Env>().get(
     }),
     async (c) => {
         c.header("Cache-Control", "public, max-age=300");
-        return c.json(await getModelStats(c.env.KV, c.var.log));
+        const stats = await getModelStats(c.env.KV, c.var.log);
+        const registry = await getGenerationModelRegistry(c.env);
+        return c.json({
+            ...stats,
+            data: stats.data.filter((row) =>
+                isListedPublicly(registry, row.model),
+            ),
+        });
     },
 );

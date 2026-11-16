@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths:
       - "apps/polli/**"
-      - "operations/deployment/**"
+      - "operations/infrastructure/deployment/deploy.sh"
+      - "operations/infrastructure/deployment/polli-container-deploy.sh"
       - ".github/workflows/deploy-polli.yml"
   workflow_dispatch:
 
@@ -33,7 +34,7 @@ jobs:
           POLLI_AZURE_HOST: ${{ secrets.POLLI_AZURE_HOST }}
           POLLI_AZURE_USER: ${{ secrets.POLLI_AZURE_USER }}
           POLLI_AZURE_SSH_KEY: ${{ secrets.POLLI_AZURE_SSH_KEY }}
-        run: bash operations/deployment/polli-container-deploy.sh "$GITHUB_SHA"
+        run: bash operations/infrastructure/deployment/polli-container-deploy.sh "$GITHUB_SHA"
 
       - name: Deploy apps/polli (legacy)
         if: vars.POLLI_CONTAINER_DEPLOY_ENABLED != 'true'
@@ -41,4 +42,4 @@ jobs:
           POLLI_AZURE_HOST: ${{ secrets.POLLI_AZURE_HOST }}
           POLLI_AZURE_USER: ${{ secrets.POLLI_AZURE_USER }}
           POLLI_AZURE_SSH_KEY: ${{ secrets.POLLI_AZURE_SSH_KEY }}
-        run: operations/deployment/deploy.sh apps/polli
+        run: operations/infrastructure/deployment/deploy.sh apps/polli

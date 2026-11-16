@@ -24,6 +24,7 @@ const EXPECTED_TOOLS = [
     "getUsage",
     "isolateSpeech",
     "listKeys",
+    "listMcpServers",
     "listModels",
     "listQuests",
     "listSites",

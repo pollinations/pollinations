@@ -2,7 +2,6 @@ import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
-import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import {
     alarmOf,
     call as callWorker,
@@ -325,32 +324,22 @@ test("only an HTML Accept from a Mozilla user agent gets the page", async () => 
     }
 });
 
-test("a rate-limited HEAD generates unpaid without booking the slot, as on the VM", async () => {
+test("a rate-limited HEAD returns 429 without calling gen or the paywall", async () => {
     const ip = await limitedIp();
     const hold = await alarmOf(ip);
 
-    const { response } = await call(CAPTURED_HEAD, {
+    const { response, text } = await call(CAPTURED_HEAD, {
         ip,
         method: "HEAD",
         headers: CURL,
     });
 
-    expect(response.status).toBe(200);
-    const vm = capturedHeaders(headHeaders);
-    for (const name of [
-        "content-type",
-        "cache-control",
-        "access-control-allow-origin",
-        "access-control-expose-headers",
-        "link",
-        "x-pollinations-logo",
-        "x-powered-by",
-        "x-model-used",
-    ]) {
-        expect(response.headers.get(name), name).toBe(vm.get(name));
-    }
+    expect(response.status).toBe(429);
+    expect(text).toBe("");
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("payment-required")).toBeNull();
-    expect(events).toEqual(["gen"]);
+    expect(events).toEqual([]);
     expect(await alarmOf(ip)).toBe(hold);
     expect(await storedAt(CAPTURED_HEAD)).toBeNull();
 });

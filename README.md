@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Dilemma Arena](https://tomdacatto.github.io/pollinations-dilemma-arena) | Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 | [💼 Receipts Tower](https://patbing.github.io/receipts-tower) | A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own. | [@patbing](https://github.com/patbing) |
 | [💬 pollable](https://pollable.kendev.ct8.pl) | Ask every model the same question | [@smplstuff](https://github.com/smplstuff) |
 | [🖼️ FlipBook Mini Historias](https://belumokasl-hub.github.io/flipbook-mini-historias) | Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música. | [@belumokasl-hub](https://github.com/belumokasl-hub) |
@@ -30,7 +31,6 @@
 | [💬 Ask Them All](https://ask-them-all.pollinations.app) | Ask one question and several labs answer it in parallel through a single Pollinations key, side by side, with a summary of where they agree and differ. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🎮 Vaultwright](https://vaultwright.rekty-dev.workers.dev) | A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints. | [@rekty](https://github.com/rekty) |
 | [🎮 Empty Room](https://rekty.github.io/empty-room) | Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move. | [@rekty](https://github.com/rekty) |
-| [🖼️ Cover Story](https://rekty.github.io/cover-story) | Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested. | [@rekty](https://github.com/rekty) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

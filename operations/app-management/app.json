@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "PETI-64",
+    "url": "https://rekty.github.io/machine-tui",
+    "description": "A 1980s computer whose OS is a language model: you type shell commands, nothing executes, and the model invents the output while keeping files, processes and clock.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/machine-tui",
+    "repositoryStars": null,
+    "discordUsername": "### Quest",
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19597",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/9f63964f-f9e1-48f6-b4b1-13710bf17a1f"
+  },
+  {
     "emoji": "🎬",
     "name": "夜市對話 Night Market Talk",
     "url": "https://night-market-talk.pollinations.app",

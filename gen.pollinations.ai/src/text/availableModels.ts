@@ -1151,6 +1151,14 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "tencent/hy4-flash",
+        config: portkeyConfig["tencent/hy4-flash"],
+    },
+    {
+        name: "tencent/hy4-flash:openrouter",
+        config: portkeyConfig["tencent/hy4-flash:openrouter"],
+    },
+    {
         name: "tencent/hy4-preview",
         config: portkeyConfig["tencent/hy4-preview"],
     },

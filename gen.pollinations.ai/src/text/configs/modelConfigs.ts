@@ -704,6 +704,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     // under a normal budget. Matches this route's own max_completion_tokens
     // cap. Callers who pass an explicit max_tokens still hit the same gap —
     // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-flash": () =>
+        createVercelAIGatewayModelConfig({
+            model: "tencent/hy4-flash",
+        }),
+    "tencent/hy4-flash:openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-flash",
+        }),
     "tencent/hy4-preview": () =>
         createOpenRouterModelConfig({
             model: "tencent/hy4-preview",

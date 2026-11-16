@@ -2716,6 +2716,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "tencent/hy4-flash": {
+        supportedParameters: CHAT_PARAMETERS.vercelHy4Flash,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-11-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
+            promptTextTokens: perMillion(0.035),
+            promptCachedTokens: perMillion(0.0015),
+            completionTextTokens: perMillion(0.1405),
+        },
+        title: "Hy4 Flash",
+        description:
+            "Low-cost reasoning and agentic coding model with a 1M-token context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1024000,
+        isSpecialized: false,
+    },
     "tencent/hy4-preview": {
         supportedParameters: CHAT_PARAMETERS.openRouterHy4Preview,
         aliases: [],

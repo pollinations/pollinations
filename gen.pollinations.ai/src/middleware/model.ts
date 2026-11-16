@@ -172,7 +172,7 @@ export function resolveModel(
         // Extract model from request
         let rawModel: string | null = null;
 
-        if (c.req.method === "GET") {
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";

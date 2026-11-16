@@ -468,10 +468,7 @@ describe("RunwayTab labels", () => {
             }),
         );
 
-        const cards =
-            html.match(
-                /<details><summary[^>]*>Bank cash[\s\S]*?<\/details>/,
-            )?.[0] ?? "";
+        const cards = html.slice(0, html.indexOf("<table"));
         expect(cards.match(/<\/section>/g)).toHaveLength(3);
         expect(cards).toContain('aria-label="Wise bank cash"');
         expect(cards).toContain('aria-label="Outlook"');

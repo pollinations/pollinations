@@ -627,6 +627,194 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
 
     return (
         <div className="flex flex-col gap-4">
+            {!data.planningError && (
+                <PairedStatCards
+                    compact
+                    layout="rows"
+                    cards={[
+                        {
+                            label: "Wise bank cash",
+                            items: [
+                                {
+                                    label: (
+                                        <span>
+                                            Recorded
+                                            {recordedDate
+                                                ? ` · ${fmtMonthDay(recordedDate)}`
+                                                : ""}
+                                            <CalculationInfo
+                                                label="Recorded bank cash"
+                                                lines={[
+                                                    "All bank currencies combined in USD.",
+                                                    recordedDate
+                                                        ? `Based on bank entries through ${fmtPeriod(recordedDate.slice(0, 10))}.`
+                                                        : "Based on imported entries, not a live bank connection.",
+                                                ]}
+                                            />
+                                        </span>
+                                    ),
+                                    value: fmtRunwayUsd(runway.currentCashUsd),
+                                    tone:
+                                        runway.currentCashUsd != null &&
+                                        runway.currentCashUsd < 0
+                                            ? "neg"
+                                            : "base",
+                                },
+                                {
+                                    label: (
+                                        <span>
+                                            Forecast · {fmtMonthDay(monthEnd)}
+                                            <CalculationInfo
+                                                label="Month-end cash"
+                                                lines={[
+                                                    `Expected cash at the END of ${fmtPeriod(monthEnd)}.`,
+                                                    "Reviewed closed-month cash plus full-month plans; current bank payments do not change the plan.",
+                                                    ...(runway.forecastTimingNote
+                                                        ? [
+                                                              runway.forecastTimingNote,
+                                                          ]
+                                                        : []),
+                                                ]}
+                                            />
+                                        </span>
+                                    ),
+                                    value: fmtRunwayUsd(
+                                        runway.projectedMonthEndCashUsd,
+                                    ),
+                                    tone:
+                                        runway.projectedMonthEndCashUsd !=
+                                            null &&
+                                        runway.projectedMonthEndCashUsd < 0
+                                            ? "neg"
+                                            : "base",
+                                },
+                            ],
+                        },
+                        {
+                            label: "Outlook",
+                            items: [
+                                {
+                                    label: (
+                                        <span>
+                                            {next
+                                                ? `${monthName(next.month)} cash change`
+                                                : "Next cash change"}
+                                            <CalculationInfo
+                                                label="Next cash change"
+                                                lines={[
+                                                    "Next month’s planned revenue minus expenses, plus cash adjustments.",
+                                                    "Provider credits are not cash payments.",
+                                                ]}
+                                            />
+                                        </span>
+                                    ),
+                                    value: fmtRunwayUsd(nextChange),
+                                    tone: valueTone(nextChange),
+                                },
+                                {
+                                    label: (
+                                        <span>
+                                            {runway.runwayExhaustedMonth
+                                                ? "Cash runs out"
+                                                : "Cash runway"}
+                                            <CalculationInfo
+                                                label="Cash runway"
+                                                lines={[
+                                                    "First month cash is projected to run out.",
+                                                    "“+” means cash lasts beyond the forecast shown.",
+                                                ]}
+                                            />
+                                        </span>
+                                    ),
+                                    value: (
+                                        <span className="text-base">
+                                            {runwayPeriodText({
+                                                capped: runway.runwayCapped,
+                                                exhaustedMonth:
+                                                    runway.runwayExhaustedMonth,
+                                                lastMonth: last?.month ?? null,
+                                            })}
+                                        </span>
+                                    ),
+                                    tone: runwayTone,
+                                },
+                            ],
+                        },
+                        ...(balances
+                            ? [
+                                  {
+                                      label: "Pollen balance",
+                                      total: balances.synced_at
+                                          ? `Snapshot · ${fmtMonthDay(balances.synced_at)}`
+                                          : "Snapshot date unavailable",
+                                      detail: (
+                                          <Gauge
+                                              className="mt-2 w-full"
+                                              left={balances.paid_balance}
+                                              leftLabel="Paid"
+                                              right={balances.quest_balance}
+                                              rightLabel="Quest"
+                                          />
+                                      ),
+                                      items: [
+                                          {
+                                              label: (
+                                                  <span className="inline-flex items-center gap-1.5 text-paid-deep">
+                                                      <CardIcon className="h-3.5 w-3.5" />
+                                                      Paid
+                                                      <CalculationInfo
+                                                          label="Paid Pollen"
+                                                          lines={[
+                                                              "Purchased Pollen still available in user wallets for the full catalog.",
+                                                              "This is an unused balance, not monthly revenue or consumption.",
+                                                          ]}
+                                                      />
+                                                  </span>
+                                              ),
+                                              valueClassName:
+                                                  "polli:text-paid-deep",
+                                              value: fmtRunwayTableValue(
+                                                  balances.paid_balance,
+                                              ),
+                                              detail: percent(
+                                                  balanceSplit?.leftPct,
+                                              ),
+                                          },
+                                          {
+                                              label: (
+                                                  <span className="inline-flex items-center gap-1.5 text-tier-deep">
+                                                      <SproutIcon className="h-3.5 w-3.5" />
+                                                      Quest
+                                                      <CalculationInfo
+                                                          label="Quest Pollen"
+                                                          lines={[
+                                                              "Earned or granted Pollen still available for the restricted catalog.",
+                                                              "It is not revenue, although using it can incur provider costs.",
+                                                          ]}
+                                                      />
+                                                  </span>
+                                              ),
+                                              valueClassName:
+                                                  "polli:text-tier-deep",
+                                              value: fmtRunwayTableValue(
+                                                  balances.quest_balance,
+                                              ),
+                                              detail: percent(
+                                                  balanceSplit
+                                                      ? 100 -
+                                                            Math.round(
+                                                                balanceSplit.leftPct,
+                                                            )
+                                                      : undefined,
+                                              ),
+                                          },
+                                      ],
+                                  } satisfies StatPair,
+                              ]
+                            : []),
+                    ]}
+                />
+            )}
             <TableScroller scrollRef={tableScrollRef}>
                 <DataTable className="runway-table min-w-max">
                     <TableHead>
@@ -749,203 +937,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            <details>
-                <summary className="cursor-pointer text-sm text-theme-text-soft">
-                    Bank cash, outlook and Pollen balances
-                </summary>
-                {!data.planningError && (
-                    <PairedStatCards
-                        compact
-                        layout="rows"
-                        cards={[
-                            {
-                                label: "Wise bank cash",
-                                items: [
-                                    {
-                                        label: (
-                                            <span>
-                                                Recorded
-                                                {recordedDate
-                                                    ? ` · ${fmtMonthDay(recordedDate)}`
-                                                    : ""}
-                                                <CalculationInfo
-                                                    label="Recorded bank cash"
-                                                    lines={[
-                                                        "All bank currencies combined in USD.",
-                                                        recordedDate
-                                                            ? `Based on bank entries through ${fmtPeriod(recordedDate.slice(0, 10))}.`
-                                                            : "Based on imported entries, not a live bank connection.",
-                                                    ]}
-                                                />
-                                            </span>
-                                        ),
-                                        value: fmtRunwayUsd(
-                                            runway.currentCashUsd,
-                                        ),
-                                        tone:
-                                            runway.currentCashUsd != null &&
-                                            runway.currentCashUsd < 0
-                                                ? "neg"
-                                                : "base",
-                                    },
-                                    {
-                                        label: (
-                                            <span>
-                                                Forecast ·{" "}
-                                                {fmtMonthDay(monthEnd)}
-                                                <CalculationInfo
-                                                    label="Month-end cash"
-                                                    lines={[
-                                                        `Expected cash at the END of ${fmtPeriod(monthEnd)}.`,
-                                                        "Reviewed closed-month cash plus full-month plans; current bank payments do not change the plan.",
-                                                        ...(runway.forecastTimingNote
-                                                            ? [
-                                                                  runway.forecastTimingNote,
-                                                              ]
-                                                            : []),
-                                                    ]}
-                                                />
-                                            </span>
-                                        ),
-                                        value: fmtRunwayUsd(
-                                            runway.projectedMonthEndCashUsd,
-                                        ),
-                                        tone:
-                                            runway.projectedMonthEndCashUsd !=
-                                                null &&
-                                            runway.projectedMonthEndCashUsd < 0
-                                                ? "neg"
-                                                : "base",
-                                    },
-                                ],
-                            },
-                            {
-                                label: "Outlook",
-                                items: [
-                                    {
-                                        label: (
-                                            <span>
-                                                {next
-                                                    ? `${monthName(next.month)} cash change`
-                                                    : "Next cash change"}
-                                                <CalculationInfo
-                                                    label="Next cash change"
-                                                    lines={[
-                                                        "Next month’s planned revenue minus expenses, plus cash adjustments.",
-                                                        "Provider credits are not cash payments.",
-                                                    ]}
-                                                />
-                                            </span>
-                                        ),
-                                        value: fmtRunwayUsd(nextChange),
-                                        tone: valueTone(nextChange),
-                                    },
-                                    {
-                                        label: (
-                                            <span>
-                                                {runway.runwayExhaustedMonth
-                                                    ? "Cash runs out"
-                                                    : "Cash runway"}
-                                                <CalculationInfo
-                                                    label="Cash runway"
-                                                    lines={[
-                                                        "First month cash is projected to run out.",
-                                                        "“+” means cash lasts beyond the forecast shown.",
-                                                    ]}
-                                                />
-                                            </span>
-                                        ),
-                                        value: (
-                                            <span className="text-base">
-                                                {runwayPeriodText({
-                                                    capped: runway.runwayCapped,
-                                                    exhaustedMonth:
-                                                        runway.runwayExhaustedMonth,
-                                                    lastMonth:
-                                                        last?.month ?? null,
-                                                })}
-                                            </span>
-                                        ),
-                                        tone: runwayTone,
-                                    },
-                                ],
-                            },
-                            ...(balances
-                                ? [
-                                      {
-                                          label: "Pollen balance",
-                                          total: balances.synced_at
-                                              ? `Snapshot · ${fmtMonthDay(balances.synced_at)}`
-                                              : "Snapshot date unavailable",
-                                          detail: (
-                                              <Gauge
-                                                  className="mt-2 w-full"
-                                                  left={balances.paid_balance}
-                                                  leftLabel="Paid"
-                                                  right={balances.quest_balance}
-                                                  rightLabel="Quest"
-                                              />
-                                          ),
-                                          items: [
-                                              {
-                                                  label: (
-                                                      <span className="inline-flex items-center gap-1.5 text-paid-deep">
-                                                          <CardIcon className="h-3.5 w-3.5" />
-                                                          Paid
-                                                          <CalculationInfo
-                                                              label="Paid Pollen"
-                                                              lines={[
-                                                                  "Purchased Pollen still available in user wallets for the full catalog.",
-                                                                  "This is an unused balance, not monthly revenue or consumption.",
-                                                              ]}
-                                                          />
-                                                      </span>
-                                                  ),
-                                                  valueClassName:
-                                                      "polli:text-paid-deep",
-                                                  value: fmtRunwayTableValue(
-                                                      balances.paid_balance,
-                                                  ),
-                                                  detail: percent(
-                                                      balanceSplit?.leftPct,
-                                                  ),
-                                              },
-                                              {
-                                                  label: (
-                                                      <span className="inline-flex items-center gap-1.5 text-tier-deep">
-                                                          <SproutIcon className="h-3.5 w-3.5" />
-                                                          Quest
-                                                          <CalculationInfo
-                                                              label="Quest Pollen"
-                                                              lines={[
-                                                                  "Earned or granted Pollen still available for the restricted catalog.",
-                                                                  "It is not revenue, although using it can incur provider costs.",
-                                                              ]}
-                                                          />
-                                                      </span>
-                                                  ),
-                                                  valueClassName:
-                                                      "polli:text-tier-deep",
-                                                  value: fmtRunwayTableValue(
-                                                      balances.quest_balance,
-                                                  ),
-                                                  detail: percent(
-                                                      balanceSplit
-                                                          ? 100 -
-                                                                Math.round(
-                                                                    balanceSplit.leftPct,
-                                                                )
-                                                          : undefined,
-                                                  ),
-                                              },
-                                          ],
-                                      } satisfies StatPair,
-                                  ]
-                                : []),
-                        ]}
-                    />
-                )}
-            </details>
         </div>
     );
 }

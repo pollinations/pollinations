@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "pollable",
+    "url": "https://pollable.kendev.ct8.pl",
+    "description": "Ask every model the same question",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "smplstuff",
+    "githubUserId": "206557620",
+    "repositoryUrl": "https://github.com/smplstuff/pollable",
+    "repositoryStars": null,
+    "discordUsername": "kennet678",
+    "other": null,
+    "submittedDate": "2026-11-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19510",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e4e13721-8898-4c6d-974a-64b484f51b3e"
+  },
+  {
     "emoji": "🖼️",
     "name": "FlipBook Mini Historias",
     "url": "https://belumokasl-hub.github.io/flipbook-mini-historias",

@@ -6,11 +6,26 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { useMemo } from "react";
-import { DataTable, TableScroller } from "../components/DataTable";
+import {
+    DataTable,
+    HeaderHint,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+} from "../components/DataTable";
 import { useAmountDisplay } from "../components/ReconcilePro";
 import { StatCards } from "../components/StatCards";
-import { infrastructureReport } from "../lib/apiCosts";
+import { type ApiCost, infrastructureReport } from "../lib/apiCosts";
+import { hasVisibleAmount } from "../lib/format";
 import type { Data } from "../types";
+
+const SORT_COLUMNS: readonly SortColumn<ApiCost>[] = [
+    { key: "vendor", value: (row) => row.vendor },
+    { key: "service", value: (row) => row.service },
+    { key: "cashUsd", value: (row) => row.cashUsd },
+    { key: "creditUsd", value: (row) => row.creditUsd },
+    { key: "totalUsd", value: (row) => row.totalUsd },
+];
 
 export function InfrastructureTab({
     data,
@@ -19,10 +34,19 @@ export function InfrastructureTab({
     data: Data;
     month: string;
 }) {
-    const { fmtUsd } = useAmountDisplay();
+    const { fmtUsd, pro } = useAmountDisplay();
     const { rows, summary } = useMemo(
         () => infrastructureReport(data, month),
         [data, month],
+    );
+    const { headerProps, rows: sortedRows } = useSortableRows(
+        rows.filter(
+            (row) =>
+                pro ||
+                hasVisibleAmount([row.cashUsd, row.creditUsd, row.totalUsd]),
+        ),
+        SORT_COLUMNS,
+        { key: "totalUsd", direction: "desc" },
     );
     return (
         <div className="flex flex-col gap-4">
@@ -46,25 +70,46 @@ export function InfrastructureTab({
                 <DataTable className="min-w-[600px]">
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>Provider</TableHeaderCell>
-                            <TableHeaderCell>Service</TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                Cash
+                            <TableHeaderCell {...headerProps("vendor")}>
+                                Provider
                             </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                Credits
+                            <TableHeaderCell {...headerProps("service")}>
+                                Service
                             </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                Total cost
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("cashUsd")}
+                            >
+                                <HeaderHint hint="Cash-funded infrastructure costs for the service month.">
+                                    Cash
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("creditUsd")}
+                            >
+                                <HeaderHint hint="Provider credits used to cover infrastructure costs.">
+                                    Credits
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("totalUsd")}
+                            >
+                                <HeaderHint hint="Cash plus used provider credits.">
+                                    Total cost
+                                </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {rows.map((row) => (
+                        {sortedRows.map((row) => (
                             <TableRow
                                 key={JSON.stringify([row.vendor, row.service])}
                             >
-                                <TableCell>{row.vendor}</TableCell>
+                                <TableCell className="font-semibold">
+                                    {row.vendor}
+                                </TableCell>
                                 <TableCell>{row.service}</TableCell>
                                 <TableCell align="right" numeric>
                                     {fmtUsd(row.cashUsd)}
@@ -77,11 +122,15 @@ export function InfrastructureTab({
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {!rows.length && (
+                        {!sortedRows.length && (
                             <TableRow>
-                                <TableCell colSpan={5}>
-                                    No infrastructure costs recorded for this
-                                    month.
+                                <TableCell
+                                    colSpan={5}
+                                    className="py-8 text-center text-theme-text-soft"
+                                >
+                                    {rows.length
+                                        ? "Recorded service amounts are all below $1."
+                                        : "No infrastructure costs recorded for this month."}
                                 </TableCell>
                             </TableRow>
                         )}

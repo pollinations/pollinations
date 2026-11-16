@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "FlipBook Mini Historias",
+    "url": "https://belumokasl-hub.github.io/flipbook-mini-historias",
+    "description": "Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música.",
+    "language": "es",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "belumokasl-hub",
+    "githubUserId": "258531692",
+    "repositoryUrl": "https://github.com/belumokasl-hub/flipbook-mini-historias",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19816",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/48e6a607-608a-4849-be96-900f20a4714e"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Susurros de Buda · storybook art CLI",
     "url": "https://github.com/Deheroesytumbas/susurros-de-buda-pollinations",
     "description": "A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed.",

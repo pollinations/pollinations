@@ -519,7 +519,6 @@ console.log(result.actualModel); // actual model used
 | `presencePenalty` | number | - | Encourage new topics (-2 to 2) |
 | `seed` | number | random | Reproducible results |
 | `json` | boolean | `false` | JSON output mode |
-| `private` | boolean | `false` | Keep generation private |
 | `raw` | boolean | `false` | Return full response |
 
 ## Chat

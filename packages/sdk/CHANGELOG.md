@@ -2,6 +2,17 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.30] - 2026-11-16
+
+### Removed
+- `private` from the `text()`, `textStream()` and `chat()` options. The API
+  never read it for text, so it did not keep a generation private; the image
+  option was removed earlier for the same reason.
+
+### Fixed
+- The `AudioGenerateOptions.model` doc comment names the real server default,
+  `openai/tts-1`.
+
 ## [5.1.0-alpha.28] - 2026-11-11
 
 ### Fixed

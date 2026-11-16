@@ -260,8 +260,6 @@ export interface TextGenerateOptions extends RequestOptions {
     presencePenalty?: number;
     /** Enable streaming response (default: false) */
     stream?: boolean;
-    /** Keep generation private (default: false) */
-    private?: boolean;
 }
 
 /** Response format options */
@@ -339,8 +337,6 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
-    /** Keep generation private (default: false) */
-    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */
@@ -513,7 +509,7 @@ export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (server default: 'elevenlabs/eleven-v3') */
+    /** Audio model to use (server default: 'openai/tts-1') */
     model?: AudioModel;
     /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;

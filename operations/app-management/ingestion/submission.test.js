@@ -373,3 +373,26 @@ if (args[0] === "issue" && args[1] === "view") {
         "Quest #15600 is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.",
     ]);
 });
+
+test("an empty Quest field followed by a separator is empty, not '---'", () => {
+    // Real report from a submission that was rejected with
+    // "Quest must be a quest issue number such as #15600" while the field was
+    // left blank and the body continued after a horizontal rule.
+    const body = `${BODY.replace(/\n### Discord Username\nsunflower$/, "")}
+
+### Quest
+
+---
+
+Notes below the separator.`;
+    const submission = parseSubmission(body);
+    assert.equal(submission.quest, "");
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
+test("a Quest value still parses with and without the hash", () => {
+    const withHash = parseSubmission(`${BODY}\n\n### Quest\n#19181`);
+    const withoutHash = parseSubmission(`${BODY}\n\n### Quest\n19181`);
+    assert.equal(withHash.quest, "19181");
+    assert.equal(withoutHash.quest, "19181");
+});

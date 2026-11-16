@@ -115,7 +115,13 @@ function parseSubmission(body) {
     const platform = clean(line(body, "Platform"), 30).toLowerCase();
     const language = normalizeLanguage(line(body, "App Language"));
     const discord = clean(line(body, "Discord Username"), 80);
-    const quest = clean(line(body, "Quest"), 20).replace(/^#/, "");
+    // A trailing separator is not a value. `### Quest\n\n---\n\nnotes` used to
+    // parse as quest "---" and reject the submission, because `line()` returns
+    // the first non-empty line of the section and the horizontal rule is one.
+    const quest = clean(line(body, "Quest"), 20)
+        .replace(/^#\s*/, "")
+        .replace(/^-{3,}$/, "")
+        .trim();
     const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {

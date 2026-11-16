@@ -204,7 +204,10 @@ export function parseApiError(status, errorText) {
                 "Access forbidden. Your API key may not have permission for this operation."
             );
         case 404:
-            return `Resource not found. The requested endpoint or model may not exist.`;
+            return (
+                errorMessage ||
+                "Resource not found. The requested endpoint or model may not exist."
+            );
         case 429:
             return (
                 errorMessage || "Rate limited. You're making too many requests."
@@ -214,7 +217,10 @@ export function parseApiError(status, errorText) {
         case 502:
         case 503:
         case 504:
-            return `Service temporarily unavailable. Please try again in a few moments.`;
+            return (
+                errorMessage ||
+                "Service temporarily unavailable. Please try again in a few moments."
+            );
         default:
             return `Request failed (${status}): ${errorMessage}`;
     }

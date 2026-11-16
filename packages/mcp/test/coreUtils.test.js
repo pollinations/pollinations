@@ -104,3 +104,30 @@ test("parseApiError returns a string when a 4xx body has no message", () => {
         assert.doesNotMatch(message, /\[object Object\]/, `status ${status}`);
     }
 });
+
+test("parseApiError 404 with body message returns API message", () => {
+    const errorJson = JSON.stringify({ error: { message: "Model not found" } });
+    assert.equal(parseApiError(404, errorJson), "Model not found");
+});
+
+test("parseApiError 404 without body message returns generic", () => {
+    assert.equal(
+        parseApiError(404, ""),
+        "Resource not found. The requested endpoint or model may not exist.",
+    );
+});
+
+for (const status of [502, 503, 504]) {
+    test(`parseApiError ${status} with body message returns API message`, () => {
+        const errorJson = JSON.stringify({
+            error: { message: "upstream down" },
+        });
+        assert.equal(parseApiError(status, errorJson), "upstream down");
+    });
+    test(`parseApiError ${status} without body message returns generic`, () => {
+        assert.equal(
+            parseApiError(status, ""),
+            "Service temporarily unavailable. Please try again in a few moments.",
+        );
+    });
+}

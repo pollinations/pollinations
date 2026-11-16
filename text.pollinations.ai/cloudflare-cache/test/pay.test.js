@@ -560,20 +560,30 @@ test("a generation that fails after verify is not settled", async () => {
     expect(events).not.toContain("/settle");
 });
 
-test("a malformed facilitator reply gets an unpaid generation, as the VM's fail-open", async () => {
+test("a malformed verify reply returns 503 without generating", async () => {
     replies["/verify"] = () => reply(200, "not json");
 
     const { response, text } = await payFor("/verify%20breaks", {
         headers: CURL,
     });
 
-    expect(response.status).toBe(200);
-    expect(text).toBe("ok");
+    expect(response.status).toBe(503);
+    expect(JSON.parse(text).error.code).toBe("SERVICE_UNAVAILABLE");
+    expect(response.headers.get("Retry-After")).toBe("10");
     expect(response.headers.get("payment-response")).toBeNull();
-    expect(response.headers.get("cache-control")).toBe(
-        "public, max-age=31536000, immutable",
-    );
-    expect(events).not.toContain("/settle");
+    expect(events).toEqual(["/verify"]);
+});
+
+test("a malformed settlement reply returns 503 after one generation", async () => {
+    replies["/settle"] = () => reply(200, "not json");
+
+    const { response, text } = await payFor("/settle%20breaks", {
+        headers: CURL,
+    });
+
+    expect(response.status).toBe(503);
+    expect(JSON.parse(text).error.code).toBe("SERVICE_UNAVAILABLE");
+    expect(events).toEqual(["/verify", "gen", "/settle"]);
 });
 
 /** The Worker as a new isolate loads it, without this file's paywall */
@@ -598,7 +608,39 @@ test("50 concurrent first requests in a fresh isolate all get a 402 and share on
     expect(events.filter((event) => event === "/supported")).toHaveLength(1);
 });
 
-test("without /supported, a rate-limited request gets an unpaid generation, as the VM's fail-open", async () => {
+test("after a facilitator outage at first use, the paywall is built again on the first request 30 s later", async () => {
+    replies["/supported"] = () => reply(500, "facilitator down");
+    const app = await freshWorker();
+    const ip = await limitedIp();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+        const down = await call("/outage%201", { ip, headers: CURL, app });
+        expect(down.response.status).toBe(503);
+        expect(events).toEqual(["/supported"]);
+
+        // Still down, within 30 s of the failed sync: no new /supported call
+        events.length = 0;
+        vi.setSystemTime(Date.now() + 29_000);
+        const stillDown = await call("/outage%202", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(stillDown.response.status).toBe(503);
+        expect(events).toEqual([]);
+
+        // Back up, 30 s after the failed sync: the challenge again
+        replies["/supported"] = STUB_REPLIES["/supported"];
+        vi.setSystemTime(Date.now() + 1_000);
+        const back = await call("/outage%203", { ip, headers: CURL, app });
+        expect(back.response.status).toBe(402);
+        expect(events).toEqual(["/supported"]);
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test("without /supported, a rate-limited request returns 503 without generating", async () => {
     replies["/supported"] = () => reply(500, "facilitator down");
     const app = await freshWorker();
 
@@ -608,8 +650,10 @@ test("without /supported, a rate-limited request gets an unpaid generation, as t
         app,
     });
 
-    expect(response.status).toBe(200);
-    expect(text).toBe("ok");
+    expect(response.status).toBe(503);
+    expect(JSON.parse(text).error.code).toBe("SERVICE_UNAVAILABLE");
+    expect(response.headers.get("Retry-After")).toBe("10");
     expect(response.headers.get("payment-required")).toBeNull();
-    expect(events).toEqual(["/supported", "gen"]);
+    expect(events).toEqual(["/supported"]);
+    expect(await storedAt("/facilitator%20down")).toBeNull();
 });

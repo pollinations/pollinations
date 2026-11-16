@@ -537,28 +537,31 @@ function AppsPage() {
                                     }
                                 />
                             </div>
-                            {loading ? (
-                                <Skeleton shape="text" className="h-5 w-20" />
-                            ) : (
-                                // Sized for "N / N apps", so filtering never
-                                // moves anything.
-                                <span
-                                    aria-live="polite"
-                                    className="shrink-0 text-sm tabular-nums text-theme-text-muted"
-                                >
-                                    <StableLabel
-                                        text={
-                                            filtered.length === apps.length
-                                                ? `${apps.length} apps`
-                                                : `${filtered.length} / ${apps.length} apps`
-                                        }
-                                        options={[
-                                            `${apps.length} apps`,
-                                            `${apps.length} / ${apps.length} apps`,
-                                        ]}
+                            {/* One live region, mounted from the start and
+                                sized for "0000 / 0000 apps" (tabular digits),
+                                so loading and filtering never move the search
+                                and the first count is announced. */}
+                            <span
+                                aria-live="polite"
+                                className="relative shrink-0 text-sm tabular-nums text-theme-text-muted"
+                            >
+                                <StableLabel
+                                    text={
+                                        loading
+                                            ? ""
+                                            : filtered.length === apps.length
+                                              ? `${apps.length} apps`
+                                              : `${filtered.length} / ${apps.length} apps`
+                                    }
+                                    options={["0000 / 0000 apps"]}
+                                />
+                                {loading && (
+                                    <Skeleton
+                                        shape="text"
+                                        className="absolute inset-0 h-5"
                                     />
-                                </span>
-                            )}
+                                )}
+                            </span>
                         </div>
 
                         <div className="flex min-h-11 items-center gap-3">

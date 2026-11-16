@@ -84,9 +84,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     349012933, // machoskir-creator
     8180249, // fabricetayou
     311199657, // mhmdrizki803-boop
-    344580817, // silvaaoche14-droid
     188256078, // fkom13
-    242627565, // Herjiberb
     89467086, // igor04091968
 ] as const;
 

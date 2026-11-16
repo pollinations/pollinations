@@ -17,6 +17,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
+import { resolveAspectRatio } from "./seedance25VideoModel.ts";
 
 const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
@@ -53,7 +54,7 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        aspect_ratio: resolveAspectRatio(safeParams),
         generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {

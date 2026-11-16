@@ -243,6 +243,20 @@ describe("text cache", () => {
         expect(await keyFor(base, "?stream=false")).toBe(omitted);
         // A real stream is still a different entry: its body is SSE, not JSON.
         expect(await keyFor({ ...base, stream: true })).not.toBe(omitted);
+        // Every nullable field spells "unset" as null; none may fork the entry.
+        for (const field of [
+            "top_p",
+            "presence_penalty",
+            "frequency_penalty",
+            "max_tokens",
+            "stop",
+            "n",
+            "logprobs",
+        ]) {
+            expect(await keyFor({ ...base, [field]: null }), field).toBe(
+                omitted,
+            );
+        }
     });
 
     it("partitions managed-agent cache keys by caller API key", async () => {

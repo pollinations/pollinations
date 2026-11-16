@@ -116,6 +116,10 @@ export async function generateCacheKey(
             streams ||= parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
+                // `null` is the schema's "not set" spelling for every nullable
+                // field (top_p, max_tokens, stop, n, logprobs, ...), so it must
+                // not fork the entry the omitted field owns and rebill it.
+                if (value === null) continue;
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
                     filteredBody[key] = value;
                 }

@@ -366,8 +366,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             "polli-control polli:aspect-square polli:rounded-lg polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
                                                 "polli:text-theme-text-muted",
+                                            // Today is marked by a bold
+                                            // underline; rings are for
+                                            // keyboard focus only.
                                             sameUtcDay(date, today) &&
-                                                "polli:ring-1 polli:ring-theme-border",
+                                                "polli:font-bold polli:underline polli:decoration-2 polli:underline-offset-4",
                                             selected
                                                 ? "polli:bg-theme-fill polli:text-theme-on-fill"
                                                 : "polli:text-ink-700 polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",

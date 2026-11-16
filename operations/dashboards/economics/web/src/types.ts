@@ -104,6 +104,8 @@ export type StripeSalesRow = {
     refunds: number;
     net_sales: number;
     stripe_fees: number;
+    stripe_fees_credit: number;
+    fee_credit_funding: number;
     dispute_fees: number;
     net_after_fees: number;
     payments: number;

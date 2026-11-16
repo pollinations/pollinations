@@ -36,6 +36,7 @@ Primary evidence sources:
 - CLI usage: `firectl billing get-usage --account-costs-only -o json`
 - CLI invoices: `firectl billing list-invoices`
 - Current account balance snapshot: `firectl account get`
+- Quantity detail: `firectl billing export-metrics` with bounded date arguments.
 - Invoice/payment: Fireworks invoice, receipt, or Wise/card transaction.
 - Dashboard: Fireworks billing and account credits.
 
@@ -148,6 +149,12 @@ Collection steps:
   "Not Found" while the account chip still shows the signed-in account; use
   `/account/usage`, `/account/billing`, `/settings/account` (shows the
   Account ID).
+- `billing export-metrics` accepts `YYYY-MM-DD` boundaries. In CLI 1.7.26,
+  use a simple `--filename` and set the process working directory to the
+  private evidence folder; an absolute filename is incorrectly prefixed with
+  the working directory. Preserve the original CSV, which contains quantities
+  rather than costs. Filter analysis to the exclusive end explicitly because
+  the export can include rows exactly on that boundary.
 
 ## Verified — 2026-09-05
 

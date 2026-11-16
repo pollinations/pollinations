@@ -112,11 +112,19 @@ do not interpret every token as cash-funded or infer cash burn from list prices.
    requested billing month and verify pagination/coverage. Reconcile the USD
    strings `totalAmountDecimal`, `voucherPayAmountDecimal` and
    `cashPayAmountDecimal` with precise usage. Keep debt, repayments, tax and
-   gross amounts separate. The live current-month summary returned `endTime`
-   before `startTime`; never use invalid summary bounds as usage coverage.
-   Use the detailed usage rows and verified `billingMonth` instead.
-   Download `invoiceUrl` when present. An empty URL is missing invoice evidence,
-   not proof that no invoice is required. Archive documents using the parent
+   gross amounts separate. A closed paid bill can settle cash to cents and
+   return `precisionDiffDecimal`. Where the response supports this identity,
+   verify precise daily payable equals `cashPayAmountDecimal` plus
+   `precisionDiffDecimal`; do not round detailed costs or count the difference
+   as another expense. Both current and closed paid monthly bills have returned
+   `endTime` before `startTime`; validate every summary's bounds. Use detailed
+   daily usage and verified `billingMonth` for coverage instead.
+   Download `invoiceUrl` when present. If it is empty, check that month's
+   Billing Overview: its Download control can still expose the original.
+   Inspect the document's purpose and printed issue date. A zero-due pro-forma
+   may explicitly say it is neither a tax invoice nor a receipt; keep that
+   distinction and its rounded totals alongside precise usage. An empty API
+   URL alone does not prove no document exists. Archive through the parent
    skill's Drive flow.
 5. Query transactions with `pageNo`, `pageSize`, `transactionTimeStart` and
    `transactionTimeEnd`; paginate through `total`. Review successful recharges

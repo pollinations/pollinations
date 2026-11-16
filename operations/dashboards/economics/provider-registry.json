@@ -1,5 +1,5 @@
 {
-  "version": 34,
+  "version": 39,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -1119,7 +1119,35 @@
         "wan2.7-image": "wan-image",
         "wan2.7-image-pro": "wan-image-pro",
         "wan2.7-t2v": "wan-pro",
-        "wan3.0-video-prime": "alibaba/wan-3.0"
+        "wan3.0-video-prime": "alibaba/wan-3.0",
+        "qwen-image-2.1-turbo": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen-image-2.1-turbo"
+          }
+        ],
+        "qwen-image-2.1-pro": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen-image-2.1-pro"
+          }
+        ],
+        "wan2.6-i2v": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.6"
+          }
+        ],
+        "qwen3.7-plus": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.7-plus"
+          }
+        ]
       }
     },
     {
@@ -1139,7 +1167,35 @@
           "claude-large",
           "midijourney-large"
         ],
-        "claude-sonnet-4-6": "claude"
+        "claude-sonnet-4-6": "claude",
+        "claude-fable-5-1": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-fable-5.1"
+          }
+        ],
+        "claude-opus-5-5": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-opus-5.5"
+          }
+        ],
+        "claude-sonnet-5-5": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-sonnet-5.5"
+          }
+        ],
+        "claude-haiku-5-5": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-haiku-5.5"
+          }
+        ]
       }
     },
     {
@@ -1243,12 +1299,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "anthropic/claude-fable-5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-fable-5"
           }
         ],
         "Claude Fable 5.1 [Amazon Bedrock Edition]": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "anthropic/claude-fable-5.1"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "anthropic/claude-fable-5.1"
           }
         ],
@@ -1257,12 +1323,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "anthropic/claude-haiku-4.5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-haiku-4.5"
           }
         ],
         "Claude Opus 4.6 [Amazon Bedrock Edition]": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "anthropic/claude-opus-4.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "anthropic/claude-opus-4.6"
           }
         ],
@@ -1271,12 +1347,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "anthropic/claude-opus-4.7"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-opus-4.7"
           }
         ],
         "Claude Opus 5 [Amazon Bedrock Edition]": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "anthropic/claude-opus-5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "anthropic/claude-opus-5"
           }
         ],
@@ -1285,12 +1371,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "anthropic/claude-opus-5.5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-opus-5.5"
           }
         ],
         "Claude Sonnet 4.6 [Amazon Bedrock Edition]": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "anthropic/claude-sonnet-4.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "anthropic/claude-sonnet-4.6"
           }
         ],
@@ -1299,12 +1395,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "anthropic/claude-sonnet-5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-sonnet-5"
           }
         ],
         "Claude Sonnet 5.5 [Amazon Bedrock Edition]": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "anthropic/claude-sonnet-5.5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "anthropic/claude-sonnet-5.5"
           }
         ],
@@ -1319,6 +1425,11 @@
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "qwen/qwen3-coder-30b-a3b-instruct"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "qwen/qwen3-coder-30b-a3b-instruct"
           }
         ],
@@ -1341,6 +1452,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "qwen/qwen3-coder-30b-a3b-instruct"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3-coder-30b-a3b-instruct"
           }
         ],
         "USE1-Qwen3Coder-30B-A3B-output-tokens-flex": [
@@ -1355,6 +1471,153 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "qwen/qwen3-coder-30b-a3b-instruct"
+          }
+        ],
+        "OpenAI GPT-6 Astra [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
+          }
+        ],
+        "Claude Haiku 5.5 [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-haiku-5.5"
+          }
+        ],
+        "OpenAI GPT-5.4 [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.4"
+          }
+        ],
+        "OpenAI GPT-6.1 Terra [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "OpenAI GPT-6.1 Sol [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "OpenAI GPT-6 Sol [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-sol"
+          }
+        ],
+        "OpenAI GPT-5.6 Luna [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.6-luna"
+          }
+        ],
+        "OpenAI GPT-6 Luna [Amazon Bedrock Edition]": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna"
+          }
+        ],
+        "USE1-moonshotai.kimi-k3-mantle-input-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "USE1-moonshotai.kimi-k3-mantle-output-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "USE1-xai.grok-4.7-mantle-input-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.7"
+          }
+        ],
+        "USE1-moonshotai.kimi-k3-mantle-cache-read-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "USE1-xai.grok-4.6-mantle-input-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
+          }
+        ],
+        "USE1-xai.grok-4.6-mantle-output-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
+          }
+        ],
+        "USE1-xai.grok-4.7-mantle-cache-read-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.7"
+          }
+        ],
+        "USE1-moonshotai.kimi-k3-mantle-cache-write-tokens-30m-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "USE1-Nova2.0Lite-cache-read-input-token-count": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "amazon/nova-2-lite-v1"
+          }
+        ],
+        "USE1-xai.grok-4.7-mantle-output-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.7"
+          }
+        ],
+        "USE1-xai.grok-4.6-mantle-cache-read-tokens-global-standard": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
+          }
+        ],
+        "USE1-Nova2.0Lite-input-tokens-cross-region-global": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "amazon/nova-2-lite-v1"
+          }
+        ],
+        "USE1-Nova2.0Lite-output-tokens-cross-region-global": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "amazon/nova-2-lite-v1"
           }
         ]
       },
@@ -1377,6 +1640,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "grok-4.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
           }
         ],
         "4.6 Inp Glbl Tokens": [
@@ -1384,6 +1652,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "grok-4.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
           }
         ],
         "4.6 Outp Glbl Tokens": [
@@ -1391,12 +1664,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "grok-4.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.6"
           }
         ],
         "5.3 codex cd inp Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-5.3-codex"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-5.3-codex"
           }
         ],
@@ -1405,12 +1688,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-5.3-codex"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.3-codex"
           }
         ],
         "5.3 codex opt Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-5.3-codex"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-5.3-codex"
           }
         ],
@@ -1668,6 +1961,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-5.6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.6-luna"
           }
         ],
         "5.6 luna LongCo Inp Std Gl 1M Tokens": "gpt-5.6-luna",
@@ -1682,6 +1980,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-5.6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.6-sol"
           }
         ],
         "5.6 sol LongCo Inp Std Gl 1M Tokens": "gpt-5.6-sol",
@@ -1696,6 +1999,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-5.6-terra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.6-terra"
           }
         ],
         "5.6 terra LongCo Inp Std Gl 1M Tokens": "gpt-5.6-terra",
@@ -1709,12 +2017,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
           }
         ],
         "6-astra LongCo Opt Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-astra"
           }
         ],
@@ -1723,12 +2041,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
           }
         ],
         "6-astra ShortCo Cd Inp Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-astra"
           }
         ],
@@ -1737,12 +2065,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
           }
         ],
         "6-astra ShortCo Cd Wr Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-astra"
           }
         ],
@@ -1751,12 +2089,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
           }
         ],
         "6-astra ShortCo Opt Std DZ 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-astra"
           }
         ],
@@ -1765,12 +2113,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-astra"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
           }
         ],
         "6-luna LongCo Cd Inp Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-luna"
           }
         ],
@@ -1779,12 +2137,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna"
           }
         ],
         "6-luna LongCo Opt Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-luna"
           }
         ],
@@ -1793,12 +2161,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna"
           }
         ],
         "6-luna ShortCo Cd Wr Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-luna"
           }
         ],
@@ -1807,12 +2185,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna"
           }
         ],
         "6-luna ShortCo Opt Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-luna"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-luna"
           }
         ],
@@ -1821,12 +2209,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-sol"
           }
         ],
         "6-sol LongCo Cd Wr Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-sol"
           }
         ],
@@ -1835,12 +2233,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-sol"
           }
         ],
         "6-sol LongCo Opt Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-sol"
           }
         ],
@@ -1849,12 +2257,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-sol"
           }
         ],
         "6-sol ShortCo Cd Wr Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-sol"
           }
         ],
@@ -1863,12 +2281,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-sol"
           }
         ],
         "6-sol ShortCo Opt Std Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-6-sol"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-6-sol"
           }
         ],
@@ -1891,6 +2319,11 @@
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "black-forest-labs/flux.1.1-pro"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "black-forest-labs/flux.1.1-pro"
           }
         ],
@@ -1981,6 +2414,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "microsoft/mai-image-2.5-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-image-2.5-flash"
           }
         ],
         "Image 2.5 Flash Image Output glbl Tokens": [
@@ -1991,6 +2429,11 @@
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "microsoft/mai-image-2.5-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "microsoft/mai-image-2.5-flash"
           }
         ],
@@ -2003,12 +2446,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "microsoft/mai-image-2.5-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-image-2.5-flash"
           }
         ],
         "Image 2.6 Flash Image Input Glbl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "microsoft/mai-image-2.6-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "microsoft/mai-image-2.6-flash"
           }
         ],
@@ -2017,12 +2470,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "microsoft/mai-image-2.6-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-image-2.6-flash"
           }
         ],
         "Image 2.6 Image Input Glbl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "microsoft/mai-image-2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "microsoft/mai-image-2.6"
           }
         ],
@@ -2031,12 +2494,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "microsoft/mai-image-2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-image-2.6"
           }
         ],
         "Image 2.6 Text Input Glbl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "microsoft/mai-image-2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "microsoft/mai-image-2.6"
           }
         ],
@@ -2045,12 +2518,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-image-2.5-flare"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-image-2.5-flare"
           }
         ],
         "Image-2.5-flare img opt Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-image-2.5-flare"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-image-2.5-flare"
           }
         ],
@@ -2059,12 +2542,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-image-2.5-flare"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-image-2.5-flare"
           }
         ],
         "Image-2.5-sunburst img inp Gl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/gpt-image-2.5-sunburst"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/gpt-image-2.5-sunburst"
           }
         ],
@@ -2073,6 +2566,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-image-2.5-sunburst"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-image-2.5-sunburst"
           }
         ],
         "Image-2.5-sunburst txt inp Gl 1M Tokens": [
@@ -2080,12 +2578,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/gpt-image-2.5-sunburst"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-image-2.5-sunburst"
           }
         ],
         "Img 2.6 Flash Text In Glbl 1M Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "microsoft/mai-image-2.6-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "microsoft/mai-image-2.6-flash"
           }
         ],
@@ -2096,6 +2604,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "moonshotai/kimi-k2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k2.6"
           }
         ],
         "K2.6 Thinking Outp glbl Tokens": [
@@ -2103,12 +2616,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "moonshotai/kimi-k2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k2.6"
           }
         ],
         "K2.6 cached glbl Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "moonshotai/kimi-k2.6"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "moonshotai/kimi-k2.6"
           }
         ],
@@ -2125,12 +2648,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "openai/tts-1-hd"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/tts-1-hd"
           }
         ],
         "Speech-Text to Speech-Regional Characters": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "openai/tts-1"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "openai/tts-1"
           }
         ],
@@ -2143,6 +2676,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "deepseek/deepseek-v4-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4-flash"
           }
         ],
         "V4 Flash 0731 Outp glbl Tokens": [
@@ -2150,12 +2688,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "deepseek/deepseek-v4-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4-flash"
           }
         ],
         "V4 Flash 0731 cached glbl Tokens": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "deepseek/deepseek-v4-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "deepseek/deepseek-v4-flash"
           }
         ],
@@ -2202,6 +2750,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-realtime-2.1-mini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
           }
         ],
         "gpt-realtime-2.1-mini Audio opt Gl 1M Tokens": [
@@ -2209,6 +2762,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-realtime-2.1-mini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
           }
         ],
         "gpt-realtime-2.1-mini Text cd inp Gl 1M Tokens": [
@@ -2216,6 +2774,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-realtime-2.1-mini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
           }
         ],
         "gpt-realtime-2.1-mini Text inp Gl 1M Tokens": [
@@ -2223,6 +2786,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-realtime-2.1-mini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
           }
         ],
         "gpt-realtime-2.1-mini Text opt Gl 1M Tokens": [
@@ -2230,6 +2798,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-realtime-2.1-mini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
           }
         ],
         "gpt-transcribe Gl Unit": [
@@ -2237,6 +2810,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gpt-transcribe"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-transcribe"
           }
         ],
         "gpt4omini-aud1217 Inp glbl Tokens": "openai-audio",
@@ -2244,7 +2822,220 @@
         "gpt4omini-aud1217-txt Inp glbl Tokens": "openai-audio",
         "gpt4omini-aud1217-txt Outp glbl Tokens": "openai-audio",
         "text-embedding-3-large-glbl Tokens": "openai-3-large",
-        "text-embedding-3-small-glbl Tokens": "openai-3-small"
+        "text-embedding-3-small-glbl Tokens": "openai-3-small",
+        "5.5 LongCo cd inp Gl 1M Tokens | Azure OpenAI GPT5 - 5.5 LongCo cd inp Gl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "openai/gpt-5.5",
+              "pollinations/midijourney-large"
+            ]
+          }
+        ],
+        "6-astra LongCo Cd Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6-astra LongCo Cd Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
+          }
+        ],
+        "6-astra LongCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6-astra LongCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
+          }
+        ],
+        "6-astra ShortCo Inp Std DZ 1M Tokens | Azure OpenAI GPT6 - 6-astra ShortCo Inp Std DZ - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-astra"
+          }
+        ],
+        "6-luna LongCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6-luna LongCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna"
+          }
+        ],
+        "6.1-sol LongCo Cd Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol LongCo Cd Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol LongCo Cd Wr Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol LongCo Cd Wr Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol LongCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol LongCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol LongCo Opt Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol LongCo Opt Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol ShortCo Cd Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol ShortCo Cd Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol ShortCo Cd Wr Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol ShortCo Cd Wr Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol ShortCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol ShortCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "6.1-sol ShortCo Opt Std Gl 1M Tokens | Azure OpenAI GPT6 - 6.1-sol ShortCo Opt Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-sol"
+          }
+        ],
+        "61 terra LongCo Cd Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra LongCo Cd Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra LongCo Cd Wr Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra LongCo Cd Wr Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra LongCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra LongCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra LongCo Opt std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra LongCo Opt std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra ShortCo Cd Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra ShortCo Cd Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra ShortCo Cd Wr Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra ShortCo Cd Wr Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra ShortCo Inp Std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra ShortCo Inp Std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "61 terra ShortCo Opt std Gl 1M Tokens | Azure OpenAI GPT6 - 61 terra ShortCo Opt std Gl - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6.1-terra"
+          }
+        ],
+        "MAI-Transcribe-2 ADM Audio | MAI Models - MAI-Transcribe-2 ADM - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-transcribe-2-streaming"
+          }
+        ],
+        "Microsoft Decision 1 1M Tokens | Microsoft Decision Models - Microsoft Decision 1 - US East": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/microsoft-decision-1"
+          }
+        ],
+        "V4.1 Flash Input Glbl 1M Tokens | Azure Deepseek Models - V4.1 Flash Input Glbl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash"
+          }
+        ],
+        "V4.1 Flash Output Glbl 1M Tokens | Azure Deepseek Models - V4.1 Flash Output Glbl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash"
+          }
+        ],
+        "V4.1 Flash cached Glbl 1M Tokens | Azure Deepseek Models - V4.1 Flash cached Glbl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash"
+          }
+        ],
+        "gpt-realtime-2.1 Image cd inp Gl 1M Tokens | Azure OpenAI Media - gpt-realtime-2.1 Image cd inp Gl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1"
+          }
+        ],
+        "gpt-realtime-2.1 Image inp Gl 1M Tokens | Azure OpenAI Media - gpt-realtime-2.1 Image inp Gl - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1"
+          }
+        ],
+        "gpt-realtime-2.1-mini Audio cd inp Gl 1M Tokens | Azure OpenAI Media - gpt-realtime-2.1-mini Audio cd inp Gl - US East 2": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-realtime-2.1-mini"
+          }
+        ],
+        "Fast Transcription Promo Speech To Text | Azure Speech - Fast Transcription Promo - SE Central": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/mai-transcribe-2"
+          }
+        ]
       },
       "pollenComputeMode": "managed-inference"
     },
@@ -2313,18 +3104,42 @@
         "stepfun-ai/Step-3.7-Flash": "step-flash",
         "Wan-AI/Wan2.6-I2V": null,
         "Wan-AI/Wan2.6-T2V": null,
-        "zai-org/GLM-5.2": null,
+        "zai-org/GLM-5.2": [
+          {
+            "model": null,
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.2"
+          },
+          {
+            "model": null,
+            "from": "2026-11"
+          }
+        ],
         "black-forest-labs/FLUX-1-schnell": [
           {
             "from": "2026-09",
             "until": "2026-09",
             "model": "flux"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux.1-schnell"
           }
         ],
         "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "deepseek/deepseek-v4-flash-vision-exp"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "deepseek/deepseek-v4-flash-vision-exp"
           }
         ],
@@ -2333,6 +3148,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "kimi"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k2.6"
           }
         ],
         "google/gemma-4-31B-it": [
@@ -2340,6 +3160,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemma-4-31b"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemma-4-31b-it"
           }
         ],
         "meta-models/Muse-Glimmer-30B": [
@@ -2347,6 +3172,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "muse-glimmer"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/muse-glimmer-30b"
           }
         ],
         "openai/whisper-large-v3": [
@@ -2354,6 +3184,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "whisper"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/whisper-large-v3"
           }
         ],
         "deepseek-ai/DeepSeek-V4-Flash-0731": [
@@ -2361,6 +3196,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "deepseek"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4-flash"
           }
         ],
         "mistralai/Mistral-Small-3.2-24B-Instruct-2506": [
@@ -2368,6 +3208,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "mistral-small-3.2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-small-3.2"
           }
         ],
         "meta-llama/Llama-3.3-70B-Instruct-Turbo": [
@@ -2375,6 +3220,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "llama"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/llama-3.3-70b-instruct"
           }
         ],
         "meta-llama/Llama-4-Scout-17B-16E-Instruct": [
@@ -2382,6 +3232,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "llama-scout"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/llama-4-scout"
           }
         ],
         "MiniMaxAI/MiniMax-M3": [
@@ -2389,6 +3244,74 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "minimax"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "minimax/minimax-m3"
+          }
+        ],
+        "Qwen/Qwen3-VL-30B-A3B-Instruct": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3-vl-30b-a3b-instruct"
+          }
+        ],
+        "Qwen/Qwen3.8-2.4T-A95B": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.8-2.4t-a95b"
+          }
+        ],
+        "XiaomiMiMo/MiMo-V2.6-Pro": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.6-pro"
+          }
+        ],
+        "deepseek-ai/DeepSeek-V4.1-Flash-1017": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash-1017"
+          }
+        ],
+        "deepseek-ai/DeepSeek-V4.1-Flash": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash"
+          }
+        ],
+        "moonshotai/Kimi-K3": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "nvidia/NVIDIA-Nemotron-3.5-Super-VL": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nvidia/nemotron-3.5-super-vl"
+          }
+        ],
+        "Qwen/Qwen3-Embedding-8B": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3-embedding-8b"
+          }
+        ],
+        "zai-org/GLM-5.3": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3"
           }
         ]
       }
@@ -2429,7 +3352,21 @@
         "six_stems_v1": "elevenlabs/stem-separation",
         "scribe_v2": "scribe",
         "scribe_v2_realtime": "scribe-realtime",
-        "upload": null
+        "upload": null,
+        "eleven_v4": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "elevenlabs/eleven-v4"
+          }
+        ],
+        "eleven_v4_turbo": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "elevenlabs/eleven-v4-turbo"
+          }
+        ]
       }
     },
     {
@@ -2497,12 +3434,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "qwen/qwen-image-2.1"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen-image-2.1"
           }
         ],
         "alibaba/qwen-image-2.1/edit": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "qwen/qwen-image-2.1"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "qwen/qwen-image-2.1"
           }
         ],
@@ -2511,6 +3458,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "seedream5"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-5.0-lite"
           }
         ],
         "bytedance/seedream/v5/lite/edit": [
@@ -2525,6 +3477,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "wan-fast"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.2-fast"
           }
         ],
         "fal-ai/wan/v2.2-a14b/text-to-video/turbo": [
@@ -2532,6 +3489,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "wan-fast"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.2-fast"
           }
         ],
         "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video": [
@@ -2539,6 +3501,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "seedance-pro"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-1-pro-fast"
           }
         ],
         "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video": [
@@ -2546,6 +3513,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "seedance-pro"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-1-pro-fast"
           }
         ],
         "wan/v2.6/text-to-video": [
@@ -2581,6 +3553,83 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "google/gemini-3.8-flash-lite-tts"
+          }
+        ],
+        "fal-ai/kling-video/v3/standard/image-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "kwaivgi/kling-v3.0-std"
+          }
+        ],
+        "fal-ai/kling-video/v3/standard/text-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "kwaivgi/kling-v3.0-std"
+          }
+        ],
+        "heygen/heygen-video/image-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "heygen/heygen-video-1"
+          }
+        ],
+        "heygen/heygen-video/text-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "heygen/heygen-video-1"
+          }
+        ],
+        "tripo3d/p2/text-to-3d": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "tripo3d/p2"
+          }
+        ],
+        "fal-ai/kandinsky6-lite/text-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "kandinskylab/kandinsky-6.0-lite"
+          }
+        ],
+        "fal-ai/kandinsky6-lite/image-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "kandinskylab/kandinsky-6.0-lite"
+          }
+        ],
+        "blackforestlabs/flux-3/klein/text-to-image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux-3-image-klein"
+          }
+        ],
+        "blackforestlabs/flux-3/klein/edit-image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux-3-image-klein"
+          }
+        ],
+        "mirelo-ai/sfx2.0/video-to-video": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mirelo/sfx-2.0"
+          }
+        ],
+        "recraft/v4.1/flash/text-to-image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "recraft/recraft-v4.1-flash"
           }
         ]
       }
@@ -2711,7 +3760,49 @@
         "Qwen 3.8 Max": "qwen3.8-2.4t-a95b",
         "Qwen3 30B": "qwen-vision",
         "Qwen3 Embedding 8B": "qwen3-embedding-8b",
-        "Qwen3.8-2.4T-A95B": "qwen3.8-2.4t-a95b"
+        "Qwen3.8-2.4T-A95B": "qwen3.8-2.4t-a95b",
+        "DeepSeek V4.1 Flash 1017": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash-1017"
+          }
+        ],
+        "DeepSeek V4.1 Flash 1017 (Flex)": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash-1017"
+          }
+        ],
+        "GLM 5.3 (Flex)": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3"
+          }
+        ],
+        "GLM 5.3 Flash (Priority)": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3-flash"
+          }
+        ],
+        "Kimi K3 (Flex)": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "moonshotai/kimi-k3"
+          }
+        ],
+        "Nemotron 3 Ultra": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nvidia/nemotron-3-ultra"
+          }
+        ]
       }
     },
     {
@@ -2764,8 +3855,36 @@
         "gemini-omni-flash": "google/gemini-omni-1.1-flash",
         "Grounding with Google Search on Gemini 3": "gemini-search",
         "LLM Grounding with Google Search tool - Predictions": "gemini-search",
-        "Veo 3 Fast 1080p Audio Video Generation": "veo-1080p",
-        "Veo 3 Fast 1080p Video Generation": "veo-1080p",
+        "Veo 3 Fast 1080p Audio Video Generation": [
+          {
+            "model": "veo-1080p",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/veo-3.1-fast"
+          },
+          {
+            "model": "veo-1080p",
+            "from": "2026-11"
+          }
+        ],
+        "Veo 3 Fast 1080p Video Generation": [
+          {
+            "model": "veo-1080p",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/veo-3.1-fast"
+          },
+          {
+            "model": "veo-1080p",
+            "from": "2026-11"
+          }
+        ],
         "Veo 3 Fast 720p Audio Video Generation": "veo",
         "Veo 3 Fast Video 720p Generation": "veo",
         "veo-3-fast": [
@@ -2781,6 +3900,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "google/gemini-omni-1.1-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-omni-1.1-flash"
           }
         ],
         "Gemini 3.0 / 3.1 Pro Image Output - Predictions": [
@@ -2788,6 +3912,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-pro"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-pro-image"
           }
         ],
         "Gemini 2.5 Flash Image Output - Predictions": [
@@ -2795,6 +3924,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-2.5-flash-image"
           }
         ],
         "Gemini 3.1 Flash Image Global Image Output - Predictions": [
@@ -2802,6 +3936,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-image"
           }
         ],
         "Gemini 3.1 Flash Lite Image Global Image Output - Predictions": [
@@ -2809,6 +3948,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2-lite"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
           }
         ],
         "Gemini 3.7 Flash Global Text Output - Predictions": [
@@ -2816,12 +3960,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Generate content output token count gemini 3.8 flash tts audio": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash-tts"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash-tts"
           }
         ],
@@ -2830,12 +3984,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Gemini 3.8 Flash Global Text Output - Predictions": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash"
           }
         ],
@@ -2847,12 +4011,25 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.8 Flash Global Text Input - Predictions": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash"
           }
         ],
@@ -2863,6 +4040,14 @@
             "model": [
               "gemini-search",
               "gemini-fast"
+            ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
             ]
           }
         ],
@@ -2878,6 +4063,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Gemini 3.7 Flash Global Text Input Caching": [
@@ -2885,12 +4075,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Gemini 3.8 Flash Global Audio Input - Predictions": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash"
           }
         ],
@@ -2899,6 +4099,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "lyria-3-clip"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/lyria-3-clip-preview"
           }
         ],
         "Gemini 3 Flash Text Input - Predictions": [
@@ -2906,6 +4111,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Lyria 3 Music Generation (output)": [
@@ -2913,6 +4123,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "lyria-3-clip"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/lyria-3.5"
           }
         ],
         "Gemini 3 Flash Text Output - Predictions": [
@@ -2920,6 +4135,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Gemini 2.5 Flash Lite Image Input - Predictions": [
@@ -2930,6 +4150,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.7 Flash Text Input Caching Storage": [
@@ -2937,12 +4165,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Gemini 3.8 Flash Global Image Input - Predictions": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash"
           }
         ],
@@ -2958,6 +4196,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "google/gemini-omni-1.1-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-omni-1.1-flash"
           }
         ],
         "Gemini 3.1 Flash Image Global Image Input - Predictions": [
@@ -2965,6 +4208,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-image"
           }
         ],
         "Gemini 2.5 Flash Lite Thinking Text Output - Predictions": [
@@ -2975,12 +4223,25 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Generate content output token count gemini 3.8 flash lite tts audio": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash-lite-tts"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash-lite-tts"
           }
         ],
@@ -2992,6 +4253,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.1 Flash Image Global Text Input - Predictions": [
@@ -2999,12 +4268,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-image"
           }
         ],
         "Gemini Omni Flash Global Image Input": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-omni-1.1-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-omni-1.1-flash"
           }
         ],
@@ -3013,6 +4292,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2-lite"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
           }
         ],
         "Gemini MM Embedding - Text Input": [
@@ -3020,12 +4304,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-embedding-2"
           }
         ],
         "Gemini 3.8 Flash Global Text Input Caching": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash"
           }
         ],
@@ -3034,6 +4328,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Gemini 2.5 Flash Lite Audio Input - Predictions": [
@@ -3044,6 +4343,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.7 Flash Global Audio Input - Predictions": [
@@ -3051,12 +4358,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Generate content input token count gemini 3.8 flash tts text": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash-tts"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash-tts"
           }
         ],
@@ -3065,6 +4382,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "google/gemini-omni-1.1-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-omni-1.1-flash"
           }
         ],
         "Gemini 3.1 Flash Lite Image Global Text Input - Predictions": [
@@ -3072,6 +4394,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2-lite"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
           }
         ],
         "Gemini 3 Flash Text Input Caching": [
@@ -3079,6 +4406,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Gemini 2.5 Flash Lite Input Image Caching": [
@@ -3089,6 +4421,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3 Flash Text Input Caching Storage": [
@@ -3096,6 +4436,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Gemini 2.5 Flash Lite Input Text Caching": [
@@ -3106,12 +4451,25 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.5 Transcribe Audio Input Count": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.5-transcribe"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.5-transcribe"
           }
         ],
@@ -3120,6 +4478,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "google/gemini-3.5-transcribe"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-transcribe"
           }
         ],
         "Gemini 3 Flash Audio Input - Predictions": [
@@ -3127,12 +4490,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Generate content input token count gemini 3.8 flash lite tts text": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "google/gemini-3.8-flash-lite-tts"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "google/gemini-3.8-flash-lite-tts"
           }
         ],
@@ -3144,6 +4517,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3 Flash Video Input - Predictions": [
@@ -3151,6 +4532,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini-3-flash"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
           }
         ],
         "Gemini 2.5 Flash Lite Input Audio Caching": [
@@ -3161,6 +4547,14 @@
               "gemini-search",
               "gemini-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
           }
         ],
         "Gemini 3.1 Flash Image Global Text Output - Predictions": [
@@ -3168,6 +4562,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-image"
           }
         ],
         "Gemini 3.1 Flash Lite Image Global Text Output - Predictions": [
@@ -3175,6 +4574,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "nanobanana-2-lite"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
           }
         ],
         "Gemini 3.7 Flash Global Image Input Caching": [
@@ -3182,6 +4586,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "gemini"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
           }
         ],
         "Gemini 3.5 Flash Lite Global Text Output - Predictions": [
@@ -3192,6 +4601,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Text Input - Predictions": [
@@ -3202,6 +4616,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Audio Input - Predictions": [
@@ -3212,6 +4631,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Image Input - Predictions": [
@@ -3222,6 +4646,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Video Input - Predictions": [
@@ -3232,6 +4661,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Text Input Caching": [
@@ -3242,6 +4676,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Video Input Caching": [
@@ -3252,6 +4691,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Audio Input Caching": [
@@ -3262,6 +4706,11 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
           }
         ],
         "Gemini 3.5 Flash Lite Global Image Input Caching": [
@@ -3272,6 +4721,207 @@
               "gemini-flash-lite-3.5",
               "gemini-search-fast"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
+          }
+        ],
+        "Generate content cached input token count gemini nano banana 2.1 image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Generate content input token count gemini nano banana 2.1 image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Generate content input token count gemini nano banana 2.1 text": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Generate content output token count gemini 3.5 flash lite text": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
+          }
+        ],
+        "Generate content output token count gemini nano banana 2.1 image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Generate content output token count gemini nano banana 2.1 text": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini 3 Flash Audio Input Caching": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
+          }
+        ],
+        "Gemini 3 Flash Audio Input Caching Storage": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
+          }
+        ],
+        "Gemini 3 Flash Image Input Caching": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
+          }
+        ],
+        "Gemini 3.1 Flash Lite Image Global Image Input Caching": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
+          }
+        ],
+        "Gemini 3.1 Flash Lite Image Global Text Input Caching": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
+          }
+        ],
+        "Gemini 3.7 Flash Global Video Input - Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
+          }
+        ],
+        "Gemini 3.8 Flash Global Image Input Caching": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.8-flash"
+          }
+        ],
+        "Gemini 3.8 Flash Global Video Input - Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.8-flash"
+          }
+        ],
+        "Gemini 4 Argon Global Audio Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Image Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Image Input Caching Online": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Text Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Text Input Caching Online": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Text Output - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini 4 Argon Global Video Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-4-argon"
+          }
+        ],
+        "Gemini MM Embedding - Image Input": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-embedding-2"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Image Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Image Input Caching Online": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Image Output - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Text Input - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Text Input Caching Online": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "Gemini Nano Banana 2.1 Global Text Output - Online Predictions": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
           }
         ]
       },
@@ -3294,12 +4944,58 @@
       "aliases": [],
       "modelLabels": {
         "asset-harvester": "nvidia/asset-harvester",
-        "lightning-image-turbo": null,
+        "lightning-image-turbo": [
+          {
+            "model": null,
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inferenceport-ai/lightning-image-turbo"
+          },
+          {
+            "model": null,
+            "from": "2026-11"
+          }
+        ],
         "minimax-h3-512p-lora-finetune": null,
         "trellis2": [
-          "trellis-2",
-          "trellis-2-medium",
-          "trellis-2-low"
+          {
+            "model": [
+              "trellis-2",
+              "trellis-2-medium",
+              "trellis-2-low"
+            ],
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "microsoft/trellis-2"
+          },
+          {
+            "model": [
+              "trellis-2",
+              "trellis-2-medium",
+              "trellis-2-low"
+            ],
+            "from": "2026-11"
+          }
+        ],
+        "lightning": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inferenceport-ai/lightning-text-v2"
+          }
+        ],
+        "lightning-text-v2.1": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inferenceport-ai/lightning-text-v2.1"
+          }
         ]
       }
     },
@@ -3349,6 +5045,11 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "mistral"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-small-4"
           }
         ],
         "Mistral Large 2512": [
@@ -3356,6 +5057,25 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "mistral-large"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-large-3"
+          }
+        ],
+        "Mistral Large 4.0 (Preview)": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-large-4"
+          }
+        ],
+        "Mistral Large 4.0": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-large-4"
           }
         ]
       }
@@ -3397,7 +5117,22 @@
     {
       "id": "novita",
       "aliases": [],
-      "modelLabels": {}
+      "modelLabels": {
+        "xiaomimimo/mimo-v2.6-pro": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.6-pro"
+          }
+        ],
+        "xiaomimimo/mimo-v2.6-flash": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.6-flash"
+          }
+        ]
+      }
     },
     {
       "id": "openai",
@@ -3407,14 +5142,66 @@
         "gpt-5.5-2026-04-23": null,
         "gpt-6-sol": "openai/gpt-6-sol",
         "gpt-6.1-sol": "openai/gpt-6.1-sol",
-        "gpt-6-luna": "openai/gpt-6-luna",
+        "gpt-6-luna": [
+          {
+            "model": "openai/gpt-6-luna",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "openai/gpt-6-luna",
+              "openai/gpt-6-luna-decisions"
+            ]
+          },
+          {
+            "model": "openai/gpt-6-luna",
+            "from": "2026-11"
+          }
+        ],
         "gpt-image-2.5-sunburst": "openai/gpt-image-2.5-sunburst",
         "gpt-image-2.5-flare": "openai/gpt-image-2.5-flare",
         "gpt-image-2-2026-04-21": "gpt-image-2",
         "gpt-realtime-2": "gpt-realtime-2",
         "gpt-realtime-2.1": "gpt-realtime-2.1",
         "text-embedding-3-large": "openai-3-large",
-        "text-embedding-3-small": "openai-3-small"
+        "text-embedding-3-small": "openai-3-small",
+        "gpt-4o-mini-2024-07-18": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-4o-mini"
+          }
+        ],
+        "gpt-5-nano-2025-08-07": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5-nano"
+          }
+        ],
+        "gpt-5.4-nano-2026-03-17": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.4-nano"
+          }
+        ],
+        "gpt-5.4-mini-2026-03-17": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-5.4-mini"
+          }
+        ],
+        "gpt-audio-mini-2025-12-15": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-audio-mini"
+          }
+        ]
       }
     },
     {
@@ -3441,7 +5228,24 @@
         "GLM 5.3": "glm-5.3",
         "GLM 5.3 Flash": "z-ai/glm-5.3-flash",
         "google/gemini-2.5-flash-image": "nanobanana",
-        "google/gemini-2.5-flash-lite": "gemini-fast",
+        "google/gemini-2.5-flash-lite": [
+          {
+            "model": "gemini-fast",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
+          },
+          {
+            "model": "gemini-fast",
+            "from": "2026-11"
+          }
+        ],
         "google/gemini-3-flash-preview": "gemini-3-flash",
         "google/gemini-3-pro-image": "nanobanana-pro",
         "google/gemini-3.1-flash-image": "nanobanana-2",
@@ -3518,8 +5322,25 @@
         "mistralai/mistral-small-2603": "mistral",
         "mistralai/mistral-small-3.2-24b-instruct": "mistral-small-3.2",
         "mistralai/mistral-small-3.2-24b-instruct-2506": [
-          "mistral",
-          "mistral-small-3.2"
+          {
+            "model": [
+              "mistral",
+              "mistral-small-3.2"
+            ],
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-small-3.2"
+          },
+          {
+            "model": [
+              "mistral",
+              "mistral-small-3.2"
+            ],
+            "from": "2026-11"
+          }
         ],
         "moonshotai/kimi-k2.7-code-20260612": "kimi-k2.7-code",
         "Nano Banana (Gemini 2.5 Flash Image)": "nanobanana",
@@ -3785,6 +5606,471 @@
             "until": "2026-09",
             "model": "qwen/qwen3.8-max-0902"
           }
+        ],
+        "x-ai/grok-imagine-video-1.5-lite-20261001": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-video-1.5-lite"
+          }
+        ],
+        "google/gemini-3.8-flash-20260902": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.8-flash"
+          }
+        ],
+        "google/gemini-3.1-flash-image-20260528": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-image"
+          }
+        ],
+        "deepseek/deepseek-v4-pro-20260813": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4-pro"
+          }
+        ],
+        "meta/muse-wonder-20261012": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/muse-wonder-1.0"
+          }
+        ],
+        "x-ai/grok-imagine-image-quality-20260512": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-image-quality"
+          }
+        ],
+        "qwen/qwen3.8-flash-20260826": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.8-flash"
+          }
+        ],
+        "inception/mercury-3-20261019": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inception/mercury-3"
+          }
+        ],
+        "black-forest-labs/flux-3-image-20261001": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux-3-image"
+          }
+        ],
+        "qwen/qwen3.7-plus-20260602": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.7-plus"
+          }
+        ],
+        "alibaba/happyhorse-1.1-20260624": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/happyhorse-1.1"
+          }
+        ],
+        "google/gemini-3.8-flash-lite-tts-20260922": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.8-flash-lite-tts"
+          }
+        ],
+        "x-ai/grok-imagine-image-2.0-20260811": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-image-2.0"
+          }
+        ],
+        "qwen/qwen3.7-flash-20260727": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.7-flash"
+          }
+        ],
+        "x-ai/grok-4.7-20260916": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.7"
+          }
+        ],
+        "openai/gpt-6-luna-decisions-20261006": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "openai/gpt-6-luna-decisions"
+          }
+        ],
+        "z-ai/glm-5.3-flash-20260826": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3-flash"
+          }
+        ],
+        "google/gemini-3.5-flash-lite-20260721": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-flash-lite"
+          }
+        ],
+        "recraft/recraft-v4.1-vector-20260514": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "recraft/recraft-v4.1-vector"
+          }
+        ],
+        "liquid/d1-20260930": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "liquid/d1"
+          }
+        ],
+        "nex-agi/nex-n2.5-mini-20260908": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nex-agi/nex-n2.5-mini"
+          }
+        ],
+        "bytedance-seed/seedream-4.5-20251203": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-4.5"
+          }
+        ],
+        "nex-agi/nex-n2.5-pro-20260907": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nex-agi/nex-n2.5-pro"
+          }
+        ],
+        "google/gemini-3.8-flash-tts-20260922": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.8-flash-tts"
+          }
+        ],
+        "bytedance-seed/seedream-5-0-flash-20261001": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-5.0-flash"
+          }
+        ],
+        "inception/mercury-2-20260304": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inception/mercury-2"
+          }
+        ],
+        "nvidia/nemotron-3.5-lightning-20260807": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nvidia/nemotron-3.5-lightning"
+          }
+        ],
+        "tencent/hy3-20260706": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "tencent/hy3"
+          }
+        ],
+        "nvidia/nemotron-3.5-super-vl-20261015": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "nvidia/nemotron-3.5-super-vl"
+          }
+        ],
+        "minimax/minimax-m2.7-20260318": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "minimax/minimax-m2.7"
+          }
+        ],
+        "z-ai/glm-5.3-flashx-20260918": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3-flashx"
+          }
+        ],
+        "z-ai/glm-5.3-20260816": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.3"
+          }
+        ],
+        "stepfun/step-5-preview-20261008": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "stepfun/step-5-preview"
+          }
+        ],
+        "cohere/command-a-plus-05-2026": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "cohere/command-a-plus"
+          }
+        ],
+        "google/gemini-3.1-pro-preview-20260219": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-pro-preview"
+          }
+        ],
+        "meta/muse-glimmer-30b-20260810": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/muse-glimmer-30b"
+          }
+        ],
+        "anthropic/claude-opus-5.5-20260921": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "anthropic/claude-opus-5.5",
+              "anthropic/claude-opus-5.5:fast"
+            ]
+          }
+        ],
+        "jaredpalmer/kev-4b-20260924": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "jaredpalmer/kev-4b"
+          }
+        ],
+        "thinkingmachines/inkling-small-20260730": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "thinkingmachines/inkling-small"
+          }
+        ],
+        "x-ai/grok-imagine-video-1.5-20260719": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-video-1.5"
+          }
+        ],
+        "xiaomi/mimo-v2.6-pro-20260921": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.6-pro"
+          }
+        ],
+        "z-ai/glm-5.2-20260616": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "z-ai/glm-5.2"
+          }
+        ],
+        "fish-audio/s2.1-pro-20260729": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "fish-audio/s2.1-pro"
+          }
+        ],
+        "tencent/hy4-preview-20260827": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "tencent/hy4-preview"
+          }
+        ],
+        "xiaomi/mimo-v2.5-pro-20260422": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.5-pro"
+          }
+        ],
+        "anthropic/claude-4.5-haiku-20251001": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "anthropic/claude-haiku-4.5"
+          }
+        ],
+        "xiaomi/mimo-v2.5-20260422": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.5"
+          }
+        ],
+        "poolside/laguna-s-2.1-20260720": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "poolside/laguna-s-2.1"
+          }
+        ],
+        "recraft/recraft-v4.1-flash-20260923": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "recraft/recraft-v4.1-flash"
+          }
+        ],
+        "x-ai/grok-4.20-20260309": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.20"
+          }
+        ],
+        "google/gemini-3.7-flash-20260813": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.7-flash"
+          }
+        ],
+        "google/gemini-3-flash-preview-20251217": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-flash-preview"
+          }
+        ],
+        "qwen/qwen3.8-27b-20260814": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.8-27b"
+          }
+        ],
+        "inclusionai/ling-3.0-flash-vl-20260910": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "inclusionai/ling-3.0-flash-vl"
+          }
+        ],
+        "qwen/qwen3.7-max-20260520": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen3.7-max"
+          }
+        ],
+        "heygen/heygen-video-1-20260930": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "heygen/heygen-video-1"
+          }
+        ],
+        "google/gemini-3.5-transcribe-20260827": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.5-transcribe"
+          }
+        ],
+        "x-ai/grok-4.3-20260430": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.3"
+          }
+        ],
+        "google/gemini-nano-banana-2.1-20261006": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-nano-banana-2.1"
+          }
+        ],
+        "xiaomi/mimo-v2.6-flash-20260921": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "xiaomi/mimo-v2.6-flash"
+          }
+        ],
+        "deepseek/deepseek-v4.1-flash-20260910": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "deepseek/deepseek-v4.1-flash"
+          }
+        ],
+        "google/gemini-3.1-flash-lite-image-20260630": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3.1-flash-lite-image"
+          }
+        ],
+        "google/gemma-4-31b-it-20260402": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemma-4-31b-it"
+          }
+        ],
+        "typesafe/jev-1.13-20260917": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "typesafe/jev-1.13"
+          }
+        ],
+        "meituan/longcat-2.0-20260720": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meituan/longcat-2.0"
+          }
+        ],
+        "google/gemini-3-pro-image-20260528": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/gemini-3-pro-image"
+          }
         ]
       }
     },
@@ -3831,7 +6117,21 @@
         "sonar | api_requests low": "perplexity-fast",
         "sonar-deep-research": "perplexity-deep",
         "sonar-pro": "perplexity",
-        "sonar-reasoning-pro": "perplexity-reasoning"
+        "sonar-reasoning-pro": "perplexity-reasoning",
+        "sonar | response_api_output_tokens": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "perplexity/sonar"
+          }
+        ],
+        "sonar | response_api_uncached_input_tokens": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "perplexity/sonar"
+          }
+        ]
       }
     },
     {
@@ -3875,22 +6175,190 @@
         "black-forest-labs/flux-schnell": "flux",
         "bytedance/piano-transcription": null,
         "bytedance/seedance-1-lite": null,
-        "bytedance/seedance-1-pro-fast": "seedance-pro",
-        "bytedance/seedance-2.0": "seedance-2.0",
-        "bytedance/seedance-2.0-fast": "seedance-2.0-fast",
-        "bytedance/seedance-2.0-mini": "seedance-2.0-mini",
-        "bytedance/seedance-2.5": "seedance-2.5",
-        "bytedance/seedream-4": "seedream",
+        "bytedance/seedance-1-pro-fast": [
+          {
+            "model": "seedance-pro",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-1-pro-fast"
+          },
+          {
+            "model": "seedance-pro",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedance-2.0": [
+          {
+            "model": "seedance-2.0",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-2.0"
+          },
+          {
+            "model": "seedance-2.0",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedance-2.0-fast": [
+          {
+            "model": "seedance-2.0-fast",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-2.0-fast"
+          },
+          {
+            "model": "seedance-2.0-fast",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedance-2.0-mini": [
+          {
+            "model": "seedance-2.0-mini",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-2.0-mini"
+          },
+          {
+            "model": "seedance-2.0-mini",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedance-2.5": [
+          {
+            "model": "seedance-2.5",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedance-2.5"
+          },
+          {
+            "model": "seedance-2.5",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedream-4": [
+          {
+            "model": "seedream",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-4.0"
+          },
+          {
+            "model": "seedream",
+            "from": "2026-11"
+          }
+        ],
         "bytedance/seedream-4.5": "seedream-pro",
-        "bytedance/seedream-5-lite": "seedream5",
-        "bytedance/seedream-5-pro": "seedream5-pro",
+        "bytedance/seedream-5-lite": [
+          {
+            "model": "seedream5",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-5.0-lite"
+          },
+          {
+            "model": "seedream5",
+            "from": "2026-11"
+          }
+        ],
+        "bytedance/seedream-5-pro": [
+          {
+            "model": "seedream5-pro",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "bytedance/seedream-5.0-pro"
+          },
+          {
+            "model": "seedream5-pro",
+            "from": "2026-11"
+          }
+        ],
         "google/nano-banana-2": "nanobanana-2",
-        "ideogram-ai/ideogram-v4-balanced": "ideogram-v4-balanced",
-        "ideogram-ai/ideogram-v4-quality": "ideogram-v4-quality",
-        "ideogram-ai/ideogram-v4-turbo": "ideogram-v4-turbo",
+        "ideogram-ai/ideogram-v4-balanced": [
+          {
+            "model": "ideogram-v4-balanced",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "ideogram-ai/ideogram-v4-balanced"
+          },
+          {
+            "model": "ideogram-v4-balanced",
+            "from": "2026-11"
+          }
+        ],
+        "ideogram-ai/ideogram-v4-quality": [
+          {
+            "model": "ideogram-v4-quality",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "ideogram-ai/ideogram-v4-quality"
+          },
+          {
+            "model": "ideogram-v4-quality",
+            "from": "2026-11"
+          }
+        ],
+        "ideogram-ai/ideogram-v4-turbo": [
+          {
+            "model": "ideogram-v4-turbo",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "ideogram-ai/ideogram-v4-turbo"
+          },
+          {
+            "model": "ideogram-v4-turbo",
+            "from": "2026-11"
+          }
+        ],
         "lightricks/ltx-2-pro": null,
         "prunaai/p-image": "p-image",
-        "prunaai/p-image-edit": "p-image-edit",
+        "prunaai/p-image-edit": [
+          {
+            "model": "p-image-edit",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "prunaai/p-image-edit"
+          },
+          {
+            "model": "p-image-edit",
+            "from": "2026-11"
+          }
+        ],
         "prunaai/p-image-upscale": null,
         "p-video-720p | Output video duration (seconds): p-video-720p-base": [
           {
@@ -3914,9 +6382,27 @@
           }
         ],
         "prunaai/p-video": [
-          "p-video",
-          "p-video-720p",
-          "p-video-1080p"
+          {
+            "model": [
+              "p-video",
+              "p-video-720p",
+              "p-video-1080p"
+            ],
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "prunaai/p-video"
+          },
+          {
+            "model": [
+              "p-video",
+              "p-video-720p",
+              "p-video-1080p"
+            ],
+            "from": "2026-11"
+          }
         ],
         "prunaai/p-video | Output video duration (seconds): p-video-1080p-base @ 0.04/second": [
           "p-video-1080p",
@@ -3934,17 +6420,90 @@
           "p-video",
           "p-video-720p"
         ],
-        "qwen/qwen-image": "qwen-image",
-        "qwen/qwen-image-edit-plus": "qwen-image",
+        "qwen/qwen-image": [
+          {
+            "model": "qwen-image",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen-image"
+          },
+          {
+            "model": "qwen-image",
+            "from": "2026-11"
+          }
+        ],
+        "qwen/qwen-image-edit-plus": [
+          {
+            "model": "qwen-image",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "qwen/qwen-image"
+          },
+          {
+            "model": "qwen-image",
+            "from": "2026-11"
+          }
+        ],
         "stability-ai/sdxl": null,
         "topazlabs/image-upscale": null,
-        "wan-video/wan-2.2-i2v-fast": "wan-fast",
-        "wan-video/wan-2.2-t2v-fast": "wan-fast",
+        "wan-video/wan-2.2-i2v-fast": [
+          {
+            "model": "wan-fast",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.2-fast"
+          },
+          {
+            "model": "wan-fast",
+            "from": "2026-11"
+          }
+        ],
+        "wan-video/wan-2.2-t2v-fast": [
+          {
+            "model": "wan-fast",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.2-fast"
+          },
+          {
+            "model": "wan-fast",
+            "from": "2026-11"
+          }
+        ],
         "wan-video/wan-2.6-i2v": "wan",
         "wan-video/wan-2.6-t2v": "wan",
         "wan-video/wan-2.7-i2v": [
-          "wan-pro",
-          "wan-pro-1080p"
+          {
+            "model": [
+              "wan-pro",
+              "wan-pro-1080p"
+            ],
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.7"
+          },
+          {
+            "model": [
+              "wan-pro",
+              "wan-pro-1080p"
+            ],
+            "from": "2026-11"
+          }
         ],
         "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-1080p @ 0.15/second": [
           "wan-pro-1080p",
@@ -3953,15 +6512,76 @@
         "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-720p @ 0.1/second": "wan-pro",
         "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-1080p": "wan-pro-1080p",
         "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-720p": "wan-pro",
-        "wan-video/wan-2.7-image": "wan-image",
-        "wan-video/wan-2.7-image-pro": "wan-image-pro",
-        "wan-video/wan-2.7-t2v": "wan-pro",
-        "xai/grok-imagine-video": "grok-video-pro",
+        "wan-video/wan-2.7-image": [
+          {
+            "model": "wan-image",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.7-image"
+          },
+          {
+            "model": "wan-image",
+            "from": "2026-11"
+          }
+        ],
+        "wan-video/wan-2.7-image-pro": [
+          {
+            "model": "wan-image-pro",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.7-image-pro"
+          },
+          {
+            "model": "wan-image-pro",
+            "from": "2026-11"
+          }
+        ],
+        "wan-video/wan-2.7-t2v": [
+          {
+            "model": "wan-pro",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.7"
+          },
+          {
+            "model": "wan-pro",
+            "from": "2026-11"
+          }
+        ],
+        "xai/grok-imagine-video": [
+          {
+            "model": "grok-video-pro",
+            "until": "2026-09"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-video"
+          },
+          {
+            "model": "grok-video-pro",
+            "from": "2026-11"
+          }
+        ],
         "black-forest-labs/flux-kontext-pro": [
           {
             "from": "2026-09",
             "until": "2026-09",
             "model": "kontext"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux.1-kontext-pro"
           }
         ],
         "black-forest-labs/flux-2-pro": [
@@ -3969,12 +6589,22 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "flux-2-pro"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "black-forest-labs/flux.2-pro"
           }
         ],
         "black-forest-labs/flux-2-max": [
           {
             "from": "2026-09",
             "until": "2026-09",
+            "model": "black-forest-labs/flux.2-max"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
             "model": "black-forest-labs/flux.2-max"
           }
         ],
@@ -4013,6 +6643,26 @@
               "wan-pro",
               "wan-pro-1080p"
             ]
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "alibaba/wan-2.7"
+          }
+        ],
+        "google/veo-3.1-fast": [
+          {
+            "until": "2026-09",
+            "model": "google/veo-3.1-fast"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "google/veo-3.1-fast"
+          },
+          {
+            "from": "2026-11",
+            "model": "google/veo-3.1-fast"
           }
         ]
       }
@@ -4124,6 +6774,43 @@
             "from": "2026-09",
             "until": "2026-09",
             "model": "llama-scout"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "meta/llama-4-scout"
+          }
+        ],
+        "google/gemini-2.5-flash-lite": [
+          {
+            "until": "2026-09",
+            "model": "google/gemini-2.5-flash-lite"
+          },
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": [
+              "google/gemini-2.5-flash-lite",
+              "google/gemini-2.5-flash-lite:search"
+            ]
+          },
+          {
+            "from": "2026-11",
+            "model": "google/gemini-2.5-flash-lite"
+          }
+        ],
+        "typesafe-ai/jev-1.13.0": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "typesafe/jev-1.13"
+          }
+        ],
+        "mistral/mistral-large-4": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "mistralai/mistral-large-4"
           }
         ]
       }
@@ -4158,7 +6845,42 @@
         "grok-imagine-image-pro": "grok-imagine-pro",
         "grok-imagine-image-quality": "grok-imagine-pro",
         "grok-imagine-video": "grok-video-pro",
-        "grok-imagine-video-1.5": "grok-imagine-video-1.5"
+        "grok-imagine-video-1.5": "grok-imagine-video-1.5",
+        "API grok-4.7": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-4.7"
+          }
+        ],
+        "API grok-imagine-image": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-image"
+          }
+        ],
+        "API grok-imagine-image-2.0": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-image-2.0"
+          }
+        ],
+        "API grok-imagine-video-1.5": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-video-1.5"
+          }
+        ],
+        "API grok-imagine-video-1.5-lite": [
+          {
+            "from": "2026-10",
+            "until": "2026-10",
+            "model": "x-ai/grok-imagine-video-1.5-lite"
+          }
+        ]
       }
     },
     {

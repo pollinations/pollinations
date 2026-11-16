@@ -165,13 +165,50 @@ function providerEvidenceFor(
 export function coversCalendarMonth(
     rows: VendorLedgerRow[],
     month: string,
+    statements: VendorLedgerRow[] = [],
 ): boolean {
     const start = Date.parse(`${month}-01T00:00:00Z`);
     const date = new Date(start);
     date.setUTCMonth(date.getUTCMonth() + 1);
     const end = date.getTime();
     let covered = start;
-    const intervals = rows
+    // Sparse daily exports omit zero-usage days. A retained monthly control
+    // proves those gaps only when it reconciles this account's detailed rows.
+    const byId = new Map(rows.map((row) => [row.entry_id, row]));
+    const controls = statements.filter((statement) => {
+        const ids = statement.compared_entry_ids ?? [];
+        const provider = resolveProvider(statement.vendor);
+        return (
+            statement.type === "statement" &&
+            statement.comparison_basis === "cost" &&
+            statement.comparison_month === month &&
+            statement.statement_amount != null &&
+            ids.length > 0 &&
+            new Set(ids).size === ids.length &&
+            ids.length === rows.length &&
+            ids.every((id) => {
+                const row = byId.get(id);
+                return (
+                    row &&
+                    row.vendor === statement.vendor &&
+                    row.currency === statement.currency &&
+                    canonicalProviderAccountId(provider, row.account_id) ===
+                        canonicalProviderAccountId(
+                            provider,
+                            statement.account_id,
+                        ) &&
+                    row.start.slice(0, 7) === month &&
+                    hasArchivedEvidence(row.evidence) &&
+                    !row.evidence.includes("calendar_coverage=unverified")
+                );
+            }) &&
+            Math.abs(
+                statement.statement_amount +
+                    rows.reduce((sum, row) => sum + row.paid + row.credit, 0),
+            ) < 1e-9
+        );
+    });
+    const intervals = [...rows, ...controls]
         .filter(
             (row) =>
                 hasArchivedEvidence(row.evidence) &&
@@ -415,12 +452,17 @@ export function providerCloseRows(
                             ) === account.id,
                     ),
                     plane.month,
+                    data.vendorStatements,
                 ),
         );
         const completeCoverage =
             accounts.length > 0
                 ? missingAccounts.length === 0
-                : coversCalendarMonth(providerRows, plane.month);
+                : coversCalendarMonth(
+                      providerRows,
+                      plane.month,
+                      data.vendorStatements,
+                  );
         const coverageStatus = !statementRequired
             ? ("not required" as const)
             : providerCheckResolved

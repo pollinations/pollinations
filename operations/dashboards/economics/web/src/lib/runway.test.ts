@@ -10,8 +10,68 @@ import { buildRunway as calculateRunway, pnlSource } from "./runway";
 
 const NOW = new Date("2026-08-25T12:00:00.000Z");
 
+it("shows cash and promotional Stripe fees once without treating the grant as sales or runway cash", () => {
+    const sale: StripeSalesRow = {
+        month: "2026-07",
+        currency: "USD",
+        revenue_stream: "pollen",
+        gross_sales: 1000,
+        refunds: 0,
+        reversals: 0,
+        net_sales: 1000,
+        stripe_fees: 30,
+        stripe_fees_credit: 20,
+        fee_credit_funding: 20000,
+        dispute_fees: 0,
+        net_after_fees: 970,
+        payments: 10,
+        refund_count: 0,
+        coverage_complete: 1,
+    };
+    const run = (sales: StripeSalesRow[]) =>
+        buildRunway(
+            [opening(1000)],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01",
+                    end: "2026-08-01",
+                    paid: -100,
+                    credit: -50,
+                }),
+            ],
+            undefined,
+            sales,
+        );
+    const result = run([sale]);
+    const column = "2026-07:actual";
+    const row = result.rows.find((r) => r.vendor === "stripe sales");
+    expect(row?.values[column]).toBe(970);
+    expect(row?.creditValues?.[column]).toBe(-20);
+    expect(row?.details?.find((r) => r.label === "Stripe fees")).toMatchObject({
+        values: { [column]: -30 },
+        creditValues: { [column]: -20 },
+    });
+    expect(
+        row?.details?.find((r) => r.label === "Gross customer payments")
+            ?.creditValues,
+    ).toBeUndefined();
+    expect(result.columns.find((c) => c.id === column)).toMatchObject({
+        totalExpensesUsd: -100,
+        totalCreditUsd: -70,
+        operatingResultUsd: 870,
+    });
+    expect(result.currentCashUsd).toBe(1000);
+    const withoutGrant = run([{ ...sale, fee_credit_funding: 0 }]);
+    expect(result.rows).toEqual(withoutGrant.rows);
+    expect(result.columns).toEqual(withoutGrant.columns);
+    expect(result.projectedMonthEndCashUsd).toBe(
+        withoutGrant.projectedMonthEndCashUsd,
+    );
+});
+
 // Historical scenarios explicitly select their review, rather than using
-// the dashboard's September review selection.
+// the dashboard's current review selection.
 const buildRunway = (
     transactions: OpTransactionRow[],
     now = NOW,
@@ -155,6 +215,8 @@ const stripeSales = (
     refunds: 20,
     net_sales: 100,
     stripe_fees: 5,
+    stripe_fees_credit: 0,
+    fee_credit_funding: 0,
     dispute_fees: 0,
     net_after_fees: 95,
     payments: 3,
@@ -709,6 +771,8 @@ describe("buildRunway", () => {
                     refunds: 0,
                     net_sales: 20,
                     stripe_fees: 2,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: 0,
                     net_after_fees: 18,
                     payments: 1,
@@ -743,6 +807,8 @@ describe("buildRunway", () => {
                     reversals: -recoveredPrincipal,
                     net_sales: recoveredPrincipal,
                     stripe_fees: -60,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: -60,
                     net_after_fees: recoveredPrincipal + 60,
                     payments: 0,
@@ -785,6 +851,8 @@ describe("buildRunway", () => {
                 refunds: 0,
                 net_sales: 0,
                 stripe_fees: -5,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_after_fees: 5,
                 payments: 0,
@@ -1060,7 +1128,8 @@ describe("buildRunway", () => {
         );
 
         expect(refund?.values["2026-08:forecast"]).toBeCloseTo(100 * 1.1593, 2);
-        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1513, 2);
+        // Future EUR amounts use the latest verified ECB rate (October).
+        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1202, 2);
         expect(payroll?.values["2026-11:forecast"]).toBeLessThan(0);
         expect(payroll?.values["2026-12:forecast"]).toBe(0);
         expect(accounting?.values["2026-12:forecast"]).toBeLessThan(0);
@@ -1129,6 +1198,7 @@ describe("buildRunway", () => {
 
     it("pins monthly spending across imports and flags calendar rollover for review", () => {
         const now = new Date("2026-10-18T12:00:00Z");
+        const review = { baselineMonth: "2026-09", asOf: "2026-10-18" };
         const reviewed = [
             baseline({
                 vendor: "replicate",
@@ -1145,6 +1215,7 @@ describe("buildRunway", () => {
             reviewed,
             undefined,
             sales,
+            review,
         );
         const after = calculateRunway(
             [
@@ -1186,6 +1257,7 @@ describe("buildRunway", () => {
                     coverage_complete: 0,
                 }),
             ],
+            review,
         );
         expect(after.columns.filter((c) => c.kind === "forecast")).toEqual(
             before.columns.filter((c) => c.kind === "forecast"),
@@ -1205,6 +1277,7 @@ describe("buildRunway", () => {
             reviewed,
             undefined,
             sales,
+            review,
         );
         expect(
             november.rows.find((row) => row.vendor === "replicate")?.values[
@@ -1511,6 +1584,46 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(20000);
         expect(result.projectedMonthEndCashUsd).toBe(19395);
         expect(result.runwayMonths).not.toBeNull();
+    });
+
+    it("forecasts an approved AWS invoice against the reviewed credits without posting the invoice", () => {
+        const invoice = cloud({
+            entry_id: "aws-invoice",
+            vendor: "aws",
+            account_id: "301235909293",
+            type: "statement",
+            source: "invoice",
+            start: "2026-07-01 00:00:00",
+            end: "2026-08-01 00:00:00",
+            paid: 0,
+            comparison_basis: "cost",
+            comparison_month: "2026-07",
+            statement_amount: 310,
+            evidence:
+                "https://drive.google.com/file/d/issued-invoice/view; forecast_basis=credit_funded_invoice",
+        });
+        const result = calculateRunway(
+            [opening()],
+            NOW,
+            [
+                {
+                    ...balance("aws", 0, 160),
+                    account_id: invoice.account_id,
+                    start: "2026-08-16 00:00:00",
+                    end: "2026-08-31 23:59:59",
+                },
+            ],
+            undefined,
+            [stripeSales()],
+            { baselineMonth: "2026-07", asOf: "2026-08-25" },
+            [invoice],
+        );
+        const aws = result.rows.find((row) => row.vendor === "aws");
+        expect(aws?.forecastIssue).toBeUndefined();
+        expect(aws?.values["2026-07:actual"]).toBeNull();
+        expect(aws?.values["2026-09:forecast"]).toBeCloseTo(0, 8);
+        expect(aws?.creditValues?.["2026-08:forecast"]).toBeCloseTo(-310, 8);
+        expect(aws?.values["2026-10:forecast"]).toBeCloseTo(-310, 8);
     });
 
     it("explains settlement timing without claiming the supplier invoice is missing", () => {
@@ -2127,6 +2240,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
             refunds: 0,
             reversals: 0,
             stripe_fees: 5,
+            stripe_fees_credit: 0,
+            fee_credit_funding: 0,
             dispute_fees: 0,
             net_sales: 100,
             net_after_fees: 95,
@@ -2148,6 +2263,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
                 revenue_stream: "kofi",
                 gross_sales: 20,
                 stripe_fees: 2,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_sales: 20,
                 net_after_fees: 18,
@@ -2157,6 +2274,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
                 month: "2026-10",
                 gross_sales: 5,
                 stripe_fees: 1,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_sales: 5,
                 net_after_fees: 4,
@@ -2250,6 +2369,9 @@ describe("monthly plan review regressions", () => {
                     end: "2026-10-18 00:00:00",
                 }),
             ],
+            undefined,
+            [],
+            { baselineMonth: "2026-09", asOf: "2026-10-18" },
         );
         expect(
             result.rows.find((row) => row.vendor === "replicate")

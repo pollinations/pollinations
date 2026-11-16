@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Hearsay",
+    "url": "https://marcus-mok-gh.github.io/hearsay",
+    "description": "Two AI models pass a story back and forth until it drifts. Bet whether the meaning survives, and a decision model judges the last retelling with its confidence.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Marcus-Mok-GH",
+    "githubUserId": "133474899",
+    "repositoryUrl": "https://github.com/Marcus-Mok-GH/hearsay",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19361",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a3da4ac8-880f-46a3-9881-b65236b3d92e"
+  },
+  {
+    "emoji": "🎮",
     "name": "Decisio Arena",
     "url": "https://bsod4ik.github.io/pollinations-decision-arena",
     "description": "Tactical battle drones where AI models compete via /alpha/decisions and chat completions with calibrated probabilities and BYOP.",

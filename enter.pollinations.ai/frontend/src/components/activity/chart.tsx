@@ -112,7 +112,11 @@ export const Chart: FC<ChartProps> = ({
     const maxDataValue =
         data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
     const scale = useMemo(() => {
-        const tickSpacing = getNiceStep(maxDataValue || 1);
+        const niceStep = getNiceStep(maxDataValue || 1);
+        // Requests are whole numbers: a fractional step would repeat the
+        // rounded labels ("0 0 0 1 1 1").
+        const tickSpacing =
+            metric === "pollen" ? niceStep : Math.max(1, niceStep);
         // Round up to the next tick.
         const niceMaxVal =
             Math.ceil(maxDataValue / tickSpacing) * tickSpacing || tickSpacing;
@@ -122,7 +126,7 @@ export const Chart: FC<ChartProps> = ({
             (_, i) => i * tickSpacing,
         ).filter((value) => value <= niceMaxVal);
         return { niceMaxVal, tickValues };
-    }, [maxDataValue]);
+    }, [maxDataValue, metric]);
 
     const formatVal = (v: number) => {
         if (metric === "pollen") return formatActivityPollen(v);

@@ -82,9 +82,12 @@ it.each([true, false])(
         const cell = row
             ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
             ?.find((item) => item.includes("−300"));
-        const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-        expect(shown).toBe(unknown ? "*−300" : "−300");
-        expect(cell).toContain("text-xs font-normal text-theme-text-muted");
+        expect(cell).toContain(
+            '<div class="text-xs font-normal text-theme-text-muted">−300</div>',
+        );
+        expect(
+            cell?.includes('aria-label="Provisional expense subtotal"'),
+        ).toBe(unknown);
     },
 );
 

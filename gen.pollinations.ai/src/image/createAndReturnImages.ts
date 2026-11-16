@@ -534,8 +534,8 @@ const callGPTImageWithEndpoint = async (
     // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
-    // Set output format to png if model is gptimage, otherwise jpeg
-    const outputFormat = "png";
+    // PNG remains the default; transparent requests force PNG; Flare may request lossless WebP or an animated GIF.
+    const outputFormat = (safeParams.transparent || safeParams.background === "transparent") ? "png" : (safeParams.output_format ?? "png");
     const requestBody = {
         ...(config.provider === "openai" ? { model: config.modelName } : {}),
         prompt: sanitizeString(prompt),

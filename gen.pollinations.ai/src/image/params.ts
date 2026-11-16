@@ -294,7 +294,7 @@ export const ImageParamsSchema = z
             ? (data.quality as (typeof validQualities)[number])
             : "medium";
 
-        return { ...data, quality, width, height, dimensionsExplicit };
+        return { ...data, quality, width, height, dimensionsExplicit, transparent: data.transparent || data.background === "transparent" };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

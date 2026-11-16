@@ -78,18 +78,26 @@ SQL >
     LEFT JOIN account_counts AS c ON s.account_id = c.account_id AND s.month = c.month
     GROUP BY s.month
 
+NODE monthly_customer_tax
+SQL >
+    SELECT account_id, month, currency,
+        argMax(tax_minor, (recorded_at, report_id)) AS tax_minor
+    FROM economics_stripe_customer_tax
+    GROUP BY account_id, month, currency
+
 NODE endpoint
 SQL >
     SELECT f.month AS month, f.currency AS currency, f.revenue_stream AS revenue_stream,
-        sum(gross) / 100 AS gross_sales,
+        (sum(gross) - sum(t.tax_minor)) / 100 AS gross_sales,
+        sum(t.tax_minor) / 100 AS customer_tax,
         sum(refund_minor) / 100 AS refunds,
         sum(reversal_minor) / 100 AS reversals,
-        (sum(gross) - sum(refund_minor) - sum(reversal_minor)) / 100 AS net_sales,
+        (sum(gross) - sum(t.tax_minor) - sum(refund_minor) - sum(reversal_minor)) / 100 AS net_sales,
         sum(fees) / 100 AS stripe_fees,
         sum(credit_fees) / 100 AS stripe_fees_credit,
         sum(credit_funding) / 100 AS fee_credit_funding,
         sum(dispute_fees) / 100 AS dispute_fees,
-        (sum(gross) - sum(refund_minor) - sum(reversal_minor) - sum(fees)) / 100 AS net_after_fees,
+        (sum(gross) - sum(t.tax_minor) - sum(refund_minor) - sum(reversal_minor) - sum(fees)) / 100 AS net_after_fees,
         sum(payments) AS payments, sum(refund_count) AS refund_count,
         sum(enter_unmatched_payments) AS enter_unmatched_payments,
         sum(fraud_refunds_minor) / 100 AS fraud_refunds,
@@ -104,6 +112,8 @@ SQL >
         toString(min(c.collected_at)) AS collected_at
     FROM account_facts AS f
     INNER JOIN month_coverage AS c ON f.month = c.month
+    LEFT JOIN monthly_customer_tax AS t
+        ON f.account_id = t.account_id AND f.month = t.month AND f.currency = t.currency
     GROUP BY f.month, f.currency, f.revenue_stream
     ORDER BY month DESC, revenue_stream, currency
 

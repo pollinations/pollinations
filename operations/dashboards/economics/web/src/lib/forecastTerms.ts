@@ -11,7 +11,7 @@ export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 // activity does not select a new baseline or a newer funding snapshot.
 export const RUNWAY_REVIEW = {
     baselineMonth: "2026-10",
-    asOf: "2026-11-03",
+    asOf: "2026-11-16",
 };
 export type RunwayReview = typeof RUNWAY_REVIEW;
 

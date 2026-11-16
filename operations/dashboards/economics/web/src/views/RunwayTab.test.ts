@@ -468,9 +468,12 @@ describe("RunwayTab labels", () => {
             }),
         );
 
-        const cards = html.slice(0, html.indexOf("<table"));
+        const cards =
+            html.match(
+                /<details><summary[^>]*>Bank cash[\s\S]*?<\/details>/,
+            )?.[0] ?? "";
         expect(cards.match(/<\/section>/g)).toHaveLength(3);
-        expect(cards).toContain('aria-label="Cash"');
+        expect(cards).toContain('aria-label="Wise bank cash"');
         expect(cards).toContain('aria-label="Outlook"');
         expect(cards).toContain('aria-label="Pollen balance"');
         expect(html).not.toContain("Unspent Pollen");
@@ -579,7 +582,7 @@ describe("RunwayTab labels", () => {
         const computeIndex = html.indexOf(
             'aria-label="Compute calculation info"',
         );
-        expect(balanceIndex).toBeLessThan(revenueIndex);
+        expect(revenueIndex).toBeLessThan(balanceIndex);
         expect(revenueIndex).toBeLessThan(expensesIndex);
         expect(expensesIndex).toBeLessThan(computeIndex);
         expect(html).toContain("runway-subcategory");

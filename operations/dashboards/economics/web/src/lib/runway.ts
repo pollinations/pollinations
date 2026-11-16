@@ -875,7 +875,10 @@ export function buildRunway(
             payments.months.add(month);
             ledgerVendorPayments.set(vendor, payments);
         } else if (
-            !(category === "revenue" && vendor === "stripe") &&
+            !(
+                category === "revenue" &&
+                (vendor === "stripe" || vendor === "wise")
+            ) &&
             !cashOnlyTransaction(row)
         ) {
             // Cash-only movements (registry `cashOnly` on the vendor or on

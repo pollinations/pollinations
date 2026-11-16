@@ -78,7 +78,7 @@ export function fmtRunwayTableValue(value: number | null | undefined): string {
 const SUMMARY_HELP: Record<string, string[]> = {
     Expenses: [
         "Main amount: cash-funded costs for the month, not necessarily paid that month.",
-        "Below cash: additional costs covered by provider credits.",
+        "Below cash: additional costs covered by provider credits, including Stripe fees.",
     ],
     "Cash change": [
         "Actual: bank inflows minus outflows, including exchange-rate changes.",
@@ -102,7 +102,8 @@ const REVENUE_HELP: Record<string, string[]> = {
         "Historical Polar: bank payouts minus test purchases, not gross sales.",
     ],
     "Stripe fees": [
-        "Payment processing and Stripe product fees, net of fee credits; excludes dispute fees.",
+        "Main amount: cash-funded payment processing and Stripe product fees; excludes dispute fees.",
+        "Below cash: fees paid with promotional Stripe credits. Credit grants are not sales or cash.",
         "May relate to older sales.",
     ],
     "Refunds, disputes & chargebacks": [
@@ -272,6 +273,7 @@ export function runwayDetailRows(rows: RunwayMatrixRow[]): RunwayMatrixRow[] {
                     ...row,
                     vendor: detail.label,
                     values: detail.values,
+                    creditValues: detail.creditValues,
                     forecastMethod: null,
                     forecastPaymentTiming: null,
                 }))
@@ -545,12 +547,15 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                 data.vendorLedger ?? [],
                 data.privateConfig?.forecastRules,
                 data.stripeSales ?? [],
+                undefined,
+                data.vendorStatements,
             ),
         [
             data.vendorLedger,
             data.opTransactions,
             data.privateConfig?.forecastRules,
             data.stripeSales,
+            data.vendorStatements,
         ],
     );
     const columns = useMemo(

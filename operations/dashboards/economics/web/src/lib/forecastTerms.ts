@@ -10,8 +10,8 @@ export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 // Explicit review selection. Advancing the calendar or importing current
 // activity does not select a new baseline or a newer funding snapshot.
 export const RUNWAY_REVIEW = {
-    baselineMonth: "2026-09",
-    asOf: "2026-10-18",
+    baselineMonth: "2026-10",
+    asOf: "2026-11-03",
 };
 export type RunwayReview = typeof RUNWAY_REVIEW;
 
@@ -155,6 +155,11 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
+    "novita|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "mistral|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -208,6 +213,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
+    "vercel|infrastructure": { method: "fixed", paymentTiming: "direct" },
     "xai|compute": {
         method: "last",
         paymentTiming: "postpaid",
@@ -271,6 +277,8 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "direct",
     },
     "notion|operations": { method: "one_off", paymentTiming: "direct" },
+    // Domain registrations are purchases; renewal terms need a separate plan.
+    "namecheap|operations": { method: "one_off", paymentTiming: "direct" },
     "protonvpn|operations": { method: "last", paymentTiming: "direct" },
     "slack|operations": { method: "last", paymentTiming: "direct" },
     "tele2|operations": { method: "fixed", paymentTiming: "direct" },

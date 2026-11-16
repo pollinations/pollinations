@@ -105,7 +105,11 @@ export type RunwayMatrixRow = {
     forecastIssue?: string;
     actualIssues?: Record<string, string>;
     // Components of the parent value; never add to totals again.
-    details?: { label: string; values: Record<string, number> }[];
+    details?: {
+        label: string;
+        values: Record<string, number>;
+        creditValues?: Record<string, number>;
+    }[];
     category: string;
     vendor: string;
     // "mixed" describes grouped rows, not a calculation method for a fact.
@@ -424,6 +428,7 @@ function balanceAwareForecasts(
     now: Date,
     review: RunwayReview,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
+    statements: VendorLedgerRow[] = [],
 ): BalanceAwareForecast & {
     issues: Map<string, string>;
     fundingGaps: string[];
@@ -474,7 +479,13 @@ function balanceAwareForecasts(
             issues.set(row.vendor, "Usage account missing or unrecognized");
             continue;
         }
-        const result = accountBalanceForecasts(rows, now, review, privateRules);
+        const result = accountBalanceForecasts(
+            rows,
+            now,
+            review,
+            privateRules,
+            statements,
+        );
         const account = canonicalProviderAccountId(provider, row.account_id);
         facts.push(
             ...result.facts.map((fact) => ({
@@ -496,6 +507,7 @@ function accountBalanceForecasts(
     now: Date,
     review: RunwayReview,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
+    statements: VendorLedgerRow[] = [],
 ): BalanceAwareForecast {
     const currentMonth = monthShift(review.baselineMonth, 1);
     const baselineMonth = review.baselineMonth;
@@ -507,7 +519,7 @@ function accountBalanceForecasts(
     const baseline = usage.filter(
         (row) => row.start.slice(0, 7) === baselineMonth,
     );
-    if (!coversCalendarMonth(baseline, baselineMonth)) {
+    if (!coversCalendarMonth(baseline, baselineMonth, statements)) {
         return {
             facts: [],
             flags: [
@@ -578,6 +590,20 @@ function accountBalanceForecasts(
         .map((row) => row.start.slice(0, 10))
         .sort()
         .at(-1);
+    const reviewedBalance = providerAccountBalanceRows(
+        { vendorLedger: cloudRows },
+        new Date(`${review.asOf}T23:59:59Z`),
+    ).find((row) => row.active && row.balanceStatus === "checked");
+    const creditLots = reviewedBalance?.fundingLots.filter(
+        (lot) => lot.creditUsd > 0,
+    );
+    const lastCreditExpiry =
+        creditLots?.length && creditLots.every((lot) => lot.expiry)
+            ? creditLots
+                  .map((lot) => lot.expiry as string)
+                  .sort()
+                  .at(-1)
+            : undefined;
     const fundedRates = [...rates].filter(
         ([, rate]) => rate.timing !== "direct" && rate.total > 0,
     );
@@ -647,11 +673,19 @@ function accountBalanceForecasts(
         }
         for (const [category, rate] of rates) {
             if (!activeInMonth(month, rate)) continue;
+            const provisionalCreditDays = lastCreditExpiry
+                ? Array.from({ length: days }, (_, index) =>
+                      `${month}-${String(index + 1).padStart(2, "0")}` <=
+                      lastCreditExpiry
+                          ? 1
+                          : 0,
+                  ).reduce<number>((sum, day) => sum + day, 0)
+                : days;
             const funding =
                 rate.timing === "direct"
                     ? "direct monthly budget"
                     : fundingGaps.length
-                      ? "provisional baseline cash/credit split; funding depletion unverified"
+                      ? `provisional baseline cash/credit split; funding depletion unverified${lastCreditExpiry ? `; credit stops after reviewed expiry ${lastCreditExpiry}` : ""}`
                       : `full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
             const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; ${funding}`;
             if (rate.timing === "direct" || rate.total === 0) {
@@ -659,10 +693,12 @@ function accountBalanceForecasts(
                 continue;
             }
             const share = rate.total / totalRate;
-            const cash = fundingGaps.length ? rate.paid : newCash * share;
             const credit = fundingGaps.length
-                ? rate.total - rate.paid
+                ? ((rate.total - rate.paid) * provisionalCreditDays) / days
                 : credits * share;
+            const cash = fundingGaps.length
+                ? rate.total - credit
+                : newCash * share;
             // Credits are consumption in the service month; postpaid cash settles
             // the following month. Existing prepaid cash is consumed by lots,
             // never added to the bank-payment forecast a second time.
@@ -695,6 +731,7 @@ export function buildRunway(
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
     stripeSales: readonly StripeSalesRow[] = [],
     review: RunwayReview = RUNWAY_REVIEW,
+    statements: VendorLedgerRow[] = [],
 ): RunwayResult {
     const currentMonth = now.toISOString().slice(0, 7);
     const priorMonth = monthShift(currentMonth, -1);
@@ -757,6 +794,8 @@ export function buildRunway(
             !Number.isFinite(row.reversals) ||
             !Number.isFinite(row.net_sales) ||
             !Number.isFinite(row.stripe_fees) ||
+            !Number.isFinite(row.stripe_fees_credit) ||
+            !Number.isFinite(row.fee_credit_funding) ||
             !Number.isFinite(row.dispute_fees) ||
             !Number.isFinite(row.net_after_fees) ||
             !Number.isFinite(row.payments) ||
@@ -976,6 +1015,16 @@ export function buildRunway(
                 identities.set(key, { vendor, category });
             }
             actualByMonth.set(row.month, monthValues);
+            // Promotional fee consumption is a cost, never cash or sales.
+            // The grant itself only funds the separate Stripe credit balance.
+            const creditValues =
+                creditFundedByMonth.get(row.month) ?? new Map<string, number>();
+            addAmount(
+                creditValues,
+                matrixKey("revenue", "stripe sales"),
+                -toUsd(row.stripe_fees_credit, row.currency, row.month),
+            );
+            creditFundedByMonth.set(row.month, creditValues);
             observedMonths.add(row.month);
         }
     }
@@ -997,6 +1046,7 @@ export function buildRunway(
         now,
         review,
         privateRules,
+        statements.filter((row) => row.recorded_at.slice(0, 10) <= review.asOf),
     );
     flags.push(
         ...ruleBased.flags,
@@ -1331,9 +1381,10 @@ export function buildRunway(
                       : [];
             const details =
                 stripeSalesUsable || stripeForecastUsable
-                    ? detailFields.map(([label]) => ({
+                    ? detailFields.map(([label, field]) => ({
                           label,
                           values: {} as Record<string, number>,
+                          ...(field === "stripe_fees" ? { creditValues } : {}),
                       }))
                     : [];
             for (const column of columnSpecs) {
@@ -1642,11 +1693,7 @@ export function buildRunway(
             actual && !hasCosts
                 ? null
                 : rows
-                      .filter(
-                          (row) =>
-                              row.category !== "revenue" &&
-                              row.category !== "balance_sheet",
-                      )
+                      .filter((row) => row.category !== "balance_sheet")
                       .reduce(
                           (sum, row) =>
                               sum + (row.creditValues?.[column.id] ?? 0),

@@ -10,8 +10,68 @@ import { buildRunway as calculateRunway, pnlSource } from "./runway";
 
 const NOW = new Date("2026-08-25T12:00:00.000Z");
 
+it("shows cash and promotional Stripe fees once without treating the grant as sales or runway cash", () => {
+    const sale: StripeSalesRow = {
+        month: "2026-07",
+        currency: "USD",
+        revenue_stream: "pollen",
+        gross_sales: 1000,
+        refunds: 0,
+        reversals: 0,
+        net_sales: 1000,
+        stripe_fees: 30,
+        stripe_fees_credit: 20,
+        fee_credit_funding: 20000,
+        dispute_fees: 0,
+        net_after_fees: 970,
+        payments: 10,
+        refund_count: 0,
+        coverage_complete: 1,
+    };
+    const run = (sales: StripeSalesRow[]) =>
+        buildRunway(
+            [opening(1000)],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01",
+                    end: "2026-08-01",
+                    paid: -100,
+                    credit: -50,
+                }),
+            ],
+            undefined,
+            sales,
+        );
+    const result = run([sale]);
+    const column = "2026-07:actual";
+    const row = result.rows.find((r) => r.vendor === "stripe sales");
+    expect(row?.values[column]).toBe(970);
+    expect(row?.creditValues?.[column]).toBe(-20);
+    expect(row?.details?.find((r) => r.label === "Stripe fees")).toMatchObject({
+        values: { [column]: -30 },
+        creditValues: { [column]: -20 },
+    });
+    expect(
+        row?.details?.find((r) => r.label === "Gross customer payments")
+            ?.creditValues,
+    ).toBeUndefined();
+    expect(result.columns.find((c) => c.id === column)).toMatchObject({
+        totalExpensesUsd: -100,
+        totalCreditUsd: -70,
+        operatingResultUsd: 870,
+    });
+    expect(result.currentCashUsd).toBe(1000);
+    const withoutGrant = run([{ ...sale, fee_credit_funding: 0 }]);
+    expect(result.rows).toEqual(withoutGrant.rows);
+    expect(result.columns).toEqual(withoutGrant.columns);
+    expect(result.projectedMonthEndCashUsd).toBe(
+        withoutGrant.projectedMonthEndCashUsd,
+    );
+});
+
 // Historical scenarios explicitly select their review, rather than using
-// the dashboard's September review selection.
+// the dashboard's current review selection.
 const buildRunway = (
     transactions: OpTransactionRow[],
     now = NOW,
@@ -155,6 +215,8 @@ const stripeSales = (
     refunds: 20,
     net_sales: 100,
     stripe_fees: 5,
+    stripe_fees_credit: 0,
+    fee_credit_funding: 0,
     dispute_fees: 0,
     net_after_fees: 95,
     payments: 3,
@@ -709,6 +771,8 @@ describe("buildRunway", () => {
                     refunds: 0,
                     net_sales: 20,
                     stripe_fees: 2,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: 0,
                     net_after_fees: 18,
                     payments: 1,
@@ -743,6 +807,8 @@ describe("buildRunway", () => {
                     reversals: -recoveredPrincipal,
                     net_sales: recoveredPrincipal,
                     stripe_fees: -60,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: -60,
                     net_after_fees: recoveredPrincipal + 60,
                     payments: 0,
@@ -785,6 +851,8 @@ describe("buildRunway", () => {
                 refunds: 0,
                 net_sales: 0,
                 stripe_fees: -5,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_after_fees: 5,
                 payments: 0,
@@ -1060,7 +1128,8 @@ describe("buildRunway", () => {
         );
 
         expect(refund?.values["2026-08:forecast"]).toBeCloseTo(100 * 1.1593, 2);
-        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1513, 2);
+        // Future EUR amounts use the latest verified ECB rate (October).
+        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1202, 2);
         expect(payroll?.values["2026-11:forecast"]).toBeLessThan(0);
         expect(payroll?.values["2026-12:forecast"]).toBe(0);
         expect(accounting?.values["2026-12:forecast"]).toBeLessThan(0);
@@ -1129,6 +1198,7 @@ describe("buildRunway", () => {
 
     it("pins monthly spending across imports and flags calendar rollover for review", () => {
         const now = new Date("2026-10-18T12:00:00Z");
+        const review = { baselineMonth: "2026-09", asOf: "2026-10-18" };
         const reviewed = [
             baseline({
                 vendor: "replicate",
@@ -1145,6 +1215,7 @@ describe("buildRunway", () => {
             reviewed,
             undefined,
             sales,
+            review,
         );
         const after = calculateRunway(
             [
@@ -1186,6 +1257,7 @@ describe("buildRunway", () => {
                     coverage_complete: 0,
                 }),
             ],
+            review,
         );
         expect(after.columns.filter((c) => c.kind === "forecast")).toEqual(
             before.columns.filter((c) => c.kind === "forecast"),
@@ -1205,6 +1277,7 @@ describe("buildRunway", () => {
             reviewed,
             undefined,
             sales,
+            review,
         );
         expect(
             november.rows.find((row) => row.vendor === "replicate")?.values[
@@ -2127,6 +2200,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
             refunds: 0,
             reversals: 0,
             stripe_fees: 5,
+            stripe_fees_credit: 0,
+            fee_credit_funding: 0,
             dispute_fees: 0,
             net_sales: 100,
             net_after_fees: 95,
@@ -2148,6 +2223,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
                 revenue_stream: "kofi",
                 gross_sales: 20,
                 stripe_fees: 2,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_sales: 20,
                 net_after_fees: 18,
@@ -2157,6 +2234,8 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
                 month: "2026-10",
                 gross_sales: 5,
                 stripe_fees: 1,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 0,
                 net_sales: 5,
                 net_after_fees: 4,
@@ -2250,6 +2329,9 @@ describe("monthly plan review regressions", () => {
                     end: "2026-10-18 00:00:00",
                 }),
             ],
+            undefined,
+            [],
+            { baselineMonth: "2026-09", asOf: "2026-10-18" },
         );
         expect(
             result.rows.find((row) => row.vendor === "replicate")

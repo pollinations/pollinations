@@ -11,6 +11,8 @@ const row: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 3,
+    stripe_fees_credit: 0,
+    fee_credit_funding: 0,
     dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 97,
@@ -76,6 +78,8 @@ it("stops Ko-fi projections without mixing recorded current activity into the pl
         revenue_stream: "kofi" as const,
         gross_sales: 5,
         stripe_fees: 0.7,
+        stripe_fees_credit: 0,
+        fee_credit_funding: 0,
         dispute_fees: 0,
     };
     const latest = [row, kofi];

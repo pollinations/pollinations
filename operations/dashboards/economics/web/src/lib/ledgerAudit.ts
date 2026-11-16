@@ -98,7 +98,7 @@ function invalidCloud(row: VendorLedgerRow): boolean {
         !isMonthKey(String(row.start ?? "").slice(0, 7)) ||
         !finite(row.credit) ||
         !finite(row.paid) ||
-        (balance && (Number(row.credit) < 0 || Number(row.paid) < 0)) ||
+        (balance && Number(row.credit) < 0) ||
         !CURRENCY_RE.test(row.currency) ||
         !present(row.recorded_at)
     );

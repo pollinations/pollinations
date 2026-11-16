@@ -101,6 +101,7 @@ describe("RunwayTab labels", () => {
                 ...base,
                 vendor: "stripe sales",
                 values: { january: 95, february: null, plan: 190 },
+                creditValues: { january: -7 },
                 details: [
                     {
                         label: "Gross customer payments",
@@ -109,6 +110,7 @@ describe("RunwayTab labels", () => {
                     {
                         label: "Stripe fees",
                         values: { january: -5, plan: -10 },
+                        creditValues: { january: -7 },
                     },
                 ],
             },
@@ -126,6 +128,10 @@ describe("RunwayTab labels", () => {
             "Stripe fees",
         ]);
         expect(displayed[0].values.january).toBe(140);
+        expect(displayed[0].creditValues).toBeUndefined();
+        expect(
+            displayed.find((r) => r.vendor === "Stripe fees")?.creditValues,
+        ).toEqual({ january: -7 });
         expect(displayed[0].values.february).toBeNull();
         expect(displayed[0].actualIssues?.january).toBe(
             "Historical settlement basis",
@@ -155,6 +161,8 @@ describe("RunwayTab labels", () => {
                 refunds: 100,
                 reversals: 20,
                 stripe_fees: 80,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 60,
                 net_sales: 880,
                 net_after_fees: 800,
@@ -170,6 +178,8 @@ describe("RunwayTab labels", () => {
                 refunds: 10,
                 reversals: 5,
                 stripe_fees: 5,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 2,
                 net_sales: 85,
                 net_after_fees: 80,
@@ -178,7 +188,10 @@ describe("RunwayTab labels", () => {
                 coverage_complete: 1,
             },
         ];
-        const result = buildRunway([], new Date(), [], undefined, sales);
+        const result = buildRunway([], new Date(), [], undefined, sales, {
+            baselineMonth: "2026-09",
+            asOf: "2026-10-14",
+        });
         const actual = result.columns.find(
             (c) => c.month === "2026-09" && c.kind === "actual",
         );
@@ -215,7 +228,7 @@ describe("RunwayTab labels", () => {
                 (sum, r) => sum + (r.values[forecast.id] ?? Number.NaN),
                 0,
             ),
-        ).toBeCloseTo(892.104, 8);
+        ).toBeCloseTo(800 + 80 * 1.1202, 8); // October ECB rate for future EUR.
         expect(actual.netUsd).toBeNull(); // No Bank coverage in this fixture.
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
@@ -538,6 +551,8 @@ describe("RunwayTab labels", () => {
                     refunds: 20,
                     net_sales: 100,
                     stripe_fees: 5,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: 0,
                     net_after_fees: 95,
                     payments: 3,

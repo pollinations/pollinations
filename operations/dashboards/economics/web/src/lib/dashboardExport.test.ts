@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
-import { dashboardExport } from "./dashboardExport";
+import { dashboardExport, dashboardSectionExport } from "./dashboardExport";
 
 it("exports all reporting months and aggregate values without source detail", () => {
     const data: Data = {
@@ -35,7 +35,8 @@ it("exports all reporting months and aggregate values without source detail", ()
             FIXTURES.economics_revenue_share_api as Data["revenueShare"],
         planningError: "private-planning-error",
     };
-    const report = dashboardExport(data, new Date("2026-11-16T12:00:00Z"));
+    const now = new Date("2026-11-16T12:00:00Z");
+    const report = dashboardExport(data, now);
     expect(report.trends.company.map(({ month }) => month)).toHaveLength(11);
     expect(
         report.runway.categories.find(({ category }) => category === "payroll"),
@@ -62,4 +63,24 @@ it("exports all reporting months and aggregate values without source detail", ()
     expect(json).not.toMatch(
         /private-|recipient_id|recipientId|access|evidence/,
     );
+    const { schemaVersion, exportedAt, currency, nullMeans, tableFormat } =
+        report;
+    for (const section of [
+        "runway",
+        "trends",
+        "vendorBalances",
+        "providers",
+        "inference",
+        "gpus",
+        "revenueShare",
+    ] as const) {
+        expect(dashboardSectionExport(data, section, now)).toEqual({
+            schemaVersion,
+            exportedAt,
+            currency,
+            nullMeans,
+            tableFormat,
+            [section]: report[section],
+        });
+    }
 });

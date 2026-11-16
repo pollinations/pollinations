@@ -7,7 +7,9 @@ import {
     Chip,
     ColorModeToggle,
     cn,
+    DownloadIcon,
     Drawer,
+    Dropdown,
     DropdownItem,
     EyeIcon,
     GlobeIcon,
@@ -46,7 +48,11 @@ import {
 } from "./components/Filters";
 import { ReconcileProContext } from "./components/ReconcilePro";
 import { GoogleDriveIcon, TinybirdIcon } from "./components/SourceIcons";
-import { dashboardExport } from "./lib/dashboardExport";
+import {
+    type DashboardExportSection,
+    dashboardExport,
+    dashboardSectionExport,
+} from "./lib/dashboardExport";
 import { dataConfidence, unreconciledBankAmount } from "./lib/dataConfidence";
 import { FINANCE_FOLDER_URL } from "./lib/driveSources";
 import {
@@ -132,6 +138,39 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
+
+const DOWNLOAD_OPTIONS = [
+    { section: "all", label: "All dashboard data", sources: DATA_SOURCES },
+    { section: "runway", label: "Runway", sources: VIEW_SOURCES.runway },
+    {
+        section: "trends",
+        label: "Trends",
+        sources: [...VIEW_SOURCES.trends, "privateConfig"],
+    },
+    {
+        section: "vendorBalances",
+        label: "Vendor balances",
+        sources: VIEW_SOURCES.balances,
+    },
+    { section: "providers", label: "Providers", sources: VIEW_SOURCES.vendors },
+    {
+        section: "inference",
+        label: "Inference",
+        sources: VIEW_SOURCES.inference,
+    },
+    { section: "gpus", label: "GPUs", sources: VIEW_SOURCES.gpu },
+    {
+        section: "revenueShare",
+        label: "Revenue share",
+        sources: VIEW_SOURCES["revenue-share"],
+    },
+] as const satisfies readonly {
+    section: DashboardExportSection | "all";
+    label: string;
+    sources: readonly DataSource[];
+}[];
+
+type DownloadOption = (typeof DOWNLOAD_OPTIONS)[number];
 
 const RECONCILE_MODE_KEY = "economics.reconcile";
 
@@ -480,6 +519,7 @@ function EconomicsDrawer({
     activeView,
     data,
     reconciliationBadge,
+    downloadControl,
     footer,
     onCollapse,
     onViewChange,
@@ -488,6 +528,7 @@ function EconomicsDrawer({
     activeView: ActiveView;
     data: Data | null;
     reconciliationBadge: ReactNode;
+    downloadControl: ReactNode;
     footer: ReactNode;
     onCollapse?: () => void;
     onViewChange: (value: ActiveView) => void;
@@ -522,6 +563,7 @@ function EconomicsDrawer({
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
+                {downloadControl}
                 {signOutError && <Alert>{signOutError}</Alert>}
                 <AccountMenu
                     name={
@@ -576,6 +618,7 @@ function EconomicsShell({
     children,
     data,
     reconciliationBadge,
+    downloadControl,
     footer,
     onViewChange,
 }: {
@@ -584,6 +627,7 @@ function EconomicsShell({
     children: ReactNode;
     data: Data | null;
     reconciliationBadge: ReactNode;
+    downloadControl: ReactNode;
     footer: ReactNode;
     onViewChange: (value: ActiveView) => void;
 }) {
@@ -622,6 +666,7 @@ function EconomicsShell({
             activeView={activeView}
             data={data}
             reconciliationBadge={reconciliationBadge}
+            downloadControl={downloadControl}
             footer={footer}
             onViewChange={handleViewChange}
         />
@@ -638,6 +683,7 @@ function EconomicsShell({
                     activeView={activeView}
                     data={data}
                     reconciliationBadge={reconciliationBadge}
+                    downloadControl={downloadControl}
                     footer={footer}
                     onCollapse={() => setNavCollapsed(true)}
                     onViewChange={handleViewChange}
@@ -970,16 +1016,27 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState(false);
 
-    async function downloadData() {
+    async function downloadData({ section, sources }: DownloadOption) {
         setDownloading(true);
         setDownloadError(false);
         try {
             const snapshot = await loadAll(
-                DATA_SOURCES,
+                sources,
                 undefined,
                 planningDocument,
             );
-            const report = dashboardExport(snapshot);
+            const now = new Date();
+            const report =
+                section === "all"
+                    ? dashboardExport(snapshot, now)
+                    : dashboardSectionExport(snapshot, section, now);
+            const fileSection =
+                section === "all"
+                    ? "dashboard"
+                    : section.replace(
+                          /[A-Z]/g,
+                          (letter) => `-${letter.toLowerCase()}`,
+                      );
             const url = URL.createObjectURL(
                 new Blob([JSON.stringify(report)], {
                     type: "application/json",
@@ -987,7 +1044,7 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
             );
             const link = document.createElement("a");
             link.href = url;
-            link.download = `economics-dashboard-${report.exportedAt.slice(0, 10)}.json`;
+            link.download = `economics-${fileSection}-${report.exportedAt.slice(0, 10)}.json`;
             document.body.appendChild(link);
             try {
                 link.click();
@@ -1166,6 +1223,58 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
         showVendorFilter ||
         showCategoryFilter;
 
+    const downloadControl = (
+        <>
+            <Dropdown
+                side="top"
+                portalled={false}
+                className="polli:max-h-[55dvh] polli:w-52 polli:max-w-[74vw] polli:overflow-y-auto polli:p-1"
+                trigger={(open) => (
+                    <Button
+                        intent="neutral"
+                        icon={<DownloadIcon />}
+                        className="polli:min-h-11 polli:w-full polli:justify-start polli:px-3"
+                        disabled={downloading}
+                        aria-busy={downloading}
+                    >
+                        <span className="flex-1 text-left">
+                            {downloading
+                                ? "Preparing download…"
+                                : "Download data"}
+                        </span>
+                        <ChevronIcon expanded={open} />
+                    </Button>
+                )}
+            >
+                {(close) =>
+                    DOWNLOAD_OPTIONS.map((option) => (
+                        <DropdownItem
+                            key={option.section}
+                            className={
+                                option.section === "all"
+                                    ? "polli:mb-1 polli:bg-theme-bg-subtle"
+                                    : undefined
+                            }
+                            onClick={() => {
+                                close();
+                                void downloadData(option);
+                            }}
+                        >
+                            {option.label}
+                        </DropdownItem>
+                    ))
+                }
+            </Dropdown>
+            {downloadError && (
+                <p
+                    role="alert"
+                    className="px-2 text-xs text-intent-warning-text"
+                >
+                    Couldn’t download the data. Try again.
+                </p>
+            )}
+        </>
+    );
     const drawerFooter = (
         <>
             <div className="flex flex-wrap items-center gap-2">
@@ -1364,6 +1473,7 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 accountUser={accountUser}
                 activeView={activeView}
                 data={data}
+                downloadControl={downloadControl}
                 footer={drawerFooter}
                 onViewChange={(value) => {
                     setCheckScope(null);
@@ -1481,27 +1591,8 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                                 >
                                     Refresh data
                                 </button>
-                                <button
-                                    type="button"
-                                    disabled={downloading}
-                                    className="cursor-pointer underline-offset-4 hover:text-theme-text-strong hover:underline disabled:cursor-wait disabled:opacity-50"
-                                    onClick={() => void downloadData()}
-                                >
-                                    {downloading
-                                        ? "Preparing download…"
-                                        : "Download data"}
-                                </button>
                             </div>
                         </div>
-                        {downloadError && (
-                            <p
-                                role="alert"
-                                className="text-sm text-intent-warning-text"
-                            >
-                                Couldn’t download the dashboard data. Try
-                                Download data again.
-                            </p>
-                        )}
                         <ReconcileProContext.Provider value={pro}>
                             <div className="flex flex-col gap-5">{content}</div>
                         </ReconcileProContext.Provider>

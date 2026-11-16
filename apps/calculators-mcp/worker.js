@@ -9,6 +9,7 @@ import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
 import { versionTools } from "./tools/versions.js";
+import { unitTools } from "./tools/units.js";
 
 const handler = createMcpHandler(
     () => {
@@ -26,6 +27,7 @@ const handler = createMcpHandler(
             ...diffTools,
             ...fractionTools,
             ...versionTools,
+            ...unitTools,
         ]) {
             server.registerTool(
                 name,

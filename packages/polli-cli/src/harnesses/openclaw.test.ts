@@ -5,12 +5,12 @@ import {
     mkdtempSync,
     readFileSync,
     rmSync,
-    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { expectOwnerOnly } from "../testing/file-mode.js";
 import {
     configureOpenClaw,
     disableOpenClaw,
@@ -89,7 +89,7 @@ describe("openclaw harness", () => {
         expect(doc.agents.defaults.model.primary).toBe("pollinations/kimi");
         expect(doc.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
         expect(read(skillFile())).toContain("name: polli");
-        expect(statSync(configFile()).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(configFile());
         expect(openclaw.status(ctx)).toMatchObject({
             configured: true,
             model: "kimi",

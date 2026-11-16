@@ -2487,6 +2487,25 @@ describe("refusal-only completions", () => {
             chunks.push(chunk);
         expect(chunks).toEqual([refusal]);
     });
+
+    it("returns the refusal as text from chat() and raw generateText()", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockImplementation(async () =>
+            makeResponse({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: null, refusal },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        const response = await chat([{ role: "user", content: "hello" }]);
+        expect(response.text).toBe(refusal);
+        const raw = await generateText("hello", { raw: true });
+        expect(typeof raw === "string" ? raw : raw.text).toBe(refusal);
+    });
 });
 
 describe("buffered chat completion errors", () => {

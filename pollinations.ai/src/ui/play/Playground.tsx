@@ -348,6 +348,7 @@ function VoicePicker({
                 trigger={(open) => (
                     <Button
                         type="button"
+                        intent="neutral"
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Voice: ${value}`}
                     >
@@ -407,6 +408,7 @@ function ModelPicker({
                     <Button
                         type="button"
                         size="lg"
+                        intent="neutral"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}

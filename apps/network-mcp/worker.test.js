@@ -37,6 +37,106 @@ async function clientFor(t, modern = false) {
     t.after(() => client.close());
     return client;
 }
+test("email policy parses SPF terms, joins split TXT chunks and reads DMARC", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const name = url.searchParams.get("name");
+        if (name === "example.com")
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    // Two quoted strings in one answer: the record is longer than one
+                    // TXT character-string and was split by the sender's DNS server.
+                    {
+                        type: 16,
+                        data: '"v=spf1 ip4:198.51.100.0/24 include:_spf." "example.net ~all"',
+                    },
+                    {
+                        type: 16,
+                        data: '"google-site-verification=not-an-spf-record"',
+                    },
+                ],
+            });
+        if (name === "_dmarc.example.com")
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    {
+                        type: 16,
+                        data: '"v=DMARC1;p=reject;sp=quarantine;pct=50;rua=mailto:r@example.com"',
+                    },
+                ],
+            });
+        return Response.json({ Status: 0, Answer: [] });
+    });
+    const client = await clientFor(t);
+    const policy = await call(client, "email_policy_records", {
+        domain: "example.com",
+    });
+    assert.equal(
+        policy.spf.record,
+        "v=spf1 ip4:198.51.100.0/24 include:_spf.example.net ~all",
+    );
+    assert.equal(policy.spf.dnsLookups, 1);
+    assert.equal(policy.spf.withinLookupLimit, true);
+    assert.equal(policy.spf.recordsPublished, 1);
+    assert.deepEqual(policy.spf.mechanisms, [
+        { term: "ip4:198.51.100.0/24", qualifier: "+", dnsLookup: false },
+        { term: "include:_spf.example.net", qualifier: "+", dnsLookup: true },
+        { term: "all", qualifier: "~", dnsLookup: false },
+    ]);
+    assert.equal(policy.dmarc.policy, "reject");
+    assert.equal(policy.dmarc.subdomainPolicy, "quarantine");
+    assert.equal(policy.dmarc.tags.pct, "50");
+});
+
+test("email policy counts lookups against the limit and flags duplicate records", async (t) => {
+    const many = Array.from(
+        { length: 11 },
+        (_, i) => `include:s${i}.example.net`,
+    ).join(" ");
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const name = url.searchParams.get("name");
+        if (name === "heavy.example")
+            return Response.json({
+                Status: 0,
+                Answer: [{ type: 16, data: `"v=spf1 ${many} -all"` }],
+            });
+        if (name === "double.example")
+            return Response.json({
+                Status: 0,
+                Answer: [
+                    { type: 16, data: '"v=spf1 include:a.example -all"' },
+                    { type: 16, data: '"v=spf1 include:b.example -all"' },
+                ],
+            });
+        if (name === "_dmarc.heavy.example")
+            return Response.json({
+                Status: 0,
+                Answer: [{ type: 16, data: '"v=DMARC1; p=none"' }],
+            });
+        return Response.json({ Status: 0, Answer: [] });
+    });
+    const client = await clientFor(t);
+    const heavy = await call(client, "email_policy_records", {
+        domain: "heavy.example",
+    });
+    assert.equal(heavy.spf.dnsLookups, 11);
+    assert.equal(heavy.spf.withinLookupLimit, false);
+    assert.equal(heavy.dmarc.policy, "none");
+
+    const doubled = await call(client, "email_policy_records", {
+        domain: "double.example",
+    });
+    assert.equal(doubled.spf.recordsPublished, 2);
+    assert.equal(doubled.spf.multipleRecords, true);
+    assert.equal(doubled.dmarc, null);
+});
+
+async function call(client, name, args = {}) {
+    const result = await client.callTool({ name, arguments: args });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    return JSON.parse(result.content[0].text);
+}
 test("private Worker and public-internet routing in both environments", () => {
     const config = JSON.parse(
         readFileSync(new URL("./wrangler.jsonc", import.meta.url)),
@@ -59,6 +159,7 @@ for (const modern of [false, true])
             "asn_whois",
             "dns_lookup",
             "domain_whois",
+            "email_policy_records",
             "http_probe",
             "inspect_cidr",
             "inspect_mac",
@@ -74,6 +175,7 @@ for (const modern of [false, true])
                 "asn_whois",
                 "dns_lookup",
                 "domain_whois",
+                "email_policy_records",
                 "http_probe",
                 "ip_whois",
             ],

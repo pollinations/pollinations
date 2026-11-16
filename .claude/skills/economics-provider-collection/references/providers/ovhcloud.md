@@ -7,6 +7,7 @@ Canonical vendor: `ovhcloud`
 - Status: signed OVH credit API works end to end.
 - Account: `fd415008-ovh` (`Myceli.AI OÜ`), login `elliot@myceli.ai`.
 - Billing: <https://manager.eu.ovhcloud.com/#/billing/payment/credits>
+- Startup voucher operations: <https://manager.eu.ovhcloud.com/#/billing/payment/credits/STARTUP_PROGRAM>
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
   positive. Preserve provider dates and use original invoice service periods.
 
@@ -43,6 +44,9 @@ Collection endpoints:
 - Invoice lines carry service periods and distinguish model inference, Public
   Cloud snapshots, and GPU capacity. Voucher application can reduce the total
   due to zero; use the service subtotal before `Use of your Voucher` for cost.
+- For month-to-date usage, use the project’s Billing Control → Current usage.
+  On 2026-11-16, Estimate of my next invoice omitted the AI Endpoints usage
+  visible in Current usage. Retain current usage as evidence until invoiced.
 - `GET /me` verifies the account, organization and email. Startup balance
   `expiring[]` and `balanceDetails[].expiring[]` include remaining amount and
   `expirationDate`; normalize the observed timezone to UTC, never invent an

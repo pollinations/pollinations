@@ -79,6 +79,17 @@ class MessageDeliveryTests(unittest.IsolatedAsyncioTestCase):
             "https://example.com", files=[], mention_author=False, suppress_embeds=True
         )
 
+    async def test_line_over_the_length_cap_is_split(self):
+        channel = SimpleNamespace(send=AsyncMock())
+        paragraph = "word " * 500
+
+        await _send_chunk(channel, paragraph, 2000, False, None, [], False)
+
+        sent = [call.args[0] for call in channel.send.await_args_list]
+        self.assertEqual(len(sent), 2)
+        self.assertTrue(all(len(chunk) <= 2000 for chunk in sent))
+        self.assertEqual("".join(sent).replace(" ", ""), "word" * 500)
+
 
 class ClientMediaTests(unittest.IsolatedAsyncioTestCase):
     async def test_video_urls_are_text_not_image_inputs(self):

@@ -1699,7 +1699,13 @@ async def _send_chunk(
 
     chunks = []
     current_chunk = ""
-    for line in text.split("\n"):
+    # A line longer than the cap is cut, or Discord rejects the whole message.
+    lines = [
+        line[start : start + max_length]
+        for line in text.split("\n")
+        for start in range(0, len(line) or 1, max_length)
+    ]
+    for line in lines:
         if len(current_chunk) + len(line) + 1 <= max_length:
             current_chunk += line + "\n"
         else:

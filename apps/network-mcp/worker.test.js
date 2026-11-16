@@ -56,6 +56,7 @@ for (const modern of [false, true])
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "ct_subdomains",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "ct_subdomains",
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -418,4 +425,133 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("CT subdomain lookup returns recent public observations without forwarding credentials", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "crt.live");
+        assert.equal(url.pathname, "/api/v1/domain/example.com");
+        assert.equal(url.searchParams.get("sort"), "recent");
+        assert.equal(url.searchParams.get("limit"), "2");
+        assert.equal(url.searchParams.get("offset"), "10");
+        assert.equal(url.searchParams.get("filter"), "api");
+        assert.deepEqual(init.headers, { Accept: "application/json" });
+        assert.equal(init.redirect, "manual");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        return Response.json({
+            apex: "example.com",
+            count: 2,
+            total: 12,
+            total_capped: false,
+            names: [
+                { name: "api.example.com", first_seen: "2026-11-13" },
+                { name: "old-api.example.com", first_seen: "2026-11-10" },
+            ],
+            has_more: true,
+            next_offset: 12,
+        });
+    });
+
+    const client = await clientFor(t);
+    const result = await client.callTool({
+        name: "ct_subdomains",
+        arguments: {
+            domain: "Example.COM.",
+            limit: 2,
+            offset: 10,
+            filter: "api",
+        },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        domain: "example.com",
+        count: 2,
+        total: 12,
+        total_capped: false,
+        names: [
+            { name: "api.example.com", first_seen: "2026-11-13" },
+            { name: "old-api.example.com", first_seen: "2026-11-10" },
+        ],
+        has_more: true,
+        next_offset: 12,
+    });
+    assert.equal(requests.length, 1);
+});
+
+test("CT subdomain lookup rejects invalid domains before I/O", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async () => {
+        throw new Error("Unexpected network request");
+    });
+    const client = await clientFor(t);
+    for (const domain of [
+        "https://example.com",
+        "example.com/path",
+        "localhost",
+        "bad..example.com",
+        "example.com:443",
+    ]) {
+        const result = await client.callTool({
+            name: "ct_subdomains",
+            arguments: { domain },
+        });
+        assert.equal(result.isError, true, domain);
+    }
+    assert.equal(stub.mock.callCount(), 0);
+});
+
+test("CT subdomain lookup surfaces rate limits and bounds malformed responses", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response("slow down", {
+                status: 429,
+                headers: { "retry-after": "30" },
+            }),
+    );
+    const client = await clientFor(t);
+    const limited = await client.callTool({
+        name: "ct_subdomains",
+        arguments: { domain: "example.com" },
+    });
+    assert.equal(limited.isError, true);
+    assert.match(limited.content[0].text, /429.*30/);
+
+    stub.mock.mockImplementation(async () =>
+        new Response("x".repeat(512 * 1024 + 1), {
+            headers: { "content-type": "application/json" },
+        }),
+    );
+    const oversized = await client.callTool({
+        name: "ct_subdomains",
+        arguments: { domain: "example.com" },
+    });
+    assert.equal(oversized.isError, true);
+    assert.match(oversized.content[0].text, /exceeds 512 KiB/);
+});
+
+test("CT subdomain lookup rejects invalid service JSON and bad entries", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async () =>
+        Response.json({ apex: "example.com", names: [{ name: "api.example.com" }] }),
+    );
+    const client = await clientFor(t);
+    const result = await client.callTool({
+        name: "ct_subdomains",
+        arguments: { domain: "example.com" },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /invalid hostname entry/);
+
+    stub.mock.mockImplementation(async () => new Response("not JSON"));
+    const invalidJson = await client.callTool({
+        name: "ct_subdomains",
+        arguments: { domain: "example.com" },
+    });
+    assert.equal(invalidJson.isError, true);
+    assert.match(invalidJson.content[0].text, /invalid JSON/);
 });

@@ -47,11 +47,15 @@ function readBearerToken(request) {
 
 function unauthorizedResponse() {
     return Response.json(
-        { error: "unauthorized", message: "Send a Pollinations API key as a bearer token." },
+        {
+            error: "unauthorized",
+            message: "Send a Pollinations API key as a bearer token.",
+        },
         {
             status: 401,
             headers: {
-                "WWW-Authenticate": 'Bearer realm="air-quality-mcp.pollinations.ai"',
+                "WWW-Authenticate":
+                    'Bearer realm="air-quality-mcp.pollinations.ai"',
             },
         },
     );
@@ -68,15 +72,24 @@ export default {
                 stateless: true,
             });
         }
-        if (url.pathname !== "/") return new Response("Not found", { status: 404 });
+        if (url.pathname !== "/")
+            return new Response("Not found", { status: 404 });
         const token = readBearerToken(request);
         if (!token) return unauthorizedResponse();
         if (
             request.method === "POST" &&
-            Array.isArray(await request.clone().json().catch(() => null))
+            Array.isArray(
+                await request
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
         ) {
             return Response.json(
-                { error: "invalid_request", message: "Batch requests are not supported." },
+                {
+                    error: "invalid_request",
+                    message: "Batch requests are not supported.",
+                },
                 { status: 400 },
             );
         }

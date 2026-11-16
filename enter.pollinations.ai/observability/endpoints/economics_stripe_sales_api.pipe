@@ -25,16 +25,25 @@ SQL >
     FROM economics_stripe_purchase_month
     GROUP BY account_id, transaction_id
 
+NODE latest_coverage
+SQL >
+    SELECT *
+    FROM economics_stripe_sync
+    ORDER BY collected_at DESC, coverage_end DESC
+    LIMIT 1 BY account_id, month
+
 NODE sales_activity
 SQL >
-    SELECT t.* EXCEPT (classification),
+    SELECT t.* EXCEPT (classification, balance_type),
+        -- Existing transactions predate the fee-credit balance export.
+        if(t.balance_type = '', 'payments', t.balance_type) AS balance_type,
         if(p.purchase_month != '' AND s.month != '',
             p.purchase_month, formatDateTime(t.created, '%Y-%m')) AS sales_month,
         if(sales_month = formatDateTime(t.created, '%Y-%m'), t.classification, '') AS classification
     FROM economics_stripe_transactions AS t
     LEFT JOIN purchase_months AS p ON t.account_id = p.account_id AND t.transaction_id = p.transaction_id
         AND t.reporting_category IN ('refund', 'refund_failure', 'dispute', 'dispute_reversal', 'partial_capture_reversal')
-    LEFT JOIN economics_stripe_sync AS s ON t.account_id = s.account_id AND p.purchase_month = s.month
+    LEFT JOIN latest_coverage AS s ON t.account_id = s.account_id AND p.purchase_month = s.month
 
 NODE monthly_facts
 SQL >
@@ -71,7 +80,7 @@ SQL >
         f.enter_unmatched_payments AS enter_unmatched_payments,
         f.fraud_refunds_minor AS fraud_refunds_minor, f.fraud_reversals_minor AS fraud_reversals_minor,
         f.fraud_fees_minor AS fraud_fees_minor, f.fraud_transactions AS fraud_transactions, f.fraud_evidence AS fraud_evidence
-    FROM economics_stripe_sync AS s
+    FROM latest_coverage AS s
     LEFT JOIN (SELECT * FROM monthly_facts
         WHERE gross != 0 OR refund_minor != 0 OR reversal_minor != 0 OR fees != 0 OR credit_fees != 0 OR credit_funding != 0 OR payments != 0 OR refund_count != 0) AS f
         ON s.account_id = f.account_id AND s.month = f.month
@@ -91,7 +100,7 @@ SQL >
         min(s.collected_at) AS collected_at,
         toUInt8(missing_accounts = '' AND count_mismatches = 0
             AND min(s.coverage_end) >= addMonths(toDate(concat(s.month, '-01')), 1)) AS coverage_complete
-    FROM economics_stripe_sync AS s
+    FROM latest_coverage AS s
     LEFT JOIN account_counts AS c ON s.account_id = c.account_id AND s.month = c.month
     GROUP BY s.month
 

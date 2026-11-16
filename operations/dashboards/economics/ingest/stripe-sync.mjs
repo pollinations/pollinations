@@ -302,7 +302,11 @@ export async function sync(exports, token) {
             )
         ).data;
     const previous = await query("SELECT * FROM economics_stripe_transactions");
-    const previousCoverage = await query("SELECT * FROM economics_stripe_sync");
+    const previousCoverage = await query(`
+        SELECT * FROM economics_stripe_sync
+        ORDER BY collected_at DESC, coverage_end DESC
+        LIMIT 1 BY account_id, month
+    `);
     const rows = mergeTransactions(previous, exports);
     const coverage = new Map(
         previousCoverage.map((r) => [`${r.account_id}:${r.month}`, r]),

@@ -211,11 +211,18 @@ async function request(url, token, options = {}, preview = true) {
     return data;
 }
 
-export async function collect(stream, start, end, key) {
+export async function collect(
+    stream,
+    start,
+    end,
+    key,
+    includePurchaseMonths = false,
+) {
     assert(key && !key.includes("_test_"), "Live Stripe access required");
     const account = await request("https://api.stripe.com/v1/account", key);
     assert.equal(account.id, ACCOUNTS[stream]?.id, "Wrong Stripe account");
     const rows = [];
+    const purchaseMonths = [];
     let cursor = "";
     while (true) {
         const p = new URLSearchParams({
@@ -224,6 +231,7 @@ export async function collect(stream, start, end, key) {
             "created[lt]": String(end),
         });
         if (cursor) p.set("starting_after", cursor);
+        if (includePurchaseMonths) p.append("expand[]", "data.source.charge");
         const page = await request(
             `https://api.stripe.com/v1/balance_transactions?${p}`,
             key,
@@ -232,7 +240,34 @@ export async function collect(stream, start, end, key) {
             Array.isArray(page.data) && typeof page.has_more === "boolean",
             "Invalid Stripe page",
         );
-        rows.push(...page.data);
+        for (const row of page.data) {
+            const charge = row.source?.charge;
+            if (
+                [
+                    "refund",
+                    "refund_failure",
+                    "dispute",
+                    "dispute_reversal",
+                    "partial_capture_reversal",
+                ].includes(row.reporting_category) &&
+                charge?.id?.startsWith("ch_") &&
+                Number.isInteger(charge.created) &&
+                charge.created <= row.created
+            ) {
+                purchaseMonths.push({
+                    account_id: account.id,
+                    transaction_id: row.id,
+                    charge_id: charge.id,
+                    purchase_month: stamp(charge.created).slice(0, 7),
+                    recorded_at: stamp(Math.floor(Date.now() / 1000)),
+                });
+            }
+            rows.push(
+                includePurchaseMonths
+                    ? { ...row, source: id(row.source) }
+                    : row,
+            );
+        }
         if (!page.has_more) break;
         assert(
             page.data.length && page.data.at(-1).id !== cursor,
@@ -246,6 +281,7 @@ export async function collect(stream, start, end, key) {
         start,
         end,
         rows,
+        ...(includePurchaseMonths ? { purchaseMonths } : {}),
     };
     normalize(exported, stream);
     return exported;
@@ -477,6 +513,7 @@ async function main() {
         start,
         end,
         process.env[ACCOUNTS[stream].key],
+        flags.includes("--write"),
     );
     const output = flags.find((f) => f.startsWith("--export="))?.slice(9);
     if (output)
@@ -499,12 +536,26 @@ async function main() {
                     process.env.TINYBIRD_STRIPE_SYNC_TOKEN,
                 ),
             );
-        console.log(
-            await sync(
-                [{ exported, stream }],
-                process.env.TINYBIRD_STRIPE_SYNC_TOKEN,
-            ),
-        );
+        const token = process.env.TINYBIRD_STRIPE_SYNC_TOKEN;
+        console.log(await sync([{ exported, stream }], token));
+        if (exported.purchaseMonths.length > 0) {
+            const imported = await request(
+                `${HOST}/v0/events?name=economics_stripe_purchase_month&wait=true`,
+                token,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-ndjson" },
+                    body: exported.purchaseMonths
+                        .map((row) => JSON.stringify(row))
+                        .join("\n"),
+                },
+            );
+            assert.equal(
+                imported.successful_rows,
+                exported.purchaseMonths.length,
+            );
+            assert.equal(imported.quarantined_rows, 0);
+        }
     }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

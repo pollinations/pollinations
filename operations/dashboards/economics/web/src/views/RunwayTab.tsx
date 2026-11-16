@@ -112,7 +112,7 @@ const REVENUE_HELP: Record<string, string[]> = {
         "May relate to older sales.",
     ],
     "Refunds, disputes & chargebacks": [
-        "Customer refunds, disputed payments, chargebacks and other payment reversals recorded this month, including older purchases and failed payments.",
+        "Matched refunds and disputes follow the original purchase month. Unmatched adjustments and failed payments use the Stripe activity month.",
         "Includes dispute fees, less recoveries and returned dispute fees.",
     ],
     "stripe sales": [

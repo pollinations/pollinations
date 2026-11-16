@@ -18,9 +18,27 @@ SQL >
     FROM economics_stripe_transactions
     WHERE reporting_category = 'charge_failure'
 
+NODE purchase_months
+SQL >
+    SELECT account_id, transaction_id,
+        argMax(purchase_month, (recorded_at, charge_id)) AS purchase_month
+    FROM economics_stripe_purchase_month
+    GROUP BY account_id, transaction_id
+
+NODE sales_activity
+SQL >
+    SELECT t.* EXCEPT (classification),
+        if(p.purchase_month != '' AND s.month != '',
+            p.purchase_month, formatDateTime(t.created, '%Y-%m')) AS sales_month,
+        if(sales_month = formatDateTime(t.created, '%Y-%m'), t.classification, '') AS classification
+    FROM economics_stripe_transactions AS t
+    LEFT JOIN purchase_months AS p ON t.account_id = p.account_id AND t.transaction_id = p.transaction_id
+        AND t.reporting_category IN ('refund', 'refund_failure', 'dispute', 'dispute_reversal', 'partial_capture_reversal')
+    LEFT JOIN economics_stripe_sync AS s ON t.account_id = s.account_id AND p.purchase_month = s.month
+
 NODE monthly_facts
 SQL >
-    SELECT t.account_id AS account_id, formatDateTime(created, '%Y-%m') AS month,
+    SELECT t.account_id AS account_id, sales_month AS month,
         t.revenue_stream AS revenue_stream, currency,
         sumIf(amount, reporting_category = 'charge') AS gross,
         -sumIf(amount, reporting_category IN ('refund', 'refund_failure')) AS refund_minor,
@@ -37,9 +55,8 @@ SQL >
         -sumIf(amount, classification = 'prior_period_fraud' AND reporting_category IN ('dispute', 'dispute_reversal')) AS fraud_reversals_minor,
         sumIf(fee, classification = 'prior_period_fraud' AND balance_type = 'payments') AS fraud_fees_minor,
         countIf(classification = 'prior_period_fraud') AS fraud_transactions,
-        arrayDistinct(arrayFlatten(groupArrayIf(evidence, classification = 'prior_period_fraud'))) AS fraud_evidence,
-        count() AS transactions
-    FROM economics_stripe_transactions AS t
+        arrayDistinct(arrayFlatten(groupArrayIf(evidence, classification = 'prior_period_fraud'))) AS fraud_evidence
+    FROM sales_activity AS t
     LEFT JOIN enter_charges AS e ON t.source_id = e.charge_id
     LEFT JOIN failed_charges AS f ON t.account_id = f.account_id AND t.source_id = f.source_id
     GROUP BY account_id, month, revenue_stream, currency
@@ -61,8 +78,8 @@ SQL >
 
 NODE account_counts
 SQL >
-    SELECT account_id, month, sum(transactions) AS transactions
-    FROM monthly_facts GROUP BY account_id, month
+    SELECT account_id, formatDateTime(created, '%Y-%m') AS month, count() AS transactions
+    FROM economics_stripe_transactions GROUP BY account_id, month
 
 NODE month_coverage
 SQL >

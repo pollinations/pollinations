@@ -63,6 +63,28 @@ for (const variant of ["flare", "sunburst"]) {
     });
 }
 
+test("a HEAD request resolves the query model like GET", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    // HEAD answers from the GET handler, so it must read the same query. When
+    // it fell back to the route default, a paid-only model answered 200.
+    const model = "openai/gpt-image-2.6-flare";
+    const unpaid = await fetchWorker(`/image/head-model-check?model=${model}`, {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    expect(unpaid.status).toBe(402);
+
+    // A model of the wrong modality is rejected before any provider runs, so
+    // this proves the requested model reached validation on HEAD.
+    const wrongModality = await fetchWorker(
+        "/image/head-model-check?model=openai/gpt-5.4-nano",
+        { method: "HEAD", headers: { Authorization: `Bearer ${paidApiKey}` } },
+    );
+    expect(wrongModality.status).toBe(400);
+});
+
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
     const caller = await createTestApiKey();

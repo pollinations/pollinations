@@ -54,14 +54,14 @@ export async function generatePalette() {
     );
     if (!recipe) throw new Error("bg-pale recipe not found in tokens.css");
 
-    // bg-active = the brighter accent step (favicon / small standalone marks).
+    // bg-active = the brand-accent step (favicon / small standalone marks).
     // Its lightness is `calc(<base> + var(--polli-nudge))`, so read the nudge too.
     const nudge = css.match(/--polli-nudge:\s*([\d.]+)/);
     if (!nudge) throw new Error("--polli-nudge not found in tokens.css");
     const active = css.match(
-        /--polli-color-bg-active:\s*oklch\(calc\(([\d.]+) \+ var\(--polli-nudge\)\) ([\d.]+) var\(--polli-hue\)\)/,
+        /--polli-color-brand-accent:\s*oklch\(calc\(([\d.]+) \+ var\(--polli-nudge\)\) ([\d.]+) var\(--polli-hue\)\)/,
     );
-    if (!active) throw new Error("bg-active recipe not found in tokens.css");
+    if (!active) throw new Error("brand-accent recipe not found in tokens.css");
 
     // neutral bg-pale === light surface-opaque (first/`:root` occurrence).
     const surf = css.match(

@@ -227,7 +227,7 @@
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(
         --polli-slider-fill,
-        var(--polli-color-bg-active)
+        var(--polli-color-fill)
     );
     /* A neutral track, so the amber fill alone shows the value. */
     --polli-slider-track-value: var(

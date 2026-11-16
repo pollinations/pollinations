@@ -100,7 +100,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
-                            "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
+                            "polli:cursor-not-allowed polli:bg-theme-fill polli:text-theme-on-fill polli:opacity-50",
                         )}
                     >
                         <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
@@ -135,8 +135,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
                             open
-                                ? "polli:bg-theme-bg-hover"
-                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
+                                ? "polli:bg-theme-fill-hover polli:text-theme-on-fill"
+                                : "polli:bg-theme-fill polli:text-theme-on-fill polli:hover:bg-theme-fill-hover",
                         )}
                     >
                         <span

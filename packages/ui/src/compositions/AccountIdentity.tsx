@@ -210,7 +210,7 @@ export function AccountMenu({
         <div
             data-theme="accent"
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:p-1 polli:pr-3 polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-bg-hover",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-fill polli:p-1 polli:pr-3 polli:text-theme-on-fill polli:transition-colors polli:hover:bg-theme-fill-hover",
                 className,
             )}
         >

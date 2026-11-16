@@ -226,10 +226,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             aria-label={`Select period, current ${summaryLabel}`}
                             className={cn(
                                 "polli-control polli:inline-flex polli:w-[320px] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
-                                "polli:bg-theme-bg-active polli:text-theme-text-base",
-                                "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
-                                isOpen &&
-                                    "polli:bg-theme-bg-hover polli:text-theme-text-strong",
+                                "polli:bg-theme-fill polli:text-theme-on-fill",
+                                "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-fill-hover",
+                                isOpen && "polli:bg-theme-fill-hover",
                             )}
                         >
                             <span className="polli:truncate">

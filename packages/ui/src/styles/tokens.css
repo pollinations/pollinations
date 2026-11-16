@@ -116,7 +116,9 @@
        button inside neutral chrome all rest on it. */
     --polli-color-bg-quiet:        oklch(0.918 0.022 var(--polli-hue) / 0.7);
     --polli-color-bg-subtle:       var(--polli-color-bg-quiet);
-    --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
+    /* The quiet tint (a chip, a chat bubble, selected text) is mixed from
+       the honey, so there is only ever one yellow on the page. */
+    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-honey) 45%, var(--polli-color-bg-pale));
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
@@ -312,7 +314,7 @@
     --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
     --polli-color-bg-quiet:        oklch(0.33 0.014 var(--polli-hue) / 0.7);
     --polli-color-bg-subtle:       var(--polli-color-bg-quiet);
-    --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
+    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-honey) 35%, var(--polli-color-bg-pale));
     --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);

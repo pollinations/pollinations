@@ -53,7 +53,7 @@ export function EditableComboboxToken({
             type="button"
             data-highlighted={highlighted ? "" : undefined}
             className={cn(
-                "polli-control polli:flex polli:h-7 polli:max-w-full polli:shrink-0 polli:items-center polli:gap-1 polli:rounded polli:px-1.5 polli:text-xs polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-active",
+                "polli-control polli:flex polli:h-7 polli:max-w-full polli:shrink-0 polli:items-center polli:gap-1 polli:rounded polli:px-1.5 polli:text-xs polli:transition-colors polli:hover:bg-theme-fill/40 polli:data-[highlighted]:bg-theme-fill/40",
                 className,
             )}
             {...buttonProps}
@@ -185,7 +185,7 @@ export function EditableCombobox({
                                     key={option}
                                     item={option}
                                     className={cn(
-                                        "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-hover",
+                                        "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-fill/40 polli:data-[highlighted]:bg-theme-fill/40",
                                         value === option &&
                                             "polli:bg-theme-fill polli:text-theme-on-fill",
                                     )}

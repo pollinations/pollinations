@@ -335,8 +335,23 @@ export async function generate(c: Context, url: URL, route: string) {
         return vmResponse(body, status, headers);
     }
     if (slot.action === "pay") {
-        // requireImagePayment ran checkCacheAndGenerate again for a paid or
-        // HEAD request, outside the free limit
+        // The paywall covers GET only.
+        if (request.method === "HEAD") {
+            const wait = Math.max(
+                1,
+                Math.ceil((slot.until - Date.now()) / 1000),
+            );
+            return new Response(null, {
+                status: 429,
+                headers: {
+                    ...VM_CORS,
+                    "Cache-Control": "no-store",
+                    "Retry-After": String(wait),
+                },
+            });
+        }
+        // requireImagePayment ran checkCacheAndGenerate again for a paid
+        // request, outside the free limit
         const unpaid = () =>
             background(
                 generateImage(
@@ -344,9 +359,7 @@ export async function generate(c: Context, url: URL, route: string) {
                     () => {},
                 ),
             );
-        // Its Express route was GET only: a HEAD passed the payment
-        // middleware, other methods got the router's 404
-        if (request.method === "HEAD") return unpaid();
+        // Its Express route was GET only: other methods got the router's 404
         if (request.method !== "GET") {
             return expressPage(
                 404,

@@ -1,7 +1,6 @@
 import { env, fetchMock } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
-import myceliHeadHeaders from "./fixtures/image.myceli.ai-head-browser.headers?raw";
 import browserHeaders from "./fixtures/image.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/image.pollinations.ai-get-json.headers?raw";
 import postBody from "./fixtures/image.pollinations.ai-post-json.body?raw";
@@ -282,22 +281,23 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     );
 });
 
-test("a rate-limited HEAD generates unpaid without booking the slot, as on the VM", async () => {
+test("a rate-limited HEAD returns 429 without calling gen or the paywall", async () => {
     const ip = await limitedIp();
     const hold = await alarmOf(ip);
 
-    const { response } = await call(`${CAPTURED_HEAD}${QUERY}`, {
+    const { response, text } = await call(`${CAPTURED_HEAD}${QUERY}`, {
         ip,
         host: "image.myceli.ai",
         method: "HEAD",
         headers: BROWSER,
     });
 
-    expect(response.status).toBe(200);
-    expect(Object.fromEntries(response.headers)).toEqual(
-        Object.fromEntries(capturedHeaders(myceliHeadHeaders)),
-    );
-    expect(events).toEqual(["gen"]);
+    expect(response.status).toBe(429);
+    expect(text).toBe("");
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("payment-required")).toBeNull();
+    expect(events).toEqual([]);
     expect(await alarmOf(ip)).toBe(hold);
     expect(await storedAt(`${CAPTURED_HEAD}${QUERY}`)).toBeNull();
 });
@@ -312,20 +312,6 @@ test("a browser sending a broken payment header still gets the page, not the pay
         expect(response.status, header).toBe(402);
         expect(text, header).toContain("Free limit reached");
     }
-});
-
-test("a rate-limited HEAD whose generation fails gets gen's 503", async () => {
-    const { response } = await call("/prompt/gen:429", {
-        ip: await limitedIp(),
-        method: "HEAD",
-        headers: CURL,
-    });
-
-    expect(response.status).toBe(503);
-    expect(response.headers.get("retry-after")).toBe("10");
-    expect(response.headers.get("content-type")).toBe(
-        "application/json; charset=utf-8",
-    );
 });
 
 test("a rate-limited POST, PUT, PATCH or DELETE gets Express's 404 page and no generation", async () => {

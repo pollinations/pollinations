@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Dilemma Arena",
+    "url": "https://tomdacatto.github.io/pollinations-dilemma-arena",
+    "description": "Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay with your own Pollen when you sign in.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-dilemma-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-06",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19310",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/afc860db-e9a2-4067-8ac7-3331e147797c"
+  },
+  {
     "emoji": "💼",
     "name": "Receipts Tower",
     "url": "https://patbing.github.io/receipts-tower",

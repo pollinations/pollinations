@@ -83,11 +83,7 @@ html {
    page. */
 .site-home-nav-group:has(.site-home-logo:hover)
     .site-home-nav-button:not([aria-current="page"]) {
-    background-color: color-mix(
-        in oklab,
-        var(--polli-color-fill) 40%,
-        transparent
-    );
+    background-color: var(--polli-color-fill-wash);
 }
 
 .site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {

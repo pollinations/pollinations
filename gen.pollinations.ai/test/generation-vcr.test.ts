@@ -1539,6 +1539,53 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     );
 });
 
+test("seed -1 regenerates identical chat requests through the coordinator", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const init = {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            messages: [
+                { role: "user", content: "vcr random seed regeneration" },
+            ],
+            seed: -1,
+        }),
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const { response, wait } = await fetchWorker(
+            "/v1/chat/completions",
+            init,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        await response.json();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    for (const { seed } of mocks.portkeyDirect.state.requests) {
+        expect(Number.isInteger(seed)).toBe(true);
+        expect(seed).toBeGreaterThanOrEqual(0);
+        expect(seed).toBeLessThanOrEqual(2147483647);
+    }
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
+    }
+});
+
 test("chat completions reject a successful envelope without usage", async ({
     paidApiKey,
     mocks,
@@ -3799,6 +3846,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         "black-forest-labs/flux.1-schnell:deepinfra",
     );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-image-dimensions")).toBe("1x1");
     await response.arrayBuffer();
     await wait();
 
@@ -3861,7 +3909,7 @@ test("fallback-only provider routes cannot be called directly", async ({
     expect(mocks.deepInfra.state.requests).toHaveLength(0);
 });
 
-test("OpenAI image generation returns token usage", async ({
+test("OpenAI image generation returns token usage and preserves produced dimensions in cache", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -3881,24 +3929,27 @@ test("OpenAI image generation returns token usage", async ({
     expect(registerResponse.status).toBe(200);
     await mocks.enable("tinybird", "imageBackend");
 
-    const { response, wait } = await fetchWorker("/v1/images/generations", {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${paidApiKey}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            model: "black-forest-labs/flux.1-schnell",
-            prompt: "vcr red square",
-            size: "1280x720",
-            seed: 42,
-            response_format: "b64_json",
-        }),
-    });
+    const generate = (response_format: "b64_json" | "url") =>
+        fetchWorker("/v1/images/generations", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${paidApiKey}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "black-forest-labs/flux.1-schnell",
+                prompt: "vcr red square",
+                size: "1280x720",
+                seed: 42,
+                response_format,
+            }),
+        });
+    const { response, wait } = await generate("b64_json");
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-cache")).toBe("MISS");
     expect(response.headers.get("x-cache-type")).toBeNull();
+    expect(response.headers.get("x-image-dimensions")).toBe("1x1");
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],
         usage: {
@@ -3912,6 +3963,15 @@ test("OpenAI image generation returns token usage", async ({
         },
     });
     await wait();
+
+    const cached = await generate("url");
+    expect(cached.response.status).toBe(200);
+    expect(cached.response.headers.get("x-cache")).toBe("HIT");
+    expect(cached.response.headers.get("x-image-dimensions")).toBe("1x1");
+    await expect(cached.response.json()).resolves.toMatchObject({
+        data: [{ url: expect.any(String) }],
+    });
+    await cached.wait();
 });
 
 test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(

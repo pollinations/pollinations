@@ -14,7 +14,7 @@ import {
 import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
 import {
     PollenBalance,
-    SidebarWallet,
+    SidebarBalance,
 } from "../frontend/src/components/pollen/pollen-balance.tsx";
 import { PollenPackButtons } from "../frontend/src/components/pollen/pollen-pack-controls.tsx";
 
@@ -316,10 +316,10 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("request a review");
 
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: true,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: true,
             }),
         );
         expect(sidebar).toContain("$35.54");
@@ -342,15 +342,25 @@ describe("locked Quest pollen display", () => {
         expect(html).not.toContain("Verification needed");
         expect(html).not.toContain("couldn’t verify");
         const sidebar = renderToStaticMarkup(
-            createElement(SidebarWallet, {
-                tierBalance: 35.54,
-                packBalance: 2,
-                questPollenRestricted: false,
+            createElement(SidebarBalance, {
+                kind: "tier",
+                balance: 35.54,
+                restricted: false,
             }),
         );
         expect(sidebar).not.toContain(
             'aria-label="Quest pollen needs verification"',
         );
+    });
+});
+
+describe("drawer wallet during an outage", () => {
+    it("shows a warning on the Credits row instead of the amount", () => {
+        const sidebar = renderToStaticMarkup(
+            createElement(SidebarBalance, { kind: "paid" }),
+        );
+        expect(sidebar).toContain('aria-label="Unavailable during the outage"');
+        expect(sidebar).not.toContain("$");
     });
 });
 

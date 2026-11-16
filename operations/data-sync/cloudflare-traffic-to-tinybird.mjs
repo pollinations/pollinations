@@ -100,6 +100,7 @@ const PAGES = {
         "/pollen",
         "/keys",
         "/models",
+        "/agents",
         "/my-models",
         "/quests",
         "/activity",

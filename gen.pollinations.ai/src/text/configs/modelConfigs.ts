@@ -814,8 +814,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
-    "Qwen/Qwen3.8-2.4T-A95B": () =>
-        createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
+    "qwen/qwen3.8-2.4t-a95b": () =>
+        createAlibabaModelConfig({ model: "qwen3.8-2.4t-a95b" }),
+    "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-2.4t-a95b-20260812",
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
     "moonshotai/Kimi-K3": () =>
@@ -1068,12 +1079,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro-highspeed",
         }),
-    // -- Fireworks AI (Qwen) ------------------------------------------------
-    "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
-        }),
-
     // -- Mistral Small ---------------------------------------------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
     // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
@@ -1276,6 +1281,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "google/gemini-3.8-flash": createVertexGeminiConfig(
         "gemini-3.8-flash",
         "global",
+    ),
+    "google/gemini-4-carbon": createVertexGeminiConfig(
+        "gemini-4-carbon",
+        "global",
+    ),
+    "google/gemini-4-carbon:openrouter:ai-studio": createPinnedOpenRouterConfig(
+        "google/gemini-4-carbon",
+        "google-ai-studio",
     ),
     "google/gemini-4-argon": createVertexGeminiConfig(
         "gemini-4-argon",

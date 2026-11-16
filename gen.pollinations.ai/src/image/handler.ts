@@ -185,7 +185,7 @@ function parseImageParams(
     }
     // Community endpoints receive the flag and decide for themselves.
     if (
-        parseResult.data.transparent &&
+        (parseResult.data.transparent || parseResult.data.background === "transparent") &&
         !model.communityEndpoint &&
         !model.definition.supportsTransparency
     ) {

@@ -1371,16 +1371,18 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        // Azure accepts this set on V4.1 Flash (probed 2026-10-15).
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-10-18").getTime(),
-        // 0.5x matches DeepInfra's output price (0.60 per M).
+        // 0.5x matches the output price of the Azure V4.1 Flash route.
         priceMultiplier: 0.5,
-        paidOnly: true,
-        // Fireworks standard serverless rates (2026-10-18).
+        paidOnly: false,
+        perUserRpm: 60,
+        // Azure V4.1 Flash rates (2026-10-15), which match Fireworks' 1017 rates.
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),

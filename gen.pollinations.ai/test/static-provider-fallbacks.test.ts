@@ -1418,11 +1418,11 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("records DeepSeek Flash 1017's discounted fallback cost at the unchanged primary quote", () => {
+    it("records DeepSeek Flash 1017's Fireworks fallback at its Fireworks cost and the unchanged primary quote", () => {
         const model = "deepseek/deepseek-v4.1-flash-1017";
         const billing = calculateUsageBilling({
             model,
-            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            servedBy: TEXT_SERVICES[`${model}:fireworks`],
             quotedBy: TEXT_SERVICES[model],
             usage: {
                 promptTextTokens: 1000,
@@ -1431,7 +1431,7 @@ describe("static provider fallbacks", () => {
                 completionReasoningTokens: 100,
             },
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00015974, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.000546, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
     });
 

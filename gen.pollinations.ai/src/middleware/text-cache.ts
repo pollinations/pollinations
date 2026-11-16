@@ -42,7 +42,16 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        if (variables.model?.requested?.includes(",")) {
+        // seed -1 asks for a fresh generation, so each request gets its own entry.
+        const seed =
+            c.req.method === "GET" || c.req.method === "HEAD"
+                ? Number(c.req.query("seed"))
+                : (
+                      c.req.valid("json" as never) as
+                          | { seed?: number }
+                          | undefined
+                  )?.seed;
+        if (variables.model?.requested?.includes(",") || seed === -1) {
             c.set("generationCachePrivate", true);
         }
         // Agent runs are unique; caller lists are stable per key because their
@@ -50,9 +59,11 @@ const textCacheAdapter: GenerationCacheAdapter = {
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : variables.model?.requested?.includes(",")
-              ? `caller-list:${callerCacheScope(variables.auth)}`
-              : undefined;
+            : seed === -1
+              ? `random-seed:${crypto.randomUUID()}`
+              : variables.model?.requested?.includes(",")
+                ? `caller-list:${callerCacheScope(variables.auth)}`
+                : undefined;
         const cacheVersions = [
             variables.model?.definition.cacheVersion,
             ...(variables.model?.fallbackEntries?.map(

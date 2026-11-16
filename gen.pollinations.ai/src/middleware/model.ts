@@ -54,7 +54,9 @@ export type ModelVariables = {
 
 /** Required checks for every provider this request may reach. */
 export function getRequiredSafetyFeatures(
-    model: ModelVariables["model"] | undefined,
+    model:
+        | Pick<ModelVariables["model"], "definition" | "fallbackEntries">
+        | undefined,
 ): SafetyFeature[] {
     const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
     for (const fallback of model?.fallbackEntries ?? []) {

@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "diff_text",
+                "levenshtein",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -672,6 +673,71 @@ test("diff_text rejects input past the line cap", async (t) => {
     const result = await client.callTool({
         name: "diff_text",
         arguments: { before: tooMany, after: "x" },
+    });
+    assert.equal(result.isError, true);
+});
+
+test("levenshtein calculates exact edit distance and normalized similarity", async (t) => {
+    const client = await clientFor(t);
+
+    // Identical strings
+    const same = await call(client, "levenshtein", {
+        a: "pollinations",
+        b: "pollinations",
+    });
+    assert.equal(same.distance, 0);
+    assert.equal(same.similarity, 1.0);
+    assert.equal(same.length_a, 12);
+    assert.equal(same.length_b, 12);
+
+    // Both empty strings
+    const empty = await call(client, "levenshtein", {
+        a: "",
+        b: "",
+    });
+    assert.equal(empty.distance, 0);
+    assert.equal(empty.similarity, 1.0);
+
+    // One empty string
+    const oneEmpty = await call(client, "levenshtein", {
+        a: "hello",
+        b: "",
+    });
+    assert.equal(oneEmpty.distance, 5);
+    assert.equal(oneEmpty.similarity, 0.0);
+
+    // Classic edit distance: kitten -> sitting (3 edits)
+    const kitten = await call(client, "levenshtein", {
+        a: "kitten",
+        b: "sitting",
+    });
+    assert.equal(kitten.distance, 3);
+    assert.equal(kitten.similarity, 0.5714);
+
+    // Case sensitivity toggle
+    const caseDiff = await call(client, "levenshtein", {
+        a: "Pollinations",
+        b: "pollinations",
+        case_sensitive: true,
+    });
+    assert.equal(caseDiff.distance, 1);
+    assert.equal(caseDiff.similarity, 0.9167);
+
+    const caseInsensitive = await call(client, "levenshtein", {
+        a: "Pollinations",
+        b: "pollinations",
+        case_sensitive: false,
+    });
+    assert.equal(caseInsensitive.distance, 0);
+    assert.equal(caseInsensitive.similarity, 1.0);
+});
+
+test("levenshtein rejects input past the string cap", async (t) => {
+    const client = await clientFor(t);
+    const oversized = "a".repeat(10001);
+    const result = await client.callTool({
+        name: "levenshtein",
+        arguments: { a: oversized, b: "hello" },
     });
     assert.equal(result.isError, true);
 });

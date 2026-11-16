@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hfTools } from "./tools/huggingface.js";
 import { osvTools } from "./tools/osv.js";
 import { packageTools } from "./tools/packages.js";
+import { nugetTools } from "./tools/nuget.js";
 
 const handler = createMcpHandler(
     () => {
@@ -12,6 +13,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...packageTools,
+            ...nugetTools,
             ...osvTools,
             ...hfTools,
         ]) {

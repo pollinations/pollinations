@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
 import { lookup } from "./tools/packages.js";
+import { searchNuget } from "./tools/nuget.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -87,6 +88,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "nuget_package_search",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -689,4 +691,148 @@ test("package_downloads passes through daily counts and validates names", async 
         arguments: { name: "zod", range: "since-forever" },
     });
     assert.equal(badRange.isError, true);
+});
+
+test("NuGet search discovers the V3 search resource and maps bounded package metadata", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const target = new URL(input);
+        urls.push(target);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (target.href === "https://api.nuget.org/v3/index.json")
+            return Response.json({
+                version: "3.0.0",
+                resources: [
+                    {
+                        "@type": "PackageBaseAddress/3.0.0",
+                        "@id": "https://api.nuget.org/v3-flatcontainer/",
+                    },
+                    {
+                        "@type": "SearchQueryService/3.5.0",
+                        "@id": "https://azuresearch-usnc.nuget.org/query",
+                    },
+                ],
+            });
+        assert.equal(target.origin, "https://azuresearch-usnc.nuget.org");
+        assert.equal(target.pathname, "/query");
+        assert.equal(target.searchParams.get("q"), "json serializer");
+        assert.equal(target.searchParams.get("skip"), "20");
+        assert.equal(target.searchParams.get("take"), "3");
+        assert.equal(target.searchParams.get("prerelease"), "true");
+        assert.equal(target.searchParams.get("semVerLevel"), "2.0.0");
+        return Response.json({
+            totalHits: 41,
+            data: [
+                {
+                    id: "Newtonsoft.Json",
+                    version: "13.0.3",
+                    title: "Json.NET",
+                    description: "Popular JSON framework",
+                    authors: ["James Newton-King"],
+                    owners: ["JamesNK"],
+                    totalDownloads: 1000000,
+                    verified: true,
+                    projectUrl: "https://www.newtonsoft.com/json",
+                    licenseUrl: "https://licenses.nuget.org/MIT",
+                    tags: ["json", "serialization"],
+                    vulnerabilities: [
+                        { advisoryUrl: "https://github.com/advisories/GHSA-demo", severity: "1" },
+                    ],
+                    packageTypes: [{ name: "Dependency" }],
+                    versions: Array.from({ length: 7 }, (_, i) => ({
+                        version: `13.0.${7 - i}`,
+                        downloads: 100 - i,
+                    })),
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "nuget_package_search", {
+        query: "json serializer",
+        limit: 3,
+        skip: 20,
+        prerelease: true,
+    });
+    assert.equal(data.total_hits, 41);
+    assert.equal(data.packages[0].id, "Newtonsoft.Json");
+    assert.equal(data.packages[0].verified, true);
+    assert.equal(data.packages[0].total_downloads, 1000000);
+    assert.deepEqual(data.packages[0].package_types, ["Dependency"]);
+    assert.equal(data.packages[0].version_count, 7);
+    assert.equal(data.packages[0].versions_truncated, true);
+    assert.equal(data.packages[0].versions.length, 5);
+    assert.deepEqual(
+        urls.map((url) => url.href),
+        [
+            "https://api.nuget.org/v3/index.json",
+            "https://azuresearch-usnc.nuget.org/query?q=json+serializer&skip=20&take=3&prerelease=true&semVerLevel=2.0.0",
+        ],
+    );
+});
+
+test("NuGet search rejects unsupported or unsafe service-index endpoints and malformed search responses", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async () =>
+        Response.json({
+            resources: [
+                {
+                    "@type": "SearchQueryService/3.5.0",
+                    "@id": "https://attacker.example/query",
+                },
+            ],
+        }),
+    );
+    await assert.rejects(
+        searchNuget({ query: "zod", limit: 10, skip: 0, prerelease: false }),
+        /HTTPS nuget.org host/,
+    );
+    stub.mock.mockImplementation(async () =>
+        Response.json({ resources: [] }),
+    );
+    await assert.rejects(
+        searchNuget({ query: "zod", limit: 10, skip: 0, prerelease: false }),
+        /no SearchQueryService/,
+    );
+    stub.mock.mockImplementation(async (input) =>
+        String(input).includes("/v3/index.json")
+            ? Response.json({
+                  resources: [
+                      {
+                          "@type": "SearchQueryService/3.5.0",
+                          "@id": "https://api-v2v3search-0.nuget.org/query",
+                      },
+                  ],
+              })
+            : Response.json({ totalHits: "many", data: {} }),
+    );
+    await assert.rejects(
+        searchNuget({ query: "zod", limit: 10, skip: 0, prerelease: false }),
+        /invalid response/,
+    );
+});
+
+test("NuGet MCP rejects invalid search arguments before any upstream request", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", () => {
+        assert.fail("Invalid NuGet search input must not make an upstream request");
+    });
+    const client = await clientFor(t);
+    for (const args of [
+        { query: "" },
+        { query: "x".repeat(201) },
+        { query: "zod", limit: 21 },
+        { query: "zod", skip: 3001 },
+        { query: "zod", prerelease: "true" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "nuget_package_search", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+    assert.equal(stub.mock.callCount(), 0);
 });

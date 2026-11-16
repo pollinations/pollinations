@@ -3,6 +3,6 @@ export { BillingPanel, EditOnStripeLink } from "./payment-details.tsx";
 export {
     BuyPollenPanel,
     PollenBalance,
-    SidebarOutage,
-    SidebarWallet,
+    SidebarBalance,
+    SidebarEarnings,
 } from "./pollen-balance.tsx";

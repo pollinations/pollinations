@@ -6,6 +6,7 @@ import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { qrTools } from "./tools/qr.js";
+import { sunriseTools } from "./tools/sunrise.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
 import { versionTools } from "./tools/versions.js";
@@ -18,6 +19,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...timeTools,
+            ...sunriseTools,
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,
@@ -34,7 +36,9 @@ const handler = createMcpHandler(
                     inputSchema: z.object(shape),
                     annotations: {
                         readOnlyHint: true,
-                        openWorldHint: name.startsWith("currency_"),
+                        openWorldHint:
+                            name.startsWith("currency_") ||
+                            name === "sunrise_sunset",
                     },
                 },
                 async (args) => {

@@ -81,3 +81,26 @@ test("parseApiError provides generic fallback when 403 body has no details", () 
         "Access forbidden. Your API key may not have permission for this operation.",
     );
 });
+
+test("parseApiError keeps a structured error object from throwing", () => {
+    const message = parseApiError(
+        400,
+        JSON.stringify({
+            error: { code: "invalid_model", type: "invalid_request_error" },
+        }),
+    );
+    assert.equal(typeof message, "string");
+    assert.match(message, /^Bad request: /);
+    assert.match(message, /invalid_model/);
+});
+
+test("parseApiError returns a string when a 4xx body has no message", () => {
+    for (const status of [401, 402, 429]) {
+        const message = parseApiError(
+            status,
+            JSON.stringify({ error: { code: "unauthorized" } }),
+        );
+        assert.equal(typeof message, "string", `status ${status}`);
+        assert.doesNotMatch(message, /\[object Object\]/, `status ${status}`);
+    }
+});

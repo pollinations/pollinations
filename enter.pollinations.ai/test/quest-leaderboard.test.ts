@@ -1,4 +1,10 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    createScheduledController,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createElement } from "react";
@@ -7,7 +13,9 @@ import { expect } from "vitest";
 import type { QuestLeaderboardData } from "../../pollinations.ai/src/data/community";
 import { QuestLeaderboard } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
 import { QuestStandings } from "../frontend/src/components/quests/quest-standings.tsx";
+import worker from "../src/index.ts";
 import {
+    buildQuestLeaderboard,
     buildQuestStandings,
     type QuestStandingsResponse,
 } from "../src/routes/quest-leaderboard.ts";
@@ -154,6 +162,55 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         completedQuests: 58,
         totalPollen: 2844.8,
     });
+
+    // The cron reads rewards in rowid slices; one-row slices split the alias,
+    // the bonus and every exclusion apart and must give the same board.
+    expect(await buildQuestLeaderboard(env, 0, 1)).toEqual(payload);
+});
+
+test("visitors read the scheduled leaderboard copy until the next run", async () => {
+    const db = drizzle(env.DB, { schema });
+    await db.insert(schema.user).values({
+        id: "scheduled-builder",
+        name: "Scheduled builder",
+        email: "scheduled-builder@example.com",
+        githubId: 9_200_001,
+        githubUsername: "scheduled-builder",
+    });
+    const addReward = (issue: number) =>
+        db.insert(schema.rewards).values({
+            id: `scheduled-reward-${issue}`,
+            idempotencyKey: `quest:github:issue:${issue}`,
+            userId: "scheduled-builder",
+            questId: `github:issue:${issue}`,
+            title: `Quest ${issue}`,
+            pollenAmount: 1,
+            balanceBucket: "tier",
+        });
+    const runSchedule = async () => {
+        const ctx = createExecutionContext();
+        await worker.scheduled(createScheduledController(), env, ctx);
+        await waitOnExecutionContext(ctx);
+    };
+    const pollen = async () => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/quests/leaderboard",
+        );
+        const body = (await response.json()) as ApiResponse;
+        return body.leaderboard.find(
+            (row) => row.githubLogin === "scheduled-builder",
+        )?.totalPollen;
+    };
+
+    await addReward(60_001);
+    await runSchedule();
+    expect(await pollen()).toBe(1);
+
+    await addReward(60_002);
+    expect(await pollen()).toBe(1);
+
+    await runSchedule();
+    expect(await pollen()).toBe(2);
 });
 
 test("rendered leaderboard shows its heading and CTA while loading", () => {

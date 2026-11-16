@@ -341,7 +341,7 @@ const REALTIME_DOCS = [
     "",
     "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
-    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
+    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` or `elevenlabs/scribe-v3-live` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
     "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",

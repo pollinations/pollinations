@@ -79,11 +79,6 @@ export async function callKlingVideoAPI(
     }
 
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 3 || duration > 15) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Kling duration must be an integer from 3 to 15 seconds",
-        });
-    }
     const generateAudio = safeParams.audio === true;
     const [startImage, endImage] = safeParams.image ?? [];
     const isImageToVideo = Boolean(startImage);

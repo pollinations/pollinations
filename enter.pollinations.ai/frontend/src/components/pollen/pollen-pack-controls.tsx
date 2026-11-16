@@ -17,7 +17,7 @@ export const PollenPackButtons: FC<{
     packs,
     selectedAmount,
     onSelect,
-    describe = (pollen, price) => `Select ${pollen} Pollen for ${price}`,
+    describe = (pollen, price) => `Select ${pollen} of Pollen for ${price}`,
 }) => (
     <div
         className={cn(
@@ -26,7 +26,8 @@ export const PollenPackButtons: FC<{
         )}
     >
         {packs.map((pack) => {
-            const pollen = formatPollenPackValue(pack.amountUsd);
+            // What the pack adds to the balance, in the balance's dollars.
+            const pollen = `$${formatPollenPackValue(pack.amountUsd)}`;
             const price = formatUsdCents(
                 pack.amountUsd * 100 +
                     calculateServiceFeeCents(pack.amountUsd * 100),

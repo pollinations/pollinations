@@ -1,5 +1,8 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    durationError,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
@@ -9,7 +12,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
     ...ImageModelName[],
 ];
-const validQualities = ["low", "medium", "high", "hd"] as const;
+const validQualities = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -93,6 +96,11 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
+        // GPT Image 2.6 Flare output controls. Keep PNG as the legacy default.
+        output_format: z.enum(["png", "webp", "gif"]).optional(),
+        frame_count: z.coerce.number().int().min(2).max(16).optional(),
+        frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
+        background: z.enum(["auto", "opaque", "transparent"]).optional(),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -143,6 +151,62 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        const isFlare =
+            data.model === "openai/gpt-image-2.6-flare" ||
+            data.model === "openai/gpt-image-2.6-flare:fal";
+        if (data.output_format && data.output_format !== "png" && !isFlare) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message:
+                    "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
+            });
+        }
+        if (data.output_format === "gif") {
+            if (
+                data.frame_count === undefined ||
+                data.frame_duration_ms === undefined
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_count"],
+                    message:
+                        "GIF output requires frame_count and frame_duration_ms.",
+                });
+            } else if (data.frame_count * data.frame_duration_ms > 10000) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_duration_ms"],
+                    message: "GIF total duration must not exceed 10000 ms.",
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["image"],
+                    message:
+                        "GIF output is currently supported for image generation only.",
+                });
+            }
+            if (data.transparent || data.background === "transparent") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["background"],
+                    message:
+                        "GIF output does not support transparent backgrounds.",
+                });
+            }
+        } else if (
+            data.frame_count !== undefined ||
+            data.frame_duration_ms !== undefined
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message:
+                    "frame_count and frame_duration_ms require output_format=gif.",
+            });
+        }
         if (data.resolution) {
             const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
                 .resolutions;
@@ -219,14 +283,18 @@ export const ImageParamsSchema = z
                 });
             }
         }
+        const durationIssue =
+            data.duration === undefined
+                ? undefined
+                : durationError(data.model, definition, data.duration);
+        if (durationIssue) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["duration"],
+                message: durationIssue,
+            });
+        }
         if (data.model === "minimax/minimax-h3") {
-            if (data.duration !== undefined && data.duration !== 5) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["duration"],
-                    message: "minimax-h3 supports exactly 5 seconds.",
-                });
-            }
             if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -247,16 +315,6 @@ export const ImageParamsSchema = z
             data.model === "minimax/minimax-h3-max-turbo"
         ) {
             if (
-                data.duration !== undefined &&
-                ![5, 10, 15].includes(data.duration)
-            ) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["duration"],
-                    message: `${data.model} supports 5, 10, or 15 seconds.`,
-                });
-            }
-            if (
                 data.aspectRatio !== undefined &&
                 !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
                     data.aspectRatio,
@@ -276,7 +334,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "google/gemini-omni-1.1-flash") {
+        if (data.model.startsWith("google/gemini-omni-")) {
             if (
                 data.aspectRatio !== undefined &&
                 !["16:9", "9:16"].includes(data.aspectRatio)
@@ -284,16 +342,14 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["aspectRatio"],
-                    message:
-                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                    message: `${data.model} supports 16:9 or 9:16.`,
                 });
             }
             if (data.fps !== undefined && data.fps !== 24) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
-                    message:
-                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }

@@ -1,7 +1,10 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
-import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import {
+    genericOpenAIClient,
+    withMistralThinking,
+} from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
 import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
@@ -23,7 +26,10 @@ import { callVercelSearch } from "./vercelSearch.ts";
 export const log = debug("pollinations:portkey");
 
 // Portkey applies this millisecond deadline per attempt until provider response
-// headers arrive. Keep retries disabled unless the total deadline is reconsidered.
+// headers arrive, so a silent provider returns a 408 before Cloudflare's ~300s
+// proxy read timeout cuts the connection. That 408 falls back like any other
+// failure, and each fallback attempt gets its own deadline. Portkey's own
+// retries stay disabled: a failed attempt goes to the next model, not again.
 const PORTKEY_REQUEST_TIMEOUT_MS = 290_000;
 
 function buildEndpoint(gatewayUrl: unknown): string {
@@ -50,6 +56,19 @@ function withoutThoughtSignatures(messages: ChatMessage[]): ChatMessage[] {
             }),
         };
     });
+}
+
+// Clients send back the reasoning of earlier turns. Mistral's and
+// InferencePort's strict message schemas reject those fields.
+function withoutReasoningHistory(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map(
+        ({
+            reasoning: _reasoning,
+            reasoning_content: _reasoningContent,
+            reasoning_details: _reasoningDetails,
+            ...message
+        }) => message,
+    );
 }
 
 export async function generateTextPortkey(
@@ -80,12 +99,15 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
-        if (state.options.modelConfig?.provider !== "vertex-ai") {
-            state = {
-                ...state,
-                messages: withoutThoughtSignatures(state.messages),
-            };
-        }
+        const config = state.options.modelConfig;
+        let history = state.messages;
+        if (config?.provider !== "vertex-ai")
+            history = withoutThoughtSignatures(history);
+        if (config?.useMistralChatFormat === true)
+            history = withMistralThinking(history);
+        if (config?.supportsReasoningHistory === false)
+            history = withoutReasoningHistory(history);
+        state = { ...state, messages: history };
         // TypeSafe has its own wire format and does not use Portkey transforms.
         if (modelDef?.useSystemOneApi) {
             return callSystemOne(state.messages, state.options);

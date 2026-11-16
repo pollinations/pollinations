@@ -37,9 +37,8 @@ function publicAudioUrl(source) {
     return url;
 }
 
-export async function transcribeAudio(params, context) {
-    requireApiKey(context);
-    const source = publicAudioUrl(params.source);
+/** Fetch the audio bytes we were asked to process from a validated public URL. */
+async function fetchPublicAudio(source) {
     let response;
     try {
         // Workers reject redirect: "error"; use "manual" and refuse 3xx below.
@@ -63,13 +62,52 @@ export async function transcribeAudio(params, context) {
     if (!response.ok) {
         throw new Error(`Source returned HTTP ${response.status}`);
     }
+    return {
+        blob: await response.blob(),
+        filename: source.pathname.split("/").pop() || "audio",
+    };
+}
+
+/**
+ * Send one audio file to a gen endpoint that stores the result and answers with
+ * its public URL. The bytes never travel through the server, so a missing
+ * enclosure link is an error rather than a base64 fallback.
+ */
+async function transformSpeech(params, context, { endpoint, name }) {
+    requireApiKey(context);
+    const { source, ...fields } = params;
+    const { blob, filename } = await fetchPublicAudio(publicAudioUrl(source));
 
     const form = new FormData();
-    form.append(
-        "file",
-        await response.blob(),
-        source.pathname.split("/").pop() || "audio",
+    form.append("file", blob, filename);
+    for (const [field, value] of Object.entries(fields)) {
+        if (value !== undefined) form.append(field, value);
+    }
+
+    const { contentType, mediaUrl } = await fetchMediaLink(
+        buildUrl(endpoint),
+        { method: "POST", body: form },
+        context,
     );
+    return createMCPResponse([
+        {
+            type: "resource_link",
+            uri: mediaUrl,
+            name,
+            mimeType: contentType,
+        },
+        createTextContent({ url: mediaUrl, mimeType: contentType }, true),
+    ]);
+}
+
+export async function transcribeAudio(params, context) {
+    requireApiKey(context);
+    const { blob, filename } = await fetchPublicAudio(
+        publicAudioUrl(params.source),
+    );
+
+    const form = new FormData();
+    form.append("file", blob, filename);
     if (params.model) form.append("model", params.model);
     if (params.language) form.append("language", params.language);
     if (params.prompt) form.append("prompt", params.prompt);
@@ -88,12 +126,27 @@ export async function transcribeAudio(params, context) {
     ]);
 }
 
+export async function isolateSpeech(params, context) {
+    return transformSpeech(params, context, {
+        endpoint: "/v1/audio/voice-isolator",
+        name: "Isolated speech",
+    });
+}
+
+export async function changeVoice(params, context) {
+    return transformSpeech(params, context, {
+        endpoint: "/v1/audio/voice-changer",
+        name: "Voice-changed audio",
+    });
+}
+
 async function generateAudio(params, context) {
     requireApiKey(context);
 
     const { text, ...options } = params;
     const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
+        {},
         context,
     );
     return createMCPResponse([
@@ -205,5 +258,46 @@ export const audioTools = [
                 ),
         },
         transcribeAudio,
+    ],
+    [
+        "isolateSpeech",
+        "Remove music, ambient sound, and other background noise from an audio or video file while preserving spoken audio, and return the audio as a resource link.",
+        {
+            source: z
+                .url()
+                .describe("Direct public HTTPS URL of an audio or video file"),
+            model: z
+                .string()
+                .optional()
+                .describe(
+                    "Speech-isolation model. Use listModels with type=audio for the live list",
+                ),
+        },
+        isolateSpeech,
+    ],
+    [
+        "changeVoice",
+        "Transform the speaker identity in a public audio file while preserving its words, timing, emotion, and delivery; accepts preset voice names or custom voice IDs, and returns the audio as a resource link.",
+        {
+            source: z
+                .url()
+                .describe("Direct public HTTPS URL of an audio file"),
+            voice: z
+                .string()
+                .describe(
+                    "Target voice name or voice ID. Use listModels with type=audio for voice metadata",
+                ),
+            model: z
+                .string()
+                .optional()
+                .describe(
+                    "Voice-change model. Use listModels with type=audio for the live list",
+                ),
+            response_format: z
+                .enum(["mp3", "opus", "aac", "wav", "pcm"])
+                .optional()
+                .describe("Audio output format (default: mp3)"),
+        },
+        changeVoice,
     ],
 ];

@@ -18,13 +18,12 @@ export const IMAGE_FALLBACKS = {
     "google/gemini-nano-banana-2.1": {
         "google/gemini-nano-banana-2.1:vercel": {
             provider: "vercel",
-            // Pinned to Google. Record the gateway's reported charge; its
-            // cached input is billed at full rate. Keep the caller's Vertex
-            // price, including the cache discount, on this fallback.
+            // Pinned to Google. Gateway cached-input rate verified 2026-11-11.
+            // Record the reported charge and keep the caller's Vertex price.
             cost: {
                 promptTextTokens: perMillion(1.5),
                 promptImageTokens: perMillion(1.5),
-                promptCachedTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.15),
                 completionTextTokens: perMillion(7.5),
                 completionImageTokens: perMillion(30),
             },
@@ -200,6 +199,18 @@ export const IMAGE_FALLBACKS = {
         "prunaai/p-image-edit:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "microsoft/mai-image-2.6-flash": {
+        "microsoft/mai-image-2.6-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's only endpoint is Azure, at our deployment's rates.
+            cost: {
+                promptTextTokens: perMillion(1.75) * 1.055,
+                promptImageTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(19) * 1.055,
+            },
         },
     },
     "google/gemini-2.5-flash-image": {

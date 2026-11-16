@@ -141,12 +141,6 @@ export async function callHeyGenVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 5 || duration > 15) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "HeyGen Video 1 duration must be an integer from 5 to 15 seconds",
-        });
-    }
     const requestBody: Record<string, unknown> = {
         model: HEYGEN_VIDEO_MODEL,
         prompt,
@@ -199,17 +193,6 @@ export async function callHeyGenVideoAPI(
     };
 }
 
-export function resolveGrokDuration(duration?: number): number {
-    const requested = duration || 5;
-    if (!Number.isInteger(requested)) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Grok Video Pro duration must be an integer from 1 to 15 seconds",
-        });
-    }
-    return Math.min(Math.max(requested, 1), 15);
-}
-
 export function resolveGrokAspectRatio(
     safeParams: ImageParams,
 ): string | undefined {
@@ -227,7 +210,7 @@ export async function callOpenRouterGrokVideoAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const duration = resolveGrokDuration(safeParams.duration);
+    const duration = safeParams.duration ?? 5;
     const resolution = safeParams.resolution ?? "720p";
     const requestBody: Record<string, unknown> = {
         model: GROK_VIDEO_15_LITE_MODEL,

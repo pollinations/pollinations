@@ -110,6 +110,43 @@ describe("billing deduction", () => {
         });
     });
 
+    it("names the paid-only requirement when Quest Pollen cannot cover a model", async () => {
+        const userId = await createUser({
+            tierBalance: 0.232,
+            packBalance: 0,
+        });
+        await expect(
+            requireFunds(
+                { env, var: {} },
+                0.0001,
+                () => getUserBalance(db, userId),
+                true,
+            ),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "INSUFFICIENT_BALANCE",
+            paidOnly: true,
+            message: expect.stringContaining(
+                "This model requires Paid Pollen, so Quest Pollen can't cover it. This request costs about $0.0001, but your available paid balance is $0.0000.",
+            ),
+        });
+    });
+
+    it("names a bound instead of a cost that would print as zero", async () => {
+        const userId = await createUser({ tierBalance: 0, packBalance: 0 });
+        await expect(
+            requireFunds({ env, var: {} }, Number.MIN_VALUE, () =>
+                getUserBalance(db, userId),
+            ),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "INSUFFICIENT_BALANCE",
+            message: expect.stringContaining(
+                "This request costs less than $0.0001, but your available balance is $0.0000.",
+            ),
+        });
+    });
+
     it("settles every admitted parallel request even after restricted paid funds run out", async () => {
         const userId = await createUser({ tierBalance: 35.5, packBalance: 2 });
         await db

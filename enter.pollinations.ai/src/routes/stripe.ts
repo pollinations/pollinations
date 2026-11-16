@@ -1,4 +1,5 @@
 import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
+import { handleError } from "@shared/error.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -51,7 +52,11 @@ export const stripeRoutes = new Hono<Env>()
      * new cards and every method the pay modal doesn't show.
      */
     .get("/checkout/:packKey", async (c) => {
-        const session = await createPackCheckoutSession(c, "hosted");
+        // A server error is reported like any other, then the buyer is sent
+        // back below.
+        const session = await createPackCheckoutSession(c, "hosted").catch(
+            (error) => handleError(error, c),
+        );
         if (session instanceof Response) {
             // A link the buyer followed, so never a JSON error: back to the
             // page they came from, which asks a signed-out buyer to sign in
@@ -362,10 +367,10 @@ async function createPackCheckoutSession(
     // default PMC) would hide a misconfigured deploy.
     const pmcId = c.env.STRIPE_PMC;
     if (!pmcId) {
-        console.error(
-            `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
-        );
-        return c.json({ error: "Checkout configuration error" }, 500);
+        throw new HTTPException(500, {
+            message: "Checkout configuration error",
+            cause: `Missing required env var STRIPE_PMC on ${c.env.ENVIRONMENT}`,
+        });
     }
 
     try {
@@ -487,9 +492,8 @@ async function createPackCheckoutSession(
             uiMode === "hosted"
                 ? checkoutSession.url
                 : checkoutSession.client_secret;
-        if (!ready) {
-            return c.json({ error: "Failed to create checkout session" }, 500);
-        }
+        if (!ready)
+            throw new Error("Stripe returned no checkout URL or client secret");
         captureFromRequest(c, "checkout_started", userId, {
             pack_key: pack.packKey,
             // Where the buyer came from, so checkouts divide by views of that
@@ -498,10 +502,11 @@ async function createPackCheckoutSession(
         });
         return checkoutSession;
     } catch (error) {
-        // Log full error server-side for debugging
-        console.error("Stripe checkout error:", error);
-        // Return generic message to client - don't expose internal error details
-        return c.json({ error: "Failed to create checkout session" }, 500);
+        // The cause reaches the error log; the buyer gets the generic message.
+        throw new HTTPException(500, {
+            message: "Failed to create checkout session",
+            cause: error,
+        });
     }
 }
 

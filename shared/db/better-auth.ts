@@ -115,6 +115,7 @@ export const account = sqliteTable("account", {
     .notNull(),
 }, (table) => [
   index("idx_account_user_id").on(table.userId),
+  index("idx_account_provider_subject").on(table.accountId, table.providerId),
 ]);
 
 export const verification = sqliteTable("verification", {

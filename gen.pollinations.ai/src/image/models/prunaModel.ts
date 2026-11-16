@@ -311,10 +311,7 @@ async function generatePrunaVideo(
 ): Promise<VideoGenerationResult> {
     const displayName = `Pruna p-video ${resolution}`;
 
-    const duration = Math.max(
-        1,
-        Math.min(10, Math.floor(safeParams.duration || 5)),
-    );
+    const duration = safeParams.duration ?? 5;
 
     const input: PVideoInput = { prompt, resolution, duration };
 

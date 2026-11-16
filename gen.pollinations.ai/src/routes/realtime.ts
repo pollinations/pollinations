@@ -216,9 +216,17 @@ const SCRIBE_BYTES_PER_SECOND: Record<ScribeAudioFormat, number> = {
     ulaw_8000: 8000,
 };
 
-function buildScribeRealtimeUrl(config: ScribeRealtimeConfig): string {
+function buildScribeRealtimeUrl(
+    config: ScribeRealtimeConfig,
+    model: string,
+): string {
     const url = new URL(SCRIBE_REALTIME_ENDPOINT);
-    url.searchParams.set("model_id", "scribe_v2_realtime");
+    url.searchParams.set(
+        "model_id",
+        model === "elevenlabs/scribe-v3-live"
+            ? "scribe_v3_live"
+            : "scribe_v2_realtime",
+    );
     url.searchParams.set("audio_format", config.audioFormat);
     url.searchParams.set("commit_strategy", config.commitStrategy);
     if (config.languageCode) {
@@ -250,12 +258,15 @@ async function connectScribeRealtime(
         });
     }
 
-    const response = (await fetch(buildScribeRealtimeUrl(config), {
-        headers: {
-            "xi-api-key": apiKey,
-            Upgrade: "websocket",
+    const response = (await fetch(
+        buildScribeRealtimeUrl(config, c.var.model.resolved),
+        {
+            headers: {
+                "xi-api-key": apiKey,
+                Upgrade: "websocket",
+            },
         },
-    })) as WebSocketResponse;
+    )) as WebSocketResponse;
     const upstreamSocket = response.webSocket;
     if (upstreamSocket) {
         upstreamSocket.binaryType = "arraybuffer";
@@ -356,7 +367,11 @@ function inspectAudioBase64(
     };
 }
 
-function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
+function scribeSession(
+    config: ScribeRealtimeConfig,
+    sessionId: string,
+    model: string,
+) {
     const format =
         config.audioFormat === "ulaw_8000"
             ? { type: "audio/pcmu" }
@@ -387,7 +402,7 @@ function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
             input: {
                 format,
                 transcription: {
-                    model: "elevenlabs/scribe-v2-realtime",
+                    model,
                     ...(config.prompt && { prompt: config.prompt }),
                     ...(languages.length && { languages }),
                 },
@@ -429,7 +444,7 @@ function parseScribeSessionUpdate(
             next.audioFormat = "pcm_24000";
         } else {
             return {
-                error: "elevenlabs/scribe-v2-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
+                error: "Scribe realtime transcription supports OpenAI PCM at 24000 Hz and PCMU audio.",
                 param: "session.audio.input.format",
             };
         }
@@ -474,7 +489,7 @@ function parseScribeSessionUpdate(
         const turnDetection = asRecord(input.turn_detection);
         if (turnDetection.type !== "server_vad") {
             return {
-                error: 'elevenlabs/scribe-v2-realtime supports null or "server_vad" turn detection.',
+                error: 'Scribe realtime transcription supports null or "server_vad" turn detection.',
                 param: "session.audio.input.turn_detection.type",
             };
         }
@@ -1416,7 +1431,7 @@ function proxyScribeOpenAIRealtime(
     sendRealtimeEvent(downstream, {
         event_id: `event_${generateRandomId()}`,
         type: "session.created",
-        session: scribeSession(config, sessionId),
+        session: scribeSession(config, sessionId, c.var.model.resolved),
     });
 
     downstream.addEventListener("message", (message) => {
@@ -1436,8 +1451,8 @@ function proxyScribeOpenAIRealtime(
             }
             if (
                 (upstream || connecting) &&
-                buildScribeRealtimeUrl(parsed.config) !==
-                    buildScribeRealtimeUrl(config)
+                buildScribeRealtimeUrl(parsed.config, c.var.model.resolved) !==
+                    buildScribeRealtimeUrl(config, c.var.model.resolved)
             ) {
                 sendRealtimeError(
                     downstream,
@@ -1452,7 +1467,7 @@ function proxyScribeOpenAIRealtime(
             sendRealtimeEvent(downstream, {
                 event_id: `event_${generateRandomId()}`,
                 type: "session.updated",
-                session: scribeSession(config, sessionId),
+                session: scribeSession(config, sessionId, c.var.model.resolved),
             });
             return;
         }
@@ -1564,7 +1579,10 @@ export async function handleRealtimeWebSocket(
         communityEndpoint: c.var.model.communityEndpoint,
     });
     const tracking = await createRealtimeBillingContext(c);
-    if (c.var.model.resolved === "elevenlabs/scribe-v2-realtime") {
+    if (
+        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
+        c.var.model.resolved === "elevenlabs/scribe-v3-live"
+    ) {
         if (!c.env.ELEVENLABS_API_KEY) {
             throw new HTTPException(503, {
                 message: "ElevenLabs realtime provider is not configured.",

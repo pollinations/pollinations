@@ -7,11 +7,7 @@ import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
-import {
-    audioCache,
-    imageCache,
-    model3dCache,
-} from "@/middleware/media-cache.ts";
+import { imageCache, model3dCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -53,6 +49,7 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { getVisibleImageModels } from "@shared/registry/registry.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -82,8 +79,10 @@ import {
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import {
+    FLUX_SIZE_DESCRIPTION,
     GenerateImageRequestQueryParamsSchema,
     GenerateVideoRequestQueryParamsSchema,
+    IMAGE_DIMENSIONS_HEADER,
 } from "@/schemas/image.ts";
 import {
     Generate3dRequestBodySchema,
@@ -105,7 +104,7 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
-import { handleSimpleAudio } from "./audio.ts";
+import { handleSimpleAudio, speechAudioCache } from "./audio.ts";
 import {
     generateChatCompletion,
     generateEmbeddingsResponse,
@@ -146,12 +145,16 @@ const ImageEditMultipartSchema = z
             "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
     });
 
-// Build dynamic model lists from registry for use in API descriptions
+// Build dynamic model lists from registry for use in API descriptions,
+// leaving out hidden models as /models does
+const visibleImageIds = new Set<string>(getVisibleImageModels());
 const imageModelNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
 const videoModelNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .map((id) => `\`${id}\``)
     .join(", ");
 
@@ -166,7 +169,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` or \`elevenlabs/scribe-v3-live\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
@@ -192,6 +195,16 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
 }
 
 const factory = createFactory<Env>();
+
+const imageResponseHeaders = {
+    ...mediaResponseHeaders,
+    [IMAGE_DIMENSIONS_HEADER]: {
+        description:
+            "Produced FLUX Schnell image dimensions in pixels as WIDTHxHEIGHT. Older cached images may omit this header.",
+        schema: { type: "string" as const },
+        example: "1024x704",
+    },
+};
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -403,6 +416,15 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        video_capabilities: entry.info.video_capabilities,
+        min_duration: entry.info.min_duration,
+        max_duration: entry.info.max_duration,
+        default_duration: entry.info.default_duration,
+        allowed_durations: entry.info.allowed_durations,
+        resolutions: entry.info.resolutions,
+        voices: entry.info.voices,
+        max_reference_images: entry.info.max_reference_images,
+        max_reference_videos: entry.info.max_reference_videos,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }
@@ -983,7 +1005,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated image",
-                    headers: mediaResponseHeaders,
+                    headers: imageResponseHeaders,
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -992,6 +1014,18 @@ export const proxyRoutes = new Hono<Env>()
                             },
                         },
                         "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/webp": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/gif": {
                             schema: {
                                 type: "string",
                                 format: "binary",
@@ -1214,7 +1248,7 @@ export const proxyRoutes = new Hono<Env>()
             supportedEndpoint: "/audio/{text}",
         }),
         track("generate.audio"),
-        audioCache,
+        speechAudioCache,
         generationAccess,
         deduplicateGeneration,
         apiKeyBudgetReservation,
@@ -1230,12 +1264,14 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 'Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).',
                 "",
+                FLUX_SIZE_DESCRIPTION,
+                "",
                 "**Authentication:** Include your secret key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
             responses: {
                 200: {
                     description: "Success",
-                    headers: mediaResponseHeaders,
+                    headers: imageResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(CreateImageResponseSchema),

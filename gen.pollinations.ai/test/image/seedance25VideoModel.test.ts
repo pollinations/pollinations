@@ -117,18 +117,6 @@ describe("Seedance 2.5 via Replicate", () => {
         },
     );
 
-    it("rejects unsupported durations before submitting", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callSeedance25API("a paper boat", {
-                ...baseParams,
-                duration: 5,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("forwards all reference media URLs directly to Replicate", async () => {
         syncImageEnv(
             { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,

@@ -183,6 +183,26 @@ test("sends native state and questions to the decisions endpoint", async (t) => 
     assert.deepEqual(JSON.parse(result.content[0].text), ANSWERS);
 });
 
+test("forwards a chosen decision model", async (t) => {
+    let model;
+    t.mock.method(globalThis, "fetch", async (_input, init) => {
+        model = JSON.parse(init.body).model;
+        return decisionResponse({ is_urgent: ANSWERS.is_urgent });
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "jev_decide",
+        arguments: {
+            model: "vllm-sr/d3",
+            state: "Please fix this before noon.",
+            questions: { is_urgent: QUESTIONS.is_urgent },
+        },
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(model, "vllm-sr/d3");
+});
+
 test("preserves optional noul criteria in the decision request", async (t) => {
     const criteriaCases = [
         { true: "Explicitly time-sensitive", false: "No urgency expressed" },

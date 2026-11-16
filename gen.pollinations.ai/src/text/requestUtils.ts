@@ -1,7 +1,10 @@
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
-import { normalizeSeed } from "@/util.ts";
 import type { ChatMessage, RequestData } from "./types.js";
+
+function normalizeTextSeed(seed: number): number {
+    return seed === -1 ? Math.floor(Math.random() * 2147483648) : seed;
+}
 
 export function requestsJson(json: unknown, jsonMode: unknown): boolean {
     return (
@@ -21,6 +24,16 @@ export function getChatRequestData(
         jsonMode,
         thinking: _thinking,
         thinking_budget: _thinkingBudget,
+        // The route's config, processing tier, upstream routing, presets and
+        // plugins decide which provider runs the request and what it costs,
+        // so only the route and its transform set them.
+        modelConfig: _modelConfig,
+        service_tier: _serviceTier,
+        provider: _provider,
+        providerOptions: _providerOptions,
+        models: _models,
+        preset: _preset,
+        plugins: _plugins,
         ...requestData
     } = body;
     const messages = [
@@ -32,7 +45,7 @@ export function getChatRequestData(
     const seed =
         requestData.seed == null
             ? {}
-            : { seed: normalizeSeed(requestData.seed) };
+            : { seed: normalizeTextSeed(requestData.seed) };
     const responseFormat =
         !requestData.response_format && requestsJson(json, jsonMode)
             ? { response_format: { type: "json_object" } as const }
@@ -68,7 +81,7 @@ export function getSimpleTextRequestData(
         model,
         messages,
         ...(options.seed !== undefined
-            ? { seed: normalizeSeed(options.seed) }
+            ? { seed: normalizeTextSeed(options.seed) }
             : {}),
         ...(json ? { response_format: { type: "json_object" } } : {}),
     };

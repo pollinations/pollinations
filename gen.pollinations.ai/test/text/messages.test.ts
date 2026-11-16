@@ -1186,6 +1186,13 @@ describe("POST /v1/messages", () => {
             type: "invalid_request_error",
         },
         {
+            name: "a list of image models",
+            body: { model: "flux,zimage" },
+            auth: true,
+            status: 400,
+            type: "invalid_request_error",
+        },
+        {
             name: "a missing max_tokens",
             body: { model, max_tokens: undefined },
             auth: true,

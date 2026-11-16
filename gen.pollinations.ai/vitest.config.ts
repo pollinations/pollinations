@@ -184,6 +184,7 @@ export default defineConfig(async ({ mode }) => {
                             // got, so tests see what gen sent.
                             if (url.pathname === "/api/account/keys") {
                                 return Response.json({
+                                    id: "enter-stub-key",
                                     key: JSON.stringify({
                                         authorization:
                                             request.headers.get(

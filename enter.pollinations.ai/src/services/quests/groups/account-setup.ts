@@ -19,6 +19,8 @@ import {
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
+ *   - first_auto_top_up -> stripe_auto_top_up_attempt (one paid auto top-up
+ *                          on or after the quest's launch)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -38,6 +40,9 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS = 1_782_000_000; // 2026-06-21T00:00:0
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS * 1000;
 const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
+// Only auto top-ups paid from the quest's launch count.
+const AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL = "13/10/26";
+const AUTO_TOP_UP_QUEST_LAUNCH_MILLIS = Date.parse("2026-10-13T00:00:00Z");
 
 const firstApiKeyQuest: QuestDefinition = {
     id: "first_api_key",
@@ -67,7 +72,7 @@ const connectPolliCliQuest: QuestDefinition = {
     id: "connect_polli_cli",
     title: "Connect Polli CLI",
     description:
-        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`. Your account must be at least 3 days old.",
+        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli), run `polli auth login` and approve it in your browser. Logging in with an existing key (`--with-token`) doesn't count. Your account must be at least 3 days old.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -129,12 +134,23 @@ const overHundredPollenSinceLaunchQuest = {
     goal: { target: 100, unit: "pollen" },
 } satisfies QuestDefinition;
 
+const firstAutoTopUpQuest: QuestDefinition = {
+    id: "first_auto_top_up",
+    title: "First auto top-up",
+    description: `Turn on [auto top-up](/pollen#buy-pollen) and complete one paid auto top-up. _(from ${AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL})_`,
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 20,
+    balanceBucket: "tier",
+};
+
 /** Quests earned by buying Pollen; the monthly standings mark their earners. */
 export const TOP_UP_QUEST_IDS = [
     legacyFirstTopUpQuest.id,
     legacyOverHundredPollenQuest.id,
     topUpSinceLaunchQuest.id,
     overHundredPollenSinceLaunchQuest.id,
+    firstAutoTopUpQuest.id,
 ];
 
 const QUESTS = [
@@ -146,6 +162,7 @@ const QUESTS = [
     legacyOverHundredPollenQuest,
     topUpSinceLaunchQuest,
     overHundredPollenSinceLaunchQuest,
+    firstAutoTopUpQuest,
 ];
 
 const EVALUATED_QUESTS = [
@@ -155,6 +172,7 @@ const EVALUATED_QUESTS = [
     earlyAdopterQuest,
     topUpSinceLaunchQuest,
     overHundredPollenSinceLaunchQuest,
+    firstAutoTopUpQuest,
 ];
 
 export async function listQuestCards(
@@ -176,6 +194,7 @@ export async function evaluateUser(
         byopLoginRows,
         polliCliRows,
         earlyAdopterRows,
+        autoTopUpRows,
     ] = await Promise.all([
         rewardableQuestIds.has(firstApiKeyQuest.id)
             ? db.all<SetupQuestRow>(sql`
@@ -237,6 +256,17 @@ export async function evaluateUser(
           AND "user".created_at <= CAST(strftime('%s', 'now', '-9 months') AS integer)
         LIMIT 1`)
             : [],
+        // `+status` keeps SQLite on the user_id index; it otherwise picks the
+        // status index and walks every paid attempt.
+        rewardableQuestIds.has(firstAutoTopUpQuest.id)
+            ? db.all<SetupQuestRow>(sql`
+        SELECT stripe_auto_top_up_attempt.user_id AS userId
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_auto_top_up_attempt.user_id = ${user.id}
+          AND +stripe_auto_top_up_attempt.status = 'paid'
+          AND stripe_auto_top_up_attempt.completed_at >= ${AUTO_TOP_UP_QUEST_LAUNCH_MILLIS}
+        LIMIT 1`)
+            : [],
     ]);
 
     const totalPollen = topUpSummaryRows[0]?.totalPollen ?? 0;
@@ -255,6 +285,10 @@ export async function evaluateUser(
         })),
         ...earlyAdopterRows.map((row) => ({
             quest: earlyAdopterQuest,
+            userId: row.userId,
+        })),
+        ...autoTopUpRows.map((row) => ({
+            quest: firstAutoTopUpQuest,
             userId: row.userId,
         })),
         ...(rewardableQuestIds.has(topUpSinceLaunchQuest.id) &&

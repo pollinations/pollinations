@@ -15,9 +15,18 @@ import { apikey, user } from "@shared/db/better-auth.ts";
 import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { fixLink } from "@shared/http/fix-link.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import {
+    callerRates,
+    perSecond,
+    SANDBOX_PROVIDERS,
+    SANDBOX_TEMPLATES,
+    type SandboxProvider,
+    sandboxTemplate,
+} from "@shared/registry/sandbox.ts";
 import {
     priceToEventParams,
     usageToEventParams,
@@ -38,9 +47,6 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
 import {
-    AZURE_GIB_SECOND,
-    AZURE_TEMPLATES,
-    AZURE_VCPU_SECOND,
     azureConfigured,
     azureDomain,
     azureE2b,
@@ -65,48 +71,8 @@ export const E2B_PATH = "/alpha/e2b";
 const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
-type Provider = "e2b" | "azure";
-type Rates = { vcpuSecond: number; gibSecond: number };
-// What each provider charges us per second, in pollen (1 pollen ≈ $1): E2B's
-// list prices, and Azure's for a running box.
-const RATES: Record<Provider, Rates> = {
-    e2b: { vcpuSecond: 0.000014, gibSecond: 0.0000045 },
-    azure: { vcpuSecond: AZURE_VCPU_SECOND, gibSecond: AZURE_GIB_SECOND },
-};
-// The share of its provider's rate a caller pays. E2B's is a launch promo: set
-// it back to 1 when the promo week ends.
-const PRICE_MULTIPLIER: Record<Provider, number> = { e2b: 0.25, azure: 0.25 };
-const perSecond = (
-    rates: Rates,
-    size: { cpuCount: number; memoryMB: number },
-) =>
-    size.cpuCount * rates.vcpuSecond + (size.memoryMB / 1024) * rates.gibSecond;
-// The rates callers pay, and each template's size with them.
-const callerRates = (provider: Provider) => ({
-    vcpuSecond: RATES[provider].vcpuSecond * PRICE_MULTIPLIER[provider],
-    gibSecond: RATES[provider].gibSecond * PRICE_MULTIPLIER[provider],
-});
-const priced = (sizes: typeof TEMPLATE_SIZES, provider: Provider) =>
-    Object.fromEntries(
-        Object.entries(sizes).map(([id, size]) => [
-            id,
-            { ...size, ...callerRates(provider) },
-        ]),
-    );
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
-// Gen logs polli in inside these templates, one image with polli and the
-// coding harnesses in two sizes, with a key of the sandbox's own. Exact names
-// only: E2B resolves them to our team's templates. Their sizes, as built, let
-// the dashboard price a create before E2B reports the size.
-const TEMPLATE_SIZES: Record<string, { cpuCount: number; memoryMB: number }> = {
-    pollinations: { cpuCount: 2, memoryMB: 2048 },
-    "pollinations-large": { cpuCount: 4, memoryMB: 8192 },
-};
-const LOGGED_IN_TEMPLATES = [
-    ...Object.keys(TEMPLATE_SIZES),
-    ...Object.keys(AZURE_TEMPLATES),
-];
 // What `polli auth login` asks for, except `keys`: every process in the box can
 // read the login, and `keys` would let it raise any key's budget. polli's
 // harnesses then use the login itself instead of keys of their own.
@@ -311,16 +277,18 @@ async function requireCapacity(c: E2bContext) {
     }
 }
 
-type Lease = { cost: number; price: number; provider: Provider };
+type Lease = { cost: number; price: number; provider: SandboxProvider };
 
 // What `seconds` of this sandbox costs us at its provider's rates, and what
 // the caller pays.
 function lease(sandbox: SandboxDetail, seconds: number): Lease {
     const provider = isAzureSandbox(sandbox.sandboxID) ? "azure" : "e2b";
-    const cost = seconds * perSecond(RATES[provider], sandbox);
+    const cost = seconds * perSecond(SANDBOX_PROVIDERS[provider], sandbox);
     return {
         cost: roundPollenLedgerAmount(cost),
-        price: roundPollenLedgerAmount(cost * PRICE_MULTIPLIER[provider]),
+        price: roundPollenLedgerAmount(
+            cost * SANDBOX_PROVIDERS[provider].share,
+        ),
         provider,
     };
 }
@@ -556,8 +524,14 @@ function noteRequestActivity(
 
 // Writes polli's login into a new sandbox: a key of its own, created with the
 // caller's key through enter's key API, as `polli harness ... on` creates one.
-// envd, the agent in every sandbox, writes the file as `user`.
+// envd, the agent in every sandbox, writes the file as `user`. A key can only
+// give a key what it has, so the box key gets the polli permissions the caller
+// has, and from a caller with a budget a budget of 0: the box's rent is billed
+// to the caller's budget, so the caller keeps all of it. Returns what the
+// caller must do then to fund the box key.
 async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
+    const callerKey = c.var.auth.apiKey;
+    const budgeted = typeof callerKey?.pollenBalance === "number";
     const created = await c.env.ENTER.fetch(
         `${PUBLIC_URLS.enter.production}/api/account/keys`,
         {
@@ -569,7 +543,12 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
             body: JSON.stringify({
                 name: `polli-sandbox-${sandbox.sandboxID}`,
                 type: "secret",
-                accountPermissions: POLLI_PERMISSIONS,
+                accountPermissions: callerKey
+                    ? POLLI_PERMISSIONS.filter((permission) =>
+                          callerKey.permissions?.account?.includes(permission),
+                      )
+                    : POLLI_PERMISSIONS,
+                ...(budgeted && { pollenBudget: 0 }),
             }),
         },
     );
@@ -578,7 +557,7 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
             `Key creation returned ${created.status}: ${(await created.text()).slice(0, 300)}`,
         );
     }
-    const { key } = await created.json<{ key: string }>();
+    const { key, id } = await created.json<{ key: string; id: string }>();
     // polli keeps a staging login apart from a production one.
     const file =
         c.env.ENVIRONMENT === "production"
@@ -603,6 +582,8 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
         },
     );
     if (!response.ok) throw await upstreamError(response);
+    if (!budgeted) return undefined;
+    return `This sandbox's polli login has a budget of 0 Pollen, because the key that created the sandbox has a budget. Give the login a budget at ${fixLink(c, "/edit-key", { id, ref: "sandbox_key_budget" })}.`;
 }
 
 async function ownerOnly(c: E2bContext) {
@@ -645,7 +626,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     message: "iam and volumeMounts are not supported.",
                 });
             }
-            const azure = Boolean(AZURE_TEMPLATES[body.templateID ?? ""]);
+            const template = sandboxTemplate(body.templateID);
+            const azure = template?.provider === "azure";
             const until = keepUntil(body.timeout);
             const idle = idleTimeoutOf(idleTimeout, until, azure);
             // An empty wallet cannot pay for any lease.
@@ -704,9 +686,11 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 throw error;
             }
             await charge(c, bill, startTime);
-            if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
+            // Pollinations templates come logged in to polli.
+            let notice: string | undefined;
+            if (template) {
                 try {
-                    await logIn(c, created);
+                    notice = await logIn(c, created);
                 } catch (error) {
                     // The sandbox still works; `polli auth login` in it logs in.
                     c.var.log.error("Sandbox login failed: {error}", {
@@ -717,7 +701,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     });
                 }
             }
-            return c.json(servedByGen(c.env, created), 201);
+            return c.json({ ...servedByGen(c.env, created), notice }, 201);
         })
         .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
@@ -927,10 +911,15 @@ export const e2bRoutes = new Hono<Env>()
             // Other E2B templates' rates.
             ...callerRates("e2b"),
             // Azure's only once they can start.
-            templates: {
-                ...priced(TEMPLATE_SIZES, "e2b"),
-                ...(azureConfigured(c.env) && priced(AZURE_TEMPLATES, "azure")),
-            },
+            templates: Object.fromEntries(
+                SANDBOX_TEMPLATES.filter(
+                    ({ provider }) =>
+                        provider === "e2b" || azureConfigured(c.env),
+                ).map(({ id, ...template }) => [
+                    id,
+                    { ...template, ...callerRates(template.provider) },
+                ]),
+            ),
         }),
     )
     .all("/sandbox/*", (c) => proxyEnvd(c, `${E2B_PATH}/sandbox`))

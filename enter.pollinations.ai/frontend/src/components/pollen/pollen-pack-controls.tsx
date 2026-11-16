@@ -42,15 +42,14 @@ export const PollenPackButtons: FC<{
                     aria-label={describe(pollen, price)}
                     // A value, not an action: never a border. Idle it is a
                     // quiet grey (a tint of the text colour, so it shows in
-                    // both modes). Two yellows only: hover is the pale 30%
-                    // of a resting outlined button, chosen is the full
-                    // accent and stays so on hover. The ring shows keyboard
-                    // focus only.
+                    // both modes). Hover is a pale wash of the fill; chosen
+                    // is the full fill with its dark text and stays so on
+                    // hover. The ring shows keyboard focus only.
                     className={cn(
                         "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
                         selected
-                            ? "bg-theme-bg-active text-theme-text-strong"
-                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-bg-active/30",
+                            ? "bg-theme-fill text-theme-on-fill"
+                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-fill/40",
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">

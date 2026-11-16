@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Plot a Law",
+    "url": "https://tomdacatto.github.io/pollinations-plot-a-law",
+    "description": "A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid with your own Pollen.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-plot-a-law",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19602",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e4876cd3-b238-4c10-9143-4841a1ae3cd0"
+  },
+  {
     "emoji": "✍️",
     "name": "Slop Golf",
     "url": "https://slop-golf.pollinations.app",

@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "gutendex_search",
+                "gutendex_book",
             ].sort(),
         );
     });
@@ -644,4 +646,221 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Gutendex search and book lookup return full-text books with download links", async (t) => {
+    let requests = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "gutendex.com");
+        const request = new Request(url, init);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (
+            url.pathname === "/books/" &&
+            url.searchParams.get("search") === "pride and prejudice"
+        ) {
+            return Response.json({
+                count: 6,
+                next: null,
+                previous: null,
+                results: [
+                    {
+                        id: 1342,
+                        title: "Pride and Prejudice",
+                        authors: [
+                            {
+                                name: "Austen, Jane",
+                                birth_year: 1775,
+                                death_year: 1817,
+                            },
+                        ],
+                        translators: [],
+                        subjects: [
+                            "Courtship -- Fiction",
+                            "Domestic fiction",
+                            "England -- Fiction",
+                            "Love stories",
+                            "Sisters -- Fiction",
+                            "Social classes -- Fiction",
+                            "Young women -- Fiction",
+                        ],
+                        bookshelves: [
+                            "Best Books Ever Listings",
+                            "Category: British Literature",
+                            "Category: Classics of Literature",
+                            "Category: Novels",
+                            "Category: Romance",
+                            "Harvard Classics",
+                        ],
+                        languages: ["en"],
+                        copyright: false,
+                        media_type: "Text",
+                        summaries: [
+                            '"Pride and Prejudice" by Jane Austen is a novel published in 1813. It follows Elizabeth Bennet, who must learn to see past first impressions and hasty judgments. With five daughters and an estate that can only pass to male heirs, the Bennet family faces financial pressure to marry well. When wealthy Mr. Darcy arrives in their countryside neighborhood, his pride and Elizabeth\'s prejudice set the stage for misunderstandings, hidden truths, and unexpected revelations about character and love. (This is an automatically generated summary.)',
+                        ],
+                        download_count: 208430,
+                        formats: {
+                            "text/html":
+                                "https://www.gutenberg.org/ebooks/1342.html.images",
+                            "application/epub+zip":
+                                "https://www.gutenberg.org/ebooks/1342.epub3.images",
+                            "text/plain; charset=utf-8":
+                                "https://www.gutenberg.org/ebooks/1342.txt.utf-8",
+                        },
+                    },
+                    {
+                        id: 26301,
+                        title: "Pride and Prejudice",
+                        authors: [
+                            {
+                                name: "Austen, Jane",
+                                birth_year: 1775,
+                                death_year: 1817,
+                            },
+                        ],
+                        translators: [],
+                        subjects: ["Courtship -- Fiction"],
+                        bookshelves: ["Best Books Ever Listings"],
+                        languages: ["en"],
+                        copyright: false,
+                        media_type: "Sound",
+                        summaries: [],
+                        download_count: 9838,
+                        formats: {
+                            "text/plain; charset=us-ascii":
+                                "https://www.gutenberg.org/files/26301/26301.txt",
+                        },
+                    },
+                ],
+            });
+        }
+        if (
+            url.pathname === "/books/" &&
+            url.searchParams.get("search") === "zzzzqqqxxyyynothing"
+        ) {
+            return Response.json({
+                count: 0,
+                next: null,
+                previous: null,
+                results: [],
+            });
+        }
+        if (url.pathname === "/books/1342/") {
+            return Response.json({
+                id: 1342,
+                title: "Pride and Prejudice",
+                authors: [
+                    {
+                        name: "Austen, Jane",
+                        birth_year: 1775,
+                        death_year: 1817,
+                    },
+                ],
+                translators: [],
+                subjects: [
+                    "Courtship -- Fiction",
+                    "Domestic fiction",
+                    "England -- Fiction",
+                    "Love stories",
+                    "Sisters -- Fiction",
+                    "Social classes -- Fiction",
+                    "Young women -- Fiction",
+                ],
+                bookshelves: [
+                    "Best Books Ever Listings",
+                    "Category: British Literature",
+                    "Category: Classics of Literature",
+                    "Category: Novels",
+                    "Category: Romance",
+                    "Harvard Classics",
+                ],
+                languages: ["en"],
+                copyright: false,
+                media_type: "Text",
+                summaries: [
+                    '"Pride and Prejudice" by Jane Austen is a novel published in 1813. It follows Elizabeth Bennet, who must learn to see past first impressions and hasty judgments. With five daughters and an estate that can only pass to male heirs, the Bennet family faces financial pressure to marry well. When wealthy Mr. Darcy arrives in their countryside neighborhood, his pride and Elizabeth\'s prejudice set the stage for misunderstandings, hidden truths, and unexpected revelations about character and love. (This is an automatically generated summary.)',
+                ],
+                download_count: 208430,
+                formats: {
+                    "text/html":
+                        "https://www.gutenberg.org/ebooks/1342.html.images",
+                    "application/epub+zip":
+                        "https://www.gutenberg.org/ebooks/1342.epub3.images",
+                    "text/plain; charset=utf-8":
+                        "https://www.gutenberg.org/ebooks/1342.txt.utf-8",
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "gutendex_search", {
+        query: "pride and prejudice",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 6);
+    assert.equal(searchVal.books.length, 2);
+    assert.equal(searchVal.books[0].id, 1342);
+    assert.equal(searchVal.books[0].title, "Pride and Prejudice");
+    assert.deepEqual(searchVal.books[0].authors, ["Austen, Jane"]);
+    assert.equal(searchVal.books[0].downloadCount, 208430);
+    assert.equal(
+        searchVal.books[0].textUrl,
+        "https://www.gutenberg.org/ebooks/1342.txt.utf-8",
+    );
+    assert.equal(
+        searchVal.books[0].epubUrl,
+        "https://www.gutenberg.org/ebooks/1342.epub3.images",
+    );
+    assert.match(searchVal.books[0].summary, /novel published in 1813/);
+    assert.equal(searchVal.books[0].subjects.length, 7);
+    assert.equal(searchVal.books[1].id, 26301);
+    assert.equal(searchVal.books[1].mediaType, "Sound");
+    assert.equal(searchVal.books[1].summary, null);
+    assert.equal(searchVal.books[1].epubUrl, null);
+    assert.equal(
+        searchVal.books[1].textUrl,
+        "https://www.gutenberg.org/files/26301/26301.txt",
+    );
+
+    const emptyRes = await call(c, "gutendex_search", {
+        query: "zzzzqqqxxyyynothing",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).books, []);
+
+    const bookRes = await call(c, "gutendex_book", {
+        id: "https://gutendex.com/books/1342/",
+    });
+    assert.notEqual(bookRes.isError, true, JSON.stringify(bookRes));
+    const bookVal = value(bookRes);
+    assert.equal(bookVal.book.id, 1342);
+    assert.equal(
+        bookVal.book.textUrl,
+        "https://www.gutenberg.org/ebooks/1342.txt.utf-8",
+    );
+    assert.ok(bookVal.book.summary.length <= 500);
+    assert.deepEqual(bookVal.book.bookshelves.slice(0, 2), [
+        "Best Books Ever Listings",
+        "Category: British Literature",
+    ]);
+
+    const before = requests;
+    const badRes = await call(c, "gutendex_book", { id: "notanid" });
+    assert.equal(badRes.isError, true);
+    assert.equal(requests, before);
+
+    const unknownRes = await call(c, "gutendex_book", { id: "99999999" });
+    assert.equal(unknownRes.isError, true);
+    assert.match(unknownRes.content[0].text, /404/);
 });

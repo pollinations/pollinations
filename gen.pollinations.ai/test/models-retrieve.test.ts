@@ -242,8 +242,7 @@ test("OpenAI-compatible model listings expose required safety checks from primar
     const payload = (fallbacks: string[]) =>
         JSON.stringify({
             paidOnly: false,
-            bearerTokenCiphertext:
-                "test-placeholder-not-used-for-generation",
+            bearerTokenCiphertext: "test-placeholder-not-used-for-generation",
             api: "chat_completions",
             modality: "text",
             imagePricing: "request",
@@ -285,9 +284,9 @@ test("OpenAI-compatible model listings expose required safety checks from primar
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.info.required_safety).toEqual(["privacy"]);
     expect(
-        registry.resolve(id)?.fallbackEntries?.map(
-            (fallback) => fallback.info.required_safety,
-        ),
+        registry
+            .resolve(id)
+            ?.fallbackEntries?.map((fallback) => fallback.info.required_safety),
     ).toEqual([["secrets"]]);
 
     const listResponse = await fetchWorker("/v1/models?reliability=all");
@@ -295,9 +294,9 @@ test("OpenAI-compatible model listings expose required safety checks from primar
     const list = (await listResponse.json()) as {
         data: { id: string; required_safety?: string[] }[];
     };
-    expect(
-        list.data.find((model) => model.id === id)?.required_safety,
-    ).toEqual(["privacy", "secrets"]);
+    expect(list.data.find((model) => model.id === id)?.required_safety).toEqual(
+        ["privacy", "secrets"],
+    );
 
     const detailResponse = await fetchWorker(
         `/v1/models/${encodeURIComponent(id)}`,

@@ -2,6 +2,7 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { cidrTools } from "./tools/cidr.js";
 import { dnsTools } from "./tools/dns.js";
+import { emailTools } from "./tools/email.js";
 import { httpTools } from "./tools/http.js";
 import { macTools } from "./tools/mac.js";
 import { rdapTools } from "./tools/rdap.js";
@@ -14,6 +15,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...dnsTools,
+            ...emailTools,
             ...httpTools,
             ...cidrTools,
             ...rdapTools,

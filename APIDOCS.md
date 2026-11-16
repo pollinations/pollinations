@@ -49,12 +49,14 @@ Free requests are anonymous and limited per IP address:
 | | Limit |
 |---|---|
 | Images | One at a time, at least 45 seconds apart |
-| Text | One at a time, at least 30 seconds apart. A stream waits for the next slot |
+| Text | One at a time, at least 45 seconds apart. A stream waits for the next slot |
 
 Beyond the limit you get **402 Payment Required**, with a `Retry-After` header saying when the next free request is ready, and a short explanation:
 
 - **Text:** a one-line notice as plain text, or a JSON error for OpenAI-style and `json=true` requests.
 - **Images:** an image card in `<img>` tags, a page in the browser, and a JSON error for scripts.
+
+A `HEAD` request beyond the limit gets **429 Too Many Requests** with a `Retry-After` header and no body.
 
 You can:
 

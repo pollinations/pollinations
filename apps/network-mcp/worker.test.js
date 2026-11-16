@@ -97,8 +97,10 @@ test("CIDR preserves IPv6 precision and prefix extremes", () => {
     assert.equal(inspect("0.0.0.0/0", []).last_address, "255.255.255.255");
     assert.equal(inspect("10.0.0.1/31", []).address_count, "2");
     assert.equal(inspect("10.0.0.1/32", []).network, "10.0.0.1");
-    for (const cidr of ["10.0.0.1/33", "::/129", "hello"])
-        assert.throws(() => inspect(cidr, []));
+    // An out-of-range prefix is a tool error, not ipaddr's internal message.
+    assert.throws(() => inspect("10.0.0.1/33", []), /IPv4 prefix must be 0-32/);
+    assert.throws(() => inspect("::/129", []), /IPv6 prefix must be 0-128/);
+    assert.throws(() => inspect("hello", []));
 });
 test("public URL validation handles normalized IPs, credentials, protocols and ports", () => {
     for (const url of [

@@ -1001,7 +1001,7 @@ test("a stream frees the IP once gen answers, and a client that leaves cancels g
     await waitOnExecutionContext(ctx);
 });
 
-test("a limiter failure is answered as a free request, booking and releasing nothing", async () => {
+test("a limiter failure returns 503 without calling gen or releasing a slot", async () => {
     const gen = recordingGen();
     const calls = [];
     const failing = {
@@ -1018,13 +1018,12 @@ test("a limiter failure is answered as a free request, booking and releasing not
         testEnv: { ...gen.testEnv, IP_SLOT: failing },
     });
 
-    expect(response.status).toBe(200);
-    expect(text).toBe("ok");
-    expect(response.headers.get("cache-control")).toBe(
-        "public, max-age=31536000, immutable",
-    );
-    expect(gen.bodies).toHaveLength(1);
+    expect(response.status).toBe(503);
+    expect(JSON.parse(text).error.code).toBe("SERVICE_UNAVAILABLE");
+    expect(response.headers.get("Retry-After")).toBe("10");
+    expect(gen.bodies).toHaveLength(0);
     expect(calls).toEqual(["take"]);
+    expect(await storedAt("/limiter%20down")).toBeNull();
 });
 
 test("a HEAD miss is not stored, so the next GET returns the full text", async () => {

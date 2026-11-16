@@ -68,7 +68,7 @@ const CROSSDOMAIN = `<?xml version="1.0" encoding="UTF-8"?>
 const JSON_TYPE = "application/json; charset=utf-8";
 const TEXT_TYPE = "text/plain; charset=utf-8";
 const IMMUTABLE = "public, max-age=31536000, immutable";
-// Cache-Control of generations outside the free limit (paid or HEAD)
+// Cache-Control for requests outside the free limit
 const UNPAID = "private, no-store";
 // The VM's cors() options: every response after the blocklist and body parsing
 export const CORS = {
@@ -613,20 +613,31 @@ async function generation(
     try {
         slot = await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
-        // The VM's in-memory queue could not fail: answer as a free request
-        // that books and releases nothing
         logFailure(route, { error: "ip_slot", type: error.name });
-        return generate(env, job, undefined, () => {});
+        return sendGenAnswer(failure(503));
     }
 
     if (slot.action === "full") {
         return sendGenAnswer(genAnswer(429, REFUSED.replyBusy));
     }
     if (slot.action === "pay") {
+        // The paywall covers GET and POST only.
+        if (request.method === "HEAD") {
+            const wait = Math.max(
+                1,
+                Math.ceil((slot.until - Date.now()) / 1000),
+            );
+            return new Response(null, {
+                status: 429,
+                headers: {
+                    ...CORS,
+                    "Cache-Control": UNPAID,
+                    "Retry-After": String(wait),
+                },
+            });
+        }
         // Outside the free limit: books no slot
         const unpaid = () => generate(env, job, UNPAID, () => {});
-        // The paywall covers GET and POST only, so a HEAD generates unpaid
-        if (request.method === "HEAD") return unpaid();
         const { pay } = await import("./pay.js");
         const format = job.options.response_format?.type;
         // OpenAI and JSON callers read errors as JSON, the rest print the text

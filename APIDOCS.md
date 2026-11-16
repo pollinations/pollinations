@@ -664,7 +664,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
-| `seed` | `integer` \| `null` | — |
+| `seed` | `integer` \| `null` | Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request. |
 | `stop` | `any` \| `string`[] | — |
 | `stream` | `any` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
@@ -947,7 +947,7 @@ Identical requests may be answered from a shared cache, also for callers without
 | `max_completion_tokens` | `integer` \| `null` | Maximum generated tokens, including reasoning. When an explicit limit is exhausted and every choice has no answer, non-streaming requests return 400 output_token_limit_exceeded. Provider-reported usage, including reasoning tokens, is billed. Increase the limit or reduce reasoning effort. |
 | `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
-| `seed` | `integer` \| `null` | — |
+| `seed` | `integer` \| `null` | Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request. |
 | `stop` | `any` \| `string`[] | — |
 | `stream` | `any` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
@@ -999,7 +999,7 @@ Identical requests may be answered from a shared cache, also for callers without
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text prompt for generation |
 | `model` | `query` | `string` | Text model to use. See /v1/models or /text/models for the full list of available models. · default: `"openai/gpt-5.4-nano"` |
-| `seed` | `query` | `integer` | Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed. · min: `-1` |
+| `seed` | `query` | `integer` | Optional seed for reproducible results on models that support it. Omitted by default. -1 requests a fresh random seed and generation for each request. · min: `-1` |
 | `system` | `query` | `string` | System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt. |
 | `json` | `query` | `boolean` | When true, the model returns valid JSON. Useful for structured data extraction. |
 | `temperature` | `query` | `number` | Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode. |
@@ -1986,12 +1986,14 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
 | `data[].output_modalities` | `string`[] | — |
+| `data[].required_safety` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Safety checks the gateway always applies to text input for this model; callers cannot disable them. |
 | `data[].supported_endpoints` | `string`[] | — |
 | `data[].agent` | `boolean` | True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models. |
 | `data[].base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `data[].pricing_adjustments` | `object`[] | Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges. |
 | `data[].top_provider` * | `object` | — |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
@@ -2104,12 +2106,23 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `description` | `string` | — |
 | `input_modalities` | `string`[] | — |
 | `output_modalities` | `string`[] | — |
+| `required_safety` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Safety checks the gateway always applies to text input for this model; callers cannot disable them. |
 | `supported_endpoints` | `string`[] | — |
 | `agent` | `boolean` | True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models. |
 | `base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
 | `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel. |
+| `pricing_adjustments` | `object`[] | Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges. |
+| `pricing_adjustments[].name` * | `string` | — |
+| `pricing_adjustments[].label` * | `string` | — |
+| `pricing_adjustments[].kind` * | `string` | — |
+| `pricing_adjustments[].price` * | `string` | — |
+| `pricing_adjustments[].currency` * | `"pollen"` | — |
+| `pricing_adjustments[].quantity` * | `number` | — |
+| `pricing_adjustments[].unit` * | `string` | — |
+| `pricing_adjustments[].suffix` | `string` | — |
+| `pricing_adjustments[].option` | `object` | — |
 | `top_provider` * | `object` | — |
 | `top_provider.max_completion_tokens` * | `integer` \| `null` | Maximum output tokens; null when no limit is declared. |
 | `capabilities` | `string`[] | — |

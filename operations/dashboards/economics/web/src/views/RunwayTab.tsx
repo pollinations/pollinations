@@ -78,8 +78,9 @@ export function fmtRunwayTableValue(value: number | null | undefined): string {
 
 const SUMMARY_HELP: Record<string, string[]> = {
     "Operating result": [
-        "Recorded revenue plus recorded expenses for the calendar month.",
-        "Bank settlement timing is shown separately in cash adjustments.",
+        "Main amount: revenue less cash-funded expenses.",
+        "Gray amount: operating result after credit-funded expenses.",
+        "Bank settlement timing is shown separately in Cash reconciliation.",
     ],
     Expenses: [
         "Main amount: cash-funded costs for the month, not necessarily paid that month.",
@@ -240,12 +241,22 @@ function hasAmount(value: number | null | undefined): value is number {
 }
 
 // Credit-funded usage stays separate from cash, including credit-only months.
-function CreditAmount({ value }: { value: number | null | undefined }) {
+function CreditAmount({
+    value,
+    label,
+}: {
+    value: number | null | undefined;
+    label?: string;
+}) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
-    if (value == null || value === 0 || (!pro && Math.abs(value) < 1))
+    if (
+        value == null ||
+        (!label && (value === 0 || (!pro && Math.abs(value) < 1)))
+    )
         return null;
     return (
         <div className="text-xs font-normal text-theme-text-muted">
+            {label && <span className="sr-only">{label} </span>}
             {fmtRunwayTableValue(value)}
         </div>
     );
@@ -360,7 +371,9 @@ function groupRows(
         };
         group.rows.push(row);
         for (const column of columns) {
-            group.creditValues[column.id] += row.creditValues?.[column.id] ?? 0;
+            if (row.category !== "revenue")
+                group.creditValues[column.id] +=
+                    row.creditValues?.[column.id] ?? 0;
             const previous = group.values[column.id];
             group.values[column.id] =
                 previous == null ||
@@ -393,6 +406,7 @@ function SummaryRow({
     columns,
     value,
     credit,
+    afterCredits,
     expanded,
     onToggle,
     treatment,
@@ -401,6 +415,7 @@ function SummaryRow({
     columns: RunwayColumn[];
     value: (column: RunwayColumn) => number | null;
     credit?: (column: RunwayColumn) => number | null;
+    afterCredits?: (column: RunwayColumn) => number | null;
     expanded?: boolean;
     onToggle?: () => void;
     treatment?: "subtotal" | "quiet" | "detail";
@@ -410,6 +425,7 @@ function SummaryRow({
         <TableRow
             className={cn(
                 "runway-summary",
+                label === "Expenses" && "runway-expenses",
                 treatment === "subtotal" && "runway-operating-result",
                 treatment === "detail"
                     ? "text-theme-text-muted"
@@ -465,6 +481,12 @@ function SummaryRow({
                         </span>
                     )}
                     <CreditAmount value={credit?.(column)} />
+                    {afterCredits && (
+                        <CreditAmount
+                            label="Operating result after credit-funded expenses"
+                            value={afterCredits(column)}
+                        />
+                    )}
                 </TableCell>
             ))}
         </TableRow>
@@ -894,6 +916,14 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                 column.forecastComplete === false
                                     ? null
                                     : column.operatingResultUsd
+                            }
+                            afterCredits={(column) =>
+                                column.forecastComplete === false ||
+                                column.operatingResultUsd == null ||
+                                !hasAmount(column.totalCreditUsd)
+                                    ? null
+                                    : column.operatingResultUsd +
+                                      column.totalCreditUsd
                             }
                         />
                         {groups

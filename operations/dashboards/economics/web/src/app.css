@@ -24,6 +24,10 @@
     font-weight: 400;
 }
 
+.runway-table tbody > tr:has(+ .runway-expenses) {
+    border-bottom-width: 0;
+}
+
 .runway-table tbody > .runway-category {
     border-top: 1px solid color-mix(in srgb, var(--polli-color-text-strong) 16%, transparent);
 }

@@ -161,7 +161,7 @@ describe("RunwayTab labels", () => {
                 refunds: 100,
                 reversals: 20,
                 stripe_fees: 80,
-                stripe_fees_credit: 0,
+                stripe_fees_credit: 461.38,
                 fee_credit_funding: 0,
                 dispute_fees: 60,
                 net_sales: 880,
@@ -237,6 +237,7 @@ describe("RunwayTab labels", () => {
             }),
         );
         expect(html).toContain("Revenue calculation info");
+        expect(html).not.toContain("−461");
         expect(html).not.toContain("Plan baseline:");
         expect(html).not.toContain("Provisional runway —");
         expect(html).toMatch(

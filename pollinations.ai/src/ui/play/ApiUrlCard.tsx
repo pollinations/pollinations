@@ -65,7 +65,6 @@ export function ApiUrlCard({
             </Text>
             <CopyButton
                 value={example}
-                tooltip={null}
                 aria-label="Copy API example"
                 className="polli-surface-card relative block w-full min-w-0 select-none rounded-card bg-surface-opaque min-h-16 p-3.5 pr-16 text-left transition-colors hover:bg-surface-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-text-soft sm:p-4 sm:pr-16"
             >
@@ -80,16 +79,9 @@ export function ApiUrlCard({
                         >
                             <CopyStateIcon
                                 copied={copied}
-                                className={
-                                    copied
-                                        ? "h-4 w-4 text-intent-success-text"
-                                        : "h-4 w-4"
-                                }
+                                className="h-4 w-4"
                             />
                         </span>
-                        <output className="sr-only">
-                            {copied ? "Copied" : ""}
-                        </output>
                     </>
                 )}
             </CopyButton>

@@ -378,7 +378,17 @@ export const CreateChatCompletionRequestSchema = z
         max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(2147483647)
+            .nullable()
+            .optional()
+            .meta({
+                description:
+                    "Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request.",
+            }),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),
@@ -810,6 +820,9 @@ export const OpenAIModelSchema = z
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
+        required_safety: ModelInfoSchema.shape.required_safety.describe(
+            "Safety checks the gateway always applies to text input for this model; callers cannot disable them.",
+        ),
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
         base_model: z
@@ -826,6 +839,9 @@ export const OpenAIModelSchema = z
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
+            "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
+        ),
         flat_rate: ModelInfoSchema.shape.flat_rate.describe(
             "True when the price is a flat rate per image rather than per unit. Omitted when the model is not flat-rate.",
         ),

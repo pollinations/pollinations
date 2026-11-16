@@ -61,6 +61,7 @@ for (const modern of [false, true])
             "http_probe",
             "inspect_cidr",
             "inspect_mac",
+            "ip_geolocate",
             "ip_whois",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
@@ -69,7 +70,13 @@ for (const modern of [false, true])
                 .filter((x) => x.annotations.openWorldHint !== false)
                 .map((x) => x.name)
                 .sort(),
-            ["dns_lookup", "domain_whois", "http_probe", "ip_whois"],
+            [
+                "dns_lookup",
+                "domain_whois",
+                "http_probe",
+                "ip_geolocate",
+                "ip_whois",
+            ],
         );
         const response = await client.callTool({
             name: "inspect_cidr",
@@ -388,6 +395,109 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
             true,
         );
     }
+});
+test("IP geolocation returns location data and surfaces private-range failures", async (t) => {
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "ip-api.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        assert.ok(url.searchParams.get("fields").includes("country"));
+        const path = decodeURIComponent(url.pathname);
+        if (path === "/json/8.8.8.8")
+            return Response.json({
+                status: "success",
+                country: "United States",
+                countryCode: "US",
+                regionName: "Virginia",
+                city: "Ashburn",
+                zip: "20149",
+                lat: 39.03,
+                lon: -77.5,
+                timezone: "America/New_York",
+                isp: "Google LLC",
+                org: "Google Public DNS",
+                as: "AS15169 Google LLC",
+                query: "8.8.8.8",
+            });
+        if (path === "/json/2606:4700:4700::1111")
+            return Response.json({
+                status: "success",
+                country: "United States",
+                countryCode: "US",
+                regionName: "California",
+                city: "San Francisco",
+                zip: "94107",
+                lat: 37.7803,
+                lon: -122.39,
+                timezone: "America/Los_Angeles",
+                isp: "Cloudflare, Inc.",
+                org: "Cloudflare, Inc.",
+                as: "AS13335 Cloudflare, Inc.",
+                query: "2606:4700:4700::1111",
+            });
+        return Response.json({
+            status: "fail",
+            message: "private range",
+            query: "10.0.0.1",
+        });
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "ip_geolocate",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    const google = await read({ ip: "8.8.8.8" });
+    assert.equal(google.country, "United States");
+    assert.equal(google.country_code, "US");
+    assert.equal(google.region, "Virginia");
+    assert.equal(google.city, "Ashburn");
+    assert.equal(google.latitude, 39.03);
+    assert.equal(google.longitude, -77.5);
+    assert.equal(google.timezone, "America/New_York");
+    assert.equal(google.isp, "Google LLC");
+    assert.equal(google.org, "Google Public DNS");
+    assert.equal(google.as, "AS15169 Google LLC");
+    const v6 = await read({ ip: "2606:4700:4700::1111" });
+    assert.equal(v6.city, "San Francisco");
+    assert.equal(v6.as, "AS13335 Cloudflare, Inc.");
+    const privateResult = await c.callTool({
+        name: "ip_geolocate",
+        arguments: { ip: "10.0.0.1" },
+    });
+    assert.equal(privateResult.isError, true);
+    assert.match(privateResult.content[0].text, /private range/);
+    assert.equal(requests, 3);
+});
+test("IP geolocation rejects invalid IPs before I/O and exposes upstream errors", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response(null, { status: 429 }),
+    );
+    const c = await clientFor(t);
+    for (const ip of ["010.0.0.1", "fe80::1%en0", "bogus", "999.1.1.1"]) {
+        assert.equal(
+            (await c.callTool({ name: "ip_geolocate", arguments: { ip } }))
+                .isError,
+            true,
+        );
+    }
+    assert.equal(stub.mock.callCount(), 0);
+    const result = await c.callTool({
+        name: "ip_geolocate",
+        arguments: { ip: "8.8.8.8" },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 429/);
+    assert.equal(stub.mock.callCount(), 1);
 });
 test("inspect_mac parses and normalizes MAC addresses across formats", async (t) => {
     const client = await clientFor(t);

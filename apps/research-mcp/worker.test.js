@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "hal_search",
+                "hal_record",
             ].sort(),
         );
     });
@@ -644,4 +646,146 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("HAL search and record lookup format French archive records and reject bad ids before fetch", async (t) => {
+    let requests = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.archives-ouvertes.fr");
+        assert.equal(new Headers(init?.headers).get("authorization"), null);
+        assert.equal(new Headers(init?.headers).get("cookie"), null);
+        const q = url.searchParams.get("q");
+        if (q === "climate") {
+            return Response.json({
+                response: {
+                    numFound: 80278,
+                    docs: [
+                        {
+                            docid: "5228972",
+                            title_s: [
+                                "Derailment and Wrath of Climate in India",
+                            ],
+                            authFullName_s: ["R Balaram", "S.V.Lingeswara Rao"],
+                            uri_s: "https://hal.science/hal-05228972v1",
+                            docType_s: "ART",
+                            producedDateY_i: 2025,
+                        },
+                        {
+                            docid: "5123853",
+                            title_s: [
+                                "Climate Justice or Climate Injustice on the Planet Earth: Social, Geopolitical, Legal, Security, Visual, and Moral Dimensions",
+                            ],
+                            authFullName_s: ["Faruk Hadžić"],
+                            uri_s: "https://hal.science/hal-05123853v1",
+                            docType_s: "ART",
+                            doiId_s: "10.9734/ijecc/2024/v14i84348",
+                            producedDateY_i: 2024,
+                        },
+                    ],
+                },
+            });
+        }
+        if (q === "asdfqwerzxcv1234") {
+            return Response.json({
+                response: { numFound: 0, docs: [] },
+            });
+        }
+        if (q === "docid:123456" || q === "halId_s:hal-05228972") {
+            const doc =
+                q === "docid:123456"
+                    ? {
+                          docid: "123456",
+                          title_s: [
+                              "Guide pour les enseignants qui accueillent un élève présentant une déficience visuelle (élèves malvoyants ou aveugles)",
+                          ],
+                          abstract_s: [
+                              "Destiné en priorité aux enseignants du primaire et du secondaire qui accueillent dans leur classe un élève présentant une déficience visuelle, ce guide présente les caractéristiques des principales formes de déficience visuelle.",
+                          ],
+                          authFullName_s: [
+                              "Nathalie Lewi-Dumont",
+                              "Michèle Collat",
+                          ],
+                          uri_s: "https://shs.hal.science/halshs-00123456v1",
+                          docType_s: "OUV",
+                          producedDateY_i: 2004,
+                      }
+                    : {
+                          docid: "5228972",
+                          halId_s: "hal-05228972",
+                          title_s: ["Derailment and Wrath of Climate in India"],
+                          authFullName_s: ["R Balaram", "S.V.Lingeswara Rao"],
+                          uri_s: "https://hal.science/hal-05228972v1",
+                          docType_s: "ART",
+                          producedDateY_i: 2025,
+                      };
+            return Response.json({
+                response: { numFound: 1, docs: [doc] },
+            });
+        }
+        if (q === "docid:999999999") {
+            return Response.json({
+                response: { numFound: 0, docs: [] },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "hal_search", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 80278);
+    assert.equal(searchVal.records.length, 2);
+    assert.equal(searchVal.records[0].docid, "5228972");
+    assert.equal(
+        searchVal.records[0].title,
+        "Derailment and Wrath of Climate in India",
+    );
+    assert.deepEqual(searchVal.records[0].authors, [
+        "R Balaram",
+        "S.V.Lingeswara Rao",
+    ]);
+    assert.equal(searchVal.records[0].year, 2025);
+    assert.equal(searchVal.records[0].docType, "ART");
+    assert.equal(searchVal.records[0].doi, null);
+    assert.equal(
+        searchVal.records[0].url,
+        "https://hal.science/hal-05228972v1",
+    );
+    assert.equal(searchVal.records[1].doi, "10.9734/ijecc/2024/v14i84348");
+
+    const emptyRes = await call(c, "hal_search", {
+        query: "asdfqwerzxcv1234",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).records, []);
+
+    const recordRes = await call(c, "hal_record", { id: "123456" });
+    assert.notEqual(recordRes.isError, true, JSON.stringify(recordRes));
+    const record = value(recordRes).record;
+    assert.equal(record.docid, "123456");
+    assert.equal(record.docType, "OUV");
+    assert.equal(record.year, 2004);
+    assert.match(record.abstract, /Destiné en priorité aux enseignants/);
+    assert.equal(record.url, "https://shs.hal.science/halshs-00123456v1");
+
+    const halIdRes = await call(c, "hal_record", {
+        id: "https://hal.science/hal-05228972v1",
+    });
+    assert.notEqual(halIdRes.isError, true, JSON.stringify(halIdRes));
+    assert.equal(value(halIdRes).record.halId, "hal-05228972");
+
+    const missingRes = await call(c, "hal_record", { id: "999999999" });
+    assert.equal(missingRes.isError, true, JSON.stringify(missingRes));
+
+    const before = requests;
+    const badRes = await call(c, "hal_record", { id: "not an id!" });
+    assert.equal(badRes.isError, true, JSON.stringify(badRes));
+    assert.equal(requests, before);
 });

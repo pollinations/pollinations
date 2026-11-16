@@ -221,6 +221,30 @@ describe("text cache", () => {
         },
     );
 
+    it("treats an explicit false stream flag as the same request", async () => {
+        // `stream` defaults to false, so an explicit false, a null and an
+        // omitted flag are one request. Hashing the raw body forked the entry
+        // and billed a second generation of the same prompt.
+        const keyFor = async (body: Record<string, unknown>, query = "") => {
+            const request = new Request(
+                `https://gen.pollinations.ai/v1/chat/completions${query}`,
+                chatInit(body),
+            );
+            return generateCacheKey(request, await request.clone().text());
+        };
+        const base = {
+            model: "openai/gpt-5.4-nano",
+            messages: [{ role: "user", content: "cache me" }],
+            seed: 7,
+        };
+        const omitted = await keyFor(base);
+        expect(await keyFor({ ...base, stream: false })).toBe(omitted);
+        expect(await keyFor({ ...base, stream: null })).toBe(omitted);
+        expect(await keyFor(base, "?stream=false")).toBe(omitted);
+        // A real stream is still a different entry: its body is SSE, not JSON.
+        expect(await keyFor({ ...base, stream: true })).not.toBe(omitted);
+    });
+
     it("partitions managed-agent cache keys by caller API key", async () => {
         const request = new Request(
             "https://gen.pollinations.ai/v1/chat/completions",

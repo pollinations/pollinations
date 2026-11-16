@@ -16,8 +16,11 @@ import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { parseBooleanLike } from "@/util.ts";
 
-// Parameters to exclude from cache key (auth + cache control)
-const EXCLUDED_PARAMS = ["key", "no-cache"];
+// Parameters to exclude from the cache key (auth + cache control). "stream" is
+// excluded because `STREAM_CACHE_VERSION` already represents it: an explicit
+// `"stream": false` (or `null`, or a `?stream=false` query) means the same thing
+// as omitting it, so it must not fork the entry and bill a second generation.
+const EXCLUDED_PARAMS = ["key", "no-cache", "stream"];
 const CACHED_HEADER_NAMES = new Set([
     "x-fallback-target",
     "x-model-used",

@@ -9,6 +9,7 @@ import {
     TableHeaderCell,
     TableRow,
     Tooltip,
+    TrendUpIcon,
 } from "@pollinations/ui";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DataTable, TableScroller } from "../components/DataTable";
@@ -421,6 +422,12 @@ function SummaryRow({
                     treatment === "detail" && "pl-8",
                 )}
             >
+                {treatment === "subtotal" && (
+                    <TrendUpIcon
+                        aria-hidden="true"
+                        className="mr-2 inline-block h-4 w-4 text-theme-text-muted"
+                    />
+                )}
                 {onToggle ? (
                     <TableDisclosureButton
                         expanded={expanded ?? false}
@@ -879,6 +886,16 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
+                        <SummaryRow
+                            label="Operating result"
+                            treatment="subtotal"
+                            columns={columns}
+                            value={(column) =>
+                                column.forecastComplete === false
+                                    ? null
+                                    : column.operatingResultUsd
+                            }
+                        />
                         {groups
                             .filter((group) => group.category === "revenue")
                             .map((group) => (
@@ -918,16 +935,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                         currentMonth={runway.currentMonth}
                                     />
                                 ))}
-                        <SummaryRow
-                            label="Operating result"
-                            treatment="subtotal"
-                            columns={columns}
-                            value={(column) =>
-                                column.forecastComplete === false
-                                    ? null
-                                    : column.operatingResultUsd
-                            }
-                        />
                     </TableBody>
                     <TableBody>
                         <SummaryRow

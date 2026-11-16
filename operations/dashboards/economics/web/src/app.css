@@ -14,7 +14,7 @@
 }
 
 .runway-table .runway-operating-result > td {
-    border-top: 2px solid color-mix(in srgb, var(--polli-color-text-strong) 16%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, var(--polli-color-text-strong) 16%, transparent);
     background: color-mix(in srgb, var(--polli-color-text-strong) 5%, var(--polli-color-surface-opaque));
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;

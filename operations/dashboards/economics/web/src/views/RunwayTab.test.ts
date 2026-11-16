@@ -581,8 +581,8 @@ describe("RunwayTab labels", () => {
             'aria-label="Expenses calculation info"',
         );
         expect(revenueIndex).toBeLessThan(expensesIndex);
-        expect(expensesIndex).toBeLessThan(resultIndex);
-        expect(resultIndex).toBeLessThan(reconciliationIndex);
+        expect(resultIndex).toBeLessThan(revenueIndex);
+        expect(expensesIndex).toBeLessThan(reconciliationIndex);
         expect(html).not.toContain("runway-subcategory");
         expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');

@@ -67,7 +67,7 @@ export async function callCommunityImageEndpoint(
                   size: `${safeParams.width}x${safeParams.height}`,
                   quality:
                       safeParams.quality === "hd" ? "high" : safeParams.quality,
-                  ...(safeParams.transparent
+                  ...(safeParams.transparent || safeParams.background === "transparent"
                       ? { background: "transparent", output_format: "png" }
                       : {}),
               }),
@@ -165,7 +165,7 @@ async function imageEditFormData(
         "quality",
         safeParams.quality === "hd" ? "high" : safeParams.quality,
     );
-    if (safeParams.transparent) {
+    if (safeParams.transparent || safeParams.background === "transparent") {
         formData.append("background", "transparent");
         formData.append("output_format", "png");
     }

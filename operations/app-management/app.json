@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Slop Golf",
+    "url": "https://slop-golf.pollinations.app",
+    "description": "A writing game about the LLM voice: a mystery model writes a paragraph, you edit out its AI tells in the fewest words, and a judge model checks your putt.",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "cristianbagrin",
+    "githubUserId": "268160111",
+    "repositoryUrl": "https://github.com/cristianbagrin/slop-golf",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19740",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/b67f1475-8880-4cfa-b2d7-b1af42357735"
+  },
+  {
     "emoji": "🎮",
     "name": "PETI-64",
     "url": "https://rekty.github.io/machine-tui",

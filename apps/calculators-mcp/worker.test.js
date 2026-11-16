@@ -73,6 +73,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "crc32_checksum",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -434,6 +435,43 @@ test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", asy
             true,
             JSON.stringify(args),
         );
+});
+
+test("crc32_checksum matches the published check values", async (t) => {
+    const client = await clientFor(t);
+    // The check value every CRC catalogue lists for each polynomial.
+    assert.deepEqual(
+        await call(client, "crc32_checksum", { text: "123456789" }),
+        { checksum: "cbf43926" },
+    );
+    assert.deepEqual(
+        await call(client, "crc32_checksum", {
+            text: "123456789",
+            variant: "crc32c",
+        }),
+        { checksum: "e3069283" },
+    );
+    assert.deepEqual(
+        await call(client, "crc32_checksum", {
+            text: "The quick brown fox jumps over the lazy dog",
+        }),
+        { checksum: "414fa339" },
+    );
+    assert.deepEqual(
+        await call(client, "crc32_checksum", {
+            text: "The quick brown fox jumps over the lazy dog",
+            variant: "crc32c",
+        }),
+        { checksum: "22620404" },
+    );
+    // An empty input is a legitimate checksum, and must keep its leading zeros.
+    assert.deepEqual(await call(client, "crc32_checksum", { text: "" }), {
+        checksum: "00000000",
+    });
+    // Multi-byte text pins the UTF-8 encoding and the zero padding together.
+    assert.deepEqual(await call(client, "crc32_checksum", { text: "café" }), {
+        checksum: "98ad42b5",
+    });
 });
 
 test("compare_versions orders by SemVer precedence, not string order", async (t) => {

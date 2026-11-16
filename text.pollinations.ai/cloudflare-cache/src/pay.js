@@ -1,8 +1,8 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import { PRICE_USD } from "../../../shared/messages.js";
-import { CORS, etag } from "./origin.js";
+import { failure, PRICE_USD } from "../../../shared/messages.js";
+import { CORS, etag, logFailure } from "./origin.js";
 
 // The x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
 // requests outside the free limit. origin.js loads this module only then.
@@ -14,11 +14,17 @@ const RESOURCE_ORIGIN = "https://text-origin.pollinations.ai";
 // /supported, Node 22 fetch's default on /verify and /settle
 const SUPPORTED_HEADERS = { "User-Agent": "weft-sdk-express/0.27.1" };
 const PAYMENT_HEADERS = { "User-Agent": "node" };
+// The Express middleware synced /supported again on the first payment request
+// at least this long after a failed sync
+const SYNC_RETRY_MS = 30_000;
 
-let app;
+// { app, unsyncedSince }: when the app first answered that /supported had
+// not synced
+let paywall;
 
 /** The middleware fetches /supported when built, so build it inside a request */
 function paywallApp(env) {
+    const built = { unsyncedSince: 0 };
     const route = () => ({
         accepts: {
             scheme: "exact",
@@ -28,7 +34,7 @@ function paywallApp(env) {
         },
         description: "Generate one text response with Pollinations",
     });
-    const paywall = weftPaymentMiddlewareHono(
+    const middleware = weftPaymentMiddlewareHono(
         { "GET *": route(), "POST *": route() },
         {
             apiKey: env.WEFT_SELLER_API_KEY,
@@ -51,14 +57,20 @@ function paywallApp(env) {
             ],
         },
     );
-    return (
-        new Hono()
-            .use(paywall)
-            .all("*", (c) => c.env.generate())
-            // A facilitator exception (no /supported yet, a malformed reply, a
-            // timeout) gets an unpaid generation: the VM's callback ignored next(err)
-            .onError((_error, c) => c.env.generate())
-    );
+    built.app = new Hono()
+        .use(middleware)
+        .all("*", (c) => c.env.generate())
+        // Changed: a facilitator exception (no /supported yet, a malformed
+        // reply, a timeout) got an unpaid generation on the VM
+        .onError((error) => {
+            if (error.message?.startsWith("Facilitator does not support")) {
+                built.unsyncedSince ||= Date.now();
+            }
+            logFailure("paywall", { error: "facilitator", type: error.name });
+            const { status, body, headers } = failure(503);
+            return new Response(body, { status, headers });
+        });
+    return built;
 }
 
 /**
@@ -67,9 +79,15 @@ function paywallApp(env) {
  * @param {() => Promise<Response>} generate an unpaid generation
  */
 export async function pay(request, env, ctx, generate) {
-    app ??= paywallApp(env);
+    // The middleware's own retry would run unawaited in a request that ends
+    // first, which a Worker does not finish: build it again instead
+    const { unsyncedSince } = paywall ?? {};
+    if (unsyncedSince && Date.now() - unsyncedSince >= SYNC_RETRY_MS) {
+        paywall = undefined;
+    }
+    paywall ??= paywallApp(env);
     const { pathname } = new URL(request.url);
-    const paid = app.fetch(
+    const paid = paywall.app.fetch(
         new Request(RESOURCE_ORIGIN + pathname, {
             method: request.method,
             headers: request.headers,

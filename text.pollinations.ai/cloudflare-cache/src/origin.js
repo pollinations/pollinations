@@ -158,7 +158,7 @@ function errorPage(status, message, cors) {
 }
 
 // One JSON line per adapter failure, without URL, prompt, IP or headers
-const logFailure = (route, details) =>
+export const logFailure = (route, details) =>
     console.error(JSON.stringify({ adapter: "text", route, ...details }));
 
 /**

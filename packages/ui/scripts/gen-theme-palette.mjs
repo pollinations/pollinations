@@ -54,7 +54,8 @@ export async function generatePalette() {
     );
     if (!recipe) throw new Error("bg-pale recipe not found in tokens.css");
 
-    // bg-active = the brand-accent step (favicon / small standalone marks).
+    // bgActive = brand-accent, the fixed yellow of the favicon and small
+    // standalone marks (no longer the UI bg-active, which mixes from honey).
     // Its lightness is `calc(<base> + var(--polli-nudge))`, so read the nudge too.
     const nudge = css.match(/--polli-nudge:\s*([\d.]+)/);
     if (!nudge) throw new Error("--polli-nudge not found in tokens.css");

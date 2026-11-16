@@ -484,7 +484,7 @@ const DocsRow: FC = () => (
             }}
             data-theme="accent"
             aria-label="Copy all docs as text"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-fill/40 hover:text-theme-text-strong"
         >
             {(copied) => <CopyStateIcon copied={copied} className="h-4 w-4" />}
         </CopyButton>

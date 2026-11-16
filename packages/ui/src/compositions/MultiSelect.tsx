@@ -103,12 +103,12 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             "polli:cursor-not-allowed polli:bg-theme-fill polli:text-theme-on-fill polli:opacity-50",
                         )}
                     >
-                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
+                        <span className="polli:flex-1 polli:truncate polli:text-left">
                             {displayText}
                         </span>
                         <ChevronIcon
                             expanded={false}
-                            className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
+                            className="polli:h-3 polli:w-3"
                         />
                     </button>
                 </Tooltip>
@@ -139,24 +139,12 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 : "polli:bg-theme-fill polli:text-theme-on-fill polli:hover:bg-theme-fill-hover",
                         )}
                     >
-                        <span
-                            className={cn(
-                                "polli:flex-1 polli:truncate polli:text-left",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-base",
-                            )}
-                        >
+                        <span className="polli:flex-1 polli:truncate polli:text-left">
                             {displayText}
                         </span>
                         <ChevronIcon
                             expanded={open}
-                            className={cn(
-                                "polli:h-3 polli:w-3 polli:transition-transform",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-soft",
-                            )}
+                            className="polli:h-3 polli:w-3 polli:transition-transform"
                         />
                     </button>
                 )}
@@ -169,8 +157,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             ROW_BASE,
                             isAllSelected
-                                ? "polli:bg-theme-bg-active polli:font-medium polli:text-theme-text-strong"
-                                : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
+                                ? "polli:bg-theme-fill polli:font-medium polli:text-theme-on-fill"
+                                : "polli:text-theme-text-base polli:hover:bg-theme-fill/40",
                         )}
                     >
                         <span
@@ -178,7 +166,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
-                                    "polli:bg-theme-fill polli:text-theme-on-fill",
+                                    "polli:border-theme-on-fill polli:text-theme-on-fill",
                             )}
                         >
                             {isAllSelected && "✓"}
@@ -196,8 +184,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 className={cn(
                                     ROW_BASE,
                                     isChecked
-                                        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-                                        : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
+                                        ? "polli:bg-theme-fill polli:text-theme-on-fill"
+                                        : "polli:text-theme-text-base polli:hover:bg-theme-fill/40",
                                 )}
                             >
                                 <span
@@ -205,7 +193,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
-                                            "polli:bg-theme-fill polli:text-theme-on-fill",
+                                            "polli:border-theme-on-fill polli:text-theme-on-fill",
                                     )}
                                 >
                                     {isChecked && "✓"}

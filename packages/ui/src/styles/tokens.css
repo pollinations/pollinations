@@ -35,10 +35,9 @@
     --polli-radius-card:     1.25rem;
 
     /* Brand constants — hue-themed, but never flipped by `.dark`. Use these
-       when an element must keep its identity on top of a dark panel: inside
-       `.dark`, bg-active resolves to a muted oklch(0.496 …) that reads as
-       muddy brown, which is right for a dark UI and wrong for a CTA that is
-       supposed to be the brightest thing on the page. */
+       when an element must keep its identity on top of a dark panel.
+       brand-accent is also the fixed favicon/app-icon yellow read by
+       scripts/gen-theme-palette.mjs; the UI uses the honey fill instead. */
     --polli-color-brand-dark: #110518;
     --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 

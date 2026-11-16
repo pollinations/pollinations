@@ -148,23 +148,34 @@ function AccountDetails({
     name,
     secondaryContent,
     secondaryId,
+    onFill = false,
 }: {
     name: string;
     secondaryContent?: ReactNode;
     secondaryId?: string;
+    /** On the honey pill the text inherits on-fill instead of theme text. */
+    onFill?: boolean;
 }) {
     return (
         <span className="polli:flex polli:min-w-0 polli:flex-col polli:items-start polli:text-left">
             <span
                 title={name}
-                className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5 polli:text-theme-text-strong"
+                className={cn(
+                    "polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5",
+                    !onFill && "polli:text-theme-text-strong",
+                )}
             >
                 {name}
             </span>
             {secondaryContent != null && (
                 <span
                     id={secondaryId}
-                    className="polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4 polli:text-theme-text-base"
+                    className={cn(
+                        "polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4",
+                        onFill
+                            ? "polli:opacity-80"
+                            : "polli:text-theme-text-base",
+                    )}
                 >
                     {secondaryContent}
                 </span>
@@ -229,17 +240,18 @@ export function AccountMenu({
                         aria-describedby={
                             secondaryContent != null ? statusId : undefined
                         }
-                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full polli:text-theme-text-strong"
+                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full"
                     >
                         {!dashboardHref && avatar}
                         <AccountDetails
                             name={name}
                             secondaryContent={secondaryContent}
                             secondaryId={statusId}
+                            onFill
                         />
                         <ChevronIcon
                             expanded={open}
-                            className="polli:ml-auto polli:h-4 polli:w-4 polli:text-theme-text-strong"
+                            className="polli:ml-auto polli:h-4 polli:w-4"
                         />
                     </button>
                 )}

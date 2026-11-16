@@ -46,6 +46,7 @@ import {
 } from "./components/Filters";
 import { ReconcileProContext } from "./components/ReconcilePro";
 import { GoogleDriveIcon, TinybirdIcon } from "./components/SourceIcons";
+import { dashboardExport } from "./lib/dashboardExport";
 import { dataConfidence, unreconciledBankAmount } from "./lib/dataConfidence";
 import { FINANCE_FOLDER_URL } from "./lib/driveSources";
 import {
@@ -67,7 +68,13 @@ import {
     type ReconciliationPage,
     reconciliationState,
 } from "./lib/reconciliation";
-import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
+import {
+    DATA_SOURCES,
+    type DataSource,
+    fixturesMode,
+    loadAll,
+    TbError,
+} from "./lib/tb";
 import { trendPeriod } from "./lib/trends";
 import { unitEconomicsReport } from "./lib/unitEconomics";
 import type { Data } from "./types";
@@ -960,6 +967,40 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
+
+    async function downloadData() {
+        setDownloading(true);
+        setDownloadError(false);
+        try {
+            const snapshot = await loadAll(
+                DATA_SOURCES,
+                undefined,
+                planningDocument,
+            );
+            const report = dashboardExport(snapshot);
+            const url = URL.createObjectURL(
+                new Blob([JSON.stringify(report)], {
+                    type: "application/json",
+                }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `economics-dashboard-${report.exportedAt.slice(0, 10)}.json`;
+            document.body.appendChild(link);
+            try {
+                link.click();
+            } finally {
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+            }
+        } catch {
+            setDownloadError(true);
+        } finally {
+            setDownloading(false);
+        }
+    }
 
     useEffect(() => {
         const retryKey = attempt;
@@ -1440,8 +1481,27 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                                 >
                                     Refresh data
                                 </button>
+                                <button
+                                    type="button"
+                                    disabled={downloading}
+                                    className="cursor-pointer underline-offset-4 hover:text-theme-text-strong hover:underline disabled:cursor-wait disabled:opacity-50"
+                                    onClick={() => void downloadData()}
+                                >
+                                    {downloading
+                                        ? "Preparing download…"
+                                        : "Download data"}
+                                </button>
                             </div>
                         </div>
+                        {downloadError && (
+                            <p
+                                role="alert"
+                                className="text-sm text-intent-warning-text"
+                            >
+                                Couldn’t download the dashboard data. Try
+                                Download data again.
+                            </p>
+                        )}
                         <ReconcileProContext.Provider value={pro}>
                             <div className="flex flex-col gap-5">{content}</div>
                         </ReconcileProContext.Provider>

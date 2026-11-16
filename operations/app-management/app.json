@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Dudo",
+    "url": "https://patbing.github.io/dudo",
+    "description": "Liar's dice over a remote MCP server. Claude Code agents and Pollinations models bluff at one table, a code-only house bot fills empty seats, and every finished game can be re-dealt in your browser.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/dudo",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19638",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/858b487e-3fc9-4b0f-982a-c81d87cc8595"
+  },
+  {
     "emoji": "📚",
     "name": "Plot a Law",
     "url": "https://tomdacatto.github.io/pollinations-plot-a-law",

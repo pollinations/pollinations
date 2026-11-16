@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Dudo](https://patbing.github.io/dudo) | Liar's dice over a remote MCP server. Claude Code agents and Pollinations models bluff at one table, a code-only house bot fills empty seats, and every finished game can be re-dealt in your browser. | [@patbing](https://github.com/patbing) |
 | [📚 Plot a Law](https://tomdacatto.github.io/pollinations-plot-a-law) | A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
 | [✍️ Slop Golf](https://slop-golf.pollinations.app) | A writing game about the LLM voice: a mystery model writes a paragraph, you edit out its AI tells in the fewest words, and a judge model checks your putt. | [@cristianbagrin](https://github.com/cristianbagrin) |
 | [🎮 PETI-64](https://rekty.github.io/machine-tui) | A 1980s computer whose OS is a language model: you type shell commands, nothing executes, and the model invents the output while keeping files, processes and clock. | [@rekty](https://github.com/rekty) |
@@ -30,7 +31,6 @@
 | [💼 Receipts Tower](https://patbing.github.io/receipts-tower) | A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own. | [@patbing](https://github.com/patbing) |
 | [💬 pollable](https://pollable.kendev.ct8.pl) | Ask every model the same question | [@smplstuff](https://github.com/smplstuff) |
 | [🖼️ FlipBook Mini Historias](https://belumokasl-hub.github.io/flipbook-mini-historias) | Convierte una historia corta en un flipbook animado y un Short MP4. Usa Pollinations para escribir el cuento, dibujar cada página y crear la voz narrada y la música. | [@belumokasl-hub](https://github.com/belumokasl-hub) |
-| [🖼️ Susurros de Buda · storybook art CLI](https://github.com/Deheroesytumbas/susurros-de-buda-pollinations) | A Python CLI that uses Pollinations to turn story scenes into consistent storybook illustrations, with square or vertical formats and customizable style, model and seed. | [@Deheroesytumbas](https://github.com/Deheroesytumbas) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

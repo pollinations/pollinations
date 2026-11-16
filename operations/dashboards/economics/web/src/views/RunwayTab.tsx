@@ -9,6 +9,7 @@ import {
     TableHeaderCell,
     TableRow,
     Tooltip,
+    TrendUpIcon,
 } from "@pollinations/ui";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DataTable, TableScroller } from "../components/DataTable";
@@ -76,16 +77,21 @@ export function fmtRunwayTableValue(value: number | null | undefined): string {
 }
 
 const SUMMARY_HELP: Record<string, string[]> = {
+    "Operating result": [
+        "Main amount: revenue less cash-funded expenses.",
+        "Gray amount: operating result after credit-funded expenses.",
+        "Bank settlement timing is shown separately in Cash reconciliation.",
+    ],
     Expenses: [
         "Main amount: cash-funded costs for the month, not necessarily paid that month.",
-        "Below cash: additional costs covered by provider credits.",
+        "Below cash: additional costs covered by provider credits, including Stripe fees.",
     ],
     "Cash change": [
         "Actual: bank inflows minus outflows, including exchange-rate changes.",
         "Revenue + cash-funded expenses + cash adjustments = cash change.",
         "Plan: expected cash increase or decrease that month.",
     ],
-    "Cash adjustments": [
+    "Cash reconciliation": [
         "Differences between recorded revenue or expenses and bank movements, plus other cash movements and exchange-rate changes.",
         "Plan: scheduled movements outside revenue and expenses, such as returned deposits.",
     ],
@@ -98,15 +104,17 @@ const SUMMARY_HELP: Record<string, string[]> = {
 
 const REVENUE_HELP: Record<string, string[]> = {
     "Customer payments": [
-        "Stripe payments before fees, refunds and chargebacks.",
+        "Stripe customer payments recorded in the UTC calendar month, before fees, refunds and chargebacks.",
+        "Net customer tax is deducted for months with a verified Stripe Tax report.",
         "Historical Polar: bank payouts minus test purchases, not gross sales.",
     ],
     "Stripe fees": [
-        "Payment processing and Stripe product fees, net of fee credits; excludes dispute fees.",
+        "Main amount: cash-funded payment processing and Stripe product fees; excludes dispute fees.",
+        "Below cash: fees paid with promotional Stripe credits. Credit grants are not sales or cash.",
         "May relate to older sales.",
     ],
     "Refunds, disputes & chargebacks": [
-        "Customer refunds, disputed payments, chargebacks and other payment reversals recorded this month, including older purchases and failed payments.",
+        "Matched refunds and disputes follow the original purchase month. Unmatched adjustments and failed payments use the Stripe activity month.",
         "Includes dispute fees, less recoveries and returned dispute fees.",
     ],
     "stripe sales": [
@@ -233,12 +241,22 @@ function hasAmount(value: number | null | undefined): value is number {
 }
 
 // Credit-funded usage stays separate from cash, including credit-only months.
-function CreditAmount({ value }: { value: number | null | undefined }) {
+function CreditAmount({
+    value,
+    label,
+}: {
+    value: number | null | undefined;
+    label?: string;
+}) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
-    if (value == null || value === 0 || (!pro && Math.abs(value) < 1))
+    if (
+        value == null ||
+        (!label && (value === 0 || (!pro && Math.abs(value) < 1)))
+    )
         return null;
     return (
         <div className="text-xs font-normal text-theme-text-muted">
+            {label && <span className="sr-only">{label} </span>}
             {fmtRunwayTableValue(value)}
         </div>
     );
@@ -272,6 +290,7 @@ export function runwayDetailRows(rows: RunwayMatrixRow[]): RunwayMatrixRow[] {
                     ...row,
                     vendor: detail.label,
                     values: detail.values,
+                    creditValues: detail.creditValues,
                     forecastMethod: null,
                     forecastPaymentTiming: null,
                 }))
@@ -352,7 +371,9 @@ function groupRows(
         };
         group.rows.push(row);
         for (const column of columns) {
-            group.creditValues[column.id] += row.creditValues?.[column.id] ?? 0;
+            if (row.category !== "revenue")
+                group.creditValues[column.id] +=
+                    row.creditValues?.[column.id] ?? 0;
             const previous = group.values[column.id];
             group.values[column.id] =
                 previous == null ||
@@ -385,20 +406,44 @@ function SummaryRow({
     columns,
     value,
     credit,
+    afterCredits,
     expanded,
     onToggle,
+    treatment,
 }: {
     label: string;
     columns: RunwayColumn[];
     value: (column: RunwayColumn) => number | null;
     credit?: (column: RunwayColumn) => number | null;
+    afterCredits?: (column: RunwayColumn) => number | null;
     expanded?: boolean;
     onToggle?: () => void;
+    treatment?: "subtotal" | "quiet" | "detail";
 }) {
     const { fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
     return (
-        <TableRow className="runway-summary font-semibold">
-            <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque">
+        <TableRow
+            className={cn(
+                "runway-summary",
+                label === "Expenses" && "runway-expenses",
+                treatment === "subtotal" && "runway-operating-result",
+                treatment === "detail"
+                    ? "text-theme-text-muted"
+                    : "font-semibold",
+            )}
+        >
+            <TableCell
+                className={cn(
+                    "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque",
+                    treatment === "detail" && "pl-8",
+                )}
+            >
+                {treatment === "subtotal" && (
+                    <TrendUpIcon
+                        aria-hidden="true"
+                        className="mr-2 inline-block h-4 w-4 text-theme-text-muted"
+                    />
+                )}
                 {onToggle ? (
                     <TableDisclosureButton
                         expanded={expanded ?? false}
@@ -418,7 +463,9 @@ function SummaryRow({
                     numeric
                     className={cn(
                         MONTH_COLUMN_CLASS,
-                        runwayValueClass(value(column)),
+                        treatment === "quiet" || treatment === "detail"
+                            ? "text-theme-text-muted"
+                            : runwayValueClass(value(column)),
                     )}
                 >
                     {showCash(value(column), credit?.(column))
@@ -434,6 +481,12 @@ function SummaryRow({
                         </span>
                     )}
                     <CreditAmount value={credit?.(column)} />
+                    {afterCredits && (
+                        <CreditAmount
+                            label="Operating result after credit-funded expenses"
+                            value={afterCredits(column)}
+                        />
+                    )}
                 </TableCell>
             ))}
         </TableRow>
@@ -545,12 +598,15 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                 data.vendorLedger ?? [],
                 data.privateConfig?.forecastRules,
                 data.stripeSales ?? [],
+                undefined,
+                data.vendorStatements,
             ),
         [
             data.vendorLedger,
             data.opTransactions,
             data.privateConfig?.forecastRules,
             data.stripeSales,
+            data.vendorStatements,
         ],
     );
     const columns = useMemo(
@@ -563,7 +619,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             ),
         [runway.columns, year, data.planningError],
     );
-    const [expensesExpanded, setExpensesExpanded] = useState(true);
+    const [expensesExpanded, setExpensesExpanded] = useState(false);
     const [cashAdjustmentsExpanded, setCashAdjustmentsExpanded] =
         useState(false);
     const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -596,6 +652,11 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             : null;
     const recordedDate =
         runway.latestTransactionDate ?? runway.openingBalanceDate;
+    const recordedMonth = recordedDate?.slice(0, 7);
+    const recordedChange = runway.columns.find(
+        (column) =>
+            column.month === recordedMonth && column.kind !== "forecast",
+    )?.netUsd;
     const [cashYear, cashMonth] = runway.currentMonth.split("-").map(Number);
     const monthEnd = new Date(Date.UTC(cashYear, cashMonth, 0))
         .toISOString()
@@ -623,7 +684,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     layout="rows"
                     cards={[
                         {
-                            label: "Cash",
+                            label: "Wise bank cash",
                             items: [
                                 {
                                     label: (
@@ -650,6 +711,17 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                             ? "neg"
                                             : "base",
                                 },
+                                ...(recordedMonth && recordedChange != null
+                                    ? [
+                                          {
+                                              label: `${monthName(recordedMonth)} cash change`,
+                                              value: fmtRunwayUsd(
+                                                  recordedChange,
+                                              ),
+                                              tone: "base" as const,
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: (
                                         <span>
@@ -837,21 +909,23 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     </TableHead>
                     <TableBody>
                         <SummaryRow
-                            label="Cash change"
+                            label="Operating result"
+                            treatment="subtotal"
                             columns={columns}
                             value={(column) =>
                                 column.forecastComplete === false
                                     ? null
-                                    : column.netUsd
+                                    : column.operatingResultUsd
+                            }
+                            afterCredits={(column) =>
+                                column.forecastComplete === false ||
+                                column.operatingResultUsd == null ||
+                                !hasAmount(column.totalCreditUsd)
+                                    ? null
+                                    : column.operatingResultUsd +
+                                      column.totalCreditUsd
                             }
                         />
-                        <SummaryRow
-                            label="Cash balance"
-                            columns={columns}
-                            value={(column) => column.runningCashUsd}
-                        />
-                    </TableBody>
-                    <TableBody className="runway-activity">
                         {groups
                             .filter((group) => group.category === "revenue")
                             .map((group) => (
@@ -891,8 +965,11 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                         currentMonth={runway.currentMonth}
                                     />
                                 ))}
+                    </TableBody>
+                    <TableBody>
                         <SummaryRow
-                            label="Cash adjustments"
+                            label="Cash reconciliation"
+                            treatment="quiet"
                             columns={columns}
                             value={(column) =>
                                 cashAdjustmentValue(
@@ -910,10 +987,28 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             }
                         />
                         {cashAdjustmentsExpanded && (
-                            <CashAdjustmentRows
-                                columns={columns}
-                                plannedValues={plannedAdjustments}
-                            />
+                            <>
+                                <CashAdjustmentRows
+                                    columns={columns}
+                                    plannedValues={plannedAdjustments}
+                                />
+                                <SummaryRow
+                                    label="Cash change"
+                                    treatment="detail"
+                                    columns={columns}
+                                    value={(column) =>
+                                        column.forecastComplete === false
+                                            ? null
+                                            : column.netUsd
+                                    }
+                                />
+                                <SummaryRow
+                                    label="Cash balance"
+                                    treatment="detail"
+                                    columns={columns}
+                                    value={(column) => column.runningCashUsd}
+                                />
+                            </>
                         )}
                     </TableBody>
                 </DataTable>
@@ -934,7 +1029,7 @@ function RunwayCategoryRows({
     currentMonth?: string;
 }) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
-    const [expanded, setExpanded] = useState(group.category === "revenue");
+    const [expanded, setExpanded] = useState(false);
     const [moreExpanded, setMoreExpanded] = useState(false);
     const rows = runwayDetailRows(group.rows).filter(
         (row) =>

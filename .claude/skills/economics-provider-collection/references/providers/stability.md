@@ -5,25 +5,31 @@ Canonical vendor: `stability`
 ## Verified — 2026-08-21
 
 - Status: active provider for the direct `stable-audio-3-large` route.
-- No dedicated billing API credential or complete monthly usage export has
-  been verified; use the dashboard and archived purchase evidence.
+- The existing runtime `STABILITY_API_KEY` supports documented read-only
+  `GET https://api.stability.ai/v1/user/account` and `/v1/user/balance`
+  (verified November 3, 2026). Verify email and default organization first;
+  an `Organization` header scopes an explicitly selected organization.
+- Balance is aggregate credits at 100 credits/USD; it does not establish the
+  paid/promotional split, expiry or calendar-month burn. No complete monthly
+  usage endpoint was found in the official reference.
 - Until a provider export is available, use the Stability billing dashboard and
   the internal Pollen meter together; never infer provider burn only from the
   prepaid balance.
 
 Primary evidence sources:
 
-- Dashboard: Stability account billing, usage and remaining credits.
+- Dashboard: <https://platform.stability.ai/dashboard/billing>; identity at
+  `/dashboard/account`. The legacy account route redirects to this redesign.
 - Internal meter: OP Pollen rows for provider `stability` and model
   `stable-audio-3-large`.
 - Payment: Stability receipts and Wise/card transactions.
 
 Collection steps:
 
-1. Check the signed-in account identity, then Billing → Credits for the
-   current balance and payment list. As checked October 2026, this page has
-   no monthly usage selector or export; do not infer September burn from its
-   current credits.
+1. Verify account identity, then Billing for credits and the complete Charges
+   table. As checked November 2026, Account and Billing expose no monthly usage
+   export, funding split, expiry or supplier-document links. Keep originals
+   from the archive and email; never infer monthly burn from current credits.
 2. Download a usage export if another verified account page offers one;
    otherwise retain the missing provider-usage gap and capture the account
    and credit pages.
@@ -37,3 +43,8 @@ Known traps:
 - `stable-audio-3-medium` is billed by canonical provider `fal`, not Stability.
 - A credit purchase proves funding, not usage in the purchase month.
 - A current credit balance alone cannot reconstruct historical monthly burn.
+- Official documentation now redirects to `docs.stability.ai`. A current price
+  needs an effective date before it can explain historical billing.
+- Normal sign-in uses the official `/api/auth/login` → WorkOS AuthKit flow,
+  returning to `/api/auth/callback`. Verify the provider-owned redirect chain
+  and use the existing account rather than creating another one.

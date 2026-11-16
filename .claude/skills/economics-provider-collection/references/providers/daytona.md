@@ -48,6 +48,11 @@ Collection steps:
 
 2. For dollars, credits, or invoices, use the dashboard or an exported source.
    Save it to `<collection-dir>/evidence/`.
+   For a month longer than 30 days, collect adjacent Spending windows: the
+   custom picker can silently clamp a longer range. Verify the applied range,
+   local-time UTC offsets, Resource Usage and Per-Sandbox Usage for each
+   window. Keyboard time-field entry commits values that DOM filling can
+   revert; recheck the displayed bounds after Apply.
 3. Use this skill to extract or reconcile the bounded evidence.
 
 Known traps:
@@ -58,6 +63,14 @@ Known traps:
 - A wallet top-up is funding, not compute cost.
 - The wallet's `Paid credit balance` includes a `Mixed credit` lot; do not
   convert its full amount to cash-funded prepaid cost without source terms.
+- Preserve a previously reviewed inferred split as an inference. A single
+  mixed provider lot can carry both paid and credit fields in one current
+  snapshot; do not invent separate provider lots. Record explicit current
+  expiry wording when shown.
+- An invoice-list date does not prove its service period. If the connected
+  browser blocks a blob PDF, retain the list observation and request an
+  ordinary user download; do not work around the access restriction or
+  recreate an invoice from a screenshot.
 - Prefer invoices for closed months and manual dashboard evidence for balance.
 
 Official references:

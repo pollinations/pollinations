@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "夜市對話 Night Market Talk",
+    "url": "https://night-market-talk.pollinations.app",
+    "description": "Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay with their own Pollen.",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "cristianbagrin",
+    "githubUserId": "268160111",
+    "repositoryUrl": "https://github.com/cristianbagrin/night-market-talk",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19737",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e57b9716-d166-42b9-81e7-82b60a8ffe22"
+  },
+  {
     "emoji": "🎮",
     "name": "Idle Island",
     "url": "https://patbing.github.io/idle-island",

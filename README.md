@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 夜市對話 Night Market Talk](https://night-market-talk.pollinations.app) | Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay with their own Pollen. | [@cristianbagrin](https://github.com/cristianbagrin) |
 | [🎮 Idle Island](https://patbing.github.io/idle-island) | An AI agent is left alone on a tiny island with nothing to do. A real engine marks what it discovers, then the same model is tested with empty notes, its own notes and one trick erased. | [@patbing](https://github.com/patbing) |
 | [🎮 Dilemma Arena](https://tomdacatto.github.io/pollinations-dilemma-arena) | Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay with your own Pollen when you sign in. | [@tomdacatto](https://github.com/tomdacatto) |
 | [💼 Receipts Tower](https://patbing.github.io/receipts-tower) | A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own. | [@patbing](https://github.com/patbing) |
@@ -30,7 +31,6 @@
 | [🖼️ Pollen Canvas](https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD) | Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser. | [@baimoyan2005](https://github.com/baimoyan2005) |
 | [✍️ Voiceprint](https://llm-voiceprint.jm716111.chatgpt.site) | Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a zero-Pollen local scan. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [💬 Ask Them All](https://ask-them-all.pollinations.app) | Ask one question and several labs answer it in parallel through a single Pollinations key, side by side, with a summary of where they agree and differ. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🎮 Vaultwright](https://vaultwright.rekty-dev.workers.dev) | A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints. | [@rekty](https://github.com/rekty) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -36,6 +36,76 @@ const call = async (client, name, args) => {
     return client.callTool({ name, arguments: args });
 };
 
+test("lookup_isbn verifies the check digit before the catalogue and returns the entry", async (t) => {
+    const seen = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(String(input));
+        seen.push(url);
+        assert.equal(url.hostname, "openlibrary.org");
+        assert.equal(url.searchParams.get("bibkeys"), "ISBN:9780140328721");
+        assert.equal(url.searchParams.get("jscmd"), "data");
+        return Response.json({
+            "ISBN:9780140328721": {
+                title: "Fantastic Mr. Fox",
+                subtitle: null,
+                authors: [{ name: "Roald Dahl" }],
+                publishers: [{ name: "Puffin" }],
+                publish_places: [{ name: "London" }],
+                publish_date: "October 1, 1988",
+                number_of_pages: 96,
+                subjects: Array.from({ length: 20 }, (_, i) => ({
+                    name: `Subject ${i}`,
+                })),
+                cover: {
+                    small: "https://covers.openlibrary.org/b/id/1-S.jpg",
+                    large: null,
+                },
+                url: "https://openlibrary.org/books/OL1M/Fantastic_Mr_Fox",
+                identifiers: { isbn_10: ["0140328726"] },
+            },
+        });
+    });
+    const res = await call(await client(t), "lookup_isbn", {
+        isbn: "978-0-14-032872-1",
+    });
+    assert.notEqual(res.isError, true);
+    const book = value(res);
+    assert.equal(book.isbn, "9780140328721");
+    assert.equal(book.title, "Fantastic Mr. Fox");
+    assert.deepEqual(book.authors, ["Roald Dahl"]);
+    assert.equal(book.numberOfPages, 96);
+    // The subject list is capped, so a well-indexed book cannot flood the response.
+    assert.equal(book.subjects.length, 12);
+    assert.deepEqual(book.identifiers.isbn_10, ["0140328726"]);
+    // One request per lookup, and no caller headers reach the public catalogue.
+    assert.equal(seen.length, 1);
+});
+
+test("lookup_isbn rejects a mistyped digit before making a request", async (t) => {
+    let requests = 0;
+    mock.method(globalThis, "fetch", async () => {
+        requests += 1;
+        return Response.json({});
+    });
+    const c = await client(t);
+    for (const isbn of ["9780140328722", "043942088X", "12345"])
+        assert.equal(
+            (await call(c, "lookup_isbn", { isbn })).isError,
+            true,
+            isbn,
+        );
+    assert.equal(requests, 0);
+});
+
+test("lookup_isbn reports an ISBN the catalogue does not hold", async (t) => {
+    mock.method(globalThis, "fetch", async () => Response.json({}));
+    const res = await call(await client(t), "lookup_isbn", {
+        isbn: "080442957X",
+    });
+    assert.equal(res.isError, true);
+    assert.match(res.content[0].text, /no record/);
+});
+
 test("RFC tools distinguish Datatracker modification time from publication and extract body sections after the contents", async (t) => {
     mock.method(globalThis, "fetch", async (input, init) => {
         const url = new URL(input);
@@ -362,6 +432,7 @@ for (const modern of [false, true]) {
                 "arxiv_paper",
                 "get_indicator_data",
                 "list_countries",
+                "lookup_isbn",
                 "crossref_search",
                 "crossref_work",
             ].sort(),

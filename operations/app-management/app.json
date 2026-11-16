@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Idle Island",
+    "url": "https://patbing.github.io/idle-island",
+    "description": "An AI agent is left alone on a tiny island with nothing to do. A real engine marks what it discovers, then the same model is tested with empty notes, its own notes and one trick erased.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/idle-island",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19612",
+    "approvedDate": "2026-11-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/ead230d9-e48a-4904-8c9b-5b2bfdde1ed7"
+  },
+  {
+    "emoji": "🎮",
     "name": "Dilemma Arena",
     "url": "https://tomdacatto.github.io/pollinations-dilemma-arena",
     "description": "Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay with your own Pollen when you sign in.",

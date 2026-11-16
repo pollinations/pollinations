@@ -10,7 +10,6 @@ type ButtonIntent =
     | "danger"
     | "info"
     | "neutral"
-    | "primary"
     | "brand"
     | "commit"
     | "surface";
@@ -39,10 +38,12 @@ const appearanceClasses: Record<ButtonAppearance, string> = {
         "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",
 };
 
-// Cascade-driven base — reads [data-theme] vars.
+// Cascade-driven base — reads [data-theme] vars. The filled button is the
+// fill / on-fill pair: the same honey with dark text as a selected tab, in both
+// modes (grey inside neutral chrome). Quiet buttons use `neutral`.
 const themeClasses =
-    "polli:bg-theme-bg-active polli:text-theme-text-strong " +
-    "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
+    "polli:bg-theme-fill polli:text-theme-on-fill " +
+    "polli:hover:bg-theme-fill-hover polli:transition-colors";
 
 // Primary actions have a soft accent fill in light mode and an outline in dark.
 // `brand` keeps a calm hover; `commit` strengthens the fill on hover and focus.
@@ -67,11 +68,6 @@ const intentClasses: Record<ButtonIntent, string> = {
     surface:
         "polli:bg-surface-opaque polli:text-theme-text-strong " +
         "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
-    // The main control on its screen: the fill / on-fill pair, the same orange
-    // with dark text as a selected tab, in both modes.
-    primary:
-        "polli:bg-theme-fill polli:text-theme-on-fill " +
-        "polli:hover:bg-theme-fill-hover polli:transition-colors",
     // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +

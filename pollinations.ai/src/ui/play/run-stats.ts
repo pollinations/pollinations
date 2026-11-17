@@ -33,29 +33,3 @@ export function runStatsLine(stat: ModelRunStat | undefined): string {
     if (cost && time) return `${cost} · about ${time}`;
     return cost || (time && `About ${time}`);
 }
-
-export type RunRecord = { model: string; timestamp: string; cost_usd: number };
-
-/**
- * The newest record (the usage API lists newest first) for the model that
- * ran, if it was written at or after the run started. Timestamps are UTC
- * "YYYY-MM-DD HH:MM:SS", whole seconds, so the start is floored to match.
- */
-export function pickRunRecord(
-    records: RunRecord[],
-    model: string,
-    startedAt: number,
-): RunRecord | undefined {
-    const record = records.find((r) => r.model === model);
-    const written =
-        record && Date.parse(`${record.timestamp}Z`.replace(" ", "T"));
-    return written !== undefined &&
-        written >= Math.floor(startedAt / 1000) * 1000
-        ? record
-        : undefined;
-}
-
-/** "$0.38" */
-export function runCostLabel(record: RunRecord): string {
-    return formatCost(record.cost_usd);
-}

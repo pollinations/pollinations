@@ -53,6 +53,7 @@ import {
     useMemo,
     useRef,
     useState,
+    useSyncExternalStore,
 } from "react";
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
@@ -68,12 +69,8 @@ import {
     generatePlaygroundAudio,
     supportsAudioLength,
 } from "./playground-audio";
-import {
-    type ModelRunStat,
-    pickRunRecord,
-    runCostLabel,
-    runStatsLine,
-} from "./run-stats";
+import { type ModelRunStat, runStatsLine } from "./run-stats";
+import { createRunStore } from "./run-store";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { videoOptions } from "./video-options";
 
@@ -179,8 +176,6 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
-          /** "$0.0038", set once the usage record is found. */
-          cost?: string;
       }
     | {
           type: "text";
@@ -223,18 +218,10 @@ function mediaResult(
     };
 }
 
-// Kept in memory so leaving /play and coming back restores the last inputs
-// and result. Nothing is written to disk.
+// Kept in memory so leaving /play and coming back restores the last inputs,
+// result and any run still in flight. Nothing is written to disk.
 let lastInputs: PlaySearch | undefined;
-let lastResult: PlaygroundResult | null = null;
-
-function resultUrl(result: PlaygroundResult | null) {
-    return result && result.type !== "text" ? result.url : undefined;
-}
-
-function revokeResult(result: PlaygroundResult | null) {
-    if (result && result.type !== "text") URL.revokeObjectURL(result.url);
-}
+const runStore = createRunStore<PlaygroundResult>();
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
@@ -591,28 +578,6 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
     );
 }
 
-function ResultCost({
-    cost,
-    className,
-}: {
-    cost: string | undefined;
-    className?: string;
-}) {
-    return (
-        cost && (
-            <Chip
-                intent="neutral"
-                size="sm"
-                role="img"
-                aria-label={`This run cost ${cost}`}
-                className={className}
-            >
-                {cost}
-            </Chip>
-        )
-    );
-}
-
 function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
 
@@ -630,10 +595,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     autoPlay
                     className="play-audio min-w-0 flex-1"
                 />
-                {/* Reserved, so the cost arriving later resizes nothing. */}
-                <span className="flex w-28 shrink-0 justify-end">
-                    <ResultCost cost={result.cost} />
-                </span>
                 <ResultDownloadButton result={result} />
             </Surface>
         );
@@ -663,10 +624,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     <ResultDownloadButton
                         result={result}
                         className="absolute bottom-3 right-3 z-10"
-                    />
-                    <ResultCost
-                        cost={result.cost}
-                        className="absolute bottom-3 left-3 z-10"
                     />
                     {result.type === "image" && (
                         <button
@@ -773,11 +730,11 @@ export function Playground() {
     const [voice, setVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
     const linkedModelRef = useRef(search.model ?? "");
-    const [result, setResult] = useState<PlaygroundResult | null>(lastResult);
-    const [isGenerating, setIsGenerating] = useState(false);
-    // `runId` drops a cost lookup once a newer run has started.
-    const runId = useRef(0);
-    const [error, setError] = useState<string | null>(null);
+    const { result, running, error } = useSyncExternalStore(
+        runStore.subscribe,
+        runStore.get,
+    );
+    const isGenerating = running !== null;
     const [stats, setStats] = useState<ModelRunStat[]>([]);
     const responseRef = useRef<HTMLDivElement>(null);
     const statusId = useId();
@@ -790,7 +747,7 @@ export function Playground() {
             type: `Only ${media.join(" or ")} files are allowed.`,
         };
         const onReject: FileUploadProps["onReject"] = (rejected) =>
-            setError(messages[rejected[0].reason]);
+            runStore.set({ error: messages[rejected[0].reason] });
         return {
             accept: media.map((item) => UPLOAD_ACCEPT[item]).join(","),
             maxSizeBytes: maxMb * 1024 * 1024,
@@ -951,32 +908,6 @@ export function Playground() {
         if (isGenerating)
             responseRef.current?.scrollIntoView({ block: "nearest" });
     }, [isGenerating]);
-
-    // The result outlives this component. Its blob URL is revoked only once
-    // it is replaced or cleared, so at most one stays alive.
-    useEffect(() => {
-        const previous = lastResult;
-        lastResult = result;
-        // Same blob URL = same result with a cost attached, still on screen.
-        if (previous && resultUrl(previous) !== resultUrl(result))
-            revokeResult(previous);
-    }, [result]);
-
-    // A run can finish after the visitor left Play. State is gone then, so
-    // the result goes straight to memory, unless another one is already
-    // remembered (it may be on screen): that late one is dropped.
-    const mounted = useRef(true);
-    useEffect(() => {
-        mounted.current = true;
-        return () => {
-            mounted.current = false;
-        };
-    }, []);
-    function finishRun(next: PlaygroundResult) {
-        if (mounted.current) setResult(next);
-        else if (lastResult) revokeResult(next);
-        else lastResult = next;
-    }
 
     const videoConfig = videoOptions(
         currentModel?.id ?? "",
@@ -1201,12 +1132,7 @@ export function Playground() {
 
         if (isGenerating || !apiKey || !currentModel || blockedReason) return;
 
-        setIsGenerating(true);
-        setError(null);
-        setResult(null);
-        const id = ++runId.current;
-        const startedAt = Date.now();
-        let failed = false;
+        runStore.set({ running: activeCategory, error: null, result: null });
 
         try {
             const client = new Pollinations({
@@ -1247,7 +1173,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                finishRun(mediaResult("video", response));
+                runStore.set({ result: mediaResult("video", response) });
                 return;
             }
 
@@ -1260,7 +1186,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                finishRun(mediaResult("image", response));
+                runStore.set({ result: mediaResult("image", response) });
                 return;
             }
 
@@ -1278,50 +1204,18 @@ export function Playground() {
                             : undefined,
                     },
                 );
-                finishRun(
-                    response.type === "text"
-                        ? response
-                        : mediaResult("audio", response),
-                );
+                runStore.set({
+                    result:
+                        response.type === "text"
+                            ? response
+                            : mediaResult("audio", response),
+                });
                 return;
             }
         } catch (err) {
-            failed = true;
-            setError(errorMessage(err));
+            runStore.set({ error: errorMessage(err) });
         } finally {
-            setIsGenerating(false);
-            if (!failed)
-                void lookUpRunCost(id, startedAt, apiKey, currentModel.id);
-        }
-    }
-
-    // The usage record is written after the response, so look at 2, 5 and
-    // 10 s and keep the first hit. A failed read just leaves the average.
-    async function lookUpRunCost(
-        id: number,
-        startedAt: number,
-        key: string,
-        model: string,
-    ) {
-        const client = new Pollinations({ apiKey: key, baseUrl: API_BASE_URL });
-        let waited = 0;
-        for (const at of [2000, 5000, 10000]) {
-            await new Promise((resolve) => setTimeout(resolve, at - waited));
-            waited = at;
-            if (runId.current !== id) return;
-            try {
-                const { usage } = await client.accountKeyUsage({ limit: 10 });
-                const record = pickRunRecord(usage, model, startedAt);
-                if (record && runId.current === id) {
-                    // The cost rides on the result, so it outlives a model change.
-                    setResult((shown) =>
-                        shown && shown.type !== "text"
-                            ? { ...shown, cost: runCostLabel(record) }
-                            : shown,
-                    );
-                    return;
-                }
-            } catch {}
+            runStore.set({ running: null });
         }
     }
 
@@ -1341,7 +1235,9 @@ export function Playground() {
         ? MicIcon
         : CATEGORY_ICON[activeCategory];
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
-    // Sized for both labels, so starting a run never resizes the button.
+    // The placeholder belongs to the tab whose run is in flight; audio has none.
+    const busyVisual =
+        running === "image" || running === "video" ? running : null;
     const hasResult =
         result &&
         (result.type === "text" ? "audio" : result.type) === activeCategory;
@@ -2010,7 +1906,7 @@ export function Playground() {
                     {(error ||
                         authError ||
                         hasResult ||
-                        (isGenerating && activeCategory !== "audio")) && (
+                        busyVisual === activeCategory) && (
                         <div ref={responseRef} className="flex flex-col gap-4">
                             {error && <Alert intent="danger">{error}</Alert>}
                             {authError && (
@@ -2019,8 +1915,8 @@ export function Playground() {
                                     {authError.message}
                                 </Alert>
                             )}
-                            {isGenerating && activeCategory !== "audio" && (
-                                <BusyPlaceholder category={activeCategory} />
+                            {busyVisual === activeCategory && (
+                                <BusyPlaceholder category={busyVisual} />
                             )}
                             {result && hasResult && (
                                 <ResultPanel result={result} />

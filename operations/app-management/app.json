@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Cover Studio",
+    "url": "https://polli-cover-studio.surge.sh",
+    "description": "Turns a title, an author and one line of premise into a finished 1600x2400 book cover. Pollinations paints the artwork, the page sets the type, and you download the PNG.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "mikeymontaz7-dotcom",
+    "githubUserId": "283490181",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19884",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e7fa5c2c-c47b-4765-b32b-4e7f74ac0af5"
+  },
+  {
     "emoji": "🎮",
     "name": "Snackbot",
     "url": "https://snackbot.pollinations.app",

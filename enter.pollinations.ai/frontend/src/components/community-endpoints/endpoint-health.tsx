@@ -12,7 +12,10 @@ import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { InferResponseType } from "hono/client";
 import { useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { formatActivityPollen } from "../activity/format-activity-pollen.ts";
+import {
+    formatActivityPollen,
+    withDollar,
+} from "../activity/format-activity-pollen.ts";
 import { type CommunityEndpointTestResponse, readError } from "./types.ts";
 
 type Health = InferResponseType<
@@ -193,8 +196,8 @@ function RunRow({ run }: { run: Health["runs"][number] }) {
         <li className="grid gap-1 rounded-md bg-theme-bg-subtle px-3 py-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="font-mono text-xs text-theme-text-strong">
-                    {run.status} · {(run.durationMs / 1000).toFixed(1)} s · $
-                    {formatActivityPollen(run.cost)}
+                    {run.status} · {(run.durationMs / 1000).toFixed(1)} s ·{" "}
+                    {withDollar(formatActivityPollen(run.cost))}
                 </span>
                 <span className="text-xs text-theme-text-muted">
                     {new Date(run.startedAt).toLocaleString()}

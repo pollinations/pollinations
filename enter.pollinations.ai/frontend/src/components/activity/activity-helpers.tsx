@@ -9,7 +9,10 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { saveBlob } from "./activity-csv";
-import { formatActivityPollenThreshold } from "./format-activity-pollen";
+import {
+    formatActivityPollenThreshold,
+    spokenDollars,
+} from "./format-activity-pollen";
 import type { Metric } from "./types";
 
 export function clearActivitySelectionOnEscape(
@@ -143,7 +146,11 @@ export function PollenUsageBadges(usage: {
                 size="sm"
                 className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={isPollen ? "Paid balance" : "Paid requests"}
-                aria-label={`${paid} ${isPollen ? "from paid balance" : "paid requests"}`}
+                aria-label={
+                    isPollen
+                        ? `${spokenDollars(paid)} from your paid balance`
+                        : `${paid} paid requests`
+                }
             >
                 <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {paid}
@@ -152,7 +159,11 @@ export function PollenUsageBadges(usage: {
                 size="sm"
                 className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={isPollen ? "Quest balance" : "Quest requests"}
-                aria-label={`${quest} ${isPollen ? "from Quest balance" : "Quest requests"}`}
+                aria-label={
+                    isPollen
+                        ? `${spokenDollars(quest)} from your Quest balance`
+                        : `${quest} Quest requests`
+                }
             >
                 <SproutIcon
                     className="h-3.5 w-3.5 shrink-0"

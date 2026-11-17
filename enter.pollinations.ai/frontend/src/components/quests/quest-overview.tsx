@@ -4,6 +4,7 @@ import {
     Button,
     CardIcon,
     CheckIcon,
+    ChevronIcon,
     Chip,
     ClockIcon,
     CopyField,
@@ -453,6 +454,42 @@ function QuestMarker({
     );
 }
 
+/** One reward of a stacked card: what it was for, when, and what it paid. */
+function RewardLine({ reward }: { reward: QuestReward }) {
+    const StatusIcon = reward.claimedAt ? CheckIcon : SparkleIcon;
+    return (
+        <li className="flex items-baseline gap-2">
+            <StatusIcon className="h-3.5 w-3.5 shrink-0 self-center text-theme-text-muted" />
+            <span className="min-w-0 flex-1 text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
+                {reward.url ? (
+                    <InlineLink href={reward.url}>{reward.title}</InlineLink>
+                ) : (
+                    reward.title
+                )}
+            </span>
+            <span className="shrink-0 text-xs text-theme-text-muted tabular-nums">
+                {new Date(reward.earnedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                })}
+            </span>
+            <span
+                className={`flex shrink-0 items-center gap-1 tabular-nums ${
+                    reward.claimedAt
+                        ? "text-theme-text-muted"
+                        : "font-semibold text-theme-text-strong"
+                }`}
+            >
+                <WalletKindIcon
+                    kind={rewardIconKind(reward.balanceBucket)}
+                    className="h-3.5 w-3.5"
+                />
+                {formatRewardAmount(reward.pollenAmount)}
+            </span>
+        </li>
+    );
+}
+
 export function QuestRow({
     card,
     claiming,
@@ -466,6 +503,7 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardIds =
         card.status === "claimable" ? card.rewardIds : undefined;
+    const [showRewards, setShowRewards] = useState(false);
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -553,7 +591,28 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || issueLink || progress) && (
+    // A stacked card lists what it holds on request, newest first.
+    const rewardList = card.repeats && card.repeats.length > 0 && (
+        <div className="flex flex-col gap-1">
+            <button
+                type="button"
+                aria-expanded={showRewards}
+                onClick={() => setShowRewards((shown) => !shown)}
+                className="polli-control inline-flex w-fit cursor-pointer items-center gap-1 text-sm text-theme-text-muted hover:text-theme-text-strong"
+            >
+                {showRewards ? "Hide" : "Show"} rewards
+                <ChevronIcon expanded={showRewards} />
+            </button>
+            {showRewards && (
+                <ul className="flex flex-col gap-1 text-sm">
+                    {card.repeats.map((repeat) => (
+                        <RewardLine key={repeat.id} reward={repeat} />
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+    const details = (description || issueLink || progress || rewardList) && (
         <div className="flex min-w-0 flex-col gap-1">
             {(description || issueLink) && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
@@ -565,6 +624,7 @@ export function QuestRow({
                 </div>
             )}
             {progress}
+            {rewardList}
         </div>
     );
     const marker = (

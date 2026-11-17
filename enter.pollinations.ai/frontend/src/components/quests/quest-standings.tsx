@@ -1,12 +1,38 @@
-import { CardIcon, Section, Surface, TargetIcon, Text } from "@pollinations/ui";
+import {
+    CardIcon,
+    InlineLink,
+    Section,
+    SproutIcon,
+    Surface,
+    TargetIcon,
+    Text,
+} from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import type { QuestStandingsResponse } from "../../backend-types.ts";
 
 type StandingRow = QuestStandingsResponse["rows"][number];
 
-/** An open quest the viewer could complete next. */
-export type NextQuest = { title: string; reward: number };
+/** An open quest the viewer could complete next, and where to do it. */
+export type NextQuest = { title: string; reward: number; href?: string };
+
+/** The quest's name, linked to where it is done when the quest says where. */
+function questName({ title, href }: NextQuest): ReactNode {
+    return href ? <InlineLink href={href}>{title}</InlineLink> : `“${title}”`;
+}
+
+/** An amount: the sprout and the number, never the word, in Quest green. */
+function Amount({ value }: { value: number }) {
+    return (
+        <span className="polli-wallet-text-tier inline-flex items-baseline gap-0.5 font-semibold tabular-nums">
+            <SproutIcon
+                aria-hidden="true"
+                className="h-3.5 w-3.5 self-center"
+            />
+            {formatPollen(value)}
+        </span>
+    );
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -28,16 +54,21 @@ export function monthName(month: string): string {
 function nudge(
     standings: QuestStandingsResponse,
     openQuests: NextQuest[],
-): string | null {
+): ReactNode {
     const { you, rows } = standings;
     if (!you) return "Sign in to join this month's race.";
     const byReward = [...openQuests].sort((a, b) => a.reward - b.reward);
     const rank = you.rank;
     if (rank === null) {
         const first = byReward[0];
-        return first
-            ? `Complete a quest to join the race. “${first.title}” earns ${formatPollen(first.reward)} Pollen.`
-            : "Complete a quest to join the race.";
+        return first ? (
+            <>
+                Complete a quest to join the race. {questName(first)} earns{" "}
+                <Amount value={first.reward} />.
+            </>
+        ) : (
+            "Complete a quest to join the race."
+        );
     }
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
@@ -45,10 +76,18 @@ function nudge(
     const gap = above.totalPollen - you.totalPollen;
     const pass = byReward.find((quest) => quest.reward > gap);
     // A tie still needs the smallest quest reward to pass, not 0.
-    const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
-    return pass
-        ? `${target}. “${pass.title}” earns ${formatPollen(pass.reward)} Pollen.`
-        : `${target}.`;
+    const target = (
+        <>
+            <Amount value={Math.max(gap, 0.25)} /> to pass @{above.githubLogin}
+        </>
+    );
+    return pass ? (
+        <>
+            {target}. {questName(pass)} earns <Amount value={pass.reward} />.
+        </>
+    ) : (
+        <>{target}.</>
+    );
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -130,11 +169,11 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             </Text>
             {row.supporter && (
                 <span
-                    title="Pollen supporter"
+                    title="Supporter"
                     className="polli-wallet-chip-paid inline-flex size-5 shrink-0 items-center justify-center rounded-full"
                 >
                     <CardIcon className="h-3 w-3" aria-hidden="true" />
-                    <span className="sr-only">Pollen supporter</span>
+                    <span className="sr-only">Supporter</span>
                 </span>
             )}
             <span className="ml-auto flex shrink-0 items-center gap-2">

@@ -486,28 +486,25 @@ function QuestMarker({
     );
 }
 
-// A merged PR or a fixed issue shows GitHub's own mark, and its number and
-// title without the "Merged PR" / "Reported issue" prefix the card repeats.
-const GITHUB_ICONS: Record<string, typeof GitMergeIcon> = {
-    merged_pr: GitMergeIcon,
-    reported_merged_issue: IssueClosedIcon,
-};
-
-// The "[QUEST]" tag older reward titles still carry from the issue title.
-const QUEST_TAG = /\[(?:POLLEN-)?QUEST\]:?\s*/i;
+// A merged PR, a won GitHub quest or a fixed issue shows GitHub's own mark.
+const GITHUB_ICONS = [
+    ["github:merged_pr:", GitMergeIcon],
+    ["github:issue:", IssueClosedIcon],
+    ["github:reported_issue:", IssueClosedIcon],
+] as const;
 
 /** One reward of a stacked card: what it was for, when, and what it paid. */
 function RewardLine({ reward }: { reward: QuestReward }) {
-    // A won GitHub quest shows its issue, numbered like the other rows.
-    const quest = /^github:issue:(\d+)$/.exec(reward.questId ?? "");
-    const SourceIcon = quest
-        ? IssueClosedIcon
-        : (GITHUB_ICONS[cardIdOf(reward.questId) ?? ""] ?? ReceiptIcon);
-    const title = quest
-        ? `#${quest[1]} ${reward.title.replace(/^[^#]*#\d+: /, "").replace(QUEST_TAG, "")}`
-        : SourceIcon !== ReceiptIcon
-          ? reward.title.replace(/^[^#]*(#\d+): /, "$1 ")
-          : reward.title;
+    const github = GITHUB_ICONS.find(([prefix]) =>
+        reward.questId?.startsWith(prefix),
+    );
+    const SourceIcon = github?.[1] ?? ReceiptIcon;
+    // GitHub rows start with their number. Saved PR and issue titles read
+    // "Merged PR #12: …"; a GitHub quest's is just the issue title.
+    const number = reward.questId?.match(/:(\d+)$/)?.[1];
+    const title = github
+        ? `#${number} ${reward.title.replace(/^[^#]*#\d+: /, "")}`
+        : reward.title;
     return (
         <li className="flex items-center gap-1.5">
             <SourceIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />

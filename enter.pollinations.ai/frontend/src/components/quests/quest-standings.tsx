@@ -178,14 +178,7 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             )}
             <span className="ml-auto flex shrink-0 items-center gap-2">
                 <Movement movement={row.movement} isYou={isYou} />
-                <Text
-                    as="span"
-                    weight="semibold"
-                    tone="strong"
-                    className="tabular-nums"
-                >
-                    {formatPollen(row.totalPollen)}
-                </Text>
+                <Amount value={row.totalPollen} />
             </span>
         </li>
     );
@@ -204,17 +197,39 @@ export function QuestStandings({
     const youRank = standings.you?.rank ?? null;
     const line = nudge(standings, openQuests);
     const days = daysLeft(standings.endsAt, now);
+    // How much of the month has passed, for the bar beside its name.
+    const monthStart = Date.parse(`${standings.month}-01T00:00:00Z`);
+    const elapsed = Math.min(
+        100,
+        Math.max(
+            0,
+            ((now - monthStart) / (Date.parse(standings.endsAt) - monthStart)) *
+                100,
+        ),
+    );
 
     return (
-        <Section
-            title={`${monthName(standings.month)} leaderboard`}
-            action={
-                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                    {days} {days === 1 ? "day" : "days"} left
-                </span>
-            }
-        >
+        <Section title="Leaderboard">
             <Surface variant="card" className="flex flex-col gap-2">
+                {/* The month's race: its name, the share of it gone, the days
+                    left. */}
+                <div className="flex items-center gap-3 px-3 pb-2">
+                    <Text as="span" weight="semibold" tone="strong">
+                        {monthName(standings.month)}
+                    </Text>
+                    <span
+                        aria-hidden="true"
+                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
+                    >
+                        <span
+                            className="block h-full rounded-full bg-tier-soft"
+                            style={{ width: `${elapsed}%` }}
+                        />
+                    </span>
+                    <span className="text-sm tabular-nums text-theme-text-muted">
+                        {days} {days === 1 ? "day" : "days"} left
+                    </span>
+                </div>
                 {standings.rows.length === 0 ? (
                     <Text size="sm" tone="muted">
                         Nobody has earned a quest this month yet.

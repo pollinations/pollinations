@@ -425,7 +425,8 @@ test("rendered standings point the viewer at the quest that passes the next row"
         }),
     );
 
-    expect(html).toContain("October leaderboard");
+    expect(html).toContain(">Leaderboard<");
+    expect(html).toContain(">October<");
     expect(html).toContain("11 days left");
     expect(html).toContain("Supporter");
     // A gap of 1 needs a reward above 1, so the quest worth 5 is next. Amounts

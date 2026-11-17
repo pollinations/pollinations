@@ -88,6 +88,14 @@ export const jobRoutes = new Hono<Env>()
                 200: {
                     description: "Generated image, video, audio or 3D file",
                 },
+                206: {
+                    description:
+                        "The requested byte range of the file, so video and audio players can seek",
+                },
+                416: {
+                    description:
+                        "The Range header named a byte range past the end of the file",
+                },
                 ...errorResponseDescriptions(400, 401, 404, 409),
             },
         }),
@@ -101,7 +109,10 @@ export const jobRoutes = new Hono<Env>()
                     ...(job.status === "pending" && { "Retry-After": "5" }),
                 });
             }
-            const result = await c.env.MEDIA.get(job.cache.key);
+            const result = await c.env.MEDIA.get(
+                job.cache.key,
+                c.req.header("range"),
+            );
             if (!result)
                 throw new HTTPException(404, {
                     message: "Job result is no longer available",

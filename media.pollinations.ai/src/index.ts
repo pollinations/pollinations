@@ -1079,11 +1079,21 @@ api.on(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
+            "Get a file by its id. A single `Range: bytes=...` request returns `206` with `Content-Range`, so media players can seek; other range headers are ignored. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
             200: {
                 description: "File content with appropriate Content-Type",
+                headers: mediaResponseHeaders,
+            },
+            206: {
+                description:
+                    "The requested byte range of the file, as a single 206 response",
+                headers: mediaResponseHeaders,
+            },
+            416: {
+                description:
+                    "The Range header named a byte range past the end of the file",
                 headers: mediaResponseHeaders,
             },
             404: {
@@ -1103,6 +1113,7 @@ api.on(
                 id,
                 c.executionCtx,
                 c.req.method,
+                c.req.header("range"),
             );
             if (!response) {
                 return c.json({ error: "Not found" }, 404);

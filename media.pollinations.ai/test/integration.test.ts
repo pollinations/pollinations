@@ -625,6 +625,74 @@ describe("media.pollinations.ai", () => {
         expect(dup.id).not.toBe(upload.id);
     });
 
+    it("serves a single byte range and rejects a range past the end", async () => {
+        const uploadRes = await uploadViaForm(VALID_KEY);
+        expect(uploadRes.status).toBe(200);
+        const upload = uploadRes.body as UploadResponse;
+        const url = `https://media.pollinations.ai/${upload.id}`;
+        const size = TINY_PNG.byteLength;
+
+        const partial = await SELF.fetch(url, {
+            headers: { Range: "bytes=0-3" },
+        });
+        expect(partial.status).toBe(206);
+        expect(partial.headers.get("content-range")).toBe(`bytes 0-3/${size}`);
+        expect(partial.headers.get("content-length")).toBe("4");
+        expect(partial.headers.get("accept-ranges")).toBe("bytes");
+        expect(Array.from(new Uint8Array(await partial.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(0, 4)),
+        );
+
+        const tail = await SELF.fetch(url, {
+            headers: { Range: `bytes=${size - 4}-` },
+        });
+        expect(tail.status).toBe(206);
+        expect(tail.headers.get("content-range")).toBe(
+            `bytes ${size - 4}-${size - 1}/${size}`,
+        );
+        expect(Array.from(new Uint8Array(await tail.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(-4)),
+        );
+
+        const suffix = await SELF.fetch(url, {
+            headers: { Range: "bytes=-4" },
+        });
+        expect(suffix.status).toBe(206);
+        expect(Array.from(new Uint8Array(await suffix.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(-4)),
+        );
+
+        const pastEnd = await SELF.fetch(url, {
+            headers: { Range: `bytes=${size}-` },
+        });
+        expect(pastEnd.status).toBe(416);
+        expect(pastEnd.headers.get("content-range")).toBe(`bytes */${size}`);
+        expect(await pastEnd.text()).toBe("");
+
+        // Malformed, reversed and multi-range headers are ignored, not
+        // rejected: the whole file is a valid answer to an unusable Range.
+        for (const range of ["pages=1-2", "bytes=0-1,3-4", "bytes=5-2"]) {
+            const full = await SELF.fetch(url, {
+                headers: { Range: range },
+            });
+            expect(full.status).toBe(200);
+            expect(new Uint8Array(await full.arrayBuffer())).toEqual(TINY_PNG);
+        }
+
+        const head = await SELF.fetch(url, {
+            method: "HEAD",
+            headers: { Range: "bytes=0-3" },
+        });
+        expect(head.status).toBe(206);
+        expect(head.headers.get("content-range")).toBe(`bytes 0-3/${size}`);
+        expect(head.headers.get("content-length")).toBe("4");
+
+        // Full responses advertise range support too.
+        const full = await SELF.fetch(url);
+        expect(full.headers.get("accept-ranges")).toBe("bytes");
+        await full.arrayBuffer();
+    });
+
     it("streams a raw upload and preserves its file metadata", async () => {
         const log = vi.spyOn(console, "log");
         const uploadRes = await SELF.fetch(
@@ -1475,6 +1543,44 @@ describe("media.pollinations.ai", () => {
 
         expect(getRes.status).toBe(200);
         expect(body.length).toBe(TINY_PNG.length);
+        expect(bucket.putCount).toBe(2);
+    });
+
+    it("refreshes an aged file's TTL on a ranged GET", async () => {
+        const bucket = createTestR2Bucket();
+        const mediaEnv = createMediaEnv(bucket);
+        const uploadCtx = createExecutionContext();
+
+        const uploadForm = new FormData();
+        uploadForm.append("file", pngFile("ttl-range.png"));
+        const uploadRes = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: uploadForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            }),
+            mediaEnv,
+            uploadCtx,
+        );
+        await waitOnExecutionContext(uploadCtx);
+
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(bucket.putCount).toBe(1);
+
+        const getCtx = createExecutionContext();
+        const getRes = await app.fetch(
+            new Request(`https://media.pollinations.ai/${upload.id}`, {
+                headers: { Range: "bytes=0-3" },
+            }),
+            mediaEnv,
+            getCtx,
+        );
+        expect(getRes.status).toBe(206);
+        await getRes.arrayBuffer();
+        await waitOnExecutionContext(getCtx);
+
+        // A partial read still counts as viewing the file.
         expect(bucket.putCount).toBe(2);
     });
 

@@ -14,8 +14,9 @@ const logOps = debug("pollinations:seedance-2.5:ops");
 const logError = debug("pollinations:seedance-2.5:error");
 const MODEL = "bytedance/seedance-2.5";
 const DURATION = 4;
-// Edits and extensions can take longer than the default 6 minutes.
-const PREDICTION_DEADLINE_MINUTES = 15;
+// Edits and extensions can take longer than the default 6 minutes. Stay
+// under the 15-minute Durable Object alarm limit so the result gets cached.
+const PREDICTION_DEADLINE_MINUTES = 14;
 const ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
 
 interface Seedance25Input {

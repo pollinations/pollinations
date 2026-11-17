@@ -52,8 +52,9 @@ const themeClasses =
 // a check and puffs pollen once an action has succeeded.
 const nectarIntents: ButtonIntent[] = ["brand", "commit"];
 const intentClasses: Record<ButtonIntent, string> = {
-    brand: "polli-nectar",
-    commit: "polli-nectar",
+    // `relative` holds the rising fill; as a utility a caller can override it.
+    brand: "polli-nectar polli:relative",
+    commit: "polli-nectar polli:relative",
     danger:
         "polli:border polli:border-intent-danger-text polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors " +
@@ -179,7 +180,7 @@ export function Button<T extends React.ElementType = "button">({
             })}
         >
             {nectar && <span aria-hidden="true" className="polli-nectar-fx" />}
-            {icon && (
+            {(icon || (nectar && done)) && (
                 <span
                     aria-hidden="true"
                     className="polli:relative polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"

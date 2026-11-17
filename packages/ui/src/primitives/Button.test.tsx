@@ -107,6 +107,14 @@ describe("Button appearances", () => {
         expect(done).toContain("polli-burst");
         expect(done).not.toContain("polli:opacity-50");
 
+        // The check shows even when the button has no icon of its own.
+        const noIcon = renderToStaticMarkup(
+            <Button intent="commit" done disabled>
+                Paid
+            </Button>,
+        );
+        expect(noIcon).toContain("<svg");
+
         const idle = renderToStaticMarkup(
             <Button intent="commit">Create</Button>,
         );

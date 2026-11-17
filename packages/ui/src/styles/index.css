@@ -206,9 +206,11 @@
    inside it with a soft wave on hover and focus, carrying the same on-fill
    text as every other filled control. Kit tokens only. */
 .polli-nectar {
-    --polli-honey: var(--polli-color-honey);
+    /* The same fill / on-fill pair as every other filled control, so the
+       fill and its text always come from one palette (grey in neutral
+       chrome; opt into data-theme="accent" to stay honey there). */
+    --polli-honey: var(--polli-color-fill);
     --polli-ease: cubic-bezier(0.22, 0.8, 0.24, 1);
-    position: relative;
     isolation: isolate;
     border-color: color-mix(
         in oklab,
@@ -217,7 +219,13 @@
     );
     background: transparent;
     color: var(--polli-color-text-strong);
-    transition: color 0.3s var(--polli-ease), border-color 0.3s var(--polli-ease);
+    /* The text flips at the moment the rising (or falling) honey crosses the
+       middle of the label, about 0.14 of the way into the rise, so it is never
+       dark on the dark desk or light on the honey for longer than a blink.
+       Same timing both ways. */
+    transition:
+        color 0.06s linear 0.04s,
+        border-color 0.3s var(--polli-ease);
 }
 
 /* A colour logo (Google) goes on a white disc when the button fills with
@@ -266,7 +274,7 @@
         linear-gradient(var(--polli-honey), var(--polli-honey)) 0 5px / 100% 100%
             no-repeat;
     transform: translateY(105%);
-    transition: transform 0.6s var(--polli-ease);
+    transition: transform 0.45s var(--polli-ease);
 }
 
 /* A busy or done button stays filled even though it is disabled. */
@@ -297,13 +305,6 @@
     )
     > .polli-nectar-fx::before {
     transform: translateY(0);
-    animation: polli-slosh 2.4s linear infinite;
-}
-
-@keyframes polli-slosh {
-    to {
-        background-position: 16px 0, 0 5px;
-    }
 }
 
 /* A small puff of pollen leaves the button when an action succeeds. */

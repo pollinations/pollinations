@@ -21,11 +21,16 @@ export type ModelHealth = {
 const DEGRADED_5XX_PERCENT = 5;
 const DOWN_5XX_PERCENT = 20;
 
-/** Discovery is fail-open when there are no recent observations. */
+export const MIN_RELIABILITY_REQUESTS = 5;
+
+/** Discovery is fail-open when there are no recent observations or fewer than MIN_RELIABILITY_REQUESTS requests. */
 export function isModelReliable(
     successRate: number | null | undefined,
+    requests?: number | null,
 ): boolean {
-    return successRate == null || successRate > 80;
+    if (successRate == null) return true;
+    if (requests != null && requests < MIN_RELIABILITY_REQUESTS) return true;
+    return successRate > 80;
 }
 
 /** Health per model id and category (`text`, `image`, ...) from rollup rows. */

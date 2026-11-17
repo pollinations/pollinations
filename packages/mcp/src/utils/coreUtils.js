@@ -169,12 +169,18 @@ export function parseApiError(status, errorText) {
     try {
         parsed = JSON.parse(errorText);
     } catch {}
-    const rawMessage =
-        parsed?.error?.message ?? parsed?.message ?? parsed?.error ?? errorText;
+    const gatewayMessage =
+        parsed?.error?.message ?? parsed?.message ?? parsed?.error;
+    const rawMessage = gatewayMessage ?? errorText;
     const errorMessage =
         typeof rawMessage === "string"
             ? rawMessage
             : JSON.stringify(rawMessage);
+    // Gateway failures can also have an HTML response from an intermediary.
+    const jsonMessage =
+        typeof gatewayMessage === "string" && gatewayMessage.trim()
+            ? gatewayMessage
+            : undefined;
     switch (status) {
         case 400:
             if (
@@ -205,7 +211,7 @@ export function parseApiError(status, errorText) {
             );
         case 404:
             return (
-                errorMessage ||
+                jsonMessage ??
                 "Resource not found. The requested endpoint or model may not exist."
             );
         case 429:
@@ -218,7 +224,7 @@ export function parseApiError(status, errorText) {
         case 503:
         case 504:
             return (
-                errorMessage ||
+                jsonMessage ??
                 "Service temporarily unavailable. Please try again in a few moments."
             );
         default:

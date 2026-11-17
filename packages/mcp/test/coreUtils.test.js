@@ -114,3 +114,21 @@ test("parseApiError displays gateway 404 and 5xx messages unchanged", () => {
         assert.equal(parseApiError(status, errorJson), text);
     }
 });
+
+test("parseApiError keeps the fallback for empty 404 and 5xx responses", () => {
+    assert.equal(
+        parseApiError(404, ""),
+        "Resource not found. The requested endpoint or model may not exist.",
+    );
+    assert.equal(
+        parseApiError(503, ""),
+        "Service temporarily unavailable. Please try again in a few moments.",
+    );
+});
+
+test("parseApiError keeps the generic fallback for an HTML 502 page", () => {
+    assert.equal(
+        parseApiError(502, "<html><body>Cloudflare Bad Gateway</body></html>"),
+        "Service temporarily unavailable. Please try again in a few moments.",
+    );
+});

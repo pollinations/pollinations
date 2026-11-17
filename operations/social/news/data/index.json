@@ -1,165 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-16T06:07:33.312693+00:00",
+  "generated_at": "2026-11-17T06:10:05.861614+00:00",
   "models": [
-    {
-      "id": "2026-10-17:anthropic/claude-fable-5.1",
-      "model_id": "anthropic/claude-fable-5.1",
-      "title": "Claude Fable 5.1",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-17",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00001",
-            "promptCachedTokens": "0.00000025",
-            "promptCacheWriteTokens": "0.0000125",
-            "completionTextTokens": "0.00005"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000075",
-            "promptCachedTokens": "0.0000001875",
-            "promptCacheWriteTokens": "0.000009375",
-            "completionTextTokens": "0.0000375"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-17:anthropic/claude-haiku-5.5",
-      "model_id": "anthropic/claude-haiku-5.5",
-      "title": "Claude Haiku 5.5",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-17",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001",
-            "promptCachedTokens": "0.00000001",
-            "promptCacheWriteTokens": "0.000000125",
-            "completionTextTokens": "0.0000005"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000075",
-            "promptCachedTokens": "0.0000000075",
-            "promptCacheWriteTokens": "0.00000009375",
-            "completionTextTokens": "0.000000375"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-17:anthropic/claude-opus-5.5",
-      "model_id": "anthropic/claude-opus-5.5",
-      "title": "Claude Opus 5.5",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-17",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000004",
-            "promptCachedTokens": "0.0000002",
-            "promptCacheWriteTokens": "0.000005",
-            "completionTextTokens": "0.00002"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000003",
-            "promptCachedTokens": "0.00000015",
-            "promptCacheWriteTokens": "0.00000375",
-            "completionTextTokens": "0.000015"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-17:anthropic/claude-sonnet-5.5",
-      "model_id": "anthropic/claude-sonnet-5.5",
-      "title": "Claude Sonnet 5.5",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-17",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000001",
-            "promptCacheWriteTokens": "0.0000025",
-            "completionTextTokens": "0.00001"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000015",
-            "promptCachedTokens": "0.000000075",
-            "promptCacheWriteTokens": "0.000001875",
-            "completionTextTokens": "0.0000075"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-17:deepseek/deepseek-v4.1-flash",
-      "model_id": "deepseek/deepseek-v4.1-flash",
-      "title": "DeepSeek V4.1 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-17",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": true,
-          "after": false
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000002",
-            "promptCachedTokens": "0.000000006",
-            "completionTextTokens": "0.0000006"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015",
-            "promptCachedTokens": "0.000000003",
-            "promptImageTokens": "0.00000015",
-            "completionTextTokens": "0.0000006"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-18:deepseek/deepseek-v4.1-flash-1017",
       "model_id": "deepseek/deepseek-v4.1-flash-1017",
@@ -3258,212 +3100,6 @@
   ],
   "api": [
     {
-      "id": "pr-17833:DELETE /alpha/e2b/sandboxes/{id}",
-      "endpoint": "DELETE /alpha/e2b/sandboxes/{id}",
-      "summary": "Delete sandbox",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /alpha/e2b/pricing",
-      "endpoint": "GET /alpha/e2b/pricing",
-      "summary": "Get sandbox pricing",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}",
-      "endpoint": "GET /alpha/e2b/sandboxes/{id}",
-      "summary": "Get sandbox",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/logs",
-      "endpoint": "GET /alpha/e2b/sandboxes/{id}/logs",
-      "summary": "Get sandbox logs",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/metrics",
-      "endpoint": "GET /alpha/e2b/sandboxes/{id}/metrics",
-      "summary": "Get sandbox metrics",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /alpha/e2b/v2/sandboxes",
-      "endpoint": "GET /alpha/e2b/v2/sandboxes",
-      "summary": "List sandboxes",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /api/x402/keys",
-      "endpoint": "GET /api/x402/keys",
-      "summary": "Choose an x402 prepaid API key amount",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:GET /api/x402/keys/{packKey}",
-      "endpoint": "GET /api/x402/keys/{packKey}",
-      "summary": "Buy a prepaid API key with x402",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/sandboxes",
-      "endpoint": "POST /alpha/e2b/sandboxes",
-      "summary": "Create sandbox (v1)",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/connect",
-      "endpoint": "POST /alpha/e2b/sandboxes/{id}/connect",
-      "summary": "Connect or resume sandbox (v1)",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/pause",
-      "endpoint": "POST /alpha/e2b/sandboxes/{id}/pause",
-      "summary": "Pause sandbox",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/timeout",
-      "endpoint": "POST /alpha/e2b/sandboxes/{id}/timeout",
-      "summary": "Set sandbox timeout",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/v2/sandboxes",
-      "endpoint": "POST /alpha/e2b/v2/sandboxes",
-      "summary": "Create sandbox",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /alpha/e2b/v2/sandboxes/{id}/connect",
-      "endpoint": "POST /alpha/e2b/v2/sandboxes/{id}/connect",
-      "summary": "Connect or resume sandbox",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /api/x402/keys/{packKey}",
-      "endpoint": "POST /api/x402/keys/{packKey}",
-      "summary": "Buy a prepaid API key with x402",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:POST /upload",
-      "endpoint": "POST /upload",
-      "summary": "Upload media",
-      "action": "CHANGE",
-      "breaking": false,
-      "changes": [
-        {
-          "field": "parameters:header:Pollinations-Safe",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        },
-        {
-          "field": "parameters:query:safe",
-          "before": null,
-          "after": {
-            "type": "string",
-            "required": false
-          },
-          "breaking": false
-        }
-      ],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
-      "id": "pr-17833:PUT /alpha/e2b/sandboxes/{id}/network",
-      "endpoint": "PUT /alpha/e2b/sandboxes/{id}/network",
-      "summary": "Update sandbox network",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-10-17",
-      "pr": 17833,
-      "url": "https://github.com/pollinations/pollinations/pull/17833"
-    },
-    {
       "id": "pr-18380:DELETE /account/sites/{name}",
       "endpoint": "DELETE /account/sites/{name}",
       "summary": "Delete Site",
@@ -4254,6 +3890,68 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-16",
+      "emoji": "🤖",
+      "title": "Agents can find MCP servers",
+      "text": "Use `listMcpServers` to discover other hosted MCP servers, including their tools, pricing, and alpha flags. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19230
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-16",
+      "emoji": "🔗",
+      "title": "Inspect Docker Hub tags",
+      "text": "The Packages MCP server can list tags for a public Docker Hub image or look up an exact tag. Results include its digest, size, last push time, and supported platforms. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19524
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-16",
+      "emoji": "🎯",
+      "title": "Exact math for agents",
+      "text": "The calculators MCP server gained `integer_math`, `convert_number_base`, and `check_digit`. Agents can work with large integers without number rounding, convert bases 2 through 36, and validate Luhn, IBAN, ISBN, and EAN-13 values. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19455,
+        19600,
+        19620
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-16",
+      "emoji": "🔗",
+      "title": "Look up ASN registrations",
+      "text": "Use `asn_whois` in the Network MCP server to look up an ASN's registered range, organization, country, status, and other RDAP details. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19669
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-16",
+      "emoji": "💡",
+      "title": "See required model checks",
+      "text": "OpenAI-compatible model listings now include `required_safety`, including mandatory checks inherited from fallbacks. Clients can read the checks without querying the registry separately; the checks themselves have not changed. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19646
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-16",
+      "emoji": "💡",
+      "title": "See per-use model charges",
+      "text": "Model listings now include `pricing_adjustments` when a model has per-use charges beyond token pricing, such as Gemini search queries or cache storage. Models without adjustments omit the field. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19698
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-11-14",
       "emoji": "💡",
@@ -5274,56 +4972,6 @@
         17863
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-10-17",
-      "emoji": "🔗",
-      "title": "Try API requests signed in",
-      "text": "Connect your Pollinations account in the interactive API docs to try requests with your own key, without pasting it into the tester. [Open the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17808
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-17",
-      "emoji": "✨",
-      "title": "Drop-in sign-in for HTML",
-      "text": "Add `<polli-connect>` to a plain HTML page for Pollinations sign-in without a build step. Read the connected key from `element.apiKey` or listen for `change` events. [Explore the UI package](https://react.pollinations.ai).",
-      "prs": [
-        17814
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-17",
-      "emoji": "🤖",
-      "title": "Linux sandboxes for agents",
-      "text": "Machines MCP gives agents tools to create and manage Linux sandboxes, run commands, and read or write text files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        17698
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-17",
-      "emoji": "🎨",
-      "title": "Private image uploads",
-      "text": "Set `safe=privacy` or send `Pollinations-Safe: privacy` to strip supported location, camera and embedded-text metadata before storing an image, while keeping its orientation and colour profile. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15428
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-17",
-      "emoji": "🤖",
-      "title": "DeepSeek Flash accepts Quest Pollen",
-      "text": "Use DeepSeek V4.1 Flash with Quest Pollen as well as paid access. Remote image URLs are handled on its Azure route, with Fireworks retained as fallback. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        17615
-      ],
-      "kind": "model"
     }
   ]
 }

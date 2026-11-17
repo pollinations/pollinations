@@ -145,8 +145,10 @@ const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
 };
 
 // Rewards recorded one per PR, fixed issue or grant, and the card that keeps them.
+// A GitHub quest you won was paid for your merged PR, so it joins that stack.
 const CARD_BY_PREFIX = [
     ["github:merged_pr:", "merged_pr"],
+    ["github:issue:", "merged_pr"],
     ["github:reported_issue:", "reported_merged_issue"],
     ["grant:", OTHER_CONTRIBUTIONS.id],
 ] as const;
@@ -465,13 +467,21 @@ const GITHUB_ICONS: Record<string, typeof GitMergeIcon> = {
     reported_merged_issue: IssueClosedIcon,
 };
 
+// The "[QUEST]" tag older reward titles still carry from the issue title.
+const QUEST_TAG = /\[(?:POLLEN-)?QUEST\]:?\s*/i;
+
 /** One reward of a stacked card: what it was for, when, and what it paid. */
 function RewardLine({ reward }: { reward: QuestReward }) {
-    const GitHubMark = GITHUB_ICONS[cardIdOf(reward.questId) ?? ""];
-    const SourceIcon = GitHubMark ?? ReceiptIcon;
-    const title = GitHubMark
-        ? reward.title.replace(/^[^#]*(#\d+): /, "$1 ")
-        : reward.title;
+    // A won GitHub quest shows its issue, numbered like the other rows.
+    const quest = /^github:issue:(\d+)$/.exec(reward.questId ?? "");
+    const SourceIcon = quest
+        ? IssueClosedIcon
+        : (GITHUB_ICONS[cardIdOf(reward.questId) ?? ""] ?? ReceiptIcon);
+    const title = quest
+        ? `#${quest[1]} ${reward.title.replace(/^[^#]*#\d+: /, "").replace(QUEST_TAG, "")}`
+        : SourceIcon !== ReceiptIcon
+          ? reward.title.replace(/^[^#]*(#\d+): /, "$1 ")
+          : reward.title;
     return (
         <li className="flex items-center gap-1.5">
             <SourceIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
@@ -974,6 +984,12 @@ function QuestOverviewContent({
                 : rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
+            // A GitHub quest you won sits in the pull request stack instead.
+            if (
+                quest.id.startsWith("github:issue:") &&
+                rewardByKey.has(quest.id)
+            )
+                continue;
             // Visibility rule:
             //  - "coming_soon" always shows (at the bottom of its lane, in the
             //    receded style with a clock + "Coming soon" — see QuestRow).

@@ -28,6 +28,10 @@ const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
         deployment: "MAI-Image-2.7",
         title: "MAI Image 2.7",
     },
+    "microsoft/mai-image-2.7-flash": {
+        deployment: "MAI-Image-2.7-Flash",
+        title: "MAI Image 2.7 Flash",
+    },
     "microsoft/mai-image-2.6-flash": {
         deployment: "MAI-Image-2.6-Flash",
         title: "MAI Image 2.6 Flash",

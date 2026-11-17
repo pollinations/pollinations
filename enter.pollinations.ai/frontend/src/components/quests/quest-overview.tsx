@@ -9,9 +9,11 @@ import {
     ClockIcon,
     CopyField,
     formatCount,
+    GitPullRequestIcon,
     InlineLink,
     LoadingStatus,
     OutageNotice,
+    ReceiptIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -456,25 +458,54 @@ function QuestMarker({
 
 /** One reward of a stacked card: what it was for, when, and what it paid. */
 function RewardLine({ reward }: { reward: QuestReward }) {
-    const StatusIcon = reward.claimedAt ? CheckIcon : SparkleIcon;
+    const cardId = cardIdOf(reward.questId);
+    const iconClass = "h-3.5 w-3.5 shrink-0 text-theme-text-muted";
+    const SourceIcon =
+        cardId === "merged_pr" ? GitPullRequestIcon : ReceiptIcon;
     return (
-        <li className="flex items-baseline gap-2">
-            <StatusIcon className="h-3.5 w-3.5 shrink-0 self-center text-theme-text-muted" />
-            <span className="min-w-0 flex-1 text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
+        <li className="flex items-center gap-1.5">
+            {cardId === "reported_merged_issue" ? (
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className={iconClass}
+                >
+                    <circle
+                        cx={12}
+                        cy={12}
+                        r={9}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                    />
+                    <circle cx={12} cy={12} r={1.5} fill="currentColor" />
+                </svg>
+            ) : (
+                <SourceIcon className={iconClass} />
+            )}
+            <span
+                className="min-w-0 flex-1 truncate text-theme-text-muted"
+                title={reward.title}
+            >
                 {reward.url ? (
-                    <InlineLink href={reward.url}>{reward.title}</InlineLink>
+                    <InlineLink href={reward.url} tone="quiet" showIcon={false}>
+                        {reward.title}
+                    </InlineLink>
                 ) : (
                     reward.title
                 )}
             </span>
-            <span className="shrink-0 text-xs text-theme-text-muted tabular-nums">
+            <time
+                className="shrink-0 whitespace-nowrap text-theme-text-muted tabular-nums"
+                dateTime={reward.earnedAt}
+            >
                 {new Date(reward.earnedAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                 })}
-            </span>
+            </time>
             <span
-                className={`flex shrink-0 items-center gap-1 tabular-nums ${
+                className={`flex shrink-0 items-center gap-0.5 tabular-nums ${
                     reward.claimedAt
                         ? "text-theme-text-muted"
                         : "font-semibold text-theme-text-strong"
@@ -485,6 +516,9 @@ function RewardLine({ reward }: { reward: QuestReward }) {
                     className="h-3.5 w-3.5"
                 />
                 {formatRewardAmount(reward.pollenAmount)}
+                <span className="sr-only">
+                    {reward.claimedAt ? " claimed" : " ready to claim"}
+                </span>
             </span>
         </li>
     );
@@ -528,10 +562,19 @@ export function QuestRow({
         >
             {card.title}
             {card.repeats && card.repeats.length > 0 && (
-                <span className="font-normal text-theme-text-muted">
+                <>
                     {" "}
-                    · {card.repeats.length} earned
-                </span>
+                    <button
+                        type="button"
+                        aria-expanded={showRewards}
+                        aria-label={`${card.repeats.length} earned rewards for ${card.title}`}
+                        onClick={() => setShowRewards((shown) => !shown)}
+                        className="polli-control inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap text-xs font-normal text-theme-text-muted hover:text-theme-text-strong"
+                    >
+                        · {card.repeats.length} earned
+                        <ChevronIcon expanded={showRewards} />
+                    </button>
+                </>
             )}
         </Text>
     );
@@ -591,28 +634,7 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    // A stacked card lists what it holds on request, newest first.
-    const rewardList = card.repeats && card.repeats.length > 0 && (
-        <div className="flex flex-col gap-1">
-            <button
-                type="button"
-                aria-expanded={showRewards}
-                onClick={() => setShowRewards((shown) => !shown)}
-                className="polli-control inline-flex w-fit cursor-pointer items-center gap-1 text-sm text-theme-text-muted hover:text-theme-text-strong"
-            >
-                {showRewards ? "Hide" : "Show"} rewards
-                <ChevronIcon expanded={showRewards} />
-            </button>
-            {showRewards && (
-                <ul className="flex flex-col gap-1 text-sm">
-                    {card.repeats.map((repeat) => (
-                        <RewardLine key={repeat.id} reward={repeat} />
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
-    const details = (description || issueLink || progress || rewardList) && (
+    const details = (description || issueLink || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
             {(description || issueLink) && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
@@ -624,7 +646,6 @@ export function QuestRow({
                 </div>
             )}
             {progress}
-            {rewardList}
         </div>
     );
     const marker = (
@@ -665,6 +686,13 @@ export function QuestRow({
                     {reward}
                 </div>
             </div>
+            {showRewards && card.repeats && card.repeats.length > 0 && (
+                <ul className="ml-9 mt-2 flex flex-col gap-0.5 text-xs">
+                    {card.repeats.map((repeat) => (
+                        <RewardLine key={repeat.id} reward={repeat} />
+                    ))}
+                </ul>
+            )}
         </Surface>
     );
 }

@@ -8,6 +8,8 @@ import {
 } from "../../src/image/models/azureFluxKontextModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
+import { mockImageProviderFetch } from "./mockImageProviderFetch.ts";
+
 const ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 const INPUT_IMAGE_URL = "https://example.com/reference.jpg";
@@ -31,9 +33,6 @@ const baseParams: ImageParams = {
 };
 
 beforeEach(() => {
-    // The Workers env fills process.env as in production. These tests cover
-    // the provider call alone, so Content Safety stays unconfigured.
-    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         {
             AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
@@ -45,15 +44,14 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
 });
 
 describe("callAzureFluxKontext", () => {
     it("generates through the Azure BFL route with the requested aspect ratio", async () => {
         let requestBody: Record<string, unknown> | undefined;
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (url, init) => {
+        const fetchSpy = mockImageProviderFetch().mockImplementation(
+            async (url, init) => {
                 expect(url.toString()).toBe(ENDPOINT);
                 expect(init?.headers).toMatchObject({
                     Authorization: "Bearer test-azure-key",
@@ -63,7 +61,8 @@ describe("callAzureFluxKontext", () => {
                 return Response.json({
                     data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                 });
-            });
+            },
+        );
 
         const result = await callAzureFluxKontext(
             "wide landscape",
@@ -88,7 +87,7 @@ describe("callAzureFluxKontext", () => {
 
     it("edits through the same route with the safety-checked image as base64", async () => {
         let requestBody: Record<string, unknown> | undefined;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+        mockImageProviderFetch().mockImplementation(async (url, init) => {
             if (url.toString() === INPUT_IMAGE_URL) {
                 return new Response(INPUT_IMAGE, {
                     headers: { "Content-Type": "image/jpeg" },
@@ -117,7 +116,7 @@ describe("callAzureFluxKontext", () => {
     });
 
     it("preserves upstream client errors", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 { error: { message: "aspect ratio is out of range" } },
                 {
@@ -138,7 +137,7 @@ describe("callAzureFluxKontext", () => {
     });
 
     it("maps moderation-worded upstream client errors to content policy", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 { error: { message: "Request blocked by content filter" } },
                 {
@@ -164,7 +163,7 @@ describe("callAzureFluxKontext", () => {
     });
 
     it("maps a filtered successful response without removing provider diagnostics", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 {
                     prompt: "private prompt must not be logged",
@@ -212,7 +211,7 @@ describe("callAzureFluxKontext", () => {
     });
 
     it("preserves the complete response when Azure returns no image", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 {
                     data: [
@@ -267,9 +266,8 @@ describe("callAzureFlux11Pro", () => {
     ] as const)(
         "routes %s with exact dimensions, seed, and flat image usage",
         async (model, resource, apiKey) => {
-            const fetchSpy = vi
-                .spyOn(globalThis, "fetch")
-                .mockImplementation(async (url, init) => {
+            const fetchSpy = mockImageProviderFetch().mockImplementation(
+                async (url, init) => {
                     expect(url.toString()).toBe(
                         `https://${resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-pro-1.1?api-version=preview`,
                     );
@@ -288,7 +286,8 @@ describe("callAzureFlux11Pro", () => {
                     return Response.json({
                         data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                     });
-                });
+                },
+            );
 
             const result = await callAzureFlux11Pro(
                 "blue ceramic teapot",
@@ -312,7 +311,7 @@ describe("callAzureFlux11Pro", () => {
     ] as const)(
         "rejects unsupported parameters with a useful 400",
         async (overrides, message) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
+            const fetchSpy = mockImageProviderFetch();
             await expect(
                 callAzureFlux11Pro(
                     "blue ceramic teapot",
@@ -332,7 +331,7 @@ describe("callAzureFlux11Pro", () => {
     );
 
     it("preserves provider content-filter errors", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 { error: { message: "Request blocked by content filter" } },
                 { status: 400 },
@@ -352,7 +351,7 @@ describe("callAzureFlux11Pro", () => {
     });
 
     it("maps an explicit refusal to a content policy error", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json({ data: [], stop_reason: "refusal" }),
         );
 
@@ -378,25 +377,21 @@ describe("callAzureFlux2", () => {
         "routes %s with exact dimensions and provider-reported megapixels",
         async (model, upstreamModel, modelPath) => {
             let requestBody: Record<string, unknown> | undefined;
-            vi.spyOn(globalThis, "fetch").mockImplementation(
-                async (url, init) => {
-                    expect(url.toString()).toBe(
-                        `https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/${modelPath}?api-version=preview`,
-                    );
-                    requestBody = JSON.parse(init?.body as string);
-                    return Response.json({
-                        data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
-                        request_meta: {
-                            cost:
-                                model === "black-forest-labs/flux.2-pro"
-                                    ? 4.5
-                                    : 10,
-                            input_mp: 0,
-                            output_mp: 1.5,
-                        },
-                    });
-                },
-            );
+            mockImageProviderFetch().mockImplementation(async (url, init) => {
+                expect(url.toString()).toBe(
+                    `https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/${modelPath}?api-version=preview`,
+                );
+                requestBody = JSON.parse(init?.body as string);
+                return Response.json({
+                    data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                    request_meta: {
+                        cost:
+                            model === "black-forest-labs/flux.2-pro" ? 4.5 : 10,
+                        input_mp: 0,
+                        output_mp: 1.5,
+                    },
+                });
+            });
 
             const result = await callAzureFlux2(
                 "wide landscape",
@@ -431,7 +426,7 @@ describe("callAzureFlux2", () => {
     it("forwards multiple references and bills Azure's rounded input units", async () => {
         const secondInputUrl = "https://example.com/reference-2.jpg";
         let requestBody: Record<string, unknown> | undefined;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+        mockImageProviderFetch().mockImplementation(async (url, init) => {
             if ([INPUT_IMAGE_URL, secondInputUrl].includes(url.toString())) {
                 return new Response(INPUT_IMAGE, {
                     headers: { "Content-Type": "image/jpeg" },
@@ -485,7 +480,7 @@ describe("callAzureFlux2", () => {
     );
 
     it("fails safely when Azure omits billing metadata", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json({
                 data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
             }),
@@ -504,7 +499,7 @@ describe("callAzureFlux2", () => {
     });
 
     it("maps a filtered response to a content policy error", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json({
                 data: [
                     {

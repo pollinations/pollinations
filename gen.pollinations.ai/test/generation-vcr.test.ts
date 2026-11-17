@@ -29,6 +29,9 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
+// GPU backends return JPEG; keep the existing complete 1x1 fixture dimensions.
+const gpuJpeg1x1Base64 =
+    "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH8AP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Af//Z";
 const imageBackendHost = "image-backend.test";
 const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
@@ -598,7 +601,7 @@ async function fakeImageBackendResponse(request: Request) {
 
     return Response.json([
         {
-            image: png1x1Base64,
+            image: gpuJpeg1x1Base64,
             isMature: false,
             isChild: false,
         },

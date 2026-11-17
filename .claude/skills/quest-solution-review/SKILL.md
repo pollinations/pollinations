@@ -21,6 +21,20 @@ complexity. Do not reward being first, large, or already up to date with `main`.
    risk. Prefer focused tests of real code and a practical smoke test when one is
    feasible.
 
+### Independent opinions
+
+For every quest review, run two independent read-only CLI reviews in parallel,
+one run per model, with no further fan-out:
+
+- Claude Code: `claude -p --model claude-fable-5-1`.
+- Codex CLI: `gpt-6-astra` with reasoning effort `high` or above.
+
+Give both the same brief, complete candidate set, evidence, and review criteria.
+Do not supply a preferred winner or the other reviewer's conclusions. Compare
+their results and verify disputed findings against code, tests, or current
+primary documentation. Report an unavailable reviewer rather than silently
+substituting another model or treating one opinion as two.
+
 ### Correctness gate
 
 A candidate must:
@@ -63,6 +77,8 @@ Give a concise comparison containing:
 - Blocking correctness findings.
 - Relative complexity and useful ideas found in alternatives.
 - Tests, checks, and smoke tests actually run.
+- Both reviewers' recommendations, where they disagree, and how those
+  differences were resolved or remain open.
 - A verdict: merge, request a small follow-up, combine a specific idea, or accept
   none.
 

@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { Resvg } from "@resvg/resvg-js";
 import jsQR from "jsqr";
+import { fromRoman, toRoman } from "./tools/roman.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -78,6 +79,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "roman_numerals",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -947,6 +949,152 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
                 .isError,
             true,
             JSON.stringify(args),
+        );
+    }
+});
+
+test("roman_numerals converts integers to Roman numerals", async (t) => {
+    const client = await clientFor(t);
+    for (const [integer, roman] of [
+        [1, "I"],
+        [4, "IV"],
+        [9, "IX"],
+        [14, "XIV"],
+        [40, "XL"],
+        [49, "XLIX"],
+        [90, "XC"],
+        [99, "XCIX"],
+        [400, "CD"],
+        [499, "CDXCIX"],
+        [900, "CM"],
+        [999, "CMXCIX"],
+        [1984, "MCMLXXXIV"],
+        [2026, "MMXXVI"],
+        [3999, "MMMCMXCIX"],
+    ]) {
+        assert.deepEqual(
+            await call(client, "roman_numerals", {
+                value: String(integer),
+                direction: "to_roman",
+            }),
+            { integer, roman },
+            String(integer),
+        );
+    }
+});
+
+test("roman_numerals converts Roman numerals to integers", async (t) => {
+    const client = await clientFor(t);
+    for (const [roman, integer] of [
+        ["I", 1],
+        ["IV", 4],
+        ["IX", 9],
+        ["XIV", 14],
+        ["XL", 40],
+        ["XLIX", 49],
+        ["XC", 90],
+        ["XCIX", 99],
+        ["CD", 400],
+        ["CDXCIX", 499],
+        ["CM", 900],
+        ["CMXCIX", 999],
+        ["MCMLXXXIV", 1984],
+        ["MMXXVI", 2026],
+        ["MMMCMXCIX", 3999],
+    ]) {
+        assert.deepEqual(
+            await call(client, "roman_numerals", {
+                value: roman,
+                direction: "from_roman",
+            }),
+            { integer, roman },
+            roman,
+        );
+    }
+});
+
+test("roman_numerals round-trips every integer from 1 to 3999", () => {
+    for (let integer = 1; integer <= 3999; integer += 1) {
+        const roman = toRoman(integer);
+        assert.equal(fromRoman(roman), integer, roman);
+    }
+});
+
+test("roman_numerals trims whitespace and accepts lowercase", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "roman_numerals", {
+            value: " 42 ",
+            direction: "to_roman",
+        }),
+        { integer: 42, roman: "XLII" },
+    );
+    assert.deepEqual(
+        await call(client, "roman_numerals", {
+            value: "  xiv ",
+            direction: "from_roman",
+        }),
+        { integer: 14, roman: "XIV" },
+    );
+});
+
+test("roman_numerals rejects out-of-range and non-integer values", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { value: "0", direction: "to_roman" },
+        { value: "-1", direction: "to_roman" },
+        { value: "4000", direction: "to_roman" },
+        { value: "100000", direction: "to_roman" },
+        { value: "3.5", direction: "to_roman" },
+        { value: "1e3", direction: "to_roman" },
+        { value: "abc", direction: "to_roman" },
+        { value: "", direction: "to_roman" },
+        { value: "   ", direction: "to_roman" },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "roman_numerals",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("roman_numerals rejects invalid Roman numerals", async (t) => {
+    const client = await clientFor(t);
+    for (const value of [
+        "IIII",
+        "VV",
+        "LL",
+        "DD",
+        "IL",
+        "IC",
+        "IM",
+        "XM",
+        "XD",
+        "VX",
+        "LC",
+        "DM",
+        "MIM",
+        "MMMM",
+        "ABC",
+        "X I",
+        "",
+        "   ",
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "roman_numerals",
+                    arguments: { value, direction: "from_roman" },
+                })
+            ).isError,
+            true,
+            JSON.stringify(value),
         );
     }
 });

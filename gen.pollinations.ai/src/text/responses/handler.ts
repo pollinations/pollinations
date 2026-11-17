@@ -27,7 +27,10 @@ import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
 import { requireChatStreamUsage } from "../chat/usage.js";
-import { communityEndpointModelConfig } from "../communityEndpoint.js";
+import {
+    communityEndpointFetch,
+    communityEndpointModelConfig,
+} from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import {
@@ -137,7 +140,7 @@ async function responsesClientForAttempt(
             `Model ${attempt.id} does not support the stateless Responses API`,
         );
     }
-    return { target };
+    return { target, fetcher: communityEndpointFetch };
 }
 
 /**

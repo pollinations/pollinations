@@ -1,6 +1,8 @@
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
+import { communityEndpointFetch } from "./communityEndpoint.js";
 import {
     genericOpenAIClient,
     withMistralThinking,
@@ -126,21 +128,17 @@ export async function generateTextPortkey(
         string
     >;
     const responsesFetcher = state.options.responsesFetcher;
-    // Community endpoints carry their own deadline-bound fetcher in the
-    // model config; it wins over the default portkey binding so their
-    // third-party upstream cannot tarpit the request forever.
-    const communityFetcher = state.options
-        .modelConfig as Partial<OpenAIClientConfig> | undefined;
-    const portkeyFetcherOverride =
-        communityFetcher?.fetcher ?? portkeyFetcher;
+    const definition = state.options.modelDef as ModelDefinition | undefined;
+    const communityFetcher =
+        definition?.provider === "community"
+            ? communityEndpointFetch
+            : undefined;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
                   endpoint: directEndpoint,
                   additionalHeaders,
-                  ...(portkeyFetcherOverride && {
-                      fetcher: portkeyFetcherOverride,
-                  }),
+                  fetcher: communityFetcher,
               }
             : {
                   endpoint: () => buildEndpoint(portkeyGatewayUrl),
@@ -150,7 +148,7 @@ export async function generateTextPortkey(
                       ),
                       ...additionalHeaders,
                   },
-                  fetcher: portkeyFetcherOverride,
+                  fetcher: portkeyFetcher,
               };
 
     delete state.options.additionalHeaders;
@@ -165,7 +163,7 @@ export async function generateTextPortkey(
         return await callChatViaResponses(
             state.messages,
             state.options,
-            communityFetcher?.fetcher ?? responsesFetcher,
+            responsesFetcher ?? communityFetcher,
         );
     }
 

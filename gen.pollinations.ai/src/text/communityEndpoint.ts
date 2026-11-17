@@ -3,8 +3,8 @@ import {
     signAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import {
-    type CommunityEndpointRuntime,
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
     usesAgentRunToken,
@@ -13,23 +13,28 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
 
-/**
- * A community endpoint is a self-hosted third-party server, not one of our
- * providers: image, embeddings and audio serve paths already bound their
- * fetches to COMMUNITY_ENDPOINT_TIMEOUT_MS, but the text path passed no
- * signal at all, so a wedged endpoint tarpitted the request until the
- * platform's own timeout kicked in. Every fetch this module originates
- * carries the deadline; official providers are unaffected.
- */
-export function communityEndpointFetch(
-    input: string,
-    init?: RequestInit,
-): Promise<Response> {
-    return fetch(input, {
-        ...init,
-        signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
-    });
-}
+/** Bound the wait for headers on each external community text attempt. */
+export const communityEndpointFetch: typeof fetch = async (input, init) => {
+    const deadline = new AbortController();
+    const callerSignal = init?.signal;
+    const signal = callerSignal
+        ? AbortSignal.any([callerSignal, deadline.signal])
+        : deadline.signal;
+    const timer = setTimeout(() => {
+        deadline.abort(
+            new DOMException(
+                "Community endpoint response timed out",
+                "TimeoutError",
+            ),
+        );
+    }, COMMUNITY_ENDPOINT_TIMEOUT_MS);
+    try {
+        return await fetch(input, { ...init, signal });
+    } finally {
+        // Once headers arrive, let the response body finish streaming.
+        clearTimeout(timer);
+    }
+};
 
 /**
  * The run token a delegating endpoint authenticates with, or undefined.
@@ -189,11 +194,5 @@ export async function communityEndpointModelConfig({
         ...(endpoint.api === "responses"
             ? { responsesEndpoint: endpoint.baseUrl }
             : { directEndpoint: endpoint.baseUrl }),
-        // Bind upstream fetches to the community deadline: the proxy is a
-        // third-party server with no platform-level transport timeout. The
-        // chat path reads "fetcher", the responses adapter "responsesFetcher".
-        ...(endpoint.api === "responses"
-            ? { responsesFetcher: communityEndpointFetch }
-            : { fetcher: communityEndpointFetch }),
     };
 }

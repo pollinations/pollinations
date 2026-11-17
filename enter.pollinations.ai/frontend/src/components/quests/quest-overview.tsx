@@ -220,11 +220,12 @@ function cardSortRank(card: QuestCard): number {
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
+// Rewards are dollars; the sprout or card beside them names the balance.
 function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
     const formatted = formatPollen(value);
-    if (value > 0 && formatted === "0") return "<0.0001";
-    return formatted;
+    if (value > 0 && formatted === "0") return "<$0.0001";
+    return `$${formatted}`;
 }
 
 function rewardIconKind(
@@ -356,7 +357,7 @@ function QuestSummary({
             <WalletBalanceCard
                 tone="neutral"
                 kind="tier"
-                label={preview ? "Potential Pollen" : "Pollen"}
+                label={preview ? "To earn" : "Earned"}
                 value={formatRewardAmount(pollen)}
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
@@ -380,8 +381,8 @@ function QuestSummary({
                                         <span>
                                             <span className="sr-only">
                                                 {kind === "paid"
-                                                    ? "Paid Pollen:"
-                                                    : "Quest Pollen:"}{" "}
+                                                    ? "Paid:"
+                                                    : "Quest:"}{" "}
                                             </span>
                                             +{formatRewardAmount(pollen)} to
                                             claim
@@ -410,15 +411,19 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         100,
         Math.max(0, (progress.current / progress.target) * 100),
     );
+    // Amounts read as dollars; users and days keep their unit.
     const formatValue = (value: number) =>
-        progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
+        progress.unit === "pollen"
+            ? `$${formatPollen(value)}`
+            : formatCount(value);
+    const unit = progress.unit === "pollen" ? null : ` ${progress.unit}`;
 
     // Nothing done yet: just the count, an empty bar reads as decoration.
     if (progress.current <= 0)
         return (
             <span className="text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {unit}
             </span>
         );
     return (
@@ -437,8 +442,8 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 />
             </div>
             <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {unit}
             </span>
         </div>
     );
@@ -714,15 +719,12 @@ export function QuestRow({
         <Button
             type="button"
             intent="commit"
-            size="lg"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardIds)}
-            aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
-            className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
+            aria-label={`Claim ${rewardLabel} to your ${rewardIcon === "paid" ? "paid" : "Quest"} balance`}
+            className="gap-2 whitespace-nowrap font-bold"
         >
-            <span className="text-sm leading-none">
-                {claiming ? "Claiming" : "Claim"}
-            </span>
+            {claiming ? "Claiming" : "Claim"}
             {rewardChip}
         </Button>
     ) : null;
@@ -1106,6 +1108,33 @@ function QuestOverviewContent({
             });
         }
 
+        // A reward with no card of its own (a quest that left the catalog)
+        // is a row of its quest's lane, else of Contribute.
+        const catalog = new Map(
+            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
+                (quest) => [quest.id, quest],
+            ),
+        );
+        for (const reward of state.rewards) {
+            const quest = catalog.get(cardIdOf(reward.questId) ?? "");
+            if (
+                quest?.repeatable ||
+                rewardByKey.get(quest?.id ?? "") === reward
+            )
+                continue;
+            byCat[quest?.category ?? "contribute"].push({
+                key: reward.id,
+                rewardIds: [reward.id],
+                title: reward.title,
+                url: reward.url ?? undefined,
+                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                reward: reward.pollenAmount,
+                balanceBucket: reward.balanceBucket,
+                status: reward.claimedAt ? "claimed" : "claimable",
+                earnedAmount: reward.pollenAmount,
+            });
+        }
+
         // Order per lane by lifecycle rank only: a claim moves its own row and
         // nothing else; within a rank the catalog's order stays (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
@@ -1120,40 +1149,6 @@ function QuestOverviewContent({
         rewardByKey,
         previewAll,
     ]);
-
-    // A reward with no card of its own (an event code, or a quest that left
-    // the catalog) gets its own row.
-    const bonusRewardCards = useMemo(() => {
-        const catalog = new Map(
-            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
-                (quest) => [quest.id, quest],
-            ),
-        );
-        return (
-            state.rewards
-                .filter((reward) => {
-                    const quest = catalog.get(cardIdOf(reward.questId) ?? "");
-                    return (
-                        !quest ||
-                        (!quest.repeatable &&
-                            rewardByKey.get(quest.id) !== reward)
-                    );
-                })
-                .map<QuestCard>((reward) => ({
-                    key: reward.id,
-                    rewardIds: [reward.id],
-                    title: reward.title,
-                    url: reward.url ?? undefined,
-                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                    reward: reward.pollenAmount,
-                    balanceBucket: reward.balanceBucket,
-                    status: reward.claimedAt ? "claimed" : "claimable",
-                    earnedAmount: reward.pollenAmount,
-                }))
-                // Same order as the sections: to claim first, done last.
-                .sort((a, b) => cardSortRank(a) - cardSortRank(b))
-        );
-    }, [state.catalog, state.rewards, rewardByKey]);
 
     // Logged-out totals show what the public catalog offers, not an owned balance.
     const previewTotals = useMemo(() => {
@@ -1285,29 +1280,13 @@ function QuestOverviewContent({
                         />
                     )}
                 </SectionContent>
-                <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Complete → claim → credited to your{" "}
-                            <InlineLink href="/pollen">wallet</InlineLink>.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Past activity may count. If you meet a quest's
-                            requirements, you can claim its reward.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Quests are in alpha. Availability and rewards may
-                            change.
-                        </span>
-                    </p>
-                </div>
+                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                    <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Quests are in alpha. Availability and amounts may
+                        change.
+                    </span>
+                </p>
             </Section>
 
             {state.standings ? (
@@ -1383,36 +1362,6 @@ function QuestOverviewContent({
                     </Section>
                 );
             })}
-            {bonusRewardCards.length > 0 && (
-                <Section
-                    title="Bonus rewards"
-                    action={
-                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                            {
-                                bonusRewardCards.filter(
-                                    (card) => card.status === "claimed",
-                                ).length
-                            }{" "}
-                            / {bonusRewardCards.length}
-                        </span>
-                    }
-                >
-                    <div className="flex flex-col gap-2">
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                claiming={
-                                    card.rewardIds?.some((id) =>
-                                        state.claimingRewardIds.includes(id),
-                                    ) ?? false
-                                }
-                                onClaim={handleClaimRewards}
-                            />
-                        ))}
-                    </div>
-                </Section>
-            )}
         </>
     );
 }

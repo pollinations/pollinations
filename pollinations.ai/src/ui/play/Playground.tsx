@@ -959,6 +959,16 @@ export function Playground() {
                 ? aspectRatio
                 : videoConfig.ratios[0]
             : undefined;
+    // The reference uploads that are on screen for this model and mode.
+    const videoReferenceMedia =
+        currentModel?.category === "video" &&
+        (!videoConfig.exclusiveReferences || usesReferences)
+            ? UPLOAD_MEDIA_ORDER.filter((media) =>
+                  currentModel.videoCapabilities.includes(
+                      REFERENCE_CAPABILITY[media],
+                  ),
+              )
+            : [];
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
@@ -1432,54 +1442,47 @@ export function Playground() {
                                         }
                                     />
                                 )}
-                            {currentModel?.category === "video" &&
-                                (!videoConfig.exclusiveReferences ||
-                                    usesReferences) &&
-                                UPLOAD_MEDIA_ORDER.filter((media) =>
-                                    currentModel.videoCapabilities.includes(
-                                        REFERENCE_CAPABILITY[media],
-                                    ),
-                                ).map((media) => {
-                                    const Icon = CATEGORY_ICON[media];
-                                    return (
-                                        <FieldStack
-                                            key={media}
-                                            label={`Reference ${MEDIA_PLURAL[media]}`}
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <FileUpload
-                                                value={videoReferences[media]}
-                                                onChange={(files) =>
-                                                    setVideoReferences(
-                                                        (previous) => ({
-                                                            ...previous,
-                                                            [media]: files,
-                                                        }),
-                                                    )
-                                                }
-                                                maxFiles={Infinity}
-                                                {...uploadProps(
-                                                    [media],
-                                                    "Too many files.",
-                                                )}
-                                                label={`Add ${MEDIA_PLURAL[media]}`}
-                                                icon={
-                                                    <Icon className="h-6 w-6 shrink-0" />
-                                                }
-                                                // Images preview as thumbnails.
-                                                previewIcon={
-                                                    media ===
-                                                    "image" ? undefined : (
-                                                        <Icon className="h-6 w-6" />
-                                                    )
-                                                }
-                                            />
-                                        </FieldStack>
-                                    );
-                                })}
-                            {Object.values(videoReferences).some(
-                                (files) => files.length > 0,
+                            {videoReferenceMedia.map((media) => {
+                                const Icon = CATEGORY_ICON[media];
+                                return (
+                                    <FieldStack
+                                        key={media}
+                                        label={`Reference ${MEDIA_PLURAL[media]}`}
+                                        orientation="inline"
+                                        className="min-w-0"
+                                    >
+                                        <FileUpload
+                                            value={videoReferences[media]}
+                                            onChange={(files) =>
+                                                setVideoReferences(
+                                                    (previous) => ({
+                                                        ...previous,
+                                                        [media]: files,
+                                                    }),
+                                                )
+                                            }
+                                            maxFiles={Infinity}
+                                            {...uploadProps(
+                                                [media],
+                                                "Too many files.",
+                                            )}
+                                            label={`Add ${MEDIA_PLURAL[media]}`}
+                                            icon={
+                                                <Icon className="h-6 w-6 shrink-0" />
+                                            }
+                                            // Images preview as thumbnails.
+                                            previewIcon={
+                                                media ===
+                                                "image" ? undefined : (
+                                                    <Icon className="h-6 w-6" />
+                                                )
+                                            }
+                                        />
+                                    </FieldStack>
+                                );
+                            })}
+                            {videoReferenceMedia.some(
+                                (media) => videoReferences[media].length > 0,
                             ) && (
                                 <div className="col-span-full">
                                     <UploadPrivacyNote />
@@ -1825,7 +1828,9 @@ export function Playground() {
                     {isGenerating && activeCategory !== "audio" && (
                         <BusyPlaceholder category={activeCategory} />
                     )}
-                    {result && <ResultPanel result={result} />}
+                    {result &&
+                        (result.type === "text" ? "audio" : result.type) ===
+                            activeCategory && <ResultPanel result={result} />}
                     {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
                 </div>
             </div>

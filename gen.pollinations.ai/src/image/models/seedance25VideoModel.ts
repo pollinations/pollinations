@@ -29,7 +29,7 @@ interface Seedance25Input {
     reference_audios?: string[];
 }
 
-export function resolveAspectRatio(safeParams: ImageParams): string {
+function resolveAspectRatio(safeParams: ImageParams): string {
     if (safeParams.aspectRatio) return safeParams.aspectRatio;
     if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(

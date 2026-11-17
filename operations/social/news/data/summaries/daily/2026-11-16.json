@@ -1,0 +1,198 @@
+{
+  "date": "2026-11-16",
+  "period_start": "2026-11-16",
+  "period_end": "2026-11-16",
+  "title": "Fourteen community apps join the catalog",
+  "summary": "Fourteen community apps joined the catalog, MCP agents gained new tools, and model listings now explain safety checks and per-use charges.\n\nThe new apps range from model-vs-model games and a simulated 1980s computer to a narrated flipbook, Mandarin roleplay, and a science-law plotter. The rotating Recent Apps list changed throughout the day, but older entries remain in the catalog. The community model publisher list also gained four contributors.\n\nAgents can discover other hosted MCP servers, inspect public Docker Hub image tags, and look up ASN registrations. Community contributors also added exact integer arithmetic, base conversion, and identifier checks to the calculators server.\n\nOpenAI-compatible model listings now expose mandatory safety checks, including those from fallbacks. They also expose optional per-use pricing adjustments, such as search-query and cache-storage charges, alongside token pricing.",
+  "pr_count": 32,
+  "prs": [
+    {
+      "number": 18378,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19230,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19233,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19455,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19524,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19600,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19620,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19631,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19646,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19669,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19698,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19817,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19842,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19843,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19850,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19862,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19863,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19865,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19869,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19870,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19871,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19872,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19873,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19874,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19875,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19876,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19910,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19912,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19913,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19914,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19916,
+      "date": "2026-11-16"
+    },
+    {
+      "number": 19919,
+      "date": "2026-11-16"
+    }
+  ],
+  "generated_at": "2026-11-17T06:08:55.843279+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Agents can find MCP servers",
+      "text": "Use `listMcpServers` to discover other hosted MCP servers, including their tools, pricing, and alpha flags. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19230
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Inspect Docker Hub tags",
+      "text": "The Packages MCP server can list tags for a public Docker Hub image or look up an exact tag. Results include its digest, size, last push time, and supported platforms. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19524
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Exact math for agents",
+      "text": "The calculators MCP server gained `integer_math`, `convert_number_base`, and `check_digit`. Agents can work with large integers without number rounding, convert bases 2 through 36, and validate Luhn, IBAN, ISBN, and EAN-13 values. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19455,
+        19600,
+        19620
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Look up ASN registrations",
+      "text": "Use `asn_whois` in the Network MCP server to look up an ASN's registered range, organization, country, status, and other RDAP details. [Browse MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        19669
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "See required model checks",
+      "text": "OpenAI-compatible model listings now include `required_safety`, including mandatory checks inherited from fallbacks. Clients can read the checks without querying the registry separately; the checks themselves have not changed. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19646
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "See per-use model charges",
+      "text": "Model listings now include `pricing_adjustments` when a model has per-use charges beyond token pricing, such as Gemini search queries or cache storage. Models without adjustments omit the field. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19698
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

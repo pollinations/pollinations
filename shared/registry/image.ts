@@ -1981,7 +1981,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and reference media at 480p or 720p",
+            "Four-second video with synchronized audio and reference media at 480p or 720p; reference-video edits pick their own length",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [

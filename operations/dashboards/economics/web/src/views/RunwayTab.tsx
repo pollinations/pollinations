@@ -31,8 +31,10 @@ import {
 import { monthName, monthShift } from "../lib/months";
 import {
     buildRunway,
+    groupRunwayRows,
     type RunwayAssumption,
     type RunwayColumn,
+    type RunwayGroup,
     type RunwayMatrixRow,
 } from "../lib/runway";
 import { signedTone } from "../lib/tone";
@@ -272,13 +274,6 @@ function monthKindLabel(kind: RunwayColumn["kind"]): string | null {
     return kind === "forecast" ? "Plan" : null;
 }
 
-type RunwayGroup = {
-    category: string;
-    rows: RunwayMatrixRow[];
-    values: Record<string, number | null>;
-    creditValues: Record<string, number>;
-};
-
 export function runwayDetailRows(rows: RunwayMatrixRow[]): RunwayMatrixRow[] {
     const result: RunwayMatrixRow[] = [];
     let payments: RunwayMatrixRow | undefined;
@@ -353,52 +348,6 @@ export function groupRunwayVendors(
         (visible ? primary : more).push(row);
     }
     return { primary, more };
-}
-
-function groupRows(
-    rows: RunwayMatrixRow[],
-    columns: RunwayColumn[],
-): RunwayGroup[] {
-    const groups = new Map<string, RunwayGroup>();
-    for (const row of rows) {
-        const group: RunwayGroup = groups.get(row.category) ?? {
-            category: row.category,
-            rows: [],
-            values: Object.fromEntries(columns.map((column) => [column.id, 0])),
-            creditValues: Object.fromEntries(
-                columns.map((column) => [column.id, 0]),
-            ),
-        };
-        group.rows.push(row);
-        for (const column of columns) {
-            if (row.category !== "revenue")
-                group.creditValues[column.id] +=
-                    row.creditValues?.[column.id] ?? 0;
-            const previous = group.values[column.id];
-            group.values[column.id] =
-                previous == null ||
-                (column.kind === "forecast" && row.forecastIssue)
-                    ? null
-                    : previous + (row.values[column.id] ?? 0);
-        }
-        groups.set(row.category, group);
-    }
-    const revenue = groups.get("revenue");
-    revenue?.rows.sort(
-        (a, b) =>
-            Number(b.vendor === "stripe sales") -
-            Number(a.vendor === "stripe sales"),
-    );
-    for (const group of groups.values()) {
-        for (const column of columns) {
-            if (
-                column.kind !== "forecast" &&
-                group.rows.every((row) => row.values[column.id] == null)
-            )
-                group.values[column.id] = null;
-        }
-    }
-    return [...groups.values()];
 }
 
 function SummaryRow({
@@ -631,7 +580,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         }
     }, [year, runway.currentMonth]);
     const groups = useMemo(
-        () => groupRows(runway.rows, columns),
+        () => groupRunwayRows(runway.rows, columns),
         [columns, runway.rows],
     );
     const plannedAdjustments =

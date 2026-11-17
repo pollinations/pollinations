@@ -41,7 +41,7 @@ export function MoneyMoves() {
                         badge={
                             <Chip
                                 size="lg"
-                                className="bg-brand-accent font-semibold text-brand-dark"
+                                className="bg-theme-fill font-semibold text-theme-on-fill"
                             >
                                 1 pollen = $1
                             </Chip>

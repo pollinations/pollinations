@@ -40,11 +40,21 @@ function PlayPage() {
         >
             <PlayHero />
             <div className={postHeroSpacingClassName}>
-                <Playground />
+                <HydratedPlayground />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
     );
+}
+
+/**
+ * The playground reads its inputs from the URL once, on mount. Returning from
+ * Connect, the provider first puts back the URL saved before sign-in, so the
+ * playground mounts only after that.
+ */
+function HydratedPlayground() {
+    const { isHydrated } = useAuthState();
+    return isHydrated ? <Playground /> : null;
 }
 
 /**

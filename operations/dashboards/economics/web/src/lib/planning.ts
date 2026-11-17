@@ -3,6 +3,7 @@ import type {
     PrivateForecastRule,
     VendorLedgerRow,
 } from "../types";
+import { canonicalCategory } from "./categories";
 import { forecastLineRule } from "./forecastTerms";
 import { parsePrivateConfig } from "./pipeContracts";
 
@@ -128,7 +129,7 @@ export function ledgerForecastRules(
         if (ids.has(row.entry_id))
             throw new Error(`Duplicate Vendor plan: ${row.entry_id}`);
         ids.add(row.entry_id);
-        const key = `${row.vendor}|${row.plan_category}`;
+        const key = `${row.vendor}|${canonicalCategory(row.plan_category ?? "")}`;
         rules[key] ??= {};
         const rule = rules[key];
         const amount = {

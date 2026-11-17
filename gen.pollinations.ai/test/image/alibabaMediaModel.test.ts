@@ -74,6 +74,8 @@ describe("Alibaba media adapters", () => {
                     },
                 ],
             },
+            // No requested shape: the edit keeps the input clip's shape.
+            parameters: { ratio: "adaptive" },
         });
         expect(result.trackingData?.usage).toEqual({
             promptVideoSeconds: 3,
@@ -129,7 +131,22 @@ describe("Alibaba media adapters", () => {
             parameters: { size: "720*1280", duration: 10 },
         });
     });
-    it("sends Wan 3.0 an explicit ratio over width/height", async () => {
+    it.each<[Partial<ImageParams>, string]>([
+        [{ aspectRatio: "16:9" }, "16:9"],
+        [
+            { aspectRatio: "16:9", reference_videos: ["https://e.com/a.mp4"] },
+            "16:9",
+        ],
+        [
+            {
+                width: 720,
+                height: 1280,
+                dimensionsExplicit: true,
+                reference_videos: ["https://e.com/a.mp4"],
+            },
+            "9:16",
+        ],
+    ])("sends Wan 3.0 the requested shape %o", async (shape, ratio) => {
         const fetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValueOnce(
@@ -146,14 +163,10 @@ describe("Alibaba media adapters", () => {
                 }),
             )
             .mockResolvedValueOnce(new Response("video"));
-        await callAlibabaVideo(
-            "Animate",
-            { ...params, aspectRatio: "16:9" },
-            "3.0",
-        );
+        await callAlibabaVideo("Animate", { ...params, ...shape }, "3.0");
         expect(
             JSON.parse(fetch.mock.calls[0][1]?.body as string).parameters.ratio,
-        ).toBe("16:9");
+        ).toBe(ratio);
     });
     it("keeps polling one accepted job beyond five minutes", async () => {
         vi.useFakeTimers();

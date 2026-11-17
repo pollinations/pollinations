@@ -98,3 +98,26 @@ describe("forecast terms", () => {
         expect(problems).toEqual([]);
     });
 });
+
+it("keeps historical development forecast decisions under Operations and rejects collisions", () => {
+    const override = { fixedAmounts: [{ amount: -123, currency: "USD" }] };
+    const parse = (forecastRules: object) =>
+        parsePrivateConfig({
+            config: JSON.stringify({
+                ...PRIVATE_CONFIG_FIXTURE,
+                forecastRules,
+            }),
+            recorded_at: "2026-11-17",
+        });
+    const config = parse({ "openai|development": override });
+    expect(config.forecastRules).toEqual({ "openai|operations": override });
+    expect(
+        forecastLineRule("openai", "operations", config.forecastRules),
+    ).toMatchObject({ ...override, method: "fixed" });
+    expect(() =>
+        parse({
+            "openai|development": override,
+            "openai|operations": override,
+        }),
+    ).toThrow("Duplicate forecast rule for openai|operations");
+});

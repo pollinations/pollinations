@@ -20,6 +20,8 @@ export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
+        /** Listed price of this request, when its options set it; the balance check prefers it to the model's average. */
+        requestPrice?: number;
         apiKeyBudgetEstimate?: number;
         apiKeyReservation?: ApiKeyBudgetReservation;
     };

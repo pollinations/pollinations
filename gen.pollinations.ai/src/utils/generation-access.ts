@@ -43,12 +43,18 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly;
+    // The request's own price covers only the model it was priced for.
+    const requestPrice =
+        model.resolved === vars.model.resolved
+            ? balance.requestPrice
+            : undefined;
     const estimatedCost = withByopMarkup(
-        getEstimatedPrice(
-            await getModelStats(env.KV, log),
-            model.resolved,
-            model.definition,
-        ),
+        requestPrice ??
+            getEstimatedPrice(
+                await getModelStats(env.KV, log),
+                model.resolved,
+                model.definition,
+            ),
         Boolean(auth.apiKey?.byopMarkupApplies),
     );
     const userId = auth.user.id;

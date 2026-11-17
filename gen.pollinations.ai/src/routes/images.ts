@@ -20,13 +20,19 @@ import {
 } from "@shared/schemas/openai.ts";
 import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
+import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
-import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    generateImageOrVideoResponse,
+    parseImageParams,
+} from "@/image/handler.ts";
+import { quoteMediaRequest } from "@/image/quote.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
+import { generationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
@@ -331,6 +337,36 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
         });
         await next();
     },
+);
+
+/**
+ * Balance check for image and video requests. Where the options set the price
+ * (duration, resolution, sound, references), it checks against that price
+ * instead of the model's average.
+ */
+export const mediaGenerationAccess = every(
+    createMiddleware<Env>(async (c, next) => {
+        try {
+            const json =
+                c.req.method === "POST"
+                    ? (c.req.valid("json" as never) as Record<string, unknown>)
+                    : undefined;
+            const quote = quoteMediaRequest(
+                c.var.model.resolved,
+                c.var.model.definition,
+                parseImageParams(
+                    c,
+                    json ? { ...json, ...resolveParams(json) } : {},
+                ),
+            );
+            if (typeof quote === "number") c.var.balance.requestPrice = quote;
+        } catch {
+            // Invalid options are the generator's to report, as before; the
+            // check then uses the model's average.
+        }
+        await next();
+    }),
+    generationAccess,
 );
 
 /** Normalize the generation body and hash the parts that shape the file. */

@@ -181,6 +181,45 @@ describe("BYOP markup", () => {
         },
     );
 
+    it("checks a media request against its own price, not the model's average", async () => {
+        const model = "google/veo-3.1-fast";
+        const other = "alibaba/wan-2.7";
+        const userId = await createBalanceUser("request-price", {
+            tier: 0,
+            pack: 1,
+        });
+        const vars = {
+            auth: { user: { id: userId } },
+            balance: {
+                getBalance: (id: string) => getUserBalance(db, id),
+                requestPrice: 0.32,
+            },
+            model: testModel(model),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        // A short clip is affordable although the average request is not.
+        await expect(
+            checkBalance(vars, fakeStatsEnv(5, model)),
+        ).resolves.toBeUndefined();
+
+        // A long clip is refused although the average request is affordable.
+        vars.balance.requestPrice = 2.8;
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, model)),
+        ).rejects.toMatchObject({
+            status: 402,
+            message: expect.stringContaining(
+                "This request costs about $2.8000",
+            ),
+        });
+
+        // Another model in the caller's list keeps its own average.
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, other), testModel(other)),
+        ).resolves.toBeUndefined();
+    });
+
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
         expect(computeDevCredit(-1)).toBe(0);

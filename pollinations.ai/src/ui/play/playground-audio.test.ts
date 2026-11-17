@@ -116,6 +116,31 @@ describe("catalog-driven audio requests", () => {
         });
     });
 
+    it("classifies a file with an empty MIME type by its extension", async () => {
+        const fetchRequest = vi
+            .fn()
+            .mockResolvedValueOnce(
+                Response.json({ url: "https://media.pollinations.ai/clip" }),
+            )
+            .mockResolvedValueOnce(new Response("sfx"));
+        vi.stubGlobal("fetch", fetchRequest);
+        const sfx = model("/v1/audio/speech", ["text", "video"]);
+        const mkv = new File(["video bytes"], "clip.MKV");
+        expect(audioInputError(sfx, "footsteps", mkv)).toBeNull();
+        await generatePlaygroundAudio(client, sfx, {
+            prompt: "footsteps",
+            file: mkv,
+        });
+        expect(JSON.parse(fetchRequest.mock.calls[1][1].body)).toEqual({
+            input: "footsteps",
+            model: "new-model-from-catalog",
+            reference_video: "https://media.pollinations.ai/clip",
+        });
+        expect(
+            audioInputError(sfx, "footsteps", new File(["a"], "take.mp3")),
+        ).toContain("does not accept reference audio");
+    });
+
     it.each(["/v1/audio/voice-changer", "/v1/audio/voice-isolator"])(
         "sends the file directly to %s with no prompt required",
         async (endpoint) => {

@@ -67,7 +67,9 @@ import {
     audioEndpoint,
     audioInputError,
     generatePlaygroundAudio,
+    isVideo,
     supportsAudioLength,
+    VIDEO_EXTENSIONS,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { reproducibleApiUrl, videoOptions } from "./video-options";
@@ -158,7 +160,7 @@ const MEDIA_PLURAL = {
 type UploadMedia = (typeof UPLOAD_MEDIA_ORDER)[number];
 const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     image: "image/*",
-    video: "video/*,.mp4,.mov,.webm,.mkv",
+    video: ["video/*", ...VIDEO_EXTENSIONS].join(","),
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
 };
 const UPLOAD_MAX_MB: Record<UploadMedia, number> = {
@@ -1014,7 +1016,7 @@ export function Playground() {
                             file: "YOUR_AUDIO_FILE",
                         }
                       : audioFiles.length
-                        ? audioFiles[0].type.startsWith("video/")
+                        ? isVideo(audioFiles[0])
                             ? { reference_video: "YOUR_UPLOADED_VIDEO_URL" }
                             : { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
                         : {}),

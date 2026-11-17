@@ -33,7 +33,13 @@ export function supportsAudioLength(model: {
     );
 }
 
-const isVideo = (file: File) => file.type.startsWith("video/");
+export const VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".mkv"];
+
+// Some browsers leave `type` empty (e.g. .mkv), so fall back to the extension.
+export const isVideo = (file: File) =>
+    file.type
+        ? file.type.startsWith("video/")
+        : VIDEO_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
 
 export function audioInputError(
     model: AudioModel,

@@ -36,7 +36,7 @@ function nudge(
     if (rank === null) {
         const first = byReward[0];
         return first
-            ? `Complete a quest to join the race. “${first.title}” earns ${formatPollen(first.reward)} Pollen.`
+            ? `Complete a quest to join the race. “${first.title}” earns $${formatPollen(first.reward)}.`
             : "Complete a quest to join the race.";
     }
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
@@ -45,9 +45,9 @@ function nudge(
     const gap = above.totalPollen - you.totalPollen;
     const pass = byReward.find((quest) => quest.reward > gap);
     // A tie still needs the smallest quest reward to pass, not 0.
-    const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
+    const target = `$${formatPollen(Math.max(gap, 0.25))} to pass @${above.githubLogin}`;
     return pass
-        ? `${target}. “${pass.title}” earns ${formatPollen(pass.reward)} Pollen.`
+        ? `${target}. “${pass.title}” earns $${formatPollen(pass.reward)}.`
         : `${target}.`;
 }
 
@@ -130,11 +130,11 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             </Text>
             {row.supporter && (
                 <span
-                    title="Pollen supporter"
+                    title="Supporter"
                     className="polli-wallet-chip-paid inline-flex size-5 shrink-0 items-center justify-center rounded-full"
                 >
                     <CardIcon className="h-3 w-3" aria-hidden="true" />
-                    <span className="sr-only">Pollen supporter</span>
+                    <span className="sr-only">Supporter</span>
                 </span>
             )}
             <span className="ml-auto flex shrink-0 items-center gap-2">
@@ -145,7 +145,7 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
                     tone="strong"
                     className="tabular-nums"
                 >
-                    {formatPollen(row.totalPollen)}
+                    ${formatPollen(row.totalPollen)}
                 </Text>
             </span>
         </li>

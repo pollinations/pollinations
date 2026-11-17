@@ -176,14 +176,6 @@ graph LR
     classDef provider fill:#1E3A8A,stroke:#60A5FA,color:#EFF6FF,stroke-width:1px
 ```
 
-## 🔮 Future Developments
-
-We're exploring:
-
-- Digital Twins: Creating interactive AI-driven avatars
-- Music Video Generation: Combining AI-generated visuals with music
-- Real-time AI-driven Visual Experiences: Projects like our Dreamachine
-
 ## 🌍 Our Vision
 
 We want AI tools to be:

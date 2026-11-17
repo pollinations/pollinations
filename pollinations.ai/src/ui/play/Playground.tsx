@@ -1780,16 +1780,22 @@ export function Playground() {
                             content={blockedReason}
                             className="self-start"
                         >
-                            <Button size="lg" disabled icon={<GenerateIcon />}>
+                            <Button
+                                size="lg"
+                                intent="brand"
+                                disabled
+                                icon={<GenerateIcon />}
+                            >
                                 {generateText}
                             </Button>
                         </Tooltip>
                     ) : (
                         <Button
                             size="lg"
-                            intent={needsSignIn ? "brand" : undefined}
-                            // Busy keeps full strength and swaps the icon for
-                            // a spinner. aria-disabled, not disabled, so focus
+                            intent="brand"
+                            // The page's main action: nectar whether it signs
+                            // in or generates. Busy fills with honey and shows
+                            // Polli. aria-disabled, not disabled, so focus
                             // stays on the button; generate() ignores repeats.
                             aria-disabled={isGenerating || undefined}
                             aria-busy={isGenerating}

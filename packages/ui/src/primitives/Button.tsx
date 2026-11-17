@@ -4,6 +4,7 @@ import type {
     ReactNode,
 } from "react";
 import { cn } from "../lib/cn.ts";
+import { CheckIcon } from "./icons/index.tsx";
 
 /** Semantic action roles. Label recipes live on Chip. */
 type ButtonIntent =
@@ -45,19 +46,15 @@ const themeClasses =
     "polli:bg-theme-fill polli:text-theme-on-fill " +
     "polli:hover:bg-theme-fill-hover polli:transition-colors";
 
-// Primary actions have a soft accent fill in light mode and an outline in dark.
-// `brand` keeps a calm hover; `commit` strengthens the fill on hover and focus.
-// The dark transparent rest is as specific as a plain hover and comes later in
-// the CSS, so dark mode repeats the hover and focus fills.
-const outlined =
-    "polli:border polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:text-theme-text-strong " +
-    "polli:transition-colors polli:[.dark_&]:bg-transparent";
+// Primary actions (`brand`, `commit`) are the nectar style: an ink outline that
+// fills with honey on hover and focus, and Polli waggles while busy. The look
+// lives in styles/index.css (.polli-nectar). `done` holds the honey fill, shows
+// a check and puffs pollen once an action has succeeded.
+const nectarIntents: ButtonIntent[] = ["brand", "commit"];
 const intentClasses: Record<ButtonIntent, string> = {
-    brand: `${outlined} polli:hover:bg-theme-fill-wash polli:[.dark_&]:hover:bg-theme-fill-wash`,
-    commit:
-        `${outlined} polli:hover:border-theme-fill polli:hover:bg-theme-fill polli:hover:text-theme-on-fill ` +
-        "polli:focus-visible:border-theme-fill polli:focus-visible:bg-theme-fill polli:focus-visible:text-theme-on-fill " +
-        "polli:[.dark_&]:hover:bg-theme-fill polli:[.dark_&]:focus-visible:bg-theme-fill",
+    // `relative` holds the rising fill; as a utility a caller can override it.
+    brand: "polli-nectar polli:relative",
+    commit: "polli-nectar polli:relative",
     danger:
         "polli:border polli:border-intent-danger-text polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors " +
@@ -65,8 +62,8 @@ const intentClasses: Record<ButtonIntent, string> = {
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
-    // A quiet white pill on the desk, like the colour toggle; hover previews
-    // the accent as the ambient button does.
+    // A quiet white pill on the desk, like the colour toggle; hover is the
+    // same pale wash of the fill as an unselected tab or menu row.
     surface:
         "polli:bg-surface-opaque polli:text-theme-text-strong " +
         "polli:hover:bg-theme-fill-wash polli:transition-colors",
@@ -75,6 +72,8 @@ const intentClasses: Record<ButtonIntent, string> = {
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +
         "polli:hover:bg-theme-text-muted/25 polli:hover:text-theme-text-strong polli:transition-colors",
 };
+
+const pollenGrains = [0, 1, 2, 3, 4, 5, 6, 7];
 
 type BaseButtonProps = {
     icon?: ReactNode;
@@ -85,6 +84,8 @@ type BaseButtonProps = {
     size?: keyof typeof pillSizes;
     className?: string;
     disabled?: boolean;
+    /** The action just succeeded; shown briefly before the flow moves on. */
+    done?: boolean;
 };
 
 const buttonClasses = ({
@@ -94,14 +95,17 @@ const buttonClasses = ({
     className,
     disabled,
     busy,
-}: BaseButtonProps & { disabled?: boolean; busy?: boolean }) => {
+    done,
+}: BaseButtonProps & { busy?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
     return cn(
         "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border polli:border polli:border-transparent",
-        // A busy button is working, not unavailable: it keeps its strength.
-        busy
-            ? "polli:cursor-progress"
+        // A busy or done button is not unavailable: it keeps its strength.
+        busy || done
+            ? done
+                ? "polli:cursor-default"
+                : "polli:cursor-progress"
             : disabled
               ? "polli:opacity-50 polli:cursor-not-allowed"
               : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
@@ -126,6 +130,7 @@ export function Button<T extends React.ElementType = "button">({
     size,
     className,
     disabled,
+    done,
     ...buttonProps
 }: ButtonProps<T>) {
     const Component: React.ElementType = as || "button";
@@ -145,6 +150,7 @@ export function Button<T extends React.ElementType = "button">({
         buttonProps as { "aria-busy"?: boolean | "true" | "false" }
     )["aria-busy"];
     const busy = ariaBusy === true || ariaBusy === "true";
+    const nectar = intent !== undefined && nectarIntents.includes(intent);
     const handleClick = disabled
         ? (event: ReactMouseEvent) => {
               event.preventDefault();
@@ -156,6 +162,7 @@ export function Button<T extends React.ElementType = "button">({
         <Component
             {...buttonProps}
             data-intent={intent}
+            data-done={done || undefined}
             {...(isButton ? { type: buttonType ?? "button", disabled } : {})}
             {...(!isButton && disabled
                 ? { "aria-disabled": true, tabIndex: -1 }
@@ -169,21 +176,34 @@ export function Button<T extends React.ElementType = "button">({
                 className,
                 disabled,
                 busy,
+                done,
             })}
         >
-            {icon && (
+            {nectar && <span aria-hidden="true" className="polli-nectar-fx" />}
+            {(icon || (nectar && done)) && (
                 <span
                     aria-hidden="true"
-                    className="polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
+                    className="polli:relative polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
                 >
-                    {busy ? (
-                        <span className="polli:block polli:size-full polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent polli:motion-reduce:animate-none" />
+                    {/* One loading sign everywhere: Polli waggles in the
+                        icon slot of any busy button. */}
+                    {done && nectar ? (
+                        <CheckIcon />
+                    ) : busy ? (
+                        <span className="polli-bee" />
                     ) : (
                         icon
                     )}
                 </span>
             )}
             {children}
+            {nectar && done && (
+                <span aria-hidden="true" className="polli-burst">
+                    {pollenGrains.map((grain) => (
+                        <i key={grain} />
+                    ))}
+                </span>
+            )}
         </Component>
     );
 }

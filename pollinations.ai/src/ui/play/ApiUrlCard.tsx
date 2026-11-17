@@ -1,4 +1,4 @@
-import { CopyButton, CopyStateIcon, Text } from "@pollinations/ui";
+import { CopyButton, CopyStateIcon, Eyebrow, Heading } from "@pollinations/ui";
 import { Fragment } from "react";
 
 function shellQuote(value: string): string {
@@ -59,10 +59,16 @@ export function ApiUrlCard({
     const example = apiExample(url, fields);
 
     return (
-        <section aria-label="API quickstart" className="min-w-0 space-y-2">
-            <Text size="sm" weight="bold">
-                API quickstart
-            </Text>
+        <section
+            aria-label="API quickstart"
+            className="mt-6 min-w-0 space-y-3 border-theme-text-strong/10 border-t pt-8"
+        >
+            <div className="flex flex-col gap-1">
+                <Eyebrow>For developers</Eyebrow>
+                <Heading as="h2" size="card">
+                    Use it from the API
+                </Heading>
+            </div>
             <CopyButton
                 value={example}
                 aria-label="Copy API example"

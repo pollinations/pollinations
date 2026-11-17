@@ -35,7 +35,6 @@ import {
     TabButton,
     Text,
     Textarea,
-    Tooltip,
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -54,6 +53,7 @@ import {
     useMemo,
     useRef,
     useState,
+    useSyncExternalStore,
 } from "react";
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
@@ -69,8 +69,10 @@ import {
     generatePlaygroundAudio,
     supportsAudioLength,
 } from "./playground-audio";
+import { type ModelRunStat, runStatsLine } from "./run-stats";
+import { createRunStore } from "./run-store";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
-import { reproducibleApiUrl, videoOptions } from "./video-options";
+import { videoOptions } from "./video-options";
 
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -88,6 +90,7 @@ type PlaygroundModel = MediaModelMetadata & {
     voices: string[];
     paidOnly: boolean;
     publisher?: string;
+    maxReferenceVideos?: number;
 };
 
 // Groups the audio model list; the first group holds the default model.
@@ -130,6 +133,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
+        maxReferenceVideos: model.max_reference_videos,
     };
 }
 
@@ -172,7 +176,6 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
-          requestUrl?: string;
       }
     | {
           type: "text";
@@ -205,20 +208,20 @@ const FILE_EXTENSIONS: Record<string, string> = {
 
 function mediaResult(
     type: "image" | "video" | "audio",
-    {
-        buffer,
-        contentType,
-        url,
-    }: { buffer: ArrayBuffer; contentType: string; url?: string },
+    { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
 ): PlaygroundResult {
     const mime = contentType.split(";")[0].trim();
     return {
         type,
         url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
-        requestUrl: url ? reproducibleApiUrl(url) : undefined,
         filename: `pollinations-playground.${FILE_EXTENSIONS[mime] ?? mime.split("/")[1]}`,
     };
 }
+
+// Kept in memory so leaving /play and coming back restores the last inputs,
+// result and any run still in flight. Nothing is written to disk.
+let lastInputs: PlaySearch | undefined;
+const runStore = createRunStore<PlaygroundResult>();
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
@@ -348,6 +351,7 @@ function VoicePicker({
                 trigger={(open) => (
                     <Button
                         type="button"
+                        intent="neutral"
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Voice: ${value}`}
                     >
@@ -406,7 +410,8 @@ function ModelPicker({
                 trigger={(open) => (
                     <Button
                         type="button"
-                        size="lg"
+                        intent="neutral"
+                        size="md"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
@@ -683,15 +688,21 @@ async function uploadFiles(
 
 export function Playground() {
     const dimensionsLabelId = useId();
-    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
     const catalog = useModelCatalog({
         baseUrl: API_BASE_URL,
         enabled: isHydrated,
     });
     const { isLoading, error: catalogError } = catalog;
-    const search = useSearch({ from: "/play" });
+    const urlSearch = useSearch({ from: "/play" });
     const navigate = useNavigate({ from: "/play" });
+    // A URL with Play keys wins; a bare /play restores the last inputs.
+    const [search] = useState<PlaySearch>(() =>
+        PLAY_SEARCH_KEYS.some((key) => urlSearch[key] !== undefined)
+            ? urlSearch
+            : (lastInputs ?? urlSearch),
+    );
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
         CATEGORY_ORDER.find((value) => value === search.tab) ?? "image",
     );
@@ -719,9 +730,14 @@ export function Playground() {
     const [voice, setVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
     const linkedModelRef = useRef(search.model ?? "");
-    const [result, setResult] = useState<PlaygroundResult | null>(null);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { result, running, error } = useSyncExternalStore(
+        runStore.subscribe,
+        runStore.get,
+    );
+    const isGenerating = running !== null;
+    const [stats, setStats] = useState<ModelRunStat[]>([]);
+    const responseRef = useRef<HTMLDivElement>(null);
+    const statusId = useId();
     // Shared FileUpload limits and rejection messages for these media.
     const uploadProps = (media: UploadMedia[], tooMany: string) => {
         const maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item]));
@@ -731,7 +747,7 @@ export function Playground() {
             type: `Only ${media.join(" or ")} files are allowed.`,
         };
         const onReject: FileUploadProps["onReject"] = (rejected) =>
-            setError(messages[rejected[0].reason]);
+            runStore.set({ error: messages[rejected[0].reason] });
         return {
             accept: media.map((item) => UPLOAD_ACCEPT[item]).join(","),
             maxSizeBytes: maxMb * 1024 * 1024,
@@ -835,7 +851,7 @@ export function Playground() {
             : (currentModel.voices[0] ?? "");
 
     useEffect(() => {
-        showInUrl({
+        lastInputs = {
             tab: activeCategory,
             model: selectedModel,
             prompt,
@@ -851,7 +867,8 @@ export function Playground() {
             sound,
             guidance:
                 referenceMode === "references" ? referenceMode : undefined,
-        });
+        };
+        showInUrl(lastInputs);
     }, [
         showInUrl,
         activeCategory,
@@ -880,12 +897,17 @@ export function Playground() {
     }, [currentModel]);
 
     useEffect(() => {
-        return () => {
-            if (result && result.type !== "text") {
-                URL.revokeObjectURL(result.url);
-            }
-        };
-    }, [result]);
+        fetch(`${API_BASE_URL}/models/stats`)
+            .then((response) => response.json())
+            .then(({ data }) => setStats(data ?? []))
+            .catch(() => {});
+    }, []);
+
+    // A new run brings its response area into view.
+    useEffect(() => {
+        if (isGenerating)
+            responseRef.current?.scrollIntoView({ block: "nearest" });
+    }, [isGenerating]);
 
     const videoConfig = videoOptions(
         currentModel?.id ?? "",
@@ -959,11 +981,34 @@ export function Playground() {
     );
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
+    // The reference uploads that are on screen for this model and mode.
+    const videoReferenceMedia =
+        currentModel?.category === "video" &&
+        (!videoConfig.exclusiveReferences || usesReferences)
+            ? UPLOAD_MEDIA_ORDER.filter((media) =>
+                  currentModel.videoCapabilities.includes(
+                      REFERENCE_CAPABILITY[media],
+                  ),
+              )
+            : [];
+    // An input image or video fixes the output shape, so Auto follows it;
+    // otherwise Auto may render square and the default ratio applies.
+    const sendsVisualInput =
+        (supportsReferenceImages &&
+            !usesReferences &&
+            referenceImages.length > 0) ||
+        videoReferenceMedia.some(
+            (media) => media !== "audio" && videoReferences[media].length > 0,
+        );
+    // "" is not picked yet; an explicit Auto is stored as "auto".
+    const pickedRatio = aspectRatio === "auto" ? "" : aspectRatio;
     const videoAspectRatio =
         currentModel?.category === "video"
-            ? videoConfig.ratios.includes(aspectRatio)
-                ? aspectRatio
-                : videoConfig.ratios[0]
+            ? aspectRatio && videoConfig.ratios.includes(pickedRatio)
+                ? pickedRatio
+                : sendsVisualInput
+                  ? videoConfig.ratios[0]
+                  : videoConfig.defaultRatio
             : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
@@ -1087,9 +1132,7 @@ export function Playground() {
 
         if (isGenerating || !apiKey || !currentModel || blockedReason) return;
 
-        setIsGenerating(true);
-        setError(null);
-        setResult(null);
+        runStore.set({ running: activeCategory, error: null, result: null });
 
         try {
             const client = new Pollinations({
@@ -1130,7 +1173,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult(mediaResult("video", response));
+                runStore.set({ result: mediaResult("video", response) });
                 return;
             }
 
@@ -1143,7 +1186,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult(mediaResult("image", response));
+                runStore.set({ result: mediaResult("image", response) });
                 return;
             }
 
@@ -1161,17 +1204,18 @@ export function Playground() {
                             : undefined,
                     },
                 );
-                setResult(
-                    response.type === "text"
-                        ? response
-                        : mediaResult("audio", response),
-                );
+                runStore.set({
+                    result:
+                        response.type === "text"
+                            ? response
+                            : mediaResult("audio", response),
+                });
                 return;
             }
         } catch (err) {
-            setError(errorMessage(err));
+            runStore.set({ error: errorMessage(err) });
         } finally {
-            setIsGenerating(false);
+            runStore.set({ running: null });
         }
     }
 
@@ -1191,11 +1235,25 @@ export function Playground() {
         ? MicIcon
         : CATEGORY_ICON[activeCategory];
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
-    // Sized for both labels, so starting a run never resizes the button.
+    // The placeholder belongs to the tab whose run is in flight; audio has none.
+    const busyVisual =
+        running === "image" || running === "video" ? running : null;
+    const hasResult =
+        result &&
+        (result.type === "text" ? "audio" : result.type) === activeCategory;
+    const againLabel = generateLabel.startsWith("Generate ")
+        ? "Generate again"
+        : generateLabel;
     const generateText = (
         <StableLabel
-            text={isGenerating ? busyLabel : generateLabel}
-            options={[generateLabel, busyLabel]}
+            text={
+                isGenerating
+                    ? busyLabel
+                    : hasResult
+                      ? againLabel
+                      : generateLabel
+            }
+            options={[generateLabel, againLabel, busyLabel]}
         />
     );
     const connectLabel =
@@ -1213,7 +1271,7 @@ export function Playground() {
         ? audioFiles.length === 0
         : !prompt.trim();
 
-    /** Why the button cannot fire, or null when it can. Drives the tooltip. */
+    /** Why the button cannot fire, or null when it can. Shown beside the button. */
     const blockedReason = needsSignIn
         ? null
         : audioError
@@ -1223,8 +1281,20 @@ export function Playground() {
                 ? `Upload ${mediaUploadLabel} first`
                 : `Add ${promptLabel.toLowerCase()} first`
             : !selectedModelAllowed
-              ? "This key cannot use the selected model"
+              ? isLoading
+                  ? "Models are loading"
+                  : catalogError
+                    ? "Models failed to load"
+                    : !currentModel
+                      ? "Choose an available model"
+                      : "This key cannot use the selected model"
               : null;
+
+    // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
+    const run = needsSignIn ? () => login() : generate;
+    const statsLine = runStatsLine(
+        stats.find((stat) => stat.model === currentModel?.id),
+    );
 
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
@@ -1320,6 +1390,15 @@ export function Playground() {
                                     onChange={(event) =>
                                         setPrompt(event.target.value)
                                     }
+                                    onKeyDown={(event) => {
+                                        if (
+                                            event.key === "Enter" &&
+                                            (event.metaKey || event.ctrlKey)
+                                        ) {
+                                            event.preventDefault();
+                                            run();
+                                        }
+                                    }}
                                     placeholder={promptPlaceholder(
                                         activeCategory,
                                         audioTask,
@@ -1438,54 +1517,53 @@ export function Playground() {
                                         }
                                     />
                                 )}
-                            {currentModel?.category === "video" &&
-                                (!videoConfig.exclusiveReferences ||
-                                    usesReferences) &&
-                                UPLOAD_MEDIA_ORDER.filter((media) =>
-                                    currentModel.videoCapabilities.includes(
-                                        REFERENCE_CAPABILITY[media],
-                                    ),
-                                ).map((media) => {
-                                    const Icon = CATEGORY_ICON[media];
-                                    return (
-                                        <FieldStack
-                                            key={media}
-                                            label={`Reference ${MEDIA_PLURAL[media]}`}
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <FileUpload
-                                                value={videoReferences[media]}
-                                                onChange={(files) =>
-                                                    setVideoReferences(
-                                                        (previous) => ({
-                                                            ...previous,
-                                                            [media]: files,
-                                                        }),
-                                                    )
-                                                }
-                                                maxFiles={Infinity}
-                                                {...uploadProps(
-                                                    [media],
-                                                    "Too many files.",
-                                                )}
-                                                label={`Add ${MEDIA_PLURAL[media]}`}
-                                                icon={
-                                                    <Icon className="h-6 w-6 shrink-0" />
-                                                }
-                                                // Images preview as thumbnails.
-                                                previewIcon={
-                                                    media ===
-                                                    "image" ? undefined : (
-                                                        <Icon className="h-6 w-6" />
-                                                    )
-                                                }
-                                            />
-                                        </FieldStack>
-                                    );
-                                })}
-                            {Object.values(videoReferences).some(
-                                (files) => files.length > 0,
+                            {videoReferenceMedia.map((media) => {
+                                const Icon = CATEGORY_ICON[media];
+                                const maxVideos =
+                                    media === "video"
+                                        ? currentModel?.maxReferenceVideos
+                                        : undefined;
+                                return (
+                                    <FieldStack
+                                        key={media}
+                                        label={`Reference ${MEDIA_PLURAL[media]}`}
+                                        orientation="inline"
+                                        className="min-w-0"
+                                    >
+                                        <FileUpload
+                                            value={videoReferences[media]}
+                                            onChange={(files) =>
+                                                setVideoReferences(
+                                                    (previous) => ({
+                                                        ...previous,
+                                                        [media]: files,
+                                                    }),
+                                                )
+                                            }
+                                            maxFiles={maxVideos ?? Infinity}
+                                            {...uploadProps(
+                                                [media],
+                                                maxVideos
+                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                                                    : "Too many files.",
+                                            )}
+                                            label={`Add ${MEDIA_PLURAL[media]}`}
+                                            icon={
+                                                <Icon className="h-6 w-6 shrink-0" />
+                                            }
+                                            // Images preview as thumbnails.
+                                            previewIcon={
+                                                media ===
+                                                "image" ? undefined : (
+                                                    <Icon className="h-6 w-6" />
+                                                )
+                                            }
+                                        />
+                                    </FieldStack>
+                                );
+                            })}
+                            {videoReferenceMedia.some(
+                                (media) => videoReferences[media].length > 0,
                             ) && (
                                 <div className="col-span-full">
                                     <UploadPrivacyNote />
@@ -1561,7 +1639,11 @@ export function Playground() {
                                                 label="Aspect ratio"
                                                 options={videoConfig.ratios}
                                                 value={videoAspectRatio}
-                                                onChange={setAspectRatio}
+                                                onChange={(ratio) =>
+                                                    setAspectRatio(
+                                                        ratio || "auto",
+                                                    )
+                                                }
                                                 format={(ratio) =>
                                                     ratio || "Auto"
                                                 }
@@ -1764,32 +1846,23 @@ export function Playground() {
                                 </div>
                             )}
                         </div>
+                        {/* One line stays reserved, so switching models moves nothing. */}
+                        <Text size="xs" tone="muted" className="min-h-5">
+                            {statsLine}
+                            {statsLine.startsWith("Average") && (
+                                <InfoTip
+                                    label="About this cost"
+                                    tapEnabled
+                                    content="From paid requests over the last 7 days. Yours depends on your settings."
+                                />
+                            )}
+                        </Text>
                     </Surface>
 
-                    {error && <Alert intent="danger">{error}</Alert>}
-
                     {/* Not connected is not a broken state, so the button
-                            does not sit there disabled under a 🚫 cursor with
-                            no explanation — it becomes the connect action. The
-                            tooltip covers the cases that genuinely are blocked
-                            (nothing typed, model not on this key). */}
-                    {blockedReason ? (
-                        <Tooltip
-                            triggerAs="span"
-                            align="center"
-                            content={blockedReason}
-                            className="self-start"
-                        >
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                disabled
-                                icon={<GenerateIcon />}
-                            >
-                                {generateText}
-                            </Button>
-                        </Tooltip>
-                    ) : (
+                            becomes the connect action. When it genuinely
+                            cannot fire, the line beside it says why. */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Button
                             size="lg"
                             intent="brand"
@@ -1797,15 +1870,13 @@ export function Playground() {
                             // in or generates. Busy fills with honey and shows
                             // Polli. aria-disabled, not disabled, so focus
                             // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
                             aria-disabled={isGenerating || undefined}
                             aria-busy={isGenerating}
+                            aria-describedby={statusId}
                             icon={needsSignIn ? undefined : <GenerateIcon />}
-                            // Wrapped: login() takes an optional request
-                            // object, so passing the ref directly would
-                            // hand it the click event.
-                            onClick={needsSignIn ? () => login() : generate}
+                            onClick={run}
                             className={cn(
-                                "self-start",
                                 needsSignIn && "h-12 gap-2 px-5 py-0",
                             )}
                         >
@@ -1818,26 +1889,41 @@ export function Playground() {
                                 generateText
                             )}
                         </Button>
-                    )}
+                        {/* One line stays reserved, so text never moves anything. */}
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="min-h-5 max-sm:w-full"
+                        >
+                            {blockedReason}
+                        </Text>
+                    </div>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not
                         twice. Audio keeps just the button's cue. */}
-                    {isGenerating && activeCategory !== "audio" && (
-                        <BusyPlaceholder category={activeCategory} />
+                    {(error ||
+                        authError ||
+                        hasResult ||
+                        busyVisual === activeCategory) && (
+                        <div ref={responseRef} className="flex flex-col gap-4">
+                            {error && <Alert intent="danger">{error}</Alert>}
+                            {authError && (
+                                <Alert intent="danger">
+                                    Could not connect your account:{" "}
+                                    {authError.message}
+                                </Alert>
+                            )}
+                            {busyVisual === activeCategory && (
+                                <BusyPlaceholder category={busyVisual} />
+                            )}
+                            {result && hasResult && (
+                                <ResultPanel result={result} />
+                            )}
+                        </div>
                     )}
-                    {result && <ResultPanel result={result} />}
-                    {apiUrl && (
-                        <ApiUrlCard
-                            url={
-                                apiMethod === "GET" &&
-                                result?.type === activeCategory
-                                    ? (result.requestUrl ?? apiUrl)
-                                    : apiUrl
-                            }
-                            fields={apiFields}
-                        />
-                    )}
+                    {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
                 </div>
             </div>
         </div>

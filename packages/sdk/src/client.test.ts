@@ -476,6 +476,22 @@ describe("Pollinations media upload", () => {
 });
 
 describe("audio inputs", () => {
+    it("sends a reference video in the speech body", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { contentType: "audio/mpeg" }),
+        );
+        const referenceVideo = "https://media.pollinations.ai/clip.mp4";
+        await newClient().audioSpeech("footsteps", {
+            model: "sfx-model",
+            referenceVideo,
+        });
+        expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+            input: "footsteps",
+            model: "sfx-model",
+            reference_video: referenceVideo,
+        });
+    });
+
     it("sends reference audio, duration and seed in the speech body", async () => {
         fetchMock.mockResolvedValue(
             makeResponse(null, { contentType: "audio/mpeg" }),

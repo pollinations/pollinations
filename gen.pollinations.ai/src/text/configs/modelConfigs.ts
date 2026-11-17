@@ -204,6 +204,36 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "microsoft-decision-1.1-azure": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "decision-1.1",
+    }),
+    "microsoft/microsoft-decision-1.1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "microsoft/decision-1.1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["azure"] } },
+            },
+        }),
+    "microsoft/microsoft-decision-1.1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "microsoft/microsoft-decision-1.1",
+        defaultOptions: {
+            provider: {
+                only: ["azure"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
@@ -380,6 +410,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6.2-astra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.2-astra/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6.2-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.2-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
     "gpt-6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -392,6 +434,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockResponsesConfig("global.openai.gpt-6-sol"),
     "gpt-6.1-sol-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6.1-sol"),
+    "gpt-6.2-astra-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-astra"),
+    "gpt-6.2-sol-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-sol"),
     "gpt-6-luna-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 

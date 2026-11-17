@@ -371,6 +371,30 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.2-astra",
+        config: portkeyConfig["gpt-6.2-astra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-astra:aws",
+        config: portkeyConfig["gpt-6.2-astra-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol",
+        config: portkeyConfig["gpt-6.2-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol:aws",
+        config: portkeyConfig["gpt-6.2-sol-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
@@ -1062,6 +1086,21 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna-decisions:openrouter",
         config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1",
+        config: portkeyConfig["microsoft-decision-1.1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:openrouter"],
         useSystemOneApi: true,
     },
     {

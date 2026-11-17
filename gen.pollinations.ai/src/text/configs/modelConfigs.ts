@@ -404,6 +404,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockResponsesConfig("global.openai.gpt-6-sol"),
     "gpt-6.1-sol-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6.1-sol"),
+    "gpt-6.2-astra-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-astra"),
+    "gpt-6.2-sol-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-sol"),
     "gpt-6-luna-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 

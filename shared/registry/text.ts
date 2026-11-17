@@ -710,7 +710,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(8),
@@ -766,7 +766,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),

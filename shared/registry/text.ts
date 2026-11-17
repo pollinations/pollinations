@@ -2001,6 +2001,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "liquid/d1.2": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: ["d1.2"],
+        provider: "vercel",
+        publisher: "Liquid AI",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "d1.2",
+        description:
+            "Structured choices, scores and probabilities over text or JSON " +
+            "state. Use /alpha/decisions or the chat-completions adapter",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
     "inferenceport-ai/lightning-text-v2.1": {
         supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
         aliases: [],

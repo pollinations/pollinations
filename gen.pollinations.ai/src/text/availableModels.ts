@@ -1066,6 +1066,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1.2",
+        config: portkeyConfig["liquid/d1.2"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1:openrouter",
         config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,

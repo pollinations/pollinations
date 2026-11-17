@@ -88,6 +88,7 @@ type PlaygroundModel = MediaModelMetadata & {
     voices: string[];
     paidOnly: boolean;
     publisher?: string;
+    maxReferenceVideos?: number;
 };
 
 // Groups the audio model list; the first group holds the default model.
@@ -130,6 +131,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
+        maxReferenceVideos: model.max_reference_videos,
     };
 }
 
@@ -1450,6 +1452,10 @@ export function Playground() {
                                 )}
                             {videoReferenceMedia.map((media) => {
                                 const Icon = CATEGORY_ICON[media];
+                                const maxVideos =
+                                    media === "video"
+                                        ? currentModel?.maxReferenceVideos
+                                        : undefined;
                                 return (
                                     <FieldStack
                                         key={media}
@@ -1467,10 +1473,12 @@ export function Playground() {
                                                     }),
                                                 )
                                             }
-                                            maxFiles={Infinity}
+                                            maxFiles={maxVideos ?? Infinity}
                                             {...uploadProps(
                                                 [media],
-                                                "Too many files.",
+                                                maxVideos
+                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                                                    : "Too many files.",
                                             )}
                                             label={`Add ${MEDIA_PLURAL[media]}`}
                                             icon={

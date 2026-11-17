@@ -29,11 +29,21 @@ const VERTEX_ASPECT_RATIOS = [
 type VertexGeminiImageConfig = {
     model: string;
     generator: string;
-    resolution: "none" | "tiered" | "1K";
+    resolution: "none" | "tiered" | "tiered-2K" | "1K";
     reasoning: boolean;
+    sampling?: boolean;
+    cachedInput?: boolean;
 };
 
 const VERTEX_GEMINI_IMAGE_CONFIGS = {
+    "google/gemini-nano-banana-2.1": {
+        model: "gemini-nano-banana-2.1",
+        generator: "Vertex AI Gemini Nano Banana 2.1",
+        resolution: "tiered-2K",
+        reasoning: false,
+        sampling: false,
+        cachedInput: true,
+    },
     "google/gemini-2.5-flash-image": {
         model: "gemini-2.5-flash-image",
         generator: "Vertex AI Gemini 2.5 Flash Image",
@@ -45,18 +55,21 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
         generator: "Vertex AI Gemini 3.1 Flash Image",
         resolution: "tiered",
         reasoning: true,
+        cachedInput: true,
     },
     "google/gemini-3.1-flash-lite-image": {
         model: "gemini-3.1-flash-lite-image",
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
         resolution: "1K",
         reasoning: true,
+        cachedInput: true,
     },
     "google/gemini-3-pro-image": {
         model: "gemini-3-pro-image",
         generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
+        cachedInput: true,
     },
 } as const satisfies Record<string, VertexGeminiImageConfig>;
 
@@ -67,6 +80,11 @@ export type VertexGeminiImageUsage = {
     candidatesTokenCount?: number;
     totalTokenCount?: number;
     thoughtsTokenCount?: number;
+    cachedContentTokenCount?: number;
+    cacheTokensDetails?: Array<{
+        modality?: VertexModality;
+        tokenCount?: number;
+    }>;
     promptTokensDetails?: Array<{
         modality?: VertexModality;
         tokenCount?: number;
@@ -82,6 +100,7 @@ type VertexResponse = {
         content?: {
             parts?: Array<{
                 text?: string;
+                thought?: boolean;
                 inlineData?: { mimeType?: string; data?: string };
             }>;
         };
@@ -113,6 +132,7 @@ function invalidVertexUsage(usage: VertexGeminiImageUsage | undefined): never {
     logError("Vertex returned invalid image billing usage", usage);
     throw UpstreamError.fromProvider(502, {
         message: "Vertex AI returned invalid image billing usage metadata",
+        requestUrl: new URL("https://aiplatform.googleapis.com"),
         responseBody: JSON.stringify(usage),
     });
 }
@@ -141,6 +161,7 @@ function mapModalityDetails(
 
 export function mapVertexGeminiImageUsage(
     usage: VertexGeminiImageUsage | undefined,
+    cachedInput = false,
 ): Usage {
     if (
         !usage ||
@@ -181,33 +202,65 @@ export function mapVertexGeminiImageUsage(
         invalidVertexUsage(usage);
     }
 
+    if (cachedInput) {
+        const cached = usage.cachedContentTokenCount ?? 0;
+        const details: Usage = {};
+        const cachedTotal = mapModalityDetails(
+            details,
+            usage.cacheTokensDetails ?? [],
+            PROMPT_USAGE_KEYS,
+            usage,
+        );
+        if (!isTokenCount(cached) || cachedTotal !== cached)
+            invalidVertexUsage(usage);
+        for (const key of ["promptTextTokens", "promptImageTokens"] as const) {
+            const remaining = (mapped[key] ?? 0) - (details[key] ?? 0);
+            if (remaining < 0) invalidVertexUsage(usage);
+            if (remaining > 0) mapped[key] = remaining;
+            else delete mapped[key];
+        }
+        addUsage(mapped, "promptCachedTokens", cached);
+    }
+
     return mapped;
 }
 
-function imageSize(
-    config: VertexGeminiImageConfig,
+export function geminiImageConfig(
     params: ImageParams,
-): "1K" | "2K" | "4K" | undefined {
-    if (config.resolution === "none") return undefined;
-    if (config.resolution === "1K") return "1K";
+    resolution: VertexGeminiImageConfig["resolution"],
+) {
+    const aspectRatio = closestByRatio(
+        params.width,
+        params.height,
+        VERTEX_ASPECT_RATIOS,
+    ).label;
+    if (resolution === "none") return { aspectRatio };
+    if (resolution === "1K") return { aspectRatio, imageSize: "1K" };
     const pixels = params.width * params.height;
     const tiers = [
         { name: "1K" as const, pixels: 1024 * 1024 },
         { name: "2K" as const, pixels: 1920 * 1080 },
         { name: "4K" as const, pixels: 3840 * 2160 },
     ];
-    return tiers.reduce((closest, tier) =>
+    const imageSize = tiers.reduce((closest, tier) =>
         Math.abs(tier.pixels - pixels) < Math.abs(closest.pixels - pixels)
             ? tier
             : closest,
     ).name;
+    if (resolution === "tiered-2K" && imageSize === "4K") {
+        throw UpstreamError.fromProvider(400, {
+            message: "Nano Banana 2.1 supports output up to 2K on this route",
+        });
+    }
+    return { aspectRatio, imageSize };
 }
 
 function noImageError(response: VertexResponse): UpstreamError {
     const candidate = response.candidates?.[0];
     const finishReason = candidate?.finishReason?.toUpperCase();
     const explanation = candidate?.content?.parts
-        ?.map((part) => part.text)
+        ?.filter((part) => !part.thought)
+        .map((part) => part.text)
         .filter((text): text is string => Boolean(text))
         .join("\n");
     const hasBlockedSafetyRating =
@@ -229,6 +282,7 @@ function noImageError(response: VertexResponse): UpstreamError {
         ].includes(finishReason ?? "");
 
     return UpstreamError.fromProvider(contentRejection ? 400 : 502, {
+        requestUrl: new URL("https://aiplatform.googleapis.com"),
         message:
             explanation ||
             blocked ||
@@ -245,7 +299,7 @@ export async function callVertexAIGeminiImageAPI(
     prompt: string,
     params: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const config =
+    const config: VertexGeminiImageConfig | undefined =
         VERTEX_GEMINI_IMAGE_CONFIGS[
             params.model as keyof typeof VERTEX_GEMINI_IMAGE_CONFIGS
         ];
@@ -254,6 +308,8 @@ export async function callVertexAIGeminiImageAPI(
             message: `Unsupported Vertex Gemini image model: ${params.model}`,
         });
     }
+
+    const imageConfig = geminiImageConfig(params, config.resolution);
 
     const projectId = getImageEnv("GOOGLE_PROJECT_ID");
     if (!projectId) {
@@ -282,7 +338,6 @@ export async function callVertexAIGeminiImageAPI(
         });
     }
 
-    const resolvedImageSize = imageSize(config, params);
     const thinkingConfig =
         config.reasoning && params.reasoning !== "balanced"
             ? {
@@ -296,17 +351,12 @@ export async function callVertexAIGeminiImageAPI(
         contents: [{ role: "user", parts }],
         generationConfig: {
             responseModalities: ["TEXT", "IMAGE"],
-            temperature: 0.7,
-            topP: 0.9,
-            seed: params.seed,
-            imageConfig: {
-                aspectRatio: closestByRatio(
-                    params.width,
-                    params.height,
-                    VERTEX_ASPECT_RATIOS,
-                ).label,
-                ...(resolvedImageSize && { imageSize: resolvedImageSize }),
-            },
+            ...(config.sampling !== false && {
+                temperature: 0.7,
+                topP: 0.9,
+                seed: params.seed,
+            }),
+            imageConfig,
             ...thinkingConfig,
         },
         safetySettings: [
@@ -335,11 +385,14 @@ export async function callVertexAIGeminiImageAPI(
     const data = (await response.json()) as VertexResponse;
     const candidate = data.candidates?.[0];
     const imagePart = candidate?.content?.parts?.find(
-        (part) => part.inlineData?.data,
+        (part) => !part.thought && part.inlineData?.data,
     )?.inlineData;
     if (!imagePart?.data) throw noImageError(data);
 
-    const usage = mapVertexGeminiImageUsage(data.usageMetadata);
+    const usage = mapVertexGeminiImageUsage(
+        data.usageMetadata,
+        config.cachedInput,
+    );
     const imageBuffer = base64ToBuffer(imagePart.data);
     let finalImageBuffer = imageBuffer;
     try {

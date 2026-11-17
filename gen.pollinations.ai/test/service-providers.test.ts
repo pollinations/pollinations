@@ -28,6 +28,7 @@ const PROVIDER_NAMES: Record<string, string> = {
     stability: "Stability AI",
     vast: "Vast.ai",
     vercel: "Vercel AI Gateway",
+    "vllm-sr": "vLLM Semantic Router",
     xai: "xAI",
 };
 

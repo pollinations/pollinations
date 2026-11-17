@@ -63,6 +63,7 @@ function flux2Endpoint(modelPath: string): string {
 }
 
 type AzureFluxResponse = {
+    stop_reason?: unknown;
     data?: Array<{
         b64_json?: string;
         content_filter_results?: unknown;
@@ -120,6 +121,9 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const categories = filteredCategories(first?.content_filter_results);
     if (categories.length > 0) {
         return `Content filter blocked categories: ${categories.join(", ")}`;
+    }
+    if (data.stop_reason === "refusal") {
+        return "Provider reported stop_reason=refusal";
     }
 
     const rootError = errorSummary(data.error);

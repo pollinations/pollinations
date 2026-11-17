@@ -279,6 +279,7 @@ describe("/openapi.json", () => {
             "3d",
             "embedding",
             "realtime",
+            "decision",
         ]);
         expect(
             (
@@ -367,6 +368,20 @@ describe("/openapi.json", () => {
             };
             expect(inputType.enum).toEqual(["query", "document"]);
         }
+    });
+
+    it("leaves the hidden DreamShaper out of the spec", async () => {
+        const ctx = createExecutionContext();
+        mockMediaSchema();
+
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/openapi.json"),
+            envWithEnterSchema(ENTER_SCHEMA),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(await response.text()).not.toContain("lykon/dreamshaper-8-lcm");
     });
 
     it("returns the same spec as /docs/open-api/generate-schema", async () => {

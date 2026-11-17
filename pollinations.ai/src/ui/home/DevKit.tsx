@@ -11,6 +11,8 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    formatCount,
+    GlobeIcon,
     Heading,
     type IconProps,
     IconTile,
@@ -72,18 +74,39 @@ const BUILD_FEATURES: Feature[] = [
         body: (
             <>
                 <Em>Call an agent like a model</Em>, or build your own. We host
-                prompt and code agents. <Em>Sandboxes</Em> for long-running
-                agents are coming soon.
+                prompt and code agents.
             </>
         ),
         links: [
             {
                 label: "Explore agents",
-                href: "https://enter.pollinations.ai/models?category=agent",
+                href: "https://enter.pollinations.ai/agents",
             },
         ],
         icon: RobotIcon,
         color: "var(--polli-color-modality-audio)",
+    },
+    {
+        title: "Sandboxes",
+        chips: ["SSH", "VS Code", "E2B or Azure"],
+        body: (
+            <>
+                <Em>A Linux computer in the cloud</Em> for you or your agents.
+                Paused sandboxes cost nothing.
+            </>
+        ),
+        links: [
+            {
+                label: "Open Sandboxes",
+                href: "https://enter.pollinations.ai/sandboxes",
+            },
+            {
+                label: "Sandboxes guide",
+                href: "https://gen.pollinations.ai/docs#tag/sandboxes",
+            },
+        ],
+        icon: TerminalIcon,
+        color: "var(--polli-color-modality-realtime)",
     },
     {
         title: "Hosted MCP tools",
@@ -96,7 +119,7 @@ const BUILD_FEATURES: Feature[] = [
         links: [
             {
                 label: "Explore MCP servers",
-                href: "https://enter.pollinations.ai/models?category=mcp",
+                href: "https://enter.pollinations.ai/agents?view=mcp",
             },
         ],
         icon: McpIcon,
@@ -127,18 +150,43 @@ const BUILD_FEATURES: Feature[] = [
         color: "var(--polli-color-modality-text)",
     },
     {
+        title: "Site hosting",
+        chips: ["Free", "Static"],
+        body: (
+            <>
+                <Em>Host a site for free</Em> at{" "}
+                <span className="whitespace-nowrap">
+                    your-name.pollinations.app
+                </span>
+                . Publish it from the CLI, SDK or an agent.
+            </>
+        ),
+        links: [
+            {
+                label: "Visit pollinations.app",
+                href: "https://pollinations.app",
+            },
+            {
+                label: "Sites guide",
+                href: "https://gen.pollinations.ai/docs#tag/sites",
+            },
+        ],
+        icon: GlobeIcon,
+        color: "var(--polli-color-modality-embedding)",
+    },
+    {
         title: "Users pay",
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users sign in with Pollinations and set a spending limit.{" "}
-                <Em>They pay for their own usage.</Em>
+                Your users connect through Pollinations Connect and set a
+                spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [
             {
                 label: "Integration guide",
-                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+                href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
             },
         ],
         icon: WalletIcon,
@@ -154,7 +202,7 @@ const BUILD_FEATURES: Feature[] = [
         ),
         links: [
             {
-                label: "Media storage guide",
+                label: "Storage guide",
                 href: "https://gen.pollinations.ai/docs#tag/media-storage",
             },
         ],
@@ -190,7 +238,7 @@ const MODEL_KINDS: {
     categories: ModelCategory[];
 }[] = [
     { label: "Image", icon: ImageIcon, categories: ["image"] },
-    { label: "Text", icon: ChatIcon, categories: ["text"] },
+    { label: "Text", icon: ChatIcon, categories: ["text", "decision"] },
     { label: "Audio", icon: AudioIcon, categories: ["audio", "realtime"] },
     { label: "Video & 3D", icon: VideoIcon, categories: ["video", "3d"] },
     { label: "Embeddings", icon: SearchIcon, categories: ["embedding"] },
@@ -221,7 +269,7 @@ const PUBLISH_FEATURES: Feature[] = [
         links: [
             {
                 label: "Add a model",
-                href: "https://enter.pollinations.ai/my-models",
+                href: "https://enter.pollinations.ai/my-models?tab=models",
             },
         ],
         icon: BeakerIcon,
@@ -481,7 +529,8 @@ function PublishCard({ feature }: { feature: Feature }) {
                     className="size-10 shrink-0"
                     style={{ color: feature.color }}
                 />
-                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
+                {/* Ink like a link, amber when the card is hovered. */}
+                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-strong transition-colors [a:hover_&]:text-theme-text-soft">
                     {link.label}
                     <ExternalLinkIcon
                         aria-hidden="true"
@@ -527,16 +576,16 @@ export function DevKit({ className }: { className?: string }) {
 
             <FeatureGroup
                 title="Pick the pieces you need."
-                description="Agents and hosted tools, plus storage, billing and safety."
+                description="Agents, sandboxes and tools, plus site hosting, storage, billing and safety."
             >
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
                             key={feature.title}
                             feature={feature}
                             countLabel={
                                 data && feature.catalogCount === "agents"
-                                    ? data.agents.toLocaleString()
+                                    ? formatCount(data.agents)
                                     : undefined
                             }
                         />

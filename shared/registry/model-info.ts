@@ -63,6 +63,7 @@ export type ModelHealth = z.infer<typeof ModelHealthSchema>;
 // it makes. Shared by the Pollinations and OpenAI-compatible model schemas.
 export const AGENT_FIELD_DESCRIPTIONS = {
     agent: "True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models.",
+    verified: "True for agents published by an official Pollinations account.",
     base_model:
         "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
     pricing:
@@ -86,6 +87,10 @@ export const ModelInfoSchema = z.object({
         .optional(),
     community: z.boolean(),
     agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+    verified: z
+        .boolean()
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.verified),
     base_model: z
         .string()
         .optional()
@@ -240,6 +245,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
+    verified?: boolean;
 };
 
 function pricingInfoFromDefinition(
@@ -277,29 +283,22 @@ export function modelInfoFromDefinition(
         brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
+        verified: options.verified || undefined,
         per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
-                ? Object.entries(service.costVariants).map(
-                      ([name, variantCost]) => {
-                          const metadata = service.costVariantMetadata?.[name];
-                          return {
-                              name,
-                              label: metadata?.label ?? name,
-                              description: metadata?.description ?? name,
-                              pricing: pricingInfoFromDefinition(
-                                  getPriceDefinitionForModel({
-                                      ...service,
-                                      cost: {
-                                          ...service.cost,
-                                          ...variantCost,
-                                      },
-                                  }),
-                              ),
-                          };
-                      },
-                  )
+                ? Object.keys(service.costVariants).map((name) => {
+                      const metadata = service.costVariantMetadata?.[name];
+                      return {
+                          name,
+                          label: metadata?.label ?? name,
+                          description: metadata?.description ?? name,
+                          pricing: pricingInfoFromDefinition(
+                              getPriceDefinitionForModel(service, name),
+                          ),
+                      };
+                  })
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
         pricing_dimensions: service.pricingDimensions,

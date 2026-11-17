@@ -69,18 +69,12 @@ interface SeedanceModelConfig {
     trackingLabel: string;
     /** Display name for error context. */
     displayName: string;
-    /** Default duration in seconds when the request omits it. */
-    defaultDuration: number;
-    /** Max duration accepted by the upstream (Replicate caps at 12). */
-    maxDuration: number;
 }
 
 const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
-    trackingLabel: "bytedance/seedance-1-pro-fast",
+    trackingLabel: "bytedance/seedance-1-pro-fast:replicate",
     displayName: "Seedance 1.0 Pro Fast",
-    defaultDuration: 5,
-    maxDuration: 10,
 };
 
 async function generateSeedanceVideo(
@@ -88,14 +82,7 @@ async function generateSeedanceVideo(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    // Replicate's duration range is [2, 12]. Clamp to upstream + our config max.
-    const requestedDuration = Math.floor(
-        safeParams.duration ?? config.defaultDuration,
-    );
-    const duration = Math.max(
-        2,
-        Math.min(config.maxDuration, requestedDuration),
-    );
+    const duration = safeParams.duration ?? 5;
 
     const images = safeParams.image ?? [];
 

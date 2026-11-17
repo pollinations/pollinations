@@ -41,10 +41,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+          check-latest: true
 
       - name: Sync Search Console
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
           DAYS: ${{ inputs.days || '3' }}
-        run: node operations/search-console/sync-to-tinybird.mjs --days "$DAYS"
+        run: node operations/data-sync/google-search-console-to-tinybird.mjs --days "$DAYS"

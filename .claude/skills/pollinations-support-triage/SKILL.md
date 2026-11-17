@@ -71,7 +71,7 @@ splitting command flags. Keep tables narrow enough for mobile.
 Read current colors from `packages/ui/src/theme-palette.json`; the example's
 inline styles illustrate them. Brand assets belong to `packages/ui/src/brand/`
 and `packages/ui/README.md`; voice guidance is in the Voice & Identity section
-of `operations/social/prompts/brand/about.md`. Do not create another brand kit.
+of `operations/news/prompts/brand/about.md`. Do not create another brand kit.
 Sign with the actual operator's name. For Workspace-covered senders, omit the
 wordmark from submitted HTML and plain text: Google adds it. Follow the access
 reference for uncovered senders and unknown coverage.

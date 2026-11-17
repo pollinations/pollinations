@@ -415,8 +415,9 @@ export const codex: HarnessAdapter = {
                 "Codex was not found. Install it first: https://github.com/openai/codex",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        await fetchHarnessModels(model);
+        const { model } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         return configureCodex(ctx, model, { browser: options.browser });
     },
 

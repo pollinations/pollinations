@@ -1,9 +1,18 @@
-import { Alert, Button, CheckIcon, Collapsible, XIcon } from "@pollinations/ui";
+import {
+    Alert,
+    Button,
+    CheckIcon,
+    Collapsible,
+    formatCount,
+    LoadingStatus,
+    XIcon,
+} from "@pollinations/ui";
 import { isModelReliable } from "@shared/model-health.ts";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { InferResponseType } from "hono/client";
 import { useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
+import { formatActivityPollen } from "../activity/format-activity-pollen.ts";
 import { type CommunityEndpointTestResponse, readError } from "./types.ts";
 
 type Health = InferResponseType<
@@ -15,11 +24,12 @@ type TestResult = { ok: boolean; message?: string };
 
 const percent = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 
-// Owner-only health. The closed row shows the listing verdict for public
-// proxies, from the catalog health the card already has. Expanding loads the
-// week (one Tinybird scan per load, so only on demand): the success rate for
-// other models, a 7-day sparkline, failed calls and, for proxies, a live
-// upstream test with the saved token.
+// Owner-only health, the same panel for models and agents. The closed row shows
+// the listing verdict for public proxies, from the catalog health the card
+// already has. Opening it loads the week (one Tinybird scan per load, so only on
+// demand, and again on each open so new calls show up): the success rate for
+// other models, a 7-day sparkline and failed calls. Proxies add a live upstream
+// test with the saved token; agents add the owner's own recent runs.
 export function EndpointHealth({
     id,
     proxy,
@@ -36,7 +46,7 @@ export function EndpointHealth({
     const [testResult, setTestResult] = useState<TestResult | null>(null);
 
     useEffect(() => {
-        if (!expanded || health) return;
+        if (!expanded) return;
         const loadHealth = async () => {
             setLoadError(null);
             try {
@@ -50,7 +60,7 @@ export function EndpointHealth({
             }
         };
         void loadHealth();
-    }, [expanded, health, id]);
+    }, [expanded, id]);
 
     const runTest = async () => {
         setTesting(true);
@@ -126,7 +136,7 @@ export function EndpointHealth({
                         {loadError}
                     </Alert>
                 ) : !health ? (
-                    <p className="text-theme-text-muted">Loading…</p>
+                    <LoadingStatus>Loading…</LoadingStatus>
                 ) : health.failures.length === 0 ? (
                     <p className="text-theme-text-muted">
                         No failed calls in the last 7 days.
@@ -148,8 +158,59 @@ export function EndpointHealth({
                         </ul>
                     </>
                 )}
+                {health && !proxy && <Runs runs={health.runs} />}
             </div>
         </Collapsible>
+    );
+}
+
+function Runs({ runs }: { runs: Health["runs"] }) {
+    return (
+        <div className="grid gap-2">
+            <p className="text-xs font-medium text-theme-text-strong">
+                Your recent runs
+                <span className="ml-2 font-normal text-theme-text-muted">
+                    Only your own calls; other callers’ runs stay private.
+                </span>
+            </p>
+            {runs.length === 0 ? (
+                <p className="text-theme-text-muted">
+                    No calls from you in the last 7 days.
+                </p>
+            ) : (
+                <ul className="grid gap-2">
+                    {runs.map((run) => (
+                        <RunRow key={run.id} run={run} />
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+function RunRow({ run }: { run: Health["runs"][number] }) {
+    return (
+        <li className="grid gap-1 rounded-md bg-theme-bg-subtle px-3 py-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className="font-mono text-xs text-theme-text-strong">
+                    {run.status} · {(run.durationMs / 1000).toFixed(1)} s ·{" "}
+                    {formatActivityPollen(run.cost)} Pollen
+                </span>
+                <span className="text-xs text-theme-text-muted">
+                    {new Date(run.startedAt).toLocaleString()}
+                </span>
+            </div>
+            <p className="text-xs text-theme-text-muted">
+                {run.modelCalls} generations · {run.toolCalls} tool calls
+                {run.failedCalls > 0 && ` · ${run.failedCalls} failed`}
+                {run.keyName && ` · key ${run.keyName}`}
+            </p>
+            {run.error && (
+                <p className="font-mono text-xs text-theme-text-base [overflow-wrap:anywhere]">
+                    {run.error}
+                </p>
+            )}
+        </li>
     );
 }
 
@@ -189,7 +250,7 @@ function HealthSummary({
                     <span className="text-xs text-theme-text-muted">
                         {listingRate !== null
                             ? `last ${listing?.requests} calls`
-                            : `${calls.toLocaleString()} calls in 7 days`}
+                            : `${formatCount(calls)} calls in 7 days`}
                     </span>
                 </>
             )}
@@ -261,8 +322,8 @@ function FailureRow({ failure }: { failure: Health["failures"][number] }) {
                     {failure.host && ` · from ${failure.host}`}
                 </span>
                 <span className="text-xs text-theme-text-muted">
-                    {failure.failures.toLocaleString()} failed ·{" "}
-                    {failure.counted.toLocaleString()} final
+                    {formatCount(failure.failures)} failed ·{" "}
+                    {formatCount(failure.counted)} final
                 </span>
             </div>
             {failure.message && (

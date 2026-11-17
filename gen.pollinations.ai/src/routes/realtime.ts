@@ -131,7 +131,6 @@ type RealtimeBillingContext = {
     settled: boolean;
     deduction?: RealtimeDeduction;
     deductionAttempted: boolean;
-    rateLimitConsumed: boolean;
 };
 
 async function createSafetyIdentifier(
@@ -217,9 +216,17 @@ const SCRIBE_BYTES_PER_SECOND: Record<ScribeAudioFormat, number> = {
     ulaw_8000: 8000,
 };
 
-function buildScribeRealtimeUrl(config: ScribeRealtimeConfig): string {
+function buildScribeRealtimeUrl(
+    config: ScribeRealtimeConfig,
+    model: string,
+): string {
     const url = new URL(SCRIBE_REALTIME_ENDPOINT);
-    url.searchParams.set("model_id", "scribe_v2_realtime");
+    url.searchParams.set(
+        "model_id",
+        model === "elevenlabs/scribe-v3-live"
+            ? "scribe_v3_live"
+            : "scribe_v2_realtime",
+    );
     url.searchParams.set("audio_format", config.audioFormat);
     url.searchParams.set("commit_strategy", config.commitStrategy);
     if (config.languageCode) {
@@ -251,12 +258,15 @@ async function connectScribeRealtime(
         });
     }
 
-    const response = (await fetch(buildScribeRealtimeUrl(config), {
-        headers: {
-            "xi-api-key": apiKey,
-            Upgrade: "websocket",
+    const response = (await fetch(
+        buildScribeRealtimeUrl(config, c.var.model.resolved),
+        {
+            headers: {
+                "xi-api-key": apiKey,
+                Upgrade: "websocket",
+            },
         },
-    })) as WebSocketResponse;
+    )) as WebSocketResponse;
     const upstreamSocket = response.webSocket;
     if (upstreamSocket) {
         upstreamSocket.binaryType = "arraybuffer";
@@ -357,7 +367,11 @@ function inspectAudioBase64(
     };
 }
 
-function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
+function scribeSession(
+    config: ScribeRealtimeConfig,
+    sessionId: string,
+    model: string,
+) {
     const format =
         config.audioFormat === "ulaw_8000"
             ? { type: "audio/pcmu" }
@@ -388,7 +402,7 @@ function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
             input: {
                 format,
                 transcription: {
-                    model: "elevenlabs/scribe-v2-realtime",
+                    model,
                     ...(config.prompt && { prompt: config.prompt }),
                     ...(languages.length && { languages }),
                 },
@@ -430,7 +444,7 @@ function parseScribeSessionUpdate(
             next.audioFormat = "pcm_24000";
         } else {
             return {
-                error: "elevenlabs/scribe-v2-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
+                error: "Scribe realtime transcription supports OpenAI PCM at 24000 Hz and PCMU audio.",
                 param: "session.audio.input.format",
             };
         }
@@ -475,7 +489,7 @@ function parseScribeSessionUpdate(
         const turnDetection = asRecord(input.turn_detection);
         if (turnDetection.type !== "server_vad") {
             return {
-                error: 'elevenlabs/scribe-v2-realtime supports null or "server_vad" turn detection.',
+                error: 'Scribe realtime transcription supports null or "server_vad" turn detection.',
                 param: "session.audio.input.turn_detection.type",
             };
         }
@@ -698,6 +712,25 @@ function validateUpstreamRealtimeEvent(
         : null;
 }
 
+/**
+ * The provider's session events name the deployment, not the model callers
+ * request ("gpt-realtime-2-1" is an Azure deployment id, not a name in
+ * /models). Rewrite the top-level session.model to the registry's public
+ * identity, as every other surface does.
+ */
+function rewriteSessionModel(
+    data: unknown,
+    deployment: string,
+    publicModel: string,
+): unknown {
+    const event = asRecord(parseEventData(data));
+    const session = asRecord(event.session);
+    if (typeof session.model !== "string") return data;
+    if (session.model !== deployment) return data;
+    session.model = publicModel;
+    return JSON.stringify(event);
+}
+
 function rewriteLiveTranscriptionModel(
     data: unknown,
     from: string | readonly string[],
@@ -863,11 +896,6 @@ async function settleRealtimeSession(
             questPollenOnly: tracking.questPollenOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
-    }
-
-    if (!tracking.rateLimitConsumed) {
-        await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
-        tracking.rateLimitConsumed = true;
     }
 
     const balances = await getUserBalance(db, tracking.identity.userId);
@@ -1121,12 +1149,45 @@ function proxyRealtimeWebSockets(
                           transcriptionModel,
                       );
                   })()
-            : undefined,
+            : (data) =>
+                  rewriteSessionModel(
+                      data,
+                      REALTIME_ROUTES[
+                          c.var.model.resolved as AzureRealtimeModelName
+                      ].deployment,
+                      c.var.model.resolved,
+                  ),
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
     downstream.accept({ allowHalfOpen: true });
     upstream.accept({ allowHalfOpen: true });
+    if (allowTranscription && !mai) {
+        // The transcription deployment ships with transcription disabled by
+        // default (session.created reports audio.input.transcription: null),
+        // so a session without a client session.update streams audio into a
+        // session that returns no transcripts and reports no usage — nothing
+        // to bill and nothing to show. OpenAI's transcription sessions
+        // transcribe by default; enable it here as the baseline. A client
+        // session.update still overrides this, and the provider's echo
+        // reaches the client with the public model name.
+        upstream.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    type: "transcription",
+                    audio: {
+                        input: {
+                            // The session's own defaults, restated so a
+                            // replacement-semantics provider cannot drop them.
+                            format: { type: "audio/pcm", rate: 24000 },
+                            transcription: { model: deployment },
+                        },
+                    },
+                },
+            }),
+        );
+    }
 
     return new Response(null, {
         status: 101,
@@ -1370,7 +1431,7 @@ function proxyScribeOpenAIRealtime(
     sendRealtimeEvent(downstream, {
         event_id: `event_${generateRandomId()}`,
         type: "session.created",
-        session: scribeSession(config, sessionId),
+        session: scribeSession(config, sessionId, c.var.model.resolved),
     });
 
     downstream.addEventListener("message", (message) => {
@@ -1390,8 +1451,8 @@ function proxyScribeOpenAIRealtime(
             }
             if (
                 (upstream || connecting) &&
-                buildScribeRealtimeUrl(parsed.config) !==
-                    buildScribeRealtimeUrl(config)
+                buildScribeRealtimeUrl(parsed.config, c.var.model.resolved) !==
+                    buildScribeRealtimeUrl(config, c.var.model.resolved)
             ) {
                 sendRealtimeError(
                     downstream,
@@ -1406,7 +1467,7 @@ function proxyScribeOpenAIRealtime(
             sendRealtimeEvent(downstream, {
                 event_id: `event_${generateRandomId()}`,
                 type: "session.updated",
-                session: scribeSession(config, sessionId),
+                session: scribeSession(config, sessionId, c.var.model.resolved),
             });
             return;
         }
@@ -1495,7 +1556,6 @@ async function createRealtimeBillingContext(
         settlementAttempts: 0,
         settled: false,
         deductionAttempted: false,
-        rateLimitConsumed: false,
     };
 }
 
@@ -1519,7 +1579,10 @@ export async function handleRealtimeWebSocket(
         communityEndpoint: c.var.model.communityEndpoint,
     });
     const tracking = await createRealtimeBillingContext(c);
-    if (c.var.model.resolved === "elevenlabs/scribe-v2-realtime") {
+    if (
+        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
+        c.var.model.resolved === "elevenlabs/scribe-v3-live"
+    ) {
         if (!c.env.ELEVENLABS_API_KEY) {
             throw new HTTPException(503, {
                 message: "ElevenLabs realtime provider is not configured.",

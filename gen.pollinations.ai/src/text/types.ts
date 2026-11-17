@@ -2,7 +2,7 @@
  * Shared types for the text generation service.
  */
 
-import type { UpstreamHeaders } from "@shared/error.ts";
+import type { OverrideErrorCode, UpstreamHeaders } from "@shared/error.ts";
 
 /** OpenAI-style chat message. */
 export interface ChatMessage {
@@ -16,6 +16,9 @@ export interface ChatMessage {
     audio?: unknown;
     [key: string]: unknown;
 }
+
+/** The part of a tool call that carries Gemini's thought signature. */
+export type ToolCall = { function?: { thought_signature?: unknown } };
 
 /** Options bag threaded through transforms and generation functions. */
 export interface TransformOptions {
@@ -113,7 +116,7 @@ export interface ServiceError extends Error {
      * Stable, machine-readable error code (mirrors `UpstreamError.errorCode`),
      * propagated into the response envelope by the text error funnel.
      */
-    errorCode?: string;
+    errorCode?: OverrideErrorCode;
     details?: unknown;
     /** Original provider response, retained independently of parsed routing details. */
     responseBody?: string;

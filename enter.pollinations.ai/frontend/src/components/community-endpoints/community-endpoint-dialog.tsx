@@ -205,7 +205,7 @@ export function CommunityEndpointDialog({
         form.modality !== "text" || form.api === "chat_completions";
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
-        setForm((current) => nextFormState(current, key, value));
+        setForm((current) => nextFormState(current, key, value, isEdit));
         if (
             key === "modality" ||
             key === "name" ||
@@ -1064,7 +1064,7 @@ export function CommunityEndpointDialog({
                                                                 className={
                                                                     modelId ===
                                                                     selected
-                                                                        ? "bg-theme-bg-active text-theme-text-strong"
+                                                                        ? "bg-theme-fill text-theme-on-fill"
                                                                         : undefined
                                                                 }
                                                                 onClick={() => {

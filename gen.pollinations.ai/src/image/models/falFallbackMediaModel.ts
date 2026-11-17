@@ -12,9 +12,10 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
-    resolveGrokAspectRatio,
-    resolveGrokDuration,
-} from "./openRouterVideoModel.ts";
+    downloadUserImage,
+    readImageDimensions,
+} from "../utils/imageDownload.ts";
+import { resolveGrokAspectRatio } from "./openRouterVideoModel.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
@@ -22,7 +23,7 @@ const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const WAN_TURBO_RATIOS = ["16:9", "9:16", "1:1"] as const;
 const SEEDANCE_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
-type FalFile = { url?: string; content_type?: string };
+type FalFile = { url?: string; content_type?: string; duration?: number };
 
 function requireFalKey(): string {
     const key = getImageEnv("FAL_KEY");
@@ -135,25 +136,17 @@ export async function callFalFallbackImage(
     }
 }
 
-function snapDuration(
-    duration: number | undefined,
-    allowed: readonly number[],
-) {
-    const requested = duration ?? allowed[0];
-    return allowed.reduce((best, value) =>
-        Math.abs(value - requested) < Math.abs(best - requested) ? value : best,
-    );
-}
-
 type FalVideoConfig = {
     textEndpoint: string;
     imageEndpoint: string;
-    duration: (params: ImageParams) => number;
     input: (
         params: ImageParams,
         duration: number,
         hasImage: boolean,
     ) => Record<string, unknown>;
+    // Endpoints whose "auto" ratio rejects some input images: send the
+    // closest of these to the image's own shape instead.
+    imageRatios?: readonly string[];
     // fal bills a video that xAI's moderation rejects after generating it.
     billsRejectedVideos?: boolean;
     // Charge fal's reported units at the endpoint's live price.
@@ -161,22 +154,20 @@ type FalVideoConfig = {
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
-    "x-ai/grok-imagine-video": {
+    "x-ai/grok-imagine-video:fal": {
         textEndpoint: "xai/grok-imagine-video/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/image-to-video",
-        duration: (params) => resolveGrokDuration(params.duration),
         input: (params, duration) => ({
             duration,
             resolution: "720p",
             aspect_ratio: resolveGrokAspectRatio(params),
         }),
         billsRejectedVideos: true,
+        providerPriced: true,
     },
     "x-ai/grok-imagine-video-1.5:fal": {
         textEndpoint: "xai/grok-imagine-video/v1.5/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/v1.5/image-to-video",
-        duration: (params) =>
-            Math.min(15, Math.max(1, Math.floor(params.duration ?? 5))),
         input: (params, duration, hasImage) => ({
             duration,
             resolution: params.resolution ?? "720p",
@@ -186,7 +177,6 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
     "alibaba/wan-2.6:fal": {
         textEndpoint: "wan/v2.6/text-to-video",
         imageEndpoint: "wan/v2.6/image-to-video",
-        duration: (params) => snapDuration(params.duration, [5, 10, 15]),
         input: (params, duration, hasImage) => ({
             duration,
             resolution: "720p",
@@ -195,35 +185,57 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
-    "alibaba/wan-2.2-fast:fal": {
+    // Primary route for alibaba/wan-2.2-fast (moved off Replicate, 2026-10-21).
+    // Fal Turbo endpoints; tracking keeps the requested (base) model id.
+    "alibaba/wan-2.2-fast": {
         textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
         imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
-        duration: () => 5,
+        // "auto" fails on e.g. 4:3 photos ("resolved output size 720x544 is
+        // not supported").
+        imageRatios: WAN_TURBO_RATIOS,
         input: (params, _duration, hasImage) => ({
             resolution: "480p",
             ...(!hasImage
-                ? { aspect_ratio: aspectRatio(params, WAN_TURBO_RATIOS) }
+                ? {
+                      // Keep Replicate's 16:9 default when the caller sets
+                      // neither a ratio nor dimensions.
+                      aspect_ratio:
+                          params.aspectRatio || params.dimensionsExplicit
+                              ? aspectRatio(params, WAN_TURBO_RATIOS)
+                              : "16:9",
+                  }
                 : {}),
             ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
         }),
     },
-    "bytedance/seedance-1-pro-fast:fal": {
+    "bytedance/seedance-1-pro-fast": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
-        duration: (params) =>
-            Math.min(10, Math.max(2, Math.floor(params.duration ?? 5))),
         input: (params, duration) => ({
             duration,
             resolution: params.resolution ?? "720p",
             aspect_ratio: aspectRatio(params, SEEDANCE_RATIOS),
             camera_fixed: false,
         }),
+        providerPriced: true,
+    },
+    // Same aspect ratios as Seedance; image-to-video follows the first frame.
+    "heygen/heygen-video-1": {
+        textEndpoint: "heygen/heygen-video/text-to-video",
+        imageEndpoint: "heygen/heygen-video/image-to-video",
+        input: (params, duration, hasImage) => ({
+            duration,
+            resolution: params.resolution ?? "480p",
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, SEEDANCE_RATIOS) }
+                : {}),
+        }),
+        providerPriced: true,
     },
     // Renders 5 seconds only; image-to-video follows the source ratio.
     "kandinskylab/kandinsky-6.0-lite": {
         textEndpoint: "fal-ai/kandinsky6-lite/text-to-video",
         imageEndpoint: "fal-ai/kandinsky6-lite/image-to-video",
-        duration: () => 5,
         input: (params, _duration, hasImage) => ({
             generate_audio: params.audio ?? true,
             ...(!hasImage
@@ -242,6 +254,17 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
     },
 };
 
+async function inputImageRatio(
+    url: string,
+    ratios: readonly string[],
+): Promise<string | undefined> {
+    const { buffer, mimeType } = await downloadUserImage(url);
+    const size = readImageDimensions(buffer, mimeType);
+    return size
+        ? closestRatioLogSpace(size.width, size.height, ratios)
+        : undefined;
+}
+
 export async function callFalFallbackVideo(
     prompt: string,
     params: ImageParams,
@@ -253,7 +276,7 @@ export async function callFalFallbackVideo(
         });
     }
     const image = params.image[0];
-    const duration = config.duration(params);
+    const duration = params.duration ?? 5;
     const usage = {
         ...(image ? { promptImageTokens: params.image.length } : {}),
         completionVideoSeconds: duration,
@@ -264,6 +287,10 @@ export async function callFalFallbackVideo(
         const unitCost = config.providerPriced
             ? await falUnitPrice(endpoint, apiKey)
             : undefined;
+        const imageRatio =
+            image && config.imageRatios
+                ? await inputImageRatio(image, config.imageRatios)
+                : undefined;
         const response = await runFalJobResponse(
             {
                 endpoint,
@@ -272,6 +299,7 @@ export async function callFalFallbackVideo(
                         prompt,
                         ...config.input(params, duration, Boolean(image)),
                         ...(image ? { image_url: image } : {}),
+                        ...(imageRatio ? { aspect_ratio: imageRatio } : {}),
                     },
                     params,
                 ),
@@ -282,15 +310,27 @@ export async function callFalFallbackVideo(
             unitCost === undefined
                 ? undefined
                 : { units: falBillableUnits(response), unitCost };
-        const result = (await response.json()) as Record<string, unknown>;
-        const { buffer, mimeType } = await download(
-            result.video as FalFile | undefined,
-            params.model,
-        );
+        const result = (await response.json()) as { video?: FalFile };
+        if (params.model === "x-ai/grok-imagine-video:fal") {
+            const seconds = result.video?.duration;
+            if (
+                typeof seconds !== "number" ||
+                !Number.isFinite(seconds) ||
+                seconds <= 0
+            ) {
+                throw UpstreamError.fromProvider(502, {
+                    message:
+                        "Fal Grok response is missing output video duration",
+                });
+            }
+            // Weighted fal billing units are not video seconds.
+            usage.completionVideoSeconds = seconds;
+        }
+        const { buffer, mimeType } = await download(result.video, params.model);
         return {
             buffer,
             mimeType: mimeType || "video/mp4",
-            durationSeconds: duration,
+            durationSeconds: usage.completionVideoSeconds,
             trackingData: {
                 actualModel: params.model,
                 usage,

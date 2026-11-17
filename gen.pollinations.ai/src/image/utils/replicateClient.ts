@@ -67,6 +67,8 @@ interface ReplicatePrediction<TOutput> {
     metrics?: {
         predict_time?: number;
         video_output_duration_seconds?: number;
+        image_input_megapixel_count?: number;
+        image_output_megapixel_count?: number;
     };
 }
 
@@ -82,6 +84,8 @@ interface RunResult<TOutput> {
     id: string;
     predictTimeSeconds: number;
     videoOutputDurationSeconds?: number;
+    imageInputMegapixels?: number;
+    imageOutputMegapixels?: number;
 }
 
 export async function runReplicatePrediction<TInput, TOutput>(
@@ -165,6 +169,8 @@ export async function runReplicatePrediction<TInput, TOutput>(
         predictTimeSeconds: prediction.metrics?.predict_time ?? 0,
         videoOutputDurationSeconds:
             prediction.metrics?.video_output_duration_seconds,
+        imageInputMegapixels: prediction.metrics?.image_input_megapixel_count,
+        imageOutputMegapixels: prediction.metrics?.image_output_megapixel_count,
     };
 }
 

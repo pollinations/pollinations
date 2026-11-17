@@ -1,3 +1,4 @@
+import { formatCount } from "@pollinations/ui";
 import { useEffect, useState } from "react";
 import {
     type ApiModelInfo,
@@ -203,9 +204,7 @@ const list = (value: unknown) =>
         : "none";
 
 const count = (unit: string) => (value: unknown) =>
-    typeof value === "number"
-        ? `${value.toLocaleString("en-US")}${unit}`
-        : "none";
+    typeof value === "number" ? `${formatCount(value)}${unit}` : "none";
 
 const CAPABILITY_FIELDS: Record<string, [string, (value: unknown) => string]> =
     {

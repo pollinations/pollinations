@@ -9,6 +9,7 @@ from ...core.config import config
 logger = logging.getLogger(__name__)
 
 TOKEN_REFRESH_BUFFER = 300
+READ_ONLY_PERMISSIONS = {"contents": "read", "issues": "read", "pull_requests": "read", "metadata": "read"}
 
 
 class GitHubAppAuth:
@@ -16,8 +17,7 @@ class GitHubAppAuth:
         self.app_id = app_id
         self.private_key = private_key
         self.installation_id = installation_id
-        self._token: str | None = None
-        self._token_expires_at: float = 0
+        self._tokens: dict[str, tuple[str, float]] = {}
         self._session: aiohttp.ClientSession | None = None
 
     def _generate_jwt(self) -> str:
@@ -36,11 +36,15 @@ class GitHubAppAuth:
             await self._session.close()
             self._session = None
 
-    async def get_token(self) -> str | None:
-        if self._token and time.time() < (self._token_expires_at - TOKEN_REFRESH_BUFFER):
-            return self._token
+    async def get_token(self, read_only_repo: str | None = None) -> str | None:
+        """Installation token; with ``read_only_repo``, one that can only read that repo."""
+        key = read_only_repo or ""
+        token, expires_at = self._tokens.get(key, (None, 0))
+        if token and time.time() < (expires_at - TOKEN_REFRESH_BUFFER):
+            return token
+        body = {"repositories": [read_only_repo], "permissions": READ_ONLY_PERMISSIONS} if read_only_repo else None
 
-        logger.info("Fetching new GitHub App installation token...")
+        logger.info("Fetching new GitHub App installation token%s...", " (read-only)" if read_only_repo else "")
 
         try:
             jwt_token = self._generate_jwt()
@@ -53,13 +57,12 @@ class GitHubAppAuth:
                 "X-GitHub-Api-Version": "2022-11-28",
             }
 
-            async with session.post(url, headers=headers) as response:
+            async with session.post(url, headers=headers, json=body) as response:
                 if response.status == 201:
                     data = await response.json()
-                    self._token = data["token"]
-                    self._token_expires_at = time.time() + 3600
+                    self._tokens[key] = (data["token"], time.time() + 3600)
                     logger.info("GitHub App token refreshed successfully")
-                    return self._token
+                    return data["token"]
                 else:
                     error = await response.text()
                     logger.error(f"Failed to get installation token: {response.status} - {error}")
@@ -97,3 +100,11 @@ async def get_github_token(*, for_projects: bool = False) -> str | None:
         logger.warning("ProjectV2 operation: No GitHub App or GITHUB_PROJECT_PAT configured")
         return None
     return config.github.token or None
+
+
+async def get_github_read_token() -> str | None:
+    """Token for requests the model writes itself: read-only and limited to the bot's repo,
+    so GitHub refuses anything else. No PAT fallback, since a PAT can't be narrowed."""
+    if not github_app_auth:
+        return None
+    return await github_app_auth.get_token(read_only_repo=config.bot.default_repo.split("/")[-1])

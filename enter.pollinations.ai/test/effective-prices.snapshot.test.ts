@@ -56,7 +56,8 @@ test("effective cost and price per model — snapshot", () => {
             getModels()
                 .sort()
                 .map((m) => {
-                    const { costVariants } = getRegistryModelDefinition(m);
+                    const { costVariants, priceMultiplierVariants } =
+                        getRegistryModelDefinition(m);
                     return [
                         m,
                         {
@@ -64,6 +65,9 @@ test("effective cost and price per model — snapshot", () => {
                             // Named alternate rate sheets (long-context tiers,
                             // resolution variants) are money too — lock them.
                             ...(costVariants ? { costVariants } : {}),
+                            ...(priceMultiplierVariants
+                                ? { priceMultiplierVariants }
+                                : {}),
                             price: getPriceDefinition(m),
                         },
                     ];

@@ -29,6 +29,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Configure git
         run: |
@@ -77,4 +78,4 @@ jobs:
             echo "Created PR: $PR_URL"
           fi
 
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          gh pr merge "$PR_URL" --auto --squash

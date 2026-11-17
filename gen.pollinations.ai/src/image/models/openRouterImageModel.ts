@@ -1,7 +1,10 @@
 import { UpstreamError } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import type {
+    AuthResult,
+    ImageGenerationResult,
+} from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import {
@@ -18,6 +21,7 @@ import {
     toDataUri,
 } from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
+import { checkMaiInputs } from "./azureMaiImageModel.ts";
 import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
@@ -101,19 +105,10 @@ type GeminiImageConfig = {
     upstreamModel: string;
     provider: string;
     generator: string;
-    resolution: "none" | "tiered" | "tiered-2K" | "1K";
-    seed?: boolean;
+    resolution: "none" | "tiered" | "1K";
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    "google/gemini-nano-banana-2.1": {
-        upstreamModel: "google/gemini-nano-banana-2.1",
-        provider: "google-ai-studio",
-        generator: "Google AI Studio Gemini Nano Banana 2.1",
-        resolution: "tiered-2K",
-        reasoning: false,
-        seed: false,
-    },
     "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
@@ -324,11 +319,6 @@ function resolveGeminiImageResolution(
             ? tier
             : closest,
     ).name;
-    if (config.resolution === "tiered-2K" && resolution === "4K") {
-        throw UpstreamError.fromProvider(400, {
-            message: "Nano Banana 2.1 supports output up to 2K on this route",
-        });
-    }
     return resolution;
 }
 
@@ -525,25 +515,46 @@ export async function callOpenRouterSeedreamFlashAPI(
     };
 }
 
-/**
- * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
- * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
- * references. OpenRouter prices the size it is sent, so the primary's size
- * resolver keeps both routes on the same price tier.
- */
-export async function callOpenRouterQwenImage3API(
+type OpenRouterAlibabaQwenRoute = {
+    model: string;
+    actualModel: string;
+    size: (params: ImageParams) => string;
+    /** Whether reference images are metered on top of OpenRouter's cost. */
+    meterReferences: boolean;
+};
+
+const QWEN_IMAGE_3_ROUTE: OpenRouterAlibabaQwenRoute = {
+    model: QWEN_IMAGE_3_PRO_MODEL,
+    actualModel: "qwen/qwen-image-3:openrouter",
+    size: (params) => {
+        const { width, height } = resolveQwenImage3Size(params);
+        return `${width}x${height}`;
+    },
+    meterReferences: true,
+};
+
+const QWEN_IMAGE_2_1_PRO_ROUTE: OpenRouterAlibabaQwenRoute = {
+    model: "qwen/qwen-image-2.1-pro",
+    actualModel: "qwen/qwen-image-2.1-pro:openrouter",
+    size: (params) => `${params.width}x${params.height}`,
+    // OpenRouter's cost already covers the references.
+    meterReferences: false,
+};
+
+/** Alibaba-pinned Qwen image models through OpenRouter, billed at its reported cost. */
+async function callOpenRouterAlibabaQwenImage(
     prompt: string,
     safeParams: ImageParams,
+    route: OpenRouterAlibabaQwenRoute,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const { width, height } = resolveQwenImage3Size(safeParams);
     const references = await Promise.all(safeParams.image.map(toDataUri));
     const requestBody: Record<string, unknown> = {
-        model: QWEN_IMAGE_3_PRO_MODEL,
+        model: route.model,
         prompt,
         n: 1,
         seed: safeParams.seed,
-        size: `${width}x${height}`,
+        size: route.size(safeParams),
         provider: { only: ["alibaba"], allow_fallbacks: false },
     };
     if (references.length > 0) {
@@ -570,16 +581,45 @@ export async function callOpenRouterQwenImage3API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "qwen/qwen-image-3:openrouter",
+            actualModel: route.actualModel,
             providerBilling: { units: providerCost, unitCost: 1.055 },
             usage: {
-                ...(references.length > 0
+                ...(route.meterReferences && references.length > 0
                     ? { promptImageTokens: references.length }
                     : {}),
                 completionImageTokens: 1,
             },
         },
     };
+}
+
+/**
+ * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
+ * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
+ * references. OpenRouter prices the size it is sent, so the primary's size
+ * resolver keeps both routes on the same price tier.
+ */
+export function callOpenRouterQwenImage3API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterAlibabaQwenImage(
+        prompt,
+        safeParams,
+        QWEN_IMAGE_3_ROUTE,
+    );
+}
+
+/** Qwen Image 2.1 Pro through OpenRouter's Alibaba endpoint, with up to 4 references. */
+export function callOpenRouterQwenImage21ProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterAlibabaQwenImage(
+        prompt,
+        safeParams,
+        QWEN_IMAGE_2_1_PRO_ROUTE,
+    );
 }
 
 export async function callOpenRouterGrokImagineProAPI(
@@ -683,7 +723,7 @@ export async function callOpenRouterGrokImagineImage2API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "x-ai/grok-imagine-image-2.0",
+            actualModel: safeParams.model,
             usage: {
                 ...(inputReferences.length > 0
                     ? { promptImageTokens: inputReferences.length }
@@ -882,7 +922,7 @@ export async function callOpenRouterGeminiImageAPI(
             safeParams.height,
             GEMINI_ASPECT_RATIOS,
         ).label,
-        ...(config.seed !== false && { seed: safeParams.seed }),
+        seed: safeParams.seed,
         provider: {
             only: [config.provider],
             allow_fallbacks: false,
@@ -965,6 +1005,73 @@ function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     );
 }
 
+/** MAI Image fallback on OpenRouter's Azure endpoint (`<model>:openrouter`). */
+export async function callOpenRouterMaiImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    // Same Content Safety checks as the Azure route.
+    const references = (await checkMaiInputs(prompt, safeParams, userInfo)).map(
+        ({ buffer, mimeType }) =>
+            `data:${mimeType};base64,${buffer.toString("base64")}`,
+    );
+    const data = await postOpenRouterImage(
+        apiKey,
+        {
+            model: safeParams.model.replace(/:openrouter$/, ""),
+            prompt,
+            n: 1,
+            // Like Azure, edits follow the first reference's shape.
+            ...(references.length > 0
+                ? {
+                      input_references: references.map((url) => ({
+                          type: "image_url",
+                          image_url: { url },
+                      })),
+                  }
+                : { size: `${safeParams.width}x${safeParams.height}` }),
+            provider: { only: ["azure"], allow_fallbacks: false },
+        },
+        "OpenRouter MAI Image request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    const usage = data.usage;
+    const completionImageTokens =
+        usage?.completion_tokens_details?.image_tokens;
+    if (
+        !isTokenCount(usage?.prompt_tokens) ||
+        !isTokenCount(completionImageTokens) ||
+        completionImageTokens === 0
+    ) {
+        invalidOpenRouterImageUsage(usage);
+    }
+    logOps("MAI Image generation complete", {
+        references: references.length,
+        providerCost: usage.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                // OpenRouter reports one prompt count. With references it bills
+                // all of it at the image-input rate (probe, 2026-10-24).
+                [references.length > 0
+                    ? "promptImageTokens"
+                    : "promptTextTokens"]: usage.prompt_tokens,
+                completionImageTokens,
+            },
+        },
+    };
+}
+
 export async function callOpenRouterRecraftFlashAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -997,7 +1104,7 @@ export async function callOpenRouterRecraftFlashAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         trackingData: {
-            actualModel: RECRAFT_FLASH_MODEL,
+            actualModel: safeParams.model,
             // OpenRouter bills this endpoint a fixed $0.007 per output image.
             usage: { completionImageTokens: 1 },
         },

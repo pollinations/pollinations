@@ -1,7 +1,11 @@
 import { AccountIdentity } from "@pollinations/ui";
 import { AccountPollen } from "@pollinations/ui/wallet";
 import type { User } from "../../auth.ts";
-import type { AccountBalance } from "../../hooks/use-account-balance.ts";
+import {
+    type AccountBalance,
+    BALANCE_PATH,
+} from "../../hooks/use-account-balance.ts";
+import { useOutage } from "../../lib/outage.ts";
 
 export function AuthAccountIdentity({
     user,
@@ -13,6 +17,7 @@ export function AuthAccountIdentity({
     /** Omit on the top-up page itself. */
     topUpHref?: string;
 }) {
+    const outage = useOutage([BALANCE_PATH]);
     return (
         <AccountIdentity
             name={user.name || user.githubUsername || user.email}
@@ -26,11 +31,15 @@ export function AuthAccountIdentity({
                             type: "wallet",
                             balances: {
                                 paid: balance.packBalance,
-                                quest: balance.tierBalance,
+                                quest: balance.questPollenRestricted
+                                    ? 0
+                                    : balance.tierBalance,
                             },
                         }}
                         topUpHref={topUpHref}
                     />
+                ) : outage ? (
+                    <AccountPollen source={{ type: "unavailable" }} />
                 ) : undefined
             }
         />

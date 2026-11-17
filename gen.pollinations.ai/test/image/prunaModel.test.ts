@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
+    callFluxSchnellDeepInfraAPI,
     callPrunaImageAPI,
     callPrunaImageEditAPI,
     callPrunaVideoAPI,
@@ -103,6 +104,22 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe("prunaModel - FLUX.1 Schnell on DeepInfra", () => {
+    it("records DeepInfra's reported charge as the fallback cost", async () => {
+        mockPrunaFetch([]);
+
+        const result = await callFluxSchnellDeepInfraAPI("a red apple", {
+            ...baseParams,
+            model: "black-forest-labs/flux.1-schnell:deepinfra",
+        });
+
+        expect(result.trackingData).toMatchObject({
+            actualModel: "black-forest-labs/flux.1-schnell:deepinfra",
+            providerBilling: { units: 0.005, unitCost: 1 },
+        });
+    });
 });
 
 describe("prunaModel - p-image", () => {

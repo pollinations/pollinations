@@ -1,0 +1,41 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: how one model's final 5xx failures spread over
+    callers, as counts only (no user or key ids). Shows whether a single
+    caller explains an alert. A caller is one account in every count; failures
+    per traffic group are reported separately, since one account can send
+    traffic in several groups. Read by the infra-watch Worker: the
+    caller_spread tool (up to 60 minutes), and a closed incident's footprint
+    (up to 24 hours).
+
+NODE infra_watch_callers_node
+SQL >
+    %
+    SELECT
+        sum(account_requests) AS requests,
+        sum(account_failures) AS failures,
+        count() AS callers,
+        countIf(account_failures > 0) AS failing_callers,
+        max(account_failures) AS top_caller_failures,
+        sum(account_failures_regular) AS failures_regular,
+        sum(account_failures_legacy) AS failures_legacy,
+        sum(account_failures_operations) AS failures_operations,
+        sum(account_failures_dev) AS failures_dev
+    FROM (
+        SELECT
+            user_id,
+            count() AS account_requests,
+            countIf(response_status >= 500) AS account_failures,
+            countIf(response_status >= 500 AND traffic_group = 'regular') AS account_failures_regular,
+            countIf(response_status >= 500 AND traffic_group = 'legacy') AS account_failures_legacy,
+            countIf(response_status >= 500 AND traffic_group = 'operations') AS account_failures_operations,
+            countIf(response_status >= 500 AND traffic_group = 'dev') AS account_failures_dev
+        FROM generation_events_classified
+        WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 1440) minute
+            AND is_final
+            AND resolved_model_requested = {{String(model, required=True)}}
+        GROUP BY user_id
+    )
+
+TYPE endpoint

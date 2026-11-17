@@ -5,7 +5,7 @@ description: "Rerun or repair the Pollinations news pipeline by hand: a missing 
 
 # News Pipeline Repairs
 
-How it works: `operations/social/PIPELINE.md`. Everything generated lives on the `news` branch under `operations/social/news/`.
+How it works: `operations/news/PIPELINE.md`. Everything generated lives on the `news` branch under `operations/social/news/`.
 
 ## Rules
 
@@ -16,7 +16,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 ## Find what happened
 
 - Runs: `gh run list --workflow news-posts.yml` (or `news-deploy-posts.yml`, `news-build-index.yml`); `gh run view <id> --log`.
-- Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
+- Empty model answers retry once with a fresh cache key, including legacy cached empty answers and the API's `empty_response` error. Other failed model, picture, GitHub or Discord calls turn the run red immediately. Reruns preserve completed deliveries; inspect the failed input if both text attempts were empty. Every shipped PR gets a factual Discord announcement, including minor and internal work.
 - Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Deploy posts". Read every failed run: more than one post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/`, in two halves. `data/`: `summaries/<daily|weekly|monthly>/<date>.json`, the `/models` record `models/<date>.json`, `contributors/<month>.json` and `index.json`. `posts/<platform>/<job>/`: one `<date>.json` per post and the folder's `delivery.json`. Deploy posts: `posts/discord/prs/held.json` and `posts/discord/prs/<YYYY-MM>/delivery.json`.
 - Pictures are links, not files: `url` on `media.pollinations.ai`, kept 30 days. Once posted, the picture lives on the platform it went to.
@@ -54,17 +54,17 @@ Successful target checks are saved so they do not expire with Actions history. T
 
 - Preview readiness first: `gh workflow run news-deploy-posts.yml -f preview=true` (the manual default). It reads live GitHub state but never saves or sends.
 - A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f preview=false`. PRs already `done` are skipped.
-- `attempt`: look in the Discord channel. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark prs <merge month> <PR> done`. Certainly not there: `… failed`, then rerun.
+- `attempt`: look in the Discord channel. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/news/scripts/deliver.py mark prs <merge month> <PR> done`. Certainly not there: `… failed`, then rerun.
 - No post at all: check `posts/discord/prs/held.json` and the required deployment jobs, then the delivery record. PRs merged before #17666 were posted at merge. Never advance the scan cursor or delete a held PR to clear a failure.
 
 ## Settle a stuck send (`attempt`)
 
 1. Look everywhere it could be: in Buffer both the Queue and the Sent tab (a post whose answer was lost may already be published), and the destination itself (X, LinkedIn, Instagram, the Discord channel).
-2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
+2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/news/scripts/deliver.py mark weekly 2026-10-18 linkedin done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
 
 ## Recover a model or community post
 
-Each is written, sent to Discord and saved in one run; the run saves only if its text is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `posts` artifact, so the same texts are saved, and a post already sent is not sent again. A new run writes a new text, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
+Each is written, sent to Discord and saved in one run; the run saves only if its complete Discord payload is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `posts` artifact, so the same cards are saved, and a post already sent is not sent again. A new run can write different cards or success rates, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
 
 ## Missing from Enter's News page
 
@@ -78,5 +78,5 @@ Check in order:
 ## Check locally
 
 ```bash
-python3 -m unittest operations/social/scripts/test_news.py
+python3 -m unittest operations/news/scripts/test_news.py
 ```

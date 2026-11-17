@@ -7,6 +7,12 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { createElement } from "react";
 import { defineConfig } from "vite";
+import {
+    NOT_FOUND_META,
+    PAGE_TITLES,
+    pageHtml,
+    pageMeta,
+} from "./frontend/src/page-meta.ts";
 import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
@@ -35,7 +41,7 @@ const EMAIL_BRAND = {
     "email/mark.png": "@pollinations/ui/brand/mark-black.png",
 };
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ command, mode }) => ({
     root: "frontend",
     server: {
         port: 3000,
@@ -70,6 +76,16 @@ export default defineConfig(({ mode }) => ({
         tailwindcss(),
         cloudflare({
             configPath: "../wrangler.toml",
+            // `vite dev` has no per-page HTML files, so it keeps the SPA
+            // fallback.
+            config:
+                command === "serve"
+                    ? {
+                          assets: {
+                              not_found_handling: "single-page-application",
+                          },
+                      }
+                    : undefined,
             persistState: {
                 path: fileURLToPath(
                     new URL("./.wrangler/state", import.meta.url),
@@ -81,6 +97,36 @@ export default defineConfig(({ mode }) => ({
             name: "enter-public-origin",
             transformIndexHtml: (html) =>
                 html.replaceAll("%PUBLIC_ORIGIN%", publicOrigin(mode)),
+        },
+        {
+            // A copy of index.html per page with that page's metadata, and
+            // 404.html, which `not_found_handling = "404-page"` serves with a
+            // 404 status for unknown paths.
+            name: "enter-page-html",
+            applyToEnvironment: (environment) => environment.name === "client",
+            generateBundle: {
+                order: "post",
+                handler(_, bundle) {
+                    const index = bundle["index.html"];
+                    if (index?.type !== "asset")
+                        throw new Error("index.html is missing");
+                    const html = String(index.source);
+                    for (const path of Object.keys(PAGE_TITLES)) {
+                        const meta = pageMeta(path);
+                        if (!meta || path === "/") continue;
+                        this.emitFile({
+                            type: "asset",
+                            fileName: `${path.slice(1)}.html`,
+                            source: pageHtml(html, meta),
+                        });
+                    }
+                    this.emitFile({
+                        type: "asset",
+                        fileName: "404.html",
+                        source: pageHtml(html, NOT_FOUND_META),
+                    });
+                },
+            },
         },
         {
             name: "enter-email-brand",

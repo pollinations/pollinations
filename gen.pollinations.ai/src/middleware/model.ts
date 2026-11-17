@@ -5,6 +5,7 @@ import {
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -15,6 +16,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
     type GenerationModelEntry,
+    type GenerationModelRegistry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
@@ -36,6 +38,8 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** The endpoint the route resolved the model for, when it names one. */
+        endpoint?: string;
         /**
          * Extra cache-key scope for models whose output is not shareable
          * between callers. Unset means the response is cacheable platform-wide,
@@ -50,7 +54,9 @@ export type ModelVariables = {
 
 /** Required checks for every provider this request may reach. */
 export function getRequiredSafetyFeatures(
-    model: ModelVariables["model"] | undefined,
+    model:
+        | Pick<ModelVariables["model"], "definition" | "fallbackEntries">
+        | undefined,
 ): SafetyFeature[] {
     const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
     for (const fallback of model?.fallbackEntries ?? []) {
@@ -81,14 +87,40 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
-export async function resolveModelDefinition(
+/**
+ * A caller names their own fallback chain by listing models: "a,b,c" serves
+ * with a and tries b, then c, if it fails. Capped because every extra entry is
+ * one more upstream attempt the caller's own request waits on.
+ */
+const MAX_REQUESTED_MODELS = 4;
+
+/** The models a caller asked for, in the order they want them tried. */
+export function requestedModelIds(model: string): string[] {
+    if (!model.includes(",")) return [model];
+    const ids = model
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+    if (ids.length === 0) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+    if (ids.length > MAX_REQUESTED_MODELS) {
+        throw new HTTPException(400, {
+            message: `Too many models: "${model}" lists ${ids.length}, at most ${MAX_REQUESTED_MODELS} are tried.`,
+        });
+    }
+    return ids;
+}
+
+function resolveModelEntry(
+    registry: GenerationModelRegistry,
     model: string,
     eventType: EventType,
-    env: CloudflareBindings,
     callerUserId?: string,
     supportedEndpoint?: string,
-): Promise<ModelVariables["model"]> {
-    const registry = await getGenerationModelRegistry(env);
+): GenerationModelEntry {
     const entry = registry.resolve(model);
     if (!entry) {
         throw new HTTPException(400, {
@@ -138,23 +170,79 @@ export async function resolveModelDefinition(
         });
     }
 
+    return entry;
+}
+
+export async function resolveModelDefinition(
+    model: string,
+    eventType: EventType,
+    env: CloudflareBindings,
+    callerUserId?: string,
+    supportedEndpoint?: string,
+): Promise<ModelVariables["model"]> {
+    const registry = await getGenerationModelRegistry(env);
+    const entries = requestedModelIds(model).map((id) =>
+        resolveModelEntry(
+            registry,
+            id,
+            eventType,
+            callerUserId,
+            supportedEndpoint,
+        ),
+    );
+    const [entry, ...alternates] = entries;
+    const mismatched = alternates.find(
+        (alternate) =>
+            alternate.definition.category !== entry.definition.category,
+    );
+    if (mismatched) {
+        throw new HTTPException(400, {
+            message: `Model lists must use the same model category: "${entry.id}" is ${entry.definition.category}, but "${mismatched.id}" is ${mismatched.definition.category}.`,
+        });
+    }
+    // Explicit lists replace configured fallbacks, preserving order and repeats.
+    const fallbackEntries = model.includes(",")
+        ? alternates
+        : (entry.fallbackEntries ?? []);
+    // An agent run executes tools and spends the caller's balance, so its
+    // answer belongs to that caller and must never be replayed to another —
+    // whether it serves as the primary or as someone's listed alternate.
+    const agent = entries.find(
+        (candidate) =>
+            candidate.communityEndpoint &&
+            usesAgentRunToken(candidate.communityEndpoint),
+    );
     return {
         requested: model,
         resolved: entry.id,
         definition: entry.definition,
+        ...(supportedEndpoint && { endpoint: supportedEndpoint }),
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
-        // An agent run executes tools and spends the caller's balance, so its
-        // answer belongs to that caller and must never be replayed to another.
-        ...(entry.communityEndpoint &&
-            usesAgentRunToken(entry.communityEndpoint) && {
-                cacheScope: `agent:${entry.id}`,
-            }),
-        ...(entry.fallbackEntries && {
-            fallbackEntries: entry.fallbackEntries,
-        }),
+        ...(agent && { cacheScope: `agent:${agent.id}` }),
+        ...(fallbackEntries.length > 0 && { fallbackEntries }),
     };
+}
+
+/**
+ * An explicit empty model must fail instead of silently using the default;
+ * only an absent field may fall back. A value of any other type is a caller
+ * error too: passing it on used to reach string methods and surface as a 500.
+ */
+function parseRawModel(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== "string") {
+        throw new HTTPException(400, {
+            message: "model: Invalid input: expected string",
+        });
+    }
+    if (value === "") {
+        throw new HTTPException(400, {
+            message: "model: Too small: expected string to have >=1 characters",
+        });
+    }
+    return value;
 }
 
 /**
@@ -177,27 +265,31 @@ export function resolveModel(
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";
             if (contentType.includes("multipart/form-data")) {
+                let formData: FormData | undefined;
                 try {
-                    const formData = await c.req.formData();
-                    rawModel = (formData.get("model") as string) || null;
-                    // Store formData to avoid re-parsing in route handlers
-                    c.set("formData", formData);
+                    formData = await c.req.formData();
                 } catch {
                     // Form parsing failed, use default
                 }
+                if (formData) {
+                    rawModel = parseRawModel(formData.get("model"));
+                    // Store formData to avoid re-parsing in route handlers
+                    c.set("formData", formData);
+                }
             } else if (hasJsonContentType(contentType)) {
+                let body: { model?: string } | undefined;
                 try {
-                    const body =
+                    body =
                         getValidatedJsonBody<{ model?: string }>(c.req) ||
                         ((await c.req.raw.clone().json()) as
                             | { model?: string }
                             | undefined);
-                    rawModel = body?.model || null;
                 } catch {
                     throw new HTTPException(400, {
                         message: "Invalid JSON body",
                     });
                 }
+                rawModel = parseRawModel(body?.model);
             }
         }
 
@@ -225,6 +317,20 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
+        // Caller-selected alternatives need their own permission. Declared
+        // provider routes retain the public model's existing permission.
+        if (model.includes(",") && resolved.fallbackEntries) {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) =>
+                    keyAllowsModel(
+                        allowedModels,
+                        entry.id,
+                        entry.definition,
+                        resolved.endpoint,
+                    ),
+            );
+        }
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

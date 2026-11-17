@@ -26,7 +26,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
@@ -49,7 +49,7 @@ export const simpleAudioQuerySchema = z.object({
         .optional()
         .meta({
             description:
-                "Audio output format. Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav and raw 24 kHz pcm; other explicit formats are rejected. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3.5`, `google/lyria-3-clip-preview`, and `elevenlabs/eleven-text-to-sound-v2` support mp3 only.",
+                "Audio output format. Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav and raw 24 kHz pcm; other explicit formats are rejected. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3.5`, `google/lyria-3-clip-preview`, ElevenLabs sound effects, and `sonilo/sonilo-1.1-sfx` support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({
@@ -100,7 +100,7 @@ export const simpleAudioQuerySchema = z.object({
         .transform((v) => (v === undefined ? undefined : v === "true"))
         .meta({
             description:
-                "Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only)",
+                "Loop the generated sound effect (ElevenLabs sound effects only)",
             example: "false",
         }),
     prompt_influence: z
@@ -110,13 +110,19 @@ export const simpleAudioQuerySchema = z.object({
         .pipe(z.number().min(0).max(1).optional())
         .meta({
             description:
-                "How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only)",
+                "How strictly to follow the prompt, 0-1 (ElevenLabs sound effects only)",
             example: "0.3",
         }),
     seed: z.coerce.number().int().min(-1).max(4294967295).optional().meta({
         description:
             "Seed passed to the model. Same seed + parameters return the same cached result while available.",
         example: "42",
+    }),
+    reference_video: z.url().optional().meta({
+        description:
+            "Public HTTP(S) URL of the video to create sound effects for (`sonilo/sonilo-1.1-sfx` only).",
+        example:
+            "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
     }),
     key: z.string().optional().meta({
         description: "API key (alternative to Authorization header)",
@@ -174,7 +180,7 @@ export async function generateEmbeddingsResponse(
             );
         },
         c.var.track?.attempts,
-        (candidate) => enforceModelRateLimit(c, candidate),
+        (candidate) => requireModelAttemptAccess(c, candidate),
     );
 }
 

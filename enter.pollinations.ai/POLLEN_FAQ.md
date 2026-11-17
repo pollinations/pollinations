@@ -13,7 +13,7 @@ No. Pollinations provides infrastructure that you connect to your own applicatio
 - **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
 - **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
 - **Community models** for developers who operate compatible model endpoints.
-- **Connect User Wallets**, also called BYOP, so each app user can fund their own requests.
+- **Pollinations Pay**, also called BYOP, so each app user can fund their own requests.
 
 You build and host the application. Pollinations provides model access, account authorization, and billing.
 
@@ -65,14 +65,13 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 ## 🔑 Which API key should I use?
 
 - **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)**: a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
-- **Raw publishable key (`pk_` without an app binding)**: legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
+- **App Key (`pk_`)**: a publishable OAuth client identifier for Pollinations Connect. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 
-## 🔌 What is Connect User Wallets?
+## 🔌 What is Pollinations Pay?
 
-Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
+Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
 
 For app developers:
 
@@ -83,17 +82,17 @@ For app developers:
 
 Users choose the budget, expiry, models, and account permissions they approve. They can edit or revoke issued keys from the dashboard.
 
-Read the [Connect User Wallets guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
+Read the [Pollinations Pay guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
 
 ## 🤖 Can I build my own agent?
 
-Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Models](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
+Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My listings](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
 
 An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. A linked GitHub username is required to create an agent. Private agents are owner-only; publishing requires community publisher access. Read [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for setup details.
 
 ## 🧩 Can I bring my own model?
 
-Yes. Register a compatible text, image, or transcription provider from [My Models](https://enter.pollinations.ai/my-models) or the `/account/my-models` API. A linked GitHub username is required. Private models are owner-only; public publishing requires community publisher access. Read [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup details.
+Yes. Register a compatible text, image, or transcription provider from [My listings](https://enter.pollinations.ai/my-models?tab=models) or the `/account/my-models` API. A linked GitHub username is required. Private models are owner-only; public publishing requires community publisher access. Read [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup details.
 
 Public community models can set prices and compatible fallback models. Pollinations monitors public text and image endpoints and credits 75% of the Pollen spent on them to the owner.
 

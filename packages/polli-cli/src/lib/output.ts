@@ -25,7 +25,7 @@ export const setOutputMode = (mode: OutputMode) => {
 export const getOutputMode = (): OutputMode => currentMode;
 
 /** Print structured data — adapts to current output mode */
-export const printResult = (data: Record<string, unknown> | unknown[]) => {
+export const printResult = (data: object) => {
     if (currentMode === "json") {
         process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
         return;

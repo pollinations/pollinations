@@ -13,7 +13,8 @@ import { resolveWanImageSize } from "./wanImageModel.ts";
 export type AlibabaImageModel =
     | "wan2.7-image"
     | "qwen-image-3.0-pro"
-    | "qwen-image-2.1-turbo";
+    | "qwen-image-2.1-turbo"
+    | "qwen-image-2.1-pro";
 
 type AlibabaImageRoute = {
     path: string;
@@ -26,6 +27,20 @@ type AlibabaImageRoute = {
     acceptsImages: boolean;
     countKey: "image_count" | "output_image_count";
     billsInputImages: boolean;
+};
+
+// Any size from 512*512 to 2560*2560 pixels of area; Alibaba rejects the
+// rest with a 400. Up to 10 reference images, billed per output image.
+// Pro shares this request shape until its size list is probed.
+const QWEN_IMAGE_2_1_ROUTE: AlibabaImageRoute = {
+    path: "/services/aigc/multimodal-generation/generation",
+    asynchronous: false,
+    size: (params) => `${params.width}*${params.height}`,
+    common: true,
+    extra: { prompt_extend: false },
+    acceptsImages: true,
+    countKey: "image_count",
+    billsInputImages: false,
 };
 
 const ALIBABA_IMAGE_ROUTES: Record<AlibabaImageModel, AlibabaImageRoute> = {
@@ -52,18 +67,8 @@ const ALIBABA_IMAGE_ROUTES: Record<AlibabaImageModel, AlibabaImageRoute> = {
         countKey: "output_image_count",
         billsInputImages: true,
     },
-    // Any size from 512*512 to 2560*2560 pixels of area; Alibaba rejects the
-    // rest with a 400. Up to 10 reference images, billed per output image.
-    "qwen-image-2.1-turbo": {
-        path: "/services/aigc/multimodal-generation/generation",
-        asynchronous: false,
-        size: (params) => `${params.width}*${params.height}`,
-        common: true,
-        extra: { prompt_extend: false },
-        acceptsImages: true,
-        countKey: "image_count",
-        billsInputImages: false,
-    },
+    "qwen-image-2.1-turbo": QWEN_IMAGE_2_1_ROUTE,
+    "qwen-image-2.1-pro": QWEN_IMAGE_2_1_ROUTE,
 };
 
 export async function callAlibabaImage(

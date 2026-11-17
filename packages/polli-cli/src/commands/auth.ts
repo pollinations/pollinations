@@ -26,7 +26,14 @@ type LoginOptions = {
 
 interface ProfileResponse {
     githubUsername?: string | null;
+    // Returned only for keys with account:profile, which device login grants.
+    name?: string | null;
     image?: string | null;
+}
+
+// Accounts without a linked GitHub (e.g. Google sign-in) still have a name.
+function profileName(profile: ProfileResponse): string {
+    return profile.githubUsername ?? profile.name ?? "unknown";
 }
 
 interface BalanceResponse {
@@ -82,14 +89,15 @@ async function pollForToken(
 }
 
 function storeKey(key: string): void {
-    const keyType = key.startsWith("sk_") ? "sk" : "pk";
-    saveCredentials({ apiKey: key, keyType });
+    saveCredentials({ apiKey: key });
 }
 
 function assertApiKey(key: string): string {
     const trimmed = key.trim();
-    if (!trimmed.startsWith("pk_") && !trimmed.startsWith("sk_")) {
-        printError("Invalid key format. Must start with pk_ or sk_");
+    if (!trimmed.startsWith("sk_")) {
+        printError(
+            "Invalid key format. Must start with sk_; pk_ App Keys only identify an app",
+        );
         throw new ExitSignal(1);
     }
     return trimmed;
@@ -146,7 +154,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    return `Logged in as ${profileName(profile)}`;
 }
 
 /** Run the browser device flow, store the resulting key, and return it. */
@@ -236,7 +244,7 @@ const login = new Command("login")
     .addOption(
         new Option(
             "--token <key>",
-            "API key (pk_ or sk_) for direct auth",
+            "Secret API key (sk_) for direct auth",
         ).hideHelp(),
     )
     .option("--with-token", "Read an existing API key from stdin")
@@ -258,6 +266,8 @@ const logout = new Command("logout")
     .action(() => {
         clearCredentials();
         printSuccess("Logged out. Credentials cleared.");
+        if (process.env.POLLINATIONS_API_KEY)
+            printInfo("POLLINATIONS_API_KEY is still set and stays in use.");
         printInfo(flavor.logout);
     });
 
@@ -273,20 +283,31 @@ export async function showAuthStatus(): Promise<void> {
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
+    const rejectedKey = (error: unknown) =>
+        error instanceof ApiError && error.status === 401 ? error : null;
     const [profile, balance] = await Promise.all([
         gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
     ]);
+
+    if (profile instanceof ApiError || balance instanceof ApiError) {
+        printResult({
+            authenticated: false,
+            key: masked,
+            status: "API key rejected. Run: polli auth login",
+        });
+        return;
+    }
 
     if (!profile) {
         printResult({
             authenticated: true,
             key: masked,
-            status: "Key stored but could not reach API",
+            status: "Could not reach API",
         });
         return;
     }
@@ -298,7 +319,7 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
+        name: profileName(profile),
         pollen: wallet ?? "unknown",
         key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
     });

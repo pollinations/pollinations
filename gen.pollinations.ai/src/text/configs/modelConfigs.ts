@@ -410,6 +410,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6.2-astra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.2-astra/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6.2-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.2-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
     "gpt-6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -422,6 +434,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockResponsesConfig("global.openai.gpt-6-sol"),
     "gpt-6.1-sol-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6.1-sol"),
+    "gpt-6.2-astra-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-astra"),
+    "gpt-6.2-sol-bedrock": () =>
+        createBedrockResponsesConfig("us.openai.gpt-6.2-sol"),
     "gpt-6-luna-bedrock": () =>
         createBedrockResponsesConfig("global.openai.gpt-6-luna"),
 

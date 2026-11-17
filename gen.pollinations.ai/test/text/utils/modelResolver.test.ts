@@ -231,6 +231,30 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each(["gpt-6.2-astra", "gpt-6.2-sol"])(
+        "routes openai/%s to Azure Responses with a US Bedrock Responses fallback",
+        (model) => {
+            const canonical = `openai/${model}`;
+            const result = resolveModelConfig(messages, { model: canonical });
+
+            expect(result.options.model).toBe(model);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "azure-openai",
+                "azure-resource-name": "myceli-prod-eastus",
+                "azure-deployment-id": model,
+                responsesEndpoint:
+                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            });
+            const fallback = resolveModelConfig(messages, {
+                model: `${canonical}:aws`,
+            });
+            expect(fallback.options.model).toBe(`us.openai.${model}`);
+            expect(fallback.options.modelConfig?.responsesEndpoint).toMatch(
+                /^https:\/\/bedrock-runtime\..+\.amazonaws\.com\/openai\/v1\/responses$/,
+            );
+        },
+    );
+
     it("keeps GPT-5.3 Codex primary and OpenAI fallback routes distinct", () => {
         const primary = resolveModelConfig(messages, {
             model: "openai/gpt-5.3-codex",

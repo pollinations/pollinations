@@ -1,5 +1,4 @@
 import {
-    AccountIcon,
     Alert,
     BeakerIcon,
     Button,
@@ -43,7 +42,6 @@ import {
     LoadError,
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
-import { Footnotes } from "../pollen/pollen-balance.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 import { monthName, QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
@@ -1329,35 +1327,37 @@ function QuestOverviewContent({
             )}
             {!state.anonymous && !state.loading && (
                 <Section title="Invite link">
-                    <Surface variant="card">
-                        {githubId === null ? (
-                            // The link carries the inviter's GitHub id.
+                    {/* Laid out like a quest row: the quest mark, then the link. */}
+                    <Surface variant="card" className="flex items-start gap-4">
+                        <TargetIcon
+                            aria-hidden="true"
+                            className="mt-1 h-5 w-5 shrink-0 text-theme-text-strong"
+                        />
+                        <div className="flex min-w-0 flex-col gap-2">
+                            {githubId === null ? (
+                                // The link carries the inviter's GitHub id.
+                                <Text size="sm" tone="muted">
+                                    <InlineLink href="/account">
+                                        Connect GitHub
+                                    </InlineLink>{" "}
+                                    to get your invite link.
+                                </Text>
+                            ) : (
+                                // The catalog's small copy pill, as wide as the link.
+                                <div className="w-fit min-w-0 max-w-full">
+                                    <CopyField
+                                        label="Copy invite link"
+                                        value={`${window.location.origin}/?ref=${githubId}`}
+                                        size="sm"
+                                    />
+                                </div>
+                            )}
                             <Text size="sm" tone="muted">
-                                <InlineLink href="/account">
-                                    Connect GitHub
-                                </InlineLink>{" "}
-                                to get your invite link.
-                            </Text>
-                        ) : (
-                            // The catalog's small copy pill, as wide as the link.
-                            <div className="w-fit min-w-0 max-w-full">
-                                <CopyField
-                                    label="Copy invite link"
-                                    value={`${window.location.origin}/?ref=${githubId}`}
-                                    size="sm"
-                                />
-                            </div>
-                        )}
-                    </Surface>
-                    <Footnotes>
-                        <p className="flex items-start gap-1.5">
-                            <AccountIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
                                 Earn 2 Quest Pollen for each friend who signs up
                                 with your link and buys more than 2 Pollen.
-                            </span>
-                        </p>
-                    </Footnotes>
+                            </Text>
+                        </div>
+                    </Surface>
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

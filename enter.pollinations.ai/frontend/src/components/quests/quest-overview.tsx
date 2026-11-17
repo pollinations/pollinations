@@ -12,7 +12,6 @@ import {
     GitMergeIcon,
     InlineLink,
     IssueClosedIcon,
-    IssueOpenedIcon,
     LoadingStatus,
     OutageNotice,
     ReceiptIcon,
@@ -567,6 +566,19 @@ export function QuestRow({
             tone={claimed ? "muted" : claimableRewardIds ? "soft" : "strong"}
         >
             {card.title}
+            {card.issueNumber != null && card.url && (
+                <>
+                    {" "}
+                    <InlineLink
+                        href={card.url}
+                        tone="quiet"
+                        showIcon={false}
+                        className="whitespace-nowrap text-sm font-normal tabular-nums"
+                    >
+                        #{card.issueNumber}
+                    </InlineLink>
+                </>
+            )}
             {card.repeats && card.repeats.length > 0 && (
                 <>
                     {" "}
@@ -588,24 +600,11 @@ export function QuestRow({
     // claimable); drop it once it's done: claimed, a stacked card that paid
     // before, or coming_soon (which also derives to "claimed").
     // A GitHub quest is its issue: the title says what to build, and the
-    // issue link under it carries the details instead of a description.
+    // issue number beside it links to the details instead of a description.
     const description =
         !resting && card.description && card.issueNumber == null
             ? card.description
             : null;
-    const IssueIcon =
-        card.status === "open" ? IssueOpenedIcon : IssueClosedIcon;
-    const issueLink =
-        card.issueNumber != null && card.url ? (
-            <InlineLink
-                href={card.url}
-                showIcon={false}
-                className="inline-flex items-center gap-1 text-sm tabular-nums"
-            >
-                <IssueIcon className="h-3.5 w-3.5 shrink-0" />#
-                {card.issueNumber}
-            </InlineLink>
-        ) : null;
     // One plain reward in every state, so it holds the same spot on the right;
     // only the bucket icon carries colour, and a claimed reward goes muted grey
     // (raw glyph, so it inherits the muted text colour).
@@ -674,15 +673,11 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || issueLink || progress) && (
+    const details = (description || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
-            {(description || issueLink) && (
+            {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
-                    {description && (
-                        <QuestDescription>{description}</QuestDescription>
-                    )}
-                    {description && issueLink ? " " : null}
-                    {issueLink}
+                    <QuestDescription>{description}</QuestDescription>
                 </div>
             )}
             {progress}

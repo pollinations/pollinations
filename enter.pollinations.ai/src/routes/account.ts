@@ -274,7 +274,7 @@ async function grantFromCallerKey(
     if (typeof callerKey.pollenBalance !== "number") return 0;
     if (grant.pollenBudget === null) {
         deny(
-            "An API key with a pollen budget can only grant a budget, taken from its own",
+            "An API key with a budget can only grant a budget, taken from its own",
         );
     }
     if (budgetToReserve <= 0) return 0;
@@ -2179,7 +2179,7 @@ export const accountRoutes = new Hono<Env>()
             ) {
                 throw new HTTPException(403, {
                     message:
-                        "A Quest Pollen only key can only edit Quest Pollen only keys",
+                        "A Quest-balance-only key can only edit Quest-balance-only keys",
                 });
             }
 

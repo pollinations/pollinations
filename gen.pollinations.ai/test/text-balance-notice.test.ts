@@ -67,7 +67,7 @@ describe("text balance notice", () => {
             const text = await response.text();
             expect(response.status).toBe(enabled ? 200 : 402);
             expect(text).toContain(
-                enabled ? "Quest pollen is locked" : "QUEST_POLLEN_RESTRICTED",
+                enabled ? "Quest balance is locked" : "QUEST_POLLEN_RESTRICTED",
             );
             expect(text).toContain("hello@pollinations.ai");
             expect(
@@ -538,7 +538,7 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
         expect(text).toContain("INSUFFICIENT_BALANCE");
     } else {
         expect(response.status, text).toBe(200);
-        expect(text).toContain("needs paid Pollen");
+        expect(text).toContain("needs the paid balance");
         expect(text).toContain("/top-up?ref=agent_low_balance_topup");
         expect(text).not.toContain("complete a quest");
     }

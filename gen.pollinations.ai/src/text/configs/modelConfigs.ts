@@ -171,12 +171,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["liquid"] } },
             },
         }),
-    "liquid/d1.2": () => ({
-        provider: "openai",
-        directEndpoint: "https://api.inferenceport.ai/v1/systemone",
-        authKey: textEnvironmentValue("INFERENCEPORT_API_KEY"),
-        model: "d1.2",
-    }),
+    "liquid/d1.2": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1.2",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["liquid"] } },
+            },
+        }),
     "liquid/d1:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",

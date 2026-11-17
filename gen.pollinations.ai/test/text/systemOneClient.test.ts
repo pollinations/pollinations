@@ -429,29 +429,31 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    it("routes Liquid d1.2 through InferencePort SystemOne", async () => {
+    it("routes Liquid d1.2 through Vercel SystemOne", async () => {
         const config = findModelByName("liquid/d1.2")?.config();
         expect(config).toMatchObject({
             provider: "openai",
-            directEndpoint: "https://api.inferenceport.ai/v1/systemone",
-            model: "d1.2",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1.2",
         });
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (url, init) => {
                 expect(String(url)).toBe(
-                    "https://api.inferenceport.ai/v1/systemone",
+                    "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
                 );
                 expect(new Headers(init?.headers).get("authorization")).toBe(
                     "Bearer test-key",
                 );
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "d1.2",
+                    model: "liquid/d1.2",
+                    providerOptions: { gateway: { only: ["liquid"] } },
                     state: nativeState,
                     questions: nativeQuestions,
                 });
                 return Response.json({
-                    model: "d1.2",
+                    model: "liquid/d1.2",
                     answers,
                     usage: { input_tokens: 95, output_tokens: 0 },
                 });

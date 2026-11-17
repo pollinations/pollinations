@@ -2004,7 +2004,7 @@ const TEXT_BASE_SERVICES = {
     "liquid/d1.2": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["d1.2"],
-        provider: "inferenceport",
+        provider: "vercel",
         publisher: "Liquid AI",
         category: "decision",
         addedDate: new Date("2026-11-17").getTime(),

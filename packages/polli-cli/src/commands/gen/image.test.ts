@@ -50,4 +50,34 @@ describe("gen image output", () => {
             rmSync(folder, { recursive: true });
         }
     });
+
+    it("leaves the size to the server unless --width or --height is given", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-image-test-"));
+        process.chdir(folder);
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+        const urls: string[] = [];
+        vi.stubGlobal("fetch", async (url: string) => {
+            urls.push(url);
+            return new Response(new Uint8Array([1]), {
+                headers: { "content-type": "image/png" },
+            });
+        });
+        try {
+            for (const args of [[], ["--width", "640"]]) {
+                await createImageCommand().parseAsync(["a fox", ...args], {
+                    from: "user",
+                });
+            }
+            const [defaults, sized] = urls.map((u) => new URL(u).searchParams);
+            expect(defaults.has("width")).toBe(false);
+            expect(defaults.has("height")).toBe(false);
+            expect(sized.get("width")).toBe("640");
+            expect(sized.has("height")).toBe(false);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
 });

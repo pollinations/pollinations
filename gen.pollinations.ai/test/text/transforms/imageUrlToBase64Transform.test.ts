@@ -193,6 +193,55 @@ describe("imageUrlToBase64Transform", () => {
     });
 
     it.each([
+        "x-ai/grok-4.3",
+        "x-ai/grok-4.6",
+        "x-ai/grok-4.20",
+        "mistralai/mistral-large-3",
+        "moonshotai/kimi-k3.1-pro",
+    ] as const)(
+        "inlines remote image URLs for %s, which cannot fetch them",
+        async (model) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+            const { options } = resolveModelConfig([], { model });
+
+            const result = await transform(
+                imageMessage(["https://example.com/image.png"]),
+                options,
+            );
+
+            const content = result.messages[0].content as {
+                image_url: { url: string };
+            }[];
+            expect(content[0].image_url.url).toMatch(
+                /^data:image\/png;base64,/,
+            );
+        },
+    );
+
+    it("inlines remote images on the reasoning Grok 4.20 deployment too", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(PNG_BYTES, {
+                headers: { "content-type": "image/png" },
+            }),
+        );
+        const { options } = resolveModelConfig([], {
+            model: "x-ai/grok-4.20",
+            reasoning_effort: "low",
+        });
+        const result = await transform(
+            imageMessage(["https://example.com/image.png"]),
+            options,
+        );
+        expect(JSON.stringify(result.messages)).toContain(
+            "data:image/png;base64,",
+        );
+    });
+
+    it.each([
         "moonshotai/kimi-k2.6",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",
     ] as const)(

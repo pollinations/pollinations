@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "AI Wallpaper Generator for Phone",
+    "url": "https://www.androidponsel.com/wallpaper-generator",
+    "description": "Free AI phone wallpaper generator with device-specific resolution, prompt enhancement via Dialagram LLM, 8 style presets, and curated gallery. Uses Flux Schnell via Pollinations image API.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "slrdone",
+    "githubUserId": "286992633",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19933",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/735557a8-1106-4fd0-bfde-c7682fa993df"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Cover Studio",
     "url": "https://polli-cover-studio.surge.sh",
     "description": "Turns a title, an author and one line of premise into a finished 1600x2400 book cover. Pollinations paints the artwork, the page sets the type, and you download the PNG.",

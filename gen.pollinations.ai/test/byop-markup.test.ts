@@ -807,43 +807,43 @@ describe("BYOP markup", () => {
         ).toBe(1.25);
     });
 
-    it("keeps Tinybird estimates for models priced per megapixel", async () => {
+    it("estimates megapixel-priced models from the median, else one megapixel", async () => {
         // The listed rate is per megapixel (or a millionth of one), not per
-        // request, so it must not stand in for the median or discard it.
+        // request: it must not discard the median, and without a median the
+        // estimate is one whole megapixel, never $0 or a millionth of it.
         for (const [model, median] of [
             ["black-forest-labs/flux-3-image-klein", 0.009],
             ["qwen/qwen-image-2.1", 0.02],
             ["black-forest-labs/flux.2-max", 0.4],
         ] as const) {
-            const definition = getRegistryModelDefinition(model);
-            expect(getDefinedRequestEstimate(definition)).toBeNull();
             expect(
                 getEstimatedPrice(
                     { data: [{ model, avg_cost_usd: median }] },
                     model,
-                    definition,
+                    getRegistryModelDefinition(model),
                 ),
             ).toBe(median);
-        }
 
-        const model = "black-forest-labs/flux-3-image-klein";
-        const vars = {
-            auth: { user: { id: "preflight-payer" } },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 0,
-                    packBalance: 0.001,
-                }),
-            },
-            model: testModel(model),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
-        await expect(
-            checkBalance(vars, fakeStatsEnv(0.009, model)),
-        ).rejects.toMatchObject({
-            status: 402,
-            message: expect.stringContaining("costs about $0.0090"),
-        });
+            const vars = {
+                auth: {
+                    user: { id: "preflight-payer" },
+                    apiKey: { id: "sk-test", pollenBalance: 0.001 },
+                },
+                balance: {
+                    getBalance: async () => ({
+                        tierBalance: 0,
+                        packBalance: 0.001,
+                    }),
+                },
+                model: testModel(model),
+                log: fakeLog(),
+            } as unknown as Parameters<typeof checkBalance>[0];
+            for (const stats of [median, 0]) {
+                await expect(
+                    checkBalance(vars, fakeStatsEnv(stats, model)),
+                ).rejects.toMatchObject({ status: 402 });
+            }
+        }
     });
 
     it("retains legacy price estimates after a canonical rename", () => {

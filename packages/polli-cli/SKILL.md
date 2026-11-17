@@ -210,7 +210,7 @@ polli earnings --days 7  # rolling window
 polli quests             # your quests + claim state (open/claimable/claimed/closed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance in dollars only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number | "unknown">, "key_budget"?: <number>}` — the account balance in dollars (`"unknown"` when the key lacks `account:usage`) and, for a budgeted key, its remaining budget in dollars; `polli auth status --json` returns the same two fields. Human output prints them as `balance: $2.50` and `key_budget: $4.47`; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
 
 ### Manage my-models
 ```bash

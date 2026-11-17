@@ -24,6 +24,10 @@ export const setOutputMode = (mode: OutputMode) => {
 
 export const getOutputMode = (): OutputMode => currentMode;
 
+/** A balance or budget for people to read: "$2.50", "-$0.30". */
+export const formatDollars = (amount: number) =>
+    `${amount < 0 ? "-" : ""}$${Math.abs(amount).toFixed(2)}`;
+
 /** Print structured data — adapts to current output mode */
 export const printResult = (data: object) => {
     if (currentMode === "json") {

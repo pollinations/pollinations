@@ -2,7 +2,12 @@ import { createInterface } from "node:readline/promises";
 import { ApiError, gen, requireKey } from "./api.js";
 import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
-import { ExitSignal, getOutputMode, printError } from "./output.js";
+import {
+    ExitSignal,
+    formatDollars,
+    getOutputMode,
+    printError,
+} from "./output.js";
 
 // Returns null for non-402 so callers fall through to their generic error path.
 export async function budgetHint(
@@ -43,7 +48,8 @@ export async function budgetHint(
             : ["Manage key budget: https://enter.pollinations.ai/keys"]),
         "",
     ];
-    if (balance != null) lines.push(`Account balance: $${balance}`);
+    if (balance != null)
+        lines.push(`Account balance: ${formatDollars(balance)}`);
     lines.push(`Server said: ${bodyText}`);
     return lines.join("\n");
 }

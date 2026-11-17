@@ -34,7 +34,7 @@ describe("budgetHint", () => {
         expect(hint).toContain(
             "Earn Quest balance: https://enter.pollinations.ai/quests",
         );
-        expect(hint).toContain("Account balance: $0");
+        expect(hint).toContain("Account balance: $0.00");
         expect(hint).not.toContain("Manage key budget:");
     });
 
@@ -60,7 +60,7 @@ describe("budgetHint", () => {
             }),
         );
         const hint = await budgetHint(402, "Payment required");
-        expect(hint).toContain("Account balance: $2.5");
+        expect(hint).toContain("Account balance: $2.50");
     });
 
     it("does not assume an unknown 402 is a wallet failure", async () => {

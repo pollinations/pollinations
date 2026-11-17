@@ -6,6 +6,7 @@ import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
     fail,
+    formatDollars,
     getOutputMode,
     printError,
     printResult,
@@ -261,10 +262,10 @@ export const usageCommand = new Command("usage")
                     let color = chalk.green;
                     if (bal <= 0) color = chalk.red;
                     else if (bal < 1) color = chalk.yellow;
-                    return color(String(bal));
+                    return color(formatDollars(bal));
                 };
                 printResult({
-                    pollen: colorize(wallet) ?? "unknown",
+                    balance: colorize(wallet) ?? "unknown",
                     key_budget: colorize(keyBudget),
                 });
                 return;

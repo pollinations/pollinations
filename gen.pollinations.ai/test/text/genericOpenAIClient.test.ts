@@ -1529,7 +1529,7 @@ describe("Chat Completions stream usage", () => {
     });
 });
 
-it.each(["length", "stop"])(
+it.each(["length", "stop", null, undefined])(
     "preserves provider truncation while normalizing completed tool calls (%s)",
     async (finishReason) => {
         const toolCalls = [

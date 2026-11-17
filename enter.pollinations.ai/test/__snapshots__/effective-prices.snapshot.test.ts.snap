@@ -4921,16 +4921,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000009375,
     },
   },
-  "x-ai/grok-4.3:aws": {
+  "x-ai/grok-4.3:openrouter:xai-zdr": {
     "cost": {
-      "completionTextTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.00000125,
+      "completionTextTokens": 0.0000026375,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000131875,
+      "promptTextTokens": 0.00000131875,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000005275,
+        "promptCachedTokens": 0.000000422,
+        "promptImageTokens": 0.0000026375,
+        "promptTextTokens": 0.0000026375,
+      },
     },
     "price": {
-      "completionTextTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.00000125,
+      "completionTextTokens": 0.0000026375,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000131875,
+      "promptTextTokens": 0.00000131875,
     },
   },
   "x-ai/grok-4.6": {

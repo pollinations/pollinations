@@ -70,7 +70,15 @@ export const CHAT_PARAMETERS = {
         "seed",
         "parallel_tool_calls",
     ],
-    bedrockGrok43: [...TOOL_CHAT, "parallel_tool_calls", "reasoning_effort"],
+    openRouterGrok43: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "seed",
+        "parallel_tool_calls",
+        "reasoning_effort",
+    ],
     // AWS and direct xAI accept logprobs requests but return no probabilities.
     grok47: [
         ...TOOL_CHAT,

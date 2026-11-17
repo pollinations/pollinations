@@ -33,10 +33,7 @@ export async function signBedrockHeaders(
     const signer = new SignatureV4({
         credentials,
         region: credentials.region,
-        service:
-            url.hostname === `bedrock-mantle.${credentials.region}.api.aws`
-                ? "bedrock-mantle"
-                : "bedrock",
+        service: "bedrock",
         sha256: Sha256,
     });
     const signed = await signer.sign({

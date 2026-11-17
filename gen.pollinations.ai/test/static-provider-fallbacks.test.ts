@@ -32,6 +32,7 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
+    ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
     [
         "anthropic/claude-haiku-4.5:openrouter:vertex-global",
         "anthropic/claude-haiku-4.5",
@@ -462,6 +463,9 @@ describe("static provider fallbacks", () => {
         expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
             provider: "bedrock",
             model: "mistral.mistral-large-3-675b-instruct",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         const billed = calculateUsageBilling({
             model,
@@ -499,18 +503,7 @@ describe("static provider fallbacks", () => {
     });
 
     it("preserves seeded requests on the Bedrock Mistral fallback", async () => {
-        const model = "mistralai/mistral-large-3";
-        const primary: ModelDefinition = TEXT_SERVICES[model];
-        expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:aws`]);
-        const route = findModelByName(`${model}:aws`);
-        expect(route?.config()).toMatchObject({
-            provider: "bedrock",
-            model: "mistral.mistral-large-3-675b-instruct",
-            "aws-region": "us-east-1",
-            directEndpoint:
-                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
-        });
+        const route = findModelByName("mistralai/mistral-large-3:aws");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
         const result = await route?.transform?.([], options);
         expect(result?.options).toEqual({ seed: 0, temperature: 0.2 });
@@ -2430,16 +2423,14 @@ describe("static provider fallbacks", () => {
 });
 
 it.each([199999, 200000, 200001])(
-    "records Grok 4.3 Bedrock's flat cost at %s tokens, retaining the primary quote",
+    "records Grok 4.3 backup's inclusive long-context cost at %s tokens, retaining the primary quote",
     (total) => {
         const model = "x-ai/grok-4.3";
-        const primary = TEXT_SERVICES[model];
-        expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:aws`]);
-        const servedBy = TEXT_SERVICES[`${model}:aws`];
+        const servedBy = TEXT_SERVICES[`${model}:openrouter:xai-zdr`];
         expect(servedBy.priceMultiplier).toBe(1);
         const usage = {
-            promptTextTokens: total - 500,
+            promptTextTokens: total - 1000,
+            promptImageTokens: 500,
             promptCachedTokens: 500,
             completionTextTokens: 10,
         };
@@ -2450,7 +2441,10 @@ it.each([199999, 200000, 200001])(
             quotedBy: TEXT_SERVICES[model],
         });
         const base = ((total - 500) * 1.25 + 500 * 0.2 + 10 * 2.5) / 1e6;
-        expect(billed.cost.totalCost).toBeCloseTo(base, 12);
+        expect(billed.cost.totalCost).toBeCloseTo(
+            base * 1.055 * (total >= 200000 ? 2 : 1),
+            12,
+        );
         expect(billed.price.totalPrice).toBeCloseTo(base * 0.75, 8);
     },
 );

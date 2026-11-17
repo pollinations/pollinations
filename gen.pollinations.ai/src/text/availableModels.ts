@@ -660,8 +660,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.3"],
     },
     {
-        name: "x-ai/grok-4.3:aws",
-        config: portkeyConfig["grok-4.3-bedrock"],
+        name: "x-ai/grok-4.3:openrouter:xai-zdr",
+        config: portkeyConfig["grok-large-openrouter-xai-zdr"],
     },
     {
         name: "x-ai/grok-4.6",

@@ -2134,6 +2134,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000002,
     },
   },
+  "liquid/d1.2-ultra": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+  },
   "liquid/d1:openrouter": {
     "cost": {
       "completionTextTokens": 0,

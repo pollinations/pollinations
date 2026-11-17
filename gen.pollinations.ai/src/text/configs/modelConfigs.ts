@@ -184,6 +184,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "liquid/d1.2-ultra": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.inferenceport.ai/v1/systemone",
+        authKey: textEnvironmentValue("INFERENCEPORT_API_KEY"),
+        model: "d1.2-ultra",
+    }),
     "gpt-6-luna-decisions": () => ({
         provider: "openai",
         directEndpoint: "https://api.openai.com/v1/decisions",

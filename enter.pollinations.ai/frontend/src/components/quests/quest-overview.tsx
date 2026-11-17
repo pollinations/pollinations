@@ -723,8 +723,8 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [openTab, setOpenTab] = useState<string | null>(null);
-    const [expandedTabs, setExpandedTabs] = useState<string[]>([]);
+    const [openTab, setOpenTab] = useState<CategoryKey | null>(null);
+    const [expandedTabs, setExpandedTabs] = useState<CategoryKey[]>([]);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -920,19 +920,14 @@ function QuestOverviewContent({
                     status: reward.claimedAt ? "claimed" : "claimable",
                     earnedAmount: reward.pollenAmount,
                 };
-                // A repeat reward joins its quest's lane, a merged PR or a
-                // fixed issue the Contribute lane; anything else (a grant) is
-                // a bonus.
-                const category: CategoryKey | null =
+                // A repeat reward joins its quest's lane; a merged PR, a
+                // fixed issue or a grant joins Contribute.
+                const category: CategoryKey =
                     (reward.questId && categoryById.get(reward.questId)) ||
-                    (card.issueNumber != null ? "contribute" : null);
+                    "contribute";
                 return { card, category };
             });
     }, [state.catalog, state.rewards, rewardByKey]);
-    const bonusRewardCards = rewardCards
-        .filter(({ category }) => category === null)
-        .map(({ card }) => card)
-        .sort((a, b) => cardSortRank(a) - cardSortRank(b));
 
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
@@ -994,7 +989,7 @@ function QuestOverviewContent({
 
         // Rewards beyond a quest's own card are more rows in their lane.
         for (const { card, category } of rewardCards) {
-            if (category) byCat[category].push(card);
+            byCat[category].push(card);
         }
 
         // Order per lane by lifecycle rank only: a claim moves its own row and
@@ -1071,15 +1066,12 @@ function QuestOverviewContent({
         refreshRewards,
     );
 
-    // One tab per lane that has rows, and Bonus when a reward fits no lane.
-    const tabs = [
-        ...CATEGORIES.map(({ key, label }) => ({
-            key: key as string,
-            label,
-            cards: sections[key],
-        })),
-        { key: "bonus", label: "Bonus", cards: bonusRewardCards },
-    ].filter((tab) => tab.cards.length > 0);
+    // One tab per lane that has rows.
+    const tabs = CATEGORIES.map(({ key, label }) => ({
+        key,
+        label,
+        cards: sections[key],
+    })).filter((tab) => tab.cards.length > 0);
     // Open the tab picked, else the first with a reward to claim.
     const activeTab =
         tabs.find((tab) => tab.key === openTab) ??
@@ -1120,12 +1112,9 @@ function QuestOverviewContent({
                     {progressUnavailable && <OutageNotice retrying />}
                     {showSummary && !state.anonymous && (
                         <QuestProgress
-                            cards={[
-                                ...Object.values(sections)
-                                    .flat()
-                                    .filter((card) => !card.comingSoon),
-                                ...bonusRewardCards,
-                            ]}
+                            cards={Object.values(sections)
+                                .flat()
+                                .filter((card) => !card.comingSoon)}
                         />
                     )}
                     {/* The preview counts available quests and their possible rewards. */}

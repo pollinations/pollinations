@@ -648,11 +648,19 @@ export function QuestRow({
     const reward = claimButton ?? rewardChip;
 
     return (
-        // Open and claimable quests are white cards; done ones sit flat, in
-        // their muted colours.
+        // Open quests are white cards. One ready to claim is tinted honey, so
+        // it stands out without changing shape; the tint is stronger in light
+        // mode, where the panel behind is already a warm cream. Done ones keep
+        // the card, faded to half: still a row of their own, but settled.
         <Surface
             variant="card"
-            className={resting ? "polli:bg-transparent" : undefined}
+            className={
+                claimableRewardIds
+                    ? "!bg-[color-mix(in_oklab,var(--polli-color-fill)_42%,var(--polli-color-surface-opaque))] [.dark_&]:!bg-[color-mix(in_oklab,var(--polli-color-fill)_16%,var(--polli-color-surface-opaque))]"
+                    : resting
+                      ? "!bg-[color-mix(in_oklab,var(--polli-color-surface-opaque)_45%,transparent)]"
+                      : undefined
+            }
         >
             {/* Mobile: the title full width, then the description above the
                 reward or Claim button. */}

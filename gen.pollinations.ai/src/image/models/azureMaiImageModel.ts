@@ -24,6 +24,10 @@ const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_MAI_ENDPOINT =
     "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
 const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
+    "microsoft/mai-image-2.7": {
+        deployment: "MAI-Image-2.7",
+        title: "MAI Image 2.7",
+    },
     "microsoft/mai-image-2.7-flash": {
         deployment: "MAI-Image-2.7-Flash",
         title: "MAI Image 2.7 Flash",

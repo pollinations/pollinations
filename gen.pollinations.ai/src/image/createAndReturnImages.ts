@@ -1076,6 +1076,7 @@ const generateImage = async (
                 "black-forest-labs/flux-3-image-klein",
             );
 
+        case "microsoft/mai-image-2.7":
         case "microsoft/mai-image-2.7-flash":
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {

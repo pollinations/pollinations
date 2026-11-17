@@ -57,6 +57,7 @@ afterEach(() => {
 
 describe("callAzureMaiImage", () => {
     it.each([
+        ["microsoft/mai-image-2.7", "MAI-Image-2.7"],
         ["microsoft/mai-image-2.7-flash", "MAI-Image-2.7-Flash"],
         ["microsoft/mai-image-2.6-flash", "MAI-Image-2.6-Flash"],
         ["microsoft/mai-image-2.6", "MAI-Image-2.6"],

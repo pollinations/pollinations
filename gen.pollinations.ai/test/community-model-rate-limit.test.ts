@@ -19,7 +19,8 @@ const QUOTA_BOUND_MODELS = new Set([
     "microsoft/mai-image-2.6-flash",
     ...IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].fallbacks,
     "microsoft/mai-image-2.6",
-    // Azure Global Standard currently allows 36 requests per minute for this deployment.
+    // Azure Global Standard currently allows 36 requests per minute per deployment.
+    "microsoft/mai-image-2.7",
     "microsoft/mai-image-2.7-flash",
     "vllm-sr/d3",
 ]);
@@ -62,6 +63,7 @@ describe("model rate limiting", () => {
             12,
         );
         expect(IMAGE_SERVICES["microsoft/mai-image-2.6"].perUserRpm).toBe(12);
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.7"].perUserRpm).toBe(12);
         expect(IMAGE_SERVICES["microsoft/mai-image-2.7-flash"].perUserRpm).toBe(
             12,
         );

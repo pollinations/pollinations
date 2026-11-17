@@ -27,6 +27,7 @@ const inviteFriendsQuest: QuestDefinition = {
     description: `Share your invite link below, or let people sign up through your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Each friend who tops up more than $${MIN_POLLEN_BOUGHT} counts.`,
     category: "community",
     scope: "perUser",
+    // One reward per friend, keyed on the friend's account.
     repeatable: true,
     rewardAmount: 2,
     balanceBucket: "tier",

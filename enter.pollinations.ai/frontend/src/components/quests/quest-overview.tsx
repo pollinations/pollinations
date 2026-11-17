@@ -4,14 +4,19 @@ import {
     Button,
     CardIcon,
     CheckIcon,
+    ChevronIcon,
     Chip,
     ClockIcon,
     CopyField,
     formatCount,
+    GitMergeIcon,
     InfoTip,
     InlineLink,
+    IssueClosedIcon,
+    LayersIcon,
     LoadingStatus,
     OutageNotice,
+    ReceiptIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -117,10 +122,6 @@ const CATEGORIES: CategoryMeta[] = [
         label: "Grow",
     },
     {
-        key: "build",
-        label: "Build",
-    },
-    {
         key: "contribute",
         label: "Contribute",
     },
@@ -128,11 +129,54 @@ const CATEGORIES: CategoryMeta[] = [
         key: "community",
         label: "Community",
     },
-    {
-        key: "easteregg",
-        label: "Easter eggs",
-    },
 ];
+
+// Keeps the admin grants (grant:<campaign>) on the page only: a grant is not a
+// quest anyone can do, so it has no catalog entry. Shown to people who got one.
+const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
+    id: "other_contributions",
+    title: "Other contributions",
+    description: "Rewards from the team for help beyond a PR or issue.",
+    category: "contribute",
+    state: "completed",
+    repeatable: true,
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    url: null,
+};
+
+// Event codes as a quest: the code field sits in its card, and each code
+// redeemed (promo:<event>) stacks on it. Page only, like the grants card.
+const EVENT_CODES: QuestCatalogItem = {
+    id: "event_codes",
+    title: "Event codes",
+    description: "",
+    category: "community",
+    state: "available",
+    repeatable: true,
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    url: null,
+};
+
+// Rewards recorded one per PR, fixed issue, grant or code, and the card that
+// keeps them.
+// A GitHub quest you won was paid for your merged PR, so it joins that stack.
+const CARD_BY_PREFIX = [
+    ["github:merged_pr:", "merged_pr"],
+    ["github:issue:", "merged_pr"],
+    ["github:reported_issue:", "reported_merged_issue"],
+    ["grant:", OTHER_CONTRIBUTIONS.id],
+    ["promo:", EVENT_CODES.id],
+] as const;
+
+/** The catalog card a reward belongs to. */
+function cardIdOf(questId: string | null): string | null {
+    const match = CARD_BY_PREFIX.find(([prefix]) =>
+        questId?.startsWith(prefix),
+    );
+    return match ? match[1] : questId;
+}
 
 function issueNumberFromId(id: string): number | null {
     const match = /^github:issue:(\d+)$/.exec(id);
@@ -249,7 +293,8 @@ export type QuestCardStatus = "open" | "claimable" | "claimed";
 
 export type QuestCard = {
     key: string;
-    rewardId?: string;
+    /** The rewards one Claim pays. */
+    rewardIds?: string[];
     title: string;
     description?: string;
     url?: string;
@@ -340,14 +385,16 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
         open: { count: 0, pollen: { tier: 0, paid: 0 } },
     };
     for (const card of cards) {
-        // A repeatable quest counts each reward it earned, and stays to do.
+        // A repeatable quest counts each reward it earned, and itself while
+        // it is open to earn again.
         for (const repeat of card.repeats ?? []) {
             const part = parts[repeat.claimedAt ? "claimed" : "ready"];
             part.count += 1;
             part.pollen[rewardIconKind(repeat.balanceBucket)] +=
                 repeat.pollenAmount;
         }
-        const part = parts[card.repeats ? "open" : CARD_STATE[card.status]];
+        if (card.repeats && card.status !== "open") continue;
+        const part = parts[CARD_STATE[card.status]];
         part.count += 1;
         part.pollen[rewardIconKind(card.balanceBucket)] +=
             (card.status === "open" ? null : card.earnedAmount) ??
@@ -457,26 +504,6 @@ export function QuestProgress({
     );
 }
 
-/** The viewer's invite link, inside the Invite friends quest. */
-function InviteLink({ githubId }: { githubId: number | null }) {
-    return githubId === null ? (
-        // The link carries the inviter's GitHub id.
-        <Text size="sm" tone="muted">
-            <InlineLink href="/account">Connect GitHub</InlineLink> to get your
-            invite link.
-        </Text>
-    ) : (
-        // The small copy pill of the catalogs.
-        <div className="mt-1 w-fit min-w-0 max-w-full">
-            <CopyField
-                label="Copy invite link"
-                value={`${window.location.origin}/?ref=${githubId}`}
-                size="sm"
-            />
-        </div>
-    );
-}
-
 function QuestDescription({ children }: { children: string }) {
     return (
         <Markdown className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline">
@@ -534,14 +561,17 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 function QuestMarker({
     status,
     comingSoon,
+    repeatable,
 }: {
     status: QuestCardStatus;
     comingSoon?: boolean;
+    /** Earned again and again: the open mark is a stack, like its rewards. */
+    repeatable?: boolean;
 }) {
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [TargetIcon, "text-theme-text-strong"]
+          ? [repeatable ? LayersIcon : TargetIcon, "text-theme-text-strong"]
           : status === "claimable"
             ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
@@ -555,6 +585,92 @@ function QuestMarker({
     );
 }
 
+// A merged PR, a won GitHub quest or a fixed issue shows GitHub's own mark.
+const GITHUB_ICONS = [
+    ["github:merged_pr:", GitMergeIcon],
+    ["github:issue:", IssueClosedIcon],
+    ["github:reported_issue:", IssueClosedIcon],
+] as const;
+
+/** One reward of a stacked card: what it was for, when, and what it paid. */
+function RewardLine({ reward }: { reward: QuestReward }) {
+    const github = GITHUB_ICONS.find(([prefix]) =>
+        reward.questId?.startsWith(prefix),
+    );
+    const SourceIcon = github?.[1] ?? ReceiptIcon;
+    // GitHub rows start with their number. Saved PR and issue titles read
+    // "Merged PR #12: …"; a GitHub quest's is just the issue title.
+    const number = reward.questId?.match(/:(\d+)$/)?.[1];
+    const title = github
+        ? `#${number} ${reward.title.replace(/^[^#]*#\d+: /, "")}`
+        : reward.title;
+    return (
+        <li className="flex items-center gap-1.5">
+            <SourceIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            <span
+                className="min-w-0 flex-1 truncate text-theme-text-muted"
+                title={title}
+            >
+                {reward.url ? (
+                    <InlineLink href={reward.url} tone="quiet" showIcon={false}>
+                        {title}
+                    </InlineLink>
+                ) : (
+                    title
+                )}
+            </span>
+            <time
+                className="shrink-0 whitespace-nowrap text-theme-text-muted tabular-nums"
+                dateTime={reward.earnedAt}
+            >
+                {new Date(reward.earnedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                })}
+            </time>
+            <span
+                className={`flex shrink-0 items-center gap-0.5 tabular-nums ${
+                    reward.claimedAt
+                        ? "text-theme-text-muted"
+                        : "font-semibold text-theme-text-strong"
+                }`}
+            >
+                <WalletKindIcon
+                    kind={rewardIconKind(reward.balanceBucket)}
+                    className="h-3.5 w-3.5"
+                />
+                {formatRewardAmount(reward.pollenAmount)}
+                <span className="sr-only">
+                    {reward.claimedAt ? " claimed" : " ready to claim"}
+                </span>
+            </span>
+        </li>
+    );
+}
+
+/** The viewer's invite link, inside the Invite friends quest. */
+function InviteLink({ githubId }: { githubId: number | null }) {
+    // The link carries the inviter's GitHub id.
+    if (githubId === null) {
+        return (
+            <Text size="sm" tone="muted">
+                <InlineLink href="/account">Connect GitHub</InlineLink> to get
+                your invite link.
+            </Text>
+        );
+    }
+    // The catalog's small copy pill, as wide as the link.
+    return (
+        <div className="w-fit min-w-0 max-w-full">
+            <CopyField
+                label="Copy invite link"
+                value={`${window.location.origin}/?ref=${githubId}`}
+                size="sm"
+            />
+        </div>
+    );
+}
+
 export function QuestRow({
     card,
     claiming,
@@ -563,14 +679,15 @@ export function QuestRow({
 }: {
     card: QuestCard;
     claiming: boolean;
-    onClaim(rewardId: string): void;
-    /** More under the description, e.g. the invite link. */
+    onClaim(rewardIds: string[]): void;
+    /** What the quest needs at hand, e.g. the invite link; shown in every state. */
     children?: ReactNode;
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
-    const claimableRewardId =
-        card.status === "claimable" ? card.rewardId : undefined;
+    const claimableRewardIds =
+        card.status === "claimable" ? card.rewardIds : undefined;
+    const [showRewards, setShowRewards] = useState(false);
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -595,34 +712,85 @@ export function QuestRow({
             weight="semibold"
             tone={claimed ? "muted" : "strong"}
             className={
-                claimableRewardId ? "[.dark_&]:text-theme-text-soft" : undefined
+                claimableRewardIds
+                    ? "[.dark_&]:text-theme-text-soft"
+                    : undefined
             }
         >
             {card.title}
-            {card.repeats && card.repeats.length > 0 && (
-                <span className="font-normal text-theme-text-muted">
+            {card.issueNumber != null && card.url && (
+                <>
                     {" "}
-                    · {card.repeats.length} earned
-                </span>
+                    <InlineLink
+                        href={card.url}
+                        tone="quiet"
+                        showIcon={false}
+                        className="whitespace-nowrap text-sm font-normal tabular-nums"
+                    >
+                        #{card.issueNumber}
+                    </InlineLink>
+                </>
+            )}
+            {card.repeats && card.repeats.length > 0 && (
+                <>
+                    {" "}
+                    <button
+                        type="button"
+                        aria-expanded={showRewards}
+                        aria-label={`${card.repeats.length} earned rewards for ${card.title}`}
+                        onClick={() => setShowRewards((shown) => !shown)}
+                        className="polli-control inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap text-xs font-normal text-theme-text-muted hover:text-theme-text-strong"
+                    >
+                        · {card.repeats.length} earned
+                        <ChevronIcon expanded={showRewards} />
+                    </button>
+                </>
             )}
         </Text>
     );
-    // Show the "how to" description only while the quest is still open. Once
-    // it is done there is nothing left to do: a claimable quest shows its title
-    // and the Claim button, a claimed one (or coming_soon, which also derives
-    // to "claimed") just its title.
+    // Show the "how to" description only while the quest is still open, and
+    // on a repeatable quest only until it paid: after that the title, the
+    // Claim button or the stack say enough.
+    // A GitHub quest is its issue: the title says what to build, and the
+    // issue number beside it links to the details instead of a description.
     const description =
-        card.status === "open" && card.description ? card.description : null;
-    const issueLink =
-        card.issueNumber != null && card.url ? (
-            <InlineLink href={card.url} className="text-sm tabular-nums">
-                #{card.issueNumber}
-            </InlineLink>
-        ) : null;
+        card.status === "open" &&
+        !card.repeats?.length &&
+        card.description &&
+        card.issueNumber == null
+            ? card.description
+            : null;
     // One plain reward in every state, so it holds the same spot on the right;
     // only the bucket icon carries colour, and a claimed reward goes muted grey
     // (raw glyph, so it inherits the muted text colour).
-    const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
+    // A done stacked card shows what it paid into each balance.
+    const amounts =
+        claimed && card.repeats
+            ? (["tier", "paid"] as const).flatMap((kind) => {
+                  const sum = card.repeats
+                      ?.filter(
+                          (repeat) =>
+                              rewardIconKind(repeat.balanceBucket) === kind,
+                      )
+                      .reduce(
+                          (total, repeat) => total + repeat.pollenAmount,
+                          0,
+                      );
+                  return sum ? [{ kind, label: formatRewardAmount(sum) }] : [];
+              })
+            : // A quest that pays a different amount each time shows none.
+              card.status === "open" && !card.reward
+              ? []
+              : [
+                    {
+                        kind: rewardIcon,
+                        // An open repeatable quest pays this again each time.
+                        label:
+                            card.repeats && card.status === "open"
+                                ? `${rewardLabel} each`
+                                : rewardLabel,
+                    },
+                ];
     const rewardChip = card.comingSoon ? (
         <Chip
             intent="neutral"
@@ -634,26 +802,34 @@ export function QuestRow({
         </Chip>
     ) : (
         <span
-            className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
+            className={`flex items-center gap-3 text-sm font-semibold tabular-nums ${
                 claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
-            {claimed ? (
-                <RewardKindIcon className="h-4 w-4 shrink-0" />
-            ) : (
-                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
-            )}
-            {rewardLabel}
+            {amounts.map(({ kind, label }) => (
+                <span key={kind} className="flex items-center gap-1">
+                    {claimed ? (
+                        kind === "paid" ? (
+                            <CardIcon className="h-4 w-4 shrink-0" />
+                        ) : (
+                            <SproutIcon className="h-4 w-4 shrink-0" />
+                        )
+                    ) : (
+                        <WalletKindIcon kind={kind} className="h-4 w-4" />
+                    )}
+                    {label}
+                </span>
+            ))}
         </span>
     );
     // A claimable quest's reward becomes the Claim button on the right: the
     // standard action button, "Claim" and its reward on one line.
-    const claimButton = claimableRewardId ? (
+    const claimButton = claimableRewardIds ? (
         <Button
             type="button"
             intent="commit"
             disabled={claiming}
-            onClick={() => onClaim(claimableRewardId)}
+            onClick={() => onClaim(claimableRewardIds)}
             aria-label={`Claim ${rewardLabel} to your ${rewardIcon === "paid" ? "paid" : "Quest"} balance`}
             className="gap-2 whitespace-nowrap font-bold"
         >
@@ -661,39 +837,37 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || issueLink || progress || children) && (
+    const details = (description || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
-            {(description || issueLink) && (
+            {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
-                    {description && (
-                        <QuestDescription>{description}</QuestDescription>
-                    )}
-                    {description && issueLink ? " " : null}
-                    {issueLink}
+                    <QuestDescription>{description}</QuestDescription>
                 </div>
             )}
             {progress}
-            {children}
         </div>
     );
     const marker = (
-        <QuestMarker status={card.status} comingSoon={card.comingSoon} />
+        <QuestMarker
+            status={card.status}
+            comingSoon={card.comingSoon}
+            repeatable={card.repeats !== undefined}
+        />
     );
     const reward = claimButton ?? rewardChip;
 
     return (
-        // Open quests are white cards. Claimed ones keep the card, faded to
-        // half, in their muted colours: still a row of their own, but settled.
-        // One ready to claim is tinted honey, so it stands out without
-        // changing shape; the tint is stronger in light mode, where the panel
-        // behind is already a warm cream.
+        // Open quests are white cards. One ready to claim is tinted honey, so
+        // it stands out without changing shape; the tint is stronger in light
+        // mode, where the panel behind is already a warm cream. Done ones keep
+        // the card, faded to half: still a row of their own, but settled.
         <Surface
             variant="card"
             className={
-                claimed
-                    ? "!bg-[color-mix(in_oklab,var(--polli-color-surface-opaque)_45%,transparent)]"
-                    : claimableRewardId
-                      ? "!bg-[color-mix(in_oklab,var(--polli-color-fill)_42%,var(--polli-color-surface-opaque))] [.dark_&]:!bg-[color-mix(in_oklab,var(--polli-color-fill)_16%,var(--polli-color-surface-opaque))]"
+                claimableRewardIds
+                    ? "!bg-[color-mix(in_oklab,var(--polli-color-fill)_42%,var(--polli-color-surface-opaque))] [.dark_&]:!bg-[color-mix(in_oklab,var(--polli-color-fill)_16%,var(--polli-color-surface-opaque))]"
+                    : claimed
+                      ? "!bg-[color-mix(in_oklab,var(--polli-color-surface-opaque)_45%,transparent)]"
                       : undefined
             }
         >
@@ -722,6 +896,15 @@ export function QuestRow({
                     {reward}
                 </div>
             </div>
+            {/* Drawn once, under both layouts, so a field in it exists once. */}
+            {children && <div className="ml-9 mt-2">{children}</div>}
+            {showRewards && card.repeats && card.repeats.length > 0 && (
+                <ul className="ml-9 mt-2 flex flex-col gap-0.5 text-xs">
+                    {card.repeats.map((repeat) => (
+                        <RewardLine key={repeat.id} reward={repeat} />
+                    ))}
+                </ul>
+            )}
         </Surface>
     );
 }
@@ -762,6 +945,18 @@ function QuestOverviewContent({
     });
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
+    // Claims, a redeemed code and the quest check reload the same data and
+    // can overlap. A reload applies unless a newer one already has; one that
+    // fails applies nothing, so an older success still lands. Others: null.
+    const reloadRef = useRef(0);
+    const appliedReloadRef = useRef(0);
+    async function reloadQuestData(): Promise<QuestData | null> {
+        const reload = ++reloadRef.current;
+        const questData = await loadQuestData();
+        if (reload < appliedReloadRef.current) return null;
+        appliedReloadRef.current = reload;
+        return questData;
+    }
     // Logged-out visitors see a preview: every quest shown open (so all
     // descriptions render) and the off-board/unearned visibility filter
     // relaxed, since there is no per-user progress to gate on.
@@ -819,7 +1014,7 @@ function QuestOverviewContent({
                 if (response.ok) {
                     const checkResult =
                         (await response.json()) as QuestCheckResult;
-                    const refreshed = await loadQuestData();
+                    const refreshed = await reloadQuestData();
                     if (cancelled) return;
                     setState((current) => ({
                         ...current,
@@ -844,39 +1039,47 @@ function QuestOverviewContent({
         };
     }, []);
 
-    async function handleClaimReward(rewardId: string): Promise<void> {
+    async function handleClaimRewards(rewardIds: string[]): Promise<void> {
         setClaimError(null);
         setState((current) => ({
             ...current,
-            claimingRewardIds: [...current.claimingRewardIds, rewardId],
+            claimingRewardIds: [...current.claimingRewardIds, ...rewardIds],
         }));
 
         try {
-            const response = await accountClient.quests.rewards[
-                ":rewardId"
-            ].claim.$post({
-                param: { rewardId },
-            });
-            if (!response.ok) {
-                throw new Error("Couldn’t claim the reward. Please try again.");
+            try {
+                for (const rewardId of rewardIds) {
+                    const response = await accountClient.quests.rewards[
+                        ":rewardId"
+                    ].claim.$post({
+                        param: { rewardId },
+                    });
+                    if (!response.ok) {
+                        throw new Error(
+                            "Couldn’t claim the reward. Please try again.",
+                        );
+                    }
+                }
+            } finally {
+                // Also after a failure part way: show what was credited.
+                void router.invalidate({
+                    filter: (match) => match.routeId === "/_dashboard",
+                });
+                const questData = await reloadQuestData();
+                setState((current) => ({
+                    ...current,
+                    ...questData,
+                    claimingRewardIds: current.claimingRewardIds.filter(
+                        (id) => !rewardIds.includes(id),
+                    ),
+                }));
+                window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
             }
-            void router.invalidate({
-                filter: (match) => match.routeId === "/_dashboard",
-            });
-            const questData = await loadQuestData();
-            setState((current) => ({
-                ...current,
-                ...questData,
-                claimingRewardIds: current.claimingRewardIds.filter(
-                    (id) => id !== rewardId,
-                ),
-            }));
-            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,
                 claimingRewardIds: current.claimingRewardIds.filter(
-                    (id) => id !== rewardId,
+                    (id) => !rewardIds.includes(id),
                 ),
             }));
             setClaimError(
@@ -891,7 +1094,9 @@ function QuestOverviewContent({
         void router.invalidate({
             filter: (match) => match.routeId === "/_dashboard",
         });
-        const questData = await loadQuestData();
+        const questData = await reloadQuestData();
+        // A newer reload is already on its way.
+        if (!questData) return;
         // Reload once so the check the outage skipped runs, as on a visit.
         if (!questData.anonymous && !autoCheckedRef.current) {
             onRecovered();
@@ -907,7 +1112,7 @@ function QuestOverviewContent({
         () =>
             new Set(
                 state.rewards
-                    .map((reward) => reward.questId)
+                    .map((reward) => cardIdOf(reward.questId))
                     .filter((id): id is string => id != null),
             ),
         [state.rewards],
@@ -919,51 +1124,38 @@ function QuestOverviewContent({
         }
         return map;
     }, [state.rewards]);
-    // Rewards created by a maintainer or another non-catalog source still need
-    // their own claim control, as do a repeatable quest's rewards beyond the
-    // one its catalog card shows. This is deliberately derived from the
-    // ledger — no synthetic catalog entry or special balance path.
+    // A reward with no card of its own (a quest that left the catalog) gets
+    // its own row in Contribute.
     const rewardCards = useMemo(() => {
-        const categoryById = new Map(
-            state.catalog.map((quest) => [quest.id, quest.category]),
-        );
-        const repeatable = new Set(
-            state.catalog
-                .filter((quest) => quest.repeatable)
-                .map((quest) => quest.id),
+        const catalog = new Map(
+            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
+                (quest) => [quest.id, quest],
+            ),
         );
         return state.rewards
-            .filter(
-                (reward) =>
-                    reward.questId == null ||
-                    !categoryById.has(reward.questId) ||
-                    (!repeatable.has(reward.questId) &&
-                        rewardByKey.get(reward.questId) !== reward),
-            )
-            .map((reward) => {
-                const card: QuestCard = {
+            .filter((reward) => {
+                const quest = catalog.get(cardIdOf(reward.questId) ?? "");
+                return (
+                    !quest ||
+                    (!quest.repeatable && rewardByKey.get(quest.id) !== reward)
+                );
+            })
+            .map((reward) => ({
+                card: {
                     key: reward.id,
-                    rewardId: reward.id,
+                    rewardIds: [reward.id],
                     title: reward.title,
-                    description: reward.questId?.startsWith(
-                        "github:reported_issue:",
-                    )
-                        ? "Your issue was closed by a merged pull request."
-                        : undefined,
                     url: reward.url ?? undefined,
                     issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
                     reward: reward.pollenAmount,
                     balanceBucket: reward.balanceBucket,
                     status: reward.claimedAt ? "claimed" : "claimable",
                     earnedAmount: reward.pollenAmount,
-                };
-                // A repeat reward joins its quest's lane; a merged PR, a
-                // fixed issue or a grant joins Contribute.
-                const category: CategoryKey =
-                    (reward.questId && categoryById.get(reward.questId)) ||
-                    "contribute";
-                return { card, category };
-            });
+                } satisfies QuestCard,
+                category:
+                    catalog.get(reward.questId ?? "")?.category ??
+                    ("contribute" as CategoryKey),
+            }));
     }, [state.catalog, state.rewards, rewardByKey]);
 
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
@@ -977,23 +1169,43 @@ function QuestOverviewContent({
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
             grow: [],
-            build: [],
             contribute: [],
             community: [],
-            easteregg: [],
         };
 
-        for (const quest of state.catalog) {
-            // A repeatable quest keeps all its rewards on its card, which
-            // offers the next one to claim and otherwise stays open.
+        for (const quest of [
+            ...state.catalog,
+            OTHER_CONTRIBUTIONS,
+            // Codes need an account, so the logged-out preview has no field.
+            ...(previewAll ? [] : [EVENT_CODES]),
+        ]) {
+            // A repeatable quest keeps all its rewards on its card. One Claim
+            // takes every waiting reward of the next one's balance. With none
+            // waiting, it stays open while the quest is on the board, so it
+            // reads as something to do again; off the board it rests.
             const repeats = quest.repeatable
-                ? state.rewards.filter((reward) => reward.questId === quest.id)
+                ? state.rewards.filter(
+                      (reward) => cardIdOf(reward.questId) === quest.id,
+                  )
                 : undefined;
+            const next = repeats?.find((repeat) => !repeat.claimedAt);
+            const waiting = repeats?.filter(
+                (repeat) =>
+                    !repeat.claimedAt &&
+                    repeat.balanceBucket === next?.balanceBucket,
+            );
             const reward = repeats
-                ? repeats.find((repeat) => !repeat.claimedAt)
+                ? (next ??
+                  (quest.state === "available" ? undefined : repeats[0]))
                 : rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
+            // A GitHub quest you won sits in the pull request stack instead.
+            if (
+                quest.id.startsWith("github:issue:") &&
+                rewardByKey.has(quest.id)
+            )
+                continue;
             // Visibility rule:
             //  - "coming_soon" always shows (at the bottom of its lane, in the
             //    receded style with a clock + "Coming soon" — see QuestRow).
@@ -1009,7 +1221,9 @@ function QuestOverviewContent({
 
             byCat[quest.category].push({
                 key: quest.id,
-                rewardId: reward?.id,
+                rewardIds: waiting?.length
+                    ? waiting.map((repeat) => repeat.id)
+                    : reward && [reward.id],
                 title: quest.title,
                 description: quest.description || undefined,
                 url: quest.url || undefined,
@@ -1018,7 +1232,13 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
-                earnedAmount: reward?.pollenAmount ?? undefined,
+                // A repeatable card shows what one Claim pays now.
+                earnedAmount: repeats
+                    ? waiting?.reduce(
+                          (sum, repeat) => sum + repeat.pollenAmount,
+                          0,
+                      )
+                    : reward?.pollenAmount,
                 progress:
                     reward && quest.goal
                         ? {
@@ -1046,6 +1266,7 @@ function QuestOverviewContent({
     }, [
         state.catalog,
         state.progress,
+        state.rewards,
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
@@ -1073,7 +1294,8 @@ function QuestOverviewContent({
                 .flat()
                 .filter(
                     (card) =>
-                        card.status === "open" &&
+                        // A repeatable quest can always be earned again.
+                        (card.status === "open" || card.repeats) &&
                         !card.comingSoon &&
                         (card.reward ?? 0) > 0,
                 )
@@ -1179,8 +1401,12 @@ function QuestOverviewContent({
                                 const live = tab.cards.filter(
                                     (card) => !card.comingSoon,
                                 );
+                                // A repeatable quest stays open, but counts
+                                // once it paid.
                                 const done = live.filter(
-                                    (card) => card.status !== "open",
+                                    (card) =>
+                                        card.status !== "open" ||
+                                        card.repeats?.length,
                                 ).length;
                                 return (
                                     <TabButton
@@ -1210,15 +1436,26 @@ function QuestOverviewContent({
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    claiming={state.claimingRewardIds.includes(
-                                        card.rewardId ?? "",
-                                    )}
-                                    onClaim={handleClaimReward}
+                                    claiming={
+                                        card.rewardIds?.some((id) =>
+                                            state.claimingRewardIds.includes(
+                                                id,
+                                            ),
+                                        ) ?? false
+                                    }
+                                    onClaim={handleClaimRewards}
                                 >
                                     {card.key === "invite_friends" &&
                                         !state.anonymous && (
                                             <InviteLink githubId={githubId} />
                                         )}
+                                    {card.key === EVENT_CODES.id && (
+                                        <RedeemCode
+                                            onRedeemed={() =>
+                                                void refreshRewards()
+                                            }
+                                        />
+                                    )}
                                 </QuestRow>
                             ))}
                         </div>
@@ -1265,11 +1502,6 @@ function QuestOverviewContent({
                     <CardLoading className="h-49.5 sm:h-50.5" />
                 )}
             </Section>
-
-            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
-            {!state.anonymous && !state.loading && (
-                <RedeemCode onRedeemed={() => void refreshRewards()} />
-            )}
         </>
     );
 }

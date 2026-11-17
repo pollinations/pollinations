@@ -7,8 +7,11 @@ Ready means all of these:
 2. Purpose: it is clear what the app does.
 3. Pollinations use: the live app or its code calls Pollinations, for example gen.pollinations.ai, image.pollinations.ai, text.pollinations.ai or @pollinations/sdk. The submitter's claim alone is not evidence.
 4. Credit: with a repository, its README shows the "Made with pollinations.ai" badge (badge-made-with.svg) linked to pollinations.ai, visible and not inside a code block or comment. Without a repository, the app page shows that badge or a visible link to pollinations.ai.
+5. Sign-in: visitors sign in with Pollinations (Pollinations Connect or the /authorize link), or the app calls Pollinations with its own server-side key. Asking visitors to paste an sk_ key, or to create their own pk_ App Key, is not ready: ask for Pollinations sign-in (https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+6. Models: the models the app uses by default work for free users. Fetch https://gen.pollinations.ai/v1/models and check that each default model id (or alias) exists and has "paid_only": false; name any that don't.
 
 How to look (your shell runs only curl, git clone and grep, and denies anything else; also read and search with the Read, Grep and Glob tools):
+- Run one command per Bash call. Never chain commands with ;, &&, ||, | or $( ); a chained call is denied. Save output with -o and search it in the next call.
 - Fetch pages with curl -sL --max-time 20 -o <file>, then Grep the file. Read only the parts Grep points to; bundles and big files are too large to read whole. When the page shows no Pollinations call, follow the scripts and modules it loads.
 - Clone a GitHub repository with git clone --depth 1 into ./repo and search it. For a tree/<branch>/<folder> URL, look in that folder.
 - Never install, build or run anything from the submission.

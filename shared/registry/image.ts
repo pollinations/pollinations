@@ -342,6 +342,50 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
+    "microsoft/mai-image-2.7": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure rates as listed by the Azure provider on OpenRouter and Vercel, checked 2026-11-17.
+        cost: {
+            promptTextTokens: perMillion(5),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(34),
+        },
+        title: "MAI Image 2.7",
+        description:
+            "Precise, controllable generation and editing with up to five references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
+    },
+    "microsoft/mai-image-2.7-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure rates as listed by the Azure provider on OpenRouter and Vercel, checked 2026-11-17.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(2.5),
+            completionImageTokens: perMillion(10),
+        },
+        title: "MAI Image 2.7 Flash",
+        description:
+            "Faster, lower-cost generation and editing with up to five references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
+    },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "google",
@@ -1981,7 +2025,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and reference media at 480p or 720p",
+            "Four-second video with synchronized audio and reference media at 480p or 720p; reference-video edits pick their own length",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [

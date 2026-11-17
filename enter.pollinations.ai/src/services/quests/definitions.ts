@@ -3,20 +3,16 @@ import type { Bucket } from "@shared/billing/deduction.ts";
 export const QUEST_CATEGORIES = [
     "setup",
     "grow",
-    "build",
     "contribute",
     "community",
-    "easteregg",
 ] as const;
 
 /**
  * Lane a quest renders in:
  *   - "setup"      -> account setup and onboarding tasks
  *   - "grow"       -> product usage, billing, and app-growth tasks
- *   - "build"      -> reserved for future build milestones
  *   - "contribute" -> open-source issue bounties and contribution tasks
  *   - "community"  -> low-friction community actions around the project
- *   - "easteregg"  -> hidden special rewards shown only after earning
  */
 export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 

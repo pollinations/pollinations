@@ -44,6 +44,11 @@ export type MockGithubState = {
                 databaseId?: number | null;
             } | null;
         }>;
+        crossReferencedPullRequests?: Array<{
+            mergedAt: string | null;
+            willCloseTarget: boolean;
+            repository?: string;
+        }>;
     }>;
     mergedPullRequests: Array<{
         number: number;
@@ -247,6 +252,20 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                             baseRefName: pr.baseRefName ?? "main",
                             repository: {
                                 nameWithOwner: pr.repository ?? REPO,
+                            },
+                        }),
+                    ),
+                },
+                timelineItems: {
+                    nodes: (issue.crossReferencedPullRequests ?? []).map(
+                        (pullRequest) => ({
+                            willCloseTarget: pullRequest.willCloseTarget,
+                            source: {
+                                mergedAt: pullRequest.mergedAt,
+                                repository: {
+                                    nameWithOwner:
+                                        pullRequest.repository ?? REPO,
+                                },
                             },
                         }),
                     ),

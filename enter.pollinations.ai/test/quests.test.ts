@@ -2494,6 +2494,8 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
         { number: 9109, labels: [], mergedAt: afterLaunch },
         { number: 9110, labels: [], mergedAt: afterLaunch },
         { number: 9111, labels: [], mergedAt: afterLaunch },
+        { number: 9112, labels: [], mergedAt: null },
+        { number: 9113, labels: [], mergedAt: null },
     ];
     for (const issue of issues) {
         mocks.github.state.questIssues.push({
@@ -2517,6 +2519,15 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
                     author: { databaseId: 999999 },
                 },
             ],
+            crossReferencedPullRequests:
+                issue.number === 9112 || issue.number === 9113
+                    ? [
+                          {
+                              mergedAt: afterLaunch,
+                              willCloseTarget: issue.number === 9112,
+                          },
+                      ]
+                    : [],
         });
     }
 
@@ -2542,10 +2553,11 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
             `quest:github:reported_issue:9105:github:${user.githubId}`,
             `quest:github:reported_issue:9108:github:${user.githubId}`,
             `quest:github:reported_issue:9111:github:${user.githubId}`,
+            `quest:github:reported_issue:9112:github:${user.githubId}`,
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2561,7 +2573,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 10);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 });
 
 test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or before the report pay nothing", async ({

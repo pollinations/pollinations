@@ -235,6 +235,15 @@ type ReportedIssueNode = {
             repository: { nameWithOwner: string };
         }[];
     };
+    timelineItems: {
+        nodes: ({
+            willCloseTarget: boolean;
+            source: {
+                mergedAt: string | null;
+                repository: { nameWithOwner: string };
+            } | null;
+        } | null)[];
+    };
 };
 
 type SurveyIssueNode = {
@@ -324,6 +333,14 @@ query($query:String!,$after:String){
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
           nodes{ mergedAt repository{ nameWithOwner } }
+        }
+        timelineItems(first:100,itemTypes:[CROSS_REFERENCED_EVENT]){
+          nodes{
+            ... on CrossReferencedEvent{
+              willCloseTarget
+              source{ ... on PullRequest{ mergedAt repository{ nameWithOwner } } }
+            }
+          }
         }
       }
     }
@@ -589,8 +606,16 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         ) {
             continue;
         }
+        // A manual close can win the merge race and leave the direct closer
+        // list empty; keep GitHub's closing-keyword intent.
+        const closingPullRequests = [
+            ...issue.closedByPullRequestsReferences.nodes,
+            ...issue.timelineItems.nodes.flatMap((event) =>
+                event?.willCloseTarget && event.source ? [event.source] : [],
+            ),
+        ];
         // Only a merge into this repository after the issue opened fixed it.
-        const fixed = issue.closedByPullRequestsReferences.nodes.some(
+        const fixed = closingPullRequests.some(
             (pr) =>
                 pr.mergedAt !== null &&
                 pr.repository.nameWithOwner === REPO &&

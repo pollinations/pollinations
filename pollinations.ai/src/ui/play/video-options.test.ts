@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reproducibleApiUrl, videoOptions } from "./video-options";
+import { videoOptions } from "./video-options";
 
 describe("video controls", () => {
     it("retains the gateway-supported square aspect ratio for Kling text-to-video links", () => {
@@ -80,15 +80,5 @@ describe("video controls", () => {
         expect(videoOptions("bytedance/seedance-2.5", []).ratios).toContain(
             "21:9",
         );
-    });
-    it("preserves actual request inputs while replacing the credential for copying", () => {
-        const original = new URL(
-            "https://gen.pollinations.ai/video/a%20scene?seed=123&audio=false&reference_videos=https%3A%2F%2Fmedia.example%2Fclip.mp4&key=test-placeholder",
-        );
-        const copied = new URL(reproducibleApiUrl(original.toString()));
-        expect(copied.searchParams.get("key")).toBe("YOUR_API_KEY");
-        original.searchParams.delete("key");
-        copied.searchParams.delete("key");
-        expect(copied.toString()).toBe(original.toString());
     });
 });

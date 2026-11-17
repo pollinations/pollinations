@@ -66,9 +66,3 @@ export function videoOptions(id: string, capabilities: readonly string[]) {
             id === "minimax/minimax-h3-max",
     } as const;
 }
-
-export function reproducibleApiUrl(url: string) {
-    const request = new URL(url);
-    request.searchParams.set("key", "YOUR_API_KEY");
-    return request.toString();
-}

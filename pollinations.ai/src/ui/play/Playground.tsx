@@ -70,7 +70,7 @@ import {
     supportsAudioLength,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
-import { reproducibleApiUrl, videoOptions } from "./video-options";
+import { videoOptions } from "./video-options";
 
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -172,7 +172,6 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
-          requestUrl?: string;
       }
     | {
           type: "text";
@@ -205,17 +204,12 @@ const FILE_EXTENSIONS: Record<string, string> = {
 
 function mediaResult(
     type: "image" | "video" | "audio",
-    {
-        buffer,
-        contentType,
-        url,
-    }: { buffer: ArrayBuffer; contentType: string; url?: string },
+    { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
 ): PlaygroundResult {
     const mime = contentType.split(";")[0].trim();
     return {
         type,
         url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
-        requestUrl: url ? reproducibleApiUrl(url) : undefined,
         filename: `pollinations-playground.${FILE_EXTENSIONS[mime] ?? mime.split("/")[1]}`,
     };
 }
@@ -1827,17 +1821,7 @@ export function Playground() {
                         <BusyPlaceholder category={activeCategory} />
                     )}
                     {result && <ResultPanel result={result} />}
-                    {apiUrl && (
-                        <ApiUrlCard
-                            url={
-                                apiMethod === "GET" &&
-                                result?.type === activeCategory
-                                    ? (result.requestUrl ?? apiUrl)
-                                    : apiUrl
-                            }
-                            fields={apiFields}
-                        />
-                    )}
+                    {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
                 </div>
             </div>
         </div>

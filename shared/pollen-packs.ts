@@ -45,7 +45,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ packKey, amountUsd }) => ({
         packKey,
         amountUsd,
-        checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen`,
+        checkoutName: `🪷 $${formatPollenPackValue(amountUsd)} top-up`,
         checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`,
         checkoutImageUrl: CHECKOUT_IMAGE_URL,
         taxCode: POLLEN_TAX_CODE,
@@ -73,7 +73,7 @@ export const getPollenPackByAmount = (
         : undefined;
 
 export const describePollenPack = (pack: PollenPack): string =>
-    `$${pack.amountUsd} -> ${formatPollenPackValue(pack.amountUsd)} pollen`;
+    `Top up $${formatPollenPackValue(pack.amountUsd)}`;
 
 export const calculateServiceFeeCents = (packAmountCents: number): number => {
     if (!Number.isFinite(packAmountCents) || packAmountCents <= 0) {

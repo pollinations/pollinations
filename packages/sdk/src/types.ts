@@ -525,6 +525,8 @@ export interface AudioGenerateOptions extends RequestOptions {
 export interface AudioSpeechOptions extends AudioGenerateOptions {
     /** Public audio URL for models that support reference audio */
     referenceAudio?: string;
+    /** Public video URL to add sound effects to (`sonilo/sonilo-1.1-sfx`) */
+    referenceVideo?: string;
 }
 
 export interface AudioSpeechWithTimestampsOptions extends RequestOptions {

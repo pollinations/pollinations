@@ -1304,6 +1304,7 @@ export class Pollinations {
             duration: options.duration,
             seed: options.seed,
             reference_audio: options.referenceAudio,
+            reference_video: options.referenceVideo,
         };
 
         return fetchWithTimeout(

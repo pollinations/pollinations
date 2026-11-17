@@ -237,6 +237,65 @@ describe("Flare format cache", () => {
     }
 });
 
+describe("transparent background entrypoint", () => {
+    afterEach(teardownFetchMock);
+
+    routeTest(
+        "GET background=transparent preserves PNG alpha",
+        async ({ paidApiKey }) => {
+            // RGBA pixels include alpha 0, 128 and 255; byte equality proves preservation.
+            const alphaPng =
+                "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFUlEQVR4nGP4zwAE/xlA1P+G/0AAADlbCHlq5ubiAAAAAElFTkSuQmCC";
+            const requests: unknown[] = [];
+            const mocks = createFetchMock({
+                tinybird: createMockTinybird(),
+                upstream: {
+                    state: requests,
+                    handlerMap: {
+                        "myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com":
+                            async (request: Request) => {
+                                requests.push(await request.json());
+                                return successResponse(alphaPng);
+                            },
+                        "content-safety.test": async () =>
+                            Response.json({ categoriesAnalysis: [] }),
+                    },
+                    reset: () => {
+                        requests.length = 0;
+                    },
+                },
+            });
+            await mocks.enable("tinybird", "upstream");
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/image/transparent-png?model=openai/gpt-image-2.5-flare&background=transparent",
+                    {
+                        headers: { Authorization: `Bearer ${paidApiKey}` },
+                    },
+                ),
+                withInlineGenerationCoordinator(env),
+                ctx,
+            );
+            expect(
+                response.status,
+                response.ok ? "" : await response.clone().text(),
+            ).toBe(200);
+            expect(response.headers.get("content-type")).toBe("image/png");
+            expect(Buffer.from(await response.arrayBuffer())).toEqual(
+                Buffer.from(alphaPng, "base64"),
+            );
+            await waitOnExecutionContext(ctx);
+            expect(requests).toEqual([
+                expect.objectContaining({
+                    background: "transparent",
+                    output_format: "png",
+                }),
+            ]);
+        },
+    );
+});
+
 describe("openai/gpt-image-2 Azure routing", () => {
     it("round robins across all Azure endpoints", async () => {
         const urls: string[] = [];

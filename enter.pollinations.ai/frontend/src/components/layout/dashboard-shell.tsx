@@ -464,7 +464,19 @@ const NavRow: FC<{
                 <span className="sr-only"> claimable</span>
             </Chip>
         )}
-        {rowStatus?.[item.id]}
+        {/* A row's balance keeps its paid/Quest colours on the desk; on the
+            honey of the current row everything in it takes the row's dark
+            text, still told apart by its icon. */}
+        {rowStatus?.[item.id] && (
+            <span
+                className={cn(
+                    "ml-auto inline-flex items-center",
+                    active && "[&_*]:text-current!",
+                )}
+            >
+                {rowStatus[item.id]}
+            </span>
+        )}
     </NavItem>
 );
 
@@ -484,7 +496,7 @@ const DocsRow: FC = () => (
             }}
             data-theme="accent"
             aria-label="Copy all docs as text"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-fill-wash hover:text-theme-text-strong"
         >
             {(copied) => <CopyStateIcon copied={copied} className="h-4 w-4" />}
         </CopyButton>

@@ -452,6 +452,7 @@ describe("Dreamshaper API response delivery", () => {
                     }),
                 ]);
                 expect(after.packBalance).toBe(before.packBalance);
+                expect(await env.MEDIA.get(stored.cache.key)).toBeNull();
                 expect(
                     (await getRegisteredServers("sana"))[0].lastMs,
                 ).toBeUndefined();

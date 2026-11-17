@@ -1047,6 +1047,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1.2-ultra",
+        config: portkeyConfig["liquid/d1.2-ultra"],
+        useSystemOneApi: true,
+    },
+    {
         name: "inferenceport-ai/lightning-text-v2.1",
         config: portkeyConfig["inferenceport-lightning-text-v2.1"],
     },

@@ -155,7 +155,7 @@ const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
 // redeemed (promo:<event>) stacks on it. Page only, like the grants card.
 const EVENT_CODES: QuestCatalogItem = {
     id: "event_codes",
-    title: "Claim an event code",
+    title: "Event codes",
     description: "",
     category: "community",
     state: "available",

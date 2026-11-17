@@ -47,7 +47,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
         }
     }
 
-    // Sits inside the "Claim an event code" quest card; Claim credits it.
+    // Sits inside the "Event codes" quest card; Claim credits the code.
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                 }`}
             >
                 {error ??
-                    "Have a code from a Pollinations event or promotion? Claim it for free API credits."}
+                    "Have a code from a Pollinations event or promotion? Enter it for free API credits."}
             </p>
         </form>
     );

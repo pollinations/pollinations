@@ -519,15 +519,19 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         100,
         Math.max(0, (progress.current / progress.target) * 100),
     );
+    // Amounts read as dollars; users and days keep their unit.
     const formatValue = (value: number) =>
-        progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
+        progress.unit === "pollen"
+            ? `$${formatPollen(value)}`
+            : formatCount(value);
+    const unit = progress.unit === "pollen" ? null : ` ${progress.unit}`;
 
     // Nothing done yet: just the count, an empty bar reads as decoration.
     if (progress.current <= 0)
         return (
             <span className="text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {unit}
             </span>
         );
     return (
@@ -546,8 +550,8 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 />
             </div>
             <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {unit}
             </span>
         </div>
     );
@@ -1126,40 +1130,6 @@ function QuestOverviewContent({
         }
         return map;
     }, [state.rewards]);
-    // A reward with no card of its own (a quest that left the catalog) gets
-    // its own row in Contribute.
-    const rewardCards = useMemo(() => {
-        const catalog = new Map(
-            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
-                (quest) => [quest.id, quest],
-            ),
-        );
-        return state.rewards
-            .filter((reward) => {
-                const quest = catalog.get(cardIdOf(reward.questId) ?? "");
-                return (
-                    !quest ||
-                    (!quest.repeatable && rewardByKey.get(quest.id) !== reward)
-                );
-            })
-            .map((reward) => ({
-                card: {
-                    key: reward.id,
-                    rewardIds: [reward.id],
-                    title: reward.title,
-                    url: reward.url ?? undefined,
-                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                    reward: reward.pollenAmount,
-                    balanceBucket: reward.balanceBucket,
-                    status: reward.claimedAt ? "claimed" : "claimable",
-                    earnedAmount: reward.pollenAmount,
-                } satisfies QuestCard,
-                category:
-                    catalog.get(reward.questId ?? "")?.category ??
-                    ("contribute" as CategoryKey),
-            }));
-    }, [state.catalog, state.rewards, rewardByKey]);
-
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
     // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
@@ -1254,9 +1224,31 @@ function QuestOverviewContent({
             });
         }
 
-        // Rewards beyond a quest's own card are more rows in their lane.
-        for (const { card, category } of rewardCards) {
-            byCat[category].push(card);
+        // A reward with no card of its own (a quest that left the catalog)
+        // is a row of its quest's lane, else of Contribute.
+        const catalog = new Map(
+            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
+                (quest) => [quest.id, quest],
+            ),
+        );
+        for (const reward of state.rewards) {
+            const quest = catalog.get(cardIdOf(reward.questId) ?? "");
+            if (
+                quest?.repeatable ||
+                rewardByKey.get(quest?.id ?? "") === reward
+            )
+                continue;
+            byCat[quest?.category ?? "contribute"].push({
+                key: reward.id,
+                rewardIds: [reward.id],
+                title: reward.title,
+                url: reward.url ?? undefined,
+                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                reward: reward.pollenAmount,
+                balanceBucket: reward.balanceBucket,
+                status: reward.claimedAt ? "claimed" : "claimable",
+                earnedAmount: reward.pollenAmount,
+            });
         }
 
         // Order per lane by lifecycle rank only: a claim moves its own row and
@@ -1272,7 +1264,6 @@ function QuestOverviewContent({
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
-        rewardCards,
     ]);
 
     // Logged-out totals show what the public catalog offers, not an owned balance.

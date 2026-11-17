@@ -154,7 +154,7 @@ export const modelStatsRoutes = new Hono<Env>().get(
         description: [
             "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",
             "",
-            "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers. Private community models are never listed.",
+            "`avg_cost_usd` is the median cost in US dollars of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers. Private community models are never listed.",
             "",
             "Refreshed hourly.",
         ].join("\n"),

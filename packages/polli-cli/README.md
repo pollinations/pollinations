@@ -113,7 +113,7 @@ polli keys revoke <id>
 `--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ```bash
-polli usage                  # pollen balance
+polli usage                  # balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day

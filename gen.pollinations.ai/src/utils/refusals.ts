@@ -62,7 +62,7 @@ export async function requireFunds(
         });
         throw new PaymentRequiredError(
             "QUEST_POLLEN_RESTRICTED",
-            `We couldn't verify your account, so Quest pollen is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            `We couldn't verify your account, so your Quest balance is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
             fixUrl,
             true,
         );
@@ -73,12 +73,12 @@ export async function requireFunds(
             id: apiKey?.id,
             ref: "agent_quest_pollen_only",
         });
-        const allowPaid = `allow paid Pollen for this key at ${fixUrl}`;
+        const allowPaid = `allow the paid balance for this key at ${fixUrl}`;
         throw new PaymentRequiredError(
             "QUEST_POLLEN_ONLY",
             paidOnly
-                ? `This model needs paid Pollen, but this API key only spends Quest Pollen. To use it, ${allowPaid}.`
-                : `Not enough Quest Pollen. ${charge}, but you have ${usd(balance.tierBalance)} of Quest Pollen, and this API key only spends Quest Pollen. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
+                ? `This model needs the paid balance, but this API key only spends the Quest balance. To use it, ${allowPaid}.`
+                : `Not enough Quest balance. ${charge}, but you have ${usd(balance.tierBalance)} of Quest balance, and this API key only spends the Quest balance. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
             fixUrl,
             paidOnly,
         );
@@ -90,7 +90,7 @@ export async function requireFunds(
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
         paidOnly
-            ? `This model requires Paid Pollen, so Quest Pollen can't cover it. ${charge}, but your available paid balance is ${usd(available)}. Top up at ${fixUrl}.`
+            ? `This model requires the paid balance, so the Quest balance can't cover it. ${charge}, but your available paid balance is ${usd(available)}. Top up at ${fixUrl}.`
             : `Insufficient balance. ${charge}, but your available balance is ${usd(available)}. Top up at ${fixUrl}.`,
         fixUrl,
         paidOnly,

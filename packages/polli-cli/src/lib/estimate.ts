@@ -146,7 +146,7 @@ export async function printEstimate(modelName: string, req: MediaRequest) {
     }
     printResult({
         model: model?.name,
-        estimate: total === null ? "unknown" : `${round(total)} pollen`,
+        estimate: total === null ? "unknown" : `$${round(total)}`,
         breakdown:
             lines
                 .map(

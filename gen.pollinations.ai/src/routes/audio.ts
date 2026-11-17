@@ -4265,6 +4265,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             message: "The file field must contain a non-empty audio file",
         });
     }
+    if (file.size > 50 * 1024 * 1024) {
+        throw new UpstreamError(413 as ContentfulStatusCode, {
+            message: "Transcription audio must be 50 MB or smaller.",
+        });
+    }
     if (speakersExpected !== undefined && responseFormat !== "diarized_json") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "speakers_expected requires response_format=diarized_json",

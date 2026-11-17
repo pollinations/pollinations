@@ -54,6 +54,7 @@ import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
     apiKeyBudgetReservation,
     generationAccess,
+    requireGenerationAccess,
 } from "@/utils/generation-access.ts";
 import {
     callCommunitySpeechEndpoint,
@@ -78,6 +79,7 @@ import {
     type NormalizedWord,
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
+import { generateZonosSpeech } from "./zonos-speech.ts";
 
 export const CreateSpeechRequestSchema = z
     .object({
@@ -3804,6 +3806,16 @@ async function dispatchAudioGeneration(
                     apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
+        case "zyphra/zonos3-mini":
+            return withSafetyHeaders(
+                c,
+                await generateZonosSpeech(
+                    c.env.ZONOS3_VPC,
+                    text,
+                    voice,
+                    responseFormat,
+                ),
+            );
         case "fish-audio/s2.1-pro":
             return withSafetyHeaders(
                 c,
@@ -4046,6 +4058,9 @@ async function generateAudioFromSpeechRequest(
 
 export const speechAudioCache = every(
     createMiddleware<Env>(async (c, next) => {
+        if (c.var.model.resolved === "zyphra/zonos3-mini") {
+            await requireGenerationAccess(c.var, c.env);
+        }
         if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
             // The GET route also answers HEAD, so the query supplies the format.
             const responseFormat =

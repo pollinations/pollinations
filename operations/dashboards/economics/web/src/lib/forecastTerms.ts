@@ -4,6 +4,7 @@ import type {
     PrivateForecastRule,
     ScheduledForecastAmount,
 } from "../types";
+import { canonicalCategory } from "./categories";
 
 export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 
@@ -245,28 +246,28 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "seraphyn|compute": { method: "one_off", paymentTiming: null },
     "stability|compute": { method: "one_off", paymentTiming: "prepaid" },
 
-    // Development
-    "anthropic|development": {
+    // Development tools, grouped under Operations
+    "anthropic|operations": {
         method: "fixed",
         paymentTiming: "direct",
     },
-    "github|development": { method: "last", paymentTiming: "direct" },
+    "github|operations": { method: "last", paymentTiming: "direct" },
     // Actions and Packages are covered by GitHub discounts. Enterprise seats
-    // remain Development; new cash-funded infrastructure must be reviewed.
+    // remain Operations; new cash-funded infrastructure must be reviewed.
     "github|infrastructure": { method: "funded", paymentTiming: null },
-    "openai|development": {
+    "openai|operations": {
         method: "fixed",
         paymentTiming: "direct",
     },
-    "typeless|development": {
+    "typeless|operations": {
         method: "one_off",
         paymentTiming: "direct",
     },
-    "windsurf|development": {
+    "windsurf|operations": {
         method: "one_off",
         paymentTiming: "direct",
     },
-    "wispr|development": { method: "one_off", paymentTiming: "direct" },
+    "wispr|operations": { method: "one_off", paymentTiming: "direct" },
 
     // Operations
     "buffer|operations": { method: "last", paymentTiming: "direct" },
@@ -335,7 +336,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 
 function key(vendor: string, category: string): string {
     // Callers supply canonical vendors or synthetic lines; parsePrivateConfig normalizes saved keys.
-    return `${vendor.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
+    return `${vendor.trim().toLowerCase()}|${canonicalCategory(category)}`;
 }
 
 function privateRule(

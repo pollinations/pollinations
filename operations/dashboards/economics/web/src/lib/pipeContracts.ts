@@ -2,6 +2,7 @@ import type {
     EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
 } from "../types";
+import { canonicalCategory } from "./categories";
 import { hasArchivedEvidence } from "./documents";
 import { canonicalProvider } from "./providerRegistry";
 
@@ -263,7 +264,7 @@ export function parsePrivateConfig(
         if (!vendor.trim() || !category?.trim() || extra !== undefined) {
             throw new Error(`Invalid forecast rule key: ${line}`);
         }
-        const key = `${canonicalProvider(vendor)}|${category.trim().toLowerCase()}`;
+        const key = `${canonicalProvider(vendor)}|${canonicalCategory(category)}`;
         if (Object.hasOwn(forecastRules, key)) {
             throw new Error(`Duplicate forecast rule for ${key}`);
         }

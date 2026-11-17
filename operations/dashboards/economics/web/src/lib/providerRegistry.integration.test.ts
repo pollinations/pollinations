@@ -200,7 +200,7 @@ describe("provider registry", () => {
             "infrastructure",
         );
         expect(ledgerCategory({ vendor: "github", type: "subscription" })).toBe(
-            "development",
+            "operations",
         );
         expect(
             ledgerCategory({

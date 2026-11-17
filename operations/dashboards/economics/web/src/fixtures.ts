@@ -10,7 +10,7 @@ import type {
 
 export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
     forecastRules: {
-        "openai|development": {
+        "openai|operations": {
             fixedAmounts: [{ amount: -90, currency: "USD" }],
         },
     },

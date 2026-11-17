@@ -112,7 +112,7 @@ const PRIVATE_RULES: Record<string, PrivateForecastRule> = {
         fixedAmounts: [{ amount: -80, currency: "EUR" }],
         activeThrough: "2026-12",
     },
-    "openai|development": {
+    "openai|operations": {
         fixedAmounts: [{ amount: -90, currency: "USD" }],
     },
     "replacement-accountant|admin": {
@@ -408,7 +408,7 @@ describe("buildRunway", () => {
                 fixedAmounts: [{ amount: -400, currency: "EUR" }],
                 activeFrom: "2026-10",
             },
-            "openai|development": {
+            "openai|operations": {
                 fixedAmounts: [{ amount: -160, currency: "USD" }],
                 activeFrom: "2026-09",
             },
@@ -435,7 +435,7 @@ describe("buildRunway", () => {
         expect(
             updated.rows.find(
                 (row) =>
-                    row.vendor === "openai" && row.category === "development",
+                    row.vendor === "openai" && row.category === "operations",
             )?.values["2026-09:forecast"],
         ).toBe(-160);
         for (const month of ["2026-06", "2026-07", "2026-08"]) {
@@ -972,7 +972,7 @@ describe("buildRunway", () => {
     it("derives fixed subscriptions from reviewed rules, not forecast rows", () => {
         const result = buildRunway([opening()], NOW, [], PRIVATE_RULES);
         const openai = result.rows.find(
-            (row) => row.vendor === "openai" && row.category === "development",
+            (row) => row.vendor === "openai" && row.category === "operations",
         );
 
         expect(openai?.values["2026-08:forecast"]).toBe(-90);
@@ -1034,7 +1034,7 @@ describe("buildRunway", () => {
             NOW,
         );
         const github = result.rows.find(
-            (row) => row.vendor === "github" && row.category === "development",
+            (row) => row.vendor === "github" && row.category === "operations",
         );
 
         expect(github?.values["2026-09:forecast"]).toBe(-200);
@@ -1067,7 +1067,7 @@ describe("buildRunway", () => {
             NOW,
         );
         const github = result.rows.find(
-            (row) => row.vendor === "github" && row.category === "development",
+            (row) => row.vendor === "github" && row.category === "operations",
         );
 
         expect(github?.values["2026-09:forecast"]).toBe(-189);
@@ -1102,7 +1102,7 @@ describe("buildRunway", () => {
             NOW,
         );
         const github = result.rows.find(
-            (row) => row.vendor === "github" && row.category === "development",
+            (row) => row.vendor === "github" && row.category === "operations",
         );
 
         expect(github?.values["2026-09:forecast"]).toBeCloseTo(
@@ -1393,7 +1393,7 @@ describe("buildRunway", () => {
         expect(row?.creditValues?.["2026-09:forecast"]).toBeCloseTo(-310);
         expect(
             result.rows.find(
-                (r) => r.vendor === "openai" && r.category === "development",
+                (r) => r.vendor === "openai" && r.category === "operations",
             )?.values["2026-08:forecast"],
         ).toBe(-90);
         expect(result.projectedMonthEndCashUsd).toBeCloseTo(
@@ -2221,7 +2221,7 @@ describe("ledger-based P&L categories", () => {
             }),
         ]);
         const github = result.rows.find(
-            (row) => row.category === "development" && row.vendor === "github",
+            (row) => row.category === "operations" && row.vendor === "github",
         );
         // Development is still bank-based, so a ledger row is not a P&L line yet.
         expect(github).toBeUndefined();

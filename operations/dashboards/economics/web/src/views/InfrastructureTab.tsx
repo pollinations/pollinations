@@ -157,8 +157,8 @@ export function InfrastructureTab({
             {kind === "infrastructure" && (
                 <p className="text-sm text-theme-text-soft">
                     The same Infrastructure category as Runway, including tools
-                    and sandboxes. Development and Operations are separate
-                    expenses.
+                    and sandboxes. Business and development tools belong to
+                    Operations.
                 </p>
             )}
             <TableScroller>

@@ -86,3 +86,42 @@ it("exports all reporting months and aggregate values without source detail", ()
         });
     }
 });
+
+it("combines historical development and operations in every report without changing expenses", () => {
+    const bank = (category: string, amount: number) => ({
+        entry_id: category,
+        kind: "transaction" as const,
+        source: "wise",
+        date: "2026-10-12",
+        vendor: `example-${category}`,
+        category,
+        amount,
+        currency: "USD",
+        description: "Subscription",
+        evidence: "",
+        recorded_at: "2026-10-12",
+    });
+    const data: Data = {
+        opTransactions: [bank("development", -40), bank("operations", -30)],
+    };
+    const now = new Date("2026-11-16T12:00:00Z");
+    const report = dashboardExport(data, now);
+    expect(
+        report.runway.categories.filter((row) => row.category === "operations"),
+    ).toHaveLength(1);
+    expect(
+        report.runway.categories.find((row) => row.category === "operations")
+            ?.values["2026-10:actual"],
+    ).toBe(-70);
+    expect(
+        report.runway.columns.find((column) => column.id === "2026-10:actual")
+            ?.totalExpensesUsd,
+    ).toBe(-70);
+    expect(
+        report.trends.company.find((row) => row.month === "2026-10"),
+    ).toMatchObject({ operations: 70, paidCost: 70 });
+    expect(JSON.stringify(report)).not.toContain('"development"');
+    expect(dashboardSectionExport(data, "runway", now)).toMatchObject({
+        runway: report.runway,
+    });
+});

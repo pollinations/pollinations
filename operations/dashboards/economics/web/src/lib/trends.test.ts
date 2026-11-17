@@ -201,7 +201,7 @@ describe("monthly sales-based trends", () => {
             compute: 500,
             infrastructure: 150,
             revenue_share: null,
-            development: null,
+            operations: null,
             payroll: null,
             paidCost: 250,
             credits: 400,
@@ -211,11 +211,10 @@ describe("monthly sales-based trends", () => {
         });
         expect(company).toMatchObject({
             revenue_share: 25,
-            development: 40,
             payroll: 400,
             compute: 500,
             infrastructure: 150,
-            operations: 30,
+            operations: 70,
             office: 60,
             admin: 70,
             paidCost: 875,

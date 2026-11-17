@@ -1953,6 +1953,13 @@ export function Playground() {
                         {/* One line stays reserved, so switching models moves nothing. */}
                         <Text size="xs" tone="muted" className="min-h-5">
                             {statsLine}
+                            {statsLine.startsWith("Average") && (
+                                <InfoTip
+                                    label="About this cost"
+                                    tapEnabled
+                                    content="From paid requests over the last 7 days. Yours depends on your settings."
+                                />
+                            )}
                         </Text>
                     </Surface>
 

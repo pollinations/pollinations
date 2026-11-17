@@ -20,17 +20,18 @@ function formatDuration(ms: number): string {
     return rest ? `${minutes} ${plural(rest, "second")}` : minutes;
 }
 
-/** "Usually about $0.42, 1 minute 40 seconds", or "" when nothing is measured. */
+/** "Average cost per request: $0.42 · about 1 minute 40 seconds", the cost or time alone, or "". */
 export function runStatsLine(stat: ModelRunStat | undefined): string {
-    const parts = [
+    const cost =
         stat?.avg_cost_usd && stat.avg_cost_usd > 0
-            ? formatCost(stat.avg_cost_usd)
-            : "",
+            ? `Average cost per request: ${formatCost(stat.avg_cost_usd)}`
+            : "";
+    const time =
         stat?.avg_response_ms && stat.avg_response_ms > 0
             ? formatDuration(stat.avg_response_ms)
-            : "",
-    ].filter(Boolean);
-    return parts.length ? `Usually about ${parts.join(", ")}` : "";
+            : "";
+    if (cost && time) return `${cost} · about ${time}`;
+    return cost || (time && `About ${time}`);
 }
 
 export type RunRecord = { model: string; timestamp: string; cost_usd: number };

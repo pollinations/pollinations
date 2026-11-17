@@ -41,7 +41,7 @@ export async function budgetHint(
             ? "Balance too low."
             : "Check your balance and API key budget.",
         "Balance: https://enter.pollinations.ai/pollen",
-        "Earn Quest balance: https://enter.pollinations.ai/quests",
+        "Complete Quests to add to your balance: https://enter.pollinations.ai/quests",
         "Top up: https://enter.pollinations.ai/pollen#buy-pollen",
         ...(code === "INSUFFICIENT_BALANCE"
             ? []

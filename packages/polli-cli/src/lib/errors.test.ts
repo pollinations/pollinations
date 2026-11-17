@@ -32,7 +32,7 @@ describe("budgetHint", () => {
         expect(hint).toContain("Top up: https://enter.pollinations.ai/pollen");
         expect(hint).toContain("Balance: https://enter.pollinations.ai/pollen");
         expect(hint).toContain(
-            "Earn Quest balance: https://enter.pollinations.ai/quests",
+            "Complete Quests to add to your balance: https://enter.pollinations.ai/quests",
         );
         expect(hint).toContain("Account balance: $0.00");
         expect(hint).not.toContain("Manage key budget:");

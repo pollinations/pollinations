@@ -89,6 +89,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "product_lifecycle",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -770,4 +771,93 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("product_lifecycle returns releases newest first, one release, or a clear miss", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        return Response.json({
+            schema_version: "1.2.1",
+            result: {
+                name: "nodejs",
+                label: "Node.js",
+                category: "framework",
+                links: {
+                    html: "https://endoflife.date/nodejs",
+                    releasePolicy:
+                        "https://nodejs.org/en/about/previous-releases",
+                },
+                releases: [
+                    {
+                        name: "26",
+                        isLts: true,
+                        isEol: false,
+                        eolFrom: "2029-04-30",
+                        isMaintained: true,
+                        latest: { name: "26.13.1", date: "2026-11-11" },
+                        custom: null,
+                    },
+                    {
+                        name: "20",
+                        isLts: true,
+                        isEol: true,
+                        eolFrom: "2026-04-30",
+                        isMaintained: true,
+                        latest: { name: "20.20.2", date: "2026-03-24" },
+                        custom: null,
+                    },
+                ],
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const all = await call(client, "product_lifecycle", { product: "NodeJS" });
+    assert.equal(all.label, "Node.js");
+    assert.equal(all.link, "https://endoflife.date/nodejs");
+    assert.deepEqual(
+        all.releases.map((x) => x.name),
+        ["26", "20"],
+    );
+    assert.equal("custom" in all.releases[0], false);
+    const one = await call(client, "product_lifecycle", {
+        product: "nodejs",
+        release: "20",
+    });
+    assert.deepEqual(one.releases, [
+        {
+            name: "20",
+            isLts: true,
+            isEol: true,
+            eolFrom: "2026-04-30",
+            isMaintained: true,
+            latest: { name: "20.20.2", date: "2026-03-24" },
+        },
+    ]);
+    const miss = await client.callTool({
+        name: "product_lifecycle",
+        arguments: { product: "nodejs", release: "99" },
+    });
+    assert.equal(miss.isError, true);
+    assert.match(miss.content[0].text, /No nodejs release named 99.*26, 20/);
+    assert.deepEqual(urls, [
+        "https://endoflife.date/api/v1/products/nodejs",
+        "https://endoflife.date/api/v1/products/nodejs",
+        "https://endoflife.date/api/v1/products/nodejs",
+    ]);
+    for (const args of [
+        { product: "../full" },
+        { product: "nodejs", release: "../x" },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "product_lifecycle",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+        );
+    assert.equal(urls.length, 3);
 });

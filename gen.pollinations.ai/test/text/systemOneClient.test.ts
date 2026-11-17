@@ -402,6 +402,44 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("routes Liquid d1.2 through InferencePort SystemOne", async () => {
+        const config = findModelByName("liquid/d1.2")?.config();
+        expect(config).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.inferenceport.ai/v1/systemone",
+            model: "d1.2",
+        });
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(
+                    "https://api.inferenceport.ai/v1/systemone",
+                );
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer test-key",
+                );
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "d1.2",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "d1.2",
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 0 },
+                });
+            });
+        const result = await callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig: { ...config, authKey: "test-key" } },
+        );
+        expect(result.usage).toMatchObject({
+            prompt_tokens: 95,
+            completion_tokens: 0,
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("routes liquid/d1 to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

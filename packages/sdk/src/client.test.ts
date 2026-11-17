@@ -153,7 +153,6 @@ describe("Convenience helpers", () => {
                 presencePenalty: -0.25,
                 seed: -1,
                 json,
-                private: true,
             };
 
             await expect(generateText("hello", options)).resolves.toBe(
@@ -181,7 +180,6 @@ describe("Convenience helpers", () => {
                 frequency_penalty: 0.25,
                 presence_penalty: -0.25,
                 seed: -1,
-                private: true,
                 stream: false,
                 ...(json ? { response_format: { type: "json_object" } } : {}),
             };
@@ -1460,7 +1458,6 @@ describe("Pollinations simple text facade", () => {
                 presencePenalty: -0.25,
                 seed: -1,
                 json: true,
-                private: true,
             }),
         ).resolves.toBe("ok");
 
@@ -1476,7 +1473,6 @@ describe("Pollinations simple text facade", () => {
             frequency_penalty: 0.25,
             presence_penalty: -0.25,
             seed: -1,
-            private: true,
             stream: false,
             response_format: { type: "json_object" },
         });
@@ -1501,7 +1497,6 @@ describe("Pollinations simple text facade", () => {
         const chunks: string[] = [];
         for await (const chunk of client.textStream("hello", {
             json: true,
-            private: true,
         })) {
             chunks.push(chunk);
         }
@@ -1511,7 +1506,6 @@ describe("Pollinations simple text facade", () => {
         expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
             messages: [{ role: "user", content: "hello" }],
             stream: true,
-            private: true,
             response_format: { type: "json_object" },
         });
     });

@@ -677,7 +677,7 @@ async function uploadFiles(
 
 export function Playground() {
     const dimensionsLabelId = useId();
-    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
     const catalog = useModelCatalog({
         baseUrl: API_BASE_URL,
@@ -1761,6 +1761,11 @@ export function Playground() {
                     </Surface>
 
                     {error && <Alert intent="danger">{error}</Alert>}
+                    {authError && (
+                        <Alert intent="danger">
+                            Could not connect your account: {authError.message}
+                        </Alert>
+                    )}
 
                     {/* Not connected is not a broken state, so the button
                             does not sit there disabled under a 🚫 cursor with

@@ -842,12 +842,16 @@ function QuestOverviewContent({
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Claims, a redeemed code and the quest check reload the same data and
-    // can overlap; only the latest reload applies, the others return null.
+    // can overlap. A reload applies unless a newer one already has; one that
+    // fails applies nothing, so an older success still lands. Others: null.
     const reloadRef = useRef(0);
+    const appliedReloadRef = useRef(0);
     async function reloadQuestData(): Promise<QuestData | null> {
         const reload = ++reloadRef.current;
         const questData = await loadQuestData();
-        return reload === reloadRef.current ? questData : null;
+        if (reload < appliedReloadRef.current) return null;
+        appliedReloadRef.current = reload;
+        return questData;
     }
     // Logged-out visitors see a preview: every quest shown open (so all
     // descriptions render) and the off-board/unearned visibility filter

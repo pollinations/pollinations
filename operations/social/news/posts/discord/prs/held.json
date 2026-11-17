@@ -14,41 +14,6 @@
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
     },
-    "18202": {
-      "merge_sha": "30ae4da1d4954f2be2854c7b8e7dfb7ab09b42dc",
-      "merged_at": "2026-11-17T19:08:20Z",
-      "required": []
-    },
-    "18203": {
-      "merge_sha": "ddffe19558ab7794220a4ea91d25a9f4d92430b1",
-      "merged_at": "2026-11-17T12:04:26Z",
-      "required": []
-    },
-    "19584": {
-      "merge_sha": "65d934f50c4d9be4406699d668b58dd9ea423057",
-      "merged_at": "2026-11-17T19:07:13Z",
-      "required": []
-    },
-    "19711": {
-      "merge_sha": "8fd48101e8f8b7de37d04b8eb416635696bfe4a9",
-      "merged_at": "2026-11-17T16:46:33Z",
-      "required": []
-    },
-    "19778": {
-      "merge_sha": "aca5490521312a9874277cab19aa91c6ffa0cfbd",
-      "merged_at": "2026-11-17T19:32:30Z",
-      "required": []
-    },
-    "19819": {
-      "merge_sha": "4d6aab68cddc55069663690cda8207334bb548e9",
-      "merged_at": "2026-11-17T16:46:33Z",
-      "required": []
-    },
-    "19844": {
-      "merge_sha": "e013337f29155e9b0dc62d798305a56128ac8595",
-      "merged_at": "2026-11-17T16:46:50Z",
-      "required": []
-    },
     "19855": {
       "merge_sha": "a2c4cdb8e12336d3b22ff47f1a0b155dd2821481",
       "merged_at": "2026-11-17T10:01:20Z",
@@ -84,11 +49,6 @@
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
-    "19939": {
-      "merge_sha": "ea52652097131cf5600cca100d378b809404468f",
-      "merged_at": "2026-11-17T12:22:31Z",
-      "required": []
-    },
     "19944": {
       "merge_sha": "2b390944ada8212c587617fbafffba4bc3379abc",
       "merged_at": "2026-11-17T12:57:42Z",
@@ -109,16 +69,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
-    },
-    "19968": {
-      "merge_sha": "5fc0306d858f544209d0b4475c4599b893bd3181",
-      "merged_at": "2026-11-17T14:30:27Z",
-      "required": []
-    },
-    "19972": {
-      "merge_sha": "95a49d12e154b21126157734d0382fdc47300c4f",
-      "merged_at": "2026-11-17T15:56:47Z",
-      "required": []
     },
     "19973": {
       "merge_sha": "549feee95bb70c4a17593e0990214070d2ead02d",

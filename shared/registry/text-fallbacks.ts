@@ -425,15 +425,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-10-18").getTime(),
+        // Fireworks standard serverless rates (2026-10-18).
+        "deepseek/deepseek-v4.1-flash-1017:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            addedDate: new Date("2026-11-16").getTime(),
             cost: {
-                // DeepInfra current 51% promotion (2026-10-24), no announced end.
-                promptTextTokens: perMillion(0.2) * 0.49,
-                promptCachedTokens: perMillion(0.006) * 0.49,
-                completionTextTokens: perMillion(0.6) * 0.49,
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },

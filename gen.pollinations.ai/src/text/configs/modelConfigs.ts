@@ -848,12 +848,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             // Reasons only when asked; keep the model's reasoning default.
             defaultOptions: { reasoning_effort: "high" },
         }),
-    "deepseek-ai/DeepSeek-V4.1-Flash-1017": () =>
-        createDeepInfraModelConfig({
-            model: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-            // Reasons only when asked; keep the model's reasoning default.
-            defaultOptions: { reasoning_effort: "high" },
-        }),
+    // Maintainer-created Foundry deployment on the Sweden resource, which
+    // rejects remote image URLs like the V4.1 Flash deployment.
+    "DeepSeek-V4.1-Flash-1017": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4.1-Flash-1017/chat/completions?api-version=2024-12-01-preview",
+            {
+                defaultOptions: { reasoning_effort: "high" },
+                requiresBase64ImageUrls: true,
+            },
+        ),
     "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",

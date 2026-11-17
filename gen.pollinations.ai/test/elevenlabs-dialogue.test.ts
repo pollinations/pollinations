@@ -87,7 +87,7 @@ describe("ElevenLabs Text to Dialogue", () => {
     });
 });
 
-workerTest.for(["GET", "JSON", "multipart"] as const)(
+workerTest.for(["GET", "HEAD", "JSON", "multipart"] as const)(
     "rejects FLAC dialogue before serving cached PCM (%s)",
     async (encoding, { paidApiKey }) => {
         const fields = {
@@ -98,7 +98,7 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
             safe: "false",
         };
         const url = new URL(
-            encoding === "GET"
+            encoding === "GET" || encoding === "HEAD"
                 ? `/audio/${encodeURIComponent(fields.input)}?model=dialogue&response_format=flac&safe=false`
                 : "/v1/audio/speech",
             "https://gen.pollinations.ai",
@@ -106,7 +106,7 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         const cacheUrl = new URL(url);
         const headers = new Headers({ Authorization: `Bearer ${paidApiKey}` });
         let body: FormData | string | undefined;
-        if (encoding !== "GET") {
+        if (encoding !== "GET" && encoding !== "HEAD") {
             let cacheBody: string;
             if (encoding === "multipart") {
                 body = new FormData();
@@ -144,7 +144,12 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(url, {
-                method: encoding === "GET" ? "GET" : "POST",
+                method:
+                    encoding === "HEAD"
+                        ? "HEAD"
+                        : encoding === "GET"
+                          ? "GET"
+                          : "POST",
                 headers,
                 body,
             }),
@@ -153,11 +158,15 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         );
         expect(response.status).toBe(400);
         expect(response.headers.get("x-cache")).toBeNull();
-        await expect(response.json()).resolves.toMatchObject({
-            error: {
-                message: expect.stringContaining("flac is not supported"),
-            },
-        });
+        if (encoding === "HEAD") {
+            expect(await response.text()).toBe("");
+        } else {
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: expect.stringContaining("flac is not supported"),
+                },
+            });
+        }
         await waitOnExecutionContext(ctx);
     },
 );

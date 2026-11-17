@@ -114,6 +114,27 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "microsoft/microsoft-decision-1.1": {
+        // Same Azure backend; covers gateway failures, not Microsoft outages.
+        "microsoft/microsoft-decision-1.1:vercel": {
+            provider: "vercel",
+            priceMultiplier: 1,
+            // Vercel AI Gateway list price, the cheapest route.
+            cost: {
+                promptTextTokens: perMillion(0.042),
+                completionTextTokens: perMillion(0),
+            },
+        },
+        "microsoft/microsoft-decision-1.1:openrouter": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "anthropic/claude-opus-5": {
         // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
         "anthropic/claude-opus-5:anthropic": {
@@ -283,6 +304,12 @@ export const TEXT_FALLBACKS = {
     },
     "openai/gpt-6.1-sol": {
         "openai/gpt-6.1-sol:aws": { provider: "aws", priceMultiplier: 1 },
+    },
+    "openai/gpt-6.2-astra": {
+        "openai/gpt-6.2-astra:aws": { provider: "aws" },
+    },
+    "openai/gpt-6.2-sol": {
+        "openai/gpt-6.2-sol:aws": { provider: "aws" },
     },
     "openai/gpt-6-luna": {
         "openai/gpt-6-luna:aws": { provider: "aws", priceMultiplier: 1 },

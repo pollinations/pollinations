@@ -24,12 +24,22 @@ export function supportsAudioLength(model: {
     id: string;
     allowedDurations: number[];
 }) {
-    // Lyria 3.5 takes approximate length in the prompt. Fixed-length models
-    // choose their only duration when the parameter is omitted.
+    // Lyria 3.5 takes approximate length in the prompt and Sonilo follows its
+    // video. Fixed-length models choose their only duration when omitted.
     return (
-        model.id !== "google/lyria-3.5" && model.allowedDurations.length !== 1
+        model.id !== "google/lyria-3.5" &&
+        model.id !== "sonilo/sonilo-1.1-sfx" &&
+        model.allowedDurations.length !== 1
     );
 }
+
+export const VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".mkv"];
+
+// Some browsers leave `type` empty (e.g. .mkv), so fall back to the extension.
+export const isVideo = (file: File) =>
+    file.type
+        ? file.type.startsWith("video/")
+        : VIDEO_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
 
 export function audioInputError(
     model: AudioModel,
@@ -46,9 +56,16 @@ export function audioInputError(
             : "Upload an audio file first.";
     if (generatesAudio && !prompt.trim())
         return "Add text or a description first.";
-    if (generatesAudio && file && !model.inputModalities.includes("audio")) {
-        return "This model does not accept reference audio.";
-    }
+    if (
+        generatesAudio &&
+        !file &&
+        model.inputModalities.includes("video") &&
+        !model.inputModalities.includes("audio")
+    )
+        return "Upload a video first.";
+    const kind = file && isVideo(file) ? "video" : "audio";
+    if (generatesAudio && file && !model.inputModalities.includes(kind))
+        return `This model does not accept reference ${kind}.`;
     return null;
 }
 
@@ -106,7 +123,8 @@ export async function generatePlaygroundAudio(
         model: model.id,
         voice,
         duration,
-        referenceAudio: upload?.url,
+        [file && isVideo(file) ? "referenceVideo" : "referenceAudio"]:
+            upload?.url,
     };
     const result =
         endpoint === "/audio/{text}"

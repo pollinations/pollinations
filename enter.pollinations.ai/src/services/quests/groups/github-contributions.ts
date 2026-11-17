@@ -103,6 +103,8 @@ const mergedPrQuest: QuestDefinition = {
     description: `Earn this for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
+    // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
+    repeatable: true,
     rewardAmount: PR_REWARD,
     balanceBucket: "tier",
 };
@@ -113,6 +115,8 @@ const reportedIssueQuest: QuestDefinition = {
     description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn this for each issue closed by a merged PR. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
+    // Each fixed issue is its own reward (github:reported_issue:N).
+    repeatable: true,
     rewardAmount: 2,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
@@ -538,12 +542,15 @@ async function cachedQuestIssues(
     return issues;
 }
 
+// The "[QUEST]" tag GitHub issue titles carry; the card doesn't repeat it.
+const QUEST_TAG = /\[(?:POLLEN-)?QUEST\]:?\s*/i;
+
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
         // Keep the issue-derived id stable; per-user reward keys add the
         // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
-        title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
+        title: issue.title.replace(QUEST_TAG, "").trim(),
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",

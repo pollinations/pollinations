@@ -8,7 +8,7 @@ import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
-import { streamSSE } from "../../lib/stream.js";
+import { streamSSE, throwIfFailed } from "../../lib/stream.js";
 
 interface Message {
     role: "system" | "user" | "assistant";
@@ -18,6 +18,7 @@ interface Message {
 interface ChatResponse {
     choices: Array<{
         message: { content: string | null; refusal?: string | null };
+        finish_reason?: string | null;
     }>;
     model: string;
     usage?: { total_tokens: number };
@@ -113,6 +114,7 @@ export function createChatCommand() {
 
                     if (isJson) {
                         const data = (await res.json()) as ChatResponse;
+                        throwIfFailed(data);
                         const message = data.choices[0]?.message;
                         const content =
                             message?.content || message?.refusal || "";

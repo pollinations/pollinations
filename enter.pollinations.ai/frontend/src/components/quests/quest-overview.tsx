@@ -1114,6 +1114,7 @@ function QuestOverviewContent({
     }, [
         state.catalog,
         state.progress,
+        state.rewards,
         rewardedCatalogIds,
         rewardByKey,
         previewAll,

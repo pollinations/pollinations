@@ -121,11 +121,21 @@ export async function callXaiVideoAPI(
     const completed = await pollXaiVideo(submitted.request_id, apiKey);
     const video = completed.video;
     if (video?.respect_moderation === false) {
+        // The provider rendered and billed this video before rejecting it, so
+        // the caller pays for the render, mirroring the fal fallback path.
+        const billedSeconds =
+            Number.isFinite(video.duration) && (video.duration as number) > 0
+                ? (video.duration as number)
+                : duration;
         throw UpstreamError.fromProvider(400, {
             message: "xAI filtered the generated video by moderation",
             errorCode: "content_policy_violation",
             responseBody: JSON.stringify(completed),
             requestUrl: new URL(submitUrl),
+            billedUsage: {
+                ...(startFrame ? { promptImageTokens: 1 } : {}),
+                completionVideoSeconds: billedSeconds,
+            },
         });
     }
     if (!video?.url) {

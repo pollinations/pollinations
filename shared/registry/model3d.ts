@@ -12,6 +12,23 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 const MODEL3D_BASE_SERVICES = {
+    "stability-ai/triposr": {
+        // The provider expects "tripoSR"; preserve the exact public alias.
+        aliases: ["tripoSR", "triposr"],
+        provider: "inferenceport",
+        publisher: "Stability AI",
+        category: "3d",
+        addedDate: new Date("2026-10-31").getTime(),
+        priceMultiplier: 1, // no markup on the $0.07 provider rate
+        paidOnly: true,
+        flatRate: true,
+        cost: { completionImageTokens: 0.07 },
+        title: "TripoSR",
+        description: "Single-image to textured 3D GLB reconstruction",
+        inputModalities: ["image"],
+        outputModalities: ["3d"],
+        maxReferenceImages: 1,
+    },
     "tripo3d/p2": {
         aliases: [],
         provider: "fal",

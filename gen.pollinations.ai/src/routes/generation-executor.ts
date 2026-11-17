@@ -170,6 +170,22 @@ generationExecutorRoutes.get(
     generateSimpleText,
 );
 
+// Promptless JSON image-to-3D requests use the same metering/coordination path.
+generationExecutorRoutes.post(
+    "/3d",
+    validator(
+        "query",
+        z.object({ key: z.string().optional(), safe: SafeSchema }).strict(),
+    ),
+    validator("json", Generate3dRequestBodySchema),
+    resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+    track("generate.image"),
+    prepareGenerationRequest,
+    model3dExecutionCache,
+    apiKeyBudgetReservation,
+    generateModel3d,
+);
+
 generationExecutorRoutes.post(
     "/3d/:prompt{[\\s\\S]+}",
     validator("param", z.object({ prompt: z.string().min(1) })),

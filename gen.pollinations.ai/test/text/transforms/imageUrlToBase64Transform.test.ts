@@ -222,6 +222,25 @@ describe("imageUrlToBase64Transform", () => {
         },
     );
 
+    it("inlines remote images on the reasoning Grok 4.20 deployment too", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(PNG_BYTES, {
+                headers: { "content-type": "image/png" },
+            }),
+        );
+        const { options } = resolveModelConfig([], {
+            model: "x-ai/grok-4.20",
+            reasoning_effort: "low",
+        });
+        const result = await transform(
+            imageMessage(["https://example.com/image.png"]),
+            options,
+        );
+        expect(JSON.stringify(result.messages)).toContain(
+            "data:image/png;base64,",
+        );
+    });
+
     it.each([
         "moonshotai/kimi-k2.6",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",

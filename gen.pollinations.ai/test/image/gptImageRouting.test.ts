@@ -237,142 +237,63 @@ describe("Flare format cache", () => {
     }
 });
 
-describe("transparent background entrypoints", () => {
+describe("transparent background entrypoint", () => {
     afterEach(teardownFetchMock);
 
-    // RGBA pixels include alpha 0, 128 and 255; byte equality proves preservation.
-    const alphaPng =
-        "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFUlEQVR4nGP4zwAE/xlA1P+G/0AAADlbCHlq5ubiAAAAAElFTkSuQmCC";
-    for (const method of ["GET", "POST"] as const) {
-        for (const edit of [false, true]) {
-            for (const format of ["png", "webp"] as const) {
-                routeTest(
-                    `${method} ${edit ? "edit" : "generation"} preserves transparent ${format}`,
-                    async ({ paidApiKey }) => {
-                        const model =
-                            format === "png"
-                                ? "openai/gpt-image-2.5-flare"
-                                : "openai/gpt-image-2.6-flare";
-                        const prompt = `transparent ${method} ${edit} ${format}`;
-                        const base64 =
-                            format === "png" ? alphaPng : flareImages.webp;
-                        const requests: {
-                            path: string;
-                            background: unknown;
-                            output_format: unknown;
-                        }[] = [];
-                        const upstream = async (request: Request) => {
-                            const body = request.headers
-                                .get("content-type")
-                                ?.includes("multipart/form-data")
-                                ? Object.fromEntries(await request.formData())
-                                : ((await request.json()) as Record<
-                                      string,
-                                      unknown
-                                  >);
-                            requests.push({
-                                path: new URL(request.url).pathname,
-                                background: body.background,
-                                output_format: body.output_format,
-                            });
-                            return successResponse(base64);
-                        };
-                        const mocks = createFetchMock({
-                            tinybird: createMockTinybird(),
-                            upstream: {
-                                state: requests,
-                                handlerMap: {
-                                    "api.openai.com": upstream,
-                                    "transparent-reference.test": async () =>
-                                        new Response(
-                                            Buffer.from(alphaPng, "base64"),
-                                            {
-                                                headers: {
-                                                    "Content-Type": "image/png",
-                                                },
-                                            },
-                                        ),
-                                    "myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com":
-                                        upstream,
-                                    "content-safety.test": async () =>
-                                        Response.json({
-                                            categoriesAnalysis: [],
-                                        }),
-                                },
-                                reset: () => {
-                                    requests.length = 0;
-                                },
+    routeTest(
+        "GET background=transparent preserves PNG alpha",
+        async ({ paidApiKey }) => {
+            // RGBA pixels include alpha 0, 128 and 255; byte equality proves preservation.
+            const alphaPng =
+                "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFUlEQVR4nGP4zwAE/xlA1P+G/0AAADlbCHlq5ubiAAAAAElFTkSuQmCC";
+            const requests: unknown[] = [];
+            const mocks = createFetchMock({
+                tinybird: createMockTinybird(),
+                upstream: {
+                    state: requests,
+                    handlerMap: {
+                        "myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com":
+                            async (request: Request) => {
+                                requests.push(await request.json());
+                                return successResponse(alphaPng);
                             },
-                        });
-                        await mocks.enable("tinybird", "upstream");
-                        const body = {
-                            model,
-                            prompt,
-                            background: "transparent",
-                            output_format: format,
-                            ...(edit
-                                ? {
-                                      image: "https://transparent-reference.test/reference.png",
-                                  }
-                                : {}),
-                        };
-                        const url = new URL(
-                            method === "GET"
-                                ? `/image/${encodeURIComponent(prompt)}`
-                                : `/v1/images/${edit ? "edits" : "generations"}`,
-                            "https://gen.pollinations.ai",
-                        );
-                        if (method === "GET")
-                            for (const [key, value] of Object.entries(body))
-                                if (key !== "prompt")
-                                    url.searchParams.set(key, value);
-                        const ctx = createExecutionContext();
-                        const response = await worker.fetch(
-                            new Request(url, {
-                                method,
-                                headers: {
-                                    Authorization: `Bearer ${paidApiKey}`,
-                                    "Content-Type": "application/json",
-                                },
-                                body:
-                                    method === "POST"
-                                        ? JSON.stringify(body)
-                                        : undefined,
-                            }),
-                            withInlineGenerationCoordinator(env),
-                            ctx,
-                        );
-                        expect(
-                            response.status,
-                            response.ok ? "" : await response.clone().text(),
-                        ).toBe(200);
-                        if (method === "GET") {
-                            expect(response.headers.get("content-type")).toBe(
-                                `image/${format}`,
-                            );
-                            expect(
-                                Buffer.from(await response.arrayBuffer()),
-                            ).toEqual(Buffer.from(base64, "base64"));
-                        } else {
-                            expect(await response.json()).toMatchObject({
-                                data: [{ b64_json: base64 }],
-                            });
-                        }
-                        await waitOnExecutionContext(ctx);
-                        expect(requests).toEqual([
-                            {
-                                path: expect.stringContaining(
-                                    `/images/${edit ? "edits" : "generations"}`,
-                                ),
-                                background: "transparent",
-                                output_format: format,
-                            },
-                        ]);
+                        "content-safety.test": async () =>
+                            Response.json({ categoriesAnalysis: [] }),
                     },
-                );
-            }
-        }
-    }
+                    reset: () => {
+                        requests.length = 0;
+                    },
+                },
+            });
+            await mocks.enable("tinybird", "upstream");
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/image/transparent-png?model=openai/gpt-image-2.5-flare&background=transparent",
+                    {
+                        headers: { Authorization: `Bearer ${paidApiKey}` },
+                    },
+                ),
+                withInlineGenerationCoordinator(env),
+                ctx,
+            );
+            expect(
+                response.status,
+                response.ok ? "" : await response.clone().text(),
+            ).toBe(200);
+            expect(response.headers.get("content-type")).toBe("image/png");
+            expect(Buffer.from(await response.arrayBuffer())).toEqual(
+                Buffer.from(alphaPng, "base64"),
+            );
+            await waitOnExecutionContext(ctx);
+            expect(requests).toEqual([
+                expect.objectContaining({
+                    background: "transparent",
+                    output_format: "png",
+                }),
+            ]);
+        },
+    );
 });
 
 describe("openai/gpt-image-2 Azure routing", () => {

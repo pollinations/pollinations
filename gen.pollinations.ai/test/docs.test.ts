@@ -117,6 +117,27 @@ describe("docs routes", () => {
         );
     });
 
+    it("keeps dark as the default while exposing the theme toggle", async () => {
+        // The reference styles itself from Scalar's theme variables, so light
+        // mode needs no extra CSS; forcing dark hid the toggle entirely.
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        const html = await response.text();
+        expect(html).toMatch(/"hideDarkModeToggle":\s*false/);
+        expect(html).not.toContain("forceDarkModeState");
+        // Dark stays the initial state.
+        expect(html).toMatch(/<html[^>]*class="[^"]*\bdark\b/);
+    });
+
     it("generates valid request examples from the checked-out Gen schema", async () => {
         // Enter and Media validate their own source schemas in their own suites.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

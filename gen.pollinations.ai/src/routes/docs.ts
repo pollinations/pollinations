@@ -1151,9 +1151,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
                 theme: "saturn",
+                // Dark stays the default brand look, but readers can switch:
+                // the reference styles itself from Scalar's theme variables,
+                // so light mode needs no extra CSS.
                 darkMode: true,
-                forceDarkModeState: "dark",
-                hideDarkModeToggle: true,
+                hideDarkModeToggle: false,
                 showDeveloperTools: "never",
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,

@@ -27,7 +27,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { checkBalance } from "@/utils/generation-access.ts";
 import {
     getDefinedRequestEstimate,
@@ -811,6 +811,15 @@ describe("BYOP markup", () => {
         // The listed rate is per megapixel (or a millionth of one), not per
         // request: it must not discard the median, and without a median the
         // estimate is one whole megapixel, never $0 or a millionth of it.
+        // No median: too few priced requests (0), or Tinybird is unreachable
+        // (nothing cached and the fetch fails).
+        const tinybirdDown = {
+            ...fakeStatsEnv(0),
+            KV: { get: async () => null, put: async () => undefined },
+        } as unknown as CloudflareBindings;
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("Tinybird unreachable"));
         for (const [model, median] of [
             ["black-forest-labs/flux-3-image-klein", 0.009],
             ["qwen/qwen-image-2.1", 0.02],
@@ -838,12 +847,18 @@ describe("BYOP markup", () => {
                 model: testModel(model),
                 log: fakeLog(),
             } as unknown as Parameters<typeof checkBalance>[0];
-            for (const stats of [median, 0]) {
+            for (const statsEnv of [
+                fakeStatsEnv(median, model),
+                fakeStatsEnv(0, model),
+                tinybirdDown,
+            ]) {
                 await expect(
-                    checkBalance(vars, fakeStatsEnv(stats, model)),
+                    checkBalance(vars, statsEnv),
                 ).rejects.toMatchObject({ status: 402 });
             }
         }
+        expect(fetchSpy).toHaveBeenCalledTimes(3);
+        fetchSpy.mockRestore();
     });
 
     it("retains legacy price estimates after a canonical rename", () => {

@@ -44,6 +44,7 @@ import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
+    pricingInputFromParams,
 } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import {
@@ -62,7 +63,9 @@ import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
-type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+export type RuntimeImageParams = Omit<ImageParams, "model"> & {
+    model: string;
+};
 
 const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
 const EDIT_DIMENSION_STEP = 16;
@@ -131,7 +134,7 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
     }
 }
 
-function parseImageParams(
+export function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
     model = c.var.model,
@@ -347,14 +350,7 @@ async function generateMediaWithFallback(
                         ? await resolveEditDimensionsForImage(parsed)
                         : parsed;
             }
-            c.var.track.setPricingInput({
-                resolution: params.resolution,
-                quality: params.quality,
-                hasImage: (params.image?.length ?? 0) > 0,
-                hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
-                maxImageDimension: Math.max(params.width, params.height),
-                megapixels: (params.width * params.height) / 1_000_000,
-            });
+            c.var.track.setPricingInput(pricingInputFromParams(params));
             if (attempt.communityEndpoint) {
                 const isVideo = attempt.communityEndpoint.modality === "video";
                 const generated = isVideo

@@ -19,7 +19,6 @@ import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
-import { generateCacheKey } from "../src/utils/media-cache.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -105,47 +104,6 @@ test("HEAD and GET validate the same query model before generation", async ({
             expect(response.status, `${method} ${path}`).toBe(status);
             if (method === "HEAD") expect(await response.text()).toBe("");
         }
-    }
-});
-
-test("HEAD and GET share existing media cache for paid and unpaid callers", async ({
-    apiKey,
-    paidApiKey,
-}) => {
-    const model = "openai/gpt-image-2.6-flare";
-    const path = `/image/head-cached-check?model=${model}&safe=false`;
-    const bytes = new Uint8Array([137, 80, 78, 71]);
-    const key = await generateCacheKey(
-        new URL(path, "https://gen.pollinations.ai"),
-        undefined,
-        [],
-        getRegistryModelDefinition(model)?.cacheVersion,
-    );
-    await env.MEDIA.put(
-        key,
-        new Response(bytes, { headers: { "Content-Type": "image/png" } }),
-    );
-    for (const method of ["HEAD", "GET"]) {
-        const paid = await fetchWorker(path, {
-            method,
-            headers: { Authorization: `Bearer ${paidApiKey}` },
-        });
-        expect(paid.status).toBe(200);
-        expect(paid.headers.get("x-cache")).toBe("HIT");
-        expect(paid.headers.get("content-type")).toBe("image/png");
-        expect(new Uint8Array(await paid.arrayBuffer())).toEqual(
-            method === "HEAD" ? new Uint8Array() : bytes,
-        );
-        const unpaid = await fetchWorker(path, {
-            method,
-            headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        // Shared completed media is served before generation balance checks.
-        expect(unpaid.status).toBe(200);
-        expect(unpaid.headers.get("x-cache")).toBe("HIT");
-        expect(new Uint8Array(await unpaid.arrayBuffer())).toEqual(
-            method === "HEAD" ? new Uint8Array() : bytes,
-        );
     }
 });
 

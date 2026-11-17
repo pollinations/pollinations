@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Where It Slips",
+    "url": "https://tomdacatto.github.io/pollinations-where-it-slips",
+    "description": "A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay with your own Pollen.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-where-it-slips",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19609",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3558761c-f61d-4eb5-8503-8ca73c436117"
+  },
+  {
     "emoji": "🎮",
     "name": "Idle Hands",
     "url": "https://tomdacatto.github.io/pollinations-idle-hands",

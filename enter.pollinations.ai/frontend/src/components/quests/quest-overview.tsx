@@ -841,8 +841,14 @@ function QuestOverviewContent({
     });
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
-    // Claims on several cards can overlap; only the latest refresh applies.
-    const claimRefreshRef = useRef(0);
+    // Claims, a redeemed code and the quest check reload the same data and
+    // can overlap; only the latest reload applies, the others return null.
+    const reloadRef = useRef(0);
+    async function reloadQuestData(): Promise<QuestData | null> {
+        const reload = ++reloadRef.current;
+        const questData = await loadQuestData();
+        return reload === reloadRef.current ? questData : null;
+    }
     // Logged-out visitors see a preview: every quest shown open (so all
     // descriptions render) and the off-board/unearned visibility filter
     // relaxed, since there is no per-user progress to gate on.
@@ -900,7 +906,7 @@ function QuestOverviewContent({
                 if (response.ok) {
                     const checkResult =
                         (await response.json()) as QuestCheckResult;
-                    const refreshed = await loadQuestData();
+                    const refreshed = await reloadQuestData();
                     if (cancelled) return;
                     setState((current) => ({
                         ...current,
@@ -951,11 +957,10 @@ function QuestOverviewContent({
                 void router.invalidate({
                     filter: (match) => match.routeId === "/_dashboard",
                 });
-                const refresh = ++claimRefreshRef.current;
-                const questData = await loadQuestData();
+                const questData = await reloadQuestData();
                 setState((current) => ({
                     ...current,
-                    ...(refresh === claimRefreshRef.current ? questData : {}),
+                    ...questData,
                     claimingRewardIds: current.claimingRewardIds.filter(
                         (id) => !rewardIds.includes(id),
                     ),
@@ -981,7 +986,9 @@ function QuestOverviewContent({
         void router.invalidate({
             filter: (match) => match.routeId === "/_dashboard",
         });
-        const questData = await loadQuestData();
+        const questData = await reloadQuestData();
+        // A newer reload is already on its way.
+        if (!questData) return;
         // Reload once so the check the outage skipped runs, as on a visit.
         if (!questData.anonymous && !autoCheckedRef.current) {
             onRecovered();

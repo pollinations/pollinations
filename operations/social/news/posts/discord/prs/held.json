@@ -47,11 +47,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "19969": {
-      "merge_sha": "59523965f59e3eb5ebd628240fef871e23a00a6b",
-      "merged_at": "2026-11-17T22:52:45Z",
-      "required": []
-    },
     "19970": {
       "merge_sha": "92cdfd07f68a26f99147dcd1481afa0ebea8fea1",
       "merged_at": "2026-11-17T22:54:51Z",
@@ -96,11 +91,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "19984": {
-      "merge_sha": "6f2a69193a24c41d6b933405fbb7e41da8722246",
-      "merged_at": "2026-11-17T22:54:51Z",
-      "required": []
     },
     "19985": {
       "merge_sha": "302c47b11a931fd5052b7f35b27247b278b96a3e",
@@ -147,11 +137,6 @@
         "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
-    "19999": {
-      "merge_sha": "a7aed04e2431d696e6c309327184c6525b1d86f2",
-      "merged_at": "2026-11-17T20:16:17Z",
-      "required": []
-    },
     "20000": {
       "merge_sha": "4a5182457312e06f00513584df8e9a08d7568f86",
       "merged_at": "2026-11-17T21:00:23Z",
@@ -174,41 +159,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "20005": {
-      "merge_sha": "9ba379d9b4606bd8c16da66483eb31a0d1e5cee8",
-      "merged_at": "2026-11-17T22:33:03Z",
-      "required": []
-    },
-    "20007": {
-      "merge_sha": "f7cd3fb41b34be3ec4b8ff2f9afda451b1d7c60d",
-      "merged_at": "2026-11-17T22:43:24Z",
-      "required": []
-    },
-    "20008": {
-      "merge_sha": "d07b2d4debba5422958c38ffe073c85ed1e40389",
-      "merged_at": "2026-11-17T22:49:51Z",
-      "required": []
-    },
-    "20009": {
-      "merge_sha": "c2d7f5abc19cf8281df5e71edd7e41c5041e38c3",
-      "merged_at": "2026-11-17T22:59:29Z",
-      "required": []
-    },
-    "20010": {
-      "merge_sha": "14de1cdd57922b53d9a0dd6036cf9b0b346886d8",
-      "merged_at": "2026-11-17T23:08:25Z",
-      "required": []
-    },
-    "20011": {
-      "merge_sha": "6a7bfc7332fd1057bc258b7680e3c2a6180ab711",
-      "merged_at": "2026-11-17T23:16:38Z",
-      "required": []
-    },
-    "20012": {
-      "merge_sha": "b8cdce9b91605ed24ba2a553ad728e2ac7c6b655",
-      "merged_at": "2026-11-17T23:24:33Z",
-      "required": []
     }
   },
   "production": "3ae335bbc2d501fe7f4c2d4b677b01c84afee29a",

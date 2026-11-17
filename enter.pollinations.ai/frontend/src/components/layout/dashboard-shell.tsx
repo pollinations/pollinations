@@ -457,9 +457,15 @@ const NavRow: FC<{
     >
         {item.label}
         {/* Quests waiting to be claimed: their count in the "New!" badge
-            style, right by the label. */}
+            green, right by the label, on the card colour so it reads on the
+            selected row too. */}
         {item.id === "quests" && claimableCount(questStatus) && (
-            <Chip intent="news" size="sm" title={questStatus ?? undefined}>
+            <Chip
+                intent="news"
+                size="sm"
+                title={questStatus ?? undefined}
+                className="!bg-surface-opaque"
+            >
                 {claimableCount(questStatus)}
                 <span className="sr-only"> claimable</span>
             </Chip>

@@ -351,7 +351,11 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
                 </Heading>
                 <Text size="sm">{item.text}</Text>
                 <div className="mt-auto pt-1">
-                    <ExternalLinkButton href={item.cta.href} size="sm">
+                    <ExternalLinkButton
+                        href={item.cta.href}
+                        size="sm"
+                        intent="neutral"
+                    >
                         {item.cta.label}
                     </ExternalLinkButton>
                 </div>

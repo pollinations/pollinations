@@ -235,6 +235,7 @@ function TemplatePicker({
                     trigger={(open) => (
                         <Button
                             type="button"
+                            intent="neutral"
                             aria-label="Choose sandbox template"
                             className="w-full min-w-0 self-stretch justify-between gap-2"
                         >

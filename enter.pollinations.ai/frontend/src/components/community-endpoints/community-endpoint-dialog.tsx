@@ -1018,6 +1018,7 @@ export function CommunityEndpointDialog({
                                             trigger={(open) => (
                                                 <Button
                                                     type="button"
+                                                    intent="neutral"
                                                     aria-label={`Fallback model ${index + 1}: ${selected || "None"}`}
                                                     className="w-full min-w-0 self-stretch justify-between gap-2"
                                                 >

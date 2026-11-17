@@ -287,7 +287,11 @@ export const SidebarBalance: FC<{
     <Chip
         intent="neutral"
         size="sm"
-        className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
+        // Paid is the honey orange, Quest the Quest green, as everywhere.
+        className={cn(
+            "ml-auto gap-1 bg-transparent tabular-nums",
+            kind === "paid" ? "text-paid-deep" : "text-tier-deep",
+        )}
     >
         <WalletKindIcon kind={kind} />
         {balance === undefined ? (

@@ -8,8 +8,9 @@
     --polli-color-paid-deep: oklch(0.5 0.14 calc(var(--polli-hue) - 20));
     --polli-color-tier-pale: oklch(0.95 0.05 152);
     --polli-color-tier-soft: oklch(0.74 0.135 152);
-    /* Grass green, not forest: alive on the pale mint and on cream (4.9:1). */
-    --polli-color-tier-deep: oklch(0.5 0.15 150);
+    /* Grass green, not forest: alive on the pale mint, 5.5:1 on cream and
+       4.7:1 on the grey dashboard rail, its darkest light surface. */
+    --polli-color-tier-deep: oklch(0.47 0.15 150);
 }
 
 /* Dark twin: deep chip, light text — keeps the paid/Quest identity while

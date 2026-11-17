@@ -3,6 +3,7 @@ import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
+import { showDone } from "../../lib/show-done.ts";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import { DEFAULT_LOCALHOST_REDIRECT } from "./publishable-key-settings.tsx";
@@ -54,6 +55,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         null,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDone, setIsDone] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +78,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     }),
                 ...(isPublishable && { earningsEnabled }),
             });
+            setIsDone(true);
+            await showDone();
             setCreatedKey(newKey);
         } catch (err) {
             setError(
@@ -107,6 +111,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }
 
         setCreatedKey(null);
+        setIsDone(false);
         setError(null);
         setName(generateFunName());
         setRedirectUris(simplified ? [DEFAULT_LOCALHOST_REDIRECT] : []);
@@ -148,6 +153,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 createdKey={createdKey?.key}
                 error={error}
                 isSubmitting={isSubmitting}
+                isDone={isDone}
                 showFields={isOpen}
                 onSubmit={handleSubmit}
                 onClose={() => setIsOpen(false)}

@@ -9,8 +9,9 @@ import {
     ClockIcon,
     CopyField,
     formatCount,
-    GitPullRequestIcon,
+    GitMergeIcon,
     InlineLink,
+    IssueClosedIcon,
     LoadingStatus,
     OutageNotice,
     ReceiptIcon,
@@ -456,43 +457,33 @@ function QuestMarker({
     );
 }
 
+// A merged PR or a fixed issue shows GitHub's own mark, and its number and
+// title without the "Merged PR" / "Reported issue" prefix the card repeats.
+const GITHUB_ICONS: Record<string, typeof GitMergeIcon> = {
+    merged_pr: GitMergeIcon,
+    reported_merged_issue: IssueClosedIcon,
+};
+
 /** One reward of a stacked card: what it was for, when, and what it paid. */
 function RewardLine({ reward }: { reward: QuestReward }) {
-    const cardId = cardIdOf(reward.questId);
-    const iconClass = "h-3.5 w-3.5 shrink-0 text-theme-text-muted";
-    const SourceIcon =
-        cardId === "merged_pr" ? GitPullRequestIcon : ReceiptIcon;
+    const GitHubMark = GITHUB_ICONS[cardIdOf(reward.questId) ?? ""];
+    const SourceIcon = GitHubMark ?? ReceiptIcon;
+    const title = GitHubMark
+        ? reward.title.replace(/^[^#]*(#\d+): /, "$1 ")
+        : reward.title;
     return (
         <li className="flex items-center gap-1.5">
-            {cardId === "reported_merged_issue" ? (
-                <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className={iconClass}
-                >
-                    <circle
-                        cx={12}
-                        cy={12}
-                        r={9}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                    />
-                    <circle cx={12} cy={12} r={1.5} fill="currentColor" />
-                </svg>
-            ) : (
-                <SourceIcon className={iconClass} />
-            )}
+            <SourceIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             <span
                 className="min-w-0 flex-1 truncate text-theme-text-muted"
-                title={reward.title}
+                title={title}
             >
                 {reward.url ? (
                     <InlineLink href={reward.url} tone="quiet" showIcon={false}>
-                        {reward.title}
+                        {title}
                     </InlineLink>
                 ) : (
-                    reward.title
+                    title
                 )}
             </span>
             <time

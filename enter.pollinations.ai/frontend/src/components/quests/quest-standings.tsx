@@ -3,7 +3,6 @@ import {
     InlineLink,
     SproutIcon,
     Surface,
-    TargetIcon,
     Text,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
@@ -207,65 +206,62 @@ export function QuestStandings({
         ),
     );
 
-    // The Progress card's Leaderboard tab: the race and the hint below it.
     return (
-        <>
-            <Surface variant="card" className="flex flex-col gap-2">
-                {/* The month's race: its name, the share of it gone, the days
+        <Surface variant="card" className="flex flex-col gap-2">
+            {/* The month's race: its name, the share of it gone, the days
                     left. */}
-                <div className="flex items-center gap-3 px-3 pb-2">
-                    <Text as="span" weight="semibold" tone="strong">
-                        {monthName(standings.month)}
-                    </Text>
+            <div className="flex items-center gap-3 px-3 pb-2">
+                <Text as="span" weight="semibold" tone="strong">
+                    {monthName(standings.month)}
+                </Text>
+                <span
+                    aria-hidden="true"
+                    className="h-1.5 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
+                >
                     <span
-                        aria-hidden="true"
-                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
-                    >
-                        <span
-                            className="block h-full rounded-full bg-tier-soft"
-                            style={{ width: `${elapsed}%` }}
-                        />
-                    </span>
-                    <span className="text-sm tabular-nums text-theme-text-muted">
-                        {days} {days === 1 ? "day" : "days"} left
-                    </span>
-                </div>
-                {standings.rows.length === 0 ? (
-                    <Text size="sm" tone="muted">
-                        Nobody has earned a quest this month yet.
-                    </Text>
-                ) : (
-                    <ol className="flex flex-col">
-                        {standings.rows.map((row, index) => {
-                            const previous = standings.rows[index - 1];
-                            const skipped =
-                                previous && row.rank > previous.rank + 1;
-                            return (
-                                <Fragment key={row.githubLogin}>
-                                    {skipped && (
-                                        <li
-                                            aria-hidden="true"
-                                            className="px-3 text-sm leading-none text-theme-text-muted"
-                                        >
-                                            ⋮
-                                        </li>
-                                    )}
-                                    <StandingRowView
-                                        row={row}
-                                        isYou={row.rank === youRank}
-                                    />
-                                </Fragment>
-                            );
-                        })}
-                    </ol>
-                )}
-            </Surface>
+                        className="block h-full rounded-full bg-tier-soft"
+                        style={{ width: `${elapsed}%` }}
+                    />
+                </span>
+                <span className="text-sm tabular-nums text-theme-text-muted">
+                    {days} {days === 1 ? "day" : "days"} left
+                </span>
+            </div>
+            {standings.rows.length === 0 ? (
+                <Text size="sm" tone="muted">
+                    Nobody has earned a quest this month yet.
+                </Text>
+            ) : (
+                <ol className="flex flex-col">
+                    {standings.rows.map((row, index) => {
+                        const previous = standings.rows[index - 1];
+                        const skipped =
+                            previous && row.rank > previous.rank + 1;
+                        return (
+                            <Fragment key={row.githubLogin}>
+                                {skipped && (
+                                    <li
+                                        aria-hidden="true"
+                                        className="px-3 text-sm leading-none text-theme-text-muted"
+                                    >
+                                        ⋮
+                                    </li>
+                                )}
+                                <StandingRowView
+                                    row={row}
+                                    isYou={row.rank === youRank}
+                                />
+                            </Fragment>
+                        );
+                    })}
+                </ol>
+            )}
+            {/* The next step in the race, quietly under the rows. */}
             {line && (
-                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                    <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{line}</span>
+                <p className="mt-1 border-t border-theme-text-strong/10 px-3 pt-3 text-sm leading-snug text-theme-text-muted">
+                    {line}
                 </p>
             )}
-        </>
+        </Surface>
     );
 }

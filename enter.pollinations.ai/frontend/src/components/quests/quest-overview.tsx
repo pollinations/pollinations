@@ -723,9 +723,6 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [progressView, setProgressView] = useState<"you" | "leaderboard">(
-        "you",
-    );
     const [openTab, setOpenTab] = useState<string | null>(null);
     const [expandedTabs, setExpandedTabs] = useState<string[]>([]);
     const [state, setState] = useState<FetchState>({
@@ -1094,9 +1091,9 @@ function QuestOverviewContent({
 
     return (
         <>
-            {/* Where you stand: your progress, or this month's race. The
-                per-user accounting is hidden for logged-out visitors, but the
-                footnotes stay so the preview still explains how quests work. */}
+            {/* Your quests in one card: where you stand at the top, then one
+                tab per kind of quest. The per-user accounting is hidden for
+                logged-out visitors, who see what the catalog offers. */}
             <Section
                 title={state.anonymous ? "Rewards you can earn" : "Progress"}
                 action={
@@ -1105,88 +1102,123 @@ function QuestOverviewContent({
                     )
                 }
             >
-                <div className="flex flex-wrap gap-1.5">
-                    {(
-                        [
-                            ["you", state.anonymous ? "Rewards" : "You"],
-                            ["leaderboard", "Leaderboard"],
-                        ] as const
-                    ).map(([value, label]) => (
-                        <TabButton
-                            key={value}
-                            active={progressView === value}
-                            onClick={() => setProgressView(value)}
-                            ariaLabel={label}
+                <SectionContent
+                    loading={state.loading}
+                    className="h-22 sm:h-28"
+                >
+                    {state.error && (
+                        <LoadError
+                            onRetry={refreshRewards}
+                            paths={[
+                                "/api/quests/catalog",
+                                "/account/quests/rewards",
+                            ]}
                         >
-                            {label}
-                        </TabButton>
-                    ))}
-                </div>
-                {progressView === "you" ? (
+                            {state.error}
+                        </LoadError>
+                    )}
+                    {progressUnavailable && <OutageNotice retrying />}
+                    {showSummary && !state.anonymous && (
+                        <QuestProgress
+                            cards={[
+                                ...Object.values(sections)
+                                    .flat()
+                                    .filter((card) => !card.comingSoon),
+                                ...bonusRewardCards,
+                            ]}
+                        />
+                    )}
+                    {/* The preview counts available quests and their possible rewards. */}
+                    {showSummary && state.anonymous && (
+                        <QuestPreview
+                            quests={previewTotals.count}
+                            pollen={previewTotals.pollen}
+                        />
+                    )}
+                </SectionContent>
+                {!state.loading && activeTab && (
                     <>
-                        <SectionContent
-                            loading={state.loading}
-                            className="h-22 sm:h-28"
-                        >
-                            {state.error && (
-                                <LoadError
-                                    onRetry={refreshRewards}
-                                    paths={[
-                                        "/api/quests/catalog",
-                                        "/account/quests/rewards",
-                                    ]}
-                                >
-                                    {state.error}
-                                </LoadError>
-                            )}
-                            {progressUnavailable && <OutageNotice retrying />}
-                            {showSummary && !state.anonymous && (
-                                <QuestProgress
-                                    cards={[
-                                        ...Object.values(sections)
-                                            .flat()
-                                            .filter((card) => !card.comingSoon),
-                                        ...bonusRewardCards,
-                                    ]}
-                                />
-                            )}
-                            {/* The preview counts available quests and their possible rewards. */}
-                            {showSummary && state.anonymous && (
-                                <QuestPreview
-                                    quests={previewTotals.count}
-                                    pollen={previewTotals.pollen}
-                                />
-                            )}
-                        </SectionContent>
-                        <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                            <p className="flex items-start gap-1.5">
-                                <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    Complete → claim → credited to your{" "}
-                                    <InlineLink href="/pollen">
-                                        wallet
-                                    </InlineLink>
-                                    .
-                                </span>
-                            </p>
-                            <p className="flex items-start gap-1.5">
-                                <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    Past activity may count. If you meet a
-                                    quest's requirements, you can claim its
-                                    reward.
-                                </span>
-                            </p>
-                            <p className="flex items-start gap-1.5">
-                                <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    Quests are in alpha. Availability and
-                                    rewards may change.
-                                </span>
-                            </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {tabs.map((tab) => {
+                                // Coming-soon rows count neither as done nor
+                                // in the total.
+                                const live = tab.cards.filter(
+                                    (card) => !card.comingSoon,
+                                );
+                                const done = live.filter(
+                                    (card) => card.status !== "open",
+                                ).length;
+                                return (
+                                    <TabButton
+                                        key={tab.key}
+                                        active={tab.key === activeTab.key}
+                                        onClick={() => setOpenTab(tab.key)}
+                                        ariaLabel={tab.label}
+                                        detail={
+                                            initialError || progressUnavailable
+                                                ? undefined
+                                                : `${done}/${live.length}`
+                                        }
+                                    >
+                                        {tab.label}
+                                    </TabButton>
+                                );
+                            })}
                         </div>
+                        {claimError && (
+                            <Alert intent="danger">{claimError}</Alert>
+                        )}
+                        {activeTab.key === "community" && !state.anonymous && (
+                            <InviteLink githubId={githubId} />
+                        )}
+                        <div className="flex flex-col gap-2">
+                            {(expanded
+                                ? activeTab.cards
+                                : activeTab.cards.slice(0, SECTION_PAGE_SIZE)
+                            ).map((card) => (
+                                <QuestRow
+                                    key={card.key}
+                                    card={card}
+                                    claiming={state.claimingRewardIds.includes(
+                                        card.rewardId ?? "",
+                                    )}
+                                    onClaim={handleClaimReward}
+                                />
+                            ))}
+                        </div>
+                        {!expanded &&
+                            activeTab.cards.length > SECTION_PAGE_SIZE && (
+                                <div
+                                    data-theme="neutral"
+                                    className="flex justify-center"
+                                >
+                                    <Button
+                                        size="sm"
+                                        onClick={() =>
+                                            setExpandedTabs((keys) => [
+                                                ...keys,
+                                                activeTab.key,
+                                            ])
+                                        }
+                                    >
+                                        Show more
+                                    </Button>
+                                </div>
+                            )}
                     </>
-                ) : state.standings ? (
+                )}
+                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                    <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Quests are in alpha. Availability and rewards may
+                        change.
+                    </span>
+                </p>
+            </Section>
+
+            {/* This month's race: about everyone, so a card of its own. */}
+            <Section title="Leaderboard">
+                {state.standings ? (
                     <QuestStandings
                         standings={state.standings}
                         openQuests={openQuests}
@@ -1198,89 +1230,6 @@ function QuestOverviewContent({
                 )}
             </Section>
 
-            {/* What you can do: one tab per kind of quest. */}
-            {(state.loading || activeTab) && (
-                <Section title="Quests">
-                    {state.loading || !activeTab ? (
-                        <CardLoading className="h-64" />
-                    ) : (
-                        <>
-                            <div className="flex flex-wrap gap-1.5">
-                                {tabs.map((tab) => {
-                                    // Coming-soon rows count neither as done
-                                    // nor in the total.
-                                    const live = tab.cards.filter(
-                                        (card) => !card.comingSoon,
-                                    );
-                                    const done = live.filter(
-                                        (card) => card.status !== "open",
-                                    ).length;
-                                    return (
-                                        <TabButton
-                                            key={tab.key}
-                                            active={tab.key === activeTab.key}
-                                            onClick={() => setOpenTab(tab.key)}
-                                            ariaLabel={tab.label}
-                                            detail={
-                                                initialError ||
-                                                progressUnavailable
-                                                    ? undefined
-                                                    : `${done}/${live.length}`
-                                            }
-                                        >
-                                            {tab.label}
-                                        </TabButton>
-                                    );
-                                })}
-                            </div>
-                            {claimError && (
-                                <Alert intent="danger">{claimError}</Alert>
-                            )}
-                            {activeTab.key === "community" &&
-                                !state.anonymous && (
-                                    <InviteLink githubId={githubId} />
-                                )}
-                            <div className="flex flex-col gap-2">
-                                {(expanded
-                                    ? activeTab.cards
-                                    : activeTab.cards.slice(
-                                          0,
-                                          SECTION_PAGE_SIZE,
-                                      )
-                                ).map((card) => (
-                                    <QuestRow
-                                        key={card.key}
-                                        card={card}
-                                        claiming={state.claimingRewardIds.includes(
-                                            card.rewardId ?? "",
-                                        )}
-                                        onClaim={handleClaimReward}
-                                    />
-                                ))}
-                            </div>
-                            {!expanded &&
-                                activeTab.cards.length > SECTION_PAGE_SIZE && (
-                                    <div
-                                        data-theme="neutral"
-                                        className="flex justify-center"
-                                    >
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                setExpandedTabs((keys) => [
-                                                    ...keys,
-                                                    activeTab.key,
-                                                ])
-                                            }
-                                        >
-                                            Show more
-                                        </Button>
-                                    </div>
-                                )}
-                        </>
-                    )}
-                </Section>
-            )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
             {!state.anonymous && !state.loading && (
                 <RedeemCode onRedeemed={() => void refreshRewards()} />

@@ -68,6 +68,7 @@ for (const modern of [false, true])
                 "compare_versions",
                 "to_fraction",
                 "convert_number_base",
+                "convert_case",
                 "check_digit",
                 "integer_math",
                 "diff_text",
@@ -944,6 +945,157 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("convert_case converts snake_case to all seven cases", async (t) => {
+    const client = await clientFor(t);
+    const expected = {
+        camel: "helloWorld",
+        pascal: "HelloWorld",
+        snake: "hello_world",
+        kebab: "hello-world",
+        title: "Hello World",
+        upper: "HELLO WORLD",
+        lower: "hello world",
+    };
+    for (const [to_case, result] of Object.entries(expected)) {
+        assert.deepEqual(
+            await call(client, "convert_case", {
+                text: "hello_world",
+                to_case,
+            }),
+            { result, to_case },
+        );
+    }
+});
+
+test("convert_case defaults to camelCase", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "convert_case", { text: "hello_world" }),
+        { result: "helloWorld", to_case: "camel" },
+    );
+});
+
+test("convert_case reads camelCase and acronyms as words", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "helloWorld",
+                to_case: "snake",
+            })
+        ).result,
+        "hello_world",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "HTTPRequest",
+                to_case: "snake",
+            })
+        ).result,
+        "http_request",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "XMLHttpRequest",
+                to_case: "camel",
+            })
+        ).result,
+        "xmlHttpRequest",
+    );
+    // A whole-word acronym lowercases as one word, not letter by letter.
+    assert.equal(
+        (await call(client, "convert_case", { text: "ABC", to_case: "pascal" }))
+            .result,
+        "Abc",
+    );
+});
+
+test("convert_case accepts mixed separators", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "hello-world_foo bar.baz",
+                to_case: "pascal",
+            })
+        ).result,
+        "HelloWorldFooBarBaz",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "my.module.Name",
+                to_case: "kebab",
+            })
+        ).result,
+        "my-module-name",
+    );
+});
+
+test("convert_case keeps numbers attached to their word", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "version2Final",
+                to_case: "snake",
+            })
+        ).result,
+        "version2_final",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "hello 123 world",
+                to_case: "camel",
+            })
+        ).result,
+        "hello123World",
+    );
+});
+
+test("convert_case is unchanged when the input is already in the target case", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "hello_world",
+                to_case: "snake",
+            })
+        ).result,
+        "hello_world",
+    );
+    assert.equal(
+        (
+            await call(client, "convert_case", {
+                text: "helloWorld",
+                to_case: "camel",
+            })
+        ).result,
+        "helloWorld",
+    );
+});
+
+test("convert_case rejects input with no words and unknown cases", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { text: "", to_case: "camel" },
+        { text: "   ", to_case: "camel" },
+        { text: "---", to_case: "camel" },
+        { text: "___", to_case: "camel" },
+        { text: "hello", to_case: "screaming" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "convert_case", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

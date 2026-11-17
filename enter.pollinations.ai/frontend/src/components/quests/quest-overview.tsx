@@ -430,7 +430,9 @@ export function QuestProgress({
 }) {
     const parts = progressOf(cards);
     const states = Object.keys(PROGRESS_STATES) as ProgressState[];
-    const scale = cards.length > MAX_CELLS ? MAX_CELLS / cards.length : 1;
+    // Count cells, not cards: a repeatable quest's card holds many rewards.
+    const total = states.reduce((sum, state) => sum + parts[state].count, 0);
+    const scale = total > MAX_CELLS ? MAX_CELLS / total : 1;
     const cells = states.flatMap((state) =>
         Array.from(
             // A state that has anything always shows at least one cell.

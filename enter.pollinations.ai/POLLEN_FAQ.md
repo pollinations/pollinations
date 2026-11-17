@@ -2,7 +2,7 @@
 
 ## 🪷 How does billing work?
 
-Pollinations is prepaid: you add credit to your balance, and each generation spends from it according to the selected model's price and usage. Prices and balances are shown in dollars. In the API and its docs, this credit is called pollen (**1 pollen ≈ $1**).
+Pollinations is prepaid: you add credit to your balance, and each generation spends from it according to the selected model's price and usage. Prices and balances are shown in dollars.
 
 Your balance stays inside your Pollinations wallet. It is not transferable between accounts or redeemable outside Pollinations.
 

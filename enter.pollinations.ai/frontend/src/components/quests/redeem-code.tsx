@@ -62,7 +62,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
     }
 
     return (
-        <Section title="Promo or event code">
+        <Section title="Promo · Event code">
             {credited !== null && (
                 <Alert intent="info">
                     {formatPollen(credited)} Quest pollen added to your wallet.

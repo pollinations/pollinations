@@ -6,7 +6,7 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 ## 🗝️ App Key
 
-An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
+An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. It is optional: without one, sign-in still works in every flow, the consent screen shows your redirect hostname, and traffic isn't attributed to your account (so no developer earnings).
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys?tab=app) → **App** → **Create**:
 
@@ -30,7 +30,7 @@ Use one `<polli-connect>` per page; additional elements show an error instead of
 ```html
 <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
 
-<polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
+<polli-connect budget="10" expiry="7"></polli-connect>
 
 <script>
   const connect = document.querySelector('polli-connect');
@@ -40,11 +40,11 @@ Use one `<polli-connect>` per page; additional elements show an error instead of
 </script>
 ```
 
-Add the page URL, without query or fragment, as a Redirect URI on your App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
+This works without an App Key. To show your app's name and earn from usage, add `app-key="pk_yourkey"` and add the page URL, without query or fragment, as a Redirect URI on that App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
 
 | Attribute | What it does |
 |-----------|-------------|
-| `app-key` | Your App Key (required) |
+| `app-key` | Your App Key (optional; without it the consent screen shows your hostname) |
 | `budget` | Pollen cap, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
@@ -121,8 +121,8 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing. Must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
+| `client_id` | Optional publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings; without it the consent screen shows the redirect hostname | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing. With a `client_id`, it must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
@@ -157,7 +157,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 # → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
 
-The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+Send the same `client_id` as in step 1, or leave it out if step 1 had none. The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
 Scopes: `profile` (name + email), `usage` (account balance + usage). `keys` (account admin: create/list/revoke keys) is only offered in the device flow and on redirects to `http://localhost` or `http://127.0.0.1`. The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
 

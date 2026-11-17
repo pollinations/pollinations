@@ -60,7 +60,7 @@ type TopUpPanelProps = {
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `$${formatPollenPackValue(amountUsd)} of pollen`
+        ? `$${formatPollenPackValue(amountUsd)}`
         : `From $${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)}`;
 // Every text each label can show, so it keeps the widest one's size.
 const REFILL_LABELS = [
@@ -68,9 +68,7 @@ const REFILL_LABELS = [
     ...POLLEN_PACKS.filter(isAutoTopUpPack).map((pack) => pack.amountUsd),
 ].map(refillLabel);
 const buyLabel = (amountUsd: number | undefined) =>
-    amountUsd
-        ? `Buy $${formatPollenPackValue(amountUsd)} of pollen`
-        : "Buy pollen";
+    amountUsd ? `Top up $${formatPollenPackValue(amountUsd)}` : "Top up";
 const BUY_LABELS = [
     undefined,
     ...POLLEN_PACKS.map((pack) => pack.amountUsd),
@@ -234,7 +232,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         <Switch
             ariaLabel={
                 billing?.autoTopUp.enabled
-                    ? `Auto top-up, $${status?.tab.label} of Pollen`
+                    ? `Auto top-up, $${status?.tab.label}`
                     : "Auto top-up"
             }
             size="md"

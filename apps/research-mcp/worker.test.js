@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "gbif_species",
             ].sort(),
         );
     });
@@ -644,4 +645,70 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("GBIF resolves synonyms to the accepted taxon with classification, English names and occurrences", async (t) => {
+    const urls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        urls.push(url.href);
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        if (url.pathname === "/v1/species/match")
+            return Response.json(
+                url.searchParams.get("name") === "Canis vulpes"
+                    ? {
+                          usageKey: 8141224,
+                          acceptedUsageKey: 5219243,
+                          scientificName: "Canis vulpes Linnaeus, 1758",
+                          rank: "SPECIES",
+                          status: "SYNONYM",
+                          confidence: 98,
+                          matchType: "EXACT",
+                          kingdom: "Animalia",
+                          family: "Canidae",
+                          genus: "Vulpes",
+                          species: "Vulpes vulpes",
+                      }
+                    : { matchType: "NONE", synonym: false },
+            );
+        if (url.pathname === "/v1/occurrence/count") return Response.json(1234);
+        return Response.json({
+            results: [
+                { vernacularName: "Red Fox", language: "eng" },
+                { vernacularName: "Red Fox", language: "eng" },
+                { vernacularName: "Rotfuchs", language: "deu" },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "gbif_species", { name: "Canis vulpes" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        key: 5219243,
+        matchedName: "Canis vulpes Linnaeus, 1758",
+        matchType: "EXACT",
+        confidence: 98,
+        status: "SYNONYM",
+        rank: "SPECIES",
+        classification: {
+            kingdom: "Animalia",
+            family: "Canidae",
+            genus: "Vulpes",
+            species: "Vulpes vulpes",
+        },
+        englishNames: ["Red Fox"],
+        occurrences: 1234,
+        url: "https://www.gbif.org/species/5219243",
+    });
+    assert.deepEqual(urls, [
+        "https://api.gbif.org/v1/species/match?name=Canis%20vulpes",
+        "https://api.gbif.org/v1/occurrence/count?taxonKey=5219243",
+        "https://api.gbif.org/v1/species/5219243/vernacularNames?limit=100",
+    ]);
+    const miss = await call(c, "gbif_species", { name: "red fox" });
+    assert.equal(miss.isError, true);
+    assert.match(
+        miss.content[0].text,
+        /No GBIF backbone match.*scientific name/,
+    );
 });

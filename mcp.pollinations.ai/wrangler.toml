@@ -1,0 +1,30 @@
+name = "pollinations-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-07-21"
+compatibility_flags = ["global_fetch_strictly_public"]
+account_id = "b6ec751c0862027ba269faf7029b2501"
+
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+
+[vars]
+ENTER_ORIGIN = "https://enter.pollinations.ai"
+GEN_ORIGIN = "https://gen.pollinations.ai"
+
+[dev]
+port = 8790
+
+[env.production]
+name = "pollinations-mcp-production"
+
+[[env.production.routes]]
+pattern = "mcp.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.production.kv_namespaces]]
+binding = "OAUTH_KV"
+
+[env.production.vars]
+ENTER_ORIGIN = "https://enter.pollinations.ai"
+GEN_ORIGIN = "https://gen.pollinations.ai"

@@ -816,28 +816,40 @@ describe("GenerationCoordinator", () => {
         expect(result).toEqual({ status: "cached" });
     });
 
-    it.each(["startAndWait", "submit"] as const)(
-        "keeps RPC responsive during a stalled %s cache check and rechecks a stale miss",
-        async (method) => {
+    it.each([
+        ["startAndWait", "text"],
+        ["submit", "text"],
+        ["startAndWait", "media"],
+        ["submit", "media"],
+    ] as const)(
+        "keeps RPC responsive during a stalled %s %s cache check and rechecks a stale miss",
+        async (method, storage) => {
             const stub = env.GENERATION_COORDINATOR.getByName(
                 `slow-cache-${crypto.randomUUID()}`,
             );
-            const job = testJob(`slow-cache-${crypto.randomUUID()}`);
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = { ...testJob(key), cache: { storage, key } };
             let lookupStarted = false;
             let release!: () => void;
             const blocked = new Promise<void>((resolve) => {
                 release = resolve;
             });
             await runInDurableObject(stub, (coordinator) => {
-                const bucket = Reflect.get(coordinator, "env")
-                    .TEXT_BUCKET as R2Bucket;
-                const head = bucket.head.bind(bucket);
-                vi.spyOn(bucket, "head").mockImplementationOnce(async (key) => {
-                    const result = await head(key);
-                    lookupStarted = true;
-                    await blocked;
-                    return result;
-                });
+                // Text caches use an R2 HEAD, media caches the storage RPC.
+                // RPC stubs cannot be spied on, so swap the binding once.
+                const coordinatorEnv = Reflect.get(coordinator, "env");
+                const binding = storage === "text" ? "TEXT_BUCKET" : "MEDIA";
+                const lookup = storage === "text" ? "head" : "has";
+                const original = coordinatorEnv[binding];
+                coordinatorEnv[binding] = {
+                    [lookup]: async (key: string) => {
+                        coordinatorEnv[binding] = original;
+                        const result = await original[lookup](key);
+                        lookupStarted = true;
+                        await blocked;
+                        return result;
+                    },
+                };
             });
 
             const pending = stub[method](job);
@@ -852,7 +864,16 @@ describe("GenerationCoordinator", () => {
                 ]);
                 // An earlier execution can finish while this caller's cache
                 // lookup is in flight. The alarm must recheck before executing.
-                await env.TEXT_BUCKET.put(job.cache.key, "completed-result");
+                if (storage === "text") {
+                    await env.TEXT_BUCKET.put(key, "completed-result");
+                } else {
+                    await env.MEDIA.put(
+                        key,
+                        new Response("completed-result", {
+                            headers: { "content-type": "image/png" },
+                        }),
+                    );
+                }
             } finally {
                 release();
             }
@@ -871,9 +892,11 @@ describe("GenerationCoordinator", () => {
                 expect(await state.storage.get("job")).toBeUndefined();
                 await state.storage.deleteAlarm();
             });
-            expect(
-                await (await env.TEXT_BUCKET.get(job.cache.key))?.text(),
-            ).toBe("completed-result");
+            const cached =
+                storage === "text"
+                    ? await env.TEXT_BUCKET.get(key)
+                    : await env.MEDIA.get(key);
+            expect(await cached?.text()).toBe("completed-result");
             expect(responsive).toBe(true);
         },
     );

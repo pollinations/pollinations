@@ -204,6 +204,36 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "microsoft-decision-1.1-azure": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "decision-1.1",
+    }),
+    "microsoft/microsoft-decision-1.1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "microsoft/decision-1.1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["azure"] } },
+            },
+        }),
+    "microsoft/microsoft-decision-1.1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "microsoft/microsoft-decision-1.1",
+        defaultOptions: {
+            provider: {
+                only: ["azure"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:

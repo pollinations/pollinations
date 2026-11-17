@@ -32,7 +32,7 @@ async function redeem(token: string, code: string) {
     });
 }
 
-test("an event code records a Quest reward to claim, once per account", async ({
+test("an event code credits Quest Pollen once per account", async ({
     accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
@@ -58,10 +58,11 @@ test("an event code records a Quest reward to claim, once per account", async ({
         ` ${code.replace("-", "").toLowerCase()} `,
     );
     expect(first.status).toBe(200);
-    const redeemed = (await first.json()) as { rewardId: string };
-    expect(redeemed).toMatchObject({
+    expect(await first.json()).toEqual({
         eventId: "talk-berlin-2026-10",
         pollenAmount: 3,
+        claimed: true,
+        newBalance: (before?.tierBalance ?? 0) + 3,
     });
 
     const second = await redeem(accountToken, code);
@@ -78,15 +79,13 @@ test("an event code records a Quest reward to claim, once per account", async ({
         pollenAmount: 3,
         balanceBucket: "tier",
     });
-    expect(ledger[0]?.id).toBe(redeemed.rewardId);
-    // Nothing is credited until the reward is claimed.
-    expect(ledger[0]?.claimedAt).toBeNull();
+    expect(ledger[0]?.claimedAt).not.toBeNull();
 
     const [after] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, before?.id ?? ""));
-    expect(after?.tierBalance).toBe(before?.tierBalance);
+    expect(after?.tierBalance).toBe((before?.tierBalance ?? 0) + 3);
 });
 
 test("unknown and expired codes are rejected the same way", async ({

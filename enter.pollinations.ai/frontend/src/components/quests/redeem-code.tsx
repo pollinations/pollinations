@@ -2,7 +2,7 @@ import { Button, Input } from "@pollinations/ui";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 
-const REDEEM_FAILED = "Couldn’t redeem the code. Please try again.";
+const REDEEM_FAILED = "Couldn’t claim the code. Please try again.";
 
 /** Promo and event codes arrive as a `?code=` link or are typed in. */
 export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
@@ -38,7 +38,6 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                 setError(body?.error?.message ?? REDEEM_FAILED);
                 return;
             }
-            // The reward now waits on this card, ready to claim.
             setCode("");
             onRedeemed();
         } catch {
@@ -48,7 +47,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
         }
     }
 
-    // Sits inside the "Redeem an event code" quest card.
+    // Sits inside the "Claim an event code" quest card; Claim credits it.
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -76,7 +75,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                     intent="commit"
                     disabled={redeeming || !code.trim()}
                 >
-                    {redeeming ? "Redeeming…" : "Redeem"}
+                    {redeeming ? "Claiming…" : "Claim"}
                 </Button>
             </div>
             {/* One line under the field: what codes are, or why one
@@ -89,7 +88,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                 }`}
             >
                 {error ??
-                    "Have a code from a Pollinations event or promotion? Redeem it for free API credits."}
+                    "Have a code from a Pollinations event or promotion? Claim it for free API credits."}
             </p>
         </form>
     );

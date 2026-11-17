@@ -499,19 +499,23 @@ const IMAGE_BASE_SERVICES = {
             {
                 "2k": {
                     label: "2K",
-                    description: "High-resolution output at OpenRouter's 2K rate.",
+                    description:
+                        "High-resolution output at OpenRouter's 2K rate.",
                 },
             },
             "1K",
-            [{
-                key: "resolution",
-                label: "Resolution",
-                values: { "": "1K", "2k": "2K" },
-            }],
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K" },
+                },
+            ],
         ),
         resolutions: ["1k", "2k"],
         title: "Seedream 5.5",
-        description: "ByteDance image generation and editing with up to ten references",
+        description:
+            "ByteDance image generation and editing with up to ten references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1792,7 +1796,8 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: { completionImageTokens: 0.007 },
         title: "Recraft V4.1 Flash V2",
-        description: "Fast text-to-image generation through InferencePort; no reference-image editing",
+        description:
+            "Fast text-to-image generation through InferencePort; no reference-image editing",
         inputModalities: ["text"],
         outputModalities: ["image"],
         maxReferenceImages: 0,

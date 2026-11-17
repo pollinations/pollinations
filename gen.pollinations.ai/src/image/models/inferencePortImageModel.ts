@@ -6,7 +6,6 @@ import type {
 } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
-import { resolveRecraftAspectRatio } from "./openRouterImageModel.ts";
 import { sanitizeString } from "../util.ts";
 import {
     analyzeImageSafety,
@@ -14,6 +13,7 @@ import {
 } from "../utils/azureContentSafety.ts";
 import { logGptImageError } from "../utils/gptImageLogger.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
+import { resolveRecraftAspectRatio } from "./openRouterImageModel.ts";
 
 const logCloudflare = debug("pollinations:cloudflare");
 

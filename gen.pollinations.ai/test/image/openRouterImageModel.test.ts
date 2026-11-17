@@ -12,8 +12,8 @@ import {
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
-    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedream55API,
+    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
     mapOpenRouterGeminiImageUsage,
 } from "../../src/image/models/openRouterImageModel.ts";

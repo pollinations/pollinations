@@ -658,6 +658,92 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
     ]);
 });
 
+test("Debian source lookup returns versions with suites and rejects binary names", async (t) => {
+    const firefox = {
+        package: "firefox",
+        path: "firefox",
+        type: "package",
+        versions: [
+            { area: "main", suites: ["sid"], version: "160.0-1" },
+            { area: "main", suites: ["sid"], version: "157.0.1-1" },
+            { area: "main", suites: ["sid"], version: "153.0.3-1" },
+        ],
+    };
+    const vim = {
+        package: "vim",
+        path: "vim",
+        type: "package",
+        versions: [
+            {
+                area: "main",
+                suites: ["forky", "sid"],
+                version: "2:9.2.0858-1",
+            },
+            {
+                area: "main",
+                suites: ["trixie-proposed-updates"],
+                version: "2:9.1.1230-2+deb13u2",
+            },
+            { area: "main", suites: [], version: "2:9.1.1230-2+deb13u1" },
+            { area: "main", suites: ["trixie"], version: "2:9.1.1230-2" },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        if (url.endsWith("/api/src/firefox/")) return Response.json(firefox);
+        if (url.endsWith("/api/src/vim/")) return Response.json(vim);
+        return Response.json({ error: 404 });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "debian",
+        name: "firefox",
+    });
+    assert.equal(latest.version, "160.0-1");
+    assert.equal(latest.area, "main");
+    assert.deepEqual(latest.suites, ["sid"]);
+    assert.equal(latest.versions.length, 3);
+    assert.equal(latest.registryUrl, "https://sources.debian.org/src/firefox/");
+    // Pinned versions match exactly, including epoch versions with a colon.
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "debian",
+        name: "vim",
+        version: "2:9.2.0858-1",
+    });
+    assert.equal(pinned.version, "2:9.2.0858-1");
+    assert.deepEqual(pinned.suites, ["forky", "sid"]);
+    const trixie = await call(client, "package_lookup", {
+        ecosystem: "debian",
+        name: "vim",
+        version: "2:9.1.1230-2",
+    });
+    assert.deepEqual(trixie.suites, ["trixie"]);
+    assert.deepEqual(urls, [
+        "https://sources.debian.org/api/src/firefox/",
+        "https://sources.debian.org/api/src/vim/",
+        "https://sources.debian.org/api/src/vim/",
+    ]);
+    // Unknown and binary-only names answer 200 with {"error":404}.
+    await assert.rejects(
+        lookup({ ecosystem: "debian", name: "nosuchpkg" }),
+        /not found/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "debian", name: "python3-numpy" }),
+        /not found/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "debian", name: "vim", version: "9.9.9-1" }),
+        /not found/,
+    );
+    // Uppercase names are rejected before any fetch.
+    await assert.rejects(
+        lookup({ ecosystem: "debian", name: "Firefox" }),
+        /Invalid debian package name/,
+    );
+});
+
 test("package_downloads passes through daily counts and validates names", async (t) => {
     const expected = {
         package: "@scope/pkg",

@@ -622,13 +622,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "mistralai/mistral-large-3": {
-        "mistralai/mistral-large-3:mistral": {
+        "mistralai/mistral-large-3:aws": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,
-            provider: "mistral",
-            addedDate: new Date("2026-09-22").getTime(),
+            provider: "aws",
+            // Bedrock US Standard reports image input in the prompt total.
             cost: {
                 promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
         },

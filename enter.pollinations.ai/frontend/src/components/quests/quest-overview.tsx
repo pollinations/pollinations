@@ -108,20 +108,12 @@ const CATEGORIES: CategoryMeta[] = [
         label: "Grow",
     },
     {
-        key: "build",
-        label: "Build",
-    },
-    {
         key: "contribute",
         label: "Contribute",
     },
     {
         key: "community",
         label: "Community",
-    },
-    {
-        key: "easteregg",
-        label: "Easter eggs",
     },
 ];
 
@@ -773,10 +765,8 @@ function QuestOverviewContent({
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
             grow: [],
-            build: [],
             contribute: [],
             community: [],
-            easteregg: [],
         };
 
         for (const quest of state.catalog) {

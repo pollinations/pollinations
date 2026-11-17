@@ -21,7 +21,6 @@ describe("provider transform passthrough", () => {
         "kimi",
         "kimi-code",
         "glm",
-        "inception/mercury-2.5-preview",
         "deepseek/deepseek-v4.1-flash",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;

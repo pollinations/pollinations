@@ -383,21 +383,6 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "inception/mercury-2",
-        config: portkeyConfig["mercury-2"],
-        transform: stripReasoning,
-    },
-    {
-        name: "inception/mercury-2.5-preview",
-        config: portkeyConfig["inception/mercury-2.5-preview"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "inception/mercury-3",
-        config: portkeyConfig["inception/mercury-3"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
         name: "cohere/command-a-plus",
         config: portkeyConfig["cohere/command-a-plus"],
     },

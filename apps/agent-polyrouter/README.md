@@ -43,7 +43,7 @@ deterministic), then lets live platform data make the final pick.
 Every response carries a trace on headers:
 
 ```
-x-polyrouter-model: inception/mercury-2.5-preview
+x-polyrouter-model: qwen/qwen3.7-flash
 x-polyrouter-tier: fast
 x-polyrouter-why: score 0; simple prompt; picked cheapest eligible of 87; skipped 21 unhealthy (5xx), ...
 ```

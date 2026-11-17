@@ -133,13 +133,15 @@
     /* Fill — the one orange for what is selected (a tab, a menu item, an
        option, a ticked box) and for the filled button. Deeper than bg-active
        and a step toward orange, so it stays warm instead of turning mustard
-       (the same reason focus is shifted). on-fill is the text on it. */
-    --polli-color-honey:           oklch(0.83 0.15 calc(var(--polli-hue) - 12));
+       (the same reason focus is shifted). In light mode it is a soft honey
+       with warm brown text (on-fill, 7.3:1, 6.2:1 on hover): near-black on a
+       strong orange read like a warning sign. */
+    --polli-color-honey:           oklch(0.87 0.12 calc(var(--polli-hue) - 12));
     --polli-color-fill:            var(--polli-color-honey);
-    --polli-color-fill-hover:      oklch(0.78 0.16 calc(var(--polli-hue) - 14));
+    --polli-color-fill-hover:      oklch(0.82 0.135 calc(var(--polli-hue) - 14));
     /* Wash — the pale fill for hovering something not selected. */
     --polli-color-fill-wash:       color-mix(in oklab, var(--polli-color-fill) 40%, transparent);
-    --polli-color-on-fill:         var(--polli-color-text-strong);
+    --polli-color-on-fill:         oklch(0.36 0.07 calc(var(--polli-hue) - 30));
 }
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard

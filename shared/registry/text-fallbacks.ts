@@ -656,6 +656,18 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-06").getTime(),
         },
     },
+    "tencent/hy4-flash": {
+        // OpenRouter's route for the same model, with its 5.5% credit fee.
+        "tencent/hy4-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.035) * 1.055,
+                promptCachedTokens: perMillion(0.0015) * 1.055,
+                completionTextTokens: perMillion(0.1405) * 1.055,
+            },
+        },
+    },
     "mistralai/mistral-small-3.2": {
         "mistralai/mistral-small-3.2:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "datamuse_words",
             ].sort(),
         );
     });
@@ -482,6 +483,110 @@ test("dictionary matches name or language code and preserves definitions/example
     });
     assert.equal(missing.isError, true);
     assert.match(missing.content[0].text, /No Finnish definitions/);
+});
+
+test("Datamuse maps each relation to its query parameter and projects word and score", async (t) => {
+    const seen = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.datamuse.com");
+        seen.push(url.searchParams);
+        const word = [...url.searchParams.values()].find(
+            (value) => value !== "3",
+        );
+        if (word === "zzzqqqx") return Response.json([]);
+        if (url.searchParams.has("ml"))
+            return Response.json([
+                { word: "pleased", score: 40004395, tags: ["syn", "adj"] },
+                { word: "blissful", score: 40004156, tags: ["syn", "adj"] },
+            ]);
+        if (url.searchParams.has("rel_syn"))
+            return Response.json([{ word: "halcyon", score: 61042 }]);
+        if (url.searchParams.has("rel_ant"))
+            return Response.json([{ word: "sad", score: 32055 }]);
+        if (url.searchParams.has("rel_rhy"))
+            return Response.json([
+                { word: "sappy", score: 19033, numSyllables: 2 },
+            ]);
+        if (url.searchParams.has("sl"))
+            return Response.json([
+                { word: "happi", score: 100, numSyllables: 2 },
+            ]);
+        if (url.searchParams.has("rel_trg"))
+            return Response.json([{ word: "birthday", score: 1387 }]);
+        return Response.json([]);
+    });
+    const c = await client(t);
+    const cases = [
+        [
+            "means-like",
+            [
+                { word: "pleased", score: 40004395 },
+                { word: "blissful", score: 40004156 },
+            ],
+        ],
+        ["synonyms", [{ word: "halcyon", score: 61042 }]],
+        ["antonyms", [{ word: "sad", score: 32055 }]],
+        ["rhymes", [{ word: "sappy", score: 19033 }]],
+        ["sounds-like", [{ word: "happi", score: 100 }]],
+        ["triggered-by", [{ word: "birthday", score: 1387 }]],
+    ];
+    for (const [relation, expected] of cases) {
+        const result = await call(c, "datamuse_words", {
+            word: "happy",
+            relation,
+            limit: 3,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        assert.equal(value(result).word, "happy");
+        assert.equal(value(result).relation, relation);
+        assert.deepEqual(value(result).results, expected);
+    }
+    assert.deepEqual(
+        seen.map((q) => [...q.keys()].find((key) => key !== "max")).sort(),
+        ["ml", "rel_ant", "rel_rhy", "rel_syn", "rel_trg", "sl"],
+    );
+    assert.ok(seen.every((q) => q.get("max") === "3"));
+    assert.ok(
+        seen.every(
+            (q) =>
+                q.get("ml") === "happy" ||
+                q.get("rel_syn") === "happy" ||
+                q.get("rel_ant") === "happy" ||
+                q.get("rel_rhy") === "happy" ||
+                q.get("sl") === "happy" ||
+                q.get("rel_trg") === "happy",
+        ),
+    );
+
+    const empty = await call(c, "datamuse_words", {
+        word: "zzzqqqx",
+        relation: "synonyms",
+        limit: 3,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty).results, []);
+});
+
+test("Datamuse rejects out-of-range limits, unknown relations and empty words before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        throw new Error("unexpected");
+    });
+    const c = await client(t);
+    for (const args of [
+        { word: "happy", limit: 11 },
+        { word: "happy", limit: 0 },
+        { word: " " },
+        { word: "happy", relation: "near-rhymes" },
+    ]) {
+        const result = await call(c, "datamuse_words", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, 0);
 });
 
 test("rejects malformed language, limits and empty inputs before fetch", async (t) => {

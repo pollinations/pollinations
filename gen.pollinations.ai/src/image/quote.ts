@@ -20,9 +20,6 @@ export const QUOTE_UNAVAILABLE_REASONS = {
 
 export type QuoteUnavailableReason = keyof typeof QUOTE_UNAVAILABLE_REASONS;
 
-type QuoteParams = Parameters<typeof pricingInputFromParams>[0] &
-    Pick<ImageParams, "duration" | "audio">;
-
 /**
  * Listed price of one image or video request with these options, or the reason
  * it cannot be known up front. A quote, never the charge: billing rates the
@@ -33,7 +30,7 @@ type QuoteParams = Parameters<typeof pricingInputFromParams>[0] &
 export function quoteMediaRequest(
     model: string,
     definition: ModelDefinition,
-    params: QuoteParams,
+    params: Omit<ImageParams, "model">,
 ): number | QuoteUnavailableReason {
     const input = pricingInputFromParams(params);
     // These bill the length of the video they return, which follows the

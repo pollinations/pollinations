@@ -63,9 +63,7 @@ import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
-export type RuntimeImageParams = Omit<ImageParams, "model"> & {
-    model: string;
-};
+type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
 const EDIT_DIMENSION_STEP = 16;

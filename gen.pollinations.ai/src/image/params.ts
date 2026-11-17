@@ -391,15 +391,7 @@ export type ImageParams = z.infer<typeof ImageParamsSchema>;
 
 /** Request facts that select a model's rate sheet. Billing and price quotes share them. */
 export function pricingInputFromParams(
-    params: Pick<
-        ImageParams,
-        | "resolution"
-        | "quality"
-        | "image"
-        | "reference_videos"
-        | "width"
-        | "height"
-    >,
+    params: Omit<ImageParams, "model">,
 ): PricingInput {
     return {
         resolution: params.resolution,

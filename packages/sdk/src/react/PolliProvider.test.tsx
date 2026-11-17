@@ -492,4 +492,44 @@ describe("PolliProvider", () => {
             "polli:pk_test:token": "sk_live",
         });
     });
+    it("hydrates the new app's token when appKey changes", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({
+            "polli:pk_first:token": "sk_first",
+            "polli:pk_second:token": "sk_second",
+        });
+        let auth: ReturnType<typeof useAuth> | undefined;
+        function Probe() {
+            auth = useAuth();
+            return null;
+        }
+        let renderer: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(
+                <PolliProvider appKey="pk_first" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth?.apiKey).toBe("sk_first");
+        await act(async () => {
+            renderer.update(
+                <PolliProvider appKey="pk_second" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth?.apiKey).toBe("sk_second");
+        expect(auth?.isHydrated).toBe(true);
+        await act(async () => {
+            renderer.update(
+                <PolliProvider appKey="pk_unsigned" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth?.apiKey).toBeNull();
+        expect(auth?.isLoggedIn).toBe(false);
+        await act(async () => renderer.unmount());
+    });
 });

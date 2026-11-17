@@ -5,10 +5,6 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 const maxConcurrent = 6;
-const deadline = Date.parse(process.env.ZONOS_PILOT_END_AT ?? "");
-if (!Number.isFinite(deadline) || deadline - Date.now() > 48 * 60 * 60 * 1000) {
-    throw new Error("Set ZONOS_PILOT_END_AT to a deadline within 48 hours");
-}
 const speakerId = "default_853b30a7338f306e";
 let active = 0;
 
@@ -20,10 +16,6 @@ function unavailable(response, status, message) {
 async function handleSpeech(request, response) {
     if (request.method !== "POST" || request.url !== "/speech") {
         unavailable(response, 404, "Unknown route");
-        return;
-    }
-    if (Date.now() >= deadline) {
-        unavailable(response, 503, "Pilot has ended");
         return;
     }
     if (active >= maxConcurrent) {

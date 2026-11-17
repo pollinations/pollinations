@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getTextModelsInfo } from "@shared/registry/model-info.ts";
+import { calculatePrice } from "@shared/registry/registry.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
@@ -1125,6 +1126,57 @@ describe("model status", () => {
         expect(String(upstream.mock.calls[0]?.[0])).toContain(
             "/v0/pipes/public_model_stats.json",
         );
+    });
+});
+
+describe("model price quote", () => {
+    it("quotes a media request from its options without a key", async () => {
+        const response = await fetchWorker(
+            "/models/quote?model=veo&duration=8&resolution=1080p&audio=true",
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=300",
+        );
+        expect(await response.json()).toEqual({
+            model: "google/veo-3.1-fast",
+            price: calculatePrice(
+                "google/veo-3.1-fast",
+                { completionVideoSeconds: 8, completionAudioSeconds: 8 },
+                undefined,
+                { resolution: "1080p" },
+            ).totalPrice,
+            currency: "usd",
+        });
+    });
+
+    it("gives a reason instead of a price for a token-priced model", async () => {
+        const response = await fetchWorker(
+            "/models/quote?model=openai/gpt-image-2",
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            model: "openai/gpt-image-2",
+            price: null,
+            currency: "usd",
+            reason: "token_priced",
+            message: expect.any(String),
+        });
+    });
+
+    it.each([
+        ["a missing model", ""],
+        [
+            "a duration the model rejects",
+            "model=google/veo-3.1-fast&duration=5",
+        ],
+        ["a model list", "model=flux,veo"],
+        ["a text model", "model=openai"],
+    ])("rejects %s like the generation routes", async (_case, query) => {
+        const response = await fetchWorker(`/models/quote?${query}`);
+        expect(response.status).toBe(400);
     });
 });
 

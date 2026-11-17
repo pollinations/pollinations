@@ -55,6 +55,7 @@ import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
+import { modelQuoteRoutes } from "./routes/model-quote.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
@@ -312,6 +313,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/", jobRoutes)
     .route("/", modelStatusRoutes)
     .route("/", modelStatsRoutes)
+    .route("/", modelQuoteRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

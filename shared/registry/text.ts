@@ -1950,7 +1950,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
-            // Azure rate as listed by OpenRouter (Azure-hosted) and Vercel, checked 2026-11-17.
+            // Azure East US Global Standard retail meter, verified 2026-11-17.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
@@ -1962,7 +1962,7 @@ const TEXT_BASE_SERVICES = {
             "message on /v1/chat/completions",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
-        inputModalities: ["text", "image"],
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
         reasoning: false,

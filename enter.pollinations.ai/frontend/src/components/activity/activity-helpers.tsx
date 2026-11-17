@@ -135,7 +135,7 @@ export function PollenUsageBadges(usage: {
     const quest = isPollen
         ? formatActivityPollenThreshold(usage.tierPollen)
         : formatCount(usage.tierRequests);
-    const unit = isPollen ? "Pollen" : "requests";
+    const unit = isPollen ? "dollars" : "requests";
     return (
         // Same-width chips with left-aligned digits, so rows line up; the pair
         // sits at the right edge. 5.5rem fits the widest value, "<0.0001".

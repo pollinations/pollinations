@@ -151,7 +151,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                 >
                                     <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
-                                        "What can I create with Pollen",
+                                        "What can I create with Pollinations",
                                     ) && <PollenExamples />}
                                 </div>
                             )}

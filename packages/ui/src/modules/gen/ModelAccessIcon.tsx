@@ -10,7 +10,7 @@ export function ModelAccessIcon({
     paidOnly = false,
     className = "polli:h-3.5 polli:w-3.5",
 }: ModelAccessIconProps) {
-    const label = paidOnly ? "Paid Pollen required" : "Works with any Pollen";
+    const label = paidOnly ? "Paid balance required" : "Works with any balance";
     const Icon = paidOnly ? CardIcon : SproutIcon;
 
     return (

@@ -193,8 +193,8 @@ function RunRow({ run }: { run: Health["runs"][number] }) {
         <li className="grid gap-1 rounded-md bg-theme-bg-subtle px-3 py-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="font-mono text-xs text-theme-text-strong">
-                    {run.status} · {(run.durationMs / 1000).toFixed(1)} s ·{" "}
-                    {formatActivityPollen(run.cost)} Pollen
+                    {run.status} · {(run.durationMs / 1000).toFixed(1)} s · $
+                    {formatActivityPollen(run.cost)}
                 </span>
                 <span className="text-xs text-theme-text-muted">
                     {new Date(run.startedAt).toLocaleString()}

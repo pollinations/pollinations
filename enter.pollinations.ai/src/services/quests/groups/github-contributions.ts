@@ -100,7 +100,7 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Earn ${PR_REWARD} Quest Pollen for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
+    description: `Earn this for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: PR_REWARD,
@@ -110,7 +110,7 @@ const mergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn this for each issue closed by a merged PR. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 2,
@@ -136,7 +136,7 @@ const beeCensusQuest: QuestDefinition = {
 const honeyCensusQuest: QuestDefinition = {
     id: "honey_census",
     title: "Take the Honey Census",
-    description: `For anyone who has bought more than ${MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    description: `For anyone who has topped up more than $${MIN_POLLEN_BOUGHT} in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 5,

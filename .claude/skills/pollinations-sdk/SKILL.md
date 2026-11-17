@@ -17,7 +17,7 @@ npm install @pollinations/sdk@5.0.0
 
 Get a key at https://enter.pollinations.ai/keys and set
 `POLLINATIONS_API_KEY` in the process environment. Never print it or commit it.
-Requests spend Pollen: confirm the intended model and budget before running.
+Requests spend from the user's balance: confirm the intended model and budget before running.
 
 Save this as `example.mjs` and run `node example.mjs`:
 

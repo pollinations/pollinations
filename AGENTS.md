@@ -190,6 +190,7 @@ npx vitest run test/file.test.ts
 ```
 
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure or preemptive test helpers.
+- Run contributor PR code only in a sandbox without secrets (Codex `-s read-only`, an E2B sandbox or a container), never directly on a maintainer machine.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
 - Test meaningful behavior and concrete regressions. Avoid tests that merely mirror the implementation or hardcode mutable catalog data; keep intentional contract and pricing snapshots.
 - Don't modify test files to make tests pass — fix the code.

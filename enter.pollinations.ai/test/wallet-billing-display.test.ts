@@ -389,9 +389,7 @@ describe("dollar amounts", () => {
             }),
         );
         expect(html).toContain(`>$${pack.amountUsd}<`);
-        expect(html).toContain(
-            `aria-label="Select $${pack.amountUsd} of Pollen for $`,
-        );
+        expect(html).toContain(`aria-label="Select $${pack.amountUsd} for $`);
     });
 });
 

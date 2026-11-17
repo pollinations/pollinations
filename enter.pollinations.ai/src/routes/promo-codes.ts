@@ -1,5 +1,4 @@
 import {
-    claimReward,
     MAX_REWARD_AMOUNT,
     recordRewards,
     rewardKey,
@@ -88,8 +87,8 @@ const redeemPromoCodeSchema = z.object({
 });
 
 /**
- * Redeems an event code once per GitHub identity. The grant goes through the
- * reward ledger, whose idempotency key blocks a second redemption.
+ * Redeems an event code once per GitHub identity. It records a reward to claim
+ * on the Quests page; the ledger's idempotency key blocks a second redemption.
  */
 export const promoCodeRedeemRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: false, allowApiKey: true }))
@@ -156,16 +155,11 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
                 });
             }
 
-            // Promo rewards are never Setup quests: no hold applies.
-            const result = await claimReward(db, {
-                rewardId,
-                userId: user.id,
-            });
+            // Waits on the Quests page to be claimed, like any quest reward.
             return c.json({
                 eventId: promo.eventId,
                 pollenAmount: promo.pollenAmount,
-                claimed: result.claimed,
-                newBalance: result.newBalance,
+                rewardId,
             });
         },
     );

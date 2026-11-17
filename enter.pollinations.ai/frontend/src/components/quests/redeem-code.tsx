@@ -1,12 +1,4 @@
-import {
-    Alert,
-    Button,
-    Input,
-    Section,
-    Surface,
-    TargetIcon,
-} from "@pollinations/ui";
-import { formatPollen } from "@pollinations/ui/wallet";
+import { Button, Input } from "@pollinations/ui";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 
@@ -18,7 +10,6 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
         () => new URLSearchParams(window.location.search).get("code") ?? "",
     );
     const [error, setError] = useState<string | null>(null);
-    const [credited, setCredited] = useState<number | null>(null);
     const [redeeming, setRedeeming] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,8 +38,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                 setError(body?.error?.message ?? REDEEM_FAILED);
                 return;
             }
-            const { pollenAmount } = await response.json();
-            setCredited(pollenAmount);
+            // The reward now waits on this card, ready to claim.
             setCode("");
             onRedeemed();
         } catch {
@@ -58,64 +48,49 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
         }
     }
 
+    // Sits inside the "Redeem an event code" quest card.
     return (
-        <Section title="Promo or event code">
-            {credited !== null && (
-                <Alert intent="info">
-                    {formatPollen(credited)} Quest pollen added to your wallet.
-                </Alert>
-            )}
-            <Surface variant="card">
-                {/* Laid out like a quest row: the quest mark, then the field. */}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                        <TargetIcon
-                            aria-hidden="true"
-                            className="mr-2 h-5 w-5 shrink-0 text-theme-text-strong"
-                        />
-                        <Input
-                            ref={inputRef}
-                            type="text"
-                            aria-label="Promo or event code"
-                            aria-invalid={error !== null}
-                            aria-describedby="redeem-code-note"
-                            value={code}
-                            onChange={(e) => {
-                                setCode(e.target.value.toUpperCase());
-                                setError(null);
-                            }}
-                            placeholder="XXXX-XXXX"
-                            className="min-w-0 flex-1 font-mono tracking-widest"
-                            maxLength={20}
-                            disabled={redeeming}
-                            autoCapitalize="characters"
-                            spellCheck={false}
-                            required
-                        />
-                        <Button
-                            type="submit"
-                            intent="commit"
-                            disabled={redeeming || !code.trim()}
-                        >
-                            {redeeming ? "Redeeming…" : "Redeem"}
-                        </Button>
-                    </div>
-                    {/* One line under the field: what codes are, or why one
-                        failed. An error takes its place, so nothing moves. */}
-                    <p
-                        id="redeem-code-note"
-                        aria-live="polite"
-                        className={`pl-9 text-sm ${
-                            error
-                                ? "text-intent-danger-text"
-                                : "text-theme-text-muted"
-                        }`}
-                    >
-                        {error ??
-                            "Have a code from a Pollinations event or promotion? Redeem it for free API credits."}
-                    </p>
-                </form>
-            </Surface>
-        </Section>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+                <Input
+                    ref={inputRef}
+                    type="text"
+                    aria-label="Promo or event code"
+                    aria-invalid={error !== null}
+                    aria-describedby="redeem-code-note"
+                    value={code}
+                    onChange={(e) => {
+                        setCode(e.target.value.toUpperCase());
+                        setError(null);
+                    }}
+                    placeholder="XXXX-XXXX"
+                    className="min-w-0 flex-1 font-mono tracking-widest"
+                    maxLength={20}
+                    disabled={redeeming}
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    required
+                />
+                <Button
+                    type="submit"
+                    intent="commit"
+                    disabled={redeeming || !code.trim()}
+                >
+                    {redeeming ? "Redeeming…" : "Redeem"}
+                </Button>
+            </div>
+            {/* One line under the field: what codes are, or why one
+                    failed. An error takes its place, so nothing moves. */}
+            <p
+                id="redeem-code-note"
+                aria-live="polite"
+                className={`text-sm ${
+                    error ? "text-intent-danger-text" : "text-theme-text-muted"
+                }`}
+            >
+                {error ??
+                    "Have a code from a Pollinations event or promotion? Redeem it for free API credits."}
+            </p>
+        </form>
     );
 }

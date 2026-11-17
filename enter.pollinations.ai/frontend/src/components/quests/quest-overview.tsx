@@ -12,10 +12,10 @@ import {
     GitMergeIcon,
     InlineLink,
     IssueClosedIcon,
+    LayersIcon,
     LoadingStatus,
     OutageNotice,
     ReceiptIcon,
-    RefreshIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -151,13 +151,29 @@ const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
     url: null,
 };
 
-// Rewards recorded one per PR, fixed issue or grant, and the card that keeps them.
+// Event codes as a quest: the code field sits in its card, and each code
+// redeemed (promo:<event>) stacks on it. Page only, like the grants card.
+const EVENT_CODES: QuestCatalogItem = {
+    id: "event_codes",
+    title: "Redeem an event code",
+    description: "",
+    category: "community",
+    state: "available",
+    repeatable: true,
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    url: null,
+};
+
+// Rewards recorded one per PR, fixed issue, grant or code, and the card that
+// keeps them.
 // A GitHub quest you won was paid for your merged PR, so it joins that stack.
 const CARD_BY_PREFIX = [
     ["github:merged_pr:", "merged_pr"],
     ["github:issue:", "merged_pr"],
     ["github:reported_issue:", "reported_merged_issue"],
     ["grant:", OTHER_CONTRIBUTIONS.id],
+    ["promo:", EVENT_CODES.id],
 ] as const;
 
 /** The catalog card a reward belongs to. */
@@ -450,13 +466,13 @@ function QuestMarker({
 }: {
     status: QuestCardStatus;
     comingSoon?: boolean;
-    /** Earned again and again: the open mark says it comes back. */
+    /** Earned again and again: the open mark is a stack, like its rewards. */
     repeatable?: boolean;
 }) {
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [repeatable ? RefreshIcon : TargetIcon, "text-theme-text-strong"]
+          ? [repeatable ? LayersIcon : TargetIcon, "text-theme-text-strong"]
           : status === "claimable"
             ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
@@ -659,16 +675,19 @@ export function QuestRow({
                       );
                   return sum ? [{ kind, label: formatRewardAmount(sum) }] : [];
               })
-            : [
-                  {
-                      kind: rewardIcon,
-                      // An open repeatable quest pays this again each time.
-                      label:
-                          card.repeats && card.status === "open"
-                              ? `${rewardLabel} each`
-                              : rewardLabel,
-                  },
-              ];
+            : // A quest that pays a different amount each time shows none.
+              card.status === "open" && !card.reward
+              ? []
+              : [
+                    {
+                        kind: rewardIcon,
+                        // An open repeatable quest pays this again each time.
+                        label:
+                            card.repeats && card.status === "open"
+                                ? `${rewardLabel} each`
+                                : rewardLabel,
+                    },
+                ];
     const rewardChip = card.comingSoon ? (
         <Chip
             intent="neutral"
@@ -718,7 +737,7 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || progress || children) && (
+    const details = (description || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
             {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
@@ -726,7 +745,6 @@ export function QuestRow({
                 </div>
             )}
             {progress}
-            {children}
         </div>
     );
     const marker = (
@@ -779,6 +797,8 @@ export function QuestRow({
                     {reward}
                 </div>
             </div>
+            {/* Drawn once, under both layouts, so a field in it exists once. */}
+            {children && <div className="ml-9 mt-2">{children}</div>}
             {showRewards && card.repeats && card.repeats.length > 0 && (
                 <ul className="ml-9 mt-2 flex flex-col gap-0.5 text-xs">
                     {card.repeats.map((repeat) => (
@@ -1009,7 +1029,12 @@ function QuestOverviewContent({
             easteregg: [],
         };
 
-        for (const quest of [...state.catalog, OTHER_CONTRIBUTIONS]) {
+        for (const quest of [
+            ...state.catalog,
+            OTHER_CONTRIBUTIONS,
+            // Codes need an account, so the logged-out preview has no field.
+            ...(previewAll ? [] : [EVENT_CODES]),
+        ]) {
             // A repeatable quest keeps all its rewards on its card. One Claim
             // takes every waiting reward of the next one's balance. With none
             // waiting, it stays open while the quest is on the board, so it
@@ -1101,10 +1126,9 @@ function QuestOverviewContent({
     // the catalog) gets its own row.
     const bonusRewardCards = useMemo(() => {
         const catalog = new Map(
-            [...state.catalog, OTHER_CONTRIBUTIONS].map((quest) => [
-                quest.id,
-                quest,
-            ]),
+            [...state.catalog, OTHER_CONTRIBUTIONS, EVENT_CODES].map(
+                (quest) => [quest.id, quest],
+            ),
         );
         return (
             state.rewards
@@ -1347,6 +1371,13 @@ function QuestOverviewContent({
                                         !state.anonymous && (
                                             <InviteLink githubId={githubId} />
                                         )}
+                                    {card.key === EVENT_CODES.id && (
+                                        <RedeemCode
+                                            onRedeemed={() =>
+                                                void refreshRewards()
+                                            }
+                                        />
+                                    )}
                                 </QuestRow>
                             ))}
                         </div>
@@ -1382,10 +1413,6 @@ function QuestOverviewContent({
                         ))}
                     </div>
                 </Section>
-            )}
-            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
-            {!state.anonymous && !state.loading && (
-                <RedeemCode onRedeemed={() => void refreshRewards()} />
             )}
         </>
     );

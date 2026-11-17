@@ -86,7 +86,7 @@ test("an event code records a Quest reward to claim, once per account", async ({
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, before?.id ?? ""));
-    expect(after?.tierBalance).toBe(before?.tierBalance ?? 0);
+    expect(after?.tierBalance).toBe(before?.tierBalance);
 });
 
 test("unknown and expired codes are rejected the same way", async ({

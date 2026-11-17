@@ -16,6 +16,7 @@ import {
     SparkleIcon,
     SproutIcon,
     Surface,
+    TabButton,
     TargetIcon,
     Text,
 } from "@pollinations/ui";
@@ -40,7 +41,7 @@ import {
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
-import { monthName, QuestStandings } from "./quest-standings.tsx";
+import { QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -294,7 +295,7 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
 const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
 // Past this many cells the comb keeps the proportions instead of growing.
 const MAX_CELLS = 200;
-// Rows a lane lists before "Show more".
+// Rows a tab lists before "Show more".
 const SECTION_PAGE_SIZE = 10;
 const PROGRESS_STATES = {
     claimed: {
@@ -436,6 +437,23 @@ export function QuestProgress({
                 ))}
             </dl>
         </Surface>
+    );
+}
+
+/** The viewer's invite link, at the top of the Community tab; the Invite
+ *  friends quest below it says what it earns. */
+function InviteLink({ githubId }: { githubId: number | null }) {
+    return githubId === null ? (
+        // The link carries the inviter's GitHub id.
+        <Text size="sm" tone="muted">
+            <InlineLink href="/account">Connect GitHub</InlineLink> to get your
+            invite link.
+        </Text>
+    ) : (
+        <CopyField
+            label="Copy invite link"
+            value={`${window.location.origin}/?ref=${githubId}`}
+        />
     );
 }
 
@@ -705,7 +723,11 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [expandedSections, setExpandedSections] = useState<CategoryKey[]>([]);
+    const [progressView, setProgressView] = useState<"you" | "leaderboard">(
+        "you",
+    );
+    const [openTab, setOpenTab] = useState<string | null>(null);
+    const [expandedTabs, setExpandedTabs] = useState<string[]>([]);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -874,35 +896,45 @@ function QuestOverviewContent({
     // one its catalog card shows. This is deliberately derived from the
     // ledger — no synthetic catalog entry or special balance path.
     const rewardCards = useMemo(() => {
-        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
+        const categoryById = new Map(
+            state.catalog.map((quest) => [quest.id, quest.category]),
+        );
         return state.rewards
             .filter(
                 (reward) =>
                     reward.questId == null ||
-                    !catalogIds.has(reward.questId) ||
+                    !categoryById.has(reward.questId) ||
                     rewardByKey.get(reward.questId) !== reward,
             )
-            .map<QuestCard>((reward) => ({
-                key: reward.id,
-                rewardId: reward.id,
-                title: reward.title,
-                description: reward.questId?.startsWith(
-                    "github:reported_issue:",
-                )
-                    ? "Your issue was closed by a merged pull request."
-                    : undefined,
-                url: reward.url ?? undefined,
-                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                reward: reward.pollenAmount,
-                balanceBucket: reward.balanceBucket,
-                status: reward.claimedAt ? "claimed" : "claimable",
-                earnedAmount: reward.pollenAmount,
-            }));
+            .map((reward) => {
+                const card: QuestCard = {
+                    key: reward.id,
+                    rewardId: reward.id,
+                    title: reward.title,
+                    description: reward.questId?.startsWith(
+                        "github:reported_issue:",
+                    )
+                        ? "Your issue was closed by a merged pull request."
+                        : undefined,
+                    url: reward.url ?? undefined,
+                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                    reward: reward.pollenAmount,
+                    balanceBucket: reward.balanceBucket,
+                    status: reward.claimedAt ? "claimed" : "claimable",
+                    earnedAmount: reward.pollenAmount,
+                };
+                // A repeat reward joins its quest's lane, a merged PR or a
+                // fixed issue the Contribute lane; anything else (a grant) is
+                // a bonus.
+                const category: CategoryKey | null =
+                    (reward.questId && categoryById.get(reward.questId)) ||
+                    (card.issueNumber != null ? "contribute" : null);
+                return { card, category };
+            });
     }, [state.catalog, state.rewards, rewardByKey]);
-    // Anything that is not a GitHub contribution (a grant, a repeat
-    // referral) is a bonus reward with its own section.
     const bonusRewardCards = rewardCards
-        .filter((card) => card.issueNumber == null)
+        .filter(({ category }) => category === null)
+        .map(({ card }) => card)
         .sort((a, b) => cardSortRank(a) - cardSortRank(b));
 
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
@@ -963,11 +995,10 @@ function QuestOverviewContent({
             });
         }
 
-        // A merged PR or a fixed issue is the Contribute quests done once
-        // more: its reward is one more row in that lane.
-        byCat.contribute.push(
-            ...rewardCards.filter((card) => card.issueNumber != null),
-        );
+        // Rewards beyond a quest's own card are more rows in their lane.
+        for (const { card, category } of rewardCards) {
+            if (category) byCat[category].push(card);
+        }
 
         // Order per lane by lifecycle rank only: a claim moves its own row and
         // nothing else; within a rank the catalog's order stays (stable sort).
@@ -1043,12 +1074,29 @@ function QuestOverviewContent({
         refreshRewards,
     );
 
+    // One tab per lane that has rows, and Bonus when a reward fits no lane.
+    const tabs = [
+        ...CATEGORIES.map(({ key, label }) => ({
+            key: key as string,
+            label,
+            cards: sections[key],
+        })),
+        { key: "bonus", label: "Bonus", cards: bonusRewardCards },
+    ].filter((tab) => tab.cards.length > 0);
+    // Open the tab picked, else the first with a reward to claim.
+    const activeTab =
+        tabs.find((tab) => tab.key === openTab) ??
+        tabs.find((tab) =>
+            tab.cards.some((card) => card.status === "claimable"),
+        ) ??
+        tabs[0];
+    const expanded = activeTab && expandedTabs.includes(activeTab.key);
+
     return (
         <>
-            {/* Summary. The per-user accounting (completed/claimed cards +
-                claimable footers + checking indicator) is hidden for logged-out
-                visitors, but the alpha + claim-flow footer stays so the preview
-                still explains how quests work. */}
+            {/* Where you stand: your progress, or this month's race. The
+                per-user accounting is hidden for logged-out visitors, but the
+                footnotes stay so the preview still explains how quests work. */}
             <Section
                 title={state.anonymous ? "Rewards you can earn" : "Progress"}
                 action={
@@ -1057,201 +1105,179 @@ function QuestOverviewContent({
                     )
                 }
             >
-                <SectionContent
-                    loading={state.loading}
-                    className="h-22 sm:h-28"
-                >
-                    {state.error && (
-                        <LoadError
-                            onRetry={refreshRewards}
-                            paths={[
-                                "/api/quests/catalog",
-                                "/account/quests/rewards",
-                            ]}
+                <div className="flex flex-wrap gap-1.5">
+                    {(
+                        [
+                            ["you", state.anonymous ? "Rewards" : "You"],
+                            ["leaderboard", "Leaderboard"],
+                        ] as const
+                    ).map(([value, label]) => (
+                        <TabButton
+                            key={value}
+                            active={progressView === value}
+                            onClick={() => setProgressView(value)}
+                            ariaLabel={label}
                         >
-                            {state.error}
-                        </LoadError>
-                    )}
-                    {progressUnavailable && <OutageNotice retrying />}
-                    {claimError && <Alert intent="danger">{claimError}</Alert>}
-                    {showSummary && !state.anonymous && (
-                        <QuestProgress
-                            cards={[
-                                ...Object.values(sections)
-                                    .flat()
-                                    .filter((card) => !card.comingSoon),
-                                ...bonusRewardCards,
-                            ]}
-                        />
-                    )}
-                    {/* The preview counts available quests and their possible rewards. */}
-                    {showSummary && state.anonymous && (
-                        <QuestPreview
-                            quests={previewTotals.count}
-                            pollen={previewTotals.pollen}
-                        />
-                    )}
-                </SectionContent>
-                <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Complete → claim → credited to your{" "}
-                            <InlineLink href="/pollen">wallet</InlineLink>.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Past activity may count. If you meet a quest's
-                            requirements, you can claim its reward.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Quests are in alpha. Availability and rewards may
-                            change.
-                        </span>
-                    </p>
+                            {label}
+                        </TabButton>
+                    ))}
                 </div>
+                {progressView === "you" ? (
+                    <>
+                        <SectionContent
+                            loading={state.loading}
+                            className="h-22 sm:h-28"
+                        >
+                            {state.error && (
+                                <LoadError
+                                    onRetry={refreshRewards}
+                                    paths={[
+                                        "/api/quests/catalog",
+                                        "/account/quests/rewards",
+                                    ]}
+                                >
+                                    {state.error}
+                                </LoadError>
+                            )}
+                            {progressUnavailable && <OutageNotice retrying />}
+                            {showSummary && !state.anonymous && (
+                                <QuestProgress
+                                    cards={[
+                                        ...Object.values(sections)
+                                            .flat()
+                                            .filter((card) => !card.comingSoon),
+                                        ...bonusRewardCards,
+                                    ]}
+                                />
+                            )}
+                            {/* The preview counts available quests and their possible rewards. */}
+                            {showSummary && state.anonymous && (
+                                <QuestPreview
+                                    quests={previewTotals.count}
+                                    pollen={previewTotals.pollen}
+                                />
+                            )}
+                        </SectionContent>
+                        <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
+                            <p className="flex items-start gap-1.5">
+                                <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Complete → claim → credited to your{" "}
+                                    <InlineLink href="/pollen">
+                                        wallet
+                                    </InlineLink>
+                                    .
+                                </span>
+                            </p>
+                            <p className="flex items-start gap-1.5">
+                                <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Past activity may count. If you meet a
+                                    quest's requirements, you can claim its
+                                    reward.
+                                </span>
+                            </p>
+                            <p className="flex items-start gap-1.5">
+                                <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Quests are in alpha. Availability and
+                                    rewards may change.
+                                </span>
+                            </p>
+                        </div>
+                    </>
+                ) : state.standings ? (
+                    <QuestStandings
+                        standings={state.standings}
+                        openQuests={openQuests}
+                    />
+                ) : standingsUnavailable ? (
+                    <OutageNotice retrying />
+                ) : (
+                    <CardLoading className="h-49.5 sm:h-50.5" />
+                )}
             </Section>
 
-            {state.standings ? (
-                <QuestStandings
-                    standings={state.standings}
-                    openQuests={openQuests}
-                />
-            ) : state.loading ? (
-                <Section
-                    title={`${monthName(new Date().toISOString().slice(0, 7))} leaderboard`}
-                >
-                    <CardLoading className="h-49.5 sm:h-50.5" />
-                </Section>
-            ) : (
-                standingsUnavailable && (
-                    <Section title="Leaderboard">
-                        <OutageNotice retrying />
-                    </Section>
-                )
-            )}
-
-            {CATEGORIES.map((category) => {
-                const cards = sections[category.key];
-                if (state.loading || cards.length === 0) return null;
-                // The progress chip counts only real (grantable) quests —
-                // coming_soon rows are excluded from both done and total.
-                const liveCards = cards.filter((card) => !card.comingSoon);
-                const done = liveCards.filter(
-                    (card) => card.status !== "open",
-                ).length;
-                // A long lane (every merged PR is a row) starts short.
-                const expanded = expandedSections.includes(category.key);
-                const row = (card: QuestCard) => (
-                    <QuestRow
-                        key={card.key}
-                        card={card}
-                        claiming={state.claimingRewardIds.includes(
-                            card.rewardId ?? "",
-                        )}
-                        onClaim={handleClaimReward}
-                    />
-                );
-                return (
-                    <Section
-                        key={category.key}
-                        title={category.label}
-                        action={
-                            !initialError &&
-                            !progressUnavailable && (
-                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                    {done} / {liveCards.length}
-                                </span>
-                            )
-                        }
-                    >
-                        <div className="flex flex-col gap-2">
-                            {(expanded
-                                ? cards
-                                : cards.slice(0, SECTION_PAGE_SIZE)
-                            ).map(row)}
-                        </div>
-                        {!expanded && cards.length > SECTION_PAGE_SIZE && (
-                            <div
-                                data-theme="neutral"
-                                className="mt-3 flex justify-center"
-                            >
-                                <Button
-                                    size="sm"
-                                    onClick={() =>
-                                        setExpandedSections((keys) => [
-                                            ...keys,
-                                            category.key,
-                                        ])
-                                    }
-                                >
-                                    Show more
-                                </Button>
-                            </div>
-                        )}
-                    </Section>
-                );
-            })}
-            {bonusRewardCards.length > 0 && (
-                <Section
-                    title="Bonus rewards"
-                    action={
-                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                            {
-                                bonusRewardCards.filter(
-                                    (card) => card.status === "claimed",
-                                ).length
-                            }{" "}
-                            / {bonusRewardCards.length}
-                        </span>
-                    }
-                >
-                    <div className="flex flex-col gap-2">
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                claiming={state.claimingRewardIds.includes(
-                                    card.rewardId ?? "",
-                                )}
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                    </div>
-                </Section>
-            )}
-            {!state.anonymous && !state.loading && (
-                <Section title="Invite link">
-                    <Text size="sm" tone="muted">
-                        Earn{" "}
-                        <span className="polli-wallet-text-tier inline-flex items-baseline gap-0.5 font-semibold">
-                            <SproutIcon
-                                aria-hidden="true"
-                                className="h-3.5 w-3.5 self-center"
-                            />
-                            2
-                        </span>{" "}
-                        for each friend who signs up with your link and tops up
-                        more than $2.
-                    </Text>
-                    {githubId === null ? (
-                        // The link carries the inviter's GitHub id.
-                        <Text size="sm" tone="muted">
-                            <InlineLink href="/account">
-                                Connect GitHub
-                            </InlineLink>{" "}
-                            to get your invite link.
-                        </Text>
+            {/* What you can do: one tab per kind of quest. */}
+            {(state.loading || activeTab) && (
+                <Section title="Quests">
+                    {state.loading || !activeTab ? (
+                        <CardLoading className="h-64" />
                     ) : (
-                        <CopyField
-                            label="Copy invite link"
-                            value={`${window.location.origin}/?ref=${githubId}`}
-                        />
+                        <>
+                            <div className="flex flex-wrap gap-1.5">
+                                {tabs.map((tab) => {
+                                    // Coming-soon rows count neither as done
+                                    // nor in the total.
+                                    const live = tab.cards.filter(
+                                        (card) => !card.comingSoon,
+                                    );
+                                    const done = live.filter(
+                                        (card) => card.status !== "open",
+                                    ).length;
+                                    return (
+                                        <TabButton
+                                            key={tab.key}
+                                            active={tab.key === activeTab.key}
+                                            onClick={() => setOpenTab(tab.key)}
+                                            ariaLabel={tab.label}
+                                            detail={
+                                                initialError ||
+                                                progressUnavailable
+                                                    ? undefined
+                                                    : `${done}/${live.length}`
+                                            }
+                                        >
+                                            {tab.label}
+                                        </TabButton>
+                                    );
+                                })}
+                            </div>
+                            {claimError && (
+                                <Alert intent="danger">{claimError}</Alert>
+                            )}
+                            {activeTab.key === "community" &&
+                                !state.anonymous && (
+                                    <InviteLink githubId={githubId} />
+                                )}
+                            <div className="flex flex-col gap-2">
+                                {(expanded
+                                    ? activeTab.cards
+                                    : activeTab.cards.slice(
+                                          0,
+                                          SECTION_PAGE_SIZE,
+                                      )
+                                ).map((card) => (
+                                    <QuestRow
+                                        key={card.key}
+                                        card={card}
+                                        claiming={state.claimingRewardIds.includes(
+                                            card.rewardId ?? "",
+                                        )}
+                                        onClaim={handleClaimReward}
+                                    />
+                                ))}
+                            </div>
+                            {!expanded &&
+                                activeTab.cards.length > SECTION_PAGE_SIZE && (
+                                    <div
+                                        data-theme="neutral"
+                                        className="flex justify-center"
+                                    >
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                setExpandedTabs((keys) => [
+                                                    ...keys,
+                                                    activeTab.key,
+                                                ])
+                                            }
+                                        >
+                                            Show more
+                                        </Button>
+                                    </div>
+                                )}
+                        </>
                     )}
                 </Section>
             )}

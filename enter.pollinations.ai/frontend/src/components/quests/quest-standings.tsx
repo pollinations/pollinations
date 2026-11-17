@@ -1,7 +1,6 @@
 import {
     CardIcon,
     InlineLink,
-    Section,
     SproutIcon,
     Surface,
     TargetIcon,
@@ -40,7 +39,7 @@ function daysLeft(endsAt: string, now: number): number {
     return Math.max(1, Math.ceil((Date.parse(endsAt) - now) / DAY_MS));
 }
 
-export function monthName(month: string): string {
+function monthName(month: string): string {
     return new Date(`${month}-01T00:00:00Z`).toLocaleString("en", {
         month: "long",
         timeZone: "UTC",
@@ -208,8 +207,9 @@ export function QuestStandings({
         ),
     );
 
+    // The Progress card's Leaderboard tab: the race and the hint below it.
     return (
-        <Section title="Leaderboard">
+        <>
             <Surface variant="card" className="flex flex-col gap-2">
                 {/* The month's race: its name, the share of it gone, the days
                     left. */}
@@ -266,6 +266,6 @@ export function QuestStandings({
                     <span>{line}</span>
                 </p>
             )}
-        </Section>
+        </>
     );
 }

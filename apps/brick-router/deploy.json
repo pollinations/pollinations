@@ -1,0 +1,8 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "subdomain": "brick",
+  "install": "npm install --silent",
+  "build": "npm test",
+  "deploy": "npx wrangler deploy worker.js"
+}

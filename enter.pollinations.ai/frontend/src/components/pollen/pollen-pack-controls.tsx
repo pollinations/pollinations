@@ -17,7 +17,7 @@ export const PollenPackButtons: FC<{
     packs,
     selectedAmount,
     onSelect,
-    describe = (pollen, price) => `Select ${pollen} of Pollen for ${price}`,
+    describe = (pollen, price) => `Select ${pollen} for ${price}`,
 }) => (
     <div
         className={cn(
@@ -55,9 +55,12 @@ export const PollenPackButtons: FC<{
                     <span className="text-2xl font-bold leading-none tracking-tight">
                         {pollen}
                     </span>
-                    {/* Faded, not grey: readable on both fills. */}
-                    <span className="mt-1 text-xs opacity-70">pollen</span>
-                    <span className="mt-2 text-sm font-semibold">{price}</span>
+                    {/* What you pay, in parentheses under what you get; the
+                        footnote below the packs explains the fee. Faded, not
+                        grey: readable on both fills. */}
+                    <span className="mt-1.5 text-sm font-semibold opacity-70">
+                        ({price})
+                    </span>
                 </button>
             );
         })}

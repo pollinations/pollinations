@@ -1,0 +1,14 @@
+{
+  "number": 16920,
+  "kind": "pr",
+  "start": "2026-10-12 22:31:36",
+  "base": "43c9d81f59ebe92f45f2e066fab24609fd06f42f",
+  "outcome": "discharged",
+  "next": "discharge",
+  "reworks": 0,
+  "end": "2026-10-12 22:44:08",
+  "cost_by_role": {
+    "claude": 2.5675438,
+    "codex": 2.32219
+  }
+}

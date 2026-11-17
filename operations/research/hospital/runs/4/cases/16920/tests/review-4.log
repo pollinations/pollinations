@@ -1,0 +1,261 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx vitest run test/generation-vcr.test.ts -t 'falls back to OpenAI direct'
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+2026-10-12T22:41:38.083Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.084Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.084Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[32mINFO[0m [36m[e03532a0][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20429?model=gpt-image-2&quality=low&seed=9347
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+2026-10-12T22:41:38.137Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.137Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.137Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·image-cache[0m Cache key: 0df6e9434b9923ecbde2d2484c5f9535a7c5e0e0282cf531eb4e412ffcbf14a3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·image-cache[0m Cache MISS
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1mTRACE[0m [36m[e03532a0][0m [2mhono[0m Fetching from cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1mTRACE[0m [36m[e03532a0][0m [2mhono[0m Executing function: model-stats-v3
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[31mERROR[0m [36m[e03532a0][0m [2mhono[0m Failed to fetch model stats from Tinybird: Error: Tinybird API error: 404
+    at fetchModelStats (/home/user/pollinations/shared/utils/model-stats.ts:36:19)
+    at /home/user/pollinations/shared/cache.ts:47:24
+    at getModelStats (/home/user/pollinations/shared/utils/model-stats.ts:24:12)
+    at checkBalance (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:41:13)
+    at requireGenerationAccess (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:198:5)
+    at /home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:203:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/generation-cache.ts:246:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/track.ts:303:9
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1mTRACE[0m [36m[e03532a0][0m [2mhono[0m Writing to cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[32mINFO[0m [36m[e03532a0][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20429?model=gpt-image-2&quality=low&seed=9347
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·image-cache[0m Cache key: 0df6e9434b9923ecbde2d2484c5f9535a7c5e0e0282cf531eb4e412ffcbf14a3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·image-cache[0m Cache MISS
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mhono·image-cache[0m Caching response
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[32mINFO[0m [36m[e03532a0][0m [2mhono[0m RESPONSE [33m200[39m [33m16[39mms
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[34mDEBUG[0m [36m[e03532a0][0m [2mtrack·helpers[0m Decremented [33m0.0004875[39m pollen from user test-user-c319fe42-4e3d-487a-8214-0bd88048353d (quest: -[33m0.0004875[39m, pack: -[33m0[39m)
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1mTRACE[0m [36m[e03532a0][0m [2mhono·track[0m Tracking event:
+  isBilledUsage=[33mtrue[39m
+  balances[v1:meter:tier]=[33m100[39m
+  balances[v1:meter:pack]=[33m0[39m
+  selectedMeterSlug="v1:meter:tier"
+  totalCost=[33m0.0006500000000000001[39m
+  totalPrice=[33m0.0004875[39m
+  devPrice=[33m0.0004875[39m
+  communityModelRewardRate=[33m0[39m
+  communityModelRewardAmount=[33m0[39m
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 429
+[1m[32mINFO[0m [36m[e03532a0][0m [2mhono[0m RESPONSE [33m200[39m [33m162[39mms
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+2026-10-12T22:41:38.326Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.326Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.326Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[32mINFO[0m [36m[39704392][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20404?model=gpt-image-2&quality=low&seed=9347
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+2026-10-12T22:41:38.333Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.333Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.333Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·image-cache[0m Cache key: bb789c650aeb49adf5cba46d55641b8dc10a3bcc041c905566cfe05030b440eb
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·image-cache[0m Cache MISS
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1mTRACE[0m [36m[39704392][0m [2mhono[0m Fetching from cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1mTRACE[0m [36m[39704392][0m [2mhono[0m Executing function: model-stats-v3
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[31mERROR[0m [36m[39704392][0m [2mhono[0m Failed to fetch model stats from Tinybird: Error: Tinybird API error: 404
+    at fetchModelStats (/home/user/pollinations/shared/utils/model-stats.ts:36:19)
+    at /home/user/pollinations/shared/cache.ts:47:24
+    at getModelStats (/home/user/pollinations/shared/utils/model-stats.ts:24:12)
+    at checkBalance (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:41:13)
+    at requireGenerationAccess (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:198:5)
+    at /home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:203:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/generation-cache.ts:246:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/track.ts:303:9
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1mTRACE[0m [36m[39704392][0m [2mhono[0m Writing to cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[32mINFO[0m [36m[39704392][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20404?model=gpt-image-2&quality=low&seed=9347
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·image-cache[0m Cache key: bb789c650aeb49adf5cba46d55641b8dc10a3bcc041c905566cfe05030b440eb
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·image-cache[0m Cache MISS
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mhono·image-cache[0m Caching response
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[32mINFO[0m [36m[39704392][0m [2mhono[0m RESPONSE [33m200[39m [33m4[39mms
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[34mDEBUG[0m [36m[39704392][0m [2mtrack·helpers[0m Decremented [33m0.0004875[39m pollen from user test-user-7889dace-0ff0-4a5b-8640-1a8aebec5334 (quest: -[33m0.0004875[39m, pack: -[33m0[39m)
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1mTRACE[0m [36m[39704392][0m [2mhono·track[0m Tracking event:
+  isBilledUsage=[33mtrue[39m
+  balances[v1:meter:tier]=[33m100[39m
+  balances[v1:meter:pack]=[33m0[39m
+  selectedMeterSlug="v1:meter:tier"
+  totalCost=[33m0.0006500000000000001[39m
+  totalPrice=[33m0.0004875[39m
+  devPrice=[33m0.0004875[39m
+  communityModelRewardRate=[33m0[39m
+  communityModelRewardAmount=[33m0[39m
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 404
+[1m[32mINFO[0m [36m[39704392][0m [2mhono[0m RESPONSE [33m200[39m [33m37[39mms
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+2026-10-12T22:41:38.388Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.388Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.388Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[32mINFO[0m [36m[f1633e1f][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20403?model=gpt-image-2&quality=low&seed=9347
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+2026-10-12T22:41:38.394Z WARN [Better Auth]: [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+2026-10-12T22:41:38.394Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx auth secret` or `openssl rand -base64 32`.
+2026-10-12T22:41:38.394Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·image-cache[0m Cache key: b58800d7dfc4cce357551086667eed635ab2b8f601df354345c52fe6d19052e5
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·image-cache[0m Cache MISS
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1mTRACE[0m [36m[f1633e1f][0m [2mhono[0m Fetching from cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1mTRACE[0m [36m[f1633e1f][0m [2mhono[0m Executing function: model-stats-v3
+
+stderr | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[31mERROR[0m [36m[f1633e1f][0m [2mhono[0m Failed to fetch model stats from Tinybird: Error: Tinybird API error: 404
+    at fetchModelStats (/home/user/pollinations/shared/utils/model-stats.ts:36:19)
+    at /home/user/pollinations/shared/cache.ts:47:24
+    at getModelStats (/home/user/pollinations/shared/utils/model-stats.ts:24:12)
+    at checkBalance (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:41:13)
+    at requireGenerationAccess (/home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:198:5)
+    at /home/user/pollinations/gen.pollinations.ai/src/utils/generation-access.ts:203:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/generation-cache.ts:246:9
+    at dispatch (home/user/pollinations/node_modules/[4mhono[24m/dist/compose.js:22:17)
+    at /home/user/pollinations/gen.pollinations.ai/src/middleware/track.ts:303:9
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1mTRACE[0m [36m[f1633e1f][0m [2mhono[0m Writing to cache: model-stats-v3
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[32mINFO[0m [36m[f1633e1f][0m [2mhono[0m GET https://gen.pollinations.ai/image/fallback%20probe%20403?model=gpt-image-2&quality=low&seed=9347
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·ratelimit[0m Skipping rate limit, not a publishable key
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·image-cache[0m Cache key: b58800d7dfc4cce357551086667eed635ab2b8f601df354345c52fe6d19052e5
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·image-cache[0m Cache MISS
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mhono·image-cache[0m Caching response
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[32mINFO[0m [36m[f1633e1f][0m [2mhono[0m RESPONSE [33m200[39m [33m4[39mms
+
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[34mDEBUG[0m [36m[f1633e1f][0m [2mtrack·helpers[0m Decremented [33m0.0004875[39m pollen from user test-user-8b07fcec-efa7-4471-beda-54b11155110d (quest: -[33m0.0004875[39m, pack: -[33m0[39m)
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1mTRACE[0m [36m[f1633e1f][0m [2mhono·track[0m Tracking event:
+  isBilledUsage=[33mtrue[39m
+  balances[v1:meter:tier]=[33m100[39m
+  balances[v1:meter:pack]=[33m0[39m
+  selectedMeterSlug="v1:meter:tier"
+  totalCost=[33m0.0006500000000000001[39m
+  totalPrice=[33m0.0004875[39m
+  devPrice=[33m0.0004875[39m
+  communityModelRewardRate=[33m0[39m
+  communityModelRewardAmount=[33m0[39m
+
+stdout | test/generation-vcr.test.ts > gpt-image-2 falls back to OpenAI direct on an Azure 403
+[1m[32mINFO[0m [36m[f1633e1f][0m [2mhono[0m RESPONSE [33m200[39m [33m39[39mms
+
+ ✓ test/generation-vcr.test.ts (73 tests | 70 skipped) 386ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed | 70 skipped (73)
+   Start at  22:41:31
+   Duration  6.68s (transform 2.04s, setup 5.10s, collect 186ms, tests 386ms, environment 0ms, prepare 134ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 0

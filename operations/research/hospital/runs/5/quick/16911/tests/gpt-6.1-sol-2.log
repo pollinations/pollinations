@@ -1,0 +1,68 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npm run test -- test/text-cache.test.ts '--testNamePattern=caches chat streams whose output'
+
+> pollinations-gen@1.0.0 test
+> vitest run test/text-cache.test.ts --testNamePattern=caches chat streams whose output
+
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ❯ test/text-cache.test.ts (16 tests | 1 failed | 15 skipped) 34ms
+   ↓ includes arbitrary agent metadata in cache identity
+   ↓ text cache > partitions managed-agent cache keys by caller API key
+   ↓ text cache > serves cached responses before auth while misses still require auth
+   ↓ text cache > caches chat completions after JSON validation consumed the body
+   ↓ text cache > keeps cache headers authoritative on streaming misses
+   ↓ text cache > does not cache accepted responses
+   ↓ text cache > treats different POST bodies as different cache entries
+   ↓ text cache > caches simple GET text requests
+   ↓ text cache > refreshes cached text TTL on aged cache hits
+   ↓ text cache > normalizes GET query parameter order for cache keys
+   ↓ text cache > uses different cache keys for streaming and non-streaming chat bodies
+   ↓ text cache > caches seed -1 in POST bodies and GET query params
+   ↓ text cache > does not cache SSE protocol errors
+   ↓ text cache > does not cache chat streams without output
+   × text cache > caches chat streams whose output is text or tool calls 14ms
+     → expected 'MISS' to be 'HIT' // Object.is equality
+   ↓ text cache > does not add text cache headers to routes without cache middleware
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/text-cache.test.ts > text cache > caches chat streams whose output is text or tool calls
+AssertionError: expected 'MISS' to be 'HIT' // Object.is equality
+
+Expected: "HIT"
+Received: "MISS"
+
+ ❯ test/text-cache.test.ts:684:60
+    682|             expect(await consumeAndWait(second)).toBe(bodies[kind]);
+    683|             expect(first.response.headers.get("X-Cache")).toBe("MISS");
+    684|             expect(second.response.headers.get("X-Cache")).toBe("HIT");
+       |                                                            ^
+    685|         }
+    686|         expect(originHits).toBe(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 skipped (16)
+   Start at  00:33:56
+   Duration  5.16s (transform 1.51s, setup 4.34s, collect 33ms, tests 34ms, environment 0ms, prepare 104ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /home/user/pollinations/gen.pollinations.ai
+npm error workspace pollinations-gen@1.0.0
+npm error location /home/user/pollinations/gen.pollinations.ai
+npm error command failed
+npm error command sh -c vitest run test/text-cache.test.ts '--testNamePattern=caches chat streams whose output'
+
+exit 1

@@ -1,0 +1,22 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx vitest run test/image/inferencePortImageModel.test.ts test/image/params.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ✓ test/image/params.test.ts (33 tests) 265ms
+ ✓ test/image/inferencePortImageModel.test.ts (14 tests) 119ms
+
+ Test Files  2 passed (2)
+      Tests  47 passed (47)
+   Start at  00:36:23
+   Duration  5.54s (transform 1.49s, setup 4.28s, collect 97ms, tests 384ms, environment 0ms, prepare 108ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 0

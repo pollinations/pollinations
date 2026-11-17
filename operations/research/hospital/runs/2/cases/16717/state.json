@@ -1,0 +1,14 @@
+{
+  "number": 16717,
+  "kind": "pr",
+  "start": "2026-10-11 21:12:03",
+  "base": "404135d0e92e0bec0ab7ee761f1dd3034360a07a",
+  "outcome": "discharged",
+  "next": "discharge",
+  "reworks": 0,
+  "end": "2026-10-11 21:20:05",
+  "cost_by_role": {
+    "claude": 2.1466619999999996,
+    "codex": 1.4105925000000001
+  }
+}

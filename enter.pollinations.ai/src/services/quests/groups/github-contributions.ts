@@ -122,20 +122,6 @@ const reportedIssueQuest: QuestDefinition = {
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
 
-// Keeps the admin grants (grant:<campaign>), which a maintainer records for
-// help a PR or issue reward doesn't cover. Shown only to people who got one.
-const teamBonusQuest: QuestDefinition = {
-    id: "team_bonus",
-    title: "Other contributions",
-    description: "Rewards from the team for help beyond a PR or issue.",
-    category: CONTRIBUTION_CATEGORY,
-    scope: "perUser",
-    repeatable: true,
-    rewardAmount: 0,
-    balanceBucket: "tier",
-    state: "completed",
-};
-
 const beeCensusQuest: QuestDefinition = {
     id: "bee_census",
     title: "Take the Bee Census",
@@ -579,7 +565,6 @@ export async function listQuestCards(
     return [
         questToCard(mergedPrQuest),
         questToCard(reportedIssueQuest),
-        questToCard(teamBonusQuest),
         questToCard(beeCensusQuest),
         questToCard(honeyCensusQuest),
         // A quest shows on the board once it has a reward label.

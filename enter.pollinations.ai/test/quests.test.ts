@@ -515,13 +515,6 @@ test("catalog lists the pull request and issue rewards", async ({
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
-    expect(
-        payload.quests.find((quest) => quest.id === "team_bonus"),
-    ).toMatchObject({
-        category: "contribute",
-        state: "completed",
-        repeatable: true,
-    });
 });
 
 test("catalog hides assigned and closed GitHub quest issues", async ({

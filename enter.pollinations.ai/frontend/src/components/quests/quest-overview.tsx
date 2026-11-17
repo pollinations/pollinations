@@ -125,11 +125,25 @@ const CATEGORIES: CategoryMeta[] = [
     },
 ];
 
+// Keeps the admin grants (grant:<campaign>) on the page only: a grant is not a
+// quest anyone can do, so it has no catalog entry. Shown to people who got one.
+const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
+    id: "other_contributions",
+    title: "Other contributions",
+    description: "Rewards from the team for help beyond a PR or issue.",
+    category: "contribute",
+    state: "completed",
+    repeatable: true,
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    url: null,
+};
+
 // Rewards recorded one per PR, fixed issue or grant, and the card that keeps them.
 const CARD_BY_PREFIX = [
     ["github:merged_pr:", "merged_pr"],
     ["github:reported_issue:", "reported_merged_issue"],
-    ["grant:", "team_bonus"],
+    ["grant:", OTHER_CONTRIBUTIONS.id],
 ] as const;
 
 /** The catalog card a reward belongs to. */
@@ -719,30 +733,34 @@ function QuestOverviewContent({
         }));
 
         try {
-            for (const rewardId of rewardIds) {
-                const response = await accountClient.quests.rewards[
-                    ":rewardId"
-                ].claim.$post({
-                    param: { rewardId },
-                });
-                if (!response.ok) {
-                    throw new Error(
-                        "Couldn’t claim the reward. Please try again.",
-                    );
+            try {
+                for (const rewardId of rewardIds) {
+                    const response = await accountClient.quests.rewards[
+                        ":rewardId"
+                    ].claim.$post({
+                        param: { rewardId },
+                    });
+                    if (!response.ok) {
+                        throw new Error(
+                            "Couldn’t claim the reward. Please try again.",
+                        );
+                    }
                 }
+            } finally {
+                // Also after a failure part way: show what was credited.
+                void router.invalidate({
+                    filter: (match) => match.routeId === "/_dashboard",
+                });
+                const questData = await loadQuestData();
+                setState((current) => ({
+                    ...current,
+                    ...questData,
+                    claimingRewardIds: current.claimingRewardIds.filter(
+                        (id) => !rewardIds.includes(id),
+                    ),
+                }));
+                window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
             }
-            void router.invalidate({
-                filter: (match) => match.routeId === "/_dashboard",
-            });
-            const questData = await loadQuestData();
-            setState((current) => ({
-                ...current,
-                ...questData,
-                claimingRewardIds: current.claimingRewardIds.filter(
-                    (id) => !rewardIds.includes(id),
-                ),
-            }));
-            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,
@@ -807,7 +825,7 @@ function QuestOverviewContent({
             easteregg: [],
         };
 
-        for (const quest of state.catalog) {
+        for (const quest of [...state.catalog, OTHER_CONTRIBUTIONS]) {
             // A repeatable quest keeps all its rewards on its card. One Claim
             // takes every waiting reward of the next one's balance. With none
             // waiting, it stays open while the quest is on the board.
@@ -896,7 +914,10 @@ function QuestOverviewContent({
     // the catalog) gets its own row.
     const bonusRewardCards = useMemo(() => {
         const catalog = new Map(
-            state.catalog.map((quest) => [quest.id, quest]),
+            [...state.catalog, OTHER_CONTRIBUTIONS].map((quest) => [
+                quest.id,
+                quest,
+            ]),
         );
         return (
             state.rewards
@@ -1103,8 +1124,9 @@ function QuestOverviewContent({
                 // The progress chip counts only real (grantable) quests —
                 // coming_soon rows are excluded from both done and total.
                 const liveCards = cards.filter((card) => !card.comingSoon);
+                // A repeatable card stays open, but counts once it paid.
                 const done = liveCards.filter(
-                    (card) => card.status !== "open",
+                    (card) => card.status !== "open" || card.repeats?.length,
                 ).length;
                 return (
                     <Section

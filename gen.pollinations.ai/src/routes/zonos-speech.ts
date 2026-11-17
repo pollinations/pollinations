@@ -18,7 +18,7 @@ export async function generateZonosSpeech(
     }
     if (!binding) {
         throw new UpstreamError(503, {
-            message: "ZONOS3-Mini pilot is unavailable.",
+            message: "ZONOS3-Mini is unavailable.",
         });
     }
 

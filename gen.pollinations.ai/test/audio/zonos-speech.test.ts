@@ -18,7 +18,7 @@ it("limits ZONOS speech to the paid POST endpoint and meters input bytes", () =>
     expect(calculatePrice(model, usage).totalPrice).toBeCloseTo(0.000025, 10);
 });
 
-it("rejects unsupported encodings and reports an unbound pilot as unavailable", async () => {
+it("rejects unsupported encodings and reports an unbound backend as unavailable", async () => {
     await expect(
         generateZonosSpeech(undefined, "Hello", "alloy", "wav"),
     ).rejects.toMatchObject({ status: 400 });

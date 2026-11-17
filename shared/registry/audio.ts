@@ -1115,7 +1115,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-11-17").getTime(),
         paidOnly: true,
         priceMultiplier: 31.25,
-        // Loaded cost measured on the RTX 3060 in the Vast pilot benchmark.
+        // Loaded cost measured on a Vast RTX 3060.
         cost: { completionAudioTokens: 0.16 / 1_000_000 },
         priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "ZONOS3-Mini",

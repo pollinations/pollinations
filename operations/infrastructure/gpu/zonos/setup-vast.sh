@@ -8,7 +8,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get -qq update
 apt-get -yqq install git cmake g++ ninja-build curl ca-certificates pkg-config espeak-ng ffmpeg
 
-root="${ZONOS_WORKSPACE:-/workspace/zonos3-pilot}"
+root="${ZONOS_WORKSPACE:-/workspace/zonos3-mini}"
 source_revision=96d9e0ec1e39083ed336ac78f24e3dbc93721c0f
 weight_revision=2921b8821772b0bd10a04456863d21abf9d2f283
 mkdir -p "$root/models"

@@ -126,8 +126,8 @@ const reportedIssueQuest: QuestDefinition = {
 // help a PR or issue reward doesn't cover. Shown only to people who got one.
 const teamBonusQuest: QuestDefinition = {
     id: "team_bonus",
-    title: "Bonus from the team",
-    description: "Extra rewards from the team for your help.",
+    title: "Other contributions",
+    description: "Rewards from the team for help beyond a PR or issue.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     repeatable: true,

@@ -703,6 +703,119 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6.2-astra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(16),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(20),
+                    completionTextTokens: perMillion(60),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Astra",
+        description:
+            "Frontier reasoning for the most demanding professional and agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6.2-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(5),
+                    promptImageTokens: perMillion(4),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Sol",
+        description: "Efficient reasoning for coding and agentic workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "openai/gpt-6.1-sol": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],
@@ -1939,6 +2052,35 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         contextLength: 128000,
         isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1.1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            // Azure East US Global Standard retail meter, verified 2026-11-17.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1.1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
     },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,

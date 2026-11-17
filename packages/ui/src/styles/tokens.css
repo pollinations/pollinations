@@ -121,8 +121,9 @@
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
-    /* Amber text, in the honey family: 5.1:1 on white, 4.6:1 on cream. */
-    --polli-color-text-soft:       oklch(0.54 0.15 calc(var(--polli-hue) - 18));
+    /* Amber text, in the honey family: 6.2:1 on white, 4.6:1 on the grey
+       dashboard rail (the darkest surface it sits on in light mode). */
+    --polli-color-text-soft:       oklch(0.5 0.15 calc(var(--polli-hue) - 18));
     /* Amber for big headline numbers only: brighter than text-soft, which
        goes brown at that size on cream (3.4:1, fine for large text). */
     --polli-color-text-display:    oklch(0.62 0.16 calc(var(--polli-hue) - 18));

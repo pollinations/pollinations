@@ -464,7 +464,19 @@ const NavRow: FC<{
                 <span className="sr-only"> claimable</span>
             </Chip>
         )}
-        {rowStatus?.[item.id]}
+        {/* A row's balance keeps its paid/Quest colours on the desk; on the
+            honey of the current row everything in it takes the row's dark
+            text, still told apart by its icon. */}
+        {rowStatus?.[item.id] && (
+            <span
+                className={cn(
+                    "ml-auto inline-flex items-center",
+                    active && "[&_*]:text-current!",
+                )}
+            >
+                {rowStatus[item.id]}
+            </span>
+        )}
     </NavItem>
 );
 

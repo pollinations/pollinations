@@ -24,12 +24,16 @@ export function supportsAudioLength(model: {
     id: string;
     allowedDurations: number[];
 }) {
-    // Lyria 3.5 takes approximate length in the prompt. Fixed-length models
-    // choose their only duration when the parameter is omitted.
+    // Lyria 3.5 takes approximate length in the prompt and Sonilo follows its
+    // video. Fixed-length models choose their only duration when omitted.
     return (
-        model.id !== "google/lyria-3.5" && model.allowedDurations.length !== 1
+        model.id !== "google/lyria-3.5" &&
+        model.id !== "sonilo/sonilo-1.1-sfx" &&
+        model.allowedDurations.length !== 1
     );
 }
+
+const isVideo = (file: File) => file.type.startsWith("video/");
 
 export function audioInputError(
     model: AudioModel,
@@ -46,8 +50,17 @@ export function audioInputError(
             : "Upload an audio file first.";
     if (generatesAudio && !prompt.trim())
         return "Add text or a description first.";
-    if (generatesAudio && file && !model.inputModalities.includes("audio")) {
-        return "This model does not accept reference audio.";
+    const takesAudio = model.inputModalities.includes("audio");
+    const takesVideo = model.inputModalities.includes("video");
+    if (generatesAudio && !file && takesVideo && !takesAudio)
+        return "Upload a video first.";
+    if (generatesAudio && file) {
+        if (isVideo(file)) {
+            if (!takesVideo)
+                return "This model does not accept reference video.";
+        } else if (!takesAudio) {
+            return "This model does not accept reference audio.";
+        }
     }
     return null;
 }
@@ -106,7 +119,11 @@ export async function generatePlaygroundAudio(
         model: model.id,
         voice,
         duration,
-        referenceAudio: upload?.url,
+        // Voice changer and isolator returned above, so a video here is for a
+        // generating model that takes video input.
+        ...(file && isVideo(file) && model.inputModalities.includes("video")
+            ? { referenceVideo: upload?.url }
+            : { referenceAudio: upload?.url }),
     };
     const result =
         endpoint === "/audio/{text}"

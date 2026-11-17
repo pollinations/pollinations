@@ -17,6 +17,7 @@ const model = (endpoint: string, inputs = ["audio"]) => ({
     inputModalities: inputs,
     supportedEndpoints: [endpoint],
 });
+const video = new File(["video bytes"], "clip.mp4", { type: "video/mp4" });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("catalog-driven audio requests", () => {
@@ -31,6 +32,12 @@ describe("catalog-driven audio requests", () => {
         expect(
             supportsAudioLength({
                 id: "google/lyria-3.5",
+                allowedDurations: [],
+            }),
+        ).toBe(false);
+        expect(
+            supportsAudioLength({
+                id: "sonilo/sonilo-1.1-sfx",
                 allowedDurations: [],
             }),
         ).toBe(false);
@@ -83,6 +90,30 @@ describe("catalog-driven audio requests", () => {
             reference_audio: "https://media.pollinations.ai/reference",
         });
         expect(result.type).toBe("audio");
+    });
+
+    it("uploads a video and sends it as the reference video", async () => {
+        const fetchRequest = vi
+            .fn()
+            .mockResolvedValueOnce(
+                Response.json({ url: "https://media.pollinations.ai/clip" }),
+            )
+            .mockResolvedValueOnce(
+                new Response("sfx", {
+                    headers: { "content-type": "audio/mpeg" },
+                }),
+            );
+        vi.stubGlobal("fetch", fetchRequest);
+        await generatePlaygroundAudio(
+            client,
+            model("/v1/audio/speech", ["text", "video"]),
+            { prompt: "footsteps", file: video },
+        );
+        expect(JSON.parse(fetchRequest.mock.calls[1][1].body)).toEqual({
+            input: "footsteps",
+            model: "new-model-from-catalog",
+            reference_video: "https://media.pollinations.ai/clip",
+        });
     });
 
     it.each(["/v1/audio/voice-changer", "/v1/audio/voice-isolator"])(
@@ -194,6 +225,22 @@ describe("catalog-driven audio requests", () => {
                 file,
             ),
         ).toContain("Add text");
+    });
+
+    it("accepts a video only where the catalog lists video input", () => {
+        const sfx = model("/v1/audio/speech", ["text", "video"]);
+        expect(audioInputError(sfx, "footsteps", video)).toBeNull();
+        expect(audioInputError(sfx, "footsteps")).toContain("Upload a video");
+        expect(audioInputError(sfx, "footsteps", file)).toContain(
+            "does not accept reference audio",
+        );
+        expect(
+            audioInputError(
+                model("/v1/audio/speech", ["text", "audio"]),
+                "music",
+                video,
+            ),
+        ).toContain("does not accept reference video");
     });
 
     it("does not generate without the reference if its upload fails", async () => {

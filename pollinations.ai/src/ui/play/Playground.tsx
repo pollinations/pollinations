@@ -1234,7 +1234,7 @@ export function Playground() {
                 label={
                     requiresMediaUpload
                         ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
-                        : "Reference audio (optional)"
+                        : `Reference ${mediaUploadLabel}${currentModel.inputModalities.includes("audio") ? " (optional)" : ""}`
                 }
             >
                 <FileUpload

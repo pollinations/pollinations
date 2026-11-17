@@ -7,12 +7,13 @@ import type { TinybirdModelStats } from "@shared/utils/model-stats.ts";
 
 /**
  * Per-request estimate from the model definition, or null when the definition
- * is token-priced (Tinybird's historical average is the better preflight).
+ * is priced per token or per declared unit such as a megapixel (Tinybird's
+ * historical average is the better preflight).
  */
 export function getDefinedRequestEstimate(
     definition: ModelDefinition,
 ): number | null {
-    if (!isFlatRateModel(definition)) return null;
+    if (!isFlatRateModel(definition) || definition.priceUnits) return null;
 
     const price = getPriceDefinitionForModel(definition);
     const requestPrice =

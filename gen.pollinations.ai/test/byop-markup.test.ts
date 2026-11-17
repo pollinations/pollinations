@@ -807,6 +807,45 @@ describe("BYOP markup", () => {
         ).toBe(1.25);
     });
 
+    it("keeps Tinybird estimates for models priced per megapixel", async () => {
+        // The listed rate is per megapixel (or a millionth of one), not per
+        // request, so it must not stand in for the median or discard it.
+        for (const [model, median] of [
+            ["black-forest-labs/flux-3-image-klein", 0.009],
+            ["qwen/qwen-image-2.1", 0.02],
+            ["black-forest-labs/flux.2-max", 0.4],
+        ] as const) {
+            const definition = getRegistryModelDefinition(model);
+            expect(getDefinedRequestEstimate(definition)).toBeNull();
+            expect(
+                getEstimatedPrice(
+                    { data: [{ model, avg_cost_usd: median }] },
+                    model,
+                    definition,
+                ),
+            ).toBe(median);
+        }
+
+        const model = "black-forest-labs/flux-3-image-klein";
+        const vars = {
+            auth: { user: { id: "preflight-payer" } },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0,
+                    packBalance: 0.001,
+                }),
+            },
+            model: testModel(model),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.009, model)),
+        ).rejects.toMatchObject({
+            status: 402,
+            message: expect.stringContaining("costs about $0.0090"),
+        });
+    });
+
     it("retains legacy price estimates after a canonical rename", () => {
         const model = "openai/gpt-5.4-nano";
         const definition = getRegistryModelDefinition(model);

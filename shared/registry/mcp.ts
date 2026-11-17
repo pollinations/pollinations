@@ -58,7 +58,8 @@ export type McpBindingName =
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
-    | "RESEARCH_MCP";
+    | "RESEARCH_MCP"
+    | "HOLIDAYS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -311,6 +312,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "holidays",
+        alpha: true,
+        name: "Holidays",
+        description:
+            "Public holidays and upcoming dates for countries worldwide, plus a working-day check.",
+        binding: "HOLIDAYS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Public holiday data is free. No additional MCP fee.",
             rates: [],
         },
     },

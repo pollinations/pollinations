@@ -63,6 +63,7 @@ for (const modern of [false, true])
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
+            "postal_code_lookup",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
@@ -76,6 +77,7 @@ for (const modern of [false, true])
                 "domain_whois",
                 "http_probe",
                 "ip_whois",
+                "postal_code_lookup",
             ],
         );
         const response = await client.callTool({
@@ -372,6 +374,148 @@ test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits wi
     });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /429.*60/);
+    assert.equal(stub.mock.callCount(), 1);
+});
+test("Postal code lookup returns place, state and coordinates and surfaces unknown codes", async (t) => {
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.zippopotam.us");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.pathname === "/us/90210")
+            return Response.json({
+                country: "United States",
+                "country abbreviation": "US",
+                "post code": "90210",
+                places: [
+                    {
+                        "place name": "Beverly Hills",
+                        longitude: "-118.4065",
+                        latitude: "34.0901",
+                        state: "California",
+                        "state abbreviation": "CA",
+                    },
+                ],
+            });
+        if (url.pathname === "/de/10115")
+            return Response.json({
+                country: "Germany",
+                "country abbreviation": "DE",
+                "post code": "10115",
+                places: [
+                    {
+                        "place name": "Berlin",
+                        longitude: "13.3922",
+                        latitude: "52.532",
+                        state: "Berlin",
+                        "state abbreviation": "BE",
+                    },
+                ],
+            });
+        if (url.pathname === "/in/110001")
+            return Response.json({
+                country: "India",
+                "country abbreviation": "IN",
+                "post code": "110001",
+                places: [
+                    {
+                        "place name": "Janpath",
+                        longitude: "77.2167",
+                        latitude: "28.6333",
+                        state: "New Delhi",
+                        "state abbreviation": "DL",
+                    },
+                    {
+                        "place name": "Rail Bhawan",
+                        longitude: "77.2167",
+                        latitude: "28.6333",
+                        state: "New Delhi",
+                        "state abbreviation": "DL",
+                    },
+                    {
+                        "place name": "Connaught Place",
+                        longitude: "77.2167",
+                        latitude: "28.6333",
+                        state: "New Delhi",
+                        "state abbreviation": "DL",
+                    },
+                ],
+            });
+        return new Response("{}", { status: 404 });
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "postal_code_lookup",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    // Country defaults to us when omitted.
+    const beverly = await read({ postal_code: "90210" });
+    assert.equal(beverly.country, "United States");
+    assert.equal(beverly.country_code, "US");
+    assert.equal(beverly.postal_code, "90210");
+    assert.deepEqual(beverly.places, [
+        {
+            place: "Beverly Hills",
+            state: "California",
+            state_code: "CA",
+            latitude: 34.0901,
+            longitude: -118.4065,
+        },
+    ]);
+    const berlin = await read({ postal_code: "10115", country: "DE" });
+    assert.equal(berlin.places[0].place, "Berlin");
+    assert.equal(berlin.places[0].state_code, "BE");
+    assert.equal(berlin.places[0].latitude, 52.532);
+    const delhi = await read({ postal_code: "110001", country: "in" });
+    assert.equal(delhi.places.length, 3);
+    assert.equal(delhi.places[2].place, "Connaught Place");
+    const unknown = await c.callTool({
+        name: "postal_code_lookup",
+        arguments: { postal_code: "00000" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.match(unknown.content[0].text, /not found/);
+    assert.equal(requests, 4);
+});
+test("Postal code lookup rejects invalid inputs before I/O and exposes upstream errors", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response(null, { status: 429 }),
+    );
+    const c = await clientFor(t);
+    for (const args of [
+        { postal_code: "" },
+        { postal_code: "90210!" },
+        { postal_code: "a".repeat(21) },
+        { postal_code: "90210", country: "usa" },
+        { postal_code: "90210", country: "1" },
+    ]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "postal_code_lookup",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+    assert.equal(stub.mock.callCount(), 0);
+    const result = await c.callTool({
+        name: "postal_code_lookup",
+        arguments: { postal_code: "90210" },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 429/);
     assert.equal(stub.mock.callCount(), 1);
 });
 test("HTTP stops redirect loops and never reads HEAD or binary bodies", async (t) => {

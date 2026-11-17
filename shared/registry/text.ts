@@ -711,7 +711,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(8),
             promptCachedTokens: perMillion(0.4),
@@ -767,7 +767,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
         paidOnly: false,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.1),

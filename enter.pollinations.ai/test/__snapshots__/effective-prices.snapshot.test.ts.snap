@@ -3544,10 +3544,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00004,
-      "promptCacheWriteTokens": 0.00001,
-      "promptCachedTokens": 0.0000004,
-      "promptTextTokens": 0.000008,
+      "completionTextTokens": 0.00003,
+      "promptCacheWriteTokens": 0.0000075,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000006,
     },
   },
   "openai/gpt-6.2-sol": {
@@ -3568,11 +3568,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000001,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "openai/gpt-audio-1.5": {

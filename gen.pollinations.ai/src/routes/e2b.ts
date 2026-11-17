@@ -583,7 +583,7 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
     );
     if (!response.ok) throw await upstreamError(response);
     if (!budgeted) return undefined;
-    return `This sandbox's polli login has a budget of 0 Pollen, because the key that created the sandbox has a budget. Give the login a budget at ${fixLink(c, "/edit-key", { id, ref: "sandbox_key_budget" })}.`;
+    return `This sandbox's polli login has a budget of $0, because the key that created the sandbox has a budget. Give the login a budget at ${fixLink(c, "/edit-key", { id, ref: "sandbox_key_budget" })}.`;
 }
 
 async function ownerOnly(c: E2bContext) {

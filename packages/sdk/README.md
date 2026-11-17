@@ -592,7 +592,7 @@ include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
 `safe`, and `signal`. The result contains `buffer`, `contentType` and a URL
 without an API key. The server's MIME type is preserved for GLB and PLY files.
 3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
-Check each model's `paid_only` flag before using it with Quest Pollen.
+Check each model's `paid_only` flag before using it with the Quest balance.
 
 ## Async media jobs
 

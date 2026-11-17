@@ -42,7 +42,7 @@ export interface PolliProviderProps {
      * `login({ models })` overrides this default.
      */
     models?: string[];
-    /** Pollen budget for the key. `login({ budget })` overrides this default. */
+    /** Budget for the key, in US dollars. `login({ budget })` overrides this default. */
     budget?: number;
     /** Key lifetime in days. `login({ expiry })` overrides this default. */
     expiry?: number;

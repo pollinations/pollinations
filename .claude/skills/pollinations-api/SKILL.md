@@ -94,7 +94,7 @@ only with the user's permission.
    (any amount from $0.01 to $10,000). It returns `402` with payment terms in
    the `PAYMENT-REQUIRED` header.
 2. An x402 client signs those terms and retries with `PAYMENT-SIGNATURE`. The
-   response holds the new secret `key` and its `pollen` budget.
+   response holds the new secret `key` and its budget in `pollen`, in US dollars.
 
 Each payment creates a new key; store it like the device authorization key above.
 

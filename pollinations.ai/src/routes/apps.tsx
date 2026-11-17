@@ -463,7 +463,7 @@ function AppsPage() {
                         <ContentHeader
                             eyebrow="Pollinations Pay"
                             title="Most used this week"
-                            subtitle="Apps ranked by requests their users paid for with their own pollen."
+                            subtitle="Apps ranked by requests their users paid for from their own balance."
                         />
                     </div>
                     {spotlightLoading ? (

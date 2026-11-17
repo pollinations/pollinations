@@ -59,7 +59,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
+        'Price in US dollars. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -84,7 +84,7 @@ const VisibilitySchema = z
 const PaidOnlySchema = z
     .boolean()
     .describe(
-        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
+        "Restrict callers to the paid balance on this model. Use it when the upstream bills per use, so the Quest balance cannot cover the price and leave you paying the inference cost.",
     );
 const PerUserRpmSchema = z
     .number()
@@ -537,7 +537,7 @@ export const CommunityEndpointHealthResponseSchema = z.object({
                 cost: z
                     .number()
                     .describe(
-                        "Pollen charged for the call and everything it ran.",
+                        "Amount charged, in US dollars, for the call and everything it ran.",
                     ),
                 modelCalls: z
                     .number()

@@ -1484,19 +1484,22 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        // Azure accepts this set on V4.1 Flash (probed 2026-10-15).
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-10-18").getTime(),
-        // 0.5x matches DeepInfra's output price (0.60 per M).
+        // 0.5x matches the output price of the Azure V4.1 Flash route.
         priceMultiplier: 0.5,
-        paidOnly: true,
-        // Fireworks standard serverless rates (2026-10-18).
+        paidOnly: false,
+        perUserRpm: 60,
+        // Azure Sweden Central Global Standard Flash1017 meters (2026-11-01).
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
+            promptImageTokens: perMillion(0.3),
             completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash 1017",
@@ -2001,6 +2004,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "liquid/d1.2": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: ["d1.2"],
+        provider: "vercel",
+        publisher: "Liquid AI",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "d1.2",
+        description:
+            "Structured choices, scores and probabilities over text or JSON " +
+            "state. Use /alpha/decisions or the chat-completions adapter",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
     "inferenceport-ai/lightning-text-v2.1": {
         supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
         aliases: [],
@@ -2052,6 +2080,35 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         contextLength: 128000,
         isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1.1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            // Azure East US Global Standard retail meter, verified 2026-11-17.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1.1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
     },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,

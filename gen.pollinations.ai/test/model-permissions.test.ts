@@ -19,6 +19,7 @@ import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
+import { generateCacheKey } from "../src/utils/media-cache.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -63,26 +64,89 @@ for (const variant of ["flare", "sunburst"]) {
     });
 }
 
-test("a HEAD request resolves the query model like GET", async ({
+test("HEAD and GET validate the same query model before generation", async ({
     apiKey,
     paidApiKey,
 }) => {
-    // HEAD answers from the GET handler, so it must read the same query. When
-    // it fell back to the route default, a paid-only model answered 200.
-    const model = "openai/gpt-image-2.6-flare";
-    const unpaid = await fetchWorker(`/image/head-model-check?model=${model}`, {
-        method: "HEAD",
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    expect(unpaid.status).toBe(402);
+    const cases = [
+        [
+            "/image/head-model-check?model=openai/gpt-image-2.6-flare",
+            apiKey,
+            402,
+        ],
+        ["/image/head-model-check?model=openai/gpt-5.4-nano", paidApiKey, 400],
+        [
+            "/audio/head-model-check?model=openai/gpt-image-2.6-flare",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/text/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/image/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/audio/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+    ] as const;
+    for (const [path, key, status] of cases) {
+        for (const method of ["GET", "HEAD"]) {
+            const response = await fetchWorker(path, {
+                method,
+                headers: { Authorization: `Bearer ${key}` },
+            });
+            expect(response.status, `${method} ${path}`).toBe(status);
+            if (method === "HEAD") expect(await response.text()).toBe("");
+        }
+    }
+});
 
-    // A model of the wrong modality is rejected before any provider runs, so
-    // this proves the requested model reached validation on HEAD.
-    const wrongModality = await fetchWorker(
-        "/image/head-model-check?model=openai/gpt-5.4-nano",
-        { method: "HEAD", headers: { Authorization: `Bearer ${paidApiKey}` } },
+test("HEAD and GET share existing media cache for paid and unpaid callers", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const model = "openai/gpt-image-2.6-flare";
+    const path = `/image/head-cached-check?model=${model}&safe=false`;
+    const bytes = new Uint8Array([137, 80, 78, 71]);
+    const key = await generateCacheKey(
+        new URL(path, "https://gen.pollinations.ai"),
+        undefined,
+        [],
+        getRegistryModelDefinition(model)?.cacheVersion,
     );
-    expect(wrongModality.status).toBe(400);
+    await env.MEDIA.put(
+        key,
+        new Response(bytes, { headers: { "Content-Type": "image/png" } }),
+    );
+    for (const method of ["HEAD", "GET"]) {
+        const paid = await fetchWorker(path, {
+            method,
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        });
+        expect(paid.status).toBe(200);
+        expect(paid.headers.get("x-cache")).toBe("HIT");
+        expect(paid.headers.get("content-type")).toBe("image/png");
+        expect(new Uint8Array(await paid.arrayBuffer())).toEqual(
+            method === "HEAD" ? new Uint8Array() : bytes,
+        );
+        const unpaid = await fetchWorker(path, {
+            method,
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        // Shared completed media is served before generation balance checks.
+        expect(unpaid.status).toBe(200);
+        expect(unpaid.headers.get("x-cache")).toBe("HIT");
+        expect(new Uint8Array(await unpaid.arrayBuffer())).toEqual(
+            method === "HEAD" ? new Uint8Array() : bytes,
+        );
+    }
 });
 
 test("banned app owners block direct keys and existing BYOP keys", async () => {

@@ -340,7 +340,7 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     return parts;
 }
 
-/** An amount of pollen: the sprout and a number, never the word, all in the
+/** An amount: the sprout and a number, never the word, all in the
  *  Quest green. Pollen still waiting to be claimed has a plus. */
 function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
     const waiting = ready && pollen.tier + pollen.paid > 0;
@@ -352,7 +352,7 @@ function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
             />
             {waiting ? "+" : ""}
             {formatRewardAmount(pollen.tier + pollen.paid)}
-            <span className="sr-only"> pollen</span>
+            <span className="sr-only"> in rewards</span>
         </span>
     );
 }

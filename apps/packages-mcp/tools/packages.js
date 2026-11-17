@@ -13,6 +13,9 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Debian source package names are lowercase alphanumerics plus
+        // +, . and - (e.g. libsigc++-2.0, python3.11), starting alphanumeric.
+        debian: /^[a-z0-9][a-z0-9+.-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +169,44 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "debian") {
+        // sources.debian.org lists SOURCE packages only, newest version
+        // first. Unknown and binary-only names answer HTTP 200 with
+        // {"error":404}, not a 404, so the body must be checked. The API
+        // publishes no description, license, homepage or dependencies.
+        const data = await fetchJson(
+            `https://sources.debian.org/api/src/${encoded}/`,
+        );
+        if (
+            data.error === 404 ||
+            !Array.isArray(data.versions) ||
+            data.versions.length === 0
+        )
+            throw new Error(`Debian source package ${name} not found`);
+        const versions = data.versions.map((entry) => ({
+            version: entry.version,
+            area: entry.area,
+            suites: entry.suites ?? [],
+        }));
+        const selected = version
+            ? versions.find((entry) => entry.version === version)
+            : versions[0];
+        if (!selected)
+            throw new Error(
+                version
+                    ? `Debian version ${version} not found for ${name}`
+                    : `Debian package ${name} has no versions`,
+            );
+        return {
+            ecosystem,
+            name: data.package ?? name,
+            version: selected.version,
+            area: selected.area,
+            suites: selected.suites,
+            versions,
+            registryUrl: `https://sources.debian.org/src/${encoded}/`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +244,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or Debian source-package versions with their suites. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Debian newest source version. Rust descriptive metadata (license/homepage) is at registryUrl. The Debian source API publishes no description, license, homepage or dependencies, so a debian result carries versions, area, suites and the source page instead. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +254,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "debian",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),
@@ -221,7 +263,10 @@ export const packageTools = [
                 .trim()
                 .min(1)
                 .max(100)
-                .regex(/^[A-Za-z0-9][A-Za-z0-9.+!_-]*$/)
+                // Debian versions carry epochs (2:9.2.0858-1) and tildes
+                // (3~bpo70+1); both are URL-safe after encoding and cannot
+                // escape the path, so they are allowed here.
+                .regex(/^[A-Za-z0-9][A-Za-z0-9.+!:~-]*$/)
                 .optional()
                 .describe("Exact version, or an npm dist-tag"),
         },

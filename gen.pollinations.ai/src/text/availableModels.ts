@@ -371,6 +371,18 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.2-astra",
+        config: portkeyConfig["gpt-6.2-astra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol",
+        config: portkeyConfig["gpt-6.2-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,

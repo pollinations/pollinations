@@ -202,6 +202,24 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it.each(["gpt-6.2-astra", "gpt-6.2-sol"])(
+        "routes openai/%s to the Azure Responses deployment with no fallback",
+        (model) => {
+            const canonical = `openai/${model}`;
+            const result = resolveModelConfig(messages, { model: canonical });
+
+            expect(result.options.model).toBe(model);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "azure-openai",
+                "azure-resource-name": "myceli-prod-eastus",
+                "azure-deployment-id": model,
+                responsesEndpoint:
+                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            });
+            expect(findModelByName(`${canonical}:aws`)).toBeNull();
+        },
+    );
+
     it("keeps GPT-5.3 Codex primary and OpenAI fallback routes distinct", () => {
         const primary = resolveModelConfig(messages, {
             model: "openai/gpt-5.3-codex",

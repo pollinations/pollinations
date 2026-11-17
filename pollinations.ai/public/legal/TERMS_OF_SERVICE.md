@@ -72,7 +72,7 @@ Fees are per plan/order/invoice; currency is by default USD. Top-ups, including 
 **Balances.** Your wallet may include:
 
 - **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest balance usage. The Quest balance does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
-- **Paid balance:** purchased credit and developer earnings credited from paid balance usage. The paid balance does not automatically refill.
+- **Paid balance:** purchased credit and developer earnings credited from paid balance usage. Your paid balance refills automatically only if you enable auto top-up.
 
 **Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining balance in your wallet (Quest balance and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or topping up counts as activity and resets the inactivity clock.
 

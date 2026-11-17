@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "met_search",
+                "met_object",
             ].sort(),
         );
     });
@@ -644,4 +646,121 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Met Museum search resolves details on v1 and skips missing objects", async (t) => {
+    const v11ObjectHits = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "collectionapi.metmuseum.org");
+        if (url.pathname === "/public/collection/v1.1/search") {
+            if (url.searchParams.get("q") === "zzqxwvjklmnop12345")
+                return Response.json({ total: 0, objectIDs: null });
+            if (url.searchParams.get("q") === "mixed")
+                return Response.json({
+                    total: 2,
+                    objectIDs: [485308, 999999],
+                });
+            assert.equal(url.searchParams.get("q"), "sunflowers");
+            assert.equal(url.searchParams.get("isHighlight"), "true");
+            assert.equal(url.searchParams.get("limit"), "2");
+            return Response.json({
+                total: 3,
+                objectIDs: [485308, 158887],
+            });
+        }
+        if (url.pathname === "/public/collection/v1/objects/485308") {
+            return Response.json({
+                objectID: 485308,
+                title: "Sunflower",
+                artistDisplayName: "Joan Mitchell",
+                objectDate: "1969",
+                medium: "Oil on canvas",
+                department: "Modern and Contemporary Art",
+                primaryImage: "",
+                objectURL:
+                    "https://www.metmuseum.org/art/collection/search/485308",
+            });
+        }
+        if (url.pathname === "/public/collection/v1/objects/158887") {
+            return Response.json({
+                objectID: 158887,
+                title: "Evening ensemble",
+                artistDisplayName: "Hanae Mori",
+                objectDate: "1966–69",
+                medium: "silk",
+                department: "Costume Institute",
+                primaryImage: "",
+                objectURL:
+                    "https://www.metmuseum.org/art/collection/search/158887",
+            });
+        }
+        if (url.pathname === "/public/collection/v1/objects/999999") {
+            return new Response(JSON.stringify({ message: "Not Found" }), {
+                status: 404,
+                headers: { "content-type": "application/json" },
+            });
+        }
+        if (url.pathname.startsWith("/public/collection/v1.1/objects")) {
+            v11ObjectHits.push(url.pathname);
+            return new Response(JSON.stringify({ message: "Not Found" }), {
+                status: 404,
+                headers: { "content-type": "application/json" },
+            });
+        }
+        throw new Error(`unexpected Met request: ${url.pathname}`);
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "met_search", {
+        query: "sunflowers",
+        limit: 2,
+        is_highlight: true,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 3);
+    assert.equal(searchVal.results[0].objectId, 485308);
+    assert.equal(searchVal.results[0].title, "Sunflower");
+    assert.equal(searchVal.results[0].artist, "Joan Mitchell");
+    assert.equal(searchVal.results[0].date, "1969");
+    assert.equal(searchVal.results[0].medium, "Oil on canvas");
+    assert.equal(
+        searchVal.results[0].department,
+        "Modern and Contemporary Art",
+    );
+    assert.equal(searchVal.results[0].image, null);
+    assert.equal(
+        searchVal.results[0].url,
+        "https://www.metmuseum.org/art/collection/search/485308",
+    );
+    assert.equal(searchVal.results[1].title, "Evening ensemble");
+    assert.equal(searchVal.results[1].artist, "Hanae Mori");
+    assert.deepEqual(v11ObjectHits, []);
+
+    const emptyRes = await call(c, "met_search", {
+        query: "zzqxwvjklmnop12345",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).results, []);
+
+    const mixedRes = await call(c, "met_search", { query: "mixed" });
+    assert.notEqual(mixedRes.isError, true, JSON.stringify(mixedRes));
+    assert.equal(value(mixedRes).totalResults, 2);
+    assert.equal(value(mixedRes).results.length, 1);
+    assert.equal(value(mixedRes).results[0].title, "Sunflower");
+
+    const objectRes = await call(c, "met_object", { object_id: 485308 });
+    assert.notEqual(objectRes.isError, true, JSON.stringify(objectRes));
+    assert.equal(value(objectRes).object.title, "Sunflower");
+    assert.equal(value(objectRes).object.artist, "Joan Mitchell");
+
+    const unknownRes = await call(c, "met_object", { object_id: 999999 });
+    assert.equal(unknownRes.isError, true);
+    assert.match(unknownRes.content[0].text, /404/);
+    assert.doesNotMatch(unknownRes.content[0].text, /Not Found/);
+
+    const invalidRes = await call(c, "met_object", { object_id: -1 });
+    assert.equal(invalidRes.isError, true);
 });

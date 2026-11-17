@@ -15,6 +15,7 @@ import {
     LoadingStatus,
     OutageNotice,
     ReceiptIcon,
+    RefreshIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -445,14 +446,17 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
 function QuestMarker({
     status,
     comingSoon,
+    repeatable,
 }: {
     status: QuestCardStatus;
     comingSoon?: boolean;
+    /** Earned again and again: the open mark says it comes back. */
+    repeatable?: boolean;
 }) {
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [TargetIcon, "text-theme-text-strong"]
+          ? [repeatable ? RefreshIcon : TargetIcon, "text-theme-text-strong"]
           : status === "claimable"
             ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
@@ -572,10 +576,6 @@ export function QuestRow({
     const claimableRewardIds =
         card.status === "claimable" ? card.rewardIds : undefined;
     const [showRewards, setShowRewards] = useState(false);
-    // A stacked card that paid before stays in the done look. A new reward
-    // wakes only its top: the mark, the title and the Claim button.
-    const resting =
-        claimed || (card.repeats?.some((repeat) => repeat.claimedAt) ?? false);
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -630,12 +630,15 @@ export function QuestRow({
         </Text>
     );
     // Show the "how to" description while the quest is actionable (open or
-    // claimable); drop it once it's done: claimed, a stacked card that paid
-    // before, or coming_soon (which also derives to "claimed").
+    // claimable); drop it once it's done (claimed, or coming_soon, which also
+    // derives to "claimed"), and on a repeatable quest once it paid.
     // A GitHub quest is its issue: the title says what to build, and the
     // issue number beside it links to the details instead of a description.
     const description =
-        !resting && card.description && card.issueNumber == null
+        !claimed &&
+        !card.repeats?.length &&
+        card.description &&
+        card.issueNumber == null
             ? card.description
             : null;
     // One plain reward in every state, so it holds the same spot on the right;
@@ -656,7 +659,16 @@ export function QuestRow({
                       );
                   return sum ? [{ kind, label: formatRewardAmount(sum) }] : [];
               })
-            : [{ kind: rewardIcon, label: rewardLabel }];
+            : [
+                  {
+                      kind: rewardIcon,
+                      // An open repeatable quest pays this again each time.
+                      label:
+                          card.repeats && card.status === "open"
+                              ? `${rewardLabel} each`
+                              : rewardLabel,
+                  },
+              ];
     const rewardChip = card.comingSoon ? (
         <Chip
             intent="neutral"
@@ -718,7 +730,11 @@ export function QuestRow({
         </div>
     );
     const marker = (
-        <QuestMarker status={card.status} comingSoon={card.comingSoon} />
+        <QuestMarker
+            status={card.status}
+            comingSoon={card.comingSoon}
+            repeatable={card.repeats !== undefined}
+        />
     );
     const reward = claimButton ?? rewardChip;
 
@@ -732,7 +748,7 @@ export function QuestRow({
             className={
                 claimableRewardIds
                     ? "!bg-[color-mix(in_oklab,var(--polli-color-fill)_42%,var(--polli-color-surface-opaque))] [.dark_&]:!bg-[color-mix(in_oklab,var(--polli-color-fill)_16%,var(--polli-color-surface-opaque))]"
-                    : resting
+                    : claimed
                       ? "!bg-[color-mix(in_oklab,var(--polli-color-surface-opaque)_45%,transparent)]"
                       : undefined
             }
@@ -996,7 +1012,8 @@ function QuestOverviewContent({
         for (const quest of [...state.catalog, OTHER_CONTRIBUTIONS]) {
             // A repeatable quest keeps all its rewards on its card. One Claim
             // takes every waiting reward of the next one's balance. With none
-            // waiting, a card that paid before rests as claimed.
+            // waiting, it stays open while the quest is on the board, so it
+            // reads as something to do again; off the board it rests.
             const repeats = quest.repeatable
                 ? state.rewards.filter(
                       (reward) => cardIdOf(reward.questId) === quest.id,
@@ -1009,7 +1026,8 @@ function QuestOverviewContent({
                     repeat.balanceBucket === next?.balanceBucket,
             );
             const reward = repeats
-                ? (next ?? repeats[0])
+                ? (next ??
+                  (quest.state === "available" ? undefined : repeats[0]))
                 : rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
@@ -1294,8 +1312,9 @@ function QuestOverviewContent({
                 // The progress chip counts only real (grantable) quests —
                 // coming_soon rows are excluded from both done and total.
                 const liveCards = cards.filter((card) => !card.comingSoon);
+                // A repeatable quest stays open, but counts once it paid.
                 const done = liveCards.filter(
-                    (card) => card.status !== "open",
+                    (card) => card.status !== "open" || card.repeats?.length,
                 ).length;
                 return (
                     <Section

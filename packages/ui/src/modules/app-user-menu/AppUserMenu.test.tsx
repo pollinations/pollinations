@@ -67,7 +67,7 @@ describe("AppUserMenu", () => {
         expect(html).toContain("mask:url(");
         expect(html.match(/mask:url\(/g)).toHaveLength(2);
         expect(html).toContain('data-intent="brand"');
-        expect(html).toContain("polli:border-theme-text-soft");
+        expect(html).toContain("polli-nectar");
         expect(html).not.toContain("polli:gap-0");
         expect(html).not.toContain("polli:h-full");
     });

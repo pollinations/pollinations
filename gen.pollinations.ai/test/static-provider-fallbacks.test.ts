@@ -448,33 +448,35 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.0002277);
     });
 
-    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+    it("keeps Mistral Large on Azure and bills its Bedrock fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        const fallback = TEXT_SERVICES[`${model}:aws`];
         expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
-        expect(fallback.provider).toBe("mistral");
+        expect(primary.fallbacks).toEqual([`${model}:aws`]);
+        expect(fallback.provider).toBe("aws");
         expect(fallback.paidOnly).not.toBe(true);
         expect(findModelByName(model)?.config()).toMatchObject({
             "azure-resource-name": "myceli-prod-eastus",
             "azure-deployment-id": "Mistral-Large-3",
         });
-        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
-            "custom-host": "https://api.mistral.ai/v1",
-            model: "mistral-large-2512",
+        expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+            provider: "bedrock",
+            model: "mistral.mistral-large-3-675b-instruct",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         const billed = calculateUsageBilling({
             model,
             usage: {
                 promptTextTokens: 1_000,
-                promptCachedTokens: 200,
                 completionTextTokens: 100,
             },
             servedBy: fallback,
             quotedBy: primary,
         });
-        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        const cost = 0.001 * 0.5 + 0.0001 * 1.5;
         expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
     });
@@ -500,11 +502,11 @@ describe("static provider fallbacks", () => {
         expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
-    it("preserves seeded requests on the direct Mistral fallback", async () => {
-        const route = findModelByName("mistralai/mistral-large-3:mistral");
+    it("preserves seeded requests on the Bedrock Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:aws");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
         const result = await route?.transform?.([], options);
-        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(result?.options).toEqual({ seed: 0, temperature: 0.2 });
         expect(options.seed).toBe(0);
         const unseeded = await route?.transform?.([], { temperature: 0.2 });
         expect(unseeded?.options).toEqual({ temperature: 0.2 });

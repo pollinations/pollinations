@@ -7,6 +7,8 @@ import { logGptImageError, logGptImagePrompt } from "./gptImageLogger.ts";
 
 const logError = debug("pollinations:error");
 
+const CONTENT_SAFETY_ENDPOINT =
+    "https://myceli-prod-eastus.cognitiveservices.azure.com";
 const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 const SEVERITY_THRESHOLD = 4;
 
@@ -29,13 +31,6 @@ const SAFE_RESULT: ContentSafetyResults = {
     violations: [],
     formattedViolations: "No violations detected",
 };
-
-function getConfig() {
-    const endpoint = getImageEnv("AZURE_CONTENT_SAFETY_ENDPOINT");
-    const apiKey = getImageEnv("AZURE_CONTENT_SAFETY_API_KEY");
-    if (!endpoint || !apiKey) return null;
-    return { endpoint: endpoint.replace(/\/$/, ""), apiKey };
-}
 
 function formatViolations(violations: ContentViolation[]): string {
     if (violations.length === 0) return "No violations detected";
@@ -73,16 +68,16 @@ async function analyzeContent(
     path: string,
     body: object,
 ): Promise<ContentSafetyResults> {
-    const cfg = getConfig();
-    if (!cfg) return SAFE_RESULT;
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
+    if (!apiKey) return SAFE_RESULT;
 
     try {
         const response = await fetch(
-            `${cfg.endpoint}${path}?api-version=2023-10-01`,
+            `${CONTENT_SAFETY_ENDPOINT}${path}?api-version=2023-10-01`,
             {
                 method: "POST",
                 headers: {
-                    "Ocp-Apim-Subscription-Key": cfg.apiKey,
+                    "Ocp-Apim-Subscription-Key": apiKey,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(body),

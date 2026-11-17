@@ -33,8 +33,11 @@ Collection steps:
    1.7.26, but it now warns that the command is deprecated. Retain it only
    when the v1 charge `items` need a cross-check.
 
-   Query the exact UTC month (`-s YYYY-MM-01 -e <next-month>-01`) and verify
-   every returned charge `start`/`end` lies within it. The v1 endpoint clips
+   The installed SDK uses inclusive `day >= start` and `day <= end` filters.
+   Pass UTC month-start epoch seconds as `-s` and next-month-start epoch minus
+   one second as `-e`, for both charges and funding invoices. Passing the next
+   month's first midnight includes that day's charges. Verify every returned
+   parent charge day lies inside the intended month. The v1 endpoint clips
    instance charges and their item amounts to the requested window; do not
    prorate those amounts again. Sum each top-level `amount` once to check the
    provider total, and check that its item amounts sum to that top-level amount
@@ -47,7 +50,14 @@ Collection steps:
    Verified instance-to-workload mappings come from
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
 
-3. If using dashboard screenshots, save them under `<collection-dir>/evidence/`.
+3. In regular Chrome, verify the account after sign-in and select the recorded
+   Myceli AI team in the sidebar; Google sign-in can initially select an
+   individual workspace. In Billing, select the UTC range and close the date
+   picker to apply it. Use `Credit Usage` → `Export All` → `Export CSV` or
+   `Export PDF`. Save loaded screenshots and originals under
+   `<collection-dir>/evidence/`. Inspect Downloads promptly after clicking;
+   avoid relying on an unbounded download event. Verify the actual file before
+   accepting export success.
 4. For the current balance, run `vastai show user --raw` with the existing
    authorized account and verify the team ID and Myceli email alias. `credit`
    is the team prepaid balance; keep `balance_referrals` separate. The raw user
@@ -73,6 +83,14 @@ Known traps:
   Represent its reviewed item rows as that UTC day bucket with an exclusive
   next-midnight end; retain the raw equal timestamps and billed hours in the
   archived source. This bucket does not assert an exact instance lifetime.
+- For multi-day aggregates, use the parent first-day through last-day-plus-one
+  coverage. A child item can carry only the final day's timestamps while its
+  quantity spans the whole parent interval. Preserve those raw timestamps;
+  do not assign the entire aggregate to the final day.
 - Upload/download quantities are network units, not hours. Use their v1 item
   amounts within the same exact month query.
+- Compare CSV rows to API billed amounts at instance and charge-kind grain.
+  An export can omit sub-cent lines. PDF displayed price arithmetic and its
+  header can also disagree with billed amounts; retain original source controls
+  and differences without replacing costs with reconstructed pricing.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.

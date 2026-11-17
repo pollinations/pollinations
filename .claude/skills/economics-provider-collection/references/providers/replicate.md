@@ -45,7 +45,10 @@ Collection steps:
      -H "Authorization: Bearer $REPLICATE_API_TOKEN"
    ```
 
-   Save raw JSON to `<collection-dir>/evidence/replicate-<period>-predictions.json`. Follow `next` pagination only as far as needed for the requested period.
+   `created_after` is inclusive and `created_before` exclusive. Follow all
+   pages in the requested UTC period, deduplicate IDs and check coverage.
+   Remove inputs, outputs and logs before retaining or archiving prediction
+   evidence; preserve operational counts and source metadata separately.
 
 4. For model schema evidence, fetch each relevant model:
 
@@ -60,8 +63,8 @@ Collection steps:
 6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.
 7. Use this skill for saved raw evidence.
 8. Prefer finalized invoice JSON over a manual monthly aggregate. Draft invoice
-   JSON is appropriate for the open month when it is timestamped and marked
-   provisional.
+   JSON is appropriate while finalization is pending, including a completed
+   calendar month, when timestamped and explicitly marked provisional.
 
 Seedance 2.0 pricing witness:
 
@@ -109,3 +112,7 @@ Known traps:
   Download every separate credit-purchase invoice PDF and receipt from the
   billing page or Myceli mailbox. Those purchases are funding evidence, not
   the month's model usage.
+- Credit purchase history can expose original paid invoices missing from
+  email. If a separate receipt redirect fails with `ERR_BLOCKED_BY_CLIENT`,
+  retain that failure and the paid invoice; do not bypass browser controls or
+  describe the receipt as downloaded.

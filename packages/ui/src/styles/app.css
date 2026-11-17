@@ -25,6 +25,20 @@
         @apply font-body;
     }
 
+    /* Tailwind v4 gives buttons the default arrow; anything you can press
+       shows the hand. Disabled controls keep the arrow, and a component's
+       own cursor utility (help, not-allowed, progress) still wins. */
+    :is(
+            button,
+            [role="button"],
+            [role="tab"],
+            [role="option"],
+            [role="menuitem"],
+            summary
+        ):not(:disabled, [aria-disabled="true"]) {
+        cursor: pointer;
+    }
+
     /* Selected text takes the honey accent instead of the browser's blue:
        11.6:1 in light, 4.5:1 in dark. */
     ::selection {

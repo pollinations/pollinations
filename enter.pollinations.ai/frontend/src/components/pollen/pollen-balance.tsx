@@ -100,15 +100,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     value={formatUsd(displayPaidBalance)}
                     info={
                         <InfoTip
-                            label="About Paid pollen"
+                            label="About Paid balance"
                             text={
                                 <TooltipList
-                                    title="Paid pollen"
+                                    title="Paid balance"
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
-                                        "pollen you bought",
+                                        "Top-ups you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Quest pollen can't cover",
+                                        "Used for paid-only models, or when Quest balance can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -142,13 +142,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     }
                     info={
                         <InfoTip
-                            label="About Quest pollen"
+                            label="About Quest balance"
                             text={
                                 <TooltipList
-                                    title="Quest pollen"
+                                    title="Quest balance"
                                     icon={<SproutIcon className="h-4 w-4" />}
                                     items={[
-                                        "pollen earned from completing Quests",
+                                        "Earned from completing Quests",
                                         "Earnings credited from your apps",
                                         questPollenRestricted
                                             ? "Available after your account is verified"
@@ -177,11 +177,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Total + 7d earnings below */}
                     <Surface className="flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-3">
-                            <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                            <span className="text-sm font-bold uppercase tracking-wide text-theme-text-base pt-1">
                                 {questPollenRestricted ? "Available" : "Total"}
                             </span>
                             <div className="flex flex-col items-end leading-tight">
-                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-strong">
                                     {formatUsd(totalPollen)}
                                 </span>
                                 {totalWeek > 0 && (
@@ -287,7 +287,11 @@ export const SidebarBalance: FC<{
     <Chip
         intent="neutral"
         size="sm"
-        className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
+        // Paid is the honey orange, Quest the Quest green, as everywhere.
+        className={cn(
+            "ml-auto gap-1 bg-transparent tabular-nums",
+            kind === "paid" ? "text-paid-deep" : "text-tier-deep",
+        )}
     >
         <WalletKindIcon kind={kind} />
         {balance === undefined ? (

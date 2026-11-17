@@ -12,8 +12,8 @@ const definitions = {
         meteringBasis: "direct",
         connector: null,
         collectionMethod: null,
-        monthlyReview: false,
-        balanceTracking: false,
+        monthlyReview: id === "fireworks",
+        balanceTracking: id === "fireworks",
     })),
 };
 initializeProviderRegistry(definitions);

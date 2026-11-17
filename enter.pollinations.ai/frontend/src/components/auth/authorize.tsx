@@ -28,7 +28,6 @@ import { useEffect, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { showDone } from "../../lib/show-done.ts";
 import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
     KeyPermissionsInputs,
@@ -83,8 +82,8 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    // Allowed: the button shows the done check for a moment before the
-    // flow moves on (back to the app, or the device confirmation).
+    // Allowed: the button shows the done check while the browser returns
+    // to the app.
     const [isDone, setIsDone] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
@@ -388,8 +387,6 @@ export function Authorize() {
                             "Failed to approve device",
                     );
                 }
-                setIsDone(true);
-                await showDone();
                 setDeviceOutcome("approved");
             } else {
                 if (!parsedRedirectUrl) {
@@ -444,7 +441,6 @@ export function Authorize() {
                     url.hash = hash.toString();
                 }
                 setIsDone(true);
-                await showDone();
                 window.location.href = url.toString();
             }
         } catch (e) {

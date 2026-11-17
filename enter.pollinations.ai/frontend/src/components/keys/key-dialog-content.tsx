@@ -43,8 +43,6 @@ type KeyDialogContentProps = {
     createdKey?: string;
     error: string | null;
     isSubmitting: boolean;
-    /** The key was just created; the button shows it before the key appears. */
-    isDone?: boolean;
     showFields?: boolean;
     onSubmit: FormEventHandler<HTMLFormElement>;
     onClose: () => void;
@@ -70,7 +68,6 @@ export function KeyDialogContent({
     createdKey,
     error,
     isSubmitting,
-    isDone = false,
     showFields = true,
     onSubmit,
     onClose,
@@ -139,18 +136,15 @@ export function KeyDialogContent({
                 icon={<KeyTypeIcon />}
                 type="submit"
                 intent="commit"
-                done={isDone}
                 disabled={isSubmitting || (mode === "create" && !name.trim())}
             >
-                {isDone
-                    ? "Created"
-                    : isSubmitting
-                      ? mode === "create"
-                          ? "Creating…"
-                          : "Saving…"
-                      : mode === "create"
-                        ? "Create"
-                        : "Save"}
+                {isSubmitting
+                    ? mode === "create"
+                        ? "Creating…"
+                        : "Saving…"
+                    : mode === "create"
+                      ? "Create"
+                      : "Save"}
             </Button>
         );
 

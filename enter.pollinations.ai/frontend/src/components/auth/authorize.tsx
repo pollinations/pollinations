@@ -82,6 +82,9 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
+    // Allowed: the button shows the done check while the browser returns
+    // to the app.
+    const [isDone, setIsDone] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -437,6 +440,7 @@ export function Authorize() {
                     if (state) hash.set("state", state);
                     url.hash = hash.toString();
                 }
+                setIsDone(true);
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -582,9 +586,14 @@ export function Authorize() {
                         intent="commit"
                         icon={<KeyIcon />}
                         disabled={!canAuthorize || isAuthorizing}
-                        aria-busy={isAuthorizing}
+                        aria-busy={isAuthorizing && !isDone}
+                        done={isDone}
                     >
-                        {isAuthorizing ? "Connecting…" : "Allow access"}
+                        {isDone
+                            ? "Connected"
+                            : isAuthorizing
+                              ? "Connecting…"
+                              : "Allow access"}
                     </Button>
                 </>
             }

@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Cover Studio](https://polli-cover-studio.surge.sh) | Turns a title, an author and one line of premise into a finished 1600x2400 book cover. Pollinations paints the artwork, the page sets the type, and you download the PNG. | [@mikeymontaz7-dotcom](https://github.com/mikeymontaz7-dotcom) |
 | [🎮 Snackbot](https://snackbot.pollinations.app) | A vending machine whose brain is a language model: it holds the stock, the credit and the change, and decides what each button press does. BYOP, you pay your own Pollen. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🎮 Hearsay](https://marcus-mok-gh.github.io/hearsay) | Two AI models pass a story back and forth until it drifts. Bet whether the meaning survives, and a decision model judges the last retelling with its confidence. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
 | [🎮 Decisio Arena](https://bsod4ik.github.io/pollinations-decision-arena) | Tactical battle drones where AI models compete via /alpha/decisions and chat completions with calibrated probabilities and BYOP. | [@bsod4ik](https://github.com/bsod4ik) |
@@ -30,7 +31,6 @@
 | [✍️ Slop Golf](https://slop-golf.pollinations.app) | A writing game about the LLM voice: a mystery model writes a paragraph, you edit out its AI tells in the fewest words, and a judge model checks your putt. | [@cristianbagrin](https://github.com/cristianbagrin) |
 | [🎮 PETI-64](https://rekty.github.io/machine-tui) | A 1980s computer whose OS is a language model: you type shell commands, nothing executes, and the model invents the output while keeping files, processes and clock. | [@rekty](https://github.com/rekty) |
 | [🎬 夜市對話 Night Market Talk](https://night-market-talk.pollinations.app) | Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay with their own Pollen. | [@cristianbagrin](https://github.com/cristianbagrin) |
-| [🎮 Idle Island](https://patbing.github.io/idle-island) | An AI agent is left alone on a tiny island with nothing to do. A real engine marks what it discovers, then the same model is tested with empty notes, its own notes and one trick erased. | [@patbing](https://github.com/patbing) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

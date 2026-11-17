@@ -1333,13 +1333,20 @@ function QuestOverviewContent({
         cards: sections[key],
     })).filter((tab) => tab.cards.length > 0);
     // Open the tab picked, else the first with a reward to claim.
-    const activeTab =
-        tabs.find((tab) => tab.key === openTab) ??
+    const defaultTab =
         tabs.find((tab) =>
             tab.cards.some((card) => card.status === "claimable"),
-        ) ??
-        tabs[0];
+        ) ?? tabs[0];
+    const activeTab = tabs.find((tab) => tab.key === openTab) ?? defaultTab;
     const expanded = activeTab && expandedTabs.includes(activeTab.key);
+    // Pin that default once the quests load, so a claim or the quest check
+    // can't move the view to another tab under the reader.
+    const defaultTabKey = defaultTab?.key;
+    useEffect(() => {
+        if (!state.loading && openTab === null && defaultTabKey) {
+            setOpenTab(defaultTabKey);
+        }
+    }, [state.loading, openTab, defaultTabKey]);
 
     return (
         <>
@@ -1483,18 +1490,20 @@ function QuestOverviewContent({
             </Section>
 
             {/* This month's race: about everyone, so a card of its own. */}
-            <Section title="Leaderboard">
-                {state.standings ? (
-                    <QuestStandings
-                        standings={state.standings}
-                        openQuests={openQuests}
-                    />
-                ) : standingsUnavailable ? (
-                    <OutageNotice retrying />
-                ) : (
-                    <CardLoading className="h-49.5 sm:h-50.5" />
-                )}
-            </Section>
+            {(state.standings || state.loading || standingsUnavailable) && (
+                <Section title="Leaderboard">
+                    {state.standings ? (
+                        <QuestStandings
+                            standings={state.standings}
+                            openQuests={openQuests}
+                        />
+                    ) : state.loading ? (
+                        <CardLoading className="h-49.5 sm:h-50.5" />
+                    ) : (
+                        <OutageNotice retrying />
+                    )}
+                </Section>
+            )}
         </>
     );
 }

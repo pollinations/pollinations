@@ -5,11 +5,11 @@ const line = (cost?: number, ms?: number) =>
     runStatsLine({ model: "m", avg_cost_usd: cost, avg_response_ms: ms });
 
 describe("runStatsLine", () => {
-    it("shows pollen to two significant digits", () => {
-        expect(line(0.004)).toBe("Usually about 0.004 pollen");
-        expect(line(0.0473)).toBe("Usually about 0.047 pollen");
-        expect(line(0.4199)).toBe("Usually about 0.42 pollen");
-        expect(line(1.2)).toBe("Usually about 1.2 pollen");
+    it("shows dollars to two significant digits", () => {
+        expect(line(0.004)).toBe("Usually about $0.004");
+        expect(line(0.0473)).toBe("Usually about $0.047");
+        expect(line(0.4199)).toBe("Usually about $0.42");
+        expect(line(1.2)).toBe("Usually about $1.2");
     });
 
     it("shows whole seconds under a minute", () => {
@@ -31,11 +31,11 @@ describe("runStatsLine", () => {
 
     it("joins both numbers and skips missing or zero ones", () => {
         expect(line(0.42, 100000)).toBe(
-            "Usually about 0.42 pollen, 1 minute 40 seconds",
+            "Usually about $0.42, 1 minute 40 seconds",
         );
         expect(line(0, 3000)).toBe("Usually about 3 seconds");
         expect(line(0.5, null as unknown as undefined)).toBe(
-            "Usually about 0.5 pollen",
+            "Usually about $0.5",
         );
         expect(line(0, 0)).toBe("");
         expect(runStatsLine(undefined)).toBe("");
@@ -79,9 +79,9 @@ describe("runCostLabel", () => {
     it("shows the charge, including zero", () => {
         expect(
             runCostLabel({ model: "m", timestamp: "", cost_usd: 0.38 }),
-        ).toBe("0.38 pollen");
+        ).toBe("$0.38");
         expect(runCostLabel({ model: "m", timestamp: "", cost_usd: 0 })).toBe(
-            "0 pollen",
+            "$0",
         );
     });
 });

@@ -179,7 +179,7 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
-          /** "0.0038 pollen", set once the usage record is found. */
+          /** "$0.0038", set once the usage record is found. */
           cost?: string;
       }
     | {

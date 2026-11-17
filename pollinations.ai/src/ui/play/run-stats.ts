@@ -4,8 +4,8 @@ export type ModelRunStat = {
     avg_response_ms?: number | null;
 };
 
-function formatPollen(usd: number): string {
-    return `${Number(usd.toPrecision(2))} pollen`;
+function formatCost(usd: number): string {
+    return `$${Number(usd.toPrecision(2))}`;
 }
 
 function plural(n: number, unit: string): string {
@@ -20,11 +20,11 @@ function formatDuration(ms: number): string {
     return rest ? `${minutes} ${plural(rest, "second")}` : minutes;
 }
 
-/** "Usually about 0.42 pollen, 1 minute 40 seconds", or "" when nothing is measured. */
+/** "Usually about $0.42, 1 minute 40 seconds", or "" when nothing is measured. */
 export function runStatsLine(stat: ModelRunStat | undefined): string {
     const parts = [
         stat?.avg_cost_usd && stat.avg_cost_usd > 0
-            ? formatPollen(stat.avg_cost_usd)
+            ? formatCost(stat.avg_cost_usd)
             : "",
         stat?.avg_response_ms && stat.avg_response_ms > 0
             ? formatDuration(stat.avg_response_ms)
@@ -54,7 +54,7 @@ export function pickRunRecord(
         : undefined;
 }
 
-/** "0.38 pollen" */
+/** "$0.38" */
 export function runCostLabel(record: RunRecord): string {
-    return formatPollen(record.cost_usd);
+    return formatCost(record.cost_usd);
 }

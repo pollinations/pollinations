@@ -586,7 +586,22 @@ export function QuestRow({
     // One plain reward in every state, so it holds the same spot on the right;
     // only the bucket icon carries colour, and a claimed reward goes muted grey
     // (raw glyph, so it inherits the muted text colour).
-    const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
+    // A done stacked card shows what it paid into each balance.
+    const amounts =
+        claimed && card.repeats
+            ? (["tier", "paid"] as const).flatMap((kind) => {
+                  const sum = card.repeats
+                      ?.filter(
+                          (repeat) =>
+                              rewardIconKind(repeat.balanceBucket) === kind,
+                      )
+                      .reduce(
+                          (total, repeat) => total + repeat.pollenAmount,
+                          0,
+                      );
+                  return sum ? [{ kind, label: formatRewardAmount(sum) }] : [];
+              })
+            : [{ kind: rewardIcon, label: rewardLabel }];
     const rewardChip = card.comingSoon ? (
         <Chip
             intent="neutral"
@@ -598,16 +613,24 @@ export function QuestRow({
         </Chip>
     ) : (
         <span
-            className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
+            className={`flex items-center gap-3 text-sm font-semibold tabular-nums ${
                 claimed ? "text-theme-text-muted" : "text-theme-text-strong"
             }`}
         >
-            {claimed ? (
-                <RewardKindIcon className="h-4 w-4 shrink-0" />
-            ) : (
-                <WalletKindIcon kind={rewardIcon} className="h-4 w-4" />
-            )}
-            {rewardLabel}
+            {amounts.map(({ kind, label }) => (
+                <span key={kind} className="flex items-center gap-1">
+                    {claimed ? (
+                        kind === "paid" ? (
+                            <CardIcon className="h-4 w-4 shrink-0" />
+                        ) : (
+                            <SproutIcon className="h-4 w-4 shrink-0" />
+                        )
+                    ) : (
+                        <WalletKindIcon kind={kind} className="h-4 w-4" />
+                    )}
+                    {label}
+                </span>
+            ))}
         </span>
     );
     // A claimable quest's reward becomes the Claim button on the right: the
@@ -733,6 +756,8 @@ function QuestOverviewContent({
     });
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
+    // Claims on several cards can overlap; only the latest refresh applies.
+    const claimRefreshRef = useRef(0);
     // Logged-out visitors see a preview: every quest shown open (so all
     // descriptions render) and the off-board/unearned visibility filter
     // relaxed, since there is no per-user progress to gate on.
@@ -841,10 +866,11 @@ function QuestOverviewContent({
                 void router.invalidate({
                     filter: (match) => match.routeId === "/_dashboard",
                 });
+                const refresh = ++claimRefreshRef.current;
                 const questData = await loadQuestData();
                 setState((current) => ({
                     ...current,
-                    ...questData,
+                    ...(refresh === claimRefreshRef.current ? questData : {}),
                     claimingRewardIds: current.claimingRewardIds.filter(
                         (id) => !rewardIds.includes(id),
                     ),
@@ -961,16 +987,12 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
-                // A repeatable card shows what it pays now, or once all is
-                // claimed, everything it paid into that balance.
+                // A repeatable card shows what one Claim pays now.
                 earnedAmount: repeats
-                    ? (waiting?.length ? waiting : repeats)
-                          .filter(
-                              (repeat) =>
-                                  repeat.balanceBucket ===
-                                  reward?.balanceBucket,
-                          )
-                          .reduce((sum, repeat) => sum + repeat.pollenAmount, 0)
+                    ? waiting?.reduce(
+                          (sum, repeat) => sum + repeat.pollenAmount,
+                          0,
+                      )
                     : reward?.pollenAmount,
                 progress:
                     reward && quest.goal

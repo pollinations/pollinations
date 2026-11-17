@@ -112,7 +112,7 @@ type Pending =
 
 // Gen takes the balance 10 minutes at a time and refuses a step the wallet
 // can't pay with 402.
-const NO_POLLEN = "Not enough balance to pay for the next 10 minutes.";
+const NO_POLLEN = "Your balance is too low for the next 10 minutes.";
 
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });

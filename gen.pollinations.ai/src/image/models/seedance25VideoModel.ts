@@ -14,6 +14,8 @@ const logOps = debug("pollinations:seedance-2.5:ops");
 const logError = debug("pollinations:seedance-2.5:error");
 const MODEL = "bytedance/seedance-2.5";
 const DURATION = 4;
+// Edits and extensions can take longer than the default 6 minutes.
+const PREDICTION_DEADLINE_MINUTES = 15;
 const ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
 
 interface Seedance25Input {
@@ -32,6 +34,8 @@ interface Seedance25Input {
 
 function resolveAspectRatio(safeParams: ImageParams): string {
     if (safeParams.aspectRatio) return safeParams.aspectRatio;
+    // Unless the caller chose a ratio, a reference video means an edit.
+    if (safeParams.reference_videos?.length) return "adaptive";
     if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(
         safeParams.width,
@@ -84,6 +88,7 @@ export async function callSeedance25API(
         const result = await runReplicatePrediction<Seedance25Input, string>({
             model: MODEL,
             input,
+            predictionDeadlineMinutes: PREDICTION_DEADLINE_MINUTES,
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;

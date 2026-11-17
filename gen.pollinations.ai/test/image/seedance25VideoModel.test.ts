@@ -164,11 +164,14 @@ describe("Seedance 2.5 via Replicate", () => {
     });
 
     it.each([
-        [{ video_output_duration_seconds: 9 }, 9],
-        [{}, undefined],
-    ])(
-        "edits with adaptive ratio and bills reported duration (metrics %j)",
-        async (metrics, billedSeconds) => {
+        ["adaptive", { video_output_duration_seconds: 9 }, 9, -1, "adaptive"],
+        ["adaptive", {}, undefined, -1, "adaptive"],
+        // Unset ratio defaults to an edit; an explicit ratio stays fixed.
+        [undefined, { video_output_duration_seconds: 9 }, 9, -1, "adaptive"],
+        ["16:9", { video_output_duration_seconds: 4 }, 4, 4, "16:9"],
+    ] as const)(
+        "with reference video and aspect ratio %s bills reported duration (metrics %j)",
+        async (aspectRatio, metrics, billedSeconds, expectedDuration, expectedAspectRatio) => {
             syncImageEnv(
                 {
                     REPLICATE_API_TOKEN: "replicate-test-key",
@@ -206,7 +209,7 @@ describe("Seedance 2.5 via Replicate", () => {
             const result = callSeedance25API("replace the background", {
                 ...baseParams,
                 image: [],
-                aspectRatio: "adaptive",
+                aspectRatio,
                 reference_videos: REFERENCE_MEDIA.reference_videos,
             });
 
@@ -221,8 +224,8 @@ describe("Seedance 2.5 via Replicate", () => {
                 });
             }
             expect(inputs[0]).toMatchObject({
-                duration: -1,
-                aspect_ratio: "adaptive",
+                duration: expectedDuration,
+                aspect_ratio: expectedAspectRatio,
             });
         },
     );

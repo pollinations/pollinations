@@ -1340,10 +1340,14 @@ function QuestOverviewContent({
                             to get your invite link.
                         </Text>
                     ) : (
-                        <CopyField
-                            label="Copy invite link"
-                            value={`${window.location.origin}/?ref=${githubId}`}
-                        />
+                        // The catalog's small copy pill, as wide as the link.
+                        <div className="w-fit min-w-0 max-w-full">
+                            <CopyField
+                                label="Copy invite link"
+                                value={`${window.location.origin}/?ref=${githubId}`}
+                                size="sm"
+                            />
+                        </div>
                     )}
                 </Section>
             )}

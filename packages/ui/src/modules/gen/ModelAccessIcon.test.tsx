@@ -6,8 +6,8 @@ describe("ModelAccessIcon", () => {
     test("labels paid-only access", () => {
         const html = renderToStaticMarkup(<ModelAccessIcon paidOnly />);
 
-        expect(html).toContain('aria-label="Paid balance required"');
-        expect(html).toContain('title="Paid balance required"');
+        expect(html).toContain('aria-label="Uses paid balance only"');
+        expect(html).toContain('title="Uses paid balance only"');
     });
 
     test("labels access that works with any balance", () => {

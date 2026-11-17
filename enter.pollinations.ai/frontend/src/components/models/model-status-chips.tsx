@@ -248,7 +248,7 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
         access === "free"
             ? "This model is free to use."
             : access === "paid"
-              ? "Paid balance only."
+              ? "Uses paid balance only."
               : "Uses Quest balance first, then paid balance if needed.";
     const tooltipContent =
         access === "free" ? (

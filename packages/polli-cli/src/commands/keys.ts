@@ -91,7 +91,7 @@ const list = new Command("list")
             const check = process.platform === "win32" ? "yes" : "✓";
             const cross = process.platform === "win32" ? "no" : "✗";
             const rows = res.data.map((k) => ({
-                id: chalk.dim(k.id.slice(0, 8)),
+                id: chalk.dim(k.id),
                 name: k.name,
                 prefix: chalk.dim(k.prefix),
                 balance:

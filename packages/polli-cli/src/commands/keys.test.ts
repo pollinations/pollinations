@@ -149,6 +149,21 @@ describe("keys list permissions output", () => {
         );
         expect(stderr).not.toContain("403");
     });
+
+    it("prints the whole key id with --verbose, as update and revoke need it", async () => {
+        const { fetch, stdout } = prepare(null);
+        const id = "0123456789abcdef0123456789abcdef";
+        fetch.mockResolvedValue(
+            Response.json({
+                data: [{ id, name: "test", prefix: "sk", enabled: true }],
+            }),
+        );
+        await keysCommand.parseAsync(["list", "--verbose"], { from: "user" });
+
+        expect(
+            stdout.mock.calls.map(([chunk]) => String(chunk)).join(""),
+        ).toContain(id);
+    });
 });
 
 describe("keys create --expires-in validation", () => {

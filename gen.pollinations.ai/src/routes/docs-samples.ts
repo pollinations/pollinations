@@ -537,7 +537,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 for record in response.json()["usage"]:
-    print(f"{record['model']}: {record['cost_usd']} pollen")`,
+    print(f"{record['model']}: \${record['cost_usd']}")`,
         },
     ],
     "get /account/usage/daily": [

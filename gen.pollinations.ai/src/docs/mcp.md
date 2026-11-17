@@ -155,7 +155,7 @@ model health, usage, earnings, quests, and API keys.
 | `transcribeAudio` | Transcribe audio from a public HTTPS URL |
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
-| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getBalance` | Check the remaining balance; requires `account:usage` permission |
 | `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
 | `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
 | `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
@@ -251,10 +251,10 @@ Before a long command, extend the paid lease with `connect_sandbox`; a command's
 
 ### Billing and permissions
 
-Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
+Calls use the same wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
 selected model's listed rate. A `tools/call` on a server with its own rate
-needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+needs a positive balance and returns 402 otherwise; `initialize` and
 `tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's

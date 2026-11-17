@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "pubchem_compound",
             ].sort(),
         );
     });
@@ -644,4 +645,68 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("PubChem looks up by name, CID or InChIKey and rejects malformed identifiers before fetch", async (t) => {
+    const urls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        urls.push(String(input));
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        return Response.json({
+            PropertyTable: {
+                Properties: [
+                    {
+                        CID: 2244,
+                        MolecularFormula: "C9H8O4",
+                        MolecularWeight: "180.16",
+                        ExactMass: "180.04225873",
+                        InChIKey: "BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
+                        Title: "Aspirin",
+                    },
+                    { CID: 1, MolecularWeight: "1", ExactMass: "1" },
+                ],
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "pubchem_compound", {
+        query: "acetylsalicylic acid",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 2,
+        compounds: [
+            {
+                CID: 2244,
+                MolecularFormula: "C9H8O4",
+                MolecularWeight: 180.16,
+                ExactMass: 180.04225873,
+                InChIKey: "BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
+                Title: "Aspirin",
+                url: "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+            },
+        ],
+    });
+    await call(c, "pubchem_compound", { query: "2244", by: "cid" });
+    await call(c, "pubchem_compound", {
+        query: "BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
+        by: "inchikey",
+    });
+    const base = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound";
+    const props =
+        "property/Title,IUPACName,MolecularFormula,MolecularWeight,ExactMass,SMILES,InChIKey,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,Charge/JSON";
+    assert.deepEqual(urls, [
+        `${base}/name/acetylsalicylic%20acid/${props}`,
+        `${base}/cid/2244/${props}`,
+        `${base}/inchikey/BSYNRYMUTXBXSQ-UHFFFAOYSA-N/${props}`,
+    ]);
+    for (const args of [
+        { query: "../2244", by: "cid" },
+        { query: "aspirin", by: "inchikey" },
+    ]) {
+        result = await call(c, "pubchem_compound", args);
+        assert.equal(result.isError, true);
+    }
+    assert.equal(urls.length, 3);
 });

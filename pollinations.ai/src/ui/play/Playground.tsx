@@ -955,12 +955,6 @@ export function Playground() {
     );
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
-    const videoAspectRatio =
-        currentModel?.category === "video"
-            ? videoConfig.ratios.includes(aspectRatio)
-                ? aspectRatio
-                : videoConfig.ratios[0]
-            : undefined;
     // The reference uploads that are on screen for this model and mode.
     const videoReferenceMedia =
         currentModel?.category === "video" &&
@@ -971,6 +965,25 @@ export function Playground() {
                   ),
               )
             : [];
+    // An input image or video fixes the output shape, so Auto follows it;
+    // otherwise Auto may render square and the default ratio applies.
+    const sendsVisualInput =
+        (supportsReferenceImages &&
+            !usesReferences &&
+            referenceImages.length > 0) ||
+        videoReferenceMedia.some(
+            (media) => media !== "audio" && videoReferences[media].length > 0,
+        );
+    // "" is not picked yet; an explicit Auto is stored as "auto".
+    const pickedRatio = aspectRatio === "auto" ? "" : aspectRatio;
+    const videoAspectRatio =
+        currentModel?.category === "video"
+            ? aspectRatio && videoConfig.ratios.includes(pickedRatio)
+                ? pickedRatio
+                : sendsVisualInput
+                  ? videoConfig.ratios[0]
+                  : videoConfig.defaultRatio
+            : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
@@ -1572,7 +1585,11 @@ export function Playground() {
                                                 label="Aspect ratio"
                                                 options={videoConfig.ratios}
                                                 value={videoAspectRatio}
-                                                onChange={setAspectRatio}
+                                                onChange={(ratio) =>
+                                                    setAspectRatio(
+                                                        ratio || "auto",
+                                                    )
+                                                }
                                                 format={(ratio) =>
                                                     ratio || "Auto"
                                                 }

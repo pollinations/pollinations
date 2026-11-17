@@ -131,12 +131,14 @@ export function QuestLeaderboard() {
                                                         aria-hidden="true"
                                                         className="size-3.5 self-center"
                                                     />
-                                                    <span className="sr-only">
-                                                        Quest rewards earned:{" "}
-                                                    </span>
+                                                    $
                                                     {formatNumber(
                                                         entry.totalPollen,
                                                     )}
+                                                    <span className="sr-only">
+                                                        {" "}
+                                                        in Quest rewards
+                                                    </span>
                                                 </Text>
                                             </span>
                                         </span>

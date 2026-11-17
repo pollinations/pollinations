@@ -37,8 +37,8 @@ export function MoneyMoves() {
                         Top up any time and pay only for what you use.
                     </Item>
                     <Item icon={SproutIcon} tone="tier" title="Free credits">
-                        Earn Quest balance by solving GitHub Quests, trying
-                        models, or building an app or agent.{" "}
+                        Complete Quests to add to your balance: solve GitHub
+                        issues, try models, or build an app or agent.{" "}
                         {quests ? (
                             <>
                                 {formatCount(quests.totals.contributors)} people

@@ -12,7 +12,7 @@ export function MediaModelOption({
                 role="img"
                 aria-label={
                     model.paidOnly
-                        ? "Paid balance required"
+                        ? "Uses paid balance only"
                         : "Works with any balance"
                 }
                 className="inline-flex shrink-0"

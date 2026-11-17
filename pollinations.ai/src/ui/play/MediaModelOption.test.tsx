@@ -4,7 +4,7 @@ import { MediaModelOption } from "./MediaModelOption";
 
 describe("model dropdown option", () => {
     it.each([
-        [true, "Paid balance required", "polli-wallet-text-paid"],
+        [true, "Uses paid balance only", "polli-wallet-text-paid"],
         [false, "Works with any balance", "polli-wallet-text-tier"],
     ] as const)(
         "keeps %s access colored beside the name",

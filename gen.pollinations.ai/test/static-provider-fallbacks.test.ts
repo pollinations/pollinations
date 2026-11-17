@@ -1420,6 +1420,23 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("bills Azure DeepSeek Flash 1017 image tokens at its input rate", () => {
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const billing = calculateUsageBilling({
+            model,
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+            usage: {
+                promptTextTokens: 63,
+                promptImageTokens: 184,
+                completionTextTokens: 2,
+                completionReasoningTokens: 79,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0001713, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00008565, 12);
+    });
+
     it("records DeepSeek Flash 1017's Fireworks fallback at its Fireworks cost and the unchanged primary quote", () => {
         const model = "deepseek/deepseek-v4.1-flash-1017";
         const billing = calculateUsageBilling({

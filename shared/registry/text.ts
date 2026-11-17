@@ -1495,10 +1495,11 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 0.5,
         paidOnly: false,
         perUserRpm: 60,
-        // Azure V4.1 Flash rates (2026-10-15), which match Fireworks' 1017 rates.
+        // Azure Sweden Central Global Standard Flash1017 meters (2026-11-01).
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
+            promptImageTokens: perMillion(0.3),
             completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash 1017",

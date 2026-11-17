@@ -4047,8 +4047,9 @@ async function generateAudioFromSpeechRequest(
 export const speechAudioCache = every(
     createMiddleware<Env>(async (c, next) => {
         if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
+            // The GET route also answers HEAD, so the query supplies the format.
             const responseFormat =
-                c.req.method === "GET"
+                c.req.method === "GET" || c.req.method === "HEAD"
                     ? c.req.query("response_format")
                     : (await parseSpeechRequest(c)).response_format;
             assertDialogueOutputFormat(responseFormat);

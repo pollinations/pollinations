@@ -178,11 +178,12 @@ function cardSortRank(card: QuestCard): number {
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
+// Rewards are dollars; the sprout or card beside them names the balance.
 function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
     const formatted = formatPollen(value);
-    if (value > 0 && formatted === "0") return "<0.0001";
-    return formatted;
+    if (value > 0 && formatted === "0") return "<$0.0001";
+    return `$${formatted}`;
 }
 
 function rewardIconKind(
@@ -356,8 +357,8 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     return parts;
 }
 
-/** An amount: the sprout and a number, never the word, all in the
- *  Quest green. Pollen still waiting to be claimed has a plus. */
+/** An amount: the sprout and a dollar amount, all in the Quest green.
+ *  Rewards still waiting to be claimed have a plus. */
 function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
     const waiting = ready && pollen.tier + pollen.paid > 0;
     return (
@@ -368,7 +369,7 @@ function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
             />
             {waiting ? "+" : ""}
             {formatRewardAmount(pollen.tier + pollen.paid)}
-            <span className="sr-only"> in your balance</span>
+            <span className="sr-only"> in Quest rewards</span>
         </span>
     );
 }
@@ -580,8 +581,8 @@ export function QuestRow({
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
     const rewardIcon = rewardIconKind(card.balanceBucket);
-    // The icon next to the number IS the "this is pollen" signal, so the word
-    // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
+    // The icon beside the amount names the balance it lands in.
+    // formatRewardAmount renders null as "TBD".
     const rewardLabel = formatRewardAmount(rewardAmount);
 
     // Shared pieces, placed differently per breakpoint below. A claimable

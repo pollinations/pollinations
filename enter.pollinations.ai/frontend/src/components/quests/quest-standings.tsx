@@ -19,7 +19,7 @@ function questName({ title, href }: NextQuest): ReactNode {
     return href ? <InlineLink href={href}>{title}</InlineLink> : `“${title}”`;
 }
 
-/** An amount: the sprout and the number, never the word, in Quest green. */
+/** A Quest reward: the sprout and a dollar amount, in Quest green. */
 function Amount({ value }: { value: number }) {
     return (
         <span className="polli-wallet-text-tier inline-flex items-baseline gap-0.5 font-semibold tabular-nums">
@@ -27,7 +27,8 @@ function Amount({ value }: { value: number }) {
                 aria-hidden="true"
                 className="h-3.5 w-3.5 self-center"
             />
-            {formatPollen(value)}
+            ${formatPollen(value)}
+            <span className="sr-only"> in Quest rewards</span>
         </span>
     );
 }

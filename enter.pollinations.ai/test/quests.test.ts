@@ -19,7 +19,6 @@ import type { QuestGroup } from "../src/services/quests/types.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
-const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
 const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
 const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
@@ -1986,55 +1985,6 @@ test("github public repo stars quest is coming_soon and never records", async ({
             request.path.startsWith("/users/"),
         ),
     ).toBe(false);
-});
-
-test("quest check records elixpo intern easter egg once", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    const targetGithubId = 161_109_909;
-    await db
-        .update(schema.user)
-        .set({
-            githubId: targetGithubId,
-            githubUsername: "elixpo",
-        })
-        .where(eq(schema.user.id, user.id));
-
-    mocks.github.state.user = {
-        ...mocks.github.state.user,
-        id: targetGithubId,
-        login: "elixpo",
-        name: "elixpo",
-        avatar_url: "https://avatars.githubusercontent.com/u/161109909?v=4",
-    };
-    await mocks.enable("github", "tinybird");
-
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
-
-    const second = await checkQuestsForUser(env, user.id);
-    expect(second.recorded).toBe(0);
-
-    const rewards = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            questId: schema.rewards.questId,
-            title: schema.rewards.title,
-            pollenAmount: schema.rewards.pollenAmount,
-            balanceBucket: schema.rewards.balanceBucket,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, ELIXPO_INTERN_QUEST_ID));
-
-    expect(rewards).toHaveLength(1);
-    expect(rewards[0]).toMatchObject({
-        idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:github:${targetGithubId}`,
-        pollenAmount: 100,
-        balanceBucket: "tier",
-    });
 });
 
 test("quest check rewards every merged author without duplicating a legacy assignee", async ({

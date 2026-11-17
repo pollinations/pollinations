@@ -2102,7 +2102,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
         idempotencyKey: migratedRewardKey,
         userId: "github-quest-second-author",
         questId: issueQuestId,
-        title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+        title: issueTitle,
         pollenAmount: 25,
         balanceBucket: "tier",
         earnedAt: new Date(),
@@ -2145,7 +2145,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
             expect.objectContaining({
                 idempotencyKey: `quest:${issueQuestId}:github:${user.githubId}`,
                 userId: user.id,
-                title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+                title: issueTitle,
                 pollenAmount: 25,
                 balanceBucket: "tier",
             }),

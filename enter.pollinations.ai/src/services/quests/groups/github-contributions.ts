@@ -542,12 +542,15 @@ async function cachedQuestIssues(
     return issues;
 }
 
+// The "[QUEST]" tag GitHub issue titles carry; the card doesn't repeat it.
+const QUEST_TAG = /\[(?:POLLEN-)?QUEST\]:?\s*/i;
+
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
         // Keep the issue-derived id stable; per-user reward keys add the
         // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
-        title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
+        title: issue.title.replace(QUEST_TAG, "").trim(),
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",

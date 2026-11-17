@@ -12,6 +12,7 @@ import {
     GitMergeIcon,
     InlineLink,
     IssueClosedIcon,
+    IssueOpenedIcon,
     LoadingStatus,
     OutageNotice,
     ReceiptIcon,
@@ -576,11 +577,23 @@ export function QuestRow({
     // Show the "how to" description while the quest is actionable (open or
     // claimable); drop it once it's done: claimed, a stacked card that paid
     // before, or coming_soon (which also derives to "claimed").
-    const description = !resting && card.description ? card.description : null;
+    // A GitHub quest is its issue: the title says what to build, and the
+    // issue link under it carries the details instead of a description.
+    const description =
+        !resting && card.description && card.issueNumber == null
+            ? card.description
+            : null;
+    const IssueIcon =
+        card.status === "open" ? IssueOpenedIcon : IssueClosedIcon;
     const issueLink =
         card.issueNumber != null && card.url ? (
-            <InlineLink href={card.url} className="text-sm tabular-nums">
-                #{card.issueNumber}
+            <InlineLink
+                href={card.url}
+                showIcon={false}
+                className="inline-flex items-center gap-1 text-sm tabular-nums"
+            >
+                <IssueIcon className="h-3.5 w-3.5 shrink-0" />#
+                {card.issueNumber}
             </InlineLink>
         ) : null;
     // One plain reward in every state, so it holds the same spot on the right;

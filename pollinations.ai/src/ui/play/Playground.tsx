@@ -1227,7 +1227,13 @@ export function Playground() {
                 ? `Upload ${mediaUploadLabel} first`
                 : `Add ${promptLabel.toLowerCase()} first`
             : !selectedModelAllowed
-              ? "This key cannot use the selected model"
+              ? isLoading
+                  ? "Models are loading"
+                  : catalogError
+                    ? "Models failed to load"
+                    : !currentModel
+                      ? "Choose an available model"
+                      : "This key cannot use the selected model"
               : null;
 
     const audioInput =

@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { findModelByName } from "../../src/text/availableModels.js";
 import { requireChatStreamUsage } from "../../src/text/chat/usage.js";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
-import { callSystemOne } from "../../src/text/systemOneClient.js";
+import {
+    callSystemOne,
+    requestDecision,
+} from "../../src/text/systemOneClient.js";
 
 const modelConfig = {
     authKey: "test-key",
@@ -69,6 +72,30 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("rejects nested image parts before calling Microsoft Decision 1.1", async () => {
+        await expect(
+            requestDecision(
+                {
+                    state: {
+                        listing: [
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "data:image/png;base64,AA==",
+                                },
+                            },
+                        ],
+                    },
+                    questions: nativeQuestions,
+                },
+                { requestedModel: "microsoft/microsoft-decision-1.1:vercel" },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "Microsoft-Decision-1.1 supports text only.",
+        });
+    });
+
     it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
         const config = findModelByName("respan/span-01-lite")?.config();
         const fetchSpy = vi

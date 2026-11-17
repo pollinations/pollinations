@@ -816,6 +816,91 @@ describe("GenerationCoordinator", () => {
         expect(result).toEqual({ status: "cached" });
     });
 
+    it.each([
+        ["startAndWait", "text"],
+        ["submit", "text"],
+        ["startAndWait", "media"],
+        ["submit", "media"],
+    ] as const)(
+        "keeps RPC responsive during a stalled %s %s cache check and rechecks a stale miss",
+        async (method, storage) => {
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `slow-cache-${crypto.randomUUID()}`,
+            );
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = { ...testJob(key), cache: { storage, key } };
+            let lookupStarted = false;
+            let release!: () => void;
+            const blocked = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            await runInDurableObject(stub, (coordinator) => {
+                // Text caches use an R2 HEAD, media caches the storage RPC.
+                // RPC stubs cannot be spied on, so swap the binding once.
+                const coordinatorEnv = Reflect.get(coordinator, "env");
+                const binding = storage === "text" ? "TEXT_BUCKET" : "MEDIA";
+                const lookup = storage === "text" ? "head" : "has";
+                const original = coordinatorEnv[binding];
+                coordinatorEnv[binding] = {
+                    [lookup]: async (key: string) => {
+                        coordinatorEnv[binding] = original;
+                        const result = await original[lookup](key);
+                        lookupStarted = true;
+                        await blocked;
+                        return result;
+                    },
+                };
+            });
+
+            const pending = stub[method](job);
+            let responsive = false;
+            try {
+                await vi.waitFor(() => expect(lookupStarted).toBe(true));
+                responsive = await Promise.race([
+                    stub.status("user-1").then(() => true),
+                    new Promise<false>((resolve) =>
+                        setTimeout(() => resolve(false), 1000),
+                    ),
+                ]);
+                // An earlier execution can finish while this caller's cache
+                // lookup is in flight. The alarm must recheck before executing.
+                if (storage === "text") {
+                    await env.TEXT_BUCKET.put(key, "completed-result");
+                } else {
+                    await env.MEDIA.put(
+                        key,
+                        new Response("completed-result", {
+                            headers: { "content-type": "image/png" },
+                        }),
+                    );
+                }
+            } finally {
+                release();
+            }
+
+            expect(await pending).toEqual(
+                method === "submit" ? "pending" : { status: "cached" },
+            );
+            if (method === "submit") {
+                await vi.waitFor(async () =>
+                    expect(await stub.status("user-1")).toMatchObject({
+                        status: "succeeded",
+                    }),
+                );
+            }
+            await runInDurableObject(stub, async (_coordinator, state) => {
+                expect(await state.storage.get("job")).toBeUndefined();
+                await state.storage.deleteAlarm();
+            });
+            const cached =
+                storage === "text"
+                    ? await env.TEXT_BUCKET.get(key)
+                    : await env.MEDIA.get(key);
+            expect(await cached?.text()).toBe("completed-result");
+            expect(responsive).toBe(true);
+        },
+    );
+
     it("joins concurrent callers for the same cache identity", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(

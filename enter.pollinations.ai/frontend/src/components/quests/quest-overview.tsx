@@ -294,8 +294,8 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
 const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
 // Past this many cells the comb keeps the proportions instead of growing.
 const MAX_CELLS = 200;
-// Contribution rows listed before "Show older".
-const CONTRIBUTIONS_PAGE_SIZE = 10;
+// Rows a lane lists before "Show more".
+const SECTION_PAGE_SIZE = 10;
 const PROGRESS_STATES = {
     claimed: {
         label: "Claimed",
@@ -705,7 +705,7 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [showAllContributions, setShowAllContributions] = useState(false);
+    const [expandedSections, setExpandedSections] = useState<CategoryKey[]>([]);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -869,6 +869,42 @@ function QuestOverviewContent({
         }
         return map;
     }, [state.rewards]);
+    // Rewards created by a maintainer or another non-catalog source still need
+    // their own claim control, as do a repeatable quest's rewards beyond the
+    // one its catalog card shows. This is deliberately derived from the
+    // ledger — no synthetic catalog entry or special balance path.
+    const rewardCards = useMemo(() => {
+        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
+        return state.rewards
+            .filter(
+                (reward) =>
+                    reward.questId == null ||
+                    !catalogIds.has(reward.questId) ||
+                    rewardByKey.get(reward.questId) !== reward,
+            )
+            .map<QuestCard>((reward) => ({
+                key: reward.id,
+                rewardId: reward.id,
+                title: reward.title,
+                description: reward.questId?.startsWith(
+                    "github:reported_issue:",
+                )
+                    ? "Your issue was closed by a merged pull request."
+                    : undefined,
+                url: reward.url ?? undefined,
+                issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
+                reward: reward.pollenAmount,
+                balanceBucket: reward.balanceBucket,
+                status: reward.claimedAt ? "claimed" : "claimable",
+                earnedAmount: reward.pollenAmount,
+            }));
+    }, [state.catalog, state.rewards, rewardByKey]);
+    // Anything that is not a GitHub contribution (a grant, a repeat
+    // referral) is a bonus reward with its own section.
+    const bonusRewardCards = rewardCards
+        .filter((card) => card.issueNumber == null)
+        .sort((a, b) => cardSortRank(a) - cardSortRank(b));
+
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
     // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
@@ -927,6 +963,12 @@ function QuestOverviewContent({
             });
         }
 
+        // A merged PR or a fixed issue is the Contribute quests done once
+        // more: its reward is one more row in that lane.
+        byCat.contribute.push(
+            ...rewardCards.filter((card) => card.issueNumber != null),
+        );
+
         // Order per lane by lifecycle rank only: a claim moves its own row and
         // nothing else; within a rank the catalog's order stays (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
@@ -939,51 +981,8 @@ function QuestOverviewContent({
         rewardedCatalogIds,
         rewardByKey,
         previewAll,
+        rewardCards,
     ]);
-
-    // Rewards created by a maintainer or another non-catalog source still need
-    // their own claim control, as do a repeatable quest's rewards beyond the
-    // one its catalog card shows. This is deliberately derived from the
-    // ledger — no synthetic catalog entry or special balance path.
-    const bonusRewardCards = useMemo(() => {
-        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
-        return (
-            state.rewards
-                .filter(
-                    (reward) =>
-                        reward.questId == null ||
-                        !catalogIds.has(reward.questId) ||
-                        rewardByKey.get(reward.questId) !== reward,
-                )
-                .map<QuestCard>((reward) => ({
-                    key: reward.id,
-                    rewardId: reward.id,
-                    title: reward.title,
-                    description: reward.questId?.startsWith(
-                        "github:reported_issue:",
-                    )
-                        ? "Your issue was closed by a merged pull request."
-                        : undefined,
-                    url: reward.url ?? undefined,
-                    issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
-                    reward: reward.pollenAmount,
-                    balanceBucket: reward.balanceBucket,
-                    status: reward.claimedAt ? "claimed" : "claimable",
-                    earnedAmount: reward.pollenAmount,
-                }))
-                // Same order as the sections: to claim first, done last.
-                .sort((a, b) => cardSortRank(a) - cardSortRank(b))
-        );
-    }, [state.catalog, state.rewards, rewardByKey]);
-    // A GitHub contribution carries its PR or issue number and belongs to the
-    // Contribute section; anything else (a grant, a repeat referral) stays a
-    // bonus reward.
-    const contributionCards = bonusRewardCards.filter(
-        (card) => card.issueNumber != null,
-    );
-    const otherBonusCards = bonusRewardCards.filter(
-        (card) => card.issueNumber == null,
-    );
 
     // Logged-out totals show what the public catalog offers, not an owned balance.
     const previewTotals = useMemo(() => {
@@ -1139,21 +1138,15 @@ function QuestOverviewContent({
 
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
-                // A merged PR or a fixed issue is the Contribute quests done
-                // once more, so those rewards live in this section too.
-                const contributions =
-                    category.key === "contribute" ? contributionCards : [];
-                if (state.loading || cards.length + contributions.length === 0)
-                    return null;
+                if (state.loading || cards.length === 0) return null;
                 // The progress chip counts only real (grantable) quests —
                 // coming_soon rows are excluded from both done and total.
-                const liveCards = [
-                    ...cards.filter((card) => !card.comingSoon),
-                    ...contributions,
-                ];
+                const liveCards = cards.filter((card) => !card.comingSoon);
                 const done = liveCards.filter(
                     (card) => card.status !== "open",
                 ).length;
+                // A long lane (every merged PR is a row) starts short.
+                const expanded = expandedSections.includes(category.key);
                 const row = (card: QuestCard) => (
                     <QuestRow
                         key={card.key}
@@ -1178,53 +1171,48 @@ function QuestOverviewContent({
                         }
                     >
                         <div className="flex flex-col gap-2">
-                            {cards.map(row)}
-                            {/* Contributions have no limit (one per merged PR
-                                or fixed issue), so their list starts short;
-                                the ones to claim come first. */}
-                            {(showAllContributions
-                                ? contributions
-                                : contributions.slice(
-                                      0,
-                                      CONTRIBUTIONS_PAGE_SIZE,
-                                  )
+                            {(expanded
+                                ? cards
+                                : cards.slice(0, SECTION_PAGE_SIZE)
                             ).map(row)}
                         </div>
-                        {!showAllContributions &&
-                            contributions.length > CONTRIBUTIONS_PAGE_SIZE && (
-                                <div
-                                    data-theme="neutral"
-                                    className="mt-3 flex justify-center"
+                        {!expanded && cards.length > SECTION_PAGE_SIZE && (
+                            <div
+                                data-theme="neutral"
+                                className="mt-3 flex justify-center"
+                            >
+                                <Button
+                                    size="sm"
+                                    onClick={() =>
+                                        setExpandedSections((keys) => [
+                                            ...keys,
+                                            category.key,
+                                        ])
+                                    }
                                 >
-                                    <Button
-                                        size="sm"
-                                        onClick={() =>
-                                            setShowAllContributions(true)
-                                        }
-                                    >
-                                        Show older
-                                    </Button>
-                                </div>
-                            )}
+                                    Show more
+                                </Button>
+                            </div>
+                        )}
                     </Section>
                 );
             })}
-            {otherBonusCards.length > 0 && (
+            {bonusRewardCards.length > 0 && (
                 <Section
                     title="Bonus rewards"
                     action={
                         <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                             {
-                                otherBonusCards.filter(
+                                bonusRewardCards.filter(
                                     (card) => card.status === "claimed",
                                 ).length
                             }{" "}
-                            / {otherBonusCards.length}
+                            / {bonusRewardCards.length}
                         </span>
                     }
                 >
                     <div className="flex flex-col gap-2">
-                        {otherBonusCards.map((card) => (
+                        {bonusRewardCards.map((card) => (
                             <QuestRow
                                 key={card.key}
                                 card={card}

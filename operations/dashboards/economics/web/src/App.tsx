@@ -870,8 +870,8 @@ function viewInfoContent(activeView: ActiveView) {
                     resource attribution.
                 </InfoItem>
                 <InfoItem lead="Runway">
-                    Tools &amp; sandboxes and shared Infrastructure together
-                    equal Runway’s Infrastructure category.
+                    Tools &amp; sandboxes is a detail view of Infrastructure.
+                    Its costs are already included in Runway and Providers.
                 </InfoItem>
             </ViewInfo>
         );
@@ -885,8 +885,8 @@ function viewInfoContent(activeView: ActiveView) {
                 </InfoItem>
                 <InfoItem lead="Funding">
                     Cash and used credits come from the Infrastructure lines of
-                    the vendor ledger. Add Tools &amp; sandboxes costs to
-                    reconcile to Runway’s Infrastructure category.
+                    the vendor ledger, including Tools &amp; sandboxes. The
+                    total matches Runway’s Infrastructure category.
                 </InfoItem>
             </ViewInfo>
         );

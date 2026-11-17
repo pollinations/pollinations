@@ -128,6 +128,12 @@ it("uses the global Pro precision for tool usage and rented service costs", () =
                 model: "sandbox",
                 price_quests: 0.375,
             },
+            {
+                ...usage("2026-10", 0.63445),
+                vendor: "azure",
+                model: "sandbox",
+                price_quests: 0.0198,
+            },
         ],
         vendorLedger: [{ ...cost("2026-10", "e2b", -10.625), type: "infra" }],
     };
@@ -146,8 +152,17 @@ it("uses the global Pro precision for tool usage and rented service costs", () =
     const normal = render(false);
     expect(normal).toContain("$27");
     expect(normal).toContain("$11");
+    const table = normal.split("Billed events")[1].split("</table>")[0];
+    expect(table).toMatch(/>\$0<\/td>/);
+    expect(table).toMatch(/>\$1<\/td>/);
     expect(normal).not.toMatch(/\$(27\.125|10\.625|0\.375)/);
     const pro = render(true);
-    for (const amount of ["$27.125", "$10.625", "$0.375"])
+    for (const amount of [
+        "$27.125",
+        "$10.625",
+        "$0.375",
+        "$0.63445",
+        "$0.0198",
+    ])
         expect(pro).toContain(amount);
 });

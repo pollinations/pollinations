@@ -132,8 +132,9 @@ function exportSections(data: Data, now: Date) {
             months.map((month) => ({
                 ...infrastructureReport(data, month, "tools"),
                 usage: toolUsageRows(data, month),
+                includedIn: "infrastructure",
                 costScope:
-                    "Attributed vendor bills only. Shared Azure and Cloudflare costs remain in Infrastructure until resource attribution is verified.",
+                    "Subset of Infrastructure, already included in its totals and Runway. Only attributable vendor bills; shared Azure and Cloudflare costs are not allocated to tools.",
                 usageBasis:
                     "Paid and Quest Pollen consumed, not Stripe cash sales.",
             })),

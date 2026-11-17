@@ -104,7 +104,11 @@ export function InfrastructureTab({
                                                   Paid
                                               </span>
                                           ),
-                                          value: fmtUsd(paid),
+                                          value: fmtUsd(
+                                              paid == null || pro
+                                                  ? paid
+                                                  : Math.round(paid),
+                                          ),
                                           valueClassName:
                                               "polli:text-paid-deep",
                                       },
@@ -115,7 +119,11 @@ export function InfrastructureTab({
                                                   Quest
                                               </span>
                                           ),
-                                          value: fmtUsd(quest),
+                                          value: fmtUsd(
+                                              quest == null || pro
+                                                  ? quest
+                                                  : Math.round(quest),
+                                          ),
                                           valueClassName:
                                               "polli:text-tier-deep",
                                       },
@@ -137,14 +145,21 @@ export function InfrastructureTab({
             {kind === "tools" && (
                 <>
                     <p className="text-sm text-theme-text-soft">
-                        E2B sandbox rental and Exa search bills are attributed
-                        here. Azure sandbox and Cloudflare MCP costs still need
-                        a resource breakdown; their shared bills remain in
-                        Infrastructure.
+                        Part of Infrastructure, already included in Runway and
+                        Providers. Costs here cover E2B rental and Exa search;
+                        shared Azure and Cloudflare bills cannot yet be
+                        attributed to individual tools.
                     </p>
                     <ToolUsage data={data} month={month} />
                     <h3 className="font-semibold">Attributed service costs</h3>
                 </>
+            )}
+            {kind === "infrastructure" && (
+                <p className="text-sm text-theme-text-soft">
+                    The same Infrastructure category as Runway, including tools
+                    and sandboxes. Development and Operations are separate
+                    expenses.
+                </p>
             )}
             <TableScroller>
                 <DataTable className="min-w-[600px]">
@@ -232,7 +247,7 @@ const USAGE_COLUMNS: readonly SortColumn<
 ];
 
 function ToolUsage({ data, month }: { data: Data; month: string }) {
-    const { fmtUsd, fmtNumber } = useAmountDisplay();
+    const { fmtUsd, fmtNumber, pro } = useAmountDisplay();
     const usage = toolUsageRows(data, month);
     const { headerProps, rows } = useSortableRows(usage, USAGE_COLUMNS, {
         key: "paid",
@@ -242,7 +257,8 @@ function ToolUsage({ data, month }: { data: Data; month: string }) {
         <>
             <p className="text-sm text-theme-text-soft">
                 Billed sandbox leases and MCP calls from Gen events. Pollen
-                consumed, not Stripe cash sales.
+                consumed, not Stripe cash sales. Normal mode rounds to whole
+                Pollen; Pro shows exact amounts.
             </p>
             <TableScroller>
                 <DataTable className="min-w-[600px]">
@@ -285,10 +301,18 @@ function ToolUsage({ data, month }: { data: Data; month: string }) {
                                     {fmtNumber(row.requests)}
                                 </TableCell>
                                 <TableCell align="right" numeric>
-                                    {fmtUsd(row.paidPollenUsd)}
+                                    {fmtUsd(
+                                        pro
+                                            ? row.paidPollenUsd
+                                            : Math.round(row.paidPollenUsd),
+                                    )}
                                 </TableCell>
                                 <TableCell align="right" numeric>
-                                    {fmtUsd(row.questPollenUsd)}
+                                    {fmtUsd(
+                                        pro
+                                            ? row.questPollenUsd
+                                            : Math.round(row.questPollenUsd),
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}

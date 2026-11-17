@@ -673,13 +673,16 @@ it("separates billed tools from inference and shared bills without changing Runw
         "cloudflare",
     ]);
     const tools = infrastructureReport(input, month, "tools");
-    const shared = infrastructureReport(input, month);
+    const infrastructure = infrastructureReport(input, month);
     expect(tools.summary).toEqual({ cashUsd: 5, creditUsd: 40, totalUsd: 45 });
-    expect(shared.summary).toEqual({
-        cashUsd: 0,
-        creditUsd: 100,
-        totalUsd: 100,
+    expect(infrastructure.summary).toEqual({
+        cashUsd: 5,
+        creditUsd: 140,
+        totalUsd: 145,
     });
+    expect(
+        infrastructure.rows.every((row) => row.kind === "infrastructure"),
+    ).toBe(true);
     const runway = buildRunway([], new Date("2026-08-15"), input.vendorLedger);
     const infraRows = runway.rows.filter(
         (row) => row.category === "infrastructure",

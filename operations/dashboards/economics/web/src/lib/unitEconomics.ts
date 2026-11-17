@@ -122,7 +122,7 @@ export function providerEconomicsReport(data: Data, month: string) {
     );
     for (const [vendor, vendorCosts] of byVendor) {
         const infra = vendorCosts.filter(
-            (cost) => cost.kind === "infrastructure" || cost.kind === "tools",
+            (cost) => cost.kind === "infrastructure",
         );
         if (!infra.length) continue;
         const row = rows.get(vendor) ?? {
@@ -196,9 +196,7 @@ export function providerEconomicsReport(data: Data, month: string) {
         (usage) => rows.get(usage.vendor)?.providerUsageUsd == null,
     );
     const infrastructure = sumApiCosts(
-        costs.filter(
-            (cost) => cost.kind === "infrastructure" || cost.kind === "tools",
-        ),
+        costs.filter((cost) => cost.kind === "infrastructure"),
     );
     return {
         ...direct,

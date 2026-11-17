@@ -245,7 +245,7 @@ const INSIGHT_TABS = [
     {
         id: "vendors",
         label: "Providers",
-        note: "Monthly costs by vendor across inference, GPUs, tools, sandboxes, and shared infrastructure.",
+        note: "Monthly costs by vendor across inference, GPUs, and infrastructure, including tools and sandboxes.",
         icon: GlobeIcon,
     },
     {
@@ -263,13 +263,13 @@ const INSIGHT_TABS = [
     {
         id: "tools",
         label: "Tools & sandboxes",
-        note: "Sandbox and MCP usage, with attributable service costs split into cash and credits.",
+        note: "Infrastructure detail: sandbox and MCP usage, with attributable service costs split into cash and credits.",
         icon: RocketIcon,
     },
     {
         id: "infrastructure",
         label: "Infrastructure",
-        note: "Shared service costs by vendor and month, split into cash and credits.",
+        note: "The same Infrastructure category as Runway, including tools and sandboxes, split into cash and credits.",
         icon: DatabaseIcon,
     },
     {
@@ -814,8 +814,8 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ViewInfo>
                 <InfoItem lead="Scope">
-                    One vendor-month across inference, GPUs, tools, sandboxes,
-                    and shared infrastructure. Expand Services for the cost
+                    One vendor-month across inference, GPUs, and Infrastructure,
+                    including tools and sandboxes. Expand Services for the cost
                     split.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">

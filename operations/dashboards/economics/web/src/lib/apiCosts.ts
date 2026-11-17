@@ -11,7 +11,6 @@ import {
 export const API_COST_LABELS = {
     inference: "Inference",
     gpu: "GPUs",
-    tools: "Tools & sandboxes",
     infrastructure: "Infrastructure",
 } as const;
 
@@ -37,15 +36,11 @@ export function apiCosts(data: Data, month: string): ApiCost[] {
             continue;
         const vendor = canonicalVendor(row.vendor);
         const type = row.type.trim().toLowerCase();
-        // Dedicated sandbox/search bills are attributable. Shared Azure and
-        // Cloudflare invoices need resource evidence before moving any cost.
         const kind =
             type === "gpu" || type === "inference"
                 ? type
                 : ledgerCategory(row) === "infrastructure"
-                  ? vendor === "e2b" || vendor === "exa"
-                      ? "tools"
-                      : "infrastructure"
+                  ? "infrastructure"
                   : null;
         if (
             !kind ||
@@ -53,7 +48,7 @@ export function apiCosts(data: Data, month: string): ApiCost[] {
         )
             continue;
         const service =
-            kind === "infrastructure" || kind === "tools"
+            kind === "infrastructure"
                 ? row.resource_name.trim() ||
                   row.resource_sku.trim() ||
                   "Unspecified service"
@@ -96,7 +91,15 @@ export function infrastructureReport(
     month: string,
     kind: "infrastructure" | "tools" = "infrastructure",
 ) {
-    const rows = apiCosts(data, month).filter((row) => row.kind === kind);
+    // Tools is a detail view of Infrastructure, never an additional category.
+    // Shared Azure/Cloudflare bills need resource evidence before attribution.
+    const rows = apiCosts(data, month).filter(
+        (row) =>
+            row.kind === "infrastructure" &&
+            (kind === "infrastructure" ||
+                row.vendor === "e2b" ||
+                row.vendor === "exa"),
+    );
     return {
         month,
         summary: rows.length ? sumApiCosts(rows) : null,

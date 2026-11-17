@@ -356,15 +356,17 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         100,
         Math.max(0, (progress.current / progress.target) * 100),
     );
-    const formatValue = (value: number) =>
-        progress.unit === "pollen" ? formatPollen(value) : formatCount(value);
+    // Money goals read "$20 of $100"; the API keeps "pollen" as the unit.
+    const label =
+        progress.unit === "pollen"
+            ? `$${formatPollen(progress.current)} of $${formatPollen(progress.target)}`
+            : `${formatCount(progress.current)} / ${formatCount(progress.target)} ${progress.unit}`;
 
     // Nothing done yet: just the count, an empty bar reads as decoration.
     if (progress.current <= 0)
         return (
             <span className="text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {label}
             </span>
         );
     return (
@@ -375,6 +377,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 aria-valuemin={0}
                 aria-valuemax={progress.target}
                 aria-valuenow={Math.min(progress.current, progress.target)}
+                aria-valuetext={label}
                 className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
             >
                 <div
@@ -383,8 +386,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 />
             </div>
             <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {label}
             </span>
         </div>
     );

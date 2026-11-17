@@ -50,7 +50,7 @@ const TABS = [
 ] as const;
 
 const METRICS = [
-    { value: "pollen", label: "Costs" },
+    { value: "pollen", label: "USD" },
     { value: "requests", label: "Requests" },
 ] as const;
 

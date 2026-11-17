@@ -149,7 +149,7 @@ export function PollenUsageBadges(usage: {
                 title={isPollen ? "Paid balance" : "Paid requests"}
                 aria-label={
                     isPollen
-                        ? `${spokenDollars(paid)} from your paid balance`
+                        ? `Paid balance, ${spokenDollars(paid)}`
                         : `${paid} paid requests`
                 }
             >
@@ -162,7 +162,7 @@ export function PollenUsageBadges(usage: {
                 title={isPollen ? "Quest balance" : "Quest requests"}
                 aria-label={
                     isPollen
-                        ? `${spokenDollars(quest)} from your Quest balance`
+                        ? `Quest balance, ${spokenDollars(quest)}`
                         : `${quest} Quest requests`
                 }
             >

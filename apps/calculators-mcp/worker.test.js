@@ -75,6 +75,7 @@ for (const modern of [false, true])
                 "hash_text",
                 "inspect_unicode",
                 "next_cron_runs",
+                "percentage",
                 "rank_palette",
                 "time_convert",
                 "time_math",
@@ -944,6 +945,132 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("percentage is exact where float arithmetic drifts", async (t) => {
+    const client = await clientFor(t);
+
+    // 15% of 200 is exactly 30.
+    assert.equal(
+        (await call(client, "percentage", { mode: "of", a: "15", b: "200" }))
+            .result,
+        "30",
+    );
+
+    // 0.1% of 0.2 is 0.0002 exactly, not 2.0000000000000004e-4.
+    assert.equal(
+        (await call(client, "percentage", { mode: "of", a: "0.1", b: "0.2" }))
+            .result,
+        "0.0002",
+    );
+
+    // 20 digits survive, because both inputs stay strings.
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "of",
+                a: "12345678901234567890",
+                b: "2",
+            })
+        ).result,
+        "246913578024691357.8",
+    );
+
+    // A result far below the rounding precision is still reported, not zeroed.
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "of",
+                a: "0.0000001",
+                b: "0.0000001",
+            })
+        ).result,
+        "0.0000000000000001",
+    );
+
+    // Signed percent change, both directions.
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "change",
+                a: "100",
+                b: "150",
+            })
+        ).result,
+        "50",
+    );
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "change",
+                a: "150",
+                b: "100",
+            })
+        ).result,
+        "-33.3333333333",
+    );
+
+    // Share and the symmetric difference.
+    assert.equal(
+        (await call(client, "percentage", { mode: "share", a: "25", b: "200" }))
+            .result,
+        "12.5",
+    );
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "difference",
+                a: "100",
+                b: "150",
+            })
+        ).result,
+        "40",
+    );
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "difference",
+                a: "150",
+                b: "100",
+            })
+        ).result,
+        "40",
+    );
+
+    // Precision is the caller's choice and trailing zeros are trimmed.
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "share",
+                a: "1",
+                b: "3",
+                precision: 4,
+            })
+        ).result,
+        "33.3333",
+    );
+});
+
+test("percentage rejects malformed input and undefined percentages", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { mode: "change", a: "0", b: "10" },
+        { mode: "share", a: "1", b: "0" },
+        { mode: "difference", a: "5", b: "-5" },
+        { mode: "of", a: "1e3", b: "2" },
+        { mode: "of", a: ".5", b: "2" },
+        { mode: "of", a: "50%", b: "2" },
+        { mode: "of", a: "one", b: "2" },
+        { mode: "of", a: "1", b: "2", precision: 21 },
+        { mode: "average", a: "1", b: "2" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "percentage", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

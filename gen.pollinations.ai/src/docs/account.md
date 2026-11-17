@@ -36,7 +36,7 @@ The directory is public, so no extra permission is required (the same as `/accou
 
 When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see the Quest balance and the paid balance separately. Budgeted keys without `account:usage` do **not** receive `accountBalance`, which would expose the owner's wallet.
 
-Amounts are in US dollars: a `balance` of `12.5` is $12.50.
+Amounts are in US dollars: a `balance` of `12.5` is $12.50. Fields and values named `pollen`, such as `currency: "pollen"` in model pricing, are US dollars too.
 
 ### GET /account/key/usage
 

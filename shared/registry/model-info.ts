@@ -67,7 +67,7 @@ export const AGENT_FIELD_DESCRIPTIONS = {
     base_model:
         "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
     pricing:
-        "Rates in US dollars per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+        'Rates in US dollars per billed unit; `currency` is always `"pollen"`, the API\'s name for US dollars. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.',
 };
 
 export const ModelInfoSchema = z.object({

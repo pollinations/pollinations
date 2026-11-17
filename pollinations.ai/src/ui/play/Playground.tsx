@@ -35,7 +35,6 @@ import {
     TabButton,
     Text,
     Textarea,
-    Tooltip,
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -69,6 +68,12 @@ import {
     generatePlaygroundAudio,
     supportsAudioLength,
 } from "./playground-audio";
+import {
+    type ModelRunStat,
+    pickRunRecord,
+    runCostLabel,
+    runStatsLine,
+} from "./run-stats";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { videoOptions } from "./video-options";
 
@@ -174,6 +179,8 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
+          /** "0.0038 pollen", set once the usage record is found. */
+          cost?: string;
       }
     | {
           type: "text";
@@ -214,6 +221,19 @@ function mediaResult(
         url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
         filename: `pollinations-playground.${FILE_EXTENSIONS[mime] ?? mime.split("/")[1]}`,
     };
+}
+
+// Kept in memory so leaving /play and coming back restores the last inputs
+// and result. Nothing is written to disk.
+let lastInputs: PlaySearch | undefined;
+let lastResult: PlaygroundResult | null = null;
+
+function resultUrl(result: PlaygroundResult | null) {
+    return result && result.type !== "text" ? result.url : undefined;
+}
+
+function revokeResult(result: PlaygroundResult | null) {
+    if (result && result.type !== "text") URL.revokeObjectURL(result.url);
 }
 
 function randomGenerationSeed(): number {
@@ -344,6 +364,7 @@ function VoicePicker({
                 trigger={(open) => (
                     <Button
                         type="button"
+                        intent="neutral"
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Voice: ${value}`}
                     >
@@ -402,7 +423,8 @@ function ModelPicker({
                 trigger={(open) => (
                     <Button
                         type="button"
-                        size="lg"
+                        intent="neutral"
+                        size="md"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
@@ -569,6 +591,28 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
     );
 }
 
+function ResultCost({
+    cost,
+    className,
+}: {
+    cost: string | undefined;
+    className?: string;
+}) {
+    return (
+        cost && (
+            <Chip
+                intent="neutral"
+                size="sm"
+                role="img"
+                aria-label={`This run cost ${cost}`}
+                className={className}
+            >
+                {cost}
+            </Chip>
+        )
+    );
+}
+
 function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
 
@@ -586,6 +630,10 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     autoPlay
                     className="play-audio min-w-0 flex-1"
                 />
+                {/* Reserved, so the cost arriving later resizes nothing. */}
+                <span className="flex w-28 shrink-0 justify-end">
+                    <ResultCost cost={result.cost} />
+                </span>
                 <ResultDownloadButton result={result} />
             </Surface>
         );
@@ -615,6 +663,10 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     <ResultDownloadButton
                         result={result}
                         className="absolute bottom-3 right-3 z-10"
+                    />
+                    <ResultCost
+                        cost={result.cost}
+                        className="absolute bottom-3 left-3 z-10"
                     />
                     {result.type === "image" && (
                         <button
@@ -686,8 +738,14 @@ export function Playground() {
         enabled: isHydrated,
     });
     const { isLoading, error: catalogError } = catalog;
-    const search = useSearch({ from: "/play" });
+    const urlSearch = useSearch({ from: "/play" });
     const navigate = useNavigate({ from: "/play" });
+    // A URL with Play keys wins; a bare /play restores the last inputs.
+    const [search] = useState<PlaySearch>(() =>
+        PLAY_SEARCH_KEYS.some((key) => urlSearch[key] !== undefined)
+            ? urlSearch
+            : (lastInputs ?? urlSearch),
+    );
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
         CATEGORY_ORDER.find((value) => value === search.tab) ?? "image",
     );
@@ -715,9 +773,14 @@ export function Playground() {
     const [voice, setVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
     const linkedModelRef = useRef(search.model ?? "");
-    const [result, setResult] = useState<PlaygroundResult | null>(null);
+    const [result, setResult] = useState<PlaygroundResult | null>(lastResult);
     const [isGenerating, setIsGenerating] = useState(false);
+    // `runId` drops a cost lookup once a newer run has started.
+    const runId = useRef(0);
     const [error, setError] = useState<string | null>(null);
+    const [stats, setStats] = useState<ModelRunStat[]>([]);
+    const responseRef = useRef<HTMLDivElement>(null);
+    const statusId = useId();
     // Shared FileUpload limits and rejection messages for these media.
     const uploadProps = (media: UploadMedia[], tooMany: string) => {
         const maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item]));
@@ -831,7 +894,7 @@ export function Playground() {
             : (currentModel.voices[0] ?? "");
 
     useEffect(() => {
-        showInUrl({
+        lastInputs = {
             tab: activeCategory,
             model: selectedModel,
             prompt,
@@ -847,7 +910,8 @@ export function Playground() {
             sound,
             guidance:
                 referenceMode === "references" ? referenceMode : undefined,
-        });
+        };
+        showInUrl(lastInputs);
     }, [
         showInUrl,
         activeCategory,
@@ -876,12 +940,43 @@ export function Playground() {
     }, [currentModel]);
 
     useEffect(() => {
-        return () => {
-            if (result && result.type !== "text") {
-                URL.revokeObjectURL(result.url);
-            }
-        };
+        fetch(`${API_BASE_URL}/models/stats`)
+            .then((response) => response.json())
+            .then(({ data }) => setStats(data ?? []))
+            .catch(() => {});
+    }, []);
+
+    // A new run brings its response area into view.
+    useEffect(() => {
+        if (isGenerating)
+            responseRef.current?.scrollIntoView({ block: "nearest" });
+    }, [isGenerating]);
+
+    // The result outlives this component. Its blob URL is revoked only once
+    // it is replaced or cleared, so at most one stays alive.
+    useEffect(() => {
+        const previous = lastResult;
+        lastResult = result;
+        // Same blob URL = same result with a cost attached, still on screen.
+        if (previous && resultUrl(previous) !== resultUrl(result))
+            revokeResult(previous);
     }, [result]);
+
+    // A run can finish after the visitor left Play. State is gone then, so
+    // the result goes straight to memory, unless another one is already
+    // remembered (it may be on screen): that late one is dropped.
+    const mounted = useRef(true);
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+    function finishRun(next: PlaygroundResult) {
+        if (mounted.current) setResult(next);
+        else if (lastResult) revokeResult(next);
+        else lastResult = next;
+    }
 
     const videoConfig = videoOptions(
         currentModel?.id ?? "",
@@ -1109,6 +1204,9 @@ export function Playground() {
         setIsGenerating(true);
         setError(null);
         setResult(null);
+        const id = ++runId.current;
+        const startedAt = Date.now();
+        let failed = false;
 
         try {
             const client = new Pollinations({
@@ -1149,7 +1247,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult(mediaResult("video", response));
+                finishRun(mediaResult("video", response));
                 return;
             }
 
@@ -1162,7 +1260,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult(mediaResult("image", response));
+                finishRun(mediaResult("image", response));
                 return;
             }
 
@@ -1180,7 +1278,7 @@ export function Playground() {
                             : undefined,
                     },
                 );
-                setResult(
+                finishRun(
                     response.type === "text"
                         ? response
                         : mediaResult("audio", response),
@@ -1188,9 +1286,42 @@ export function Playground() {
                 return;
             }
         } catch (err) {
+            failed = true;
             setError(errorMessage(err));
         } finally {
             setIsGenerating(false);
+            if (!failed)
+                void lookUpRunCost(id, startedAt, apiKey, currentModel.id);
+        }
+    }
+
+    // The usage record is written after the response, so look at 2, 5 and
+    // 10 s and keep the first hit. A failed read just leaves the average.
+    async function lookUpRunCost(
+        id: number,
+        startedAt: number,
+        key: string,
+        model: string,
+    ) {
+        const client = new Pollinations({ apiKey: key, baseUrl: API_BASE_URL });
+        let waited = 0;
+        for (const at of [2000, 5000, 10000]) {
+            await new Promise((resolve) => setTimeout(resolve, at - waited));
+            waited = at;
+            if (runId.current !== id) return;
+            try {
+                const { usage } = await client.accountKeyUsage({ limit: 10 });
+                const record = pickRunRecord(usage, model, startedAt);
+                if (record && runId.current === id) {
+                    // The cost rides on the result, so it outlives a model change.
+                    setResult((shown) =>
+                        shown && shown.type !== "text"
+                            ? { ...shown, cost: runCostLabel(record) }
+                            : shown,
+                    );
+                    return;
+                }
+            } catch {}
         }
     }
 
@@ -1211,10 +1342,22 @@ export function Playground() {
         : CATEGORY_ICON[activeCategory];
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
     // Sized for both labels, so starting a run never resizes the button.
+    const hasResult =
+        result &&
+        (result.type === "text" ? "audio" : result.type) === activeCategory;
+    const againLabel = generateLabel.startsWith("Generate ")
+        ? "Generate again"
+        : generateLabel;
     const generateText = (
         <StableLabel
-            text={isGenerating ? busyLabel : generateLabel}
-            options={[generateLabel, busyLabel]}
+            text={
+                isGenerating
+                    ? busyLabel
+                    : hasResult
+                      ? againLabel
+                      : generateLabel
+            }
+            options={[generateLabel, againLabel, busyLabel]}
         />
     );
     const connectLabel =
@@ -1232,7 +1375,7 @@ export function Playground() {
         ? audioFiles.length === 0
         : !prompt.trim();
 
-    /** Why the button cannot fire, or null when it can. Drives the tooltip. */
+    /** Why the button cannot fire, or null when it can. Shown beside the button. */
     const blockedReason = needsSignIn
         ? null
         : audioError
@@ -1250,6 +1393,12 @@ export function Playground() {
                       ? "Choose an available model"
                       : "This key cannot use the selected model"
               : null;
+
+    // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
+    const run = needsSignIn ? () => login() : generate;
+    const statsLine = runStatsLine(
+        stats.find((stat) => stat.model === currentModel?.id),
+    );
 
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
@@ -1345,6 +1494,15 @@ export function Playground() {
                                     onChange={(event) =>
                                         setPrompt(event.target.value)
                                     }
+                                    onKeyDown={(event) => {
+                                        if (
+                                            event.key === "Enter" &&
+                                            (event.metaKey || event.ctrlKey)
+                                        ) {
+                                            event.preventDefault();
+                                            run();
+                                        }
+                                    }}
                                     placeholder={promptPlaceholder(
                                         activeCategory,
                                         audioTask,
@@ -1792,37 +1950,16 @@ export function Playground() {
                                 </div>
                             )}
                         </div>
+                        {/* One line stays reserved, so switching models moves nothing. */}
+                        <Text size="xs" tone="muted" className="min-h-5">
+                            {statsLine}
+                        </Text>
                     </Surface>
 
-                    {error && <Alert intent="danger">{error}</Alert>}
-                    {authError && (
-                        <Alert intent="danger">
-                            Could not connect your account: {authError.message}
-                        </Alert>
-                    )}
-
                     {/* Not connected is not a broken state, so the button
-                            does not sit there disabled under a 🚫 cursor with
-                            no explanation — it becomes the connect action. The
-                            tooltip covers the cases that genuinely are blocked
-                            (nothing typed, model not on this key). */}
-                    {blockedReason ? (
-                        <Tooltip
-                            triggerAs="span"
-                            align="center"
-                            content={blockedReason}
-                            className="self-start"
-                        >
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                disabled
-                                icon={<GenerateIcon />}
-                            >
-                                {generateText}
-                            </Button>
-                        </Tooltip>
-                    ) : (
+                            becomes the connect action. When it genuinely
+                            cannot fire, the line beside it says why. */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Button
                             size="lg"
                             intent="brand"
@@ -1830,15 +1967,13 @@ export function Playground() {
                             // in or generates. Busy fills with honey and shows
                             // Polli. aria-disabled, not disabled, so focus
                             // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
                             aria-disabled={isGenerating || undefined}
                             aria-busy={isGenerating}
+                            aria-describedby={statusId}
                             icon={needsSignIn ? undefined : <GenerateIcon />}
-                            // Wrapped: login() takes an optional request
-                            // object, so passing the ref directly would
-                            // hand it the click event.
-                            onClick={needsSignIn ? () => login() : generate}
+                            onClick={run}
                             className={cn(
-                                "self-start",
                                 needsSignIn && "h-12 gap-2 px-5 py-0",
                             )}
                         >
@@ -1851,17 +1986,40 @@ export function Playground() {
                                 generateText
                             )}
                         </Button>
-                    )}
+                        {/* One line stays reserved, so text never moves anything. */}
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="min-h-5 max-sm:w-full"
+                        >
+                            {blockedReason}
+                        </Text>
+                    </div>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not
                         twice. Audio keeps just the button's cue. */}
-                    {isGenerating && activeCategory !== "audio" && (
-                        <BusyPlaceholder category={activeCategory} />
+                    {(error ||
+                        authError ||
+                        hasResult ||
+                        (isGenerating && activeCategory !== "audio")) && (
+                        <div ref={responseRef} className="flex flex-col gap-4">
+                            {error && <Alert intent="danger">{error}</Alert>}
+                            {authError && (
+                                <Alert intent="danger">
+                                    Could not connect your account:{" "}
+                                    {authError.message}
+                                </Alert>
+                            )}
+                            {isGenerating && activeCategory !== "audio" && (
+                                <BusyPlaceholder category={activeCategory} />
+                            )}
+                            {result && hasResult && (
+                                <ResultPanel result={result} />
+                            )}
+                        </div>
                     )}
-                    {result &&
-                        (result.type === "text" ? "audio" : result.type) ===
-                            activeCategory && <ResultPanel result={result} />}
                     {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
                 </div>
             </div>

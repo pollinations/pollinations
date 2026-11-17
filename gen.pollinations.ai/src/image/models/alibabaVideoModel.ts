@@ -60,7 +60,15 @@ export async function callAlibabaVideo(
                   },
                   parameters: {
                       resolution: (params.resolution ?? "480p").toUpperCase(),
-                      ratio: frames.length ? "adaptive" : ratio,
+                      // Input media keeps its own shape unless the caller
+                      // asked for one; Alibaba's default is also "adaptive".
+                      ratio:
+                          frames.length ||
+                          (references.length &&
+                              !params.aspectRatio &&
+                              !params.dimensionsExplicit)
+                              ? "adaptive"
+                              : ratio,
                       duration,
                       audio: params.audio ?? true,
                       seed: params.seed,

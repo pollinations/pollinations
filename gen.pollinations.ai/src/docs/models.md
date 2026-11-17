@@ -12,6 +12,7 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
+| `GET /models/quote` | Price of one image or video request with the chosen options |
 
 ### Filters
 
@@ -90,6 +91,27 @@ Built-in models may use separate upstream routes for Chat and Responses.
 Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
+
+### Price quote
+
+`GET /models/quote` returns what one image or video request costs before you
+send it. Pass `model` plus the query parameters of the generation request:
+
+```bash
+curl 'https://gen.pollinations.ai/models/quote?model=google/veo-3.1-fast&duration=8&resolution=1080p&audio=true'
+```
+
+```json
+{ "model": "google/veo-3.1-fast", "price": 0.96, "currency": "usd" }
+```
+
+`price` is null, with a `reason`, when the charge is only known after
+generation: `token_priced` (billed per token), `provider_metered` (billed from
+megapixels or other units the provider measures) and `input_dependent` (depends
+on the reference media). Text, audio and other models are not quoted.
+
+A quote is the listed price, not the charge: billing uses the usage the
+provider reports.
 
 ### Chat parameters
 

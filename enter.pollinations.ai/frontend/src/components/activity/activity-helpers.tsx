@@ -12,6 +12,7 @@ import { saveBlob } from "./activity-csv";
 import {
     formatActivityPollenThreshold,
     spokenDollars,
+    withDollar,
 } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -140,11 +141,11 @@ export function PollenUsageBadges(usage: {
         : formatCount(usage.tierRequests);
     return (
         // Same-width chips with left-aligned digits, so rows line up; the pair
-        // sits at the right edge. 5.5rem fits the widest value, "<0.0001".
+        // sits at the right edge. 6rem fits threshold amounts such as "<$0.0001".
         <div className="ml-auto grid w-max grid-cols-1 items-center gap-1 @[32rem]:grid-cols-2">
             <PaidChip
                 size="sm"
-                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={isPollen ? "Paid balance" : "Paid requests"}
                 aria-label={
                     isPollen
@@ -153,11 +154,11 @@ export function PollenUsageBadges(usage: {
                 }
             >
                 <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {paid}
+                {isPollen ? withDollar(paid) : paid}
             </PaidChip>
             <TierChip
                 size="sm"
-                className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
                 title={isPollen ? "Quest balance" : "Quest requests"}
                 aria-label={
                     isPollen
@@ -169,7 +170,7 @@ export function PollenUsageBadges(usage: {
                     className="h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
                 />
-                {quest}
+                {isPollen ? withDollar(quest) : quest}
             </TierChip>
         </div>
     );

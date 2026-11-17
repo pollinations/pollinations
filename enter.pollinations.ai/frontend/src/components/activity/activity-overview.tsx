@@ -50,7 +50,7 @@ const TABS = [
 ] as const;
 
 const METRICS = [
-    { value: "pollen", label: "$" },
+    { value: "pollen", label: "Costs" },
     { value: "requests", label: "Requests" },
 ] as const;
 
@@ -369,7 +369,11 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                 align="right"
                                 className="px-2 py-1 font-normal"
                             >
-                                {metric === "pollen" ? "$" : "Requests"}
+                                {
+                                    METRICS.find(
+                                        (option) => option.value === metric,
+                                    )?.label
+                                }
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

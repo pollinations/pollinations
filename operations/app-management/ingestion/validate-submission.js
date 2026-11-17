@@ -16,7 +16,8 @@ function gh(args) {
     return execFileSync("gh", args, { encoding: "utf8" }).trim();
 }
 
-function isOpenQuest(number) {
+// When the quest opened, or null if #number isn't an open POLLEN-QUEST issue.
+function openQuestCreatedAt(number) {
     let issue;
     try {
         issue = JSON.parse(
@@ -27,16 +28,27 @@ function isOpenQuest(number) {
                 "--repo",
                 "pollinations/pollinations",
                 "--json",
-                "state,labels",
+                "state,labels,createdAt",
             ]),
         );
     } catch {
-        return false;
+        return null;
     }
-    return (
+    const open =
         issue.state === "OPEN" &&
-        issue.labels.some((label) => label.name === "POLLEN-QUEST")
-    );
+        issue.labels.some((label) => label.name === "POLLEN-QUEST");
+    return open ? issue.createdAt : null;
+}
+
+function repoCreatedAt(repoUrl) {
+    const [, owner, repo] =
+        repoUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/#?]+)/i) || [];
+    if (!owner) return null;
+    try {
+        return gh(["api", `/repos/${owner}/${repo}`, "--jq", ".created_at"]);
+    } catch {
+        return null;
+    }
 }
 
 async function main() {
@@ -131,10 +143,26 @@ async function main() {
         );
     }
 
-    if (/^\d+$/.test(submission.quest) && !isOpenQuest(submission.quest)) {
-        errors.push(
-            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
-        );
+    if (/^\d+$/.test(submission.quest)) {
+        const questOpened = openQuestCreatedAt(submission.quest);
+        // A quest rewards new work: an app whose repository predates the
+        // quest can still be listed, just without the quest reward.
+        const repoCreated =
+            questOpened && submission.repoUrl
+                ? repoCreatedAt(submission.repoUrl)
+                : null;
+        if (!questOpened) {
+            errors.push(
+                `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
+            );
+        } else if (
+            repoCreated &&
+            repoCreated.slice(0, 10) < questOpened.slice(0, 10)
+        ) {
+            errors.push(
+                `The repository was created on ${repoCreated.slice(0, 10)}, before Quest #${submission.quest} opened on ${questOpened.slice(0, 10)}. Quests reward apps built for them: leave the Quest field empty to list this app without the reward.`,
+            );
+        }
     }
 
     const approvedDate =

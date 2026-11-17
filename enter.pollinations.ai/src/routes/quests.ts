@@ -38,6 +38,7 @@ const questCatalogItemSchema = z.object({
             unit: z.enum(["pollen", "users", "days"]),
         })
         .optional(),
+    repeatable: z.boolean().optional(),
     url: z.string().nullable(),
 });
 

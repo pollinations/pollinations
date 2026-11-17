@@ -27,7 +27,14 @@ import {
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
-import { type FC, useEffect, useMemo, useRef, useState } from "react";
+import {
+    type FC,
+    type ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
@@ -251,6 +258,8 @@ export type QuestCard = {
     status: QuestCardStatus;
     earnedAmount?: number | null;
     progress?: QuestProgress;
+    /** A repeatable quest's rewards: its card keeps them all. */
+    repeats?: QuestReward[];
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
@@ -330,7 +339,14 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
         open: { count: 0, pollen: { tier: 0, paid: 0 } },
     };
     for (const card of cards) {
-        const part = parts[CARD_STATE[card.status]];
+        // A repeatable quest counts each reward it earned, and stays to do.
+        for (const repeat of card.repeats ?? []) {
+            const part = parts[repeat.claimedAt ? "claimed" : "ready"];
+            part.count += 1;
+            part.pollen[rewardIconKind(repeat.balanceBucket)] +=
+                repeat.pollenAmount;
+        }
+        const part = parts[card.repeats ? "open" : CARD_STATE[card.status]];
         part.count += 1;
         part.pollen[rewardIconKind(card.balanceBucket)] +=
             (card.status === "open" ? null : card.earnedAmount) ??
@@ -440,8 +456,7 @@ export function QuestProgress({
     );
 }
 
-/** The viewer's invite link, at the top of the Community tab; the Invite
- *  friends quest below it says what it earns. */
+/** The viewer's invite link, inside the Invite friends quest. */
 function InviteLink({ githubId }: { githubId: number | null }) {
     return githubId === null ? (
         // The link carries the inviter's GitHub id.
@@ -450,10 +465,14 @@ function InviteLink({ githubId }: { githubId: number | null }) {
             invite link.
         </Text>
     ) : (
-        <CopyField
-            label="Copy invite link"
-            value={`${window.location.origin}/?ref=${githubId}`}
-        />
+        // The small copy pill of the catalogs.
+        <div className="mt-1 w-fit min-w-0 max-w-full">
+            <CopyField
+                label="Copy invite link"
+                value={`${window.location.origin}/?ref=${githubId}`}
+                size="sm"
+            />
+        </div>
     );
 }
 
@@ -539,10 +558,13 @@ export function QuestRow({
     card,
     claiming,
     onClaim,
+    children,
 }: {
     card: QuestCard;
     claiming: boolean;
     onClaim(rewardId: string): void;
+    /** More under the description, e.g. the invite link. */
+    children?: ReactNode;
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
@@ -576,6 +598,12 @@ export function QuestRow({
             }
         >
             {card.title}
+            {card.repeats && card.repeats.length > 0 && (
+                <span className="font-normal text-theme-text-muted">
+                    {" "}
+                    · {card.repeats.length} earned
+                </span>
+            )}
         </Text>
     );
     // Show the "how to" description only while the quest is still open. Once
@@ -632,7 +660,7 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || issueLink || progress) && (
+    const details = (description || issueLink || progress || children) && (
         <div className="flex min-w-0 flex-col gap-1">
             {(description || issueLink) && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
@@ -644,6 +672,7 @@ export function QuestRow({
                 </div>
             )}
             {progress}
+            {children}
         </div>
     );
     const marker = (
@@ -897,12 +926,18 @@ function QuestOverviewContent({
         const categoryById = new Map(
             state.catalog.map((quest) => [quest.id, quest.category]),
         );
+        const repeatable = new Set(
+            state.catalog
+                .filter((quest) => quest.repeatable)
+                .map((quest) => quest.id),
+        );
         return state.rewards
             .filter(
                 (reward) =>
                     reward.questId == null ||
                     !categoryById.has(reward.questId) ||
-                    rewardByKey.get(reward.questId) !== reward,
+                    (!repeatable.has(reward.questId) &&
+                        rewardByKey.get(reward.questId) !== reward),
             )
             .map((reward) => {
                 const card: QuestCard = {
@@ -948,7 +983,14 @@ function QuestOverviewContent({
         };
 
         for (const quest of state.catalog) {
-            const reward = rewardByKey.get(quest.id);
+            // A repeatable quest keeps all its rewards on its card, which
+            // offers the next one to claim and otherwise stays open.
+            const repeats = quest.repeatable
+                ? state.rewards.filter((reward) => reward.questId === quest.id)
+                : undefined;
+            const reward = repeats
+                ? repeats.find((repeat) => !repeat.claimedAt)
+                : rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
             // Visibility rule:
@@ -985,6 +1027,7 @@ function QuestOverviewContent({
                           }
                         : progressByQuestId.get(quest.id),
                 comingSoon,
+                repeats,
             });
         }
 
@@ -1158,9 +1201,6 @@ function QuestOverviewContent({
                         {claimError && (
                             <Alert intent="danger">{claimError}</Alert>
                         )}
-                        {activeTab.key === "community" && !state.anonymous && (
-                            <InviteLink githubId={githubId} />
-                        )}
                         <div className="flex flex-col gap-2">
                             {(expanded
                                 ? activeTab.cards
@@ -1173,7 +1213,12 @@ function QuestOverviewContent({
                                         card.rewardId ?? "",
                                     )}
                                     onClaim={handleClaimReward}
-                                />
+                                >
+                                    {card.key === "invite_friends" &&
+                                        !state.anonymous && (
+                                            <InviteLink githubId={githubId} />
+                                        )}
+                                </QuestRow>
                             ))}
                         </div>
                         {!expanded &&

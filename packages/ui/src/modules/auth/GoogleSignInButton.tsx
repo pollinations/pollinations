@@ -18,7 +18,7 @@ export function GoogleSignInButton({
             icon={
                 <GoogleIcon
                     aria-hidden="true"
-                    className="polli:h-5 polli:w-5 polli:shrink-0"
+                    className="polli-logo-disc polli:h-5 polli:w-5 polli:shrink-0"
                 />
             }
         >

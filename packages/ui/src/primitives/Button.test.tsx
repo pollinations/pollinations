@@ -81,8 +81,25 @@ describe("Button appearances", () => {
 
         expect(footer).toContain(standalone);
         expect(standalone).toContain("polli:rounded-full");
-        expect(standalone).toContain("polli:border-theme-text-soft");
+        expect(standalone).toContain("polli-nectar");
         expect(standalone).toContain('type="submit"');
+    });
+
+    test("shows a done action with a pollen puff and keeps it undimmed", () => {
+        const done = renderToStaticMarkup(
+            <Button intent="commit" done disabled>
+                Create
+            </Button>,
+        );
+        expect(done).toContain('data-done="true"');
+        expect(done).toContain("polli-burst");
+        expect(done).not.toContain("polli:opacity-50");
+
+        const idle = renderToStaticMarkup(
+            <Button intent="commit">Create</Button>,
+        );
+        expect(idle).not.toContain("data-done");
+        expect(idle).not.toContain("polli-burst");
     });
 
     test("makes disabled polymorphic links inert", () => {

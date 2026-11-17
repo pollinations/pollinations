@@ -202,6 +202,208 @@
     outline-color: var(--polli-color-danger-text);
 }
 
+/* Nectar: the outlined brand / commit button. An ink hairline; honey rises
+   inside it with a soft wave on hover and focus, carrying the same on-fill
+   text as every other filled control. Kit tokens only. */
+.polli-nectar {
+    --polli-honey: var(--polli-color-honey);
+    --polli-ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+    position: relative;
+    isolation: isolate;
+    border-color: color-mix(
+        in oklab,
+        var(--polli-color-text-strong) 88%,
+        transparent
+    );
+    background: transparent;
+    color: var(--polli-color-text-strong);
+    transition: color 0.3s var(--polli-ease), border-color 0.3s var(--polli-ease);
+}
+
+/* A colour logo (Google) goes on a white disc when the button fills with
+   honey, so its colours stay legible. The ring is a shadow: no layout shift. */
+.polli-logo-disc {
+    border-radius: 50%;
+    transition: background-color 0.3s var(--polli-ease), box-shadow 0.3s var(--polli-ease);
+}
+
+.polli-nectar:is(
+        [aria-busy="true"],
+        [data-done],
+        :not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible)
+    )
+    .polli-logo-disc {
+    background: #fff;
+    box-shadow: 0 0 0 3px #fff;
+}
+
+/* The rising fill is the hover feedback; the shared brightness lift would
+   turn the honey into a second, paler yellow. */
+.polli-nectar:hover {
+    filter: none;
+}
+
+.polli-nectar-fx {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.polli-nectar-fx::before {
+    content: "";
+    position: absolute;
+    inset: -5px 0 0;
+    background:
+        radial-gradient(
+                8px 5px at 8px 0,
+                transparent 94%,
+                var(--polli-honey)
+            )
+            0 0 / 16px 5px repeat-x,
+        linear-gradient(var(--polli-honey), var(--polli-honey)) 0 5px / 100% 100%
+            no-repeat;
+    transform: translateY(105%);
+    transition: transform 0.6s var(--polli-ease);
+}
+
+/* A busy or done button stays filled even though it is disabled. */
+.polli-nectar:is(
+        [aria-busy="true"],
+        [data-done],
+        :not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible)
+    ) {
+    border-color: var(--polli-honey);
+    color: var(--polli-color-on-fill);
+}
+
+/* Whatever sits inside the filled button (an amount, a coloured icon) takes
+   the same on-fill text, so nothing pale is left on the honey. */
+.polli-nectar:is(
+        [aria-busy="true"],
+        [data-done],
+        :not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible)
+    )
+    * {
+    color: inherit;
+}
+
+.polli-nectar:is(
+        [aria-busy="true"],
+        [data-done],
+        :not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible)
+    )
+    > .polli-nectar-fx::before {
+    transform: translateY(0);
+    animation: polli-slosh 2.4s linear infinite;
+}
+
+@keyframes polli-slosh {
+    to {
+        background-position: 16px 0, 0 5px;
+    }
+}
+
+/* A small puff of pollen leaves the button when an action succeeds. */
+.polli-burst {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.polli-burst i {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    border-radius: 50%;
+    background: var(--polli-honey);
+    opacity: 0;
+    animation: polli-puff 0.9s var(--polli-ease) both;
+}
+
+.polli-burst i:nth-child(even) {
+    animation-delay: 0.06s;
+}
+
+.polli-burst i:nth-child(1) { left: 8%; top: 20%; --dx: -10px; --dy: -12px; }
+.polli-burst i:nth-child(2) { left: 30%; top: 0; --dx: -4px; --dy: -14px; }
+.polli-burst i:nth-child(3) { left: 62%; top: 0; --dx: 4px; --dy: -15px; }
+.polli-burst i:nth-child(4) { left: 92%; top: 18%; --dx: 12px; --dy: -10px; }
+.polli-burst i:nth-child(5) { left: 96%; top: 72%; --dx: 14px; --dy: 7px; }
+.polli-burst i:nth-child(6) { left: 70%; top: 100%; --dx: 6px; --dy: 13px; }
+.polli-burst i:nth-child(7) { left: 36%; top: 100%; --dx: -5px; --dy: 14px; }
+.polli-burst i:nth-child(8) { left: 4%; top: 78%; --dx: -13px; --dy: 7px; }
+
+@keyframes polli-puff {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.4);
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(1);
+    }
+}
+
+/* Polli waggles in the icon slot while an action works. It is drawn 1.5x the
+   slot, growing left into the padding so the label never moves. */
+.polli-bee {
+    position: absolute;
+    inset: -4px 0 -4px -8px;
+    background: url("./brand/polli/polli.png") center / contain no-repeat;
+    animation: polli-waggle 1.6s ease-in-out infinite;
+}
+
+@keyframes polli-waggle {
+    0%,
+    100% {
+        translate: 0 0;
+        rotate: 0deg;
+    }
+    12% {
+        translate: 3px -4px;
+        rotate: 12deg;
+    }
+    25% {
+        translate: 0 -7px;
+        rotate: 0deg;
+    }
+    37% {
+        translate: -3px -4px;
+        rotate: -12deg;
+    }
+    44% {
+        translate: -1px -1px;
+        rotate: 10deg;
+    }
+    50% {
+        translate: 0 0;
+        rotate: -10deg;
+    }
+    56% {
+        translate: 1px 1px;
+        rotate: 10deg;
+    }
+    62% {
+        translate: 3px 4px;
+        rotate: 12deg;
+    }
+    75% {
+        translate: 0 7px;
+        rotate: 0deg;
+    }
+    87% {
+        translate: -3px 4px;
+        rotate: -12deg;
+    }
+}
+
 /* Touch screens: every control gets at least a 44px tap area, without
    changing how it looks or lays out. Layered, so a control placed with a
    utility (polli:absolute) keeps that position. */

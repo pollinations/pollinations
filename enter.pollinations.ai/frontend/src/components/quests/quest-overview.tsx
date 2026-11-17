@@ -29,7 +29,14 @@ import {
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
-import { type FC, useEffect, useMemo, useRef, useState } from "react";
+import {
+    type FC,
+    type ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
@@ -525,14 +532,40 @@ function RewardLine({ reward }: { reward: QuestReward }) {
     );
 }
 
+/** The viewer's invite link, inside the Invite friends quest. */
+function InviteLink({ githubId }: { githubId: number | null }) {
+    // The link carries the inviter's GitHub id.
+    if (githubId === null) {
+        return (
+            <Text size="sm" tone="muted">
+                <InlineLink href="/account">Connect GitHub</InlineLink> to get
+                your invite link.
+            </Text>
+        );
+    }
+    // The catalog's small copy pill, as wide as the link.
+    return (
+        <div className="w-fit min-w-0 max-w-full">
+            <CopyField
+                label="Copy invite link"
+                value={`${window.location.origin}/?ref=${githubId}`}
+                size="sm"
+            />
+        </div>
+    );
+}
+
 export function QuestRow({
     card,
     claiming,
     onClaim,
+    children,
 }: {
     card: QuestCard;
     claiming: boolean;
     onClaim(rewardIds: string[]): void;
+    /** What the quest needs at hand, e.g. the invite link; shown in every state. */
+    children?: ReactNode;
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
@@ -673,7 +706,7 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || progress) && (
+    const details = (description || progress || children) && (
         <div className="flex min-w-0 flex-col gap-1">
             {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
@@ -681,6 +714,7 @@ export function QuestRow({
                 </div>
             )}
             {progress}
+            {children}
         </div>
     );
     const marker = (
@@ -1289,7 +1323,12 @@ function QuestOverviewContent({
                                         ) ?? false
                                     }
                                     onClaim={handleClaimRewards}
-                                />
+                                >
+                                    {card.key === "invite_friends" &&
+                                        !state.anonymous && (
+                                            <InviteLink githubId={githubId} />
+                                        )}
+                                </QuestRow>
                             ))}
                         </div>
                     </Section>
@@ -1323,41 +1362,6 @@ function QuestOverviewContent({
                             />
                         ))}
                     </div>
-                </Section>
-            )}
-            {!state.anonymous && !state.loading && (
-                <Section title="Invite link">
-                    {/* Laid out like a quest row: the quest mark, then the link. */}
-                    <Surface variant="card" className="flex items-start gap-4">
-                        <TargetIcon
-                            aria-hidden="true"
-                            className="mt-1 h-5 w-5 shrink-0 text-theme-text-strong"
-                        />
-                        <div className="flex min-w-0 flex-col gap-2">
-                            {githubId === null ? (
-                                // The link carries the inviter's GitHub id.
-                                <Text size="sm" tone="muted">
-                                    <InlineLink href="/account">
-                                        Connect GitHub
-                                    </InlineLink>{" "}
-                                    to get your invite link.
-                                </Text>
-                            ) : (
-                                // The catalog's small copy pill, as wide as the link.
-                                <div className="w-fit min-w-0 max-w-full">
-                                    <CopyField
-                                        label="Copy invite link"
-                                        value={`${window.location.origin}/?ref=${githubId}`}
-                                        size="sm"
-                                    />
-                                </div>
-                            )}
-                            <Text size="sm" tone="muted">
-                                Earn 2 Quest Pollen for each friend who signs up
-                                with your link and buys more than 2 Pollen.
-                            </Text>
-                        </div>
-                    </Surface>
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

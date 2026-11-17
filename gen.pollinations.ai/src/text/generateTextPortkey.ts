@@ -126,11 +126,21 @@ export async function generateTextPortkey(
         string
     >;
     const responsesFetcher = state.options.responsesFetcher;
+    // Community endpoints carry their own deadline-bound fetcher in the
+    // model config; it wins over the default portkey binding so their
+    // third-party upstream cannot tarpit the request forever.
+    const communityFetcher = state.options
+        .modelConfig as Partial<OpenAIClientConfig> | undefined;
+    const portkeyFetcherOverride =
+        communityFetcher?.fetcher ?? portkeyFetcher;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
                   endpoint: directEndpoint,
                   additionalHeaders,
+                  ...(portkeyFetcherOverride && {
+                      fetcher: portkeyFetcherOverride,
+                  }),
               }
             : {
                   endpoint: () => buildEndpoint(portkeyGatewayUrl),
@@ -140,7 +150,7 @@ export async function generateTextPortkey(
                       ),
                       ...additionalHeaders,
                   },
-                  fetcher: portkeyFetcher,
+                  fetcher: portkeyFetcherOverride,
               };
 
     delete state.options.additionalHeaders;
@@ -155,7 +165,7 @@ export async function generateTextPortkey(
         return await callChatViaResponses(
             state.messages,
             state.options,
-            responsesFetcher,
+            communityFetcher?.fetcher ?? responsesFetcher,
         );
     }
 

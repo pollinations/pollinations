@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "biorxiv_recent",
             ].sort(),
         );
     });
@@ -644,4 +645,314 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("bioRxiv lists recent preprints newest-first, validates dates and categories", async (t) => {
+    // Trimmed real fixtures from live api.biorxiv.org responses
+    // (2026-11-16, details endpoint, 15-day window).
+    const page0 = [
+        {
+            title: "Lymphangiogenesis is Critical for Healing and Survival in a Murine Model of Laryngotracheal Injury",
+            authors:
+                "Gulleman, P.; Zhang, Y.; Clark, F.; Litvak, M.; Clinton, A.; Hillel, A.; Deutsch, G.; Yang, T. S.; Gelbard, A.; Sucre, J. M.; Park, J. S.",
+            date: "2026-11-02",
+            doi: "10.64898/2026.08.19.745806",
+            category: "physiology",
+            type: "new results",
+            version: 2,
+            license: "cc_by_nc_nd",
+            server: "bioRxiv",
+            abstract:
+                "Objective: Lymphatic dysfunction has been implicated in exacerbating fibrosis in numerous diseases, yet the role of the lymphatic system in laryngotracheal injury has not previously been explored. This study aims to evaluate lymphatic vascular remodeling in a murine model of laryngotracheal stenosis (LTS) and determine how pharmacologic blockade of lymphangiogenesis impacts airway healing after mucosal injury. Methods: LTS was induced in C57BL6 mice using an established chemomechanical injury model. Lymphatic density was quantified using LYVE-1 immunohistochemistry. Mice were treated with the ",
+        },
+        {
+            title: "Head movement allocation in freely-moving macaques learning object-context sequences",
+            authors:
+                "Rahman, K. F.; Abbaspoor, S.; Zinke, W.; Tamaki, H.; Hoffman, K. L.",
+            date: "2026-11-02",
+            doi: "10.1101/2023.12.11.571113",
+            category: "neuroscience",
+            type: "new results",
+            version: 2,
+            license: "cc_by_nc",
+            server: "bioRxiv",
+            abstract:
+                "Flexible learning and long-term memory are hallmark features of primate cognition that are shaped by interactions with changing environments. A comprehensive understanding of these brain-body-environm",
+        },
+        {
+            title: "A rational design strategy and validation for protease-resistant fusion-inhibitor antiviral peptides",
+            authors: "Yang, K.; Wang, C.; Topi, F.",
+            date: "2026-11-02",
+            doi: "10.64898/2026.09.12.750390",
+            category: "microbiology",
+            type: "new results",
+            version: 2,
+            license: "cc_by",
+            server: "bioRxiv",
+            abstract:
+                "Peptide-based fusion inhibitors are promising pharmaceuticals in the fight against enveloped viruses relying on membrane fusion for host infection. However, peptide therapeutic applications have long ",
+        },
+    ];
+    const lastPage = [
+        {
+            title: "Metabolic rewiring of sugar alcohols drives lichen symbiosis in Trebouxiophyceae microalgae",
+            authors: "Perez-Rodrigo, M.; Calvo, D.; Carrasco, P.; Marco, F.",
+            date: "2026-11-17",
+            doi: "10.64898/2026.11.13.766367",
+            category: "plant biology",
+            type: "new results",
+            version: 1,
+            license: "cc_no",
+            server: "bioRxiv",
+            abstract:
+                "Lichen symbioses are among the most successful mutualisms in extreme environments, yet the biochemical traits that enable algal pa",
+        },
+        {
+            title: "Human tau compromises neuronal structural integrity in C. elegans independently of disease-associated modifications",
+            authors:
+                "Joshi, M.; van Schijndel, V.; Tiggelaar, J.; van Falier, S. J. A.; Sinnige, T.",
+            date: "2026-11-17",
+            doi: "10.1101/2025.08.01.668095",
+            category: "neuroscience",
+            type: "new results",
+            version: 2,
+            license: "cc_by_nc",
+            server: "bioRxiv",
+            abstract:
+                "Tauopathies are a group of progressive neurodegenerative diseases amongst which Alzheimer's disease is the most prevalent. They ty",
+        },
+        {
+            title: "A Latent Variable Perspective on EEG Measures of Attentional Control",
+            authors: "Sabo, M.; von Bastian, C. C.; Wascher, E.; Schneider, D.",
+            date: "2026-11-17",
+            doi: "10.64898/2026.11.13.766498",
+            category: "neuroscience",
+            type: "new results",
+            version: 1,
+            license: "cc_by_nc_nd",
+            server: "bioRxiv",
+            abstract:
+                "Attentional control is a core cognitive function, yet there is still a significant debate revolving around its definition, factori",
+        },
+        {
+            title: "In vitro and in vivo validation of recombinant Syrian hamster interferon-α",
+            authors: "Neven, V.; Beelen, S.; Broeckhoven, E.",
+            date: "2026-11-17",
+            doi: "10.64898/2026.11.12.766184",
+            category: "immunology",
+            type: "new results",
+            version: 1,
+            license: "cc_by",
+            server: "bioRxiv",
+            abstract:
+                "The Syrian hamster (Mesocricetus auratus) is an important model for the study of viral pathogenesis and the development of antivir",
+        },
+        {
+            title: "Periodic spatial patterning of gene expression via a natural quorum-synchronized oscillator",
+            authors: "Sridhar, V.; Guenther, S.; Guo, K.",
+            date: "2026-11-17",
+            doi: "10.64898/2026.11.13.766566",
+            category: "microbiology",
+            type: "new results",
+            version: 1,
+            license: "cc0_ng",
+            server: "bioRxiv",
+            abstract:
+                "In many biological systems, genetic oscillators that function in growing tissues can establish spatially repetitive patt",
+        },
+        {
+            title: "An Optimized ChIP-sequencing protocol for transcription factors in embryonic mouse brains",
+            authors: "Li, A.; Lim, Y.; Cho, G.",
+            date: "2026-11-17",
+            doi: "10.64898/2026.11.13.766299",
+            category: "molecular biology",
+            type: "new results",
+            version: 1,
+            license: "cc_no",
+            server: "bioRxiv",
+            abstract:
+                "Chromatin immunoprecipitation followed by sequencing (ChIP-Seq) is widely used to identify genome-wide protein-chromatin interactions. However, obtaining reliable ChIP-seq data for transcription factors has been challenging for several reasons, including their low abundance, transient or weak DNA binding, and poor antibody performance. Here, we present an improved ChIP-Seq protocol for mapping transcription factor occupancy in embryonic mouse brains. We describe critical steps in tissue preparation, fixation and antigen unmasking steps, and chromatin fragmentation by prolonged sonication, spec",
+        },
+    ];
+
+    let fetchCount = 0;
+    const seenUrls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount++;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        seenUrls.push(url.toString());
+        assert.equal(url.hostname, "api.biorxiv.org");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        const [, , server, start, end, cursor] = url.pathname.split("/");
+        assert.equal(url.pathname.split("/").at(-1), "json");
+        if (start === "2000-01-01")
+            return Response.json({ messages: [{ status: "no posts found" }] });
+        const category = url.searchParams.get("category");
+        // Live behavior: an unknown category is silently ignored and the
+        // API echoes "all" instead.
+        const echo =
+            category === "not_a_category" ? "all" : (category ?? "all");
+        if (category === "neuroscience")
+            return Response.json({
+                messages: [
+                    {
+                        status: "ok",
+                        category: "neuroscience",
+                        interval: `${start}:${end}`,
+                        cursor,
+                        count: 1,
+                        total: "1",
+                    },
+                ],
+                collection: [page0[1]],
+            });
+        if (server === "medrxiv")
+            return Response.json({
+                messages: [
+                    {
+                        status: "ok",
+                        category: "all",
+                        interval: `${start}:${end}`,
+                        cursor,
+                        count: page0.length,
+                        total: "12",
+                    },
+                ],
+                collection: page0.map((p) => ({ ...p, server: "medRxiv" })),
+            });
+        return Response.json({
+            messages: [
+                {
+                    status: "ok",
+                    category: echo,
+                    interval: `${start}:${end}`,
+                    cursor,
+                    count: cursor === "30" ? lastPage.length : page0.length,
+                    total: "35",
+                },
+            ],
+            collection: cursor === "30" ? lastPage : page0,
+        });
+    });
+
+    const c = await client(t);
+    const today = new Date().toISOString().slice(0, 10);
+    const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+
+    // Default call: last 7 days, two fetches (total 35 > page size 30),
+    // newest first from the last page.
+    const before = fetchCount;
+    const result = await call(c, "biorxiv_recent", {
+        start_date: "2026-11-02",
+        end_date: "2026-11-17",
+        limit: 3,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetchCount - before, 2, "page 0 + newest page");
+    const val = value(result);
+    assert.equal(val.server, "biorxiv");
+    assert.equal(val.startDate, "2026-11-02");
+    assert.equal(val.endDate, "2026-11-17");
+    assert.equal(val.totalResults, 35);
+    assert.equal(val.preprints.length, 3);
+    assert.deepEqual(
+        val.preprints.map((p) => p.title),
+        [
+            "An Optimized ChIP-sequencing protocol for transcription factors in embryonic mouse brains",
+            "Periodic spatial patterning of gene expression via a natural quorum-synchronized oscillator",
+            "In vitro and in vivo validation of recombinant Syrian hamster interferon-α",
+        ],
+    );
+    const first = val.preprints[0];
+    assert.deepEqual(first.authors, ["Li, A.", "Lim, Y.", "Cho, G."]);
+    assert.equal(first.date, "2026-11-17");
+    assert.equal(first.doi, "10.64898/2026.11.13.766299");
+    assert.equal(first.url, "https://doi.org/10.64898/2026.11.13.766299");
+    assert.equal(first.category, "molecular biology");
+    assert.equal(first.type, "new results");
+    assert.equal(first.version, 1);
+    assert.equal(first.license, "cc_no");
+    assert.equal(first.server, "bioRxiv");
+    assert.equal(first.abstractSnippet.length, 500);
+    assert.match(
+        first.abstractSnippet,
+        /^Chromatin immunoprecipitation followed by sequencing/,
+    );
+    // Short abstracts pass through untruncated.
+    assert.equal(
+        val.preprints[1].abstractSnippet,
+        "In many biological systems, genetic oscillators that function in growing tissues can establish spatially repetitive patt",
+    );
+
+    // Category filter is applied server-side and echoed back.
+    const neuro = await call(c, "biorxiv_recent", {
+        start_date: "2026-11-02",
+        end_date: "2026-11-17",
+        category: "neuroscience",
+    });
+    assert.notEqual(neuro.isError, true, JSON.stringify(neuro));
+    assert.equal(value(neuro).category, "neuroscience");
+    assert.equal(value(neuro).totalResults, 1);
+    assert.equal(value(neuro).preprints[0].category, "neuroscience");
+    assert.ok(
+        seenUrls.some((u) => u.includes("category=neuroscience")),
+        seenUrls.join("\n"),
+    );
+
+    // Unknown categories are rejected, not silently unfiltered.
+    const badCat = await call(c, "biorxiv_recent", {
+        start_date: "2026-11-02",
+        end_date: "2026-11-17",
+        category: "not_a_category",
+    });
+    assert.equal(badCat.isError, true);
+
+    // Empty ranges are clean empty results, not errors.
+    const empty = await call(c, "biorxiv_recent", {
+        start_date: "2000-01-01",
+        end_date: "2000-01-02",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.equal(value(empty).totalResults, 0);
+    assert.deepEqual(value(empty).preprints, []);
+
+    // medRxiv is a separate server on the same API.
+    const med = await call(c, "biorxiv_recent", {
+        server: "medrxiv",
+        start_date: "2026-11-02",
+        end_date: "2026-11-17",
+        limit: 2,
+    });
+    assert.notEqual(med.isError, true, JSON.stringify(med));
+    assert.equal(value(med).server, "medrxiv");
+    assert.equal(value(med).preprints[0].server, "medRxiv");
+    assert.ok(
+        seenUrls.some((u) => u.includes("/details/medrxiv/")),
+        seenUrls.join("\n"),
+    );
+
+    // Defaults: no dates means the last 7 days ending today.
+    const def = await call(c, "biorxiv_recent", {});
+    assert.notEqual(def.isError, true, JSON.stringify(def));
+    assert.equal(value(def).startDate, sixDaysAgo);
+    assert.equal(value(def).endDate, today);
+
+    // Bad inputs are rejected before any fetch.
+    const beforeBad = fetchCount;
+    for (const args of [
+        { start_date: "2026-13-01", end_date: "2026-11-17" },
+        { start_date: "2026-02-30", end_date: "2026-11-17" },
+        { start_date: "11/02/2026", end_date: "2026-11-17" },
+        { start_date: "2026-11-17", end_date: "2026-11-02" },
+        { start_date: "2026-11-02", end_date: "2026-11-17", limit: 0 },
+        { start_date: "2026-11-02", end_date: "2026-11-17", limit: 31 },
+    ]) {
+        const bad = await call(c, "biorxiv_recent", args);
+        assert.equal(bad.isError, true, JSON.stringify(args));
+    }
+    assert.equal(fetchCount, beforeBad, "no fetch for invalid inputs");
 });

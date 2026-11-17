@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Idle Hands",
+    "url": "https://tomdacatto.github.io/pollinations-idle-hands",
+    "description": "Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay with your own Pollen.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-idle-hands",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19601",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/72993a0a-e068-407c-b2ef-714f84818feb"
+  },
+  {
+    "emoji": "🎮",
     "name": "Read On",
     "url": "https://patbing.github.io/read-on",
     "description": "Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP.",

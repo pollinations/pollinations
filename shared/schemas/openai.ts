@@ -374,6 +374,13 @@ export const CreateChatCompletionRequestSchema = z
             .default(null),
         logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
+        // Number of choices to generate. Declared so an out-of-range value is
+        // rejected here instead of reaching the provider: the schema
+        // passthrough() forwarded any `n` verbatim, so `n: 0` or a fractional
+        // `n` came back as a provider error (and named the provider) rather
+        // than a local 400. The upper bound is the provider's, so it is not
+        // capped here.
+        n: z.number().int().min(1).nullable().optional(),
         max_tokens: ChatOutputTokenLimitSchema,
         max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),

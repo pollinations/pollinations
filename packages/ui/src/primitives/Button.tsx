@@ -184,12 +184,12 @@ export function Button<T extends React.ElementType = "button">({
                     aria-hidden="true"
                     className="polli:relative polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
                 >
+                    {/* One loading sign everywhere: Polli waggles in the
+                        icon slot of any busy button. */}
                     {done && nectar ? (
                         <CheckIcon />
-                    ) : busy && nectar ? (
-                        <span className="polli-bee" />
                     ) : busy ? (
-                        <span className="polli:block polli:size-full polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent polli:motion-reduce:animate-none" />
+                        <span className="polli-bee" />
                     ) : (
                         icon
                     )}

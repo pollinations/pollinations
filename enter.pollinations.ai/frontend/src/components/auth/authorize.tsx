@@ -582,6 +582,7 @@ export function Authorize() {
                         intent="commit"
                         icon={<KeyIcon />}
                         disabled={!canAuthorize || isAuthorizing}
+                        aria-busy={isAuthorizing}
                     >
                         {isAuthorizing ? "Connecting…" : "Allow access"}
                     </Button>

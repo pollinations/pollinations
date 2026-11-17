@@ -85,6 +85,18 @@ describe("Button appearances", () => {
         expect(standalone).toContain('type="submit"');
     });
 
+    test("shows Polli in the icon slot of any busy button", () => {
+        for (const intent of ["commit", "neutral", undefined] as const) {
+            const busy = renderToStaticMarkup(
+                <Button intent={intent} icon={<span>i</span>} aria-busy>
+                    Working
+                </Button>,
+            );
+            expect(busy).toContain("polli-bee");
+            expect(busy).not.toContain("polli:animate-spin");
+        }
+    });
+
     test("shows a done action with a pollen puff and keeps it undimmed", () => {
         const done = renderToStaticMarkup(
             <Button intent="commit" done disabled>

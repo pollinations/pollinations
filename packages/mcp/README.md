@@ -18,7 +18,7 @@ Authorization: Bearer YOUR_KEY
 ```
 
 Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
-Calls use that key's Pollen wallet, permissions, and budget.
+Calls use that key's wallet, permissions, and budget.
 
 For all Pollinations-hosted MCP servers, see the
 [MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).
@@ -39,7 +39,7 @@ For all Pollinations-hosted MCP servers, see the
 | `listModels` | Search and list live models, capabilities, voices, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `listMcpServers` | List the other hosted MCP servers, their endpoints and pricing | `/mcp` |
-| `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+| `getBalance` | Check the remaining balance; requires `account:usage` | `/account/balance` |
 | `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
 | `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |
 | `listQuests` | Quests with reward and claim state; requires `account:usage` | `/account/quests` |

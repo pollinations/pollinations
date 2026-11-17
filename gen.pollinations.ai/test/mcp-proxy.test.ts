@@ -169,8 +169,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Time, cron schedules, Unicode, color contrast, QR codes, hashes, version ordering, and ECB rates.",
                 url: "https://gen.pollinations.ai/mcp/calculators",
                 pricing: {
-                    description:
-                        "Local utilities and public ECB rates. No Pollen charge.",
+                    description: "Local utilities and public ECB rates. Free.",
                     rates: [],
                 },
             },
@@ -182,7 +181,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Public DNS records, HTTP diagnostics, IPv4/IPv6 subnets and RDAP registration data.",
                 url: "https://gen.pollinations.ai/mcp/network",
                 pricing: {
-                    description: "Network diagnostics. No Pollen charge.",
+                    description: "Network diagnostics. Free.",
                     rates: [],
                 },
             },
@@ -194,7 +193,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Package versions, known vulnerabilities and public Hugging Face models and Spaces.",
                 url: "https://gen.pollinations.ai/mcp/packages",
                 pricing: {
-                    description: "Public registry lookups. No Pollen charge.",
+                    description: "Public registry lookups. Free.",
                     rates: [],
                 },
             },

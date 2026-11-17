@@ -344,7 +344,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether the paid balance is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -832,7 +832,7 @@ export const OpenAIModelSchema = z
         paid_only: z
             .boolean()
             .describe(
-                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+                "True when the model needs the paid balance; the Quest balance can't pay for it. Same field as on `/models`.",
             ),
         pricing: z
             .record(z.string(), z.string())

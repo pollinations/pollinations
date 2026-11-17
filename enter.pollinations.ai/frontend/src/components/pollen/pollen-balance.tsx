@@ -236,7 +236,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 <InlineLink
                                     as={Link}
                                     to="/news"
-                                    hash="how-does-my-wallet-work"
+                                    hash="how-does-my-pollen-wallet-work"
                                     external={false}
                                 >
                                     How it works

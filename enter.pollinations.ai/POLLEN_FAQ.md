@@ -1,6 +1,6 @@
 # FAQ
 
-## 🪷 How does billing work?
+## 🪷 How does billing work? {#what-is-pollen}
 
 Pollinations is prepaid: you add credit to your balance, and each generation spends from it according to the selected model's price and usage. Prices and balances are shown in dollars.
 
@@ -17,7 +17,7 @@ No. Pollinations provides infrastructure that you connect to your own applicatio
 
 You build and host the application. Pollinations provides model access, account authorization, and billing.
 
-## 🛒 How do I add credit?
+## 🛒 How do I add credit? {#how-do-i-get-pollen}
 
 - **Top up** from [Credits](https://enter.pollinations.ai/pollen) through Stripe Checkout.
 - **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
@@ -39,7 +39,7 @@ Quests reward eligible account activity and community contributions.
 
 Quest availability and reward amounts can change, so the dashboard and the linked issue are the source of truth.
 
-## 👛 How does my wallet work?
+## 👛 How does my wallet work? {#how-does-my-pollen-wallet-work}
 
 Your wallet has two balances:
 
@@ -58,7 +58,7 @@ Developer rewards are credited to the matching balance type used by the paying u
 
 Prices depend on the model and may use tokens, images, seconds, or another model-specific unit. Check the live [model catalog](https://enter.pollinations.ai/models) or [`GET /v1/models`](https://gen.pollinations.ai/v1/models) instead of relying on a hardcoded model list or price.
 
-## 🎨 What can I create with Pollinations?
+## 🎨 What can I create with Pollinations? {#what-can-i-create-with-pollen}
 
 Pollinations supports text, images and image edits, video, speech and audio, transcription, realtime conversations, embeddings, and 3D generation. Availability and capabilities differ by model; use the live model catalog to choose one for your task.
 

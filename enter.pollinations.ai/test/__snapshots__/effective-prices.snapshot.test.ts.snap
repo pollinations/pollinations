@@ -5419,5 +5419,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013293,
     },
   },
+  "zyphra/zonos3-mini": {
+    "cost": {
+      "completionAudioTokens": 0.00000016,
+    },
+    "price": {
+      "completionAudioTokens": 0.000005,
+    },
+  },
 }
 `;

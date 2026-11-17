@@ -171,15 +171,21 @@ workerTest.for(["GET", "HEAD", "JSON", "multipart"] as const)(
     },
 );
 
-workerTest("advertises the simple route for every speech model", async () => {
+workerTest("advertises the supported routes for speech models", async () => {
     const response = await fetchGen("https://gen.pollinations.ai/v1/models");
     expect(response.status).toBe(200);
 
     const models = (await response.json()) as {
-        data: { supported_endpoints?: string[] }[];
+        data: { id: string; supported_endpoints?: string[] }[];
     };
-    const speechModels = models.data.filter((model) =>
-        model.supported_endpoints?.includes("/v1/audio/speech"),
+    const zonosId = "zyphra/zonos3-mini";
+    expect(
+        models.data.find((model) => model.id === zonosId)?.supported_endpoints,
+    ).toEqual(["/v1/audio/speech"]);
+    const speechModels = models.data.filter(
+        (model) =>
+            model.id !== zonosId &&
+            model.supported_endpoints?.includes("/v1/audio/speech"),
     );
     expect(speechModels.length).toBeGreaterThan(0);
     for (const model of speechModels) {

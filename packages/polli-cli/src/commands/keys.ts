@@ -164,10 +164,10 @@ const create = new Command("create")
     )
     .option("--expires-in <seconds>", "Expiry in seconds")
     .option("--models <models...>", MODELS_HELP)
-    .option("--budget <pollen>", "Pollen budget cap")
+    .option("--budget <dollars>", "Budget cap in US dollars")
     .option(
         "--quest-pollen-only",
-        "Never spend paid Pollen; requests stop when Quest Pollen runs out",
+        "Never spend the paid balance; requests stop when the Quest balance runs out",
     )
     .option(
         "--redirect-uri <uri...>",

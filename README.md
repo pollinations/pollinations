@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Decision Arena — Grid Rush](https://decisionarena.edgeone.cool) | A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race. | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Herd Check](https://patbing.github.io/herd-check) | Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Schelling Table](https://tomdacatto.github.io/pollinations-schelling-table) | A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or seat Pollinations models with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Where It Slips](https://tomdacatto.github.io/pollinations-where-it-slips) | A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Idle Hands](https://tomdacatto.github.io/pollinations-idle-hands) | Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Read On](https://patbing.github.io/read-on) | Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Under Oath](https://patbing.github.io/under-oath) | One AI keeps a sealed word, another gets 20 yes/no questions. Code judges the guess, a referee model re-checks every answer, a hash seals the word. Race the Asker. BYOP. | [@patbing](https://github.com/patbing) |
 | [📚 Science Explainer](https://mhmdrizki803-boop.github.io/science-explainer) | Name a science topic and a Pollinations model writes rival explanations, each with a prediction. You run observations and the explanations that fail are falsified. BYOP, you pay your own Pollen. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
 | [🖼️ AI Wallpaper Generator for Phone](https://www.androidponsel.com/wallpaper-generator) | Free AI phone wallpaper generator with device-specific resolution, prompt enhancement via Dialagram LLM, 8 style presets, and curated gallery. Uses Flux Schnell via Pollinations image API. | [@slrdone](https://github.com/slrdone) |
 | [🖼️ Cover Studio](https://polli-cover-studio.surge.sh) | Turns a title, an author and one line of premise into a finished 1600x2400 book cover. Pollinations paints the artwork, the page sets the type, and you download the PNG. | [@mikeymontaz7-dotcom](https://github.com/mikeymontaz7-dotcom) |
-| [🎮 Snackbot](https://snackbot.pollinations.app) | A vending machine whose brain is a language model: it holds the stock, the credit and the change, and decides what each button press does. BYOP, you pay your own Pollen. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🎮 Hearsay](https://marcus-mok-gh.github.io/hearsay) | Two AI models pass a story back and forth until it drifts. Bet whether the meaning survives, and a decision model judges the last retelling with its confidence. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
-| [🎮 Decisio Arena](https://bsod4ik.github.io/pollinations-decision-arena) | Tactical battle drones where AI models compete via /alpha/decisions and chat completions with calibrated probabilities and BYOP. | [@bsod4ik](https://github.com/bsod4ik) |
-| [🎮 Model Duel](https://svirepyibambr.github.io/model-duel) | Two AI models play Connect Four against each other move by move via Pollinations. Pick the duelists; a referee validates every move and decides the winner. | [@SvirepyiBambr](https://github.com/SvirepyiBambr) |
-| [🎮 Dudo](https://patbing.github.io/dudo) | Liar's dice over a remote MCP server. Claude Code agents and Pollinations models bluff at one table, a code-only house bot fills empty seats, and every finished game can be re-dealt in your browser. | [@patbing](https://github.com/patbing) |
-| [📚 Plot a Law](https://tomdacatto.github.io/pollinations-plot-a-law) | A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid with your own Pollen. | [@tomdacatto](https://github.com/tomdacatto) |
-| [✍️ Slop Golf](https://slop-golf.pollinations.app) | A writing game about the LLM voice: a mystery model writes a paragraph, you edit out its AI tells in the fewest words, and a judge model checks your putt. | [@cristianbagrin](https://github.com/cristianbagrin) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -42,7 +42,7 @@
 ### What's Included
 
 - **Unified endpoint**: single API at `gen.pollinations.ai` for all generation
-- **Pollen credits**: simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **Prepaid credit**: simple pay-as-you-go, priced in dollars
 - **All models, one place**: Flux, GPT, Claude, Gemini, Seedream, and more
 - **API keys**: secret keys for model usage, app keys for tracking BYOP apps.
 - **CLI**: `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
@@ -89,7 +89,7 @@
 
 - 🔓 **100% Open Source**: code, decisions, roadmap all public
 - 🤝 **Community-Built**: 500+ projects already using our APIs
-- 🌱 **Pollen Quests**: earn Pollen by completing Quests
+- 🌱 **Quests**: complete Quests to add to your balance
 - 🖼️ **Image Generation**: Text-to-image and image editing
 - 📝 **Text Generation**: Chat, reasoning, vision, function calling, structured outputs
 - 🎬 **Video Generation**: Text-to-video and image-to-video
@@ -106,7 +106,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay from their own balance |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -438,7 +438,7 @@ We're exploring:
 
 We want AI tools to be:
 
-- **Open & Accessible**: Earn Pollen by contributing, without a credit card
+- **Open & Accessible**: Add to your balance by contributing, without a credit card
 
 - **Transparent & Ethical**: Inspect our code and discuss how the platform works
 
@@ -474,7 +474,7 @@ The main folders are:
 
 - [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
-- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, Pollen credits, and pack checkout.
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, balances, and top-up checkout.
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 

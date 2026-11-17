@@ -427,10 +427,10 @@ test("rendered standings point the viewer at the quest that passes the next row"
 
     expect(html).toContain("October leaderboard");
     expect(html).toContain("11 days left");
-    expect(html).toContain("Pollen supporter");
-    // A 1 Pollen gap needs more than 1 Pollen, so the 5 Pollen quest is next.
+    expect(html).toContain("Supporter");
+    // A gap of 1 needs a reward above 1, so the quest worth 5 is next.
     expect(html).toContain(
-        "1 Pollen to pass @bob. “Contribute a pull request” earns 5 Pollen.",
+        "$1 to pass @bob. “Contribute a pull request” earns $5.",
     );
 });
 
@@ -466,7 +466,7 @@ test("rendered standings show the minimum increment for a tied row", () => {
     );
 
     expect(html).toContain(
-        "0.25 Pollen to pass @alice. “Use a text model” earns 0.25 Pollen.",
+        "$0.25 to pass @alice. “Use a text model” earns $0.25.",
     );
 });
 

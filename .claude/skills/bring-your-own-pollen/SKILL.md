@@ -1,10 +1,10 @@
 ---
 name: bring-your-own-pollen
-description: Add Bring Your Own Pollen (BYOP) to an app with Pollinations Connect so each user pays with their own Pollen instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
+description: Add Bring Your Own Pollen (BYOP) to an app with Pollinations Connect so each user pays from their own balance instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
 ---
 # bring-your-own-pollen — user-paid Pollinations apps
 
-BYOP lets your users authorize your app to spend **their** Pollen. The app
+BYOP lets your users authorize your app to spend from **their** balance. The app
 sends users to the consent screen with a publishable **App Key** (`pk_...`)
 and gets back a scoped user key (`sk_...`) for generation calls. The app
 owner never pays for user usage, and users keep control of budget, expiry and
@@ -59,7 +59,7 @@ https://enter.pollinations.ai/authorize
 ```
 
 Optional restrictions: `models=image,text` (or individual IDs),
-`budget=10` (Pollen cap, default 5, at most 10 from a link), `expiry=7` (days,
+`budget=10` (spending cap in dollars, default 5, at most 10 from a link), `expiry=7` (days,
 default 7). The user can change these on the consent screen. A requested
 `machines` scope starts unticked there; `keys` is only offered in the device
 flow and on redirects to `http://localhost` or `http://127.0.0.1`.

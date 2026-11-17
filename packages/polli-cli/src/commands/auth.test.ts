@@ -145,6 +145,33 @@ describe("auth status", () => {
         });
     });
 
+    it("prints the wallet and key budget in dollars for people", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("human");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            Response.json(
+                url.includes("/account/balance")
+                    ? {
+                          balance: 4.4691,
+                          accountBalance: { total: 2.5, tier: 0, paid: 2.5 },
+                      }
+                    : { githubUsername: "test" },
+            ),
+        );
+
+        await authCommand.parseAsync(["status"], { from: "user" });
+
+        const printed = stdout.mock.calls
+            .map((call) => String(call[0]))
+            .join("");
+        expect(printed).toContain("balance: $2.50");
+        expect(printed).toContain("key_budget: $4.47");
+        expect(printed).not.toContain("pollen");
+    });
+
     it("shows the profile name when no GitHub account is linked", async () => {
         setKeyOverride("sk_test");
         setOutputMode("json");

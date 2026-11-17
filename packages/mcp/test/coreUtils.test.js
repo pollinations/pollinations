@@ -68,10 +68,7 @@ test("parseApiError displays gateway 402 error message unchanged", () => {
 
 test("parseApiError provides generic fallback when 402 body has no details", () => {
     const message = parseApiError(402, "");
-    assert.equal(
-        message,
-        "Insufficient pollen balance or API key budget exhausted.",
-    );
+    assert.equal(message, "Balance too low or API key budget exhausted.");
 });
 
 test("parseApiError provides generic fallback when 403 body has no details", () => {
@@ -103,4 +100,32 @@ test("parseApiError returns a string when a 4xx body has no message", () => {
         assert.equal(typeof message, "string", `status ${status}`);
         assert.doesNotMatch(message, /\[object Object\]/, `status ${status}`);
     }
+});
+
+test("parseApiError displays gateway 404 and 5xx messages unchanged", () => {
+    for (const [status, text] of [
+        [404, "API key not found"],
+        [503, "Unable to verify balance. Please try again shortly."],
+    ]) {
+        const errorJson = JSON.stringify({ error: { message: text } });
+        assert.equal(parseApiError(status, errorJson), text);
+    }
+});
+
+test("parseApiError keeps the fallback for empty 404 and 5xx responses", () => {
+    assert.equal(
+        parseApiError(404, ""),
+        "Resource not found. The requested endpoint or model may not exist.",
+    );
+    assert.equal(
+        parseApiError(503, ""),
+        "Service temporarily unavailable. Please try again in a few moments.",
+    );
+});
+
+test("parseApiError keeps the generic fallback for an HTML 502 page", () => {
+    assert.equal(
+        parseApiError(502, "<html><body>Cloudflare Bad Gateway</body></html>"),
+        "Service temporarily unavailable. Please try again in a few moments.",
+    );
 });

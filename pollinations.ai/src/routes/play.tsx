@@ -89,7 +89,7 @@ function PlayHero() {
                 subtitle={
                     <>
                         Create images, video and audio. {connect} to use your
-                        own pollen.
+                        own balance.
                     </>
                 }
                 variant="page"

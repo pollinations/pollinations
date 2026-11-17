@@ -427,20 +427,24 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
+    // The Grok deployments cannot fetch remote image URLs, so Gen inlines them.
     "grok-4-20-non-reasoning": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4-20-reasoning": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4.3": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4.6": () => ({
         provider: "openai",
@@ -449,6 +453,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         directAuthHeader: "api-key",
         authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
         model: "grok-4.6",
+        requiresBase64ImageUrls: true,
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
@@ -1118,7 +1123,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
             // Mistral's server rejects unknown message fields on Azure too.
-            { supportsReasoningHistory: false },
+            // It also cannot fetch remote image URLs, so Gen inlines them.
+            { supportsReasoningHistory: false, requiresBase64ImageUrls: true },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1363,6 +1369,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+            // Azure Kimi rejects remote image URLs.
+            { requiresBase64ImageUrls: true },
         ),
     "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({

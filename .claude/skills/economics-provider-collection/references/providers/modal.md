@@ -2,9 +2,11 @@
 
 Canonical vendor: `modal`
 
-## Verified — 2026-10-02
+## Verified — 2026-11-03
 
-- Status: bounded billing CLI works with the stored token pair.
+- Status: bounded billing reports and monthly billing summaries work.
+- Verify `Workspace.from_context().hydrate().name`; local credential profile
+  names can point to the same workspace and do not establish account scope.
 - Login: `elliot@myceli.ai` in the Myceli browser workspace.
 - Workspaces: `myceli-ai`, `myceli-ai2`, `elliot-4`.
 - Each workspace has a Starter plan with an included monthly compute credit;
@@ -14,7 +16,11 @@ Canonical vendor: `modal`
 
 Primary evidence sources:
 
-- CLI: `modal billing report --start <YYYY-MM-DD> --end <YYYY-MM-DD> --json`
+- CLI: `modal billing report --start <YYYY-MM-DD> --end <YYYY-MM-DD> --show-resources --json`
+- Monthly summary: `modal billing summary --for YYYY-MM --json` or SDK
+  `Workspace.billing.summary(cycle="YYYY-MM")`. Verified with SDK 1.6.3;
+  installed 1.5.1 lacks this command. Use an isolated supported SDK when needed,
+  preserving existing credentials and the global installation.
 - Dashboard: Modal billing page.
 - Invoice/payment: Modal receipt, invoice, or Wise/card transaction.
 
@@ -46,8 +52,11 @@ Collection steps:
    Daily reports cannot span more than 31 days, so collect longer history as
    consecutive monthly calls and preserve every raw response.
 
-2. Sum cost by calendar month, `object_id`, app/deployment `description`, and
-   `environment`.
+2. Use UTC bounds with exclusive end. Sum cost by calendar month, `object_id`,
+   app/deployment `description`, and `environment`; retain resource dimensions
+   and workload tags. Also inspect the monthly summary’s metered breakdown,
+   adjustments and billed cost. Reconcile metered cost plus adjustments to
+   billed cost; empty app reports do not prove zero storage cost.
 3. Preserve the workspace in `account_id`, `object_id` in `resource_id`,
    and the app/deployment description in `resource_name`. Keep all raw
    dimensions in the export; never infer a model from the app name alone.
@@ -72,12 +81,27 @@ Known traps:
   with its own expiry; a historical monthly-plan balance cannot prove a grant.
 - Modal billing reports are app/deployment oriented; model attribution depends on app naming or an internal deployment map.
 - A successful CLI call can return zero rows for a quiet or still-open period.
-- Record a verified-zero month when a bounded closed-month call succeeds with
-  no rows; do not interpret it as missing data.
+- Record verified-zero app usage only for the workspace and report checked.
+  Certify total billed zero only after checking other monthly billing categories.
+- “Free Storage” is a price allowance, not a promotional grant. Keep its offset
+  visible without counting it as either paid or grant-funded burn.
+- A current summary remains partial despite showing the full cycle end and
+  cannot establish current credit-lot balances.
 - Modal container/fleet snapshots are not billing totals; use billing report for cost.
 - Keep tokens in environment variables, not command output or saved evidence.
 - Verify the exact workspace and billing cycle on each balance screenshot;
   an August cycle viewed in September does not prove September's balance.
+- After month rollover, the UI can still show the previous cycle with the next
+  cycle disabled. Record that balance as stale and a dated recheck; the word
+  “Current” alone does not establish the month. Workspace selection opens
+  Members, so follow that workspace's Usage & billing link before collecting.
+- Invoice history can include separate Starter and usage invoices on the same
+  date. Use each original PDF's service period. A workspace without a payment
+  method may have no invoice-history link; preserve its complete zero-billed
+  API summary without changing payment settings.
+- Stripe invoice downloads can display “Preparing” before a file arrives.
+  Verify the supplier, workspace, service period and downloaded PDF before
+  archiving. A successful click or screenshot does not prove receipt retrieval.
 - The billing report is gross provider usage. Apply known grants as a funding
   waterfall separately; only the amount beyond verified available credit is
   paid/provider-payable.

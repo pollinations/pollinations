@@ -316,6 +316,8 @@ export function reconciliationState(data: Data, now = new Date()) {
         data.vendorLedger ?? [],
         data.privateConfig?.forecastRules,
         data.stripeSales ?? [],
+        undefined,
+        data.vendorStatements,
     );
     const scheduledRules = forecastRuleEntries(
         data.privateConfig?.forecastRules,

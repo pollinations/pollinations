@@ -36,7 +36,16 @@ Known traps:
 - The trial has no numeric wallet balance. Do not invent a monetary credit.
 - Dashboard usage costs are informational and are not billed during the trial.
 - Selecting dates can leave the picker open while data loads. Confirm the
-  final period and loaded totals before saving evidence.
-- The November 1 pricing-change notice requires acknowledgement. Obtain
-  action-time confirmation before accepting; do not subscribe to a paid plan
-  while collecting evidence.
+  final period and loaded totals before saving evidence. Choosing an
+  outside-month date can shift the displayed calendars; inspect them again
+  before selecting the end date.
+- When timezone is omitted and usage is zero, capture an adjacent-day buffer
+  around the month. Zero requests, tokens and cost throughout that superset
+  establishes UTC-month zero; nonzero activity requires explicit timestamps.
+- Search original invoices under SEEWEB S.R.L. / seeweb.it as well as Regolo.
+  Match prepaid PayPal identifiers to Payments, separately from usage dates.
+  An empty current invoice list does not invalidate an archived original.
+- If a pricing or terms notice blocks collection, read it and obtain
+  action-time confirmation before accepting binding changes. Previously
+  accepted notices require no repeated approval. Do not subscribe to a paid
+  plan while collecting evidence.

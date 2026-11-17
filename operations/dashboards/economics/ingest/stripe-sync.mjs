@@ -6,12 +6,10 @@ export const HOST = "https://api.europe-west2.gcp.tinybird.co";
 export const ACCOUNTS = {
     pollen: {
         id: "acct_1SrY3q7rcjS3l7tr",
-        currency: "EUR",
         key: "STRIPE_API_KEY",
     },
     kofi: {
         id: "acct_1QzdqWGHtmCJlpeq",
-        currency: "EUR",
         key: "STRIPE_KOFI_API_KEY",
     },
 };
@@ -24,6 +22,7 @@ const categories = new Set([
     "charge_failure",
     "partial_capture_reversal",
     "fee",
+    "fee_credit_funding",
     "payout",
     "payout_reversal",
     "currency_conversion",
@@ -62,6 +61,16 @@ export function normalize(exported, stream) {
             `Unreviewed Stripe category: ${row.reporting_category}`,
         );
         assert(
+            ["payments", "fee_credits"].includes(row.balance_type),
+            `Unreviewed Stripe balance type: ${row.balance_type}`,
+        );
+        assert(
+            row.balance_type === "fee_credits"
+                ? ["fee", "fee_credit_funding"].includes(row.reporting_category)
+                : row.reporting_category !== "fee_credit_funding",
+            "Unreviewed Stripe category/balance combination",
+        );
+        assert(
             ["eur", "usd"].includes(row.currency.toLowerCase()),
             "Unreviewed settlement currency",
         );
@@ -77,6 +86,7 @@ export function normalize(exported, stream) {
             created: stamp(row.created),
             available_on: stamp(row.available_on ?? row.created),
             currency: row.currency.toUpperCase(),
+            balance_type: row.balance_type,
             amount: row.amount,
             fee: row.fee,
             net: row.net,
@@ -141,6 +151,8 @@ export function totals(rows) {
             refunds: 0,
             reversals: 0,
             stripe_fees: 0,
+            stripe_fees_credit: 0,
+            fee_credit_funding: 0,
             payments: 0,
             refund_count: 0,
         };
@@ -162,7 +174,12 @@ export function totals(rows) {
             ].includes(c)
         )
             r.reversals -= row.amount;
-        r.stripe_fees += row.fee - (c === "fee" ? row.amount : 0);
+        r[
+            row.balance_type === "payments"
+                ? "stripe_fees"
+                : "stripe_fees_credit"
+        ] += row.fee - (c === "fee" ? row.amount : 0);
+        if (c === "fee_credit_funding") r.fee_credit_funding += row.amount;
         grouped.set(key, r);
     }
     return [...grouped].map(([key, r]) => ({
@@ -194,11 +211,18 @@ async function request(url, token, options = {}, preview = true) {
     return data;
 }
 
-export async function collect(stream, start, end, key) {
+export async function collect(
+    stream,
+    start,
+    end,
+    key,
+    includePurchaseMonths = false,
+) {
     assert(key && !key.includes("_test_"), "Live Stripe access required");
     const account = await request("https://api.stripe.com/v1/account", key);
     assert.equal(account.id, ACCOUNTS[stream]?.id, "Wrong Stripe account");
     const rows = [];
+    const purchaseMonths = [];
     let cursor = "";
     while (true) {
         const p = new URLSearchParams({
@@ -207,6 +231,7 @@ export async function collect(stream, start, end, key) {
             "created[lt]": String(end),
         });
         if (cursor) p.set("starting_after", cursor);
+        if (includePurchaseMonths) p.append("expand[]", "data.source.charge");
         const page = await request(
             `https://api.stripe.com/v1/balance_transactions?${p}`,
             key,
@@ -215,7 +240,34 @@ export async function collect(stream, start, end, key) {
             Array.isArray(page.data) && typeof page.has_more === "boolean",
             "Invalid Stripe page",
         );
-        rows.push(...page.data);
+        for (const row of page.data) {
+            const charge = row.source?.charge;
+            if (
+                [
+                    "refund",
+                    "refund_failure",
+                    "dispute",
+                    "dispute_reversal",
+                    "partial_capture_reversal",
+                ].includes(row.reporting_category) &&
+                charge?.id?.startsWith("ch_") &&
+                Number.isInteger(charge.created) &&
+                charge.created <= row.created
+            ) {
+                purchaseMonths.push({
+                    account_id: account.id,
+                    transaction_id: row.id,
+                    charge_id: charge.id,
+                    purchase_month: stamp(charge.created).slice(0, 7),
+                    recorded_at: stamp(Math.floor(Date.now() / 1000)),
+                });
+            }
+            rows.push(
+                includePurchaseMonths
+                    ? { ...row, source: id(row.source) }
+                    : row,
+            );
+        }
         if (!page.has_more) break;
         assert(
             page.data.length && page.data.at(-1).id !== cursor,
@@ -223,7 +275,14 @@ export async function collect(stream, start, end, key) {
         );
         cursor = page.data.at(-1).id;
     }
-    const exported = { account_id: account.id, start, end, rows };
+    const exported = {
+        account_id: account.id,
+        default_currency: account.default_currency.toUpperCase(),
+        start,
+        end,
+        rows,
+        ...(includePurchaseMonths ? { purchaseMonths } : {}),
+    };
     normalize(exported, stream);
     return exported;
 }
@@ -243,12 +302,20 @@ export async function sync(exports, token) {
             )
         ).data;
     const previous = await query("SELECT * FROM economics_stripe_transactions");
-    const previousCoverage = await query("SELECT * FROM economics_stripe_sync");
+    const previousCoverage = await query(`
+        SELECT * FROM economics_stripe_sync
+        ORDER BY collected_at DESC, coverage_end DESC
+        LIMIT 1 BY account_id, month
+    `);
     const rows = mergeTransactions(previous, exports);
     const coverage = new Map(
         previousCoverage.map((r) => [`${r.account_id}:${r.month}`, r]),
     );
     for (const { exported, stream } of exports) {
+        assert(
+            ["EUR", "USD"].includes(exported.default_currency),
+            "Verified account default currency required",
+        );
         const first = new Date(exported.start * 1000);
         assert(
             first.getUTCDate() === 1 &&
@@ -269,7 +336,7 @@ export async function sync(exports, token) {
                 account_id: exported.account_id,
                 month,
                 revenue_stream: stream,
-                default_currency: ACCOUNTS[stream].currency,
+                default_currency: exported.default_currency,
                 coverage_end: stamp(end),
                 collected_at: stamp(Math.floor(Date.now() / 1000)),
                 transaction_count: exported.rows.filter(
@@ -450,6 +517,7 @@ async function main() {
         start,
         end,
         process.env[ACCOUNTS[stream].key],
+        flags.includes("--write"),
     );
     const output = flags.find((f) => f.startsWith("--export="))?.slice(9);
     if (output)
@@ -472,12 +540,26 @@ async function main() {
                     process.env.TINYBIRD_STRIPE_SYNC_TOKEN,
                 ),
             );
-        console.log(
-            await sync(
-                [{ exported, stream }],
-                process.env.TINYBIRD_STRIPE_SYNC_TOKEN,
-            ),
-        );
+        const token = process.env.TINYBIRD_STRIPE_SYNC_TOKEN;
+        console.log(await sync([{ exported, stream }], token));
+        if (exported.purchaseMonths.length > 0) {
+            const imported = await request(
+                `${HOST}/v0/events?name=economics_stripe_purchase_month&wait=true`,
+                token,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-ndjson" },
+                    body: exported.purchaseMonths
+                        .map((row) => JSON.stringify(row))
+                        .join("\n"),
+                },
+            );
+            assert.equal(
+                imported.successful_rows,
+                exported.purchaseMonths.length,
+            );
+            assert.equal(imported.quarantined_rows, 0);
+        }
     }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

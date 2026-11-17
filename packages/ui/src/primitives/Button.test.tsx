@@ -19,7 +19,7 @@ describe("Button appearances", () => {
         );
 
         expect(html).toContain("polli:bg-surface-opaque");
-        expect(html).not.toContain("polli:bg-theme-bg-active");
+        expect(html).not.toContain("polli:bg-theme-fill");
     });
 
     test("preserves an explicit submit type", () => {

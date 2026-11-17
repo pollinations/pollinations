@@ -8,6 +8,8 @@ import type {
     VendorLedgerRow,
 } from "../types";
 import { ReconciliationTab } from "../views/ReconciliationTab";
+import { RUNWAY_REVIEW } from "./forecastTerms";
+import { monthShift } from "./months";
 import {
     type ReconciliationIssue,
     reconciliationState,
@@ -388,8 +390,16 @@ it.each([0, 0.19])(
 
 it("retains funding gaps in reconciliation when the baseline split supports a provisional plan", () => {
     const state = reconciliationState(
-        { privateConfig: blankConfig(), vendorLedger: [cost("fal")] },
-        now,
+        {
+            privateConfig: blankConfig(),
+            vendorLedger: [
+                {
+                    ...cost("fal", RUNWAY_REVIEW.baselineMonth),
+                    end: `${monthShift(RUNWAY_REVIEW.baselineMonth, 1)}-01T00:00:00Z`,
+                },
+            ],
+        },
+        new Date(`${RUNWAY_REVIEW.asOf}T12:00:00Z`),
     );
     expect(state.issues.flatMap((issue) => issue.messages).join(" ")).toContain(
         "funding depletion is unverified",

@@ -135,7 +135,6 @@ export function PollenUsageBadges(usage: {
     const quest = isPollen
         ? formatActivityPollenThreshold(usage.tierPollen)
         : formatCount(usage.tierRequests);
-    const unit = isPollen ? "dollars" : "requests";
     return (
         // Same-width chips with left-aligned digits, so rows line up; the pair
         // sits at the right edge. 5.5rem fits the widest value, "<0.0001".
@@ -143,8 +142,8 @@ export function PollenUsageBadges(usage: {
             <PaidChip
                 size="sm"
                 className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
-                title={`Paid ${unit}`}
-                aria-label={`${paid} Paid ${unit}`}
+                title={isPollen ? "Paid balance" : "Paid requests"}
+                aria-label={`${paid} ${isPollen ? "from paid balance" : "paid requests"}`}
             >
                 <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {paid}
@@ -152,8 +151,8 @@ export function PollenUsageBadges(usage: {
             <TierChip
                 size="sm"
                 className="w-[5.5rem] cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
-                title={`Quest ${unit}`}
-                aria-label={`${quest} Quest ${unit}`}
+                title={isPollen ? "Quest balance" : "Quest requests"}
+                aria-label={`${quest} ${isPollen ? "from Quest balance" : "Quest requests"}`}
             >
                 <SproutIcon
                     className="h-3.5 w-3.5 shrink-0"

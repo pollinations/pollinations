@@ -858,8 +858,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-direct": () =>
-        createMistralModelConfig({ model: "mistral-large-2512" }),
+    "mistral-large-3-bedrock": () =>
+        createBedrockNativeConfig({
+            model: "mistral.mistral-large-3-675b-instruct",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
+            serviceTier: "default",
+        }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -875,16 +881,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         "x-ai/grok-4.20",
         "xai/zdr",
     ),
-    "grok-large-openrouter-xai-zdr": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.3",
-            defaultOptions: {
-                provider: {
-                    only: ["xai/zdr"],
-                    ignore: ["xai/zdr/priority", "cloudflare"],
-                    allow_fallbacks: false,
-                },
-            },
+    "grok-4.3-bedrock": () =>
+        createBedrockNativeConfig({
+            model: "xai.grok-4.3",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/openai/v1/chat/completions",
+            serviceTier: "default",
         }),
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",

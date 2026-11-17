@@ -601,13 +601,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "mistralai/mistral-large-3": {
-        "mistralai/mistral-large-3:mistral": {
+        "mistralai/mistral-large-3:aws": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,
-            provider: "mistral",
-            addedDate: new Date("2026-09-22").getTime(),
+            provider: "aws",
+            // Bedrock US Standard reports image input in the prompt total.
             cost: {
                 promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
         },
@@ -735,36 +734,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "x-ai/grok-4.3": {
-        "x-ai/grok-4.3:openrouter:xai-zdr": {
-            supportedParameters: CHAT_PARAMETERS.openRouterGrok43,
-            provider: "openrouter",
+        "x-ai/grok-4.3:aws": {
+            supportedParameters: CHAT_PARAMETERS.bedrockGrok43,
+            provider: "aws",
             priceMultiplier: 1,
-            addedDate: new Date("2026-09-01").getTime(),
+            // Mantle US Standard has a flat rate and reports image input in the prompt total.
             cost: {
-                promptTextTokens: perMillion(1.25) * 1.055,
-                promptCachedTokens: perMillion(0.2) * 1.055,
-                promptImageTokens: perMillion(1.25) * 1.055,
-                completionTextTokens: perMillion(2.5) * 1.055,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(2.5),
             },
-            ...defineCostVariants(
-                {
-                    long_context: {
-                        promptTextTokens: perMillion(2.5) * 1.055,
-                        promptCachedTokens: perMillion(0.4) * 1.055,
-                        promptImageTokens: perMillion(2.5) * 1.055,
-                        completionTextTokens: perMillion(5) * 1.055,
-                    },
-                },
-                longContextAtLeast(200_000),
-                {
-                    long_context: {
-                        label: "Long context (≥200K)",
-                        description:
-                            "OpenRouter xAI long-context pricing applies to the whole request.",
-                    },
-                },
-                "<200K context",
-            ),
         },
     },
     "anthropic/claude-haiku-4.5": {

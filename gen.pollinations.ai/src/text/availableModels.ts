@@ -660,8 +660,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.3"],
     },
     {
-        name: "x-ai/grok-4.3:openrouter:xai-zdr",
-        config: portkeyConfig["grok-large-openrouter-xai-zdr"],
+        name: "x-ai/grok-4.3:aws",
+        config: portkeyConfig["grok-4.3-bedrock"],
     },
     {
         name: "x-ai/grok-4.6",
@@ -1455,18 +1455,9 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:mistral",
-        config: portkeyConfig["mistral-large-direct"],
-        transform: pipe(stripReasoning, (messages, options) => {
-            const { seed, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(seed === undefined ? {} : { random_seed: seed }),
-                },
-            };
-        }),
+        name: "mistralai/mistral-large-3:aws",
+        config: portkeyConfig["mistral-large-3-bedrock"],
+        transform: stripReasoning,
     },
     {
         name: "qwen/qwen3guard-gen-8b",

@@ -1616,15 +1616,18 @@ describe("resolveModelConfig", () => {
     });
 });
 
-it("excludes Grok 4.3 backup priority endpoints from the quoted price", () => {
-    expect(
-        resolveModelConfig(messages, {
-            model: "x-ai/grok-4.3:openrouter:xai-zdr",
-        }).options.provider,
-    ).toEqual({
-        only: ["xai/zdr"],
-        ignore: ["xai/zdr/priority", "cloudflare"],
-        allow_fallbacks: false,
+it("routes the Grok 4.3 fallback to Bedrock Mantle Standard in US East", () => {
+    const { options } = resolveModelConfig(messages, {
+        model: "x-ai/grok-4.3:aws",
+        service_tier: "priority",
+    });
+    expect(options.model).toBe("xai.grok-4.3");
+    expect(options.service_tier).toBe("default");
+    expect(options.modelConfig).toMatchObject({
+        provider: "bedrock",
+        "aws-region": "us-east-1",
+        directEndpoint:
+            "https://bedrock-mantle.us-east-1.api.aws/openai/v1/chat/completions",
     });
 });
 

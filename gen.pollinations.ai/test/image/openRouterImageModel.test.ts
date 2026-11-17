@@ -13,6 +13,7 @@ import {
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
+    callOpenRouterSeedream55API,
     callOpenRouterSeedreamProAPI,
     mapOpenRouterGeminiImageUsage,
 } from "../../src/image/models/openRouterImageModel.ts";
@@ -474,6 +475,56 @@ describe("OpenRouter FLUX.2 Max", () => {
                 message: "OpenRouter returned invalid image billing usage",
             });
         }
+    });
+});
+
+describe("OpenRouter Seedream 5.5", () => {
+    it("routes generation and editing through Seed and bills its receipt", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url.toString() === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            expect(url.toString()).toBe(OPENROUTER_IMAGE_URL);
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Bearer openrouter-test-key",
+            );
+            requests.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: { cost: 0.043 },
+            });
+        });
+        const result = await callOpenRouterSeedream55API("edit prompt", {
+            ...baseParams,
+            model: "bytedance-seed/seedream-5-5",
+            resolution: "2k",
+            width: 1280,
+            height: 720,
+            image: [REFERENCE_IMAGE_URL],
+        });
+        expect(requests[0]).toMatchObject({
+            model: "bytedance-seed/seedream-5-5",
+            prompt: "edit prompt",
+            n: 1,
+            resolution: "2K",
+            aspect_ratio: "16:9",
+            provider: { only: ["seed"], allow_fallbacks: false },
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "bytedance-seed/seedream-5-5",
+            providerBilling: { units: 0.043, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
     });
 });
 

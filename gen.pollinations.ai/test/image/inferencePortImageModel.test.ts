@@ -88,6 +88,39 @@ describe("callInferencePortImage", () => {
         });
     });
 
+    it("routes Recraft V4.1 Flash V2 without reference inputs", async () => {
+        let requestBody: Record<string, unknown> | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Bearer test-ip-key",
+            );
+            requestBody = JSON.parse(String(init?.body));
+            return successResponse();
+        });
+        const result = await callInferencePortImage(
+            "a wide landscape",
+            {
+                ...baseParams,
+                model: "recraft/recraft-v4.1-flash-v2",
+                width: 1536,
+                height: 1024,
+            },
+            USER_INFO,
+            "recraft-v4.1-flash-v2",
+        );
+        expect(requestBody).toEqual({
+            model: "recraft-v4.1-flash-v2",
+            prompt: "a wide landscape",
+            n: 1,
+            aspect_ratio: "4:3",
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "recraft/recraft-v4.1-flash-v2",
+            usage: { completionImageTokens: 1, totalTokenCount: 1 },
+        });
+    });
+
     it("conditions generation on a safety-checked reference image", async () => {
         let editInit: RequestInit | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {

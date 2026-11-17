@@ -443,9 +443,11 @@ export async function callOpenRouterSeedreamProAPI(
     };
 }
 
-export async function callOpenRouterSeedreamFlashAPI(
+async function callOpenRouterSeedreamImageAPI(
     prompt: string,
     safeParams: ImageParams,
+    upstreamModel: string,
+    actualModel: string,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
     const downloadedImages = await Promise.all(
@@ -458,7 +460,7 @@ export async function callOpenRouterSeedreamFlashAPI(
         },
     }));
     const requestBody: Record<string, unknown> = {
-        model: SEEDREAM_FLASH_MODEL,
+        model: upstreamModel,
         prompt,
         n: 1,
         seed: safeParams.seed,
@@ -484,7 +486,7 @@ export async function callOpenRouterSeedreamFlashAPI(
     const data = await postOpenRouterImage(
         apiKey,
         requestBody,
-        "OpenRouter Seedream 5.0 Flash request failed",
+        "OpenRouter Seedream image request failed",
     );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
@@ -500,7 +502,7 @@ export async function callOpenRouterSeedreamFlashAPI(
         invalidOpenRouterImageUsage(data.usage);
     }
 
-    logOps("Seedream 5.0 Flash generation complete", {
+    logOps("Seedream image generation complete", {
         referenceImages: inputReferences.length,
         providerCost,
     });
@@ -508,11 +510,35 @@ export async function callOpenRouterSeedreamFlashAPI(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "bytedance/seedream-5.0-flash",
+            actualModel,
             providerBilling: { units: providerCost, unitCost: 1.055 },
             usage: { completionImageTokens: 1 },
         },
     };
+}
+
+export function callOpenRouterSeedreamFlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterSeedreamImageAPI(
+        prompt,
+        safeParams,
+        SEEDREAM_FLASH_MODEL,
+        "bytedance/seedream-5.0-flash",
+    );
+}
+
+export function callOpenRouterSeedream55API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterSeedreamImageAPI(
+        prompt,
+        safeParams,
+        "bytedance-seed/seedream-5-5",
+        "bytedance-seed/seedream-5-5",
+    );
 }
 
 type OpenRouterAlibabaQwenRoute = {
@@ -992,7 +1018,7 @@ export async function callOpenRouterGeminiImageAPI(
 
 // A requested ratio goes through as-is (Recraft rejects unsupported ones and
 // lists the accepted values); width/height snap to a ratio Recraft accepts.
-function resolveRecraftAspectRatio(safeParams: ImageParams): string {
+export function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     const requested = safeParams.aspectRatio;
     if (requested === "adaptive") return "auto";
     return (

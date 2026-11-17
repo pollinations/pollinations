@@ -37,6 +37,7 @@ import {
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
+    callOpenRouterSeedream55API,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
@@ -1127,6 +1128,9 @@ const generateImage = async (
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
 
+        case "bytedance-seed/seedream-5-5":
+            return await callOpenRouterSeedream55API(prompt, safeParams);
+
         case "bytedance/seedream-5.0-flash":
             return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
@@ -1181,6 +1185,14 @@ const generateImage = async (
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-flash-v2":
+            return await callInferencePortImage(
+                prompt,
+                safeParams,
+                userInfo,
+                "recraft-v4.1-flash-v2",
+            );
 
         case "recraft/recraft-v4.1-flash":
             return await callRecraftFlashFalAPI(prompt, safeParams);

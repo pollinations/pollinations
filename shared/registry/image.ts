@@ -479,6 +479,43 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "bytedance-seed/seedream-5-5": {
+        aliases: ["seedream-5.5", "bytedance/seedream-5.5"],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter prices: $0.02 standard, $0.035 2K and $0.008 per reference.
+            // The provider's final receipt includes resolution and reference charges.
+            promptImageTokens: 0.008 * 1.055,
+            completionImageTokens: 0.02 * 1.055,
+        },
+        ...defineCostVariants(
+            { "2k": { completionImageTokens: 0.035 * 1.055 } },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "High-resolution output at OpenRouter's 2K rate.",
+                },
+            },
+            "1K",
+            [{
+                key: "resolution",
+                label: "Resolution",
+                values: { "": "1K", "2k": "2K" },
+            }],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.5",
+        description: "ByteDance image generation and editing with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "bytedance/seedream-5.0-flash": {
         aliases: [],
         provider: "openrouter",
@@ -1744,6 +1781,21 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
+    },
+    "recraft/recraft-v4.1-flash-v2": {
+        aliases: ["recraft-v4.1-flash-v2"],
+        provider: "inferenceport",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.007 },
+        title: "Recraft V4.1 Flash V2",
+        description: "Fast text-to-image generation through InferencePort; no reference-image editing",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        maxReferenceImages: 0,
     },
     "recraft/recraft-v4.1-flash": {
         aliases: [],

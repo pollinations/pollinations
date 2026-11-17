@@ -283,7 +283,7 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
             <WalletBalanceCard
                 tone="neutral"
                 kind="tier"
-                label="Potential rewards"
+                label="Potential credits"
                 value={formatRewardAmount(pollen)}
                 icon={
                     <SproutIcon
@@ -310,12 +310,12 @@ const PROGRESS_STATES = {
     claimed: {
         label: "Claimed",
         tone: "bg-tier-soft",
-        info: "Quests and contributions you claimed. Their rewards are in your balance.",
+        info: "Quests and contributions you claimed. Their credits are in your balance.",
     },
     ready: {
         label: "Ready to claim",
         tone: "bg-theme-fill",
-        info: "Quests and contributions you completed. Claim them below to add their rewards to your balance.",
+        info: "Quests and contributions you completed. Claim them below to add their credits to your balance.",
     },
     open: {
         label: "To do",
@@ -368,7 +368,7 @@ function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
             />
             {waiting ? "+" : ""}
             {formatRewardAmount(pollen.tier + pollen.paid)}
-            <span className="sr-only"> in rewards</span>
+            <span className="sr-only"> credits</span>
         </span>
     );
 }
@@ -1131,7 +1131,7 @@ function QuestOverviewContent({
                 tab per kind of quest. The per-user accounting is hidden for
                 logged-out visitors, who see what the catalog offers. */}
             <Section
-                title={state.anonymous ? "Rewards you can earn" : "Progress"}
+                title={state.anonymous ? "Credits you can earn" : "Progress"}
                 action={
                     state.checking && (
                         <LoadingStatus>Checking quests…</LoadingStatus>
@@ -1245,7 +1245,7 @@ function QuestOverviewContent({
                 <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
                     <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Quests are in alpha. Availability and rewards may
+                        Quests are in alpha. Availability and credits may
                         change.
                     </span>
                 </p>

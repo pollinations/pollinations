@@ -103,6 +103,8 @@ const mergedPrQuest: QuestDefinition = {
     description: `Earn ${PR_REWARD} Quest Pollen for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
+    // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
+    repeatable: true,
     rewardAmount: PR_REWARD,
     balanceBucket: "tier",
 };
@@ -113,9 +115,25 @@ const reportedIssueQuest: QuestDefinition = {
     description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
+    // Each fixed issue is its own reward (github:reported_issue:N).
+    repeatable: true,
     rewardAmount: 2,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
+};
+
+// Keeps the admin grants (grant:<campaign>), which a maintainer records for
+// help a PR or issue reward doesn't cover. Shown only to people who got one.
+const teamBonusQuest: QuestDefinition = {
+    id: "team_bonus",
+    title: "Bonus from the team",
+    description: "Extra rewards from the team for your help.",
+    category: CONTRIBUTION_CATEGORY,
+    scope: "perUser",
+    repeatable: true,
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    state: "completed",
 };
 
 const beeCensusQuest: QuestDefinition = {
@@ -561,6 +579,7 @@ export async function listQuestCards(
     return [
         questToCard(mergedPrQuest),
         questToCard(reportedIssueQuest),
+        questToCard(teamBonusQuest),
         questToCard(beeCensusQuest),
         questToCard(honeyCensusQuest),
         // A quest shows on the board once it has a reward label.

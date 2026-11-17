@@ -125,6 +125,21 @@ const CATEGORIES: CategoryMeta[] = [
     },
 ];
 
+// Rewards recorded one per PR, fixed issue or grant, and the card that keeps them.
+const CARD_BY_PREFIX = [
+    ["github:merged_pr:", "merged_pr"],
+    ["github:reported_issue:", "reported_merged_issue"],
+    ["grant:", "team_bonus"],
+] as const;
+
+/** The catalog card a reward belongs to. */
+function cardIdOf(questId: string | null): string | null {
+    const match = CARD_BY_PREFIX.find(([prefix]) =>
+        questId?.startsWith(prefix),
+    );
+    return match ? match[1] : questId;
+}
+
 function issueNumberFromId(id: string): number | null {
     const match = /^github:issue:(\d+)$/.exec(id);
     return match ? Number(match[1]) : null;
@@ -239,7 +254,8 @@ export type QuestCardStatus = "open" | "claimable" | "claimed";
 
 export type QuestCard = {
     key: string;
-    rewardId?: string;
+    /** The rewards one Claim pays. */
+    rewardIds?: string[];
     title: string;
     description?: string;
     url?: string;
@@ -249,6 +265,8 @@ export type QuestCard = {
     status: QuestCardStatus;
     earnedAmount?: number | null;
     progress?: QuestProgress;
+    /** A repeatable quest's rewards: its card keeps them all. */
+    repeats?: QuestReward[];
     // coming_soon quests render at the bottom of their lane in the receded
     // (claimed) style, with a clock + "Coming soon" in place of the reward.
     comingSoon?: boolean;
@@ -428,12 +446,12 @@ export function QuestRow({
 }: {
     card: QuestCard;
     claiming: boolean;
-    onClaim(rewardId: string): void;
+    onClaim(rewardIds: string[]): void;
 }) {
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
-    const claimableRewardId =
-        card.status === "claimable" ? card.rewardId : undefined;
+    const claimableRewardIds =
+        card.status === "claimable" ? card.rewardIds : undefined;
     // A claimed quest no longer needs its progress bar — the reward is banked,
     // so the "N / N" count is done and just adds noise.
     const progress =
@@ -454,9 +472,15 @@ export function QuestRow({
         <Text
             as="span"
             weight="semibold"
-            tone={claimed ? "muted" : claimableRewardId ? "soft" : "strong"}
+            tone={claimed ? "muted" : claimableRewardIds ? "soft" : "strong"}
         >
             {card.title}
+            {card.repeats && card.repeats.length > 0 && (
+                <span className="font-normal text-theme-text-muted">
+                    {" "}
+                    · {card.repeats.length} earned
+                </span>
+            )}
         </Text>
     );
     // Show the "how to" description while the quest is actionable (open or
@@ -499,13 +523,13 @@ export function QuestRow({
     );
     // A claimable quest's reward becomes the Claim button on the right: the
     // standard large action button, "Claim" over its reward.
-    const claimButton = claimableRewardId ? (
+    const claimButton = claimableRewardIds ? (
         <Button
             type="button"
             intent="commit"
             size="lg"
             disabled={claiming}
-            onClick={() => onClaim(claimableRewardId)}
+            onClick={() => onClaim(claimableRewardIds)}
             aria-label={`Claim ${rewardLabel} ${rewardIcon === "paid" ? "paid" : "Quest"} pollen`}
             className="flex-col justify-center gap-0.5 px-5 py-2 font-bold"
         >
@@ -687,21 +711,25 @@ function QuestOverviewContent({
         };
     }, []);
 
-    async function handleClaimReward(rewardId: string): Promise<void> {
+    async function handleClaimRewards(rewardIds: string[]): Promise<void> {
         setClaimError(null);
         setState((current) => ({
             ...current,
-            claimingRewardIds: [...current.claimingRewardIds, rewardId],
+            claimingRewardIds: [...current.claimingRewardIds, ...rewardIds],
         }));
 
         try {
-            const response = await accountClient.quests.rewards[
-                ":rewardId"
-            ].claim.$post({
-                param: { rewardId },
-            });
-            if (!response.ok) {
-                throw new Error("Couldn’t claim the reward. Please try again.");
+            for (const rewardId of rewardIds) {
+                const response = await accountClient.quests.rewards[
+                    ":rewardId"
+                ].claim.$post({
+                    param: { rewardId },
+                });
+                if (!response.ok) {
+                    throw new Error(
+                        "Couldn’t claim the reward. Please try again.",
+                    );
+                }
             }
             void router.invalidate({
                 filter: (match) => match.routeId === "/_dashboard",
@@ -711,7 +739,7 @@ function QuestOverviewContent({
                 ...current,
                 ...questData,
                 claimingRewardIds: current.claimingRewardIds.filter(
-                    (id) => id !== rewardId,
+                    (id) => !rewardIds.includes(id),
                 ),
             }));
             window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
@@ -719,7 +747,7 @@ function QuestOverviewContent({
             setState((current) => ({
                 ...current,
                 claimingRewardIds: current.claimingRewardIds.filter(
-                    (id) => id !== rewardId,
+                    (id) => !rewardIds.includes(id),
                 ),
             }));
             setClaimError(
@@ -750,7 +778,7 @@ function QuestOverviewContent({
         () =>
             new Set(
                 state.rewards
-                    .map((reward) => reward.questId)
+                    .map((reward) => cardIdOf(reward.questId))
                     .filter((id): id is string => id != null),
             ),
         [state.rewards],
@@ -780,7 +808,24 @@ function QuestOverviewContent({
         };
 
         for (const quest of state.catalog) {
-            const reward = rewardByKey.get(quest.id);
+            // A repeatable quest keeps all its rewards on its card. One Claim
+            // takes every waiting reward of the next one's balance. With none
+            // waiting, it stays open while the quest is on the board.
+            const repeats = quest.repeatable
+                ? state.rewards.filter(
+                      (reward) => cardIdOf(reward.questId) === quest.id,
+                  )
+                : undefined;
+            const next = repeats?.find((repeat) => !repeat.claimedAt);
+            const waiting = repeats?.filter(
+                (repeat) =>
+                    !repeat.claimedAt &&
+                    repeat.balanceBucket === next?.balanceBucket,
+            );
+            const reward = repeats
+                ? (next ??
+                  (quest.state === "available" ? undefined : repeats[0]))
+                : rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
             const comingSoon = quest.state === "coming_soon";
             // Visibility rule:
@@ -798,7 +843,9 @@ function QuestOverviewContent({
 
             byCat[quest.category].push({
                 key: quest.id,
-                rewardId: reward?.id,
+                rewardIds: waiting?.length
+                    ? waiting.map((repeat) => repeat.id)
+                    : reward && [reward.id],
                 title: quest.title,
                 description: quest.description || undefined,
                 url: quest.url || undefined,
@@ -807,7 +854,17 @@ function QuestOverviewContent({
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: deriveCardStatus(comingSoon, previewAll, reward),
-                earnedAmount: reward?.pollenAmount ?? undefined,
+                // A repeatable card shows what it pays now, or once all is
+                // claimed, everything it paid into that balance.
+                earnedAmount: repeats
+                    ? (waiting?.length ? waiting : repeats)
+                          .filter(
+                              (repeat) =>
+                                  repeat.balanceBucket ===
+                                  reward?.balanceBucket,
+                          )
+                          .reduce((sum, repeat) => sum + repeat.pollenAmount, 0)
+                    : reward?.pollenAmount,
                 progress:
                     reward && quest.goal
                         ? {
@@ -817,6 +874,7 @@ function QuestOverviewContent({
                           }
                         : progressByQuestId.get(quest.id),
                 comingSoon,
+                repeats,
             });
         }
 
@@ -834,29 +892,26 @@ function QuestOverviewContent({
         previewAll,
     ]);
 
-    // Rewards created by a maintainer or another non-catalog source still need
-    // their own claim control, as do a repeatable quest's rewards beyond the
-    // one its catalog card shows. This is deliberately derived from the
-    // ledger — no synthetic catalog entry or special balance path.
+    // A reward with no card of its own (an event code, or a quest that left
+    // the catalog) gets its own row.
     const bonusRewardCards = useMemo(() => {
-        const catalogIds = new Set(state.catalog.map((quest) => quest.id));
+        const catalog = new Map(
+            state.catalog.map((quest) => [quest.id, quest]),
+        );
         return (
             state.rewards
-                .filter(
-                    (reward) =>
-                        reward.questId == null ||
-                        !catalogIds.has(reward.questId) ||
-                        rewardByKey.get(reward.questId) !== reward,
-                )
+                .filter((reward) => {
+                    const quest = catalog.get(cardIdOf(reward.questId) ?? "");
+                    return (
+                        !quest ||
+                        (!quest.repeatable &&
+                            rewardByKey.get(quest.id) !== reward)
+                    );
+                })
                 .map<QuestCard>((reward) => ({
                     key: reward.id,
-                    rewardId: reward.id,
+                    rewardIds: [reward.id],
                     title: reward.title,
-                    description: reward.questId?.startsWith(
-                        "github:reported_issue:",
-                    )
-                        ? "Your issue was closed by a merged pull request."
-                        : undefined,
                     url: reward.url ?? undefined,
                     issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
                     reward: reward.pollenAmount,
@@ -1069,10 +1124,14 @@ function QuestOverviewContent({
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    claiming={state.claimingRewardIds.includes(
-                                        card.rewardId ?? "",
-                                    )}
-                                    onClaim={handleClaimReward}
+                                    claiming={
+                                        card.rewardIds?.some((id) =>
+                                            state.claimingRewardIds.includes(
+                                                id,
+                                            ),
+                                        ) ?? false
+                                    }
+                                    onClaim={handleClaimRewards}
                                 />
                             ))}
                         </div>
@@ -1098,10 +1157,12 @@ function QuestOverviewContent({
                             <QuestRow
                                 key={card.key}
                                 card={card}
-                                claiming={state.claimingRewardIds.includes(
-                                    card.rewardId ?? "",
-                                )}
-                                onClaim={handleClaimReward}
+                                claiming={
+                                    card.rewardIds?.some((id) =>
+                                        state.claimingRewardIds.includes(id),
+                                    ) ?? false
+                                }
+                                onClaim={handleClaimRewards}
                             />
                         ))}
                     </div>

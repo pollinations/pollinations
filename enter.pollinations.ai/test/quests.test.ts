@@ -501,6 +501,7 @@ test("catalog lists the pull request and issue rewards", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
+        repeatable: true,
         rewardAmount: 5,
         balanceBucket: "tier",
     });
@@ -509,9 +510,17 @@ test("catalog lists the pull request and issue rewards", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
+        repeatable: true,
         rewardAmount: 2,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "team_bonus"),
+    ).toMatchObject({
+        category: "contribute",
+        state: "completed",
+        repeatable: true,
     });
 });
 

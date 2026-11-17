@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "check_digit",
                 "integer_math",
                 "diff_text",
+                "password_generate",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -945,6 +946,122 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
                 .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("password_generate respects length, classes and ambiguous exclusion", async (t) => {
+    const client = await clientFor(t);
+    // Default: 16 characters from all four classes. The pool is 26 + 26 + 10
+    // + 25 symbols = 87, so 16 characters carry 103.1 bits of entropy.
+    const generated = await call(client, "password_generate", {});
+    assert.equal(generated.mode, "password");
+    assert.equal(generated.length, 16);
+    assert.equal(generated.password.length, 16);
+    assert.deepEqual(generated.classes, [
+        "lowercase",
+        "uppercase",
+        "digits",
+        "symbols",
+    ]);
+    assert.equal(generated.exclude_ambiguous, false);
+    assert.equal(generated.entropy_bits, 103.1);
+    assert.match(generated.password, /[a-z]/);
+    assert.match(generated.password, /[A-Z]/);
+    assert.match(generated.password, /[0-9]/);
+    assert.match(generated.password, /[!@#$%^&*()_=+[\]{};:,.<>?-]/);
+
+    // Length bounds: the shortest and the longest passwords.
+    assert.equal(
+        (await call(client, "password_generate", { length: 8 })).password
+            .length,
+        8,
+    );
+    assert.equal(
+        (await call(client, "password_generate", { length: 128 })).password
+            .length,
+        128,
+    );
+
+    // A single class is honoured exactly, and the entropy follows the pool.
+    const digits = await call(client, "password_generate", {
+        length: 8,
+        lowercase: false,
+        uppercase: false,
+        symbols: false,
+    });
+    assert.match(digits.password, /^[0-9]{8}$/);
+    assert.deepEqual(digits.classes, ["digits"]);
+    assert.equal(digits.entropy_bits, 26.6);
+
+    // Excluding ambiguous characters removes I, l, 1, O and 0 from a long
+    // password drawn from every class.
+    const clear = await call(client, "password_generate", {
+        length: 128,
+        exclude_ambiguous: true,
+    });
+    assert.doesNotMatch(clear.password, /[Il1O0]/);
+    assert.equal(clear.password.length, 128);
+    assert.equal(clear.exclude_ambiguous, true);
+
+    // Two passwords from the same call shape are different values: the shape
+    // is deterministic, the value is not.
+    const first = await call(client, "password_generate", { length: 32 });
+    const second = await call(client, "password_generate", { length: 32 });
+    assert.notEqual(first.password, second.password);
+});
+
+test("password_generate builds passphrases from the wordlist", async (t) => {
+    const client = await clientFor(t);
+    // Four words from a 256-word list: 4 * log2(256) = 32 bits.
+    const phrase = await call(client, "password_generate", {
+        passphrase: true,
+        words: 4,
+    });
+    assert.equal(phrase.mode, "passphrase");
+    assert.equal(phrase.words, 4);
+    assert.equal(phrase.separator, "-");
+    assert.equal(phrase.entropy_bits, 32);
+    const parts = phrase.password.split("-");
+    assert.equal(parts.length, 4);
+    for (const word of parts) assert.match(word, /^[a-z]+$/);
+    assert.equal(phrase.length, phrase.password.length);
+
+    const spaced = await call(client, "password_generate", {
+        passphrase: true,
+        words: 6,
+        separator: " ",
+    });
+    assert.equal(spaced.password.split(" ").length, 6);
+    assert.equal(spaced.entropy_bits, 48);
+});
+
+test("password_generate rejects invalid input", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { length: 7 },
+        { length: 129 },
+        { length: 12.5 },
+        {
+            lowercase: false,
+            uppercase: false,
+            digits: false,
+            symbols: false,
+        },
+        { passphrase: true, words: 2 },
+        { passphrase: true, words: 9 },
+        { passphrase: true, separator: "" },
+        { passphrase: true, separator: "----" },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "password_generate",
+                    arguments: args,
+                })
+            ).isError,
             true,
             JSON.stringify(args),
         );

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -148,7 +148,22 @@ describe("CLI argument validation", () => {
     });
 
     it("lets pipes and devices such as /dev/stdin through", () => {
-        expect(requireFile("/dev/null")).toBe(0);
+        if (process.platform !== "win32") {
+            expect(requireFile("/dev/null")).toBe(0);
+            return;
+        }
+        // Windows has no path statSync reports as a device: NUL, \\.\NUL and
+        // \\.\CONIN$ all come back null. An empty file covers the same
+        // contract there - a path that is not a directory passes and reports its size,
+        // which is 0.
+        const dir = mkdtempSync(join(tmpdir(), "polli-device-"));
+        try {
+            const empty = join(dir, "empty");
+            writeFileSync(empty, "");
+            expect(requireFile(empty)).toBe(0);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 
     describe.each([

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Decision Arena — Grid Rush",
+    "url": "https://decisionarena.edgeone.cool",
+    "description": "A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "NamanSoni78",
+    "githubUserId": "170070104",
+    "repositoryUrl": "https://github.com/NamanSoni78/pollinationsai/tree/work8-decision-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19808",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/ca1fe510-eaac-4859-b55d-2cfbb7022ebc"
+  },
+  {
+    "emoji": "🎮",
     "name": "Herd Check",
     "url": "https://patbing.github.io/herd-check",
     "description": "Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP.",

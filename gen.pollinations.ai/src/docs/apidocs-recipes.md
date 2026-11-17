@@ -31,7 +31,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 ## 🔓 Pollinations Connect (OAuth 2.1)
 
-Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Optionally register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret) and puts your app's name on the consent screen. Without one, omit `client_id` and the consent screen shows the redirect hostname. The issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata. Resolve them from there:
 

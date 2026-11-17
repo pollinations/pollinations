@@ -342,6 +342,28 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
+    "microsoft/mai-image-2.7-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure rates as listed by the Azure provider on OpenRouter and Vercel, checked 2026-11-17.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(2.5),
+            completionImageTokens: perMillion(10),
+        },
+        title: "MAI Image 2.7 Flash",
+        description:
+            "Faster, lower-cost generation and editing with up to five references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
+    },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "google",

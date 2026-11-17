@@ -29,7 +29,7 @@ For dashboard-created sandboxes, run `polli sandbox ssh-config` first. VS Code's
 The template sets where a sandbox runs: `pollinations` and `pollinations-large` on E2B, `pollinations-azure` and `pollinations-azure-large` on Azure with the same software and sizes, and `pollinations-azure-xl` (8 vCPU, 16 GB) on Azure only. The differences:
 
 - E2B pauses and resumes long runs once a day; Azure runs them without that break.
-- Azure's disks are larger: about 40, 80 and 160 GB for its three sizes, against 27 GB on E2B.
+- Azure's disks are larger; [the template list](https://gen.pollinations.ai/alpha/e2b/pricing) has each template's disk in `diskSizeMB`.
 - Each provider has its own rates; see [current rates](https://gen.pollinations.ai/alpha/e2b/pricing).
 - On Azure, a sandbox stops at the first 5-minute mark after its timeout, and that time is billed.
 - ssh into sandboxes on Azure needs polli 0.1.59 or newer: update with `npm i -g @pollinations/cli && polli sandbox ssh-config`.

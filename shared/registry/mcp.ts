@@ -138,7 +138,7 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description:
-                "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                "Decision tools use the selected decision model's listed rate, Jev by default. No additional MCP fee.",
             rates: [],
         },
     },
@@ -253,12 +253,11 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Calculators",
         description:
-            "Time, cron schedules, Unicode, color contrast, QR codes, and ECB currency rates.",
+            "Time, cron schedules, Unicode, color contrast, QR codes, hashes, version ordering, and ECB rates.",
         binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {
-            description:
-                "Local utilities and public ECB rates. No Pollen charge.",
+            description: "Local utilities and public ECB rates. Free.",
             rates: [],
         },
     },
@@ -271,7 +270,7 @@ export const MCP_SERVERS = [
         binding: "NETWORK_MCP",
         billing: "downstream",
         pricing: {
-            description: "Network diagnostics. No Pollen charge.",
+            description: "Network diagnostics. Free.",
             rates: [],
         },
     },
@@ -284,7 +283,7 @@ export const MCP_SERVERS = [
         binding: "PACKAGES_MCP",
         billing: "downstream",
         pricing: {
-            description: "Public registry lookups. No Pollen charge.",
+            description: "Public registry lookups. Free.",
             rates: [],
         },
     },
@@ -306,7 +305,7 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Research",
         description:
-            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature and World Bank indicators.",
+            "Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank data.",
         binding: "RESEARCH_MCP",
         billing: "downstream",
         pricing: {

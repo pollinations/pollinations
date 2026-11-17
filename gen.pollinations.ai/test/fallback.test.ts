@@ -1,5 +1,7 @@
+import { env } from "cloudflare:test";
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
@@ -22,7 +24,14 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
-import type { GenerationModelEntry } from "../src/model-registry.ts";
+import {
+    requestedModelIds,
+    resolveModelDefinition,
+} from "../src/middleware/model.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../src/model-registry.ts";
 
 function registryEntry(
     id: string,
@@ -651,7 +660,7 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
-    it("does not multiply the owned Portkey timeout across fallbacks", () => {
+    it("falls back when Portkey's per-attempt timeout expires", () => {
         expect(
             isRetryableFallbackError(
                 textFailure(408, {
@@ -664,7 +673,7 @@ describe("isRetryableFallbackError", () => {
                     },
                 }),
             ),
-        ).toBe(false);
+        ).toBe(true);
         expect(isRetryableFallbackError(textFailure(408))).toBe(true);
     });
 
@@ -1001,6 +1010,43 @@ describe("withModelFallback", () => {
         // own row; the local gate called no provider and is not added.
         expect(seen(attempts)).toEqual(["primary"]);
     });
+
+    it("skips a model the caller can't afford and ends on the last one that ran", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const attempt = vi.fn(async () => {
+            throw rateLimited();
+        });
+        const beforeAttempt = vi.fn(async (current: FallbackCandidate) => {
+            if (current.id !== "primary") {
+                throw new PaymentRequiredError(
+                    "INSUFFICIENT_BALANCE",
+                    `${current.id} costs too much`,
+                    "https://enter.pollinations.ai/top-up",
+                );
+            }
+        });
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second"), candidate("third")],
+                attempt,
+                attempts,
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("429 upstream");
+        expect(seen(attempts)).toEqual(["primary!"]);
+
+        // With nothing run, the first refusal answers.
+        await expect(
+            withModelFallback(
+                [candidate("second"), candidate("third")],
+                attempt,
+                [],
+                beforeAttempt,
+            ),
+        ).rejects.toThrow("second costs too much");
+        expect(attempt).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe("withModelFallbackResponse", () => {
@@ -1040,4 +1086,137 @@ describe("withModelFallbackResponse", () => {
         );
         await expect(response.json()).resolves.toEqual({ model: "target" });
     });
+});
+
+describe("caller-listed model chains", () => {
+    it("does not expand a listed alternative's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(fallbackCandidates(model).map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "perplexity/sonar",
+        ]);
+    });
+    it("splits and trims without removing repeats", () => {
+        expect(requestedModelIds("openai")).toEqual(["openai"]);
+        expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([
+            "openai",
+            "openai-fast",
+            "openai",
+        ]);
+    });
+
+    it("rejects a list longer than the attempt cap", () => {
+        expect(() => requestedModelIds("a,b,c,d,e")).toThrowError(
+            /at most 4 are tried/,
+        );
+    });
+
+    it("replaces the primary model's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("perplexity/sonar");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+        ]);
+    });
+
+    it("preserves repeated models even when named by different aliases", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,gpt-5-nano,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("openai/gpt-5-nano");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "openai/gpt-5.4-nano",
+        ]);
+    });
+
+    it("keeps configured fallbacks for a single-model request", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const entry = registry
+            .visibleEntries()
+            .find(
+                (entry) =>
+                    entry.eventType === "generate.text" &&
+                    !entry.definition.supportedEndpoints &&
+                    entry.fallbackEntries?.length,
+            );
+        expect(entry).toBeDefined();
+        if (!entry) throw new Error("Missing model with configured fallbacks");
+        const model = await resolveModelDefinition(
+            entry.id,
+            "generate.text",
+            env,
+        );
+        expect(model.fallbackEntries).toEqual(entry.fallbackEntries);
+    });
+
+    it("tries repeated entries separately without inserting configured routes", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+        const attempted: string[] = [];
+        const { index } = await withModelFallback(
+            fallbackCandidates(model),
+            async (candidate) => {
+                attempted.push(candidate.id);
+                if (attempted.length < 3)
+                    throw Object.assign(new Error("Unavailable"), {
+                        status: 503,
+                    });
+                return "ok";
+            },
+        );
+        expect(attempted).toEqual([
+            "perplexity/sonar",
+            "perplexity/sonar",
+            "openai/gpt-5-nano",
+        ]);
+        expect(index).toBe(2);
+    });
+
+    it("keeps the string the caller sent so a chain gets its own cache key", async () => {
+        const chain = await resolveModelDefinition(
+            "openai-fast,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(chain.requested).toBe("openai-fast,openai");
+        expect(chain.resolved).toBe("openai/gpt-5-nano");
+    });
+
+    it("holds every listed model to the endpoint it was called on", async () => {
+        await expect(
+            resolveModelDefinition("openai-fast,flux", "generate.text", env),
+        ).rejects.toThrowError(/is a image model/);
+    });
+
+    it.each(["flux,hyper3d/rodin-2.5", "hyper3d/rodin-2.5,flux"])(
+        "rejects mixed output categories in %s",
+        async (models) => {
+            await expect(
+                resolveModelDefinition(
+                    models,
+                    "generate.image",
+                    env,
+                    undefined,
+                    "/v1/responses",
+                ),
+            ).rejects.toThrowError(/same model category/);
+        },
+    );
 });

@@ -5,10 +5,7 @@ import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import {
-    resolveGrokAspectRatio,
-    resolveGrokDuration,
-} from "./openRouterVideoModel.ts";
+import { resolveGrokAspectRatio } from "./openRouterVideoModel.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
 
@@ -85,7 +82,7 @@ export async function callXaiVideoAPI(
         });
     }
 
-    const duration = resolveGrokDuration(safeParams.duration);
+    const duration = safeParams.duration ?? 5;
     const startFrame = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
         model: upstreamModel,

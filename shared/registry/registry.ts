@@ -647,6 +647,29 @@ export const isFlatRateModel = (definition: ModelDefinition): boolean =>
     (definition.category === "image" &&
         definition.cost.promptTextTokens === undefined);
 
+/** No request can bill: every rate sheet is zero and no billing rule adds a charge. */
+export const isFreeModel = (definition: ModelDefinition): boolean =>
+    !definition.billing &&
+    getCostSheetsForModel(definition).every((sheet) =>
+        Object.values(sheet).every((rate) => rate === 0),
+    );
+
+/** Why the registry refuses this duration for the model, or undefined when it accepts it. */
+export function durationError(
+    model: string,
+    { minDuration, maxDuration, allowedDurations }: ModelDefinition,
+    duration: number,
+): string | undefined {
+    const accepted = allowedDurations
+        ? allowedDurations.includes(duration)
+        : duration >= (minDuration ?? duration) &&
+          duration <= (maxDuration ?? duration);
+    if (accepted) return undefined;
+    const range =
+        allowedDurations?.join(", ") ?? `${minDuration}-${maxDuration}`;
+    return `Unsupported duration for ${model}: ${duration}. It accepts ${range} seconds.`;
+}
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;

@@ -186,16 +186,49 @@ export const CreateMessageRequestSchema = z
                 name: z.string().optional(),
                 disable_parallel_tool_use: z.boolean().optional(),
             })
+            .superRefine((choice, context) => {
+                if (choice.type === "tool" && !choice.name) {
+                    context.addIssue({
+                        code: "custom",
+                        path: ["name"],
+                        message:
+                            'tool_choice.name is required when type is "tool"',
+                    });
+                }
+            })
             .optional(),
         thinking: z
             .object({
+                // Anthropic adds thinking types over time (for example
+                // "between_tools" on Claude Sonnet 5.5); a fixed list would
+                // turn those requests into 400s until we catch up.
                 type: z.string(),
-                budget_tokens: z.number().int().optional(),
+                budget_tokens: z.number().int().min(1024).optional(),
             })
             .passthrough()
+            .superRefine((thinking, ctx) => {
+                // Anthropic requires a budget whenever thinking is enabled;
+                // without one the translator silently falls back to "low".
+                if (
+                    thinking.type === "enabled" &&
+                    thinking.budget_tokens === undefined
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["budget_tokens"],
+                        message:
+                            "budget_tokens is required when thinking.type is enabled",
+                    });
+                }
+            })
             .optional(),
         output_config: z
-            .object({ effort: z.string().optional() })
+            .object({
+                // Kept as a plain string for the same reason as thinking.type:
+                // Anthropic adds effort levels over time and unknown values
+                // fall through gracefully instead of failing the request.
+                effort: z.string().optional(),
+            })
             .passthrough()
             .optional(),
     })

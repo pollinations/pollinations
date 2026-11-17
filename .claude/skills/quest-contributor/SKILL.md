@@ -1,11 +1,11 @@
 ---
 name: quest-contributor
-description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Pollen rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
+description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Quest rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
 ---
 
 # Quest Contributor
 
-Pollinations pays Pollen rewards for merged PRs that solve community quests -
+Pollinations pays Quest rewards for merged PRs that solve community quests -
 issues labeled `POLLEN-QUEST` in
 [pollinations/pollinations](https://github.com/pollinations/pollinations).
 This skill teaches an agent the whole loop.

@@ -74,7 +74,11 @@ export function isAdminUser(user: {
     );
 }
 
-export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
+export function createAuth(
+    env: Cloudflare.Env,
+    ctx?: ExecutionContext,
+    onError?: (message: string) => void,
+) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
     const discordConfig = discordConfigFromEnv(env);
@@ -180,11 +184,22 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             errorURL: "/error",
         },
         logger: {
-            log: (level, message, ...args) =>
-                console[level](
-                    `[Better Auth]: ${withoutQueryParams(message)}`,
-                    ...args.map(withoutQueryParams),
-                ),
+            log: (level, message, ...args) => {
+                const parts = [message, ...args].map(withoutQueryParams);
+                console[level]("[Better Auth]:", ...parts);
+                // Better Auth answers its own errors, so `handleError` never
+                // sees them: the caller gets each one as text.
+                if (level === "error")
+                    onError?.(
+                        parts
+                            .filter(
+                                (part) =>
+                                    typeof part === "string" ||
+                                    part instanceof Error,
+                            )
+                            .join(" "),
+                    );
+            },
         },
         hooks: {
             // better-auth has its own freshness check on /delete-user, but it

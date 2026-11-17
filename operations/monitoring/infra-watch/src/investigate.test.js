@@ -37,11 +37,34 @@ const degraded = {
     info: { kind: "DEGRADED", model: "a/model", success: 0.8, nonClient: 100 },
 };
 
-test("degraded, weak-primary and platform-drop incidents are investigated", () => {
-    for (const kind of ["DEGRADED", "PLATFORM_DROP", "PRIMARY_WEAK"])
+test("every outage is investigated; a sign-up burst is not", () => {
+    for (const kind of [
+        "DEGRADED",
+        "PLATFORM_DROP",
+        "GEN_DOWN",
+        "EARLY_ERRORS",
+    ])
         assert.equal(investigates(kind), true);
-    for (const kind of ["GEN_DOWN", "ANALYTICS_DOWN"])
-        assert.equal(investigates(kind), false);
+    assert.equal(investigates("SIGNUP_BURST"), false);
+});
+
+test("a platform alert's evidence is the alert, without Stripe ids", () => {
+    const data = { recent: [row("a/model")], last60: [row("a/model")] };
+    const early = { info: { kind: "EARLY_ERRORS", worst: 152 } };
+    assert.deepEqual(evidence(early, data), { alert: early.info });
+    const paid = {
+        kind: "not_credited",
+        id: "pi_1",
+        ref: "in_1",
+        reason: "",
+        n: 1,
+        amount_cents: 1000,
+        at: "2026-11-09 16:00:00",
+    };
+    const e = evidence({ info: { kind: "PAYMENTS_FAILING", rows: [paid] } });
+    assert.equal(e.alert.rows[0].amount_cents, 1000);
+    assert.ok(!JSON.stringify(e).includes("pi_1"));
+    assert.ok(!JSON.stringify(e).includes("in_1"));
 });
 
 test("evidence holds only the alerted model's rows and allowlisted fields", () => {

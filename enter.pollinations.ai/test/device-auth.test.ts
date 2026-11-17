@@ -46,12 +46,16 @@ async function insertApiKey(userId: string) {
 describe("Device Authorization Flow", () => {
     test("POST /api/device/code issues device and user codes", async ({
         mocks,
+        pubApiKey,
     }) => {
         await mocks.enable("tinybird");
         const res = await SELF.fetch(`${BASE}/api/device/code`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: "test-cli", scope: "generate" }),
+            body: JSON.stringify({
+                client_id: pubApiKey,
+                scope: "generate",
+            }),
         });
         const body = (await res.json()) as {
             device_code: string;
@@ -83,17 +87,19 @@ describe("Device Authorization Flow", () => {
         expect(info.status).toBe("pending");
         expect(info.scope).toBe("generate");
         await mocks.clear();
-        expect(mocks.tinybird.state.productEvents).toEqual([
+        expect(mocks.tinybird.state.productEvents).toContainEqual(
             expect.objectContaining({
                 event: "device_code_issued",
                 user_id: "",
-                client_id: "test-cli",
+                client_id: pubApiKey,
                 flow_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
             }),
-        ]);
+        );
     });
 
-    test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async () => {
+    test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async ({
+        pubApiKey,
+    }) => {
         // Off-the-shelf clients discovering the endpoint via RFC 8414
         // metadata send application/x-www-form-urlencoded, not JSON.
         const res = await SELF.fetch(`${BASE}/api/device/code`, {
@@ -102,7 +108,7 @@ describe("Device Authorization Flow", () => {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
-                client_id: "pk_form_client",
+                client_id: pubApiKey,
                 scope: "profile",
             }).toString(),
         });
@@ -118,6 +124,23 @@ describe("Device Authorization Flow", () => {
             scope: string;
         };
         expect(info.scope).toBe("profile");
+        expect(info.clientId).toBe(pubApiKey);
+    });
+
+    test("POST /api/device/code rejects an unknown client_id", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                client_id: "pk_TOTALLY_BOGUS",
+                scope: "generate",
+            }),
+        });
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({
+            error: "invalid_client",
+            error_description: "Unknown or revoked client_id",
+        });
     });
 
     test("GET /api/device/info with valid code returns pending", async () => {

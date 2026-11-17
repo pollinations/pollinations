@@ -54,13 +54,27 @@ for (const modern of [false, true])
     test(`real stateless MCP protocol: ${modern ? "modern" : "legacy"}`, async (t) => {
         const client = await clientFor(t, modern);
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
+        const { tools } = await client.listTools();
+        assert.deepEqual(tools.map((x) => x.name).sort(), [
+            "asn_whois",
+            "dns_lookup",
+            "domain_whois",
+            "http_probe",
+            "inspect_cidr",
+            "inspect_mac",
+            "ip_whois",
+        ]);
+        // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
-            (await client.listTools()).tools.map((x) => x.name).sort(),
+            tools
+                .filter((x) => x.annotations.openWorldHint !== false)
+                .map((x) => x.name)
+                .sort(),
             [
+                "asn_whois",
                 "dns_lookup",
                 "domain_whois",
                 "http_probe",
-                "inspect_cidr",
                 "ip_whois",
             ],
         );
@@ -278,6 +292,9 @@ test("RDAP follows registry redirects, normalizes domain and network records, an
         return Response.json({
             ldhName: "EXAMPLE.ORG",
             handle: "fixture-handle",
+            name: "EXAMPLE-AS",
+            startAutnum: 15169,
+            endAutnum: 15169,
             startAddress: "192.0.2.0",
             endAddress: "192.0.2.255",
             ipVersion: "v4",
@@ -316,6 +333,13 @@ test("RDAP follows registry redirects, normalizes domain and network records, an
     assert.equal(ip.organization, "Example Registry");
     assert.equal(ip.country, null);
     assert.equal(ip.endAddress, "192.0.2.255");
+    const asn = await read("asn_whois", { asn: "AS15169" });
+    assert.equal(asn.asn, 15169);
+    assert.equal(asn.organization, "Example Registry");
+    assert.equal(asn.startAutnum, 15169);
+    assert.equal(asn.endAutnum, 15169);
+    await read("asn_whois", { asn: 15169 });
+    assert.equal(requests, 3);
 });
 
 test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits without retrying", async (t) => {
@@ -333,6 +357,8 @@ test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits wi
         ["domain_whois", { domain: "https://example.com/path" }],
         ["ip_whois", { ip: "010.0.0.1" }],
         ["ip_whois", { ip: "fe80::1%en0" }],
+        ["asn_whois", { asn: "AS0" }],
+        ["asn_whois", { asn: "AS4294967296" }],
     ]) {
         assert.equal(
             (await c.callTool({ name, arguments: args })).isError,
@@ -381,4 +407,34 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
             true,
         );
     }
+});
+test("inspect_mac parses and normalizes MAC addresses across formats", async (t) => {
+    const client = await clientFor(t);
+    const unicast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "00:1A:2B:3C:4D:5E" },
+    });
+    const uResult = JSON.parse(unicast.content[0].text);
+    assert.equal(uResult.valid, true);
+    assert.equal(uResult.formats.colon, "00:1a:2b:3c:4d:5e");
+    assert.equal(uResult.formats.hyphen, "00-1a-2b-3c-4d-5e");
+    assert.equal(uResult.formats.cisco_dot, "001a.2b3c.4d5e");
+    assert.equal(uResult.properties.is_unicast, true);
+    assert.equal(uResult.properties.is_multicast, false);
+    assert.equal(uResult.properties.is_universally_administered, true);
+
+    const multicast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "01-80-c2-00-00-00" },
+    });
+    const mResult = JSON.parse(multicast.content[0].text);
+    assert.equal(mResult.properties.is_multicast, true);
+    assert.equal(mResult.properties.is_unicast, false);
+
+    const broadcast = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "ffff.ffff.ffff" },
+    });
+    const bResult = JSON.parse(broadcast.content[0].text);
+    assert.equal(bResult.properties.is_broadcast, true);
 });

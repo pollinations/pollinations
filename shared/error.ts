@@ -519,7 +519,7 @@ export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
         401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
-        402: "Insufficient pollen balance or API key budget exhausted.",
+        402: "Balance too low or API key budget exhausted.",
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
@@ -539,18 +539,36 @@ export function getDefaultErrorMessage(status: number): string {
     return messages[status] || "UNKNOWN_ERROR";
 }
 
+/**
+ * Reports a 5xx that never reached `handleError`, such as one Better Auth
+ * answered itself. Its request inputs stay out: auth requests carry OAuth
+ * codes and client secrets.
+ */
+export async function reportServerError<TEnv extends ErrorHandlerEnv>(
+    c: Context<TEnv>,
+    error: Error,
+    status: number,
+): Promise<void> {
+    const timestamp = new Date().toISOString();
+    await emitServerError(c, error, status, timestamp, getLogger(["hono"]), {
+        withInputs: false,
+    });
+}
+
 async function emitServerError<TEnv extends ErrorHandlerEnv>(
     c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
     log: Logger,
+    { withInputs = true } = {},
 ): Promise<void> {
     const envelope = await createServerErrorEnvelope(
         c,
         error,
         status,
         timestamp,
+        withInputs,
     );
     log.error(
         "server_error route={routePath} status={status} class={errorClass}",
@@ -575,6 +593,7 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
     error: Error,
     status: number,
     timestamp: string,
+    withInputs: boolean,
 ): Promise<ServerErrorEnvelope> {
     const vars = c.var as Partial<{
         auth: {
@@ -632,7 +651,7 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError ? error.upstreamHeaders : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
-        requestInputs: await collectRequestInputs(c),
+        requestInputs: withInputs ? await collectRequestInputs(c) : undefined,
         userId: vars.auth?.user?.id,
         userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,

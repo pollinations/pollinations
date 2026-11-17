@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveCredentials, setKeyOverride } from "../lib/config.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
-import { authCommand, loginWithDeviceFlow } from "./auth.js";
+import { authCommand, loginWithDeviceFlow, showAuthStatus } from "./auth.js";
 
 vi.mock("../lib/config.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../lib/config.js")>();
@@ -145,6 +145,33 @@ describe("auth status", () => {
         });
     });
 
+    it("prints the wallet and key budget in dollars for people", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("human");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            Response.json(
+                url.includes("/account/balance")
+                    ? {
+                          balance: 4.4691,
+                          accountBalance: { total: 2.5, tier: 0, paid: 2.5 },
+                      }
+                    : { githubUsername: "test" },
+            ),
+        );
+
+        await authCommand.parseAsync(["status"], { from: "user" });
+
+        const printed = stdout.mock.calls
+            .map((call) => String(call[0]))
+            .join("");
+        expect(printed).toContain("balance: $2.50");
+        expect(printed).toContain("key_budget: $4.47");
+        expect(printed).not.toContain("pollen");
+    });
+
     it("shows the profile name when no GitHub account is linked", async () => {
         setKeyOverride("sk_test");
         setOutputMode("json");
@@ -218,4 +245,20 @@ describe("auth login with a key", () => {
         expect(fetch).not.toHaveBeenCalled();
         expect(saveCredentials).not.toHaveBeenCalled();
     });
+});
+
+it("reports a revoked stored key as unauthenticated", async () => {
+    setKeyOverride("sk_revoked");
+    setOutputMode("json");
+    vi.stubGlobal("fetch", async () =>
+        Response.json({ error: "Invalid API key" }, { status: 401 }),
+    );
+    const stdout = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    await showAuthStatus();
+    expect(
+        JSON.parse(stdout.mock.calls.map(([text]) => String(text)).join("")),
+    ).toMatchObject({ authenticated: false });
+    expect(saveCredentials).not.toHaveBeenCalled();
 });

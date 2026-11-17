@@ -69,6 +69,11 @@ Collection steps:
   amount. Preserve the provider's unrounded API total separately; do not rebuild
   prices or allocate a rounding residual. Record what is exact and flag the
   rest; do not fill it from Pollen.
+  Use only completed weekly buckets: an incomplete bucket can carry a future
+  end date. Refresh YTD evidence because later-arriving product lines can be
+  absent from an older export. Retain `response_api_model` and other raw
+  dimensions; exact invoice quantities can identify a legacy-family aggregate,
+  but tool lines without a model must remain unattributed.
 - No public usage or billing API exists; the console routes are limited to
   `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
 
@@ -104,6 +109,8 @@ Known traps:
   invoice series; do not compare the current-group YTD card with January–July
   invoices as though they had the same scope.
 - Timestamp each balance check and record auto-reload settings in its evidence.
+- Perplexity Computer renewal and expiry emails concern a separate product;
+  do not apply those terms to the API group's credit pool.
 
 Official reference:
 

@@ -733,24 +733,180 @@ describe("Account Key Management API", () => {
             );
             expect(extend.status).toBe(403);
 
-            // An unlimited key is within a budgeted one only once it gets a
-            // budget, taken from the caller's.
+            // An unlimited key isn't within a budgeted one, which can't cut
+            // it down to its own limits either.
             const unlimited = await createApiKeyViaApi(accountToken, {
                 name: "unlimited",
             });
             const url = `/keys/${unlimited.id}`;
-            expect(
-                (await call(caller.key, url, "PATCH", { expiresAt })).status,
-            ).toBe(403);
-            expect(
-                (
-                    await call(caller.key, url, "PATCH", {
-                        expiresAt,
-                        pollenBudget: 1,
+            for (const body of [
+                { expiresAt },
+                { expiresAt, pollenBudget: 1 },
+            ]) {
+                expect(
+                    (await call(caller.key, url, "PATCH", body)).status,
+                ).toBe(403);
+            }
+            expect(await budgetOf(caller.key)).toBe(5);
+            expect(await budgetOf(unlimited.key)).toBeNull();
+        });
+
+        test("a key can only edit or revoke keys already within its own limits", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "limited",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    pollenBudget: 5,
+                    expiresIn: 3600,
+                })
+            ).json();
+            const limits = {
+                accountPermissions: ["keys"],
+                allowedModels: ["text"],
+                pollenBudget: 1,
+                expiresIn: 60,
+            };
+
+            for (const stronger of [
+                {},
+                { ...limits, accountPermissions: ["keys", "profile"] },
+                { ...limits, allowedModels: ["text", "image"] },
+                { ...limits, pollenBudget: null },
+                { ...limits, expiresIn: 7200 },
+            ]) {
+                const target = await (
+                    await call(accountToken, "/keys", "POST", {
+                        name: "stronger",
+                        ...stronger,
                     })
-                ).status,
+                ).json();
+                const url = `/keys/${target.id}`;
+                for (const [method, body] of [
+                    ["PATCH", { name: "renamed" }],
+                    ["PATCH", { pollenBudget: 0 }],
+                    ["DELETE"],
+                ] as const) {
+                    const refused = await call(caller.key, url, method, body);
+                    expect(refused.status).toBe(403);
+                    // The owner fixes it on that key's page.
+                    expect(
+                        new URL((await refused.json()).error.fixUrl),
+                    ).toMatchObject({
+                        pathname: "/edit-key",
+                        search: `?id=${target.id}`,
+                    });
+                }
+                // The key still works, and its owner can still revoke it.
+                expect((await call(target.key, "/key", "GET")).status).toBe(
+                    200,
+                );
+                expect((await call(accountToken, url, "DELETE")).status).toBe(
+                    200,
+                );
+            }
+
+            // A key within the caller's limits, such as one it created.
+            const child = await (
+                await call(caller.key, "/keys", "POST", {
+                    name: "child",
+                    pollenBudget: 1,
+                })
+            ).json();
+            const url = `/keys/${child.id}`;
+            expect(
+                (await call(caller.key, url, "PATCH", { name: "renamed" }))
+                    .status,
             ).toBe(200);
-            expect(await budgetOf(caller.key)).toBe(4);
+            expect((await call(caller.key, url, "DELETE")).status).toBe(200);
+            expect((await call(child.key, "/key", "GET")).status).toBe(401);
+        });
+
+        test("a Quest Pollen only key can't revoke a key that spends paid Pollen", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "quest-only",
+                accountPermissions: ["keys"],
+                questPollenOnly: true,
+            });
+            const paid = await createApiKeyViaApi(accountToken, {
+                name: "paid",
+            });
+
+            const response = await call(
+                caller.key,
+                `/keys/${paid.id}`,
+                "DELETE",
+            );
+            expect(response.status).toBe(403);
+        });
+
+        test("a budgeted key can revoke an app key", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "five",
+                accountPermissions: ["keys"],
+                pollenBudget: 5,
+            });
+            const app = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "app",
+                    type: "publishable",
+                    redirectUris: ["https://app.example/callback"],
+                })
+            ).json();
+
+            const response = await call(
+                caller.key,
+                `/keys/${app.id}`,
+                "DELETE",
+            );
+            expect(response.status).toBe(200);
+        });
+
+        test("only the account owner changes an app key's redirect URLs", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "unlimited-admin",
+                accountPermissions: ["keys"],
+            });
+            const app = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "app",
+                    type: "publishable",
+                    redirectUris: ["https://app.example/callback"],
+                })
+            ).json();
+            const url = `/keys/${app.id}`;
+            const redirectUris = ["https://elsewhere.example/callback"];
+
+            const byKey = await call(caller.key, url, "PATCH", {
+                redirectUris,
+            });
+            expect(byKey.status).toBe(403);
+            expect((await byKey.json()).error.fixUrl).toMatch(
+                new RegExp(`/edit-key\\?id=${app.id}$`),
+            );
+            const renamed = await call(caller.key, url, "PATCH", {
+                name: "renamed",
+            });
+            expect(renamed.status).toBe(200);
+            expect((await renamed.json()).metadata.redirectUris).toEqual([
+                "https://app.example/callback",
+            ]);
+
+            const byOwner = await call(accountToken, url, "PATCH", {
+                redirectUris,
+            });
+            expect(byOwner.status).toBe(200);
+            expect((await byOwner.json()).metadata.redirectUris).toEqual(
+                redirectUris,
+            );
         });
 
         test("a key can't renew a budget beyond its allowance", async ({
@@ -869,23 +1025,21 @@ describe("Account Key Management API", () => {
                     ),
                 );
 
-            // A key without budget and an unlimited key.
-            for (const pollenBudget of [0, null]) {
-                const target = await (
-                    await call(accountToken, "/keys", "POST", {
-                        name: "target",
-                        pollenBudget,
-                    })
-                ).json();
-                const responses = await patchConcurrently(target.id, {
-                    pollenBudget: 10,
-                });
-                for (const response of responses) {
-                    expect(response.status).toBe(200);
-                }
-                expect(await budgetOf(target.key)).toBe(10);
+            // A key without budget.
+            const target = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "target",
+                    pollenBudget: 0,
+                })
+            ).json();
+            const responses = await patchConcurrently(target.id, {
+                pollenBudget: 10,
+            });
+            for (const response of responses) {
+                expect(response.status).toBe(200);
             }
-            expect(await budgetOf(caller.key)).toBe(180);
+            expect(await budgetOf(target.key)).toBe(10);
+            expect(await budgetOf(caller.key)).toBe(190);
 
             // Renewing to the same expiry pays for the remaining budget once.
             const renewed = await (
@@ -899,7 +1053,7 @@ describe("Account Key Management API", () => {
                 Math.floor(Date.now() / 1000) * 1000 + 1800_000,
             ).toISOString();
             await patchConcurrently(renewed.id, { expiresAt });
-            expect(await budgetOf(caller.key)).toBe(175);
+            expect(await budgetOf(caller.key)).toBe(185);
         });
 
         test("a budget update doesn't refill what the key loses meanwhile", async ({

@@ -331,8 +331,8 @@ function CommunityDetailRow({
                 {copyLabel && copyValue && (
                     <CopyButton
                         value={copyValue}
-                        tooltip={copyLabel}
-                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                        aria-label={copyLabel}
+                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-fill-wash hover:text-theme-text-strong"
                     >
                         {(copied: boolean) => (
                             <CopyStateIcon

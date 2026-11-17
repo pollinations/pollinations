@@ -58,6 +58,40 @@ function entityName(data, role) {
 }
 export const rdapTools = [
     [
+        "asn_whois",
+        "Read authoritative public RDAP registration data for an Autonomous System number. Accepts asplain or AS-prefixed input and returns its registered range, organization, country, status and dates.",
+        {
+            asn: z.union([
+                z.number().int().min(1).max(4294967295),
+                z
+                    .string()
+                    .trim()
+                    .regex(/^(?:AS)?[1-9]\d{0,9}$/i)
+                    .refine(
+                        (value) =>
+                            Number(value.replace(/^AS/i, "")) <= 4294967295,
+                        "ASN must be at most 4294967295",
+                    ),
+            ]),
+        },
+        async ({ asn }) => {
+            const number = Number(String(asn).replace(/^AS/i, ""));
+            const d = await lookup("autnum", number);
+            return {
+                asn: number,
+                handle: d.handle ?? null,
+                name: d.name ?? null,
+                organization: entityName(d, "registrant"),
+                country: d.country ?? null,
+                type: d.type ?? null,
+                startAutnum: d.startAutnum ?? null,
+                endAutnum: d.endAutnum ?? null,
+                events: events(d),
+                status: d.status ?? [],
+            };
+        },
+    ],
+    [
         "domain_whois",
         "Read authoritative public RDAP domain registration dates, registrar, nameservers and status. Results may be cached for ten minutes; registries can rate-limit requests.",
         { domain: z.string().trim().min(1).max(253) },

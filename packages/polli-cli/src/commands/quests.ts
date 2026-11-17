@@ -70,10 +70,15 @@ function colorStatus(status: QuestStatus): string {
     }
 }
 
+// The icon says which balance a reward lands in; the amount is dollars.
+const bucketIcon = (quest: QuestEntry) =>
+    (quest.reward?.balanceBucket ?? quest.balanceBucket) === "pack"
+        ? "💳"
+        : "🌱";
+
 function rewardLabel(quest: QuestEntry): string {
     const amount = quest.reward?.pollenAmount ?? quest.rewardAmount;
-    const bucket = quest.reward?.balanceBucket ?? quest.balanceBucket;
-    return `${amount} ${bucket}`;
+    return `${bucketIcon(quest)} $${amount}`;
 }
 
 function filterQuests(
@@ -137,8 +142,10 @@ export const questsCommand = new Command("quests")
                             sum + (q.reward?.pollenAmount ?? q.rewardAmount),
                         0,
                     );
+                    const icons = new Set(claimable.map(bucketIcon));
+                    const icon = icons.size === 1 ? `${[...icons][0]} ` : "";
                     printInfo(
-                        `${claimable.length} reward(s) ready to claim (${total} pollen) — claim them at ${ENTER_URL}/quests`,
+                        `${claimable.length} reward(s) ready to claim (${icon}$${Number(total.toFixed(4))}) — claim them at ${ENTER_URL}/quests`,
                     );
                 }
             }

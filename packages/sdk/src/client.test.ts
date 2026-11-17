@@ -476,6 +476,22 @@ describe("Pollinations media upload", () => {
 });
 
 describe("audio inputs", () => {
+    it("sends a reference video in the speech body", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { contentType: "audio/mpeg" }),
+        );
+        const referenceVideo = "https://media.pollinations.ai/clip.mp4";
+        await newClient().audioSpeech("footsteps", {
+            model: "sfx-model",
+            referenceVideo,
+        });
+        expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+            input: "footsteps",
+            model: "sfx-model",
+            reference_video: referenceVideo,
+        });
+    });
+
     it("sends reference audio, duration and seed in the speech body", async () => {
         fetchMock.mockResolvedValue(
             makeResponse(null, { contentType: "audio/mpeg" }),
@@ -2486,5 +2502,31 @@ describe("refusal-only completions", () => {
         for await (const chunk of newClient().textStream("hello"))
             chunks.push(chunk);
         expect(chunks).toEqual([refusal]);
+    });
+});
+
+describe("buffered chat completion errors", () => {
+    it("rejects partial completions with finish_reason=error", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                choices: [
+                    {
+                        message: {
+                            role: "assistant",
+                            content: "Partial answer",
+                        },
+                        finish_reason: "error",
+                    },
+                ],
+            }),
+        );
+        const client = newClient();
+        await expect(client.text("Write a report")).rejects.toMatchObject({
+            code: "STREAM_ERROR",
+            status: 502,
+        });
+        await expect(
+            client.chat([{ role: "user", content: "Write a report" }]),
+        ).rejects.toMatchObject({ code: "STREAM_ERROR", status: 502 });
     });
 });

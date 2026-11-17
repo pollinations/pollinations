@@ -19,6 +19,9 @@ export function appOrigin(
     }
 }
 
+/** A Pollen amount in dollars (1 Pollen is worth $1), never below zero. */
+const usd = (pollen: number) => `$${Math.max(0, pollen).toFixed(4)}`;
+
 /**
  * Refuses a charge the key's budget or the account's balance can't cover.
  * The budget comes first: topping up the wallet doesn't raise it.
@@ -28,14 +31,21 @@ export async function requireFunds(
     cost: number,
     loadBalance: () => Promise<UserBalance>,
     paidOnly = false,
+    free = false,
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
-    const charge = `This request costs ~${cost.toFixed(4)} pollen`;
+    // A cost that would print as $0.0000 says nothing: name the bound instead.
+    const charge = `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
-    if (typeof budget === "number" && budget < Math.max(0, cost)) {
+    // A cost of 0 can mean "not known until billed" (no price history, or a
+    // receipt), so a key with nothing left only makes calls known to be free.
+    if (
+        typeof budget === "number" &&
+        (budget < Math.max(0, cost) || (budget <= 0 && !free))
+    ) {
         throw keyBudgetExhausted(
             c,
-            `API key budget too low. ${charge}, but this key has ${Math.max(0, budget).toFixed(4)}.`,
+            `API key budget too low. ${charge}, but this key has ${usd(budget)} left.`,
         );
     }
     const balance = await loadBalance();
@@ -52,7 +62,7 @@ export async function requireFunds(
         });
         throw new PaymentRequiredError(
             "QUEST_POLLEN_RESTRICTED",
-            `We couldn't verify your account, so Quest pollen is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
+            `We couldn't verify your account, so your Quest balance is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
             fixUrl,
             true,
         );
@@ -63,12 +73,12 @@ export async function requireFunds(
             id: apiKey?.id,
             ref: "agent_quest_pollen_only",
         });
-        const allowPaid = `allow paid Pollen for this key at ${fixUrl}`;
+        const allowPaid = `allow the paid balance for this key at ${fixUrl}`;
         throw new PaymentRequiredError(
             "QUEST_POLLEN_ONLY",
             paidOnly
-                ? `This model needs paid Pollen, but this API key only spends Quest Pollen. To use it, ${allowPaid}.`
-                : `Not enough Quest Pollen. ${charge}, but you have ${Math.max(0, balance.tierBalance).toFixed(4)} Quest Pollen, and this API key only spends Quest Pollen. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
+                ? `This model needs the paid balance, but this API key only spends the Quest balance. To use it, ${allowPaid}.`
+                : `Not enough Quest balance. ${charge}, but you have ${usd(balance.tierBalance)} of Quest balance, and this API key only spends the Quest balance. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
             fixUrl,
             paidOnly,
         );
@@ -79,7 +89,9 @@ export async function requireFunds(
     const fixUrl = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
-        `Insufficient balance. ${charge}, but your available ${paidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
+        paidOnly
+            ? `This model requires the paid balance, so the Quest balance can't cover it. ${charge}, but your available paid balance is ${usd(available)}. Top up at ${fixUrl}.`
+            : `Insufficient balance. ${charge}, but your available balance is ${usd(available)}. Top up at ${fixUrl}.`,
         fixUrl,
         paidOnly,
     );

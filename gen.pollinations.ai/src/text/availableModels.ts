@@ -7,6 +7,7 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
+    createOpenRouterGoogleSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
@@ -370,6 +371,30 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.2-astra",
+        config: portkeyConfig["gpt-6.2-astra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-astra:aws",
+        config: portkeyConfig["gpt-6.2-astra-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol",
+        config: portkeyConfig["gpt-6.2-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol:aws",
+        config: portkeyConfig["gpt-6.2-sol-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
@@ -439,13 +464,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-2.4t-a95b",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
-        transform: fireworksThinkingWithoutCacheControl,
+        config: portkeyConfig["qwen/qwen3.8-2.4t-a95b"],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
-        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
-        transform: fireworksThinking,
+        name: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
+        config: portkeyConfig[
+            "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8"
+        ],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
         name: "qwen/qwen3.8-27b",
@@ -569,15 +596,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig["DeepSeek-V4.1-Flash-1017"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:fireworks",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4p1-flash-1017"
         ],
         transform: fireworksThinkingWithoutCacheControl,
-    },
-    {
-        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
-        transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -715,6 +742,16 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-fable-5.2",
+        config: portkeyConfig["anthropic/claude-fable-5.2"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.2:anthropic",
+        config: portkeyConfig["anthropic/claude-fable-5.2:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
@@ -845,6 +882,25 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon",
+        config: portkeyConfig["google/gemini-4-carbon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Carbon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-4-carbon:openrouter:ai-studio"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createOpenRouterGoogleSearchTransform("exa"),
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -1010,6 +1066,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1.2",
+        config: portkeyConfig["liquid/d1.2"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1:openrouter",
         config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,
@@ -1030,6 +1091,21 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna-decisions:openrouter",
         config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1",
+        config: portkeyConfig["microsoft-decision-1.1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:openrouter"],
         useSystemOneApi: true,
     },
     {
@@ -1137,27 +1213,23 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
-        ],
+        config: portkeyConfig["azure/Nemotron-3-Ultra"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "nvidia/nemotron-3.5-lightning",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
-        ],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
-        transform: fireworksThinking,
+        name: "nvidia/nemotron-3.5-lightning",
+        config: portkeyConfig["azure/Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3.5-lightning:deepinfra",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3.5-super-vl",
@@ -1334,6 +1406,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["moonshotai/kimi-k3.1-pro"],
     },
     {
+        name: "moonshotai/kimi-k3.1-pro:vercel",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro:vercel"],
+    },
+    {
         name: "meta/muse-spark-1.3",
         config: portkeyConfig["meta/muse-spark-1.3"],
     },
@@ -1399,18 +1475,9 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:mistral",
-        config: portkeyConfig["mistral-large-direct"],
-        transform: pipe(stripReasoning, (messages, options) => {
-            const { seed, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(seed === undefined ? {} : { random_seed: seed }),
-                },
-            };
-        }),
+        name: "mistralai/mistral-large-3:aws",
+        config: portkeyConfig["mistral-large-3-bedrock"],
+        transform: stripReasoning,
     },
     {
         name: "qwen/qwen3guard-gen-8b",

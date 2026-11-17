@@ -34,7 +34,7 @@ describe("canonical categories", () => {
             "compute",
         );
         expect(transactionCategory(transaction("github", "cloud"))).toBe(
-            "development",
+            "operations",
         );
         expect(transactionCategory(transaction("lambda", "cloud"))).toBe(
             "compute",
@@ -49,10 +49,10 @@ describe("canonical categories", () => {
             "operations",
         );
         expect(transactionCategory(transaction("wispr", "saas"))).toBe(
-            "development",
+            "operations",
         );
         expect(transactionCategory(transaction("typeless", "saas"))).toBe(
-            "development",
+            "operations",
         );
         expect(runwayLineItem("operations", "tele2")).toBe("Telecom");
     });
@@ -62,7 +62,7 @@ describe("canonical categories", () => {
             transactionCategory(
                 transaction("openai", "saas", "OpenAI - ChatGPT Subscription"),
             ),
-        ).toBe("development");
+        ).toBe("operations");
         expect(
             transactionCategory(
                 transaction("openai", "saas", "OpenAI API usage"),
@@ -76,7 +76,7 @@ describe("canonical categories", () => {
                     "Anthropic Claude Subscription",
                 ),
             ),
-        ).toBe("development");
+        ).toBe("operations");
         expect(
             transactionCategory(
                 transaction(
@@ -85,7 +85,7 @@ describe("canonical categories", () => {
                     "Card transaction issued by Anthropic* Claude Sub ANTHROPIC.COM",
                 ),
             ),
-        ).toBe("development");
+        ).toBe("operations");
         expect(
             transactionCategory(
                 transaction("anthropic", "saas", "Anthropic API"),
@@ -250,7 +250,7 @@ describe("canonical categories", () => {
         };
 
         expect(forecastCategory(fact)).toBe("balance_sheet");
-        expect(forecastCategory(openAiFact)).toBe("development");
+        expect(forecastCategory(openAiFact)).toBe("operations");
     });
 
     it("does not infer a forecast category from vendor or evidence", () => {
@@ -271,7 +271,7 @@ describe("canonical categories", () => {
     });
 
     it("labels only the canonical vocabulary", () => {
-        expect(categoryLabel("development")).toBe("Development");
+        expect(categoryLabel("development")).toBe("Operations");
         expect(categoryLabel("uncategorized")).toBe("Uncategorized");
     });
 });

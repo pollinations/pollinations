@@ -27,6 +27,7 @@ const SKIPPED_CONFIG_KEYS = new Set([
     "defaultOptions",
     "requiresBase64ImageUrls",
     "supportsMaxCompletionTokens",
+    "supportsReasoningHistory",
     "supportsStreamOptions",
 ]);
 

@@ -30,7 +30,11 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { permissionRequired } from "@shared/http/permission-required-error.ts";
+import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
+import {
+    PermissionRequiredError,
+    permissionRequired,
+} from "@shared/http/permission-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     keyAllowsModelPermissions,
@@ -145,13 +149,13 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+            "Budget cap in US dollars. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
     questPollenOnly: z
         .boolean()
         .optional()
         .describe(
-            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
+            "Spend only the Quest balance, never the paid balance. Requests stop when the Quest balance runs out. Keys created by a Quest-balance-only key are always Quest balance only",
         ),
     accountPermissions: z
         .array(z.enum(CONSENT_PERMISSIONS))
@@ -270,7 +274,7 @@ async function grantFromCallerKey(
     if (typeof callerKey.pollenBalance !== "number") return 0;
     if (grant.pollenBudget === null) {
         deny(
-            "An API key with a pollen budget can only grant a budget, taken from its own",
+            "An API key with a budget can only grant a budget, taken from its own",
         );
     }
     if (budgetToReserve <= 0) return 0;
@@ -292,6 +296,60 @@ function parsePermissions(
     } catch {
         return null;
     }
+}
+
+/**
+ * A key can only edit or revoke keys that are already within its own limits,
+ * so it can't cut down or remove a key that can do more than it can. Budgets
+ * aren't compared by amount: a key with a budget can't manage a key without
+ * one, but still manages the keys it funded after spending its own down. The
+ * account owner (no key) can manage every key.
+ */
+async function requireKeyWithinCallerKey(
+    c: RefusalContext & { env: { DB: D1Database } },
+    callerKey: AuthenticatedApiKey | undefined,
+    key: typeof apikeyTable.$inferSelect,
+): Promise<void> {
+    if (!callerKey) return;
+    const db = c.env.DB;
+    const permissions = parsePermissions(key.permissions);
+    const within =
+        !(callerKey.questPollenOnly && !key.questPollenOnly) &&
+        (await grantFromCallerKey(
+            db,
+            callerKey,
+            {
+                accountPermissions: permissions?.account ?? null,
+                allowedModels: permissions?.models ?? null,
+                expiresAt: key.expiresAt,
+                // Publishable keys never have a budget.
+                pollenBudget: key.prefix === "pk" ? 0 : key.pollenBalance,
+            },
+            0,
+        ).then(
+            () => true,
+            (error) => {
+                if (error instanceof HTTPException && error.status === 403)
+                    return false;
+                throw error;
+            },
+        ));
+    if (!within) {
+        throw signInToManage(
+            c,
+            key.id,
+            "An API key can only edit or revoke keys within its own account permissions, models, expiry and budget.",
+        );
+    }
+}
+
+/** A refusal only the signed-in owner can fix, on that key's own page. */
+function signInToManage(c: RefusalContext, id: string, reason: string) {
+    const fixUrl = fixLink(c, "/edit-key", { id });
+    return new PermissionRequiredError(
+        `${reason} Sign in to manage this key at ${fixUrl}`,
+        fixUrl,
+    );
 }
 
 // The JSON shape of a key in the list and update responses; never the hash.
@@ -669,7 +727,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest balance, 'pack' = paid balance",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
@@ -762,7 +820,7 @@ const developerEarningsRowSchema = z.object({
         .describe("Developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .describe("Developer credit earned from Quest Pollen spend"),
+        .describe("Developer credit earned from Quest balance spend"),
     cost_usd: z
         .number()
         .describe(
@@ -952,23 +1010,23 @@ const accountBalanceSchema = z.object({
     total: z
         .number()
         .describe(
-            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+            "Quest balance + paid balance the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
         ),
     tier: z
         .number()
         .describe(
-            "Spendable Quest pollen, never below 0; zero while restricted",
+            "Spendable Quest balance, never below 0; zero while restricted",
         ),
-    paid: z.number().describe("Paid Pollen remaining, never below 0"),
+    paid: z.number().describe("Paid balance remaining, never below 0"),
     heldTier: z
         .number()
         .optional()
-        .describe("Locked Quest pollen, excluded from total and tier"),
+        .describe("Locked Quest balance, excluded from total and tier"),
     questPollenRestricted: z
         .boolean()
         .optional()
         .describe(
-            "Whether Quest pollen spending is locked until a purchase or account review",
+            "Whether Quest balance spending is locked until a purchase or account review",
         ),
 });
 
@@ -976,7 +1034,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+            "Balance remaining for this caller, in US dollars. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest balance + paid balance).",
         ),
     accountBalance: accountBalanceSchema
         .optional()
@@ -1069,7 +1127,7 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z
@@ -1428,10 +1486,10 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
+                "Returns the balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
             responses: {
                 200: {
-                    description: "Pollen balance",
+                    description: "Balance",
                     content: {
                         "application/json": {
                             schema: resolver(balanceResponseSchema),
@@ -1913,7 +1971,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it. A key created with an API key stays within the account permissions, models and expiry of that key, and inherits its models and expiry when they are omitted. If the calling key has a pollen budget, the new key needs a `pollenBudget`, which is deducted from the budget of the calling key.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it. A key created with an API key stays within the account permissions, models and expiry of that key, and inherits its models and expiry when they are omitted. If the calling key has a budget, the new key needs a `pollenBudget`, which is deducted from the budget of the calling key.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -2043,7 +2101,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, can only edit keys that are within its own account permissions, models, expiry and budget and stay within them, and can't change an app key's `redirectUris`. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
@@ -2105,6 +2163,15 @@ export const accountRoutes = new Hono<Env>()
             for (const uri of redirectUris ?? []) {
                 validateRedirectUriFormat(uri);
             }
+            // Redirect URLs decide where an app's sign-ins send users, so
+            // only the account owner changes them once the app key exists.
+            if (callerKey && redirectUris !== undefined) {
+                throw signInToManage(
+                    c,
+                    id,
+                    "An API key can't change an app key's redirect URLs.",
+                );
+            }
             // As on creation: a key can't grant spending it doesn't have.
             if (
                 callerKey?.questPollenOnly &&
@@ -2112,7 +2179,7 @@ export const accountRoutes = new Hono<Env>()
             ) {
                 throw new HTTPException(403, {
                     message:
-                        "A Quest Pollen only key can only edit Quest Pollen only keys",
+                        "A Quest-balance-only key can only edit Quest-balance-only keys",
                 });
             }
 
@@ -2149,6 +2216,7 @@ export const accountRoutes = new Hono<Env>()
             // spending changed them, the payment goes back and the update
             // starts over from the key as it is now.
             for (let attempt = 1; ; attempt++) {
+                await requireKeyWithinCallerKey(c, callerKey, key);
                 // Raising a budget takes the difference; an unlimited key
                 // counts as having none.
                 const budgetChange =
@@ -2293,7 +2361,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Revoke API Key",
             description:
-                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. Cannot revoke the key used to authenticate the request.",
+                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. An API key can't revoke itself, and can only revoke keys within its own account permissions, models, expiry and budget.",
             responses: {
                 200: { description: "Key revoked" },
                 400: { description: "Cannot revoke self" },
@@ -2333,6 +2401,7 @@ export const accountRoutes = new Hono<Env>()
             if (!key) {
                 throw new HTTPException(404, { message: "API key not found" });
             }
+            await requireKeyWithinCallerKey(c, callerKey, key);
 
             await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
 
@@ -2404,12 +2473,12 @@ export const accountRoutes = new Hono<Env>()
                                         .number()
                                         .nullable()
                                         .describe(
-                                            "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                            "Remaining budget for this key in US dollars, null = unlimited (uses user balance)",
                                         ),
                                     questPollenOnly: z
                                         .boolean()
                                         .describe(
-                                            "Whether this key spends only Quest Pollen, never paid Pollen",
+                                            "Whether this key spends only the Quest balance, never the paid balance",
                                         ),
                                     userId: z
                                         .string()

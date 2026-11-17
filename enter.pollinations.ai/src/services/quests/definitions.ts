@@ -50,6 +50,8 @@ export type QuestDefinition = {
     balanceBucket: Bucket;
     /** Optional measurable target for quests with meaningful partial progress. */
     goal?: QuestGoal;
+    /** Earned again and again (one reward each time); its card stays open. */
+    repeatable?: boolean;
     /**
      * Optional static link for the quest (e.g. the GitHub quest board, the app
      * directory). Snapshotted onto each reward by toReward and shown on the

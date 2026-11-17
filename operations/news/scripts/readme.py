@@ -4,7 +4,7 @@
     python readme.py INDEX README
 
 INDEX is the news branch's data/index.json. The list is the 10 newest daily items, each with a
-category badge, its title linked where the item links, its date, and its text below without
+title linked where the item links, its date, and its text below without
 the closing link the title already carries. Apps are left out: the README's Recent Apps table,
 built from the app catalog, already lists them.
 """
@@ -19,14 +19,13 @@ ITEMS = 10
 LINK = re.compile(r"\[[^\]]+\]\(([^)\s]+)\)")
 CLOSING_LINK = re.compile(r"\s*\[[^\]]+\]\([^)\s]+\)\.?$")
 START, END = "<!-- news:start -->", "<!-- news:end -->"
-BADGES = {"model": ("Model", "8b5cf6"), "api": ("API", "0ea5e9"), "product": ("Feature", "f59e0b")}
-BADGE = '<img src="https://img.shields.io/badge/{0}-{1}?style=flat-square" alt="{0}" align="top">'
+NEWS_KINDS = {"model", "api", "product"}
 
 
 def news_lines(index: dict) -> list[str]:
     lines = []
-    for item in [item for item in index["daily"] if item.get("kind") in BADGES][:ITEMS]:  # newest first
-        title = f"{BADGE.format(*BADGES[item['kind']])} **{item['title']}**"
+    for item in [item for item in index["daily"] if item.get("kind") in NEWS_KINDS][:ITEMS]:  # newest first
+        title = f"**{item['title']}**"
         link = LINK.search(item["text"])
         day = date.fromisoformat(item["date"])
         text = CLOSING_LINK.sub("", item["text"])

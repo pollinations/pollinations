@@ -1694,3 +1694,106 @@ describe("POST /v1/messages", () => {
         },
     );
 });
+
+it.each([false, true])(
+    "preserves max_tokens with a complete and a truncated call (stream=%s)",
+    async (stream) => {
+        const calls = [
+            {
+                id: "complete",
+                type: "function" as const,
+                function: { name: "Write", arguments: '{"path":"a"}' },
+            },
+            {
+                id: "cut",
+                type: "function" as const,
+                function: { name: "Write", arguments: '{"path":' },
+            },
+        ];
+        if (!stream) {
+            const result = chatToMessagesResponse(
+                {
+                    id: "mixed",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: "length",
+                            message: {
+                                role: "assistant",
+                                content: null,
+                                tool_calls: calls,
+                            },
+                        },
+                    ],
+                    usage,
+                },
+                model,
+            );
+            expect(result.content).toEqual([
+                {
+                    type: "tool_use",
+                    id: "complete",
+                    name: "Write",
+                    input: { path: "a" },
+                },
+            ]);
+            expect(result.stop_reason).toBe("max_tokens");
+        } else {
+            const events = await translateStream([
+                {
+                    choices: [
+                        {
+                            delta: {
+                                tool_calls: calls.map((call, index) => ({
+                                    ...call,
+                                    index,
+                                })),
+                            },
+                        },
+                    ],
+                },
+                { choices: [{ delta: {}, finish_reason: "length" }], usage },
+                "[DONE]",
+            ]);
+            expect(
+                events.filter((event) => event.type === "content_block_start"),
+            ).toMatchObject([
+                { content_block: { type: "tool_use", id: "complete" } },
+            ]);
+            expect(
+                events.find((event) => event.type === "message_delta"),
+            ).toMatchObject({ delta: { stop_reason: "max_tokens" } });
+        }
+    },
+);
+
+it("does not invent empty arguments when length stops before tool input", () => {
+    const result = chatToMessagesResponse(
+        {
+            id: "empty",
+            object: "chat.completion",
+            created: 1,
+            choices: [
+                {
+                    finish_reason: "length",
+                    message: {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: "cut",
+                                type: "function",
+                                function: { name: "Write", arguments: "" },
+                            },
+                        ],
+                    },
+                },
+            ],
+            usage,
+        },
+        model,
+    );
+    expect(result.content).toEqual([]);
+    expect(result.stop_reason).toBe("max_tokens");
+});

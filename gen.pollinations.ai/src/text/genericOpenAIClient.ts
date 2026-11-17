@@ -620,7 +620,10 @@ export async function genericOpenAIClient(
                 }
                 // Some providers report "stop" even when they returned a tool
                 // call. Keep the compatibility fix without dropping choices.
-                if (formattedChoice.message?.tool_calls?.length) {
+                if (
+                    formattedChoice.finish_reason === "stop" &&
+                    formattedChoice.message?.tool_calls?.length
+                ) {
                     formattedChoice.finish_reason = "tool_calls";
                 }
                 if (

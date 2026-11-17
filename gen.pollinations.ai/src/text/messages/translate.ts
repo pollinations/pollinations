@@ -387,8 +387,8 @@ export function stopReason(
     finishReason: string | null | undefined,
     hasToolUse: boolean,
 ): string {
-    if (hasToolUse) return "tool_use";
     if (finishReason === "length") return "max_tokens";
+    if (hasToolUse) return "tool_use";
     if (finishReason === "content_filter") return "refusal";
     return "end_turn";
 }
@@ -400,16 +400,17 @@ export function toolUseInput(argumentsJson: string): unknown {
 /**
  * Anthropic tool_use blocks from provider tool calls.
  *
- * When the provider stops at the token limit, a tool call can be cut off inside
- * its JSON. That is an incomplete turn, not a provider fault: drop the call so
- * the response keeps `stop_reason: "max_tokens"` instead of failing. Arguments
- * that are unparseable for any other reason still fail the request.
+ * Unlike native Anthropic partial-input objects, this adapter omits invalid or
+ * empty arguments cut off by the token limit. The caller sees max_tokens and
+ * can retry with a higher budget; we do not retry or invent executable input.
+ * Complete content is preserved. Malformed arguments at other stops still fail.
  */
 export function toolUseBlocks(
     calls: { id: string; name: string; arguments: string }[],
     truncated: boolean,
 ): CreateMessageResponse["content"] {
     return calls.flatMap((call) => {
+        if (truncated && !call.arguments) return [];
         try {
             return [
                 {

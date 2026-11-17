@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Herd Check",
+    "url": "https://patbing.github.io/herd-check",
+    "description": "Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/herd-check",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19628",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/7c3835a5-a58f-4992-83e4-4c197c64d635"
+  },
+  {
+    "emoji": "🎮",
     "name": "Schelling Table",
     "url": "https://tomdacatto.github.io/pollinations-schelling-table",
     "description": "A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or seat Pollinations models with your own Pollen.",

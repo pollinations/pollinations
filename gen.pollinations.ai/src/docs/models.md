@@ -102,16 +102,19 @@ curl 'https://gen.pollinations.ai/models/quote?model=google/veo-3.1-fast&duratio
 ```
 
 ```json
-{ "model": "google/veo-3.1-fast", "price": 0.96, "currency": "usd" }
+{ "model": "google/veo-3.1-fast", "price": 0.96, "currency": "usd", "basis": "listed" }
 ```
 
-`price` is null, with a `reason`, when the charge is only known after
-generation: `token_priced` (billed per token), `provider_metered` (billed from
-megapixels or other units the provider measures) and `input_dependent` (depends
-on the reference media). Text, audio and other models are not quoted.
+`basis` is `listed` when the price is calculated from the model's listed rates
+for these options. When the charge is only known after generation, the answer
+carries a `reason`: `token_priced` (billed per token), `provider_metered`
+(billed from megapixels or other units the provider measures) or
+`input_dependent` (depends on the reference media). `price` is then the model's
+7-day median charge (`basis: average`), or null until the model has one. Text,
+audio and other models are not quoted.
 
-A quote is the listed price, not the charge: billing uses the usage the
-provider reports.
+A quote is an estimate, not the charge: billing uses the usage the provider
+reports.
 
 ### Chat parameters
 

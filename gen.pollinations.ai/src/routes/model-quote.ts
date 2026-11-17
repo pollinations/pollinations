@@ -1,5 +1,6 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
@@ -8,6 +9,7 @@ import type { Env } from "@/env.ts";
 import { resolveModelDefinition } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import { getEstimatedPrice } from "@/utils/model-stats.ts";
 import { parseImageParams } from "../image/handler.ts";
 import {
     QUOTE_UNAVAILABLE_REASONS,
@@ -27,9 +29,13 @@ const QuoteResponseSchema = z.object({
     model: z.string().meta({ description: "Canonical model ID." }),
     price: z.number().nullable().meta({
         description:
-            "Listed price of one request with these options, in US dollars. Null when it cannot be known before generation.",
+            "Price of one request in US dollars. Null when it cannot be calculated and the model has no 7-day average yet.",
     }),
     currency: z.literal("usd"),
+    basis: z.enum(["listed", "average"]).optional().meta({
+        description:
+            "`listed`: calculated from the model's listed rates for these options. `average`: the median charge of this model's requests over the last 7 days, whatever their options. Absent when `price` is null.",
+    }),
     reason: z
         .enum(
             Object.keys(QUOTE_UNAVAILABLE_REASONS) as [
@@ -40,7 +46,7 @@ const QuoteResponseSchema = z.object({
         .optional()
         .meta({
             description: [
-                "Why `price` is null.",
+                "Why the price could not be calculated from the options.",
                 ...Object.entries(QUOTE_UNAVAILABLE_REASONS).map(
                     ([reason, message]) => `\`${reason}\`: ${message}`,
                 ),
@@ -62,9 +68,9 @@ export const modelQuoteRoutes = new Hono<Env>().get(
             "",
             "Pass `model` plus the same query parameters as `/image/{prompt}` or `/video/{prompt}`. The quote follows the options that change the price: `resolution`, `quality`, `duration`, `audio`, `width` and `height`, and whether `image` or `reference_videos` are present. Reference URLs are counted, never fetched. Invalid options return the same `400` as the generation request.",
             "",
-            "`price` is null, with a `reason`, when the charge is only known after generation: models billed per token, models billed from units the provider measures (megapixels, provider units), and requests whose cost depends on the reference media.",
+            "`basis` is `listed` when the price is calculated from the model's listed rates. Some charges are only known after generation: models billed per token, models billed from units the provider measures (megapixels, provider units), and requests whose cost depends on the reference media. Those answer with a `reason` and, as `basis: average`, the model's 7-day median charge from `/models/stats`; `price` is null until the model has one.",
             "",
-            "A quote is the listed price, not the charge. Billing uses the usage the provider reports, which can differ, for example when a video comes back slightly longer than requested.",
+            "A quote is an estimate, not the charge. Billing uses the usage the provider reports, which can differ, for example when a video comes back slightly longer than requested.",
         ].join("\n"),
         responses: {
             200: {
@@ -103,16 +109,26 @@ export const modelQuoteRoutes = new Hono<Env>().get(
             parseImageParams(c, {}, model),
         );
         c.header("Cache-Control", "public, max-age=300");
-        return c.json(
-            typeof quote === "number"
-                ? { model: model.resolved, price: quote, currency: "usd" }
-                : {
-                      model: model.resolved,
-                      price: null,
-                      currency: "usd",
-                      reason: quote,
-                      message: QUOTE_UNAVAILABLE_REASONS[quote],
-                  },
+        if (typeof quote === "number") {
+            return c.json({
+                model: model.resolved,
+                price: quote,
+                currency: "usd",
+                basis: "listed",
+            });
+        }
+        // Not calculable: answer with what this model's requests were charged.
+        const average = getEstimatedPrice(
+            await getModelStats(c.env.KV, c.var.log),
+            model.resolved,
         );
+        return c.json({
+            model: model.resolved,
+            price: average || null,
+            currency: "usd",
+            basis: average ? "average" : undefined,
+            reason: quote,
+            message: QUOTE_UNAVAILABLE_REASONS[quote],
+        });
     },
 );

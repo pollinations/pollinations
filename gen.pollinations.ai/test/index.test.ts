@@ -1148,23 +1148,40 @@ describe("model price quote", () => {
                 { resolution: "1080p" },
             ).totalPrice,
             currency: "usd",
+            basis: "listed",
         });
     });
 
-    it("gives a reason instead of a price for a token-priced model", async () => {
-        const response = await fetchWorker(
-            "/models/quote?model=openai/gpt-image-2",
-        );
+    it.each([
+        ["the 7-day average", 0.04, { price: 0.04, basis: "average" }],
+        ["no price until the model has an average", 0, { price: null }],
+    ])(
+        "answers a token-priced model with %s",
+        async (_case, average, expected) => {
+            await env.KV.delete("model-stats-v3");
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({
+                    data: [
+                        { model: "openai/gpt-image-2", avg_cost_usd: average },
+                    ],
+                }),
+            );
 
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            model: "openai/gpt-image-2",
-            price: null,
-            currency: "usd",
-            reason: "token_priced",
-            message: expect.any(String),
-        });
-    });
+            const response = await fetchWorker(
+                "/models/quote?model=openai/gpt-image-2",
+            );
+            await env.KV.delete("model-stats-v3");
+
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual({
+                model: "openai/gpt-image-2",
+                currency: "usd",
+                reason: "token_priced",
+                message: expect.any(String),
+                ...expected,
+            });
+        },
+    );
 
     it.each([
         ["a missing model", ""],

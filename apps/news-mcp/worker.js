@@ -4,6 +4,7 @@ import { feeds } from "./tools/feeds.js";
 import { hackernews } from "./tools/hackernews.js";
 import { onThisDayTools } from "./tools/onthisday.js";
 import { wayback } from "./tools/wayback.js";
+import { weatherTools } from "./tools/weather.js";
 
 const handler = createMcpHandler(
     () => {
@@ -17,6 +18,7 @@ const handler = createMcpHandler(
             ...wayback,
             ...earthquakeTools,
             ...onThisDayTools,
+            ...weatherTools,
         ]) {
             server.registerTool(
                 name,

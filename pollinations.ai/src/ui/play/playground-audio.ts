@@ -50,18 +50,16 @@ export function audioInputError(
             : "Upload an audio file first.";
     if (generatesAudio && !prompt.trim())
         return "Add text or a description first.";
-    const takesAudio = model.inputModalities.includes("audio");
-    const takesVideo = model.inputModalities.includes("video");
-    if (generatesAudio && !file && takesVideo && !takesAudio)
+    if (
+        generatesAudio &&
+        !file &&
+        model.inputModalities.includes("video") &&
+        !model.inputModalities.includes("audio")
+    )
         return "Upload a video first.";
-    if (generatesAudio && file) {
-        if (isVideo(file)) {
-            if (!takesVideo)
-                return "This model does not accept reference video.";
-        } else if (!takesAudio) {
-            return "This model does not accept reference audio.";
-        }
-    }
+    const kind = file && isVideo(file) ? "video" : "audio";
+    if (generatesAudio && file && !model.inputModalities.includes(kind))
+        return `This model does not accept reference ${kind}.`;
     return null;
 }
 
@@ -119,11 +117,8 @@ export async function generatePlaygroundAudio(
         model: model.id,
         voice,
         duration,
-        // Voice changer and isolator returned above, so a video here is for a
-        // generating model that takes video input.
-        ...(file && isVideo(file) && model.inputModalities.includes("video")
-            ? { referenceVideo: upload?.url }
-            : { referenceAudio: upload?.url }),
+        [file && isVideo(file) ? "referenceVideo" : "referenceAudio"]:
+            upload?.url,
     };
     const result =
         endpoint === "/audio/{text}"

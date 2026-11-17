@@ -1014,7 +1014,9 @@ export function Playground() {
                             file: "YOUR_AUDIO_FILE",
                         }
                       : audioFiles.length
-                        ? { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
+                        ? audioFiles[0].type.startsWith("video/")
+                            ? { reference_video: "YOUR_UPLOADED_VIDEO_URL" }
+                            : { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
                         : {}),
               }
             : undefined;

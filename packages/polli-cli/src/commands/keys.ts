@@ -8,6 +8,7 @@ import {
     printResult,
     printSuccess,
     printTable,
+    printWarn,
 } from "../lib/output.js";
 
 interface KeyInfo {
@@ -233,6 +234,14 @@ Examples:
                 printSuccess(`Key created: ${created.name}`);
                 printInfo("Save this key — it won't be shown again:\n");
                 process.stdout.write(`  ${created.key}\n\n`);
+            }
+
+            // The server gives a key the expiry of the key that created it, so an
+            // app key made from a `polli auth login` session dies with that login.
+            if (created.expiresAt && opts.expiresIn === undefined) {
+                printWarn(
+                    `This key expires ${created.expiresAt.slice(0, 10)}, like the key that created it. For a long-lived app key, create it at https://enter.pollinations.ai/keys.`,
+                );
             }
 
             printResult({

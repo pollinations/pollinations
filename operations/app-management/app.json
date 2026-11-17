@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Schelling Table",
+    "url": "https://tomdacatto.github.io/pollinations-schelling-table",
+    "description": "A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or seat Pollinations models with your own Pollen.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-schelling-table",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/19603",
+    "approvedDate": "2026-11-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/afcf4a5f-70e2-4622-9b4b-b712f371a8a8"
+  },
+  {
     "emoji": "📚",
     "name": "Where It Slips",
     "url": "https://tomdacatto.github.io/pollinations-where-it-slips",

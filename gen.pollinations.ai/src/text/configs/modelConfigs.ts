@@ -204,6 +204,21 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "google/gemini-decision-1": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "google/gemini-decision-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        }),
+    "google/gemini-decision-1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "google/gemini-decision-1",
+    }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:

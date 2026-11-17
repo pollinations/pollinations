@@ -29,6 +29,29 @@ describe("resolveModelConfig", () => {
         }
     });
 
+    it("routes Gemini Decision 1 through Vercel with an OpenRouter backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "google/gemini-decision-1",
+        });
+        expect(primary.options.modelConfig).toMatchObject({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "google/gemini-decision-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        });
+
+        const backup = resolveModelConfig(messages, {
+            model: "google/gemini-decision-1:openrouter",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            model: "google/gemini-decision-1",
+        });
+    });
+
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
             [

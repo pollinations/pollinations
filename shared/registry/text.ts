@@ -1940,6 +1940,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "google/gemini-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Google",
+        category: "decision",
+        addedDate: new Date("2026-11-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price (2026-11-11). Input tokens only; the
+            // model generates no output tokens.
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Gemini Decision 1",
+        description:
+            "Calibrated yes/no, choice and score answers from text state, with no generated text",
+        supportedEndpoints: ["/alpha/decisions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        isSpecialized: true,
+    },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],

@@ -93,6 +93,19 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "google/gemini-decision-1": {
+        // OpenRouter's decision route for the same Gemini model. No provider is
+        // pinned, so OpenRouter chooses the backend.
+        "google/gemini-decision-1:openrouter": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "microsoft/microsoft-decision-1": {
         // Same Azure backend; covers gateway failures, not Microsoft outages.
         "microsoft/microsoft-decision-1:vercel": {

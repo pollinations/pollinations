@@ -195,8 +195,7 @@ export function parseApiError(status, errorText) {
             );
         case 402:
             return (
-                errorMessage ||
-                "Insufficient pollen balance or API key budget exhausted."
+                errorMessage || "Balance too low or API key budget exhausted."
             );
         case 403:
             return (

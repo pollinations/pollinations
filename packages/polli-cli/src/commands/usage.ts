@@ -183,9 +183,7 @@ export function splitKeyArgs(argv: string[], command = "usage"): UsageKeyArgs {
 }
 
 export const usageCommand = new Command("usage")
-    .description(
-        "Show pollen balance (default), usage history, or daily summary",
-    )
+    .description("Show balance (default), usage history, or daily summary")
     .option("--limit <n>", "Number of records", "20")
     .option("--history", "Show individual request history")
     .option("--daily", "Show daily summary instead of individual requests")

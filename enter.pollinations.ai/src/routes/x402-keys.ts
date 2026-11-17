@@ -70,7 +70,7 @@ export const x402KeysRoutes = new Hono<Env>()
             const amountUsd = purchaseAmountUsd(purchaseKey);
             if (!amountUsd)
                 throw new HTTPException(404, {
-                    message: "Invalid prepaid amount or Pollen pack",
+                    message: "Invalid prepaid amount or pack",
                 });
 
             const { WEFT_SELLER_API_KEY, WEFT_PAY_TO, WEFT_NETWORK } = c.env;

@@ -113,7 +113,8 @@ export async function generateCacheKey(
             const bodyObj = JSON.parse(bodyText);
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
-            streams ||= parseBooleanLike(bodyObj.stream) === true;
+            // JSON requests select response format from the body, not the query.
+            streams = parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {

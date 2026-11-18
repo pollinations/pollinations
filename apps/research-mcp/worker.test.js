@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "wger_exercise",
             ].sort(),
         );
     });
@@ -644,4 +645,129 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("wger_exercise looks up an exact exercise name and projects category, equipment and muscles", async (t) => {
+    let fetches = 0;
+    const fetchedUrls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        fetchedUrls.push(url.toString());
+        assert.equal(url.hostname, "wger.de");
+        assert.equal(init?.headers?.Authorization, undefined);
+        assert.equal(init?.headers?.Cookie, undefined);
+        assert.match(
+            init?.headers?.["User-Agent"] ?? "",
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname === "/api/v2/exercise-translation/") {
+            const name = url.searchParams.get("name");
+            if (name === "1 Leg Box Squat") {
+                return Response.json({
+                    count: 1,
+                    results: [
+                        {
+                            id: 3099,
+                            name: "1 Leg Box Squat",
+                            exercise: 1948,
+                            description:
+                                "<p>This exercise requires a sturdy box or a chair. Simple stand ~6 inches in front of it and balance yourself on one leg. From here, begin squatting down in a smooth controlled motion while keeping your other leg straight out in front of you for balance. Slowly sit down on the box, pause for a 1 count and push back up with the working leg, while never letting your other leg touch the ground.</p>\n",
+                            language: 2,
+                        },
+                    ],
+                });
+            }
+            if (name === "Long Description Exercise") {
+                return Response.json({
+                    count: 1,
+                    results: [
+                        {
+                            id: 1,
+                            name: "Long Description Exercise",
+                            exercise: 9999,
+                            // Synthetic long description, labelled as such:
+                            // pins the 500-char cap and the truncated flag.
+                            description: `<p>${"Step. ".repeat(120)}</p>`,
+                            language: 2,
+                        },
+                    ],
+                });
+            }
+            return Response.json({ count: 0, results: [] });
+        }
+        if (url.pathname === "/api/v2/exerciseinfo/1948/") {
+            return Response.json({
+                id: 1948,
+                category: { id: 9, name: "Legs" },
+                muscles: [
+                    { id: 11, name_en: "Hamstrings" },
+                    { id: 10, name_en: "Quads" },
+                ],
+                muscles_secondary: [],
+                equipment: [{ id: 7, name: "none (bodyweight exercise)" }],
+            });
+        }
+        if (url.pathname === "/api/v2/exerciseinfo/9999/") {
+            return Response.json({
+                id: 9999,
+                category: { id: 8, name: "Arms" },
+                muscles: [{ id: 1, name_en: "Biceps" }],
+                muscles_secondary: [],
+                equipment: [{ id: 3, name: "Dumbbell" }],
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "wger_exercise", {
+        name: "1 Leg Box Squat",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "1 Leg Box Squat",
+        total: 1,
+        exercises: [
+            {
+                id: 1948,
+                name: "1 Leg Box Squat",
+                description:
+                    "This exercise requires a sturdy box or a chair. Simple stand ~6 inches in front of it and balance yourself on one leg. From here, begin squatting down in a smooth controlled motion while keeping your other leg straight out in front of you for balance. Slowly sit down on the box, pause for a 1 count and push back up with the working leg, while never letting your other leg touch the ground.",
+                description_truncated: false,
+                category: "Legs",
+                equipment: ["none (bodyweight exercise)"],
+                muscles: ["Hamstrings", "Quads"],
+                muscles_secondary: [],
+            },
+        ],
+    });
+    assert.deepEqual(fetchedUrls, [
+        "https://wger.de/api/v2/exercise-translation/?language=2&name=1%20Leg%20Box%20Squat",
+        "https://wger.de/api/v2/exerciseinfo/1948/",
+    ]);
+
+    const longRes = await call(c, "wger_exercise", {
+        name: "Long Description Exercise",
+    });
+    assert.notEqual(longRes.isError, true, JSON.stringify(longRes));
+    const longVal = value(longRes);
+    assert.equal(longVal.exercises[0].description.length, 500);
+    assert.equal(longVal.exercises[0].description_truncated, true);
+    assert.equal(longVal.exercises[0].category, "Arms");
+
+    const emptyRes = await call(c, "wger_exercise", {
+        name: "zzzznotanexercise",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        name: "zzzznotanexercise",
+        total: 0,
+        exercises: [],
+    });
+
+    const before = fetches;
+    const blankRes = await call(c, "wger_exercise", { name: "   " });
+    assert.equal(blankRes.isError, true);
+    assert.equal(fetches, before);
 });

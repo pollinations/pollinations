@@ -80,7 +80,10 @@ export function realtimeUrl(options: RealtimeOptions): string {
             401,
         );
     }
-    const url = new URL("/v1/realtime", options.baseUrl ?? DEFAULT_BASE_URL);
+    // The endpoint is appended to the base URL, so a base URL with a path
+    // prefix (a reverse proxy) keeps that prefix.
+    const base = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+    const url = new URL(`${base}/v1/realtime`);
     url.protocol = url.protocol === "http:" ? "ws:" : "wss:";
     url.searchParams.set("model", options.model ?? DEFAULT_REALTIME_MODEL);
     url.searchParams.set("key", apiKey);

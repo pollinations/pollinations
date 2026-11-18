@@ -66,6 +66,26 @@ describe("realtimeUrl", () => {
         expect(url.pathname).toBe("/v1/realtime");
     });
 
+    it("keeps the path prefix of a base URL", () => {
+        const url = new URL(
+            realtimeUrl({
+                apiKey: "sk_test",
+                baseUrl: "https://proxy.example.com/api/",
+            }),
+        );
+        expect(url.pathname).toBe("/api/v1/realtime");
+    });
+
+    it("keeps the path prefix of a base URL behind a proxy", () => {
+        const url = new URL(
+            realtimeUrl({
+                apiKey: "sk_test",
+                baseUrl: "https://proxy.example.com/api/",
+            }),
+        );
+        expect(url.pathname).toBe("/api/v1/realtime");
+    });
+
     it("refuses keys the gateway cannot authenticate in a query string", () => {
         expect(() => realtimeUrl({ apiKey: "pk_app" })).toThrow(/sk_/);
         expect(() => realtimeUrl({ apiKey: "sess_token" })).toThrow(/sk_/);

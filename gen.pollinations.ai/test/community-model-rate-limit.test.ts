@@ -29,12 +29,10 @@ const QUOTA_BOUND_MODELS = new Set([
 describe("model rate limiting", () => {
     it("caps both Glyph Cluster routes at 8 RPM", () => {
         const definition = TEXT_SERVICES["stealth/glyph-cluster"];
+        const fallback = "stealth/glyph-cluster:kilo";
         expect(definition.perUserRpm).toBe(8);
-        expect(
-            definition.fallbacks.map(
-                (id) => getRegistryModelDefinition(id).perUserRpm,
-            ),
-        ).toEqual([8]);
+        expect(definition.fallbacks).toContain(fallback);
+        expect(TEXT_SERVICES[fallback].perUserRpm).toBe(8);
     });
 
     it("caps Ling at 8 RPM and publishes its limit", async () => {

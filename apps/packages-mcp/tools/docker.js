@@ -73,6 +73,31 @@ export async function imageTags({ image, tag, filter, limit }) {
     };
 }
 
+export async function searchRepositories({ query, limit }) {
+    const term = (query ?? "").trim();
+    if (!term) throw new Error("Give a search term");
+    const pageSize =
+        Number.isInteger(limit) && limit >= 1 && limit <= 10 ? limit : 5;
+    const data = await fetchJson(
+        `https://hub.docker.com/v2/search/repositories/?query=${encodeURIComponent(term)}&page_size=${pageSize}`,
+    );
+    if (!Array.isArray(data.results))
+        throw new Error("Unexpected response from Docker Hub");
+    return {
+        query: term,
+        limit: pageSize,
+        // `count` is the catalog match count, not the number returned.
+        total: data.count ?? data.results.length,
+        repositories: data.results.map((repo) => ({
+            name: repo.repo_name,
+            description: repo.short_description ?? null,
+            stars: repo.star_count,
+            pulls: repo.pull_count,
+            official: repo.is_official,
+        })),
+    };
+}
+
 export const dockerTools = [
     [
         "container_image_tags",
@@ -102,5 +127,19 @@ export const dockerTools = [
             limit: z.number().int().min(1).max(100).default(25),
         },
         imageTags,
+    ],
+    [
+        "dockerhub_search",
+        "Search Docker Hub public repositories by name or keyword. Each result carries the repository name, short description, star count, pull count and whether it is an official image, so an agent can find an image to use instead of guessing one. `total` is the catalog match count, which can be far larger than the page returned. This searches repositories; `container_image_tags` lists tags for a repository you already know. Public repositories only: no registry credentials are sent and private repositories are not readable.",
+        {
+            query: z
+                .string()
+                .trim()
+                .min(1)
+                .max(128)
+                .describe("Search term, e.g. `nginx` or `grafana`"),
+            limit: z.number().int().min(1).max(10).default(5),
+        },
+        searchRepositories,
     ],
 ];

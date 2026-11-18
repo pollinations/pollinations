@@ -13,6 +13,7 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        chef: /^[a-z][a-z0-9_-]{0,63}$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +167,48 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "chef") {
+        const data = await fetchJson(
+            `https://supermarket.chef.io/api/v1/cookbooks/${encoded}`,
+        );
+        // The versions list is URLs; the latest version is named in
+        // latest_version. A pinned version missing from the list is rejected
+        // before the second fetch.
+        const latest = data.latest_version?.split("/").at(-1);
+        const versions = (data.versions ?? []).map((url) =>
+            String(url).split("/").at(-1),
+        );
+        const selected = version ?? latest;
+        if (!selected) throw new Error(`Chef cookbook ${name} has no versions`);
+        if (version && !versions.includes(version))
+            throw new Error(`Chef version ${version} not found for ${name}`);
+        const detail = await fetchJson(
+            `https://supermarket.chef.io/api/v1/cookbooks/${encoded}/versions/${encodeURIComponent(selected)}`,
+        );
+        const description = data.description ?? null;
+        return {
+            ecosystem,
+            name: data.name,
+            version: detail.version,
+            latest,
+            versionCount: versions.length,
+            description:
+                description && description.length > 500
+                    ? `${description.slice(0, 500)}…`
+                    : description,
+            license: detail.license ?? null,
+            maintainer: data.maintainer,
+            category: data.category,
+            downloads: data.metrics?.downloads?.total ?? null,
+            followers: data.metrics?.followers ?? null,
+            dependencies: detail.dependencies ?? {},
+            supports: detail.supports ?? {},
+            publishedAt: detail.published_at,
+            deprecated: data.deprecated ?? false,
+            sourceUrl: data.source_url ?? null,
+            registryUrl: `https://supermarket.chef.io/cookbooks/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +246,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/Chef Supermarket cookbook metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Chef latest version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +256,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "chef",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

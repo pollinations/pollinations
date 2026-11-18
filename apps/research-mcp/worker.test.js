@@ -342,6 +342,80 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("universities_search returns the projected record over plain HTTP and an empty list on no match", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.protocol, "http:");
+        assert.equal(url.hostname, "universities.hipolabs.com");
+        assert.equal(url.pathname, "/search");
+        assert.equal(init.redirect, "follow");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("name") === "zzzzqqqxxyy") {
+            assert.equal(url.searchParams.get("limit"), "5");
+            return Response.json([]);
+        }
+        assert.equal(url.searchParams.get("name"), "Oxford");
+        assert.equal(url.searchParams.get("limit"), "1");
+        return Response.json([
+            {
+                domains: ["oxford.ac.uk", "ox.ac.uk"],
+                web_pages: ["http://www.ox.ac.uk/"],
+                "state-province": null,
+                alpha_two_code: "GB",
+                name: "University of Oxford",
+                country: "United Kingdom",
+            },
+            {
+                domains: ["brookes.ac.uk"],
+                web_pages: ["http://www.brookes.ac.uk/"],
+                "state-province": null,
+                alpha_two_code: "GB",
+                name: "Oxford Brookes University",
+                country: "United Kingdom",
+            },
+        ]);
+    });
+
+    const c = await client(t);
+    let result = await call(c, "universities_search", {
+        name: "Oxford",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Oxford",
+        total: 1,
+        universities: [
+            {
+                name: "University of Oxford",
+                country: "United Kingdom",
+                domains: ["oxford.ac.uk", "ox.ac.uk"],
+                web_pages: ["http://www.ox.ac.uk/"],
+            },
+        ],
+    });
+
+    result = await call(c, "universities_search", { name: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        universities: [],
+    });
+
+    const before = fetches;
+    result = await call(c, "universities_search", { name: " " });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +438,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "universities_search",
             ].sort(),
         );
     });

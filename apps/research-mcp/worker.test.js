@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ncbi_gene",
             ].sort(),
         );
     });
@@ -644,4 +645,191 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("NCBI Gene looks up genes by symbol with the Gene Name qualifier and one organism at a time", async (t) => {
+    // Trimmed real fixtures from live eutils.ncbi.nlm.nih.gov responses
+    // (2026-11-18, esearch + esummary). Summaries are the real opening
+    // text, cut short; the 500-char cap is pinned with a synthetic long
+    // summary below.
+    const brca1Summary =
+        "This gene encodes a 190 kD nuclear phosphoprotein that plays a role in maintaining genomic stability, and it also acts as a tumor suppressor. The BRCA1 gene contains 22 exons spanning about 110 kb of DNA. The encoded protein combines with other tumor suppresso";
+    const mouseSummary =
+        "Enables damaged DNA binding activity; transcription cis-regulatory region binding activity; and transcription coactivator activity. Involved in double-strand break repair and positive regulation of transcription by RNA polymerase II. Acts upstream of with a po";
+    const humanSearch = {
+        esearchresult: {
+            count: "1",
+            retmax: "5",
+            retstart: "0",
+            idlist: ["672"],
+            querytranslation: 'BRCA1[Gene Name] AND "Homo sapiens"[Organism]',
+        },
+    };
+    const humanSummary = {
+        result: {
+            uids: ["672"],
+            672: {
+                uid: "672",
+                name: "BRCA1",
+                description: "BRCA1 DNA repair associated",
+                chromosome: "17",
+                maplocation: "17q21.31",
+                otheraliases:
+                    "BRCAI, BRCC1, BROVCA1, FANCS, IRIS, PNCA4, PPP1R53, PSCP, RNF53",
+                organism: {
+                    scientificname: "Homo sapiens",
+                    commonname: "human",
+                    taxid: 9606,
+                },
+                summary: brca1Summary,
+            },
+        },
+    };
+    const mouseSearch = {
+        esearchresult: {
+            count: "1",
+            retmax: "5",
+            retstart: "0",
+            idlist: ["12189"],
+            querytranslation: 'Brca1[Gene Name] AND "Mus musculus"[Organism]',
+        },
+    };
+    const mouseSummaryRecord = {
+        result: {
+            uids: ["12189"],
+            12189: {
+                uid: "12189",
+                name: "Brca1",
+                description: "breast cancer 1, early onset",
+                chromosome: "11",
+                maplocation: "11 D",
+                otheraliases: "",
+                organism: {
+                    scientificname: "Mus musculus",
+                    commonname: "house mouse",
+                    taxid: 10090,
+                },
+                summary: mouseSummary,
+            },
+        },
+    };
+    const emptySearch = {
+        esearchresult: {
+            count: "0",
+            retmax: "0",
+            retstart: "0",
+            idlist: [],
+            querytranslation:
+                'ZZZZNOTAGENE[Gene Name] AND "Homo sapiens"[Organism]',
+        },
+    };
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname.endsWith("esearch.fcgi")) {
+            const term = url.searchParams.get("term");
+            // The [Gene Name] qualifier is load-bearing: a bare BRCA1 term
+            // returns 38,286 free-text hits upstream.
+            assert.match(term, /\[Gene Name\]/);
+            assert.match(term, /\[Organism\]/);
+            if (term.startsWith("BRCA1")) {
+                assert.equal(url.searchParams.get("retmax"), "5");
+                return Response.json(humanSearch);
+            }
+            if (term.startsWith("Brca1")) return Response.json(mouseSearch);
+            if (term.startsWith("LONG"))
+                return Response.json({
+                    esearchresult: {
+                        count: "1",
+                        retmax: "5",
+                        retstart: "0",
+                        idlist: ["1"],
+                    },
+                });
+            return Response.json(emptySearch);
+        }
+        if (url.pathname.endsWith("esummary.fcgi")) {
+            const ids = url.searchParams.get("id");
+            if (ids === "672") return Response.json(humanSummary);
+            if (ids === "12189") return Response.json(mouseSummaryRecord);
+            // Synthetic long summary pins the 500-char cap.
+            return Response.json({
+                result: {
+                    uids: ["1"],
+                    1: {
+                        uid: "1",
+                        name: "LONG",
+                        description: "long summary gene",
+                        chromosome: "1",
+                        maplocation: "1p1",
+                        otheraliases: "",
+                        organism: { scientificname: "Homo sapiens" },
+                        summary: "S".repeat(600),
+                    },
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+    const c = await client(t);
+    const result = await call(c, "ncbi_gene", { gene: "BRCA1" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        gene: "BRCA1",
+        organism: "Homo sapiens",
+        total: 1,
+        genes: [
+            {
+                geneId: 672,
+                symbol: "BRCA1",
+                description: "BRCA1 DNA repair associated",
+                chromosome: "17",
+                mapLocation: "17q21.31",
+                organism: "Homo sapiens",
+                summary: brca1Summary,
+                summaryTruncated: false,
+                aliases: ["BRCAI", "BRCC1", "BROVCA1", "FANCS", "IRIS"],
+                aliasesCount: 9,
+            },
+        ],
+    });
+    const mouse = await call(c, "ncbi_gene", {
+        gene: "Brca1",
+        organism: "Mus musculus",
+    });
+    assert.notEqual(mouse.isError, true, JSON.stringify(mouse));
+    assert.equal(value(mouse).genes[0].geneId, 12189);
+    assert.equal(value(mouse).genes[0].organism, "Mus musculus");
+    assert.equal(value(mouse).genes[0].symbol, "Brca1");
+    const empty = await call(c, "ncbi_gene", { gene: "ZZZZNOTAGENE" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        gene: "ZZZZNOTAGENE",
+        organism: "Homo sapiens",
+        total: 0,
+        genes: [],
+    });
+    const long = await call(c, "ncbi_gene", { gene: "LONG" });
+    assert.notEqual(long.isError, true, JSON.stringify(long));
+    assert.equal(value(long).genes[0].summary.length, 500);
+    assert.equal(value(long).genes[0].summaryTruncated, true);
+    const before = fetches;
+    for (const args of [
+        { gene: "   " },
+        { gene: "BRCA1", limit: 0 },
+        { gene: "BRCA1", limit: 26 },
+    ]) {
+        const bad = await call(c, "ncbi_gene", args);
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
 });

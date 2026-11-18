@@ -37,6 +37,6 @@ export async function fetchText(
         await response?.body?.cancel().catch(() => {});
     }
 }
-export async function fetchJson(url) {
-    return JSON.parse(await fetchText(url));
+export async function fetchJson(url, accept = "application/json") {
+    return JSON.parse(await fetchText(url, accept));
 }

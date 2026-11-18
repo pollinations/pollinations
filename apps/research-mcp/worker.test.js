@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "kitsu_search",
             ].sort(),
         );
     });
@@ -644,4 +645,107 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Kitsu anime search encodes the filter brackets, projects JSON:API records and caps synopses", async (t) => {
+    let fetchCount = 0;
+    const fixture = JSON.parse(`{
+        "data": [
+            {
+                "id": "1555",
+                "type": "anime",
+                "attributes": {
+                    "canonicalTitle": "Naruto: Shippuuden",
+                    "titles": {"en": "Naruto: Shippuden", "en_jp": "Naruto: Shippuuden", "ja_jp": "ナルト- 疾風伝"},
+                    "status": "finished",
+                    "showType": "TV",
+                    "episodeCount": 500,
+                    "episodeLength": 23,
+                    "averageRating": "84.07",
+                    "ageRating": "PG",
+                    "ageRatingGuide": "Teens 13 or older",
+                    "nsfw": false,
+                    "startDate": "2007-02-15",
+                    "endDate": "2017-03-23",
+                    "synopsis": "${"It has been two and a half years since Naruto Uzumaki left Konohagakure. ".repeat(12)}",
+                    "slug": "naruto-shippuden"
+                }
+            },
+            {
+                "id": "11",
+                "type": "anime",
+                "attributes": {
+                    "canonicalTitle": "Naruto",
+                    "titles": {"en": "Naruto", "en_jp": "Naruto", "ja_jp": "ナルト"},
+                    "status": "finished",
+                    "showType": "TV",
+                    "episodeCount": 220,
+                    "episodeLength": 23,
+                    "averageRating": "80.22",
+                    "ageRating": "PG",
+                    "ageRatingGuide": "Teens 13 or older",
+                    "nsfw": false,
+                    "startDate": "2002-10-03",
+                    "endDate": "2007-02-08",
+                    "synopsis": "Moments prior to Naruto Uzumaki's birth, a huge demon known as the Kyuubi attacked.",
+                    "slug": "naruto"
+                }
+            }
+        ],
+        "meta": {"count": 37}
+    }`);
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        // Kitsu is JSON:API and 406s on plain application/json.
+        assert.equal(
+            new Headers(init.headers).get("accept"),
+            "application/vnd.api+json",
+        );
+        const url = new URL(input);
+        assert.equal(url.hostname, "kitsu.io");
+        // The filter brackets must reach the API URL-encoded.
+        assert.match(input.toString(), /filter%5Btext%5D=/);
+        assert.match(input.toString(), /page%5Blimit%5D=/);
+        if (url.searchParams.get("filter[text]") === "zzzzqqqxxyy")
+            return Response.json({ data: [], meta: { count: 0 } });
+        return Response.json(fixture);
+    });
+
+    const c = await client(t);
+    const res = await call(c, "kitsu_search", { title: "naruto", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(val.total, 37);
+    assert.equal(val.anime.length, 2);
+    const first = val.anime[0];
+    assert.equal(first.title, "Naruto: Shippuuden");
+    assert.equal(first.english_title, "Naruto: Shippuden");
+    assert.equal(first.status, "finished");
+    assert.equal(first.episode_count, 500);
+    assert.equal(first.average_rating, 84.07);
+    assert.equal(first.age_rating, "PG");
+    assert.equal(first.nsfw, false);
+    assert.equal(first.url, "https://kitsu.io/anime/naruto-shippuden");
+    assert.equal(first.synopsis.length, 501);
+    assert.equal(first.synopsis.endsWith("…"), true);
+    assert.equal(val.anime[1].title, "Naruto");
+    assert.equal(val.anime[1].episode_count, 220);
+    assert.match(val.anime[1].synopsis, /Kyuubi/);
+
+    const emptyRes = await call(c, "kitsu_search", {
+        title: "zzzzqqqxxyy",
+        limit: 5,
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        total: 0,
+        title: "zzzzqqqxxyy",
+        anime: [],
+    });
+
+    const before = fetchCount;
+    const blank = await call(c, "kitsu_search", { title: "   " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetchCount, before);
 });

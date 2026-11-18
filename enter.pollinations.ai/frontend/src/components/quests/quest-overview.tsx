@@ -210,16 +210,27 @@ function deriveCardStatus(
 // Lane ordering rank: claimable first, then claimed, then open, then
 // coming_soon last.
 function cardSortRank(card: QuestCard): number {
-    if (card.comingSoon) return 3;
+    // Waiting for Claim, then still to do, then coming soon, then done.
+    if (card.comingSoon) return 2;
     switch (card.status) {
-        // Waiting for Claim, then still to do, then done.
         case "claimable":
             return 0;
         case "claimed":
-            return 2;
+            return 3;
         default:
             return 1;
     }
+}
+
+/** The one time order of the page: the most recent reward first. Anything
+ *  without a date yet (a quest still to do) comes after, in its own order. */
+function newestFirst(
+    a: { earnedAt?: string | null },
+    b: { earnedAt?: string | null },
+): number {
+    const time = (item: { earnedAt?: string | null }) =>
+        item.earnedAt ? Date.parse(item.earnedAt) : 0;
+    return time(b) - time(a);
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
@@ -493,13 +504,9 @@ function progressOf(cards: QuestCard[]): {
             card.status === "open" ? null : (card.earnedAt ?? null),
         );
     }
-    // Rewards in the order they became ready to claim, so a claim changes a
-    // cell's colour but never its place; open quests follow.
-    cells.sort(
-        (a, b) =>
-            (a.earnedAt ? Date.parse(a.earnedAt) : Number.POSITIVE_INFINITY) -
-            (b.earnedAt ? Date.parse(b.earnedAt) : Number.POSITIVE_INFINITY),
-    );
+    // The comb has one order, time: a claim changes a cell's colour but
+    // never its place.
+    cells.sort(newestFirst);
     return { parts, cells };
 }
 
@@ -539,7 +546,7 @@ function Comb({ cells }: { cells: CombCell[] }) {
         >
             {cells.map(({ state, kind }, index) => (
                 <span
-                    // Cells never reorder, so the place is a stable key.
+                    // Plain cells with no state: their place is key enough.
                     key={index}
                     className={`${cell} ${PROGRESS_STATES[state].tone[kind]}`}
                 />
@@ -1420,10 +1427,13 @@ function QuestOverviewContent({
             });
         }
 
-        // Order per lane by lifecycle rank only: a claim moves its own row and
-        // nothing else; within a rank the catalog's order stays (stable sort).
+        // Order per lane: by lifecycle rank, then the most recent first.
+        // Quests with no reward yet keep the catalog's order (stable sort).
         for (const key of Object.keys(byCat) as CategoryKey[]) {
-            byCat[key].sort((a, b) => cardSortRank(a) - cardSortRank(b));
+            byCat[key].sort(
+                (a, b) =>
+                    cardSortRank(a) - cardSortRank(b) || newestFirst(a, b),
+            );
         }
         return byCat;
     }, [

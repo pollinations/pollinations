@@ -16,11 +16,9 @@ const log = (text) => (document.querySelector("#log").textContent += text);
 const actions = document.querySelector("#actions");
 const button = (label, onclick) => actions.append(Object.assign(document.createElement("button"), { textContent: label, onclick }));
 
-// Sign-in returns the key in the URL fragment: #api_key=sk_...
-const fragment = new URLSearchParams(location.hash.slice(1));
-if (fragment.get("api_key")) sessionStorage.setItem("key", fragment.get("api_key"));
+// Sign-in returns the key in the URL fragment (#api_key=sk_...). It is kept in memory only, so a reload signs in again.
+const apiKey = new URLSearchParams(location.hash.slice(1)).get("api_key");
 history.replaceState(null, "", location.pathname);
-const apiKey = sessionStorage.getItem("key");
 
 if (!apiKey) {
     button("Sign in with Pollinations", () => (location.href = authorizeUrl({ redirectUrl: location.href, budget: 1, expiry: 1 })));

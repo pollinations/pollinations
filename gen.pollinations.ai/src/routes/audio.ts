@@ -169,11 +169,18 @@ export const CreateSpeechRequestSchema = z
             description:
                 "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
-        seed: z.number().int().min(0).max(4294967295).optional().meta({
-            description:
-                "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
-            example: 42,
-        }),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(4294967295)
+            .optional()
+            .transform(normalizeSeed)
+            .meta({
+                description:
+                    "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. -1 maps to the stable compatibility seed, as on `GET /audio`. Omit for random.",
+                example: 42,
+            }),
         instructions: z.string().optional().meta({
             description:
                 "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
@@ -4710,8 +4717,10 @@ export const audioRoutes = new Hono<Env>()
                                 composition_plan: { type: "object" },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                                 instructions: {
                                     type: "string",
@@ -4835,8 +4844,10 @@ export const audioRoutes = new Hono<Env>()
                                 },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                             },
                         },

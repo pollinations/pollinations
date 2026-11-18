@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "who_indicator",
             ].sort(),
         );
     });
@@ -644,4 +645,68 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("who_indicator returns projected codes and names, and treats no match as an empty list", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "ghoapi.azureedge.net");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.search.includes("zzzzqqqxxyy"))
+            return Response.json({
+                "@odata.context":
+                    "https://ghoapi.azureedge.net/api/$metadata#Indicator",
+                value: [],
+            });
+        return Response.json({
+            "@odata.context":
+                "https://ghoapi.azureedge.net/api/$metadata#Indicator",
+            value: [
+                {
+                    IndicatorCode: "MALARIA_1STLINE_TREATED",
+                    IndicatorName:
+                        "Number of malaria cases treated with any first  line tx courses (including artemisinin-based combination therapies (ACTs))",
+                    Language: "EN",
+                },
+                {
+                    IndicatorCode: "MALARIA_ACT_TREATED",
+                    IndicatorName:
+                        "Number of malaria cases treated with artemisinin-based combination therapies (ACTs)",
+                    Language: "EN",
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "who_indicator", {
+        query: "malaria",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "malaria",
+        total: 2,
+        indicators: [
+            {
+                code: "MALARIA_1STLINE_TREATED",
+                name: "Number of malaria cases treated with any first  line tx courses (including artemisinin-based combination therapies (ACTs))",
+            },
+        ],
+    });
+
+    const empty = await call(c, "who_indicator", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        indicators: [],
+    });
+
+    const blank = await call(c, "who_indicator", { query: " " });
+    assert.equal(blank.isError, true);
 });

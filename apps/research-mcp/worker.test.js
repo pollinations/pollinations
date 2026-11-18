@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "prayer_times",
             ].sort(),
         );
     });
@@ -644,4 +645,116 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Aladhan prayer times default to method 3 and project nine timings", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, options) => {
+        fetches += 1;
+        const request = new Request(input, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.aladhan.com");
+        assert.equal(target.pathname, "/v1/timingsByCity");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        assert.equal(target.searchParams.get("city"), "London");
+        assert.equal(target.searchParams.get("country"), "United Kingdom");
+        const method = target.searchParams.get("method");
+        // The fixture echoes the requested method's name, as the live API does.
+        const methodName =
+            method === "20"
+                ? "Kementerian Agama Republik Indonesia"
+                : "Muslim World League";
+        return Response.json({
+            code: 200,
+            status: "OK",
+            data: {
+                timings: {
+                    Fajr: "05:26",
+                    Sunrise: "07:23",
+                    Dhuhr: "11:46",
+                    Asr: "13:47",
+                    Sunset: "16:07",
+                    Maghrib: "16:07",
+                    Isha: "17:59",
+                    Imsak: "05:16",
+                    Midnight: "23:45",
+                    Firstthird: "21:13",
+                    Lastthird: "02:18",
+                },
+                date: {
+                    gregorian: {
+                        date: "18-11-2026",
+                        weekday: { en: "Wednesday" },
+                    },
+                    hijri: {
+                        date: "08-06-1448",
+                        month: { en: "Jumādá al-ākhirah" },
+                        year: "1448",
+                    },
+                },
+                meta: { method: { id: Number(method), name: methodName } },
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "prayer_times", {
+        city: "London",
+        country: "United Kingdom",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        city: "London",
+        country: "United Kingdom",
+        method: 3,
+        method_name: "Muslim World League",
+        timings: {
+            fajr: "05:26",
+            sunrise: "07:23",
+            dhuhr: "11:46",
+            asr: "13:47",
+            sunset: "16:07",
+            maghrib: "16:07",
+            isha: "17:59",
+            imsak: "05:16",
+            midnight: "23:45",
+        },
+        date: { gregorian: "18-11-2026", weekday: "Wednesday" },
+        hijri_date: {
+            date: "08-06-1448",
+            month: "Jumādá al-ākhirah",
+            year: "1448",
+        },
+    });
+
+    const regional = await call(c, "prayer_times", {
+        city: "London",
+        country: "United Kingdom",
+        method: 20,
+    });
+    assert.notEqual(regional.isError, true, JSON.stringify(regional));
+    assert.equal(value(regional).method, 20);
+    assert.equal(
+        value(regional).method_name,
+        "Kementerian Agama Republik Indonesia",
+    );
+
+    const before = fetches;
+    const badMethod = await call(c, "prayer_times", {
+        city: "London",
+        country: "United Kingdom",
+        method: 99,
+    });
+    assert.equal(badMethod.isError, true);
+    assert.equal(fetches, before);
+    const badCity = await call(c, "prayer_times", {
+        city: "   ",
+        country: "United Kingdom",
+    });
+    assert.equal(badCity.isError, true);
+    assert.equal(fetches, before);
 });

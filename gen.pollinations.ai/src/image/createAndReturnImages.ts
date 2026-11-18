@@ -32,6 +32,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
+    callOpenRouterMiniMaxH3ImageHighspeedAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -1180,6 +1181,9 @@ const generateImage = async (
 
         case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
+
+        case "minimax/minimax-h3-image-highspeed":
+            return await callOpenRouterMiniMaxH3ImageHighspeedAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);

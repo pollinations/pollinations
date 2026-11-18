@@ -8,6 +8,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
+    callOpenRouterMiniMaxH3ImageHighspeedAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -474,6 +475,66 @@ describe("OpenRouter FLUX.2 Max", () => {
                 message: "OpenRouter returned invalid image billing usage",
             });
         }
+    });
+});
+
+describe("OpenRouter MiniMax H3 Image Highspeed", () => {
+    it("routes image editing and bills the provider receipt", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url.toString() === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            expect(url.toString()).toBe(OPENROUTER_IMAGE_URL);
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Bearer openrouter-test-key",
+            );
+            requests.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: {
+                    cost: 0.07,
+                    prompt_tokens: 120,
+                    prompt_tokens_details: { image_tokens: 80 },
+                    completion_tokens: 500,
+                    completion_tokens_details: { image_tokens: 500 },
+                },
+            });
+        });
+        const result = await callOpenRouterMiniMaxH3ImageHighspeedAPI("edit this image", {
+            ...baseParams,
+            model: "minimax/minimax-h3-image-highspeed",
+            resolution: "4k",
+            aspectRatio: "9:16",
+            image: [REFERENCE_IMAGE_URL],
+        });
+        expect(requests[0]).toEqual({
+            model: "minimax/minimax-h3-image-highspeed",
+            prompt: "edit this image",
+            n: 1,
+            seed: 42,
+            resolution: "4K",
+            aspect_ratio: "9:16",
+            provider: { only: ["minimax"], allow_fallbacks: false },
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "minimax/minimax-h3-image-highspeed",
+            usage: {
+                promptTextTokens: 40,
+                promptImageTokens: 80,
+                completionImageTokens: 500,
+            },
+            providerBilling: { units: 0.07, unitCost: 1.055 },
+        });
     });
 });
 

@@ -1,6 +1,7 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { cidrTools } from "./tools/cidr.js";
+import { circlTools } from "./tools/circl.js";
 import { dnsTools } from "./tools/dns.js";
 import { httpTools } from "./tools/http.js";
 import { macTools } from "./tools/mac.js";
@@ -17,6 +18,7 @@ const handler = createMcpHandler(
             ...httpTools,
             ...cidrTools,
             ...rdapTools,
+            ...circlTools,
             ...macTools,
         ]) {
             server.registerTool(

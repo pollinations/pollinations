@@ -25,9 +25,10 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
+        "celestrak_satellite",
         "earthquake_event",
         "earthquake_search",
         "feed_read",
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,67 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("celestrak returns one projected TLE record; bad catalog numbers fail before I/O", async (t) => {
+    const record = {
+        OBJECT_NAME: "ISS (ZARYA)",
+        OBJECT_ID: "1998-067A",
+        EPOCH: "2026-11-18T04:09:08.663616",
+        MEAN_MOTION: 15.49450921,
+        ECCENTRICITY: 0.00073761,
+        INCLINATION: 51.6317,
+        RA_OF_ASC_NODE: 258.0725,
+        ARG_OF_PERICENTER: 38.4804,
+        MEAN_ANOMALY: 321.6709,
+        EPHEMERIS_TYPE: 0,
+        CLASSIFICATION_TYPE: "U",
+        NORAD_CAT_ID: 25544,
+        ELEMENT_SET_NO: 999,
+        REV_AT_EPOCH: 59562,
+        BSTAR: 0.00022374706,
+        MEAN_MOTION_DOT: 0.00012098,
+        MEAN_MOTION_DDOT: 0,
+    };
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "celestrak.org");
+        assert.equal(url.pathname, "/NORAD/elements/gp.php");
+        assert.equal(url.searchParams.get("CATNR"), "25544");
+        assert.equal(url.searchParams.get("FORMAT"), "json");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.ok(
+            new Headers(init.headers)
+                .get("user-agent")
+                .includes("hello@pollinations.ai"),
+        );
+        assert.equal(init.redirect, "manual");
+        return Response.json([record]);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "celestrak_satellite",
+        arguments: { catnr: 25544 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        object_name: "ISS (ZARYA)",
+        object_id: "1998-067A",
+        norad_cat_id: 25544,
+        epoch: "2026-11-18T04:09:08.663616",
+        mean_motion: 15.49450921,
+        eccentricity: 0.00073761,
+        inclination: 51.6317,
+        ra_of_asc_node: 258.0725,
+        arg_of_pericenter: 38.4804,
+        mean_anomaly: 321.6709,
+        rev_at_epoch: 59562,
+    });
+    const bad = await c.callTool({
+        name: "celestrak_satellite",
+        arguments: { catnr: 0 },
+    });
+    assert.equal(bad.isError, true);
 });

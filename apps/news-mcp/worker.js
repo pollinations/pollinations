@@ -1,4 +1,5 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
+import { celestrakTools } from "./tools/celestrak.js";
 import { earthquakeTools } from "./tools/earthquakes.js";
 import { feeds } from "./tools/feeds.js";
 import { hackernews } from "./tools/hackernews.js";
@@ -13,6 +14,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, inputSchema, run] of [
             ...hackernews,
+            ...celestrakTools,
             ...feeds,
             ...wayback,
             ...earthquakeTools,

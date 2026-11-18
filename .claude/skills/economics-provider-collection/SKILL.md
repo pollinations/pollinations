@@ -247,6 +247,9 @@ the checklist; for a scoped request, read that vendor's guide. Guides live in
 `vendor.connector` field gives the filename. Use that explicit value rather
 than deriving a connector name from the vendor ID.
 
+For scoped Kilo Gateway collection, use the [Kilo connector](references/providers/kilo.md)
+for usage, prepaid balances, and original funding documents.
+
 ## Collection order
 
 Choose the first source that supplies authoritative, sufficiently granular

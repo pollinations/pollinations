@@ -112,6 +112,7 @@ export const jobRoutes = new Hono<Env>()
             const result = await c.env.MEDIA.get(
                 job.cache.key,
                 c.req.header("range"),
+                c.req.method,
             );
             if (!result)
                 throw new HTTPException(404, {

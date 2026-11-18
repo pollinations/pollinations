@@ -147,7 +147,7 @@ export async function readMedia(
     // Range requests need the full size before fetching bytes, so read the
     // metadata first and ask R2 for only the wanted slice. Plain GETs keep
     // their single-operation path.
-    if (rangeHeader) {
+    if (method === "GET" && rangeHeader) {
         const meta = await env.MEDIA_BUCKET.head(id);
         if (!meta) return null;
         const headers = mediaHeaders(meta, id);
@@ -163,16 +163,15 @@ export async function readMedia(
                 `bytes ${range.offset}-${range.offset + range.length - 1}/${meta.size}`,
             );
             headers.set("Content-Length", range.length.toString());
-            if (isHead) return new Response(null, { status: 206, headers });
             const ranged = await env.MEDIA_BUCKET.get(id, {
                 range: { offset: range.offset, length: range.length },
             });
             if (!ranged) return null;
-            // A partial read still counts as viewing the file: refresh an aged
-            // object in the background so the retention window keeps moving.
+            // Refresh retention when playback starts, not on every seek.
             if (
+                range.offset === 0 &&
                 Date.now() - meta.uploaded.getTime() >=
-                DEFAULT_R2_TTL_REFRESH_AGE_MS
+                    DEFAULT_R2_TTL_REFRESH_AGE_MS
             ) {
                 ctx.waitUntil(refreshAgedMedia(env, id));
             }
@@ -292,8 +291,12 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
         return uploadUnlistedMedia(this.env, body, input);
     }
 
-    get(id: string, rangeHeader?: string): Promise<Response | null> {
-        return readMedia(this.env, id, this.ctx, "GET", rangeHeader);
+    get(
+        id: string,
+        rangeHeader?: string,
+        method = "GET",
+    ): Promise<Response | null> {
+        return readMedia(this.env, id, this.ctx, method, rangeHeader);
     }
 
     async has(id: string): Promise<boolean> {

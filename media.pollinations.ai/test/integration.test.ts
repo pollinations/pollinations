@@ -683,9 +683,11 @@ describe("media.pollinations.ai", () => {
             method: "HEAD",
             headers: { Range: "bytes=0-3" },
         });
-        expect(head.status).toBe(206);
-        expect(head.headers.get("content-range")).toBe(`bytes 0-3/${size}`);
-        expect(head.headers.get("content-length")).toBe("4");
+        expect(head.status).toBe(200);
+        expect(head.headers.get("content-range")).toBeNull();
+        expect(head.headers.get("content-length")).toBe(String(size));
+        expect(head.headers.get("x-content-size")).toBe(String(size));
+        expect(await head.text()).toBe("");
 
         // Full responses advertise range support too.
         const full = await SELF.fetch(url);
@@ -1546,42 +1548,42 @@ describe("media.pollinations.ai", () => {
         expect(bucket.putCount).toBe(2);
     });
 
-    it("refreshes an aged file's TTL on a ranged GET", async () => {
-        const bucket = createTestR2Bucket();
-        const mediaEnv = createMediaEnv(bucket);
-        const uploadCtx = createExecutionContext();
-
-        const uploadForm = new FormData();
-        uploadForm.append("file", pngFile("ttl-range.png"));
-        const uploadRes = await app.fetch(
-            new Request("https://media.pollinations.ai/upload", {
-                method: "POST",
-                body: uploadForm,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
-            }),
-            mediaEnv,
-            uploadCtx,
-        );
-        await waitOnExecutionContext(uploadCtx);
-
-        expect(uploadRes.status).toBe(200);
-        const upload = (await uploadRes.json()) as UploadResponse;
-        expect(bucket.putCount).toBe(1);
-
-        const getCtx = createExecutionContext();
-        const getRes = await app.fetch(
-            new Request(`https://media.pollinations.ai/${upload.id}`, {
-                headers: { Range: "bytes=0-3" },
-            }),
-            mediaEnv,
-            getCtx,
-        );
-        expect(getRes.status).toBe(206);
-        await getRes.arrayBuffer();
-        await waitOnExecutionContext(getCtx);
-
-        // A partial read still counts as viewing the file.
-        expect(bucket.putCount).toBe(2);
+    it("real R2 aged seek skips rewrite and byte zero refreshes", async () => {
+        const id = "range-real-r2-probe";
+        const bytes = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
+        await env.MEDIA_BUCKET.put(id, bytes);
+        const put = vi.spyOn(env.MEDIA_BUCKET, "put");
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 16 * 86400000);
+        try {
+            for (const [range, count] of [
+                ["bytes=4-7", 0],
+                ["bytes=0-3", 1],
+            ] as const) {
+                const ctx = createExecutionContext();
+                const response = await app.fetch(
+                    new Request(`https://media.pollinations.ai/${id}`, {
+                        headers: { Range: range },
+                    }),
+                    env,
+                    ctx,
+                );
+                expect(response.status).toBe(206);
+                await response.arrayBuffer();
+                await waitOnExecutionContext(ctx);
+                expect(put).toHaveBeenCalledTimes(count);
+            }
+            const fullCtx = createExecutionContext();
+            const full = await app.fetch(
+                new Request(`https://media.pollinations.ai/${id}`),
+                env,
+                fullCtx,
+            );
+            expect(full.status).toBe(200);
+            expect(new Uint8Array(await full.arrayBuffer())).toEqual(bytes);
+            await waitOnExecutionContext(fullCtx);
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 
     it("identical uploads get distinct ids", async () => {

@@ -342,6 +342,69 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("KEGG parses TSV lines, caps names and treats an empty body as no match", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "rest.kegg.jp");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname.endsWith("/aspirin"))
+            return new Response(
+                "C01405\tAspirin; Acetylsalicylic acid; 2-Acetoxybenzenecarboxylic acid; Acetylsalicylate\nC13400\tBufferin; Aspirin softam\n",
+                { headers: { "content-type": "text/plain" } },
+            );
+        if (url.pathname.endsWith("/zzznotacompound123"))
+            return new Response("\n", {
+                headers: { "content-type": "text/plain" },
+            });
+        return new Response("unexpected", { status: 404 });
+    });
+    const c = await client(t);
+    let result = await call(c, "kegg_compound", { query: "aspirin" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "aspirin",
+        total: 2,
+        compounds: [
+            {
+                kegg_id: "C01405",
+                names: [
+                    "Aspirin",
+                    "Acetylsalicylic acid",
+                    "2-Acetoxybenzenecarboxylic acid",
+                    "Acetylsalicylate",
+                ],
+            },
+            {
+                kegg_id: "C13400",
+                names: ["Bufferin", "Aspirin softam"],
+            },
+        ],
+    });
+    result = await call(c, "kegg_compound", { query: "aspirin", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 2);
+    assert.equal(value(result).compounds.length, 1);
+    assert.equal(value(result).compounds[0].kegg_id, "C01405");
+    result = await call(c, "kegg_compound", {
+        query: "zzznotacompound123",
+    });
+    assert.equal(result.isError, true);
+    assert.match(
+        result.content[0].text,
+        /No KEGG compound found for "zzznotacompound123"/,
+    );
+    result = await call(c, "kegg_compound", { query: " " });
+    assert.equal(result.isError, true);
+    assert.equal(count, 3);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +427,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "kegg_compound",
             ].sort(),
         );
     });

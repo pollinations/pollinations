@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "water_level",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,106 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("water_level returns only the latest readings, in feet above MLLW", async (t) => {
+    const readings = [
+        { t: "2026-11-18 00:00", v: "3.15", s: "0.043", f: "0,0,0,0", q: "p" },
+        { t: "2026-11-18 00:06", v: "3.222", s: "0.043", f: "1,0,0,0", q: "p" },
+        { t: "2026-11-18 12:00", v: "3.081", s: "0.112", f: "1,0,0,0", q: "p" },
+        { t: "2026-11-18 12:06", v: "3.209", s: "0.144", f: "1,0,0,0", q: "p" },
+    ];
+    const fetch = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.tidesandcurrents.noaa.gov");
+        assert.equal(url.searchParams.get("product"), "water_level");
+        assert.equal(url.searchParams.get("datum"), "MLLW");
+        assert.equal(url.searchParams.get("station"), "8518750");
+        assert.match(url.searchParams.get("begin_date"), /^\d{8}$/);
+        assert.match(url.searchParams.get("end_date"), /^\d{8}$/);
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.ok(
+            new Headers(init.headers)
+                .get("user-agent")
+                .includes("hello@pollinations.ai"),
+        );
+        return Response.json({
+            metadata: { id: "8518750", name: "The Battery" },
+            data: readings,
+        });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "water_level",
+        arguments: { station: "8518750", limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        station: "8518750",
+        name: "The Battery",
+        datum: "MLLW",
+        units: "feet",
+        readings: [
+            { time: "2026-11-18 12:00", value_ft: 3.081, sigma_ft: 0.112 },
+            { time: "2026-11-18 12:06", value_ft: 3.209, sigma_ft: 0.144 },
+        ],
+    });
+    // Defaults: station 8518750, latest reading only.
+    const single = await c.callTool({ name: "water_level", arguments: {} });
+    assert.notEqual(single.isError, true, JSON.stringify(single));
+    assert.deepEqual(JSON.parse(single.content[0].text).readings, [
+        { time: "2026-11-18 12:06", value_ft: 3.209, sigma_ft: 0.144 },
+    ]);
+    // Bad station ids and limits are rejected before any fetch.
+    for (const arguments_ of [
+        { station: "New York" },
+        { station: "851875" },
+        { station: "8518750", limit: 4 },
+        { station: "8518750", limit: 0 },
+    ]) {
+        assert.equal(
+            (await c.callTool({ name: "water_level", arguments: arguments_ }))
+                .isError,
+            true,
+        );
+    }
+    assert.equal(fetch.mock.callCount(), 2);
+});
+
+test("water_level unknown stations and empty days are clean errors or empty lists", async (t) => {
+    const mock = t.mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(
+                JSON.stringify({
+                    error: {
+                        message: "There is no MLLW for the station: 9999999",
+                    },
+                }),
+                { status: 400 },
+            ),
+    );
+    const c = await client();
+    t.after(() => c.close());
+    const missing = await c.callTool({
+        name: "water_level",
+        arguments: { station: "9999999" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /400/);
+    mock.mock.mockImplementation(async () =>
+        Response.json({
+            metadata: { id: "8518750", name: "The Battery" },
+            data: [],
+        }),
+    );
+    const empty = await c.callTool({
+        name: "water_level",
+        arguments: { station: "8518750" },
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(JSON.parse(empty.content[0].text).readings, []);
 });

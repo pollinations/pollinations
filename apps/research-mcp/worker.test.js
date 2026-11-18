@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dryad_search",
             ].sort(),
         );
     });
@@ -644,4 +645,109 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("dryad_search unwraps the stash:datasets envelope and projects datasets", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "datadryad.org");
+        assert.equal(target.pathname, "/api/v2/search");
+        assert.equal(target.searchParams.get("q"), "climate");
+        assert.equal(target.searchParams.get("per_page"), "2");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            count: 2,
+            total: 9873,
+            _embedded: {
+                "stash:datasets": [
+                    {
+                        identifier: "doi:10.5061/dryad.hx3ffbgjj",
+                        title: "The climatic drivers of long-term population changes in rainforest montane birds",
+                        publicationDate: "2023-01-19",
+                        authors: [
+                            {
+                                firstName: "Alejandro",
+                                lastName: "de la Fuente",
+                                email: "alejandro@example.edu",
+                                affiliation: "James Cook University",
+                            },
+                            {
+                                firstName: "Stephen",
+                                lastName: "Williams",
+                                email: "stephen@example.edu",
+                                affiliation: "James Cook University",
+                            },
+                        ],
+                        abstract: "<p>Climate-driven biodiversity erosion.</p>",
+                        storageSize: 750054,
+                    },
+                    {
+                        identifier: "doi:10.5061/dryad.m63xsj44h",
+                        title: "Climate change threatens the future of rainforest ringtail possums by 2050",
+                        publicationDate: "2022-10-25",
+                        authors: [
+                            {
+                                firstName: "Alejandro",
+                                lastName: "de la Fuente",
+                            },
+                        ],
+                        abstract: "<p>Possums.</p>",
+                        storageSize: 12345,
+                    },
+                ],
+            },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "dryad_search", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "climate",
+        total: 9873,
+        datasets: [
+            {
+                doi: "10.5061/dryad.hx3ffbgjj",
+                title: "The climatic drivers of long-term population changes in rainforest montane birds",
+                authors: ["Alejandro de la Fuente", "Stephen Williams"],
+                publication_date: "2023-01-19",
+            },
+            {
+                doi: "10.5061/dryad.m63xsj44h",
+                title: "Climate change threatens the future of rainforest ringtail possums by 2050",
+                authors: ["Alejandro de la Fuente"],
+                publication_date: "2022-10-25",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({
+            count: 0,
+            total: 0,
+            _embedded: { "stash:datasets": [] },
+        }),
+    );
+    const empty = await call(c, "dryad_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        datasets: [],
+    });
+
+    const before = fetches;
+    const blank = await call(c, "dryad_search", { query: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
 });

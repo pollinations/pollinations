@@ -20,39 +20,39 @@ You build and host the application. Pollinations provides model access, account 
 ## 🛒 How do I add credit? {#how-do-i-get-pollen}
 
 - **Top up** from [Credits](https://enter.pollinations.ai/pollen) through Stripe Checkout.
-- **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
+- **Complete Quests** and claim what you earn from the [Quests dashboard](https://enter.pollinations.ai/quests).
 - **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
 - **Publish a community model** with a price. The model owner receives 75% of what is spent on it.
 
 ## 🆓 Can I try Pollinations without a credit card?
 
-Yes. Create an account, complete eligible Quests, and claim the rewards to add to your Quest balance. Available Quests and rewards are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
+Yes. Create an account, complete eligible Quests, and claim what you earn to add it to your 🌱 Quest balance. Available Quests and their amounts are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
 
 ## 🎯 How do Quests work?
 
-Quests reward eligible account activity and community contributions.
+Quests pay for eligible account activity and community contributions.
 
-- Browse the dashboard for current requirements, progress, and rewards.
-- Claim completed rewards from the dashboard; past qualifying activity may count.
-- Contribution quests are labeled GitHub issues with a stated reward. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim the reward afterward.
-- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and the submitter can claim the reward once the app is approved.
+- Browse the dashboard for current requirements, progress, and amounts.
+- Claim what you earned from the dashboard; past qualifying activity may count.
+- Contribution quests are labeled GitHub issues with a stated amount. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim it afterward.
+- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and you can claim what you earned after the catalog PR merges.
 
-Quest availability and reward amounts can change, so the dashboard and the linked issue are the source of truth.
+Quest availability and amounts can change, so the dashboard and the linked issue are the source of truth.
 
 ## 👛 How does my wallet work? {#how-does-my-pollen-wallet-work}
 
 Your wallet has two balances:
 
-- **Quest balance**: earned from Quests and eligible developer rewards.
-- **Paid balance**: purchased through Stripe and eligible developer rewards.
+- 🌱 **Quest balance**: earned from Quests and eligible developer earnings.
+- 💳 **Paid balance**: purchased through Stripe and eligible developer earnings.
 
 Every request is charged to one balance, never split across both:
 
-- A regular model uses the Quest balance when it can cover the estimated charge; otherwise it uses the paid balance.
+- A regular model uses the 🌱 Quest balance when it can cover the estimated charge; otherwise it uses the paid balance.
 - A paid-only model requires the paid balance.
 - The final cost can exceed the estimate and make the selected balance negative.
 
-Developer rewards are credited to the matching balance type used by the paying user.
+Developer earnings are credited to the matching balance type used by the paying user.
 
 ## 💰 How much does a generation cost?
 

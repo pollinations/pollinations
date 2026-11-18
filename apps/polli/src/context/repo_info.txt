@@ -29,10 +29,10 @@ To check one model, listed or not, fetch https://gen.pollinations.ai/v1/models/<
 
 ## Quests (complete tasks to add to your balance)
 
-Complete quests from the Quests dashboard at enter.pollinations.ai/quests → rewards land in the Quest balance.
+Complete quests from the Quests dashboard at enter.pollinations.ai/quests → what you earn lands in the Quest balance.
 - Lanes: onboarding, model usage, app growth, GitHub contributions
-- Contribute quests: multiple contributors may submit PRs; maintainers select and assign the best solution before merge; the selected contributor claims the fixed reward
-- In alpha — rewards and availability evolve
+- Contribute quests: multiple contributors may submit PRs; maintainers select and assign the best solution before merge; the selected contributor claims the fixed amount
+- In alpha — amounts and availability evolve
 - Regular models use the Quest balance when it covers the request, otherwise the paid balance (never split) | Paid-only models require the paid balance
 
 ## Auth & Keys

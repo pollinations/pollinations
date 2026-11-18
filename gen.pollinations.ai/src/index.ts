@@ -175,7 +175,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Contribute
 
-- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a community quest, submit a PR, and claim the Quest reward.
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a community quest, submit a PR, and claim what you earned in Quest balance.
 
 ## Account
 

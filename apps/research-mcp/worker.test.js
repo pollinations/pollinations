@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { macrostratTools } from "./tools/macrostrat.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -342,6 +343,173 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Macrostrat lists the units at a point and rejects out-of-range coordinates before fetching", async (t) => {
+    const units = [
+        {
+            unit_id: 15318,
+            section_id: 4059,
+            col_id: 498,
+            project_id: 1,
+            col_area: 28567.506,
+            unit_name: "Piney Creek Alluvium",
+            strat_name_id: 5765,
+            Mbr: "",
+            Fm: "Piney Creek Alluvium",
+            Gp: "",
+            SGp: "",
+            t_age: 0,
+            b_age: 0.0117,
+            max_thick: 6,
+            min_thick: 0,
+            outcrop: "surface",
+            pbdb_collections: 0,
+            pbdb_occurrences: 0,
+        },
+        {
+            unit_id: 15319,
+            section_id: 4059,
+            col_id: 498,
+            project_id: 1,
+            col_area: 28567.506,
+            unit_name: "Broadway Alluvium",
+            strat_name_id: 7504,
+            Mbr: "",
+            Fm: "Broadway Alluvium",
+            Gp: "",
+            SGp: "",
+            t_age: 0.0117,
+            b_age: 0.3327,
+            max_thick: 7,
+            min_thick: 0,
+            outcrop: "surface",
+            pbdb_collections: 0,
+            pbdb_occurrences: 0,
+        },
+        {
+            unit_id: 15320,
+            section_id: 4059,
+            col_id: 498,
+            project_id: 1,
+            col_area: 28567.506,
+            unit_name: "Louviers Alluvium",
+            strat_name_id: 7519,
+            Mbr: "",
+            Fm: "Louviers Alluvium",
+            Gp: "",
+            SGp: "",
+            t_age: 0.3327,
+            b_age: 0.6538,
+            max_thick: 10,
+            min_thick: 0,
+            outcrop: "surface",
+            pbdb_collections: 0,
+            pbdb_occurrences: 0,
+        },
+    ];
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "macrostrat.org");
+        assert.equal(url.searchParams.get("lat"), "40");
+        assert.equal(url.searchParams.get("lng"), "-105");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations\.ai/);
+        return Response.json({
+            success: { v: 2, license: "CC-BY 4.0", data: units },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "macrostrat_units", {
+        lat: 40,
+        lng: -105,
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        lat: 40,
+        lng: -105,
+        total: 3,
+        units: [
+            {
+                unit_name: "Piney Creek Alluvium",
+                formation: "Piney Creek Alluvium",
+                group: null,
+                top_age_ma: 0,
+                bottom_age_ma: 0.0117,
+                max_thickness_m: 6,
+                min_thickness_m: 0,
+                outcrop: "surface",
+            },
+            {
+                unit_name: "Broadway Alluvium",
+                formation: "Broadway Alluvium",
+                group: null,
+                top_age_ma: 0.0117,
+                bottom_age_ma: 0.3327,
+                max_thickness_m: 7,
+                min_thickness_m: 0,
+                outcrop: "surface",
+            },
+        ],
+    });
+    result = await call(c, "macrostrat_units", { lat: 40, lng: -105 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 2);
+    assert.equal(value(result).units.length, 3);
+    assert.equal(value(result).total, 3);
+});
+
+test("Macrostrat returns an empty list where there are no units", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "macrostrat.org");
+        assert.equal(url.searchParams.get("lat"), "0");
+        assert.equal(url.searchParams.get("lng"), "0");
+        return Response.json({
+            success: { v: 2, license: "CC-BY 4.0", data: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "macrostrat_units", { lat: 0, lng: 0 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), { lat: 0, lng: 0, total: 0, units: [] });
+});
+
+test("Macrostrat handler validates coordinates and falls back on an out-of-range limit", async () => {
+    const run = macrostratTools[0][3];
+    let fetches = 0;
+    const stub = async () => {
+        fetches += 1;
+        return {
+            success: {
+                data: [
+                    {
+                        unit_name: "Piney Creek Alluvium",
+                        Fm: "Piney Creek Alluvium",
+                        Gp: "",
+                        t_age: 0,
+                        b_age: 0.0117,
+                        max_thick: 6,
+                        min_thick: 0,
+                        outcrop: "surface",
+                    },
+                ],
+            },
+        };
+    };
+    await assert.rejects(run({ lat: 200, lng: -105 }, stub), /lat must be/);
+    await assert.rejects(run({ lat: 40, lng: 999 }, stub), /lng must be/);
+    assert.equal(fetches, 0);
+    const res = await run({ lat: 40, lng: -105, limit: 99 }, stub);
+    assert.equal(fetches, 1);
+    assert.equal(res.units.length, 1);
+    assert.equal(res.total, 1);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +532,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "macrostrat_units",
             ].sort(),
         );
     });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "lei_lookup",
             ].sort(),
         );
     });
@@ -644,4 +645,280 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("lei_lookup returns GLEIF records and ranks an exact name match first", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.gleif.org");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const name = target.searchParams.get("filter[entity.legalName]");
+        if (name === "Zzzqqqxxyy") {
+            assert.equal(target.searchParams.get("page[size]"), "5");
+            return Response.json({
+                meta: {
+                    pagination: {
+                        currentPage: 1,
+                        perPage: 5,
+                        from: null,
+                        to: null,
+                        total: 0,
+                        lastPage: 1,
+                    },
+                },
+                data: [],
+            });
+        }
+        if (name === "APPLE INC") {
+            // Upstream order here puts the exact match second; the tool must
+            // rank "Apple Inc." first.
+            return Response.json({
+                meta: {
+                    pagination: {
+                        currentPage: 1,
+                        perPage: 5,
+                        from: 1,
+                        to: 2,
+                        total: 24,
+                        lastPage: 5,
+                    },
+                },
+                data: [
+                    {
+                        type: "lei-records",
+                        id: "254900TWD71M3MX9I453",
+                        attributes: {
+                            lei: "254900TWD71M3MX9I453",
+                            entity: {
+                                legalName: {
+                                    name: "APPLE MANAGEMENT INC.",
+                                    language: "en",
+                                },
+                                legalAddress: {
+                                    city: "Panama",
+                                    region: "PA-7",
+                                    country: "PA",
+                                    postalCode: "0801",
+                                },
+                                status: "ACTIVE",
+                            },
+                        },
+                    },
+                    {
+                        type: "lei-records",
+                        id: "HWUPKR0MPOU8FGXBT394",
+                        attributes: {
+                            lei: "HWUPKR0MPOU8FGXBT394",
+                            entity: {
+                                legalName: {
+                                    name: "Apple Inc.",
+                                    language: "en",
+                                },
+                                legalAddress: {
+                                    city: "Glendale",
+                                    region: "US-CA",
+                                    country: "US",
+                                    postalCode: "91203",
+                                },
+                                status: "ACTIVE",
+                            },
+                        },
+                    },
+                ],
+            });
+        }
+        assert.equal(name, "Apple");
+        assert.equal(target.searchParams.get("page[size]"), "2");
+        return Response.json({
+            meta: {
+                pagination: {
+                    currentPage: 1,
+                    perPage: 2,
+                    from: 1,
+                    to: 2,
+                    total: 379,
+                    lastPage: 190,
+                },
+            },
+            data: [
+                {
+                    type: "lei-records",
+                    id: "969500WVQ16LAMI5J506",
+                    attributes: {
+                        lei: "969500WVQ16LAMI5J506",
+                        entity: {
+                            legalName: { name: "APPLE TREE", language: "fr" },
+                            legalAddress: {
+                                city: "SAINT-LEGER-EN-YVELINES",
+                                region: "FR-78",
+                                country: "FR",
+                                postalCode: "78610",
+                            },
+                            status: "ACTIVE",
+                        },
+                    },
+                },
+                {
+                    type: "lei-records",
+                    id: "335800LUOBQQY1UPKZ54",
+                    attributes: {
+                        lei: "335800LUOBQQY1UPKZ54",
+                        entity: {
+                            legalName: {
+                                name: "APPLE IMPRESSION",
+                                language: "en",
+                            },
+                            legalAddress: {
+                                city: "Pulwama",
+                                region: "IN-JK",
+                                country: "IN",
+                                postalCode: "192301",
+                            },
+                            status: "ACTIVE",
+                        },
+                    },
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "lei_lookup", { name: "Apple", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 379,
+        query: "Apple",
+        records: [
+            {
+                lei: "969500WVQ16LAMI5J506",
+                legal_name: "APPLE TREE",
+                city: "SAINT-LEGER-EN-YVELINES",
+                region: "FR-78",
+                country: "FR",
+                postal_code: "78610",
+                status: "ACTIVE",
+            },
+            {
+                lei: "335800LUOBQQY1UPKZ54",
+                legal_name: "APPLE IMPRESSION",
+                city: "Pulwama",
+                region: "IN-JK",
+                country: "IN",
+                postal_code: "192301",
+                status: "ACTIVE",
+            },
+        ],
+    });
+
+    const ranked = await call(c, "lei_lookup", { name: "APPLE INC" });
+    assert.notEqual(ranked.isError, true, JSON.stringify(ranked));
+    assert.equal(value(ranked).total, 24);
+    assert.equal(value(ranked).records[0].legal_name, "Apple Inc.");
+    assert.equal(value(ranked).records[0].lei, "HWUPKR0MPOU8FGXBT394");
+
+    const empty = await call(c, "lei_lookup", { name: "Zzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        total: 0,
+        query: "Zzzqqqxxyy",
+        records: [],
+    });
+
+    const before = fetches;
+    const neither = await call(c, "lei_lookup", {});
+    assert.equal(neither.isError, true);
+    assert.equal(fetches, before);
+    const badLei = await call(c, "lei_lookup", { lei: "SHORT" });
+    assert.equal(badLei.isError, true);
+    assert.equal(fetches, before);
+    const tooMany = await call(c, "lei_lookup", {
+        name: "Apple",
+        limit: 99,
+    });
+    assert.equal(tooMany.isError, true);
+    assert.equal(fetches, before);
+});
+
+test("lei_lookup fetches one record by exact LEI and reports a missing LEI cleanly", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.gleif.org");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.pathname.endsWith("/00000000000000000000")) {
+            return new Response("<html>Not Found</html>", {
+                status: 404,
+                headers: { "content-type": "text/html" },
+            });
+        }
+        assert.equal(
+            target.pathname,
+            "/api/v1/lei-records/969500WVQ16LAMI5J506",
+        );
+        return Response.json({
+            meta: {},
+            data: {
+                type: "lei-records",
+                id: "969500WVQ16LAMI5J506",
+                attributes: {
+                    lei: "969500WVQ16LAMI5J506",
+                    entity: {
+                        legalName: { name: "APPLE TREE", language: "fr" },
+                        legalAddress: {
+                            city: "SAINT-LEGER-EN-YVELINES",
+                            region: "FR-78",
+                            country: "FR",
+                            postalCode: "78610",
+                        },
+                        status: "ACTIVE",
+                    },
+                },
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "lei_lookup", {
+        lei: "969500wvq16lami5j506",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 1,
+        query: "969500WVQ16LAMI5J506",
+        records: [
+            {
+                lei: "969500WVQ16LAMI5J506",
+                legal_name: "APPLE TREE",
+                city: "SAINT-LEGER-EN-YVELINES",
+                region: "FR-78",
+                country: "FR",
+                postal_code: "78610",
+                status: "ACTIVE",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    const missing = await call(c, "lei_lookup", {
+        lei: "00000000000000000000",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(
+        missing.content[0].text,
+        /No LEI record found for 00000000000000000000/,
+    );
 });

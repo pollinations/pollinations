@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "interpro_entry",
             ].sort(),
         );
     });
@@ -644,4 +645,78 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("interpro_entry strips HTML and cite markers, caps the description and names missing entries", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "www.ebi.ac.uk");
+        assert.equal(
+            init.headers["User-Agent"].includes("hello@pollinations.ai"),
+            true,
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        if (url.pathname.includes("IPR999999"))
+            return new Response(null, { status: 204 });
+        // Trimmed real fixture for IPR000001 (live: 200, 5,133 B, 2.84 s).
+        return Response.json({
+            metadata: {
+                accession: "IPR000001",
+                type: "domain",
+                member_databases: {
+                    cdd: { cd00108: "KR" },
+                    profile: { PS50070: "Kringle domain profile" },
+                    pfam: { PF00051: "Kringle domain" },
+                    smart: { SM00130: "Kringle domain" },
+                },
+                name: { name: "Kringle", short: "Kringle" },
+                description: [
+                    {
+                        text: "<p>Kringles are autonomous structural domains, found throughout the blood clotting and fibrinolytic proteins. Kringle domains are believed to play a role in binding mediators (e.g., membranes, other proteins or phospholipids), and in the regulation of proteolytic activity [[cite:PUB00002414], [cite:PUB00001541], [cite:PUB00003257]]. Kringle domains [[cite:PUB00003400], [cite:PUB00000803], [cite:PUB00001620]] are characterised by a triple loop, 3-disulphide bridge structure, whose conformation is defined by a number of hydrogen bonds and small pieces of anti-parallel β-sheet. They are found in a varying number of copies in some plasma proteins including prothrombin and urokinase-type plasminogen activator, which are serine proteases belonging to MEROPS peptidase family S1A.</p>",
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "interpro_entry", {
+        accession: "ipr000001",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        requests[0].pathname,
+        "/interpro/api/entry/interpro/IPR000001/",
+    );
+    assert.deepEqual(value(result), {
+        accession: "IPR000001",
+        name: "Kringle",
+        type: "domain",
+        description:
+            "Kringles are autonomous structural domains, found throughout the blood clotting and fibrinolytic proteins. Kringle domains are believed to play a role in binding mediators (e.g., membranes, other proteins or phospholipids), and in the regulation of proteolytic activity. Kringle domains are characterised by a triple loop, 3-disulphide bridge structure, whose conformation is defined by a number of hydrogen bonds and small pieces of anti-parallel β-sheet. They are found in a varying number of co...",
+        member_databases: {
+            cdd: [{ accession: "cd00108", name: "KR" }],
+            profile: [{ accession: "PS50070", name: "Kringle domain profile" }],
+            pfam: [{ accession: "PF00051", name: "Kringle domain" }],
+            smart: [{ accession: "SM00130", name: "Kringle domain" }],
+        },
+    });
+    assert.equal(value(result).description.length, 500);
+    assert.doesNotMatch(value(result).description, /<p>|cite:/);
+
+    const missing = await call(c, "interpro_entry", {
+        accession: "IPR999999",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(
+        missing.content[0].text,
+        /No InterPro entry found for IPR999999/,
+    );
+
+    const callsBefore = requests.length;
+    const bad = await call(c, "interpro_entry", { accession: "KRINGLE" });
+    assert.equal(bad.isError, true);
+    assert.equal(requests.length, callsBefore);
 });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "worms_species",
             ].sort(),
         );
     });
@@ -644,4 +645,98 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("WoRMS species lookup returns the projected record and treats 204 as empty", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.marinespecies.org");
+        assert.equal(target.pathname, "/rest/AphiaRecordsByName/Delphinus");
+        assert.equal(target.searchParams.get("like"), "false");
+        assert.equal(target.searchParams.get("marine_only"), "true");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json([
+            {
+                AphiaID: 137015,
+                url: "https://www.marinespecies.org/aphia.php?p=taxdetails&id=137015",
+                scientificname: "Delphinus",
+                authority: "Linnaeus, 1758",
+                status: "accepted",
+                unacceptreason: null,
+                taxonRankID: 180,
+                rank: "Genus",
+                valid_AphiaID: 137015,
+                valid_name: "Delphinus",
+                valid_authority: "Linnaeus, 1758",
+                kingdom: "Animalia",
+                phylum: "Chordata",
+                class: "Mammalia",
+                order: "Cetartiodactyla",
+                family: "Delphinidae",
+                genus: "Delphinus",
+                citation:
+                    "Fordyce, E.; Perrin, W.F. (2026). World Cetacea Database.",
+                lsid: "urn:lsid:marinespecies.org:taxname:137015",
+                isMarine: 1,
+                isBrackish: null,
+                isFreshwater: null,
+                isTerrestrial: 0,
+                match_type: "exact",
+            },
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "worms_species", {
+        name: "Delphinus",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Delphinus",
+        total: 1,
+        species: [
+            {
+                name: "Delphinus",
+                authority: "Linnaeus, 1758",
+                status: "accepted",
+                rank: "Genus",
+                aphia_id: 137015,
+                valid_name: "Delphinus",
+                valid_authority: "Linnaeus, 1758",
+                kingdom: "Animalia",
+                phylum: "Chordata",
+                class: "Mammalia",
+                order: "Cetartiodactyla",
+                family: "Delphinidae",
+                genus: "Delphinus",
+                is_marine: true,
+                url: "https://www.marinespecies.org/aphia.php?p=taxdetails&id=137015",
+            },
+        ],
+    });
+
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return new Response(null, { status: 204 });
+    });
+    const empty = await call(c, "worms_species", {
+        name: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        species: [],
+    });
+
+    const blank = await call(c, "worms_species", { name: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 2);
 });

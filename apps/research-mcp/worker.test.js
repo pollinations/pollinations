@@ -342,6 +342,77 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("fruit returns exact nutrition for an exact name", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.fruityvice.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname.endsWith("/zzzznotreal"))
+            return new Response('{"error":"Not found"}', { status: 404 });
+        if (url.pathname.endsWith("/banana"))
+            return Response.json({
+                name: "Banana",
+                id: 1,
+                family: "Musaceae",
+                order: "Zingiberales",
+                genus: "Musa",
+                nutritions: {
+                    calories: 96,
+                    fat: 0.2,
+                    sugar: 17.2,
+                    carbohydrates: 22.0,
+                    protein: 1.0,
+                },
+            });
+        return Response.json({
+            name: "Apple",
+            id: 6,
+            family: "Rosaceae",
+            order: "Rosales",
+            genus: "Malus",
+            nutritions: {
+                calories: 52,
+                fat: 0.4,
+                sugar: 10.3,
+                carbohydrates: 11.4,
+                protein: 0.3,
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "fruit", { name: "apple" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "Apple",
+        id: 6,
+        family: "Rosaceae",
+        genus: "Malus",
+        order: "Rosales",
+        nutritions: {
+            calories: 52,
+            fat: 0.4,
+            sugar: 10.3,
+            carbohydrates: 11.4,
+            protein: 0.3,
+        },
+    });
+    result = await call(c, "fruit", { name: "Apple" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).name, "Apple");
+    result = await call(c, "fruit", { name: "zzzznotreal" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /No fruit found named "zzzznotreal"/);
+    result = await call(c, "fruit", { name: "   " });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 3);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +435,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "fruit",
             ].sort(),
         );
     });

@@ -348,6 +348,7 @@ for (const modern of [false, true]) {
         assert.deepEqual(
             (await c.listTools()).tools.map((t) => t.name).sort(),
             [
+                "advice",
                 "wikipedia_page",
                 "wikipedia_search",
                 "wiktionary_define",
@@ -644,4 +645,30 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("advice returns one random slip with id and text", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.href, "https://api.adviceslip.com/advice");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        return Response.json({
+            slip: {
+                id: 137,
+                advice: "You're not that important; it's what you do that counts.",
+            },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "advice", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        id: 137,
+        advice: "You're not that important; it's what you do that counts.",
+    });
 });

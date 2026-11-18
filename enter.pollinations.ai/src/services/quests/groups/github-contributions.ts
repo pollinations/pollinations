@@ -29,6 +29,7 @@ import {
 
 const QUEST_LABEL = "POLLEN-QUEST";
 const PR_REWARD = 5;
+const ISSUE_REPORT_REWARD = 2;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
 // date as REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
 const REWARDS_START = "2026-11-05T00:00:00Z";
@@ -100,7 +101,7 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Earn this for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
+    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A reward label on the PR, or on the quest it closes, sets another amount. [Connect GitHub](/account) so we can match your pull requests.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
@@ -112,12 +113,12 @@ const mergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn this for each issue closed by a merged PR. App submissions do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Each issue of yours closed by a merged PR earns $${ISSUE_REPORT_REWARD}, even if you fix it yourself. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     // Each fixed issue is its own reward (github:reported_issue:N).
     repeatable: true,
-    rewardAmount: 2,
+    rewardAmount: ISSUE_REPORT_REWARD,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };

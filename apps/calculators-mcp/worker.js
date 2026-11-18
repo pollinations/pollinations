@@ -9,6 +9,7 @@ import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { integerTools } from "./tools/integer.js";
 import { qrTools } from "./tools/qr.js";
+import { tidesTools } from "./tools/tides.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
 import { versionTools } from "./tools/versions.js";
@@ -21,6 +22,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...timeTools,
+            ...tidesTools,
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,

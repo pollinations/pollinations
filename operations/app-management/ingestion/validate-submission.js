@@ -35,9 +35,7 @@ function isOpenQuest(number) {
     }
     return (
         issue.state === "OPEN" &&
-        issue.labels.some((label) =>
-            ["QUEST", "POLLEN-QUEST"].includes(label.name),
-        )
+        issue.labels.some((label) => label.name === "QUEST")
     );
 }
 

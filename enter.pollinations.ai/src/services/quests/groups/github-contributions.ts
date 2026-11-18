@@ -27,7 +27,7 @@ import {
  * else 5, and quest PRs merged before REWARDS_START earn the quest's label.
  */
 
-const QUEST_LABEL = "POLLEN-QUEST";
+const QUEST_LABELS = ["QUEST", "POLLEN-QUEST"];
 const PR_REWARD = 5;
 const ISSUE_REPORT_REWARD = 2;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
@@ -101,7 +101,7 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A reward label on the PR, or on the quest it closes, sets another amount. [Connect GitHub](/account) so we can match your pull requests.`,
+    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A label on the PR, or on the quest it closes, can set another amount. [Connect GitHub](/account) so we can match your pull requests.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
@@ -388,7 +388,7 @@ function truncate(text: string, maxLength: number): string {
 }
 
 function hasQuestLabel(labels: { name: string }[]): boolean {
-    return labels.some((label) => label.name === QUEST_LABEL);
+    return labels.some((label) => QUEST_LABELS.includes(label.name));
 }
 
 // PRs merged into this repository's main branch; a fork's PR can close an issue too.
@@ -491,7 +491,7 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
     const issues = await searchAll<GitHubIssueNode>(
         token,
         QUEST_ISSUES_QUERY,
-        `repo:${REPO} label:${QUEST_LABEL} is:issue`,
+        `repo:${REPO} label:${QUEST_LABELS.join(",")} is:issue`,
     );
 
     // Quests without a reward label stay too: their PRs then keep the quest's
@@ -552,7 +552,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
         title: issue.title.replace(QUEST_TAG, "").trim(),
-        description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
+        description: `Help close this community quest. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",
         rewardAmount: issue.rewardAmount || PR_REWARD,

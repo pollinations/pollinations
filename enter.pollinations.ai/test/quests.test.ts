@@ -54,6 +54,7 @@ type SeedQuestIssue = {
     issueNumber: number;
     title: string;
     goal: string;
+    questLabel?: "POLLEN-QUEST" | "QUEST";
     // Adds the reward-<reward> label.
     reward: number | null;
     assigneeGithubId?: number | null;
@@ -97,7 +98,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
             : [],
         labels: [
-            { name: "POLLEN-QUEST" },
+            { name: issue.questLabel ?? "POLLEN-QUEST" },
             ...(issue.reward !== null
                 ? [{ name: `reward-${issue.reward}` }]
                 : []),
@@ -547,6 +548,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     });
     seedQuestIssue(mocks.github.state, {
         issueNumber: 804,
+        questLabel: "QUEST",
         title: "Unassigned bounty",
         goal: "Still available.",
         reward: 10,

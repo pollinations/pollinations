@@ -72,7 +72,7 @@ example place from [`default.project.json`](default.project.json).
 reply. Use it to answer from your own trigger, such as a ProximityPrompt or
 quest UI.
 
-When a request fails, Sage stays in character ("My purse is out of pollen…")
+When a request fails, Sage stays in character ("My balance is too low…")
 and the real reason (missing secret, HTTP off, wrong key, rate limit) goes to
 the server output with `warn`.
 

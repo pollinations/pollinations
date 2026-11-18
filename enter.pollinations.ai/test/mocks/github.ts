@@ -215,12 +215,14 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
-            const label = search.match(/\blabel:([^\s]+)/)?.[1];
+            const labels = search.match(/\blabel:([^\s]+)/)?.[1]?.split(",");
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
-                    (!label ||
-                        issue.labels?.some(({ name }) => name === label)),
+                    (!labels ||
+                        issue.labels?.some(({ name }) =>
+                            labels.includes(name),
+                        )),
             );
             const start = Number(body.variables?.after ?? 0);
             const nodes = issues.slice(start, start + 100).map((issue) => ({

@@ -28,6 +28,8 @@ export type TinybirdEvent = {
     responseTime?: number;
     /** Duration of this upstream attempt, excluding earlier attempts. */
     attemptResponseTime?: number;
+    /** Caller-requested text streaming mode; absent for non-text/older events. */
+    streamRequested?: boolean;
     responseStatus?: number;
     environment?: string;
     eventType: TinybirdEventType;

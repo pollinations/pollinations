@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-17",
+  "period_start": "2026-11-17",
+  "period_end": "2026-11-17",
+  "generated_at": "2026-11-18T06:14:33.316275+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/febd17dd4c3cd0dada551892e083b337c18dc074698f340c97e7bbe8e9c4dcbf"
+    }
+  ],
+  "text": "image requests now support background=transparent on supported models. PNG alpha survives, and GPU responses are checked before we record success. status codes are easily impressed."
+}

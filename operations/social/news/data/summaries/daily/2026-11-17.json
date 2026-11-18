@@ -1,0 +1,343 @@
+{
+  "date": "2026-11-17",
+  "period_start": "2026-11-17",
+  "period_end": "2026-11-17",
+  "title": "More models for images, speech, text, and decisions",
+  "summary": "New image, speech, text, and decision models arrived alongside a steadier Play playground, repeatable Quest claims, and ten community apps.\n\nAdded Hy4 Flash, GPT-6.2 Astra and Sol, two MAI Image 2.7 models, two decision models, and ZONOS3-Mini speech. DeepSeek V4.1 Flash 1017 also gained Quest access. The decision models return structured choices and probabilities, while both MAI models can edit images using up to five references.\n\nPlay now keeps inputs, results, and in-flight runs when you leave and return during the same visit. Its video controls follow each model's options, and Sonilo accepts reference-video uploads for sound effects. Repeat Quest rewards stack by activity, with a single claim for waiting rewards on the same balance. Across the site, dashboard, CLI, and docs, balance amounts are described in dollars.\n\nThe new listings span book covers, phone wallpapers, science experiments, model evaluation, and games where agents guess, vote, coordinate, or race. App pre-review now checks sign-in methods and default model eligibility.",
+  "pr_count": 53,
+  "prs": [
+    {
+      "number": 18202,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 18203,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19584,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19709,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19711,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19778,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19796,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19797,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19819,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19844,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19890,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19892,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19904,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19920,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19921,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19923,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19929,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19930,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19935,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19939,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19944,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19956,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19963,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19967,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19968,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19969,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19970,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19971,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19972,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19973,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19974,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19978,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19979,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19981,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19982,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19983,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19985,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19986,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19988,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19989,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19998,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 19999,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20000,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20002,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20003,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20005,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20007,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20008,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20009,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20010,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20011,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20012,
+      "date": "2026-11-17"
+    },
+    {
+      "number": 20016,
+      "date": "2026-11-17"
+    }
+  ],
+  "generated_at": "2026-11-18T06:14:33.316275+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Hy4 Flash joins text",
+      "text": "Use `tencent/hy4-flash` for text and image input, reasoning, and tools. It is paid-only and has a listed context length of 1,024,000 tokens. [View the model](https://enter.pollinations.ai/models?q=tencent/hy4-flash).",
+      "prs": [
+        19890
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Flash gains Quest access",
+      "text": "DeepSeek V4.1 Flash 1017 now accepts Quest balance as well as paid balance, with a 60 requests-per-minute per-user limit. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19892
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-6.2 Astra arrives",
+      "text": "Use paid-only `openai/gpt-6.2-astra` with text or image input, tools, and reasoning. It accepts up to 10 reference images and has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.2-astra).",
+      "prs": [
+        19981
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-6.2 Sol arrives",
+      "text": "Use paid-only `openai/gpt-6.2-sol` with text or image input, tools, and reasoning. It has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.2-sol).",
+      "prs": [
+        19981
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MAI Image Flash arrives",
+      "text": "Generate or edit images with `microsoft/mai-image-2.7-flash`, using up to five reference images for edits. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7-flash).",
+      "prs": [
+        19985
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MAI Image 2.7 arrives",
+      "text": "Generate images from text or edit them with up to five reference images using `microsoft/mai-image-2.7`. It accepts Quest or paid balance. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7).",
+      "prs": [
+        19986
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Microsoft decision model arrives",
+      "text": "Use `microsoft/microsoft-decision-1.1` to get typed choices and a probability for each fixed option through `/alpha/decisions` or `/v1/chat/completions`. It accepts Quest or paid balance and text-only requests. [View the model](https://enter.pollinations.ai/models?q=microsoft/microsoft-decision-1.1).",
+      "prs": [
+        19988
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Liquid d1.2 joins decisions",
+      "text": "Send text or JSON state to `liquid/d1.2` and get structured choices, scores, and probabilities through `/alpha/decisions` or `/v1/chat/completions`. It uses paid balance. [View the model](https://enter.pollinations.ai/models?q=liquid/d1.2).",
+      "prs": [
+        19989
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "ZONOS3-Mini speech arrives",
+      "text": "Turn text into MP3 or PCM speech with paid-only `zyphra/zonos3-mini` using the `alloy` voice. Requests accept up to 10,000 text characters and a 64 KiB payload. [View the model](https://enter.pollinations.ai/models?q=zyphra/zonos3-mini).",
+      "prs": [
+        20003
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Give Sonilo a video",
+      "text": "Upload a reference video in Play and use `sonilo/sonilo-1.1-sfx` to add sound effects. Play shows the `reference_video` field in its API example. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        19973
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Reference video in the SDK",
+      "text": "Pass `referenceVideo` to the SDK's `audioSpeech()` call for video-based sound effects. The SDK sends it as `reference_video`. [Browse the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        19973
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Play remembers your run",
+      "text": "Leave Play and return during the same visit without losing your inputs, result, or in-flight run. Video controls now follow each model's supported options, and Cmd/Ctrl+Enter starts a run. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        19974
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Repeat Quest rewards stack",
+      "text": "Repeat rewards now appear on one card per activity, with earned amounts and links to each result. Claim waiting rewards together for one balance, then keep the card for the next reward. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        19983
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

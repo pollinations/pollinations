@@ -64,6 +64,11 @@ import type {
     VideoGenerateOptions,
     VideoResponse,
 } from "./types.js";
+import {
+    createRealtimeSession,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+} from "./realtime.js";
 import { PollinationsError } from "./types.js";
 
 export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
@@ -308,6 +313,23 @@ export class Pollinations {
         this.videoTimeout =
             config.videoTimeout ??
             (config.timeout ? config.timeout : DEFAULT_VIDEO_TIMEOUT);
+    }
+
+    /**
+     * Open a realtime voice or transcription session (OpenAI Realtime
+     * protocol) on \`wss://gen.pollinations.ai/v1/realtime\`. Await
+     * \`session.ready\`, then \`send\` client events; server events
+     * arrive via the \`onEvent\` option. Billing settles when the
+     * socket closes.
+     */
+    realtime(
+        options: Omit<RealtimeSessionOptions, "apiKey" | "baseUrl"> = {},
+    ): RealtimeSession {
+        return createRealtimeSession({
+            ...options,
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+        });
     }
 
     // ============================================================================
@@ -2280,4 +2302,4 @@ export class Pollinations {
             },
         );
     }
-}
+                }

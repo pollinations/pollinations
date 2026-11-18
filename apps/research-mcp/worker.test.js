@@ -360,6 +360,7 @@ for (const modern of [false, true]) {
                 "get_article",
                 "arxiv_search",
                 "arxiv_paper",
+                "clinvar_variant",
                 "get_indicator_data",
                 "list_countries",
                 "crossref_search",
@@ -644,4 +645,137 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ClinVar search fetches IDs then summaries and projects accession, HGVS title, type, significance and xrefs", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname.endsWith("/esearch.fcgi")) {
+            assert.equal(url.searchParams.get("db"), "clinvar");
+            assert.equal(url.searchParams.get("term"), "BRCA1");
+            assert.equal(url.searchParams.get("retmax"), "2");
+            assert.equal(url.searchParams.get("tool"), "pollinations-research");
+            assert.equal(
+                url.searchParams.get("email"),
+                "hello@pollinations.ai",
+            );
+            return Response.json({
+                esearchresult: {
+                    count: "2",
+                    idlist: ["12345", "67890"],
+                },
+            });
+        }
+        if (url.pathname.endsWith("/esummary.fcgi")) {
+            assert.equal(url.searchParams.get("db"), "clinvar");
+            assert.equal(url.searchParams.get("id"), "12345,67890");
+            return Response.json({
+                result: {
+                    uids: ["12345", "67890"],
+                    12345: {
+                        uid: "12345",
+                        obj_type: "single nucleotide variant",
+                        accession: "VCV000012345",
+                        title: "NM_001065.4(TNFRSF1A):c.295T>A (p.Cys99Ser)",
+                        variation_set: [
+                            {
+                                variant_type: "single nucleotide variant",
+                                variation_xrefs: [
+                                    { db_source: "ClinGen", db_id: "CA280163" },
+                                    {
+                                        db_source: "UniProtKB",
+                                        db_id: "P19438#VAR_019304",
+                                    },
+                                    { db_source: "OMIM", db_id: "191190.0011" },
+                                    { db_source: "dbSNP", db_id: "104895228" },
+                                ],
+                            },
+                        ],
+                        germline_classification: {
+                            description: "Pathogenic",
+                        },
+                    },
+                    67890: {
+                        uid: "67890",
+                        obj_type: "Deletion",
+                        accession: "VCV000067890",
+                        title: "NM_000059.4(BRCA2):c.1234del (p.Ser412fs)",
+                        variation_set: [
+                            {
+                                variant_type: "Deletion",
+                                variation_xrefs: [],
+                            },
+                        ],
+                    },
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "clinvar_variant", { term: "BRCA1", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.equal(fetches, 2);
+    assert.deepEqual(value(res), {
+        term: "BRCA1",
+        total: 2,
+        variants: [
+            {
+                accession: "VCV000012345",
+                title: "NM_001065.4(TNFRSF1A):c.295T>A (p.Cys99Ser)",
+                variation_type: "single nucleotide variant",
+                significance: "Pathogenic",
+                xrefs: [
+                    "ClinGen:CA280163",
+                    "UniProtKB:P19438#VAR_019304",
+                    "OMIM:191190.0011",
+                    "dbSNP:104895228",
+                ],
+            },
+            {
+                accession: "VCV000067890",
+                title: "NM_000059.4(BRCA2):c.1234del (p.Ser412fs)",
+                variation_type: "Deletion",
+                significance: null,
+                xrefs: [],
+            },
+        ],
+    });
+});
+
+test("ClinVar returns an empty list for no match and rejects a blank term before any fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(url.searchParams.get("term"), "zzzzqqqxxyy");
+        return Response.json({
+            esearchresult: { count: "0", idlist: [] },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "clinvar_variant", { term: "zzzzqqqxxyy" });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.deepEqual(value(res), {
+        term: "zzzzqqqxxyy",
+        total: 0,
+        variants: [],
+    });
+    assert.equal(fetches, 1);
+
+    const blank = await call(c, "clinvar_variant", { term: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 1);
 });

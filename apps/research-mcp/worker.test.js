@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ghibli_film",
             ].sort(),
         );
     });
@@ -644,4 +645,124 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Ghibli lists all films and returns full details for one id", async (t) => {
+    const castle = {
+        id: "2baf70d1-42bb-4437-b551-e5fed5a87abe",
+        title: "Castle in the Sky",
+        original_title: "天空の城ラピュタ",
+        original_title_romanised: "Tenkū no shiro Rapyuta",
+        director: "Hayao Miyazaki",
+        producer: "Isao Takahata",
+        release_date: "1986",
+        running_time: "124",
+        rt_score: "95",
+        description:
+            "The orphan Sheeta inherited a mysterious crystal that links her to the mythical sky-kingdom of Laputa. With the help of resourceful Pazu and a rollicking band of sky pirates, she makes her way to the ruins of the once-great civilization. Sheeta and Pazu must outwit the evil Muska, who plans to use Laputa's science to make himself ruler of the world.",
+    };
+    const whisper = {
+        id: "ff24da26-a969-4f0e-ba1e-a122ead6c6e3",
+        title: "Whisper of the Heart",
+        original_title: "耳をすませば",
+        original_title_romanised: "Mimi wo sumaseba",
+        director: "Yoshifumi Kondō",
+        producer: "Toshio Suzuki",
+        release_date: "1995",
+        running_time: "111",
+        rt_score: "91",
+        description:
+            "Shizuku lives a simple life, dominated by her love for stories and writing. One day she notices that all the library books she has have been previously checked out by the same person: 'Seiji Amasawa'. Curious as to who he is, Shizuku meets a boy her age whom she finds infuriating, but discovers to her shock that he is her 'Prince of Books'. As she grows closer to him, she realises that he merely read all those books to bring himself closer to her. The boy Seiji aspires to be a violin maker in Italy, and it is his dreams that make Shizuku realise that she has no clear path for her life. Knowing that her strength lies in writing, she tests her talents by writing a story about Baron, a cat statuette belonging to Seiji's grandfather.",
+    };
+    const list = [
+        castle,
+        {
+            id: "12cfb892-aac0-4c5b-94af-521852e46d6a",
+            title: "Grave of the Fireflies",
+            original_title: "火垂るの墓",
+            original_title_romanised: "Hotaru no haka",
+            director: "Isao Takahata",
+            producer: "Toru Hara",
+            release_date: "1988",
+            running_time: "89",
+            rt_score: "97",
+            description:
+                "In the latter part of World War II, a boy and his sister, orphaned when their mother is killed in the firebombing of Tokyo, are left to survive on their own in what remains of civilian life in Japan. The plot follows this boy and his sister as they do their best to survive in the Japanese countryside, battling hunger, prejudice, and pride in their own quiet, personal battle.",
+        },
+        {
+            id: "58611129-2dbc-4a81-a72f-77ddfc1b1b49",
+            title: "My Neighbor Totoro",
+            original_title: "となりのトトロ",
+            original_title_romanised: "Tonari no Totoro",
+            director: "Hayao Miyazaki",
+            producer: "Hayao Miyazaki",
+            release_date: "1988",
+            running_time: "86",
+            rt_score: "93",
+            description:
+                "Two sisters move to the country with their father in order to be closer to their hospitalized mother, and discover the surrounding trees are inhabited by Totoros, magical spirits of the forest. When the youngest runs away from home, the older sister turns to the Totoro for help.",
+        },
+    ];
+    let fetchCount = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "ghibliapi.vercel.app");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname === "/films") return Response.json(list);
+        if (url.pathname === `/films/${castle.id}`)
+            return Response.json(castle);
+        if (url.pathname === `/films/${whisper.id}`)
+            return Response.json(whisper);
+        return new Response("{}", { status: 404 });
+    });
+
+    const c = await client(t);
+    const listRes = await call(c, "ghibli_film", {});
+    assert.notEqual(listRes.isError, true, JSON.stringify(listRes));
+    const listVal = value(listRes);
+    assert.equal(listVal.total, 3);
+    assert.deepEqual(listVal.films[0], {
+        id: "2baf70d1-42bb-4437-b551-e5fed5a87abe",
+        title: "Castle in the Sky",
+        original_title: "天空の城ラピュタ",
+        original_title_romanised: "Tenkū no shiro Rapyuta",
+        director: "Hayao Miyazaki",
+        producer: "Isao Takahata",
+        release_date: "1986",
+        running_time: "124",
+        rt_score: "95",
+    });
+    assert.equal(listVal.films[0].description, undefined);
+    assert.equal(listVal.films[1].title, "Grave of the Fireflies");
+
+    const filmRes = await call(c, "ghibli_film", { id: castle.id });
+    assert.notEqual(filmRes.isError, true, JSON.stringify(filmRes));
+    const filmVal = value(filmRes);
+    assert.equal(filmVal.film.title, "Castle in the Sky");
+    assert.equal(filmVal.film.descriptionTruncated, false);
+    assert.match(filmVal.film.description, /orphan Sheeta inherited/);
+    assert.equal(filmVal.film.description.length, 351);
+
+    const longRes = await call(c, "ghibli_film", { id: whisper.id });
+    assert.notEqual(longRes.isError, true, JSON.stringify(longRes));
+    const longVal = value(longRes);
+    assert.equal(longVal.film.descriptionTruncated, true);
+    assert.equal(longVal.film.description.length, 501);
+    assert.match(longVal.film.description, /…$/);
+    assert.match(longVal.film.description, /^Shizuku lives a simple life/);
+
+    const unknownRes = await call(c, "ghibli_film", {
+        id: "00000000-0000-0000-0000-000000000000",
+    });
+    assert.equal(unknownRes.isError, true, JSON.stringify(unknownRes));
+
+    const before = fetchCount;
+    const blankRes = await call(c, "ghibli_film", { id: "   " });
+    assert.equal(blankRes.isError, true, JSON.stringify(blankRes));
+    assert.equal(fetchCount, before);
 });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "chuck_norris_joke",
             ].sort(),
         );
     });
@@ -644,4 +645,69 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("chuck_norris_joke returns a random joke and validates the category before fetch", async (t) => {
+    const fetched = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.chucknorris.io");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        fetched.push(url.toString());
+        if (url.searchParams.get("category") === "dev")
+            return Response.json({
+                categories: ["dev"],
+                created_at: "2020-01-05 13:42:19.104863",
+                icon_url:
+                    "https://api.chucknorris.io/img/avatar/chuck-norris.png",
+                id: "reo41iwasygr5trac08e9g",
+                updated_at: "2020-01-05 13:42:19.104863",
+                url: "https://api.chucknorris.io/jokes/reo41iwasygr5trac08e9g",
+                value: "Chuck Norris is the ultimate mutex, all threads fear him.",
+            });
+        return Response.json({
+            categories: [],
+            created_at: "2020-01-05 13:42:28.143137",
+            icon_url: "https://api.chucknorris.io/img/avatar/chuck-norris.png",
+            id: "l_FL26CJSWioTMs6YMyONg",
+            updated_at: "2020-01-05 13:42:28.143137",
+            url: "https://api.chucknorris.io/jokes/l_FL26CJSWioTMs6YMyONg",
+            value: "Chuck Norris`s calender doesn`t need a leap year. Its more acurate than ours.",
+        });
+    });
+    const c = await client(t);
+    // Unknown category is rejected before any fetch, naming the real list.
+    let result = await call(c, "chuck_norris_joke", { category: "bogus" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Unknown Chuck Norris joke category/);
+    assert.equal(fetched.length, 0);
+    // Default call: exact object, joke text returned as published (typos kept).
+    result = await call(c, "chuck_norris_joke", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        id: "l_FL26CJSWioTMs6YMyONg",
+        joke: "Chuck Norris`s calender doesn`t need a leap year. Its more acurate than ours.",
+        categories: [],
+        url: "https://api.chucknorris.io/jokes/l_FL26CJSWioTMs6YMyONg",
+        icon_url: "https://api.chucknorris.io/img/avatar/chuck-norris.png",
+    });
+    assert.equal(fetched[0], "https://api.chucknorris.io/jokes/random");
+    // Category param lands in the fetched URL, upper-case normalized.
+    result = await call(c, "chuck_norris_joke", { category: "DEV" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        value(result).joke,
+        "Chuck Norris is the ultimate mutex, all threads fear him.",
+    );
+    assert.deepEqual(value(result).categories, ["dev"]);
+    assert.equal(
+        fetched[1],
+        "https://api.chucknorris.io/jokes/random?category=dev",
+    );
 });

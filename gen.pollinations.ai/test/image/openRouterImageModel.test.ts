@@ -104,13 +104,16 @@ describe("OpenRouter MiniMax H3 Image", () => {
                 },
             });
         });
-        const result = await callOpenRouterMiniMaxH3ImageAPI("edit this image", {
-            ...baseParams,
-            model: "minimax/minimax-h3-image",
-            resolution: "2k",
-            aspectRatio: "9:16",
-            image: [REFERENCE_IMAGE_URL],
-        });
+        const result = await callOpenRouterMiniMaxH3ImageAPI(
+            "edit this image",
+            {
+                ...baseParams,
+                model: "minimax/minimax-h3-image",
+                resolution: "2k",
+                aspectRatio: "9:16",
+                image: [REFERENCE_IMAGE_URL],
+            },
+        );
         expect(requests[0]).toEqual({
             model: "minimax/minimax-h3-image",
             prompt: "edit this image",

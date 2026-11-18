@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test, { afterEach, mock } from "node:test";
+import { gzipSync } from "node:zlib";
 import {
     Client,
     StreamableHTTPClientTransport,
@@ -361,6 +362,7 @@ for (const modern of [false, true]) {
                 "arxiv_search",
                 "arxiv_paper",
                 "get_indicator_data",
+                "hpa_gene",
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
@@ -644,4 +646,120 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("HPA gene search gunzips the Atlas response and projects symbol, description and synonyms", async (t) => {
+    // Trimmed live fixture: the first three records of a real TP53 search
+    // (verbatim projected fields). TP63 carries 14 synonyms upstream, so it
+    // proves the 10-synonym cap.
+    const fixture = [
+        {
+            Gene: "TP53",
+            "Gene synonym": ["LFS1", "p53"],
+            "Gene description": "Tumor protein p53",
+        },
+        {
+            Gene: "TP53INP1",
+            "Gene synonym": [
+                "DKFZp434M1317",
+                "FLJ22139",
+                "P53DINP1",
+                "SIP",
+                "Teap",
+                "TP53INP1A",
+                "TP53INP1B",
+            ],
+            "Gene description": "Tumor protein p53 inducible nuclear protein 1",
+        },
+        {
+            Gene: "TP63",
+            "Gene synonym": [
+                "EEC3",
+                "KET",
+                "NBP",
+                "OFC8",
+                "p40",
+                "p51",
+                "p53CP",
+                "p63",
+                "p73H",
+                "p73L",
+                "SHFM4",
+                "TP53CP",
+                "TP53L",
+                "TP73L",
+            ],
+            "Gene description": "Tumor protein p63",
+        },
+    ];
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.proteinatlas.org");
+        assert.equal(url.pathname, "/api/search_download.php");
+        assert.equal(url.searchParams.get("search"), "TP53");
+        assert.equal(url.searchParams.get("format"), "json");
+        assert.equal(url.searchParams.get("columns"), "g,gs,gd");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        // The Atlas answers with a gzip *file*, not gzip content-encoding:
+        // the body is real gzipped bytes the tool must decompress itself.
+        return new Response(gzipSync(JSON.stringify(fixture)), {
+            headers: { "content-type": "application/gzip" },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "hpa_gene", { gene: "TP53", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        gene: "TP53",
+        total: 3,
+        genes: [
+            {
+                symbol: "TP53",
+                description: "Tumor protein p53",
+                synonyms: ["LFS1", "p53"],
+            },
+        ],
+    });
+
+    const capped = await call(c, "hpa_gene", { gene: "TP53", limit: 3 });
+    assert.notEqual(capped.isError, true, JSON.stringify(capped));
+    assert.equal(value(capped).genes[2].symbol, "TP63");
+    assert.equal(value(capped).genes[2].synonyms.length, 10);
+    assert.equal(fetches, 2);
+});
+
+test("HPA gene search returns an empty list on no match and rejects bad input before fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches += 1;
+        const url = new URL(input);
+        if (url.searchParams.get("search") === "ZZZZQQQXXYY")
+            return new Response(gzipSync("[]"), {
+                headers: { "content-type": "application/gzip" },
+            });
+        // A body that is not gzip at all must fail cleanly, not crash.
+        return new Response('[{"Gene":"TP53"}]', {
+            headers: { "content-type": "application/json" },
+        });
+    });
+    const c = await client(t);
+    const empty = await call(c, "hpa_gene", { gene: "ZZZZQQQXXYY" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        gene: "ZZZZQQQXXYY",
+        total: 0,
+        genes: [],
+    });
+
+    const notGzip = await call(c, "hpa_gene", { gene: "TP53" });
+    assert.equal(notGzip.isError, true, JSON.stringify(notGzip));
+
+    const blank = await call(c, "hpa_gene", { gene: " " });
+    assert.equal(blank.isError, true, JSON.stringify(blank));
+    assert.equal(fetches, 2);
 });

@@ -13,6 +13,7 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        ctan: /^[a-z][a-z0-9-]{0,63}$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +167,29 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "ctan") {
+        // CTAN's JSON endpoint is latest-only: no version listing exists,
+        // so a pinned version is accepted only when it equals the latest.
+        const data = await fetchJson(
+            `https://ctan.org/json/2.0/pkg/${encoded}`,
+        );
+        const latest = data.version?.number;
+        if (!latest) throw new Error(`CTAN package ${name} has no version`);
+        if (version && version !== latest)
+            throw new Error(
+                `CTAN version ${version} not found for ${name} (latest is ${latest}; only the latest version is available)`,
+            );
+        return {
+            ecosystem,
+            name: data.name,
+            version: latest,
+            description: data.caption,
+            license: data.license,
+            authors: (data.authors ?? []).map((author) => author.id),
+            versionDate: data.version.date || null,
+            registryUrl: `https://ctan.org/pkg/${encoded}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +227,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements, or CTAN LaTeX package metadata (latest version, license, caption, authors). Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, CTAN latest. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +237,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "ctan",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

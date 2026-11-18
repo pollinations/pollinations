@@ -4715,8 +4715,10 @@ export const audioRoutes = new Hono<Env>()
                                 composition_plan: { type: "object" },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                                 instructions: {
                                     type: "string",
@@ -4831,8 +4833,10 @@ export const audioRoutes = new Hono<Env>()
                                 },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                             },
                         },

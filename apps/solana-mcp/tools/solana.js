@@ -15,7 +15,6 @@ const mintSchema = z.string().trim()
     .describe("Solana token mint address (base58)");
 const limitSchema = z.number().int().min(1).max(10).default(5)
     .describe("Number of recent signatures to inspect (default 5, max 10)");
-
 const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 export function base58Encode(bytes) {
@@ -33,10 +32,7 @@ export function base58Encode(bytes) {
 }
 
 class Reader {
-    constructor(bytes) {
-        this.bytes = bytes;
-        this.offset = 0;
-    }
+    constructor(bytes) { this.bytes = bytes; this.offset = 0; }
     take(size) {
         if (!Number.isInteger(size) || size < 0 || this.offset + size > this.bytes.length)
             throw new Error("Truncated on-chain event payload.");
@@ -45,14 +41,18 @@ class Reader {
         return value;
     }
     u8() { return this.take(1)[0]; }
-    u16() { return new DataView(this.take(2).buffer).getUint16(0, true); }
-    u32() { return new DataView(this.take(4).buffer).getUint32(0, true); }
-    u64() { return new DataView(this.take(8).buffer).getBigUint64(0, true).toString(); }
-    i64() { return Number(BigInt.asIntN(64, BigInt(\`0x\${[...this.take(8)].reverse().map(x => x.toString(16).padStart(2, "0")).join("") || "0"\`))); }
+    u16() { const b = this.take(2); return new DataView(b.buffer, b.byteOffset, 2).getUint16(0, true); }
+    u32() { const b = this.take(4); return new DataView(b.buffer, b.byteOffset, 4).getUint32(0, true); }
+    u64() { const b = this.take(8); return new DataView(b.buffer, b.byteOffset, 8).getBigUint64(0, true).toString(); }
+    i64() {
+        const b = this.take(8);
+        const hex = [...b].reverse().map((x) => x.toString(16).padStart(2, "0")).join("") || "0";
+        return Number(BigInt.asIntN(64, BigInt(`0x${hex}`)));
+    }
     u128() {
         const bytes = this.take(16);
         let value = 0n;
-        for (let i = bytes.length - 1; i >= 0; i--) value = (value << 8n) | BigInt(bytes[i]);
+        for (let i = bytes.length - 1; i >= 0; i -= 1) value = (value << 8n) | BigInt(bytes[i]);
         return value;
     }
     i128() { return BigInt.asIntN(128, this.u128()).toString(); }
@@ -70,17 +70,13 @@ class Reader {
     shareholders() {
         const count = this.u32();
         if (count > 1000) throw new Error("Unreasonable shareholder vector length.");
-        return Array.from({ length: count }, () => ({
-            address: this.pubkey(),
-            shareBps: this.u16(),
-        }));
+        return Array.from({ length: count }, () => ({ address: this.pubkey(), shareBps: this.u16() }));
     }
     get remaining() { return this.bytes.length - this.offset; }
 }
 
 function decodeBase64(value) {
-    if (typeof value !== "string" || value.length > 100000)
-        throw new Error("Invalid or oversized base64 event.");
+    if (typeof value !== "string" || value.length > 100000) throw new Error("Invalid or oversized base64 event.");
     const binary = atob(value);
     return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
@@ -93,26 +89,12 @@ export function decodeCreateEvent(encoded) {
     if (!startsWith(raw, CREATE_EVENT)) return null;
     const r = new Reader(raw.slice(8));
     const event = {
-        name: r.string(),
-        symbol: r.string(),
-        uri: r.string(),
-        mint: r.pubkey(),
-        bondingCurve: r.pubkey(),
-        user: r.pubkey(),
-        creator: r.pubkey(),
-        timestamp: r.i64(),
-        virtualTokenReserves: r.u64(),
-        virtualSolReserves: r.u64(),
-        realTokenReserves: r.u64(),
-        tokenTotalSupply: r.u64(),
-        tokenProgram: r.pubkey(),
-        isMayhemMode: r.bool(),
-        isCashbackEnabled: r.bool(),
-        quoteMint: r.pubkey(),
-        virtualQuoteReserves: r.u64(),
-        creatorFeeBps: r.u64(),
-        isHolderReward: r.bool(),
-        depth: r.u8(),
+        name: r.string(), symbol: r.string(), uri: r.string(),
+        mint: r.pubkey(), bondingCurve: r.pubkey(), user: r.pubkey(), creator: r.pubkey(),
+        timestamp: r.i64(), virtualTokenReserves: r.u64(), virtualSolReserves: r.u64(),
+        realTokenReserves: r.u64(), tokenTotalSupply: r.u64(), tokenProgram: r.pubkey(),
+        isMayhemMode: r.bool(), isCashbackEnabled: r.bool(), quoteMint: r.pubkey(),
+        virtualQuoteReserves: r.u64(), creatorFeeBps: r.u64(), isHolderReward: r.bool(), depth: r.u8(),
     };
     if (r.remaining !== 0) throw new Error("Unexpected trailing bytes in Pump.fun CreateEvent.");
     return event;
@@ -123,43 +105,18 @@ export function decodeTradeEvent(encoded) {
     if (!startsWith(raw, TRADE_EVENT)) return null;
     const r = new Reader(raw.slice(8));
     const event = {
-        mint: r.pubkey(),
-        solAmount: r.u64(),
-        tokenAmount: r.u64(),
-        isBuy: r.bool(),
-        user: r.pubkey(),
-        timestamp: r.i64(),
-        virtualSolReserves: r.u64(),
-        virtualTokenReserves: r.u64(),
-        realSolReserves: r.u64(),
-        realTokenReserves: r.u64(),
-        feeRecipient: r.pubkey(),
-        feeBasisPoints: r.u64(),
-        fee: r.u64(),
-        creator: r.pubkey(),
-        creatorFeeBasisPoints: r.u64(),
-        creatorFee: r.u64(),
-        trackVolume: r.bool(),
-        totalUnclaimedTokens: r.u64(),
-        totalClaimedTokens: r.u64(),
-        currentSolVolume: r.u64(),
-        lastUpdateTimestamp: r.i64(),
-        instructionName: r.string(),
-        mayhemMode: r.bool(),
-        cashbackFeeBasisPoints: r.u64(),
-        cashback: r.u64(),
-        buybackFeeBasisPoints: r.u64(),
-        buybackFee: r.u64(),
-        shareholders: r.shareholders(),
-        quoteMint: r.pubkey(),
-        quoteAmount: r.u64(),
-        virtualQuoteReserves: r.u64(),
-        realQuoteReserves: r.u64(),
-        holderRewardsBps: r.u64(),
-        holderRewards: r.u64(),
-        creatorFeeUnclaimed: r.u64(),
+        mint: r.pubkey(), solAmount: r.u64(), tokenAmount: r.u64(), isBuy: r.bool(),
+        user: r.pubkey(), timestamp: r.i64(), virtualSolReserves: r.u64(),
+        virtualTokenReserves: r.u64(), realSolReserves: r.u64(), realTokenReserves: r.u64(),
+        feeRecipient: r.pubkey(), feeBasisPoints: r.u64(), fee: r.u64(), creator: r.pubkey(),
+        creatorFeeBasisPoints: r.u64(), creatorFee: r.u64(), trackVolume: r.bool(),
+        totalUnclaimedTokens: r.u64(), totalClaimedTokens: r.u64(), currentSolVolume: r.u64(),
+        lastUpdateTimestamp: r.i64(), instructionName: r.string(), mayhemMode: r.bool(),
+        cashbackFeeBasisPoints: r.u64(), cashback: r.u64(), buybackFeeBasisPoints: r.u64(),
+        buybackFee: r.u64(), shareholders: r.shareholders(), quoteMint: r.pubkey(),
+        quoteAmount: r.u64(), virtualQuoteReserves: r.u64(), realQuoteReserves: r.u64(),
+        holderRewardsBps: r.u64(), holderRewards: r.u64(), creatorFeeUnclaimed: r.u64(),
     };
-    // Some deployed events append undocumented bytes. Keep them opaque.
     event.unparsedTrailingBytesLength = r.remaining;
     return event;
 }
@@ -175,110 +132,48 @@ export function decodePumpSwapEvent(encoded) {
     if (startsWith(discriminator, SWAP_CREATE_POOL_EVENT)) {
         kind = "pool_created";
         event = {
-            timestamp: r.i64(),
-            index: r.u16(),
-            creator: r.pubkey(),
-            baseMint: r.pubkey(),
-            quoteMint: r.pubkey(),
-            baseMintDecimals: r.u8(),
-            quoteMintDecimals: r.u8(),
-            baseAmountIn: r.u64(),
-            quoteAmountIn: r.u64(),
-            poolBaseAmount: r.u64(),
-            poolQuoteAmount: r.u64(),
-            minimumLiquidity: r.u64(),
-            initialLiquidity: r.u64(),
-            lpTokenAmountOut: r.u64(),
-            poolBump: r.u8(),
-            pool: r.pubkey(),
-            lpMint: r.pubkey(),
-            userBaseTokenAccount: r.pubkey(),
-            userQuoteTokenAccount: r.pubkey(),
-            coinCreator: r.pubkey(),
-            isMayhemMode: r.bool(),
-            creatorFeeBps: r.u64(),
-            canEditCreatorFee: r.bool(),
-            isHolderReward: r.bool(),
+            timestamp: r.i64(), index: r.u16(), creator: r.pubkey(), baseMint: r.pubkey(),
+            quoteMint: r.pubkey(), baseMintDecimals: r.u8(), quoteMintDecimals: r.u8(),
+            baseAmountIn: r.u64(), quoteAmountIn: r.u64(), poolBaseAmount: r.u64(),
+            poolQuoteAmount: r.u64(), minimumLiquidity: r.u64(), initialLiquidity: r.u64(),
+            lpTokenAmountOut: r.u64(), poolBump: r.u8(), pool: r.pubkey(), lpMint: r.pubkey(),
+            userBaseTokenAccount: r.pubkey(), userQuoteTokenAccount: r.pubkey(), coinCreator: r.pubkey(),
+            isMayhemMode: r.bool(), creatorFeeBps: r.u64(), canEditCreatorFee: r.bool(), isHolderReward: r.bool(),
         };
     } else if (startsWith(discriminator, SWAP_BUY_EVENT)) {
         kind = "trade_buy";
         event = {
-            timestamp: r.i64(),
-            baseAmountOut: r.u64(),
-            maxQuoteAmountIn: r.u64(),
-            userBaseTokenReserves: r.u64(),
-            userQuoteTokenReserves: r.u64(),
-            poolBaseTokenReserves: r.u64(),
-            poolQuoteTokenReserves: r.u64(),
-            quoteAmountIn: r.u64(),
-            lpFeeBasisPoints: r.u64(),
-            lpFee: r.u64(),
-            protocolFeeBasisPoints: r.u64(),
-            protocolFee: r.u64(),
-            quoteAmountInWithLpFee: r.u64(),
-            userQuoteAmountIn: r.u64(),
-            pool: r.pubkey(),
-            user: r.pubkey(),
-            userBaseTokenAccount: r.pubkey(),
-            userQuoteTokenAccount: r.pubkey(),
-            protocolFeeRecipient: r.pubkey(),
-            protocolFeeRecipientTokenAccount: r.pubkey(),
-            coinCreator: r.pubkey(),
-            coinCreatorFeeBasisPoints: r.u64(),
-            coinCreatorFee: r.u64(),
-            trackVolume: r.bool(),
-            totalUnclaimedTokens: r.u64(),
-            totalClaimedTokens: r.u64(),
-            currentSolVolume: r.u64(),
-            lastUpdateTimestamp: r.i64(),
-            minBaseAmountOut: r.u64(),
-            instructionName: r.string(),
-            cashbackFeeBasisPoints: r.u64(),
-            cashback: r.u64(),
-            buybackFeeBasisPoints: r.u64(),
-            buybackFee: r.u64(),
-            virtualQuoteReserves: r.i128(),
-            canBoost: r.bool(),
-            baseSupply: r.u64(),
-            holderRewardsBps: r.u64(),
-            holderRewards: r.u64(),
-            creatorFeeUnclaimed: r.u64(),
+            timestamp: r.i64(), baseAmountOut: r.u64(), maxQuoteAmountIn: r.u64(),
+            userBaseTokenReserves: r.u64(), userQuoteTokenReserves: r.u64(),
+            poolBaseTokenReserves: r.u64(), poolQuoteTokenReserves: r.u64(),
+            quoteAmountIn: r.u64(), lpFeeBasisPoints: r.u64(), lpFee: r.u64(),
+            protocolFeeBasisPoints: r.u64(), protocolFee: r.u64(), quoteAmountInWithLpFee: r.u64(),
+            userQuoteAmountIn: r.u64(), pool: r.pubkey(), user: r.pubkey(),
+            userBaseTokenAccount: r.pubkey(), userQuoteTokenAccount: r.pubkey(),
+            protocolFeeRecipient: r.pubkey(), protocolFeeRecipientTokenAccount: r.pubkey(),
+            coinCreator: r.pubkey(), coinCreatorFeeBasisPoints: r.u64(), coinCreatorFee: r.u64(),
+            trackVolume: r.bool(), totalUnclaimedTokens: r.u64(), totalClaimedTokens: r.u64(),
+            currentSolVolume: r.u64(), lastUpdateTimestamp: r.i64(), minBaseAmountOut: r.u64(),
+            instructionName: r.string(), cashbackFeeBasisPoints: r.u64(), cashback: r.u64(),
+            buybackFeeBasisPoints: r.u64(), buybackFee: r.u64(), virtualQuoteReserves: r.i128(),
+            canBoost: r.bool(), baseSupply: r.u64(), holderRewardsBps: r.u64(),
+            holderRewards: r.u64(), creatorFeeUnclaimed: r.u64(),
         };
     } else {
         kind = "trade_sell";
         event = {
-            timestamp: r.i64(),
-            baseAmountIn: r.u64(),
-            minQuoteAmountOut: r.u64(),
-            userBaseTokenReserves: r.u64(),
-            userQuoteTokenReserves: r.u64(),
-            poolBaseTokenReserves: r.u64(),
-            poolQuoteTokenReserves: r.u64(),
-            quoteAmountOut: r.u64(),
-            lpFeeBasisPoints: r.u64(),
-            lpFee: r.u64(),
-            protocolFeeBasisPoints: r.u64(),
-            protocolFee: r.u64(),
-            quoteAmountOutWithoutLpFee: r.u64(),
-            userQuoteAmountOut: r.u64(),
-            pool: r.pubkey(),
-            user: r.pubkey(),
-            userBaseTokenAccount: r.pubkey(),
-            userQuoteTokenAccount: r.pubkey(),
-            protocolFeeRecipient: r.pubkey(),
-            protocolFeeRecipientTokenAccount: r.pubkey(),
-            coinCreator: r.pubkey(),
-            coinCreatorFeeBasisPoints: r.u64(),
-            coinCreatorFee: r.u64(),
-            cashbackFeeBasisPoints: r.u64(),
-            cashback: r.u64(),
-            buybackFeeBasisPoints: r.u64(),
-            buybackFee: r.u64(),
-            virtualQuoteReserves: r.i128(),
-            canBoost: r.bool(),
-            baseSupply: r.u64(),
-            holderRewardsBps: r.u64(),
-            holderRewards: r.u64(),
+            timestamp: r.i64(), baseAmountIn: r.u64(), minQuoteAmountOut: r.u64(),
+            userBaseTokenReserves: r.u64(), userQuoteTokenReserves: r.u64(),
+            poolBaseTokenReserves: r.u64(), poolQuoteTokenReserves: r.u64(),
+            quoteAmountOut: r.u64(), lpFeeBasisPoints: r.u64(), lpFee: r.u64(),
+            protocolFeeBasisPoints: r.u64(), protocolFee: r.u64(), quoteAmountOutWithoutLpFee: r.u64(),
+            userQuoteAmountOut: r.u64(), pool: r.pubkey(), user: r.pubkey(),
+            userBaseTokenAccount: r.pubkey(), userQuoteTokenAccount: r.pubkey(),
+            protocolFeeRecipient: r.pubkey(), protocolFeeRecipientTokenAccount: r.pubkey(),
+            coinCreator: r.pubkey(), coinCreatorFeeBasisPoints: r.u64(), coinCreatorFee: r.u64(),
+            cashbackFeeBasisPoints: r.u64(), cashback: r.u64(), buybackFeeBasisPoints: r.u64(),
+            buybackFee: r.u64(), virtualQuoteReserves: r.i128(), canBoost: r.bool(),
+            baseSupply: r.u64(), holderRewardsBps: r.u64(), holderRewards: r.u64(),
             creatorFeeUnclaimed: r.u64(),
         };
     }
@@ -310,17 +205,14 @@ function programDataLines(logMessages, programId) {
 }
 
 async function scanProgramEvents(programId, limit, decoder) {
-    const signatures = await rpcCall("getSignaturesForAddress", [
-        programId, { limit, commitment: "confirmed" },
-    ]);
+    const signatures = await rpcCall("getSignaturesForAddress", [programId, { limit, commitment: "confirmed" }]);
     const entries = Array.isArray(signatures) ? signatures : [];
     const valid = entries.filter((entry) => entry?.signature && entry.err == null);
     const transactions = await Promise.all(valid.map(async (entry) => ({
         signature: entry.signature,
-        tx: await rpcCall("getTransaction", [
-            entry.signature,
-            { encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1 },
-        ]),
+        tx: await rpcCall("getTransaction", [entry.signature, {
+            encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1,
+        }]),
     })));
     const events = [];
     let missingTransactions = 0;
@@ -331,36 +223,22 @@ async function scanProgramEvents(programId, limit, decoder) {
         for (const { logIndex, encoded } of programDataLines(tx.meta?.logMessages, programId)) {
             try {
                 const decoded = decoder(encoded);
-                if (decoded) {
-                    events.push({
-                        signature,
-                        slot: tx.slot ?? null,
-                        blockTime: tx.blockTime ?? null,
-                        logIndex,
-                        ...decoded,
-                    });
-                }
+                if (decoded) events.push({
+                    signature, slot: tx.slot ?? null, blockTime: tx.blockTime ?? null,
+                    logIndex, ...decoded,
+                });
             } catch (error) {
                 unparsedEvents += 1;
                 events.push({
-                    signature,
-                    slot: tx.slot ?? null,
-                    blockTime: tx.blockTime ?? null,
-                    logIndex,
-                    kind: "unparsed_event",
-                    confidence: "unverified",
+                    signature, slot: tx.slot ?? null, blockTime: tx.blockTime ?? null,
+                    logIndex, kind: "unparsed_event", confidence: "unverified",
                     error: String(error?.message ?? error).slice(0, 160),
                 });
             }
         }
     }
-    return {
-        signaturesReturned: entries.length,
-        transactionsFetched: transactions.length - missingTransactions,
-        missingTransactions,
-        unparsedEvents,
-        events,
-    };
+    return { signaturesReturned: entries.length, transactionsFetched: transactions.length - missingTransactions,
+        missingTransactions, unparsedEvents, events };
 }
 
 async function getMintAccount(mint) {
@@ -376,23 +254,14 @@ async function getMintAccount(mint) {
     if (data.length < 82) throw new Error("Account data is shorter than the SPL Mint layout.");
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     const mintAuthorityOption = view.getUint32(0, true);
-    const supplyRaw = view.getBigUint64(36, true);
-    const decimals = data[44];
-    const initialized = data[45] === 1;
     const freezeAuthorityOption = view.getUint32(46, true);
     return {
-        found: true,
-        mint,
-        ownerProgram: account.owner ?? null,
-        lamports: account.lamports ?? null,
+        found: true, mint, ownerProgram: account.owner ?? null, lamports: account.lamports ?? null,
         contextSlot: accountResponse.context?.slot ?? null,
         mintAuthority: mintAuthorityOption === 1 ? base58Encode(data.slice(4, 36)) : null,
         freezeAuthority: freezeAuthorityOption === 1 ? base58Encode(data.slice(50, 82)) : null,
-        supplyRaw: supplyRaw.toString(),
-        decimals,
-        initialized,
-        tokenSupply: supplyResponse?.value ?? null,
-        extensionBytesLength: Math.max(0, data.length - 82),
+        supplyRaw: view.getBigUint64(36, true).toString(), decimals: data[44], initialized: data[45] === 1,
+        tokenSupply: supplyResponse?.value ?? null, extensionBytesLength: Math.max(0, data.length - 82),
         source: "Solana mainnet public RPC",
     };
 }
@@ -412,16 +281,12 @@ export const solanaTools = [
             const result = await rpcCall("getTokenLargestAccounts", [mint, { commitment: "confirmed" }]);
             const values = Array.isArray(result?.value) ? result.value : [];
             return {
-                mint,
-                contextSlot: result?.context?.slot ?? null,
+                mint, contextSlot: result?.context?.slot ?? null,
                 accounts: values.map((item) => ({
-                    address: item.address,
-                    amountRaw: item.amount,
-                    decimals: item.decimals,
+                    address: item.address, amountRaw: item.amount, decimals: item.decimals,
                     uiAmountString: item.uiAmountString ?? null,
                 })),
-                count: values.length,
-                note: "Largest token accounts are not a unique-holder count.",
+                count: values.length, note: "Largest token accounts are not a unique-holder count.",
             };
         },
     ],
@@ -430,17 +295,14 @@ export const solanaTools = [
         "Inspect recent transactions that reference a Solana mint and decode matching Pump.fun TradeEvents when present. Signature sampling is bounded and is not complete historical activity.",
         z.object({ mint: mintSchema, limit: limitSchema }),
         async ({ mint, limit }) => {
-            const signatures = await rpcCall("getSignaturesForAddress", [
-                mint, { limit, commitment: "confirmed" },
-            ]);
+            const signatures = await rpcCall("getSignaturesForAddress", [mint, { limit, commitment: "confirmed" }]);
             const entries = Array.isArray(signatures) ? signatures : [];
             const valid = entries.filter((entry) => entry?.signature && entry.err == null);
             const transactions = await Promise.all(valid.map(async (entry) => ({
                 entry,
-                tx: await rpcCall("getTransaction", [
-                    entry.signature,
-                    { encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1 },
-                ]),
+                tx: await rpcCall("getTransaction", [entry.signature, {
+                    encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1,
+                }]),
             })));
             const trades = [];
             let missingTransactions = 0;
@@ -450,29 +312,17 @@ export const solanaTools = [
                     try {
                         const event = decodeTradeEvent(encoded);
                         if (event?.mint === mint)
-                            trades.push({
-                                signature: entry.signature,
-                                slot: tx.slot ?? null,
-                                blockTime: tx.blockTime ?? null,
-                                logIndex,
-                                ...event,
-                            });
-                    } catch {
-                        // Unknown event layouts are omitted, never guessed.
-                    }
+                            trades.push({ signature: entry.signature, slot: tx.slot ?? null,
+                                blockTime: tx.blockTime ?? null, logIndex, ...event });
+                    } catch { /* Unknown event layouts are omitted, never guessed. */ }
                 }
             }
             return {
-                mint,
-                signaturesReturned: entries.length,
-                transactionsFetched: transactions.length - missingTransactions,
-                missingTransactions,
+                mint, signaturesReturned: entries.length,
+                transactionsFetched: transactions.length - missingTransactions, missingTransactions,
                 signatures: entries.map((entry) => ({
-                    signature: entry.signature,
-                    slot: entry.slot,
-                    blockTime: entry.blockTime ?? null,
-                    confirmationStatus: entry.confirmationStatus ?? null,
-                    failed: entry.err != null,
+                    signature: entry.signature, slot: entry.slot, blockTime: entry.blockTime ?? null,
+                    confirmationStatus: entry.confirmationStatus ?? null, failed: entry.err != null,
                 })),
                 pumpfunTrades: trades,
                 source: "Solana mainnet public RPC + official Pump.fun event discriminator/layout",
@@ -483,36 +333,39 @@ export const solanaTools = [
         "get_recent_pumpfun_launches",
         "Scan a small recent window of Pump.fun program transactions and decode official CreateEvent records. This is a bounded recent sample, not a complete launch archive.",
         z.object({ limit: limitSchema }),
-        async ({ limit }) => {
-            const result = await scanProgramEvents(PUMP_FUN_PROGRAM_ID, limit, (encoded) => {
+        async ({ limit }) => ({
+            programId: PUMP_FUN_PROGRAM_ID,
+            ...(await scanProgramEvents(PUMP_FUN_PROGRAM_ID, limit, (encoded) => {
                 const event = decodeCreateEvent(encoded);
                 return event ? { kind: "token_created", confidence: "observed", event } : null;
-            });
-            return { programId: PUMP_FUN_PROGRAM_ID, ...result, source: "Solana mainnet public RPC + official Pump.fun IDL" };
-        },
+            })),
+            source: "Solana mainnet public RPC + official Pump.fun IDL",
+        }),
     ],
     [
         "get_recent_pumpfun_trades",
         "Scan a small recent window of Pump.fun program transactions and decode official TradeEvent fields. Unknown trailing bytes are preserved as a length only, never interpreted.",
         z.object({ limit: limitSchema }),
-        async ({ limit }) => {
-            const result = await scanProgramEvents(PUMP_FUN_PROGRAM_ID, limit, (encoded) => {
+        async ({ limit }) => ({
+            programId: PUMP_FUN_PROGRAM_ID,
+            ...(await scanProgramEvents(PUMP_FUN_PROGRAM_ID, limit, (encoded) => {
                 const event = decodeTradeEvent(encoded);
                 return event ? { kind: event.isBuy ? "trade_buy" : "trade_sell", confidence: "observed", event } : null;
-            });
-            return { programId: PUMP_FUN_PROGRAM_ID, ...result, source: "Solana mainnet public RPC + official Pump.fun IDL" };
-        },
+            })),
+            source: "Solana mainnet public RPC + official Pump.fun IDL",
+        }),
     ],
     [
         "get_recent_pumpswap_events",
-        "Scan a small recent window of PumpSwap program transactions and decode pool creation and buy/sell events. Unknown trailing bytes remain opaque; trade events expose pool IDs and raw token amounts, not USD prices.",
+        "Scan a small recent window of PumpSwap program transactions and decode pool creation and buy/sell events. Unknown trailing bytes remain opaque; trade events expose pool IDs and raw amounts, not USD prices.",
         z.object({ limit: limitSchema }),
-        async ({ limit }) => {
-            const result = await scanProgramEvents(PUMP_SWAP_PROGRAM_ID, limit, (encoded) => {
+        async ({ limit }) => ({
+            programId: PUMP_SWAP_PROGRAM_ID,
+            ...(await scanProgramEvents(PUMP_SWAP_PROGRAM_ID, limit, (encoded) => {
                 const decoded = decodePumpSwapEvent(encoded);
                 return decoded ? { kind: decoded.kind, confidence: "observed", event: decoded.event } : null;
-            });
-            return { programId: PUMP_SWAP_PROGRAM_ID, ...result, source: "Solana mainnet public RPC + official PumpSwap IDL" };
-        },
+            })),
+            source: "Solana mainnet public RPC + official PumpSwap IDL",
+        }),
     ],
 ];

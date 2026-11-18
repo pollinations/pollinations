@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "treasury_rates",
             ].sort(),
         );
     });
@@ -644,4 +645,86 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("treasury_rates returns the latest average interest rates, newest first", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.fiscaldata.treasury.gov");
+        assert.equal(
+            url.pathname,
+            "/services/api/fiscal_service/v2/accounting/od/avg_interest_rates",
+        );
+        assert.equal(url.searchParams.get("sort"), "-record_date");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        return Response.json({
+            data: [
+                {
+                    record_date: "2026-10-31",
+                    security_type_desc: "Marketable",
+                    security_desc: "Treasury Bills",
+                    avg_interest_rate_amt: "4.014",
+                    src_line_nbr: "1",
+                    record_fiscal_year: "2027",
+                    record_fiscal_quarter: "1",
+                    record_calendar_year: "2026",
+                    record_calendar_quarter: "4",
+                    record_calendar_month: "10",
+                    record_calendar_day: "31",
+                },
+                {
+                    record_date: "2026-10-31",
+                    security_type_desc: "Marketable",
+                    security_desc: "Treasury Notes",
+                    avg_interest_rate_amt: "3.399",
+                    src_line_nbr: "2",
+                    record_fiscal_year: "2027",
+                    record_fiscal_quarter: "1",
+                    record_calendar_year: "2026",
+                    record_calendar_quarter: "4",
+                    record_calendar_month: "10",
+                    record_calendar_day: "31",
+                },
+            ],
+            meta: { count: 2, "total-count": 5041, "total-pages": 2521 },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "treasury_rates", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 5041,
+        rates: [
+            {
+                record_date: "2026-10-31",
+                security_type_desc: "Marketable",
+                security_desc: "Treasury Bills",
+                avg_interest_rate_amt: "4.014",
+                record_fiscal_year: "2027",
+                record_fiscal_quarter: "1",
+            },
+            {
+                record_date: "2026-10-31",
+                security_type_desc: "Marketable",
+                security_desc: "Treasury Notes",
+                avg_interest_rate_amt: "3.399",
+                record_fiscal_year: "2027",
+                record_fiscal_quarter: "1",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+    const one = await call(c, "treasury_rates", { limit: 1 });
+    assert.notEqual(one.isError, true, JSON.stringify(one));
+    assert.equal(value(one).rates.length, 1);
+    assert.equal(value(one).total, 5041);
+    const bad = await call(c, "treasury_rates", { limit: 0 });
+    assert.equal(bad.isError, true);
+    assert.equal(fetches, 2);
 });

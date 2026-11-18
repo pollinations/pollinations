@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dragonball_character",
             ].sort(),
         );
     });
@@ -644,4 +645,141 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Dragon Ball character search projects fields, slices client-side and returns Spanish descriptions as-is", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "dragonball-api.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        // The limit param is never sent: the API silently ignores it.
+        assert.equal(url.searchParams.get("limit"), null);
+        const name = url.searchParams.get("name");
+        if (name === "goku")
+            return Response.json([
+                {
+                    id: 1,
+                    name: "Goku",
+                    ki: "60.000.000",
+                    maxKi: "90 Septillion",
+                    race: "Saiyan",
+                    gender: "Male",
+                    description:
+                        "El protagonista de la serie, conocido por su gran poder y personalidad amigable.",
+                    image: "https://dragonball-api.com/characters/goku_normal.webp",
+                    affiliation: "Z Fighter",
+                    deletedAt: null,
+                },
+            ]);
+        if (name === "a")
+            return Response.json([
+                {
+                    id: 2,
+                    name: "Vegeta",
+                    ki: "54.000.000",
+                    maxKi: "19 Septillion",
+                    race: "Saiyan",
+                    gender: "Male",
+                    description: "x".repeat(600),
+                    image: "https://dragonball-api.com/characters/vegeta_normal.webp",
+                    affiliation: "Z Fighter",
+                    deletedAt: null,
+                },
+                {
+                    id: 3,
+                    name: "Bulma",
+                    ki: "0",
+                    maxKi: "0",
+                    race: "Human",
+                    gender: "Female",
+                    description: "La hija del Dr. Brief.",
+                    image: "https://dragonball-api.com/characters/bulma.webp",
+                    affiliation: "Z Fighter",
+                    deletedAt: null,
+                },
+                {
+                    id: 4,
+                    name: "Zarbon",
+                    ki: "22.000",
+                    maxKi: "30.000",
+                    race: "Alien",
+                    gender: "Male",
+                    description: "Un guerrero de Freezer.",
+                    image: "https://dragonball-api.com/characters/zarbon.webp",
+                    affiliation: "Frieza Force",
+                    deletedAt: null,
+                },
+            ]);
+        return Response.json([]);
+    });
+
+    const c = await client(t);
+    const gokuRes = await call(c, "dragonball_character", {
+        name: "goku",
+        limit: 1,
+    });
+    assert.notEqual(gokuRes.isError, true, JSON.stringify(gokuRes));
+    assert.deepEqual(value(gokuRes), {
+        name: "goku",
+        total: 1,
+        characters: [
+            {
+                id: 1,
+                name: "Goku",
+                race: "Saiyan",
+                gender: "Male",
+                ki: "60.000.000",
+                maxKi: "90 Septillion",
+                affiliation: "Z Fighter",
+                description:
+                    "El protagonista de la serie, conocido por su gran poder y personalidad amigable.",
+                descriptionTruncated: false,
+                image_url:
+                    "https://dragonball-api.com/characters/goku_normal.webp",
+            },
+        ],
+    });
+
+    // limit is honoured client-side: 3 matches in, 2 out, total stays 3.
+    const manyRes = await call(c, "dragonball_character", {
+        name: "a",
+        limit: 2,
+    });
+    assert.notEqual(manyRes.isError, true, JSON.stringify(manyRes));
+    const manyVal = value(manyRes);
+    assert.equal(manyVal.total, 3);
+    assert.equal(manyVal.characters.length, 2);
+    assert.equal(manyVal.characters[0].name, "Vegeta");
+    assert.equal(manyVal.characters[0].description.length, 500);
+    assert.equal(manyVal.characters[0].descriptionTruncated, true);
+
+    const emptyRes = await call(c, "dragonball_character", {
+        name: "zzzznotreal",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        name: "zzzznotreal",
+        total: 0,
+        characters: [],
+    });
+
+    const before = fetches;
+    for (const args of [
+        { name: "   " },
+        { name: "goku", limit: 0 },
+        { name: "goku", limit: 26 },
+    ]) {
+        const result = await call(c, "dragonball_character", args).catch(
+            () => ({ isError: true }),
+        );
+        assert.equal(result.isError, true);
+    }
+    assert.equal(fetches, before);
 });

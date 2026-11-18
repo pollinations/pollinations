@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "wikivoyage_search",
             ].sort(),
         );
     });
@@ -644,4 +645,112 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Wikivoyage search strips snippet markup and entities and returns guide URLs", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "en.wikivoyage.org");
+        assert.equal(target.pathname, "/w/api.php");
+        assert.equal(target.searchParams.get("action"), "query");
+        assert.equal(target.searchParams.get("list"), "search");
+        assert.equal(target.searchParams.get("format"), "json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const term = target.searchParams.get("srsearch");
+        if (term === "paris")
+            return Response.json({
+                query: {
+                    searchinfo: { totalhits: 1409 },
+                    search: [
+                        {
+                            title: "Paris",
+                            pageid: 26799,
+                            size: 177439,
+                            wordcount: 23006,
+                            snippet:
+                                'For other places with the same name, see <span class="searchmatch">Paris</span> (disambiguation). <span class="searchmatch">Paris</span> is a huge city with several district articles that contain information about specific',
+                        },
+                        {
+                            title: "Paris Charles de Gaulle Airport",
+                            pageid: 123855,
+                            size: 60257,
+                            wordcount: 6625,
+                            snippet:
+                                '<span class="searchmatch">Paris</span> Charles de Gaulle Airport (CDG \u00a0IATA) is the main airport of <span class="searchmatch">Paris</span>, one of the busiest hubs in Europe, largest airport in France and home of the',
+                        },
+                        {
+                            title: "Disneyland Paris",
+                            pageid: 9575,
+                            size: 46576,
+                            wordcount: 7213,
+                            snippet:
+                                '\'Disneyland <span class="searchmatch">Paris</span> is a major theme park resort in the <span class="searchmatch">Paris</span> suburb of Marne-la-Vallée. It is the Disney Company&#039;s flagship European resort and has two',
+                        },
+                    ],
+                },
+            });
+        return Response.json({
+            query: { searchinfo: { totalhits: 0 }, search: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikivoyage_search", {
+        query: "paris",
+        limit: 3,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "paris",
+        total: 1409,
+        guides: [
+            {
+                title: "Paris",
+                pageid: 26799,
+                size: 177439,
+                wordcount: 23006,
+                snippet:
+                    "For other places with the same name, see Paris (disambiguation). Paris is a huge city with several district articles that contain information about specific",
+                url: "https://en.wikivoyage.org/wiki/Paris",
+            },
+            {
+                title: "Paris Charles de Gaulle Airport",
+                pageid: 123855,
+                size: 60257,
+                wordcount: 6625,
+                snippet:
+                    "Paris Charles de Gaulle Airport (CDG IATA) is the main airport of Paris, one of the busiest hubs in Europe, largest airport in France and home of the",
+                url: "https://en.wikivoyage.org/wiki/Paris%20Charles%20de%20Gaulle%20Airport",
+            },
+            {
+                title: "Disneyland Paris",
+                pageid: 9575,
+                size: 46576,
+                wordcount: 7213,
+                snippet:
+                    "'Disneyland Paris is a major theme park resort in the Paris suburb of Marne-la-Vallée. It is the Disney Company's flagship European resort and has two",
+                url: "https://en.wikivoyage.org/wiki/Disneyland%20Paris",
+            },
+        ],
+    });
+    const empty = await call(c, "wikivoyage_search", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        guides: [],
+    });
+    const before = fetches;
+    const blank = await call(c, "wikivoyage_search", { query: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
 });

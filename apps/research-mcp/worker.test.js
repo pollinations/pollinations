@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "pageviews",
             ].sort(),
         );
     });
@@ -644,4 +645,94 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("pageviews returns daily views with a total and a clean not-found error", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "wikimedia.org");
+        assert.match(
+            target.pathname,
+            /^\/api\/rest_v1\/metrics\/pageviews\/per-article\/en\.wikipedia\/all-access\/user\/Paris\/daily\/\d{8}\/\d{8}$/,
+        );
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            items: [
+                {
+                    project: "en.wikipedia",
+                    article: "Paris",
+                    granularity: "daily",
+                    timestamp: "2026111000",
+                    access: "all-access",
+                    agent: "user",
+                    views: 4577,
+                },
+                {
+                    project: "en.wikipedia",
+                    article: "Paris",
+                    granularity: "daily",
+                    timestamp: "2026111100",
+                    access: "all-access",
+                    agent: "user",
+                    views: 4125,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "pageviews", { article: "Paris", days: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        article: "Paris",
+        start: "2026-11-10",
+        end: "2026-11-11",
+        total: 8702,
+        days: [
+            { date: "2026-11-10", views: 4577 },
+            { date: "2026-11-11", views: 4125 },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async (url) => {
+        assert.match(new URL(url).pathname, /New_York_City/);
+        return Response.json({
+            items: [
+                {
+                    project: "en.wikipedia",
+                    article: "New_York_City",
+                    granularity: "daily",
+                    timestamp: "2026111700",
+                    access: "all-access",
+                    agent: "user",
+                    views: 11319,
+                },
+            ],
+        });
+    });
+    const spaced = await call(c, "pageviews", { article: "New York City" });
+    assert.notEqual(spaced.isError, true, JSON.stringify(spaced));
+    assert.equal(value(spaced).article, "New_York_City");
+    assert.equal(value(spaced).total, 11319);
+
+    mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("Not Found", { status: 404 }),
+    );
+    const missing = await call(c, "pageviews", { article: "zzzzqqqxxyy" });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /Article not found: zzzzqqqxxyy/);
+
+    fetches = 0;
+    const blank = await call(c, "pageviews", { article: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 0);
 });

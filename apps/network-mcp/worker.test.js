@@ -63,6 +63,7 @@ for (const modern of [false, true])
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
+            "mac_vendor",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
@@ -76,6 +77,7 @@ for (const modern of [false, true])
                 "domain_whois",
                 "http_probe",
                 "ip_whois",
+                "mac_vendor",
             ],
         );
         const response = await client.callTool({
@@ -408,6 +410,63 @@ test("tool schemas reject oversized inputs before I/O", async (t) => {
         );
     }
 });
+test("mac_vendor looks up the OUI vendor and rejects bad addresses", async (t) => {
+    let calls = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        calls++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.macvendors.com");
+        assert.equal(init.headers, undefined);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.pathname === "/00:1b:44:11:3a:b7")
+            return new Response("SanDisk Corporation");
+        if (url.pathname === "/04:5a:9b:11:22:33")
+            return new Response(
+                JSON.stringify({ errors: { detail: "Not Found" } }),
+                { status: 404 },
+            );
+        return new Response(
+            JSON.stringify({ errors: { detail: "Multicast Address" } }),
+            { status: 404 },
+        );
+    });
+    const client = await clientFor(t);
+    const read = async (name, args) => {
+        const result = await client.callTool({ name, arguments: args });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    assert.deepEqual(
+        await read("mac_vendor", { address: "00:1B:44:11:3A:B7" }),
+        { mac: "00:1b:44:11:3a:b7", vendor: "SanDisk Corporation" },
+    );
+    assert.equal(calls, 1);
+    const unknown = await client.callTool({
+        name: "mac_vendor",
+        arguments: { address: "04:5A:9B:11:22:33" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /No vendor found for MAC 04:5a:9b:11:22:33: Not Found/,
+    );
+    const multicast = await client.callTool({
+        name: "mac_vendor",
+        arguments: { address: "FF:FF:FF:FF:FF:FF" },
+    });
+    assert.equal(multicast.isError, true);
+    assert.match(multicast.content[0].text, /Multicast Address/);
+    assert.equal(calls, 3);
+    const bad = await client.callTool({
+        name: "mac_vendor",
+        arguments: { address: "not-a-mac" },
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /Invalid MAC address/);
+    assert.equal(calls, 3);
+});
+
 test("inspect_mac parses and normalizes MAC addresses across formats", async (t) => {
     const client = await clientFor(t);
     const unicast = await client.callTool({

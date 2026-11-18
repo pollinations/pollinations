@@ -4,6 +4,7 @@ import { cidrTools } from "./tools/cidr.js";
 import { dnsTools } from "./tools/dns.js";
 import { httpTools } from "./tools/http.js";
 import { macTools } from "./tools/mac.js";
+import { macvendorTools } from "./tools/macvendor.js";
 import { rdapTools } from "./tools/rdap.js";
 
 const handler = createMcpHandler(
@@ -18,6 +19,7 @@ const handler = createMcpHandler(
             ...cidrTools,
             ...rdapTools,
             ...macTools,
+            ...macvendorTools,
         ]) {
             server.registerTool(
                 name,

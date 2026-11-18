@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { mediaActionTileClass } from "../lib/media-action-tile.ts";
 import { RECORDING_SAMPLE_RATE, recordedWav } from "../lib/recorded-wav.ts";
-import { Button } from "../primitives/Button.tsx";
 import { MicIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 
@@ -129,16 +129,16 @@ export function AudioRecorder({
         }
     }
     if (!available) return null;
+    const waiting = state === "requesting" || state === "preparing";
     return (
         <div className="polli:flex polli:flex-col polli:items-start polli:gap-2">
-            <Button
+            <button
                 type="button"
-                size="sm"
-                intent={state === "recording" ? "danger" : "neutral"}
-                icon={<MicIcon />}
-                disabled={
-                    disabled || state === "requesting" || state === "preparing"
-                }
+                className={mediaActionTileClass(
+                    disabled || waiting,
+                    state === "recording",
+                )}
+                disabled={disabled || waiting}
                 onClick={() => {
                     if (state === "recording") {
                         if (recorder.current?.state === "recording")
@@ -146,14 +146,17 @@ export function AudioRecorder({
                     } else void record();
                 }}
             >
-                {state === "recording"
-                    ? "Stop recording"
-                    : state === "preparing"
-                      ? "Preparing preview…"
-                      : state === "requesting"
-                        ? "Waiting for microphone…"
-                        : label}
-            </Button>
+                <MicIcon />
+                <span>
+                    {state === "recording"
+                        ? "Stop recording"
+                        : state === "preparing"
+                          ? "Preparing…"
+                          : state === "requesting"
+                            ? "Waiting…"
+                            : label}
+                </span>
+            </button>
             {error && (
                 <Text role="alert" size="sm">
                     {error}

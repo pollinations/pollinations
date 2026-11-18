@@ -8,6 +8,7 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
+import { mediaActionTileClass } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
@@ -222,12 +223,7 @@ export function FileUpload({
                     <li className="polli:list-none">
                         <label
                             htmlFor={inputId}
-                            className={cn(
-                                "polli-control polli:flex polli:h-20 polli:w-20 polli:flex-col polli:items-center polli:justify-center polli:gap-2 polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border polli:bg-theme-bg-pale polli:p-2 polli:text-center polli:text-xs polli:text-theme-text-soft polli:transition-colors",
-                                canAdd
-                                    ? "polli:cursor-pointer polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong"
-                                    : "polli:cursor-not-allowed",
-                            )}
+                            className={mediaActionTileClass(!canAdd)}
                         >
                             {value.length ? (
                                 <PlusIcon className="polli:h-6 polli:w-6" />

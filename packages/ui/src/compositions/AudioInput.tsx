@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "../lib/cn.ts";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
+import { mediaActionTileClass } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { Button } from "../primitives/Button.tsx";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { CloudUploadIcon, XIcon } from "../primitives/icons/index.tsx";
-import { Surface } from "../primitives/Surface.tsx";
 import { Text } from "../primitives/Typography.tsx";
 import { AudioPlayer } from "./AudioPlayer.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
@@ -110,11 +110,13 @@ export function AudioInput({
         }
     }
     return (
-        <Surface
-            variant="card-themed"
-            role="group"
+        <fieldset
             aria-label="Audio clips"
-            className="polli:flex polli:w-full polli:flex-col polli:gap-3"
+            className={cn(
+                "polli:m-0 polli:flex polli:w-full polli:min-w-0 polli:flex-col polli:gap-3 polli:border-0 polli:p-0",
+                value.length > 0 &&
+                    "polli:rounded-card polli:bg-theme-bg-pale polli:p-3.5 polli:sm:p-4",
+            )}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
                 e.preventDefault();
@@ -133,7 +135,7 @@ export function AudioInput({
                     />
                 ))}
             {canAdd && (
-                <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-2">
+                <div className="polli:flex polli:flex-wrap polli:items-start polli:gap-3">
                     <input
                         hidden
                         ref={picker}
@@ -148,16 +150,17 @@ export function AudioInput({
                         }}
                     />
                     {!busy && (
-                        <Button
+                        <button
                             type="button"
-                            size="sm"
-                            intent="neutral"
-                            icon={<CloudUploadIcon />}
+                            className={mediaActionTileClass(disabled)}
                             disabled={disabled}
                             onClick={() => picker.current?.click()}
                         >
-                            {replace ? "Replace file" : importLabel}
-                        </Button>
+                            <CloudUploadIcon />
+                            <span>
+                                {replace ? "Replace file" : importLabel}
+                            </span>
+                        </button>
                     )}
                     <AudioRecorder
                         label={replace ? "Record again" : "Record audio"}
@@ -173,6 +176,6 @@ export function AudioInput({
                     {error}
                 </Text>
             )}
-        </Surface>
+        </fieldset>
     );
 }

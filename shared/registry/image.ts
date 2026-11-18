@@ -2273,11 +2273,13 @@ const IMAGE_BASE_SERVICES = {
             {
                 "2k": {
                     label: "2K",
-                    description: "Same token rates at 2K; larger output uses more tokens.",
+                    description:
+                        "Same token rates at 2K; larger output uses more tokens.",
                 },
                 "4k": {
                     label: "4K",
-                    description: "Same token rates at 4K; larger output uses more tokens.",
+                    description:
+                        "Same token rates at 4K; larger output uses more tokens.",
                 },
             },
             "1K",

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pollinations realtime voice</title>
+<style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 40rem; padding: 0 1rem; }
+    button { font: inherit; padding: .5rem 1rem; }
+    #log { white-space: pre-wrap; border: 1px solid #ccc; border-radius: 6px; padding: .75rem; min-height: 8rem; }
+    #status { color: #666; }
+</style>
+</head>
+<body>
+<h1>Realtime voice</h1>
+<p id="status">idle</p>
+
+<label>API key <input id="key" type="password" size="40" placeholder="sk_..." /></label>
+<p>
+    <button type="button" id="start">Start talking</button>
+    <button type="button" id="stop" disabled>Stop</button>
+</p>
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk"></script>
+<script>
+    // connectRealtime is in the browser bundle under the Pollinations global.
+    const { connectRealtime } = Pollinations;
+    const status = document.getElementById("status");
+    const log = document.getElementById("log");
+    const start = document.getElementById("start");
+    const stop = document.getElementById("stop");
+    const keyInput = document.getElementById("key");
+
+    let session = null;
+    let audioContext = null;
+    const playbackQueue = [];
+    let playing = false;
+    const SAMPLE_RATE = 24000;
+
+    function append(text) {
+        log.textContent += text;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function base64(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        return btoa(binary);
+    }
+
+    // The realtime API takes base64 PCM16. The AudioContext runs at 24 kHz so
+    // captured frames need no resampling.
+    async function startMicrophone() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+        processor.onaudioprocess = (event) => {
+            if (!session) return;
+            const input = event.inputBuffer.getChannelData(0);
+            const pcm = new Int16Array(input.length);
+            for (let i = 0; i < input.length; i++) {
+                pcm[i] = Math.max(-1, Math.min(1, input[i])) * 0x7fff;
+            }
+            session.appendAudio(base64(pcm.buffer));
+        };
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+    }
+
+    function play(base64Audio) {
+        const raw = atob(base64Audio);
+        const pcm = new Int16Array(raw.length / 2);
+        for (let i = 0; i < pcm.length; i++) {
+            pcm[i] = ((raw.charCodeAt(i * 2) | (raw.charCodeAt(i * 2 + 1) << 8)) << 16) >> 16;
+        }
+        playbackQueue.push(pcm);
+        if (!playing) drain();
+    }
+
+    // Reply audio arrives as deltas; play the buffers in order, one at a time,
+    // so the sentences do not overlap.
+    function drain() {
+        const pcm = playbackQueue.shift();
+        if (!pcm) {
+            playing = false;
+            return;
+        }
+        playing = true;
+        const buffer = audioContext.createBuffer(1, pcm.length, SAMPLE_RATE);
+        const channel = buffer.getChannelData(0);
+        for (let i = 0; i < pcm.length; i++) channel[i] = pcm[i] / 0x8000;
+        const node = audioContext.createBufferSource();
+        node.buffer = buffer;
+        node.connect(audioContext.destination);
+        node.onended = drain;
+        node.start();
+    }
+
+    start.onclick = async () => {
+        start.disabled = true;
+        status.textContent = "connecting";
+        try {
+            session = await connectRealtime({
+                apiKey: keyInput.value.trim() || undefined,
+                model: "openai/gpt-realtime-2.1",
+            });
+        } catch (error) {
+            status.textContent = `error: ${error.message}`;
+            start.disabled = false;
+            return;
+        }
+        status.textContent = "connected";
+        stop.disabled = false;
+
+        session.onEvent((event) => {
+            if (event.type === "response.audio_transcript.delta") append(event.delta ?? "");
+            if (event.type === "response.audio.delta") play(event.delta);
+            if (event.type === "error") append(`\n[error] ${event.error?.message ?? ""}`);
+        });
+        session.onClose(() => {
+            status.textContent = "closed";
+            start.disabled = false;
+            stop.disabled = true;
+        });
+
+        // Server VAD ends the turn when the caller stops speaking, so the
+        // microphone only has to append frames.
+        session.updateSession({ voice: "coral" });
+        await startMicrophone();
+    };
+
+    stop.onclick = () => {
+        session?.close();
+        session = null;
+    };
+</script>
+</body>
+</html>

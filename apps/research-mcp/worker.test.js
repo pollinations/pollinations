@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { excuserTools } from "./tools/excuser.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "excuse",
             ].sort(),
         );
     });
@@ -644,4 +646,109 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("excuse returns random excuses with no credentials and rejects bad categories before fetching", async (t) => {
+    const liveExcuses = [
+        [
+            {
+                id: 704,
+                excuse: "My friend told me that there's no place like 127.0.0.1 so I went to see if there exists such place.",
+                category: "developers",
+            },
+        ],
+        [
+            {
+                id: 603,
+                excuse: "I sat in the bathroom too long and my legs and feet fell asleep, so when I finally stood up, I fell over and broke my ankle.",
+                category: "unbelievable",
+            },
+        ],
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "excuser-three.vercel.app");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(
+            liveExcuses[(fetchCalls - 1) % liveExcuses.length],
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "excuse", {
+        category: "developers",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        category: "developers",
+        limit: 2,
+        excuses: [
+            {
+                excuse: "My friend told me that there's no place like 127.0.0.1 so I went to see if there exists such place.",
+                category: "developers",
+            },
+            {
+                excuse: "I sat in the bathroom too long and my legs and feet fell asleep, so when I finally stood up, I fell over and broke my ankle.",
+                category: "unbelievable",
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "excuse", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).category, null);
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const badCategory = await call(c, "excuse", { category: "notacategory" });
+    assert.equal(badCategory.isError, true, JSON.stringify(badCategory));
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "excuse", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = excuserTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return [
+            {
+                id: 104,
+                excuse: "My wife had to go to the hospital for delivery.",
+                category: "office",
+            },
+        ];
+    };
+    assert.deepEqual(await run({ category: "OFFICE", limit: 99 }, stubFetch), {
+        category: "office",
+        limit: 1,
+        excuses: [
+            {
+                excuse: "My wife had to go to the hospital for delivery.",
+                category: "office",
+            },
+        ],
+    });
+    assert.equal(stubCalls, 1);
+
+    // An empty upstream list and a textless excuse are clean errors.
+    await assert.rejects(
+        run({ limit: 1 }, async () => []),
+        /no excuse/,
+    );
+    await assert.rejects(
+        run({ limit: 1 }, async () => [{ id: 1, category: "family" }]),
+        /without text/,
+    );
 });

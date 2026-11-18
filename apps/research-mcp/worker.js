@@ -7,6 +7,7 @@ import { europePmcTools } from "./tools/europe-pmc.js";
 import { rfcTools } from "./tools/rfc.js";
 import { wikidataTools } from "./tools/wikidata.js";
 import { wikipediaTools } from "./tools/wikipedia.js";
+import { wikisourceTools } from "./tools/wikisource.js";
 import { wiktionaryTools } from "./tools/wiktionary.js";
 import { worldBankTools } from "./tools/worldbank.js";
 
@@ -26,6 +27,7 @@ const handler = () =>
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,
+                ...wikisourceTools,
             ]) {
                 server.registerTool(
                     name,

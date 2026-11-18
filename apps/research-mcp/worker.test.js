@@ -350,6 +350,7 @@ for (const modern of [false, true]) {
             [
                 "wikipedia_page",
                 "wikipedia_search",
+                "wikisource_search",
                 "wiktionary_define",
                 "rfc_search",
                 "rfc_metadata",
@@ -644,4 +645,255 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+// Trimmed live fixtures: the chapter HTML keeps the header template
+// (`ws-noexport` div with its style block and nested divs) and the first two
+// paragraphs verbatim from the live parse of
+// "Pride and Prejudice (1817)/Chapter 1"; only the style bodies were
+// shortened to `/* css */`. The work-page HTML is the live parse of
+// "Pride and Prejudice" with the same style shortening.
+const WIKISOURCE_CHAPTER_HTML = `<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><div class="ws-noexport"><style data-mw-deduplicate="TemplateStyles:r15431460">/* css */</style></div><style data-mw-deduplicate="TemplateStyles:r15675465">/* css */</style><div class="ws-header wst-header-structure wst-unknown wst-header ws-header ws-noexport noprint dynlayout-exempt"><div class="wst-header-mainblock wst-unknown-mainblock headertemplate"><div class="wst-header-back searchaux wst-unknown-back wst-header-nav-empty"><div class="wst-header-back-arrow">←</div><div class="wst-header-back-link"></div></div><div class="wst-header-central-cell wst-unknown-central-cell"><span class="wst-header-title wst-unknown-title"><span class="wst-header-title-text"><a href="/wiki/Pride_and_Prejudice_(1817)" title="Pride and Prejudice (1817)">Pride and Prejudice (1817)</a></span><br class="wst-header-title-break" /><span class="contributor-text">by&#160;<span class="fn"><a href="/wiki/Author:Jane_Austen" title="Author:Jane Austen">Jane Austen</a></span></span><div class="header-section-text">Chapter 1 Volume 1</div></span></div><div class="wst-header-forward searchaux wst-unknown-forward"><div class="wst-header-forward-link"><a href="/wiki/Pride_and_Prejudice_(1817)/Chapter_2" title="Pride and Prejudice (1817)/Chapter 2">Chapter 2</a></div><div class="wst-header-forward-arrow">→</div></div></div><div class="wst-header-notes header&#95;notes searchaux wst-unknown-notes"><style data-mw-deduplicate="TemplateStyles:r14791120">/* css */</style><ul class="plainSister"><li class="sisitem"><span class="sisicon"><span typeof="mw:File/Frameless"><a href="/wiki/Special:SiteMatrix" title="Special:SiteMatrix"><img alt="Sister Projects" src="//thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Wikimedia-logo.svg/20px-Wikimedia-logo.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail" decoding="async" loading="lazy" width="18" height="18" class="mw-file-element" srcset="//thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Wikimedia-logo.svg/40px-Wikimedia-logo.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x" data-file-width="1024" data-file-height="1024" /></a></span></span><a href="/wiki/Special:SiteMatrix" title="Special:SiteMatrix">sister projects</a>: <a href="https://www.wikidata.org/wiki/Q38230120" class="extiw" title="d:Q38230120">Wikidata item</a></li></ul><div class="wst-header-content header&#95;notes&#95;content wst-header-notes-content wst-unknown-notes-content">
+<table class="noprint ws-noexport" style="vertical-align: bottom;">
+
+<tbody><tr>
+<td><span class="mw-default-size" typeof="mw:File"><span><audio id="mwe_player_0" controls="" preload="none" data-mw-tmh="" class="mw-file-element" width="250" style="width:250px;" data-durationhint="275" data-mwtitle="Chapter_01_-_Pride_and_Prejudice_-_Jane_Austen.ogg" data-mwprovider="wikimediacommons"><source src="//upload.wikimedia.org/wikipedia/commons/a/a5/Chapter_01_-_Pride_and_Prejudice_-_Jane_Austen.ogg?utm_source=en.wikisource.org&amp;utm_campaign=api&amp;utm_content=original" type="audio/ogg; codecs=&quot;vorbis&quot;" data-width="0" data-height="0" /><source src="//upload.wikimedia.org/wikipedia/commons/transcoded/a/a5/Chapter_01_-_Pride_and_Prejudice_-_Jane_Austen.ogg/Chapter_01_-_Pride_and_Prejudice_-_Jane_Austen.ogg.mp3" type="audio/mpeg" data-transcodekey="mp3" data-width="0" data-height="0" /></audio></span></span>
+</td>
+<td>Listen to this text <span style="font-size:83%;">(<a href="https://commons.wikimedia.org/wiki/Project:Media_help" class="extiw" title="commons:Project:Media help">help</a> | <a href="/wiki/File:Chapter_01_-_Pride_and_Prejudice_-_Jane_Austen.ogg" title="File:Chapter 01 - Pride and Prejudice - Jane Austen.ogg">file info or download</a>)</span>
+</td></tr></tbody></table>
+</div></div><div class="ws-noexport" id="ws-data" style="speak:none"><span id="ws-article-id">8987</span><span id="ws-title"><a href="/wiki/Pride_and_Prejudice_(1817)" title="Pride and Prejudice (1817)">Pride and Prejudice (1817)</a> — Chapter 1 Volume 1</span><span id="ws-author">Jane Austen</span></div></div>
+<p><br />
+</p>
+<div class="prp-pages-output" lang="en">
+<span><span class="pagenum ws-pagenum" id="1" data-page-number="1" data-page-name="Page:Austen - Pride and Prejudice, third edition, 1817.djvu/11" data-page-index="11" data-page-quality="4" title="Page:Austen&#95;-&#95;Pride&#95;and&#95;Prejudice,&#95;third&#95;edition,&#95;1817.djvu/11"><span id="pageindex&#95;11" class="pagenum-inner ws-noexport">&#8203;</span></span></span><div class="wst-dhr" style="visibility:hidden; line-height:100%;">&#160;</div>
+<style data-mw-deduplicate="TemplateStyles:r15620827">/* css */</style><div class="wst-center tiInherit">
+<p><span style="font-size:144%;">PRIDE &amp; PREJUDICE.</span>
+</p>
+</div>
+<div class="wst-dhr" style="visibility:hidden; line-height:100%;">&#160;</div>
+<style data-mw-deduplicate="TemplateStyles:r15848246">/* css */</style><div class="wst-custom-rule"><span class="mw-default-size mw-valign-middle" typeof="mw:File"><span><img alt="" src="//thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Rule_Segment_-_Span_-_40px.svg/40px-Rule_Segment_-_Span_-_40px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail" decoding="async" loading="lazy" width="40" height="1" class="mw-file-element" srcset="//thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Rule_Segment_-_Span_-_40px.svg/120px-Rule_Segment_-_Span_-_40px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x" data-file-width="40" data-file-height="1" /></span></span><span class="mw-default-size mw-valign-middle" typeof="mw:File"><span><img alt="" src="//thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Rule_Segment_-_Flare_Centre_-_22px.svg/40px-Rule_Segment_-_Flare_Centre_-_22px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail" decoding="async" loading="lazy" width="22" height="9" class="mw-file-element" srcset="//thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Rule_Segment_-_Flare_Centre_-_22px.svg/60px-Rule_Segment_-_Flare_Centre_-_22px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x" data-file-width="22" data-file-height="9" /></span></span><span class="mw-default-size mw-valign-middle" typeof="mw:File"><span><img alt="" src="//thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Rule_Segment_-_Span_-_40px.svg/40px-Rule_Segment_-_Span_-_40px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail" decoding="async" loading="lazy" width="40" height="1" class="mw-file-element" srcset="//thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Rule_Segment_-_Span_-_40px.svg/120px-Rule_Segment_-_Span_-_40px.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x" data-file-width="40" data-file-height="1" /></span></span></div>
+<div class="wst-dhr" style="visibility:hidden; line-height:100%;">&#160;</div>
+<link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r15620827" /><div class="wst-center tiInherit">
+<p>CHAPTER I.
+</p>
+</div>
+<div class="wst-dhr" style="visibility:hidden; line-height:100%;">&#160;</div>
+<p><span class="smallcaps" style="font-variant:small-caps;"><style data-mw-deduplicate="TemplateStyles:r14952543">/* css */</style><span class="wst-largeinitial" style="font-size:150%;">I</span>t</span> is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.
+</p><p>However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.
+</p></div></div>`;
+
+const WIKISOURCE_WORK_HTML = `<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><div class="ws-noexport"><style data-mw-deduplicate="TemplateStyles:r15431460">/* css */</style></div><style data-mw-deduplicate="TemplateStyles:r15675465">/* css */</style><div class="ws-header wst-header-structure wst-unknown wst-header ws-header ws-noexport noprint dynlayout-exempt ws-dynlayout-disable"><div class="wst-header-mainblock wst-unknown-mainblock headertemplate"><div class="wst-header-back searchaux wst-unknown-back wst-header-nav-empty"><div class="wst-header-back-arrow">←</div><div class="wst-header-back-link"></div></div><div class="wst-header-central-cell wst-unknown-central-cell"><span class="wst-header-pretitle">Versions of<br /></span><span class="wst-header-title wst-unknown-title"><span class="wst-header-title-text">Pride and Prejudice</span><br class="wst-header-title-break" /><span class="contributor-text">by&#160;<span class="fn"><a href="/wiki/Author:Jane_Austen" title="Author:Jane Austen">Jane Austen</a></span></span></span></div><div class="wst-header-forward searchaux wst-unknown-forward wst-header-nav-empty"><div class="wst-header-forward-link"></div><div class="wst-header-forward-arrow">→</div></div></div><div class="wst-header-notes header&#95;notes searchaux wst-unknown-notes"><style data-mw-deduplicate="TemplateStyles:r14791120">/* css */</style><ul class="plainSister"><li class="sisitem"><span class="sisicon"><span typeof="mw:File/Frameless"><a href="/wiki/Special:SiteMatrix" title="Special:SiteMatrix"><img alt="Sister Projects" src="//thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Wikimedia-logo.svg/20px-Wikimedia-logo.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail" decoding="async" loading="lazy" width="18" height="18" class="mw-file-element" srcset="//thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Wikimedia-logo.svg/40px-Wikimedia-logo.svg.png?utm_source=en.wikisource.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x" data-file-width="1024" data-file-height="1024" /></a></span></span><a href="/wiki/Special:SiteMatrix" title="Special:SiteMatrix">sister projects</a>: <a href="https://en.wikipedia.org/wiki/Pride_and_Prejudice" class="extiw" title="w:Pride and Prejudice">Wikipedia article</a>, <a href="https://commons.wikimedia.org/wiki/Category:Pride_and_Prejudice" class="extiw" title="c:Category:Pride and Prejudice">Commons category</a>, <a href="https://en.wikiquote.org/wiki/Pride_and_Prejudice" class="extiw" title="q:Pride and Prejudice">quotes</a>, <a href="https://en.wikiversity.org/wiki/Happiness" class="extiw" title="v:Happiness">course</a>, <a href="https://www.wikidata.org/wiki/Q170583" class="extiw" title="d:Q170583">Wikidata item</a></li></ul><div class="wst-header-content header&#95;notes&#95;content wst-header-notes-content wst-unknown-notes-content">
+<p><i><b>Pride and Prejudice</b></i> is an 1813 novel of manners by Jane Austen. The novel follows the character development of Elizabeth Bennet, the dynamic protagonist of the book who learns about the repercussions of hasty judgments and comes to appreciate the difference between superficial goodness and actual goodness.
+</p>
+<dl><dd>— Excerpted from <a href="https://en.wikipedia.org/wiki/Pride_and_Prejudice" class="extiw" title="w:Pride and Prejudice">Pride and Prejudice</a> on <a href="https://en.wikipedia.org/wiki/Main_page" class="extiw" title="w:Main page">Wikipedia</a>.</dd></dl>
+</div></div><div class="ws-noexport" id="ws-data" style="speak:none"><span id="ws-article-id">4185790</span><span id="ws-title">Pride and Prejudice</span><span id="ws-author">Jane Austen</span></div></div>
+<div class="subNote" style="margin:4px auto 4px auto;"><span id="nofooter">Versions of <b><i>Pride and Prejudice</i></b> include:</span></div>
+<ul><li><a href="/wiki/Pride_and_Prejudice_(1813)" title="Pride and Prejudice (1813)">The 1st edition</a>, published in three volumes on 28 January 1813 by <a href="https://en.wikipedia.org/wiki/Thomas_Egerton_(publisher)" class="extiw" title="w:Thomas Egerton (publisher)">T. Egerton, Whitehall</a>. Austen sold the copyright, and thus did not contribute to the modifications of later editions.</li>
+<li><a href="/wiki/Pride_and_Prejudice_(1817)" title="Pride and Prejudice (1817)">The 3rd edition</a>, published in two volumes in 1817 by <a href="https://en.wikipedia.org/wiki/Thomas_Egerton_(publisher)" class="extiw" title="w:Thomas Egerton (publisher)">T. Egerton, Whitehall</a>.</li></ul>
+<!-- 
+NewPP limit report
+Parsed by mw‐api‐ext.codfw.main‐dc79f745f‐8bcbb
+Cached time: 20261020120538
+Cache expiry: 2592000
+Cache expiry source: Module:Header (os.date(%Y))
+Reduced expiry: false
+Complications: [vary‐page‐id, vary‐revision‐sha1]
+CPU time usage: 0.114 seconds
+Real time usage: 0.200 seconds
+Preprocessor visited node count: 52/1000000
+Revision size: 1191/2097152 bytes
+Post‐expand include size: 4896/2097152 bytes
+Template argument size: 38/2097152 bytes
+Highest expansion depth: 5/100
+Expensive parser function count: 1/500
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 2480/5000000 bytes
+Lua time usage: 0.095/10.000 seconds
+Lua memory usage: 4283454/52428800 bytes
+Number of Wikibase entities loaded: 1/500
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%  188.208      1 Template:Versions
+100.00%  188.208      1 -total
+-->
+
+<!-- Render ID 900e62e9-cc7e-11f1-a7e4-05e7b50fd5ee -->
+
+<!-- Saved in parser cache with key enwikisource:pcache:4185790:|#|:idhash:canonical and timestamp 20261020120538 and revision id 13374640. Rendering was triggered because: api-parse
+ -->
+</div>`;
+
+test("Wikisource search returns titles, snippets and the opening of the page text", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "en.wikisource.org");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("action") === "query") {
+            assert.equal(url.searchParams.get("list"), "search");
+            assert.equal(url.searchParams.get("srsearch"), "pride prejudice");
+            assert.equal(url.searchParams.get("srlimit"), "2");
+            return Response.json({
+                query: {
+                    searchinfo: { totalhits: 5210 },
+                    search: [
+                        {
+                            ns: 0,
+                            title: "Pride and Prejudice",
+                            pageid: 4185790,
+                            size: 1191,
+                            wordcount: 61,
+                            snippet:
+                                'Versions of <span class="searchmatch">Pride</span> and <span class="searchmatch">Prejudice</span> by\u00a0Jane Austen 4185790Pride and <span class="searchmatch">Prejudice</span>Jane Austen Versions of <span class="searchmatch">Pride</span> and <span class="searchmatch">Prejudice</span> include: The 1st edition, published',
+                            timestamp: "2023-08-12T23:51:27Z",
+                        },
+                        {
+                            ns: 0,
+                            title: "Pride and Prejudice (1817)",
+                            pageid: 942,
+                            size: 3563,
+                            wordcount: 334,
+                            snippet:
+                                '<span class="searchmatch">Pride</span> and <span class="searchmatch">Prejudice</span> (1817) by\u00a0Jane Austen 942Pride and Prejudice1817Jane Austen \u200b <span class="searchmatch">PRIDE</span> AND <span class="searchmatch">PREJUDICE</span>: A NOVEL. IN TWO VOLUMES. BY THE AUTHOR OF &quot;SENSE',
+                            timestamp: "2025-09-20T02:14:19Z",
+                        },
+                    ],
+                },
+            });
+        }
+        assert.equal(url.searchParams.get("action"), "parse");
+        assert.equal(url.searchParams.get("prop"), "text");
+        const page = url.searchParams.get("page");
+        if (page === "Pride and Prejudice")
+            return Response.json({ parse: { text: WIKISOURCE_WORK_HTML } });
+        if (page === "Pride and Prejudice (1817)")
+            return Response.json({
+                parse: { text: WIKISOURCE_CHAPTER_HTML },
+            });
+        return Response.json({
+            error: {
+                code: "missingtitle",
+                info: "The page you specified doesn't exist.",
+            },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikisource_search", {
+        query: "pride prejudice",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.query, "pride prejudice");
+    assert.equal(val.total, 5210);
+    assert.equal(val.results.length, 2);
+    assert.deepEqual(val.results[0], {
+        title: "Pride and Prejudice",
+        pageid: 4185790,
+        snippet:
+            "Versions of Pride and Prejudice by Jane Austen 4185790Pride and PrejudiceJane Austen Versions of Pride and Prejudice include: The 1st edition, published",
+        text: "Versions of Pride and Prejudice include: The 1st edition, published in three volumes on 28 January 1813 by T. Egerton, Whitehall. Austen sold the copyright, and thus did not contribute to the modifications of later editions. The 3rd edition, published in two volumes in 1817 by T. Egerton, Whitehall.",
+        truncated: false,
+        url: "https://en.wikisource.org/wiki/Pride%20and%20Prejudice",
+    });
+    assert.deepEqual(val.results[1], {
+        title: "Pride and Prejudice (1817)",
+        pageid: 942,
+        snippet:
+            'Pride and Prejudice (1817) by Jane Austen 942Pride and Prejudice1817Jane Austen PRIDE AND PREJUDICE: A NOVEL. IN TWO VOLUMES. BY THE AUTHOR OF "SENSE',
+        text: "PRIDE & PREJUDICE. CHAPTER I. It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
+        truncated: false,
+        url: "https://en.wikisource.org/wiki/Pride%20and%20Prejudice%20(1817)",
+    });
+    // One search fetch plus one parse fetch per hit.
+    assert.equal(requests.length, 3);
+});
+
+test("Wikisource search returns an empty list for no match and rejects blank queries and out-of-range limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({
+            query: { searchinfo: { totalhits: 0 }, search: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikisource_search", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(count, 1);
+    for (const args of [{ query: " " }, { query: "x", limit: 99 }]) {
+        const bad = await call(c, "wikisource_search", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, 1);
+});
+
+test("Wikisource search keeps a result whose page cannot be read and caps long text at 2000 characters", async (t) => {
+    const searchBody = {
+        query: {
+            searchinfo: { totalhits: 1 },
+            search: [
+                {
+                    title: "Pride and Prejudice (1817)",
+                    pageid: 942,
+                    snippet: "Pride and Prejudice (1817)",
+                },
+            ],
+        },
+    };
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("action") === "query")
+            return Response.json(searchBody);
+        return Response.json({
+            error: {
+                code: "missingtitle",
+                info: "The page you specified doesn't exist.",
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "wikisource_search", {
+        query: "pride prejudice",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text, null);
+    assert.equal(value(result).results[0].truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("action") === "query")
+            return Response.json(searchBody);
+        return Response.json({
+            parse: { text: WIKISOURCE_CHAPTER_HTML.repeat(6) },
+        });
+    });
+    result = await call(c, "wikisource_search", {
+        query: "pride prejudice",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text.length, 2000);
+    assert.equal(value(result).results[0].truncated, true);
+    assert.match(
+        value(result).results[0].text,
+        /^PRIDE & PREJUDICE\. CHAPTER I\./,
+    );
 });

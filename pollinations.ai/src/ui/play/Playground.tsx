@@ -1590,7 +1590,9 @@ export function Playground() {
                                                 }
                                                 onBusyChange={setRecording}
                                                 disabled={isGenerating}
-                                                maxFiles={Infinity}
+                                                maxFiles={
+                                                    videoConfig.maxReferenceAudios
+                                                }
                                                 {...uploadProps(
                                                     ["audio"],
                                                     "Too many audio clips.",

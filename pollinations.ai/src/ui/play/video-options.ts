@@ -11,6 +11,14 @@ const SQUARE_WITHOUT_RATIO = new Set([
     "prunaai/p-video",
 ]);
 
+// Reference-audio counts in the Replicate, Model Studio, and fal input schemas.
+const AUDIO_REFERENCE_LIMITS: Record<string, number> = {
+    "bytedance/seedance-2.0": 3,
+    "bytedance/seedance-2.5": 10,
+    "alibaba/wan-3.0": 5,
+    "minimax/minimax-h3-max": 3,
+};
+
 export function videoOptions(id: string, capabilities: readonly string[]) {
     const ratios = ["16:9", "9:16"];
     // Fixed ratio, or no ratio at all (mirelo adds sound to a source video).
@@ -48,6 +56,7 @@ export function videoOptions(id: string, capabilities: readonly string[]) {
     const list = noAuto ? ratios : ["", ...ratios];
     return {
         ratios: list,
+        maxReferenceAudios: AUDIO_REFERENCE_LIMITS[id] ?? Infinity,
         defaultRatio:
             SQUARE_WITHOUT_RATIO.has(id) || id.startsWith("x-ai/")
                 ? "16:9"

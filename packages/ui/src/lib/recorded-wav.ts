@@ -3,6 +3,22 @@ import { pcmToWav } from "../../../../shared/pcm-to-wav.ts";
 // Browsers record in different containers. Audio endpoints share PCM WAV.
 export const RECORDING_SAMPLE_RATE = 44100;
 const HEADER_BYTES = 44;
+let recordingNumber = 0;
+
+function nextRecordingName() {
+    // Keep numbering across model changes and reloads in this tab.
+    const key = "pollinations.ui.recordingNumber";
+    try {
+        const saved = Number(sessionStorage.getItem(key));
+        if (Number.isSafeInteger(saved) && saved > recordingNumber)
+            recordingNumber = saved;
+        sessionStorage.setItem(key, String(recordingNumber + 1));
+    } catch {
+        // Browsers with storage disabled still number clips for this page.
+    }
+    recordingNumber += 1;
+    return `Pollinations recording ${String(recordingNumber).padStart(2, "0")}.wav`;
+}
 
 export async function recordedWav(blob: Blob, maxBytes: number): Promise<File> {
     const decoder = new OfflineAudioContext(1, 1, RECORDING_SAMPLE_RATE);
@@ -29,7 +45,7 @@ export async function recordedWav(blob: Blob, maxBytes: number): Promise<File> {
     }
     return new File(
         [pcmToWav(new Uint8Array(pcm.buffer), audio.sampleRate)],
-        "recording.wav",
+        nextRecordingName(),
         {
             type: "audio/wav",
         },

@@ -33,8 +33,8 @@ export function AppEarningsRow({
                     <EarningsIcon className="mr-1.5 inline-block h-3.5 w-3.5 align-text-bottom text-intent-info-text" />
                 )}
                 {onChange
-                    ? "Receive 20% of the pollen users spend in your app"
-                    : "20% of the pollen you spend in this app goes to its developer."}
+                    ? "Receive 20% of what users spend in your app"
+                    : "20% of what you spend in this app goes to its developer."}
             </span>
         </AuthAccessItem>
     );

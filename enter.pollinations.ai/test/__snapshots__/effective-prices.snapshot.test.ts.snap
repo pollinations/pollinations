@@ -4693,6 +4693,36 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0,
     },
   },
+  "qwen/qwen4-max": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+  },
+  "qwen/qwen4-max:vercel": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "recraft/recraft-v4.1-flash": {
     "cost": {
       "completionImageTokens": 0.007,
@@ -4841,6 +4871,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000006119,
       "promptCachedTokens": 0.000000036925,
       "promptTextTokens": 0.0000001477,
+    },
+  },
+  "tencent/hy4-flash": {
+    "cost": {
+      "completionTextTokens": 0.0000001405,
+      "promptCachedTokens": 0.0000000015,
+      "promptTextTokens": 0.000000035,
+    },
+    "price": {
+      "completionTextTokens": 0.0000001405,
+      "promptCachedTokens": 0.0000000015,
+      "promptTextTokens": 0.000000035,
+    },
+  },
+  "tencent/hy4-flash:openrouter": {
+    "cost": {
+      "completionTextTokens": 0.0000001482275,
+      "promptCachedTokens": 0.0000000015825,
+      "promptTextTokens": 0.000000036925,
+    },
+    "price": {
+      "completionTextTokens": 0.0000001482275,
+      "promptCachedTokens": 0.0000000015825,
+      "promptTextTokens": 0.000000036925,
     },
   },
   "tencent/hy4-preview": {

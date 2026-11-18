@@ -1,6 +1,17 @@
 import { ContentHeader } from "@pollinations/ui";
 import { Prose } from "@pollinations/ui/markdown";
+import { useLocation } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useAsync } from "../../data/useAsync";
+
+const previousHeadingIds = new Map([
+    ["6-pollen-fees-taxes--billing", "6-balance-fees-taxes--billing"],
+    [
+        "refunds--cancellations-digital-api-services--pollen",
+        "refunds--cancellations-digital-api-services--credit",
+    ],
+    ["1-pollen-is-digital-api-credit", "1-your-balance-is-digital-api-credit"],
+]);
 
 type LegalPageProps = {
     /** Path under public/legal, e.g. "/legal/PRIVACY_POLICY.md" */
@@ -18,6 +29,7 @@ type LegalPageProps = {
  * so nothing shifts when the text arrives.
  */
 export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
+    const hash = useLocation({ select: (location) => location.hash });
     const { data: markdown, failed } = useAsync<string | null>(async () => {
         const response = await fetch(markdownPath);
         if (!response.ok) throw new Error(String(response.status));
@@ -25,6 +37,14 @@ export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
     }, null);
     const [, title, body] =
         markdown?.match(/^#[ \t]+(.+)\r?\n([\s\S]*)$/) ?? [];
+
+    // The router can try to scroll before the Markdown headings exist.
+    useEffect(() => {
+        if (markdown && hash) {
+            const id = previousHeadingIds.get(hash) ?? hash;
+            document.getElementById(id)?.scrollIntoView();
+        }
+    }, [markdown, hash]);
 
     return (
         <article className="flex max-w-3xl flex-col gap-6 max-sm:pt-12">

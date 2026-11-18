@@ -123,15 +123,15 @@ function EventPollenChip({ event }: { event: LastEvent }) {
         return (
             <span className="whitespace-nowrap tabular-nums">
                 {amount}
-                <span className="sr-only"> Pollen</span>
+                <span className="sr-only"> dollars</span>
             </span>
         );
     }
     const source = event.meterSource === "tier" ? "Quest" : "Paid";
     const props = {
         size: "sm" as const,
-        title: `${source} Pollen`,
-        "aria-label": `${amount} ${source} Pollen`,
+        title: `${source} balance`,
+        "aria-label": `${amount} from ${source} balance`,
         // Same-width chips with left-aligned digits, as in the Overview table;
         // 6rem fits the widest value, "-<0.0001".
         className:
@@ -383,7 +383,7 @@ export const LastEventsPanel: FC = () => {
                                 align="right"
                                 className={TABLE_HEADER_CELL_CLASS}
                             >
-                                Pollen
+                                $
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

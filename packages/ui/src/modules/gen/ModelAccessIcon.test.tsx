@@ -6,13 +6,13 @@ describe("ModelAccessIcon", () => {
     test("labels paid-only access", () => {
         const html = renderToStaticMarkup(<ModelAccessIcon paidOnly />);
 
-        expect(html).toContain('aria-label="Paid Pollen required"');
-        expect(html).toContain('title="Paid Pollen required"');
+        expect(html).toContain('aria-label="Uses paid balance only"');
+        expect(html).toContain('title="Uses paid balance only"');
     });
 
-    test("labels access that works with any Pollen", () => {
+    test("labels access that works with any balance", () => {
         const html = renderToStaticMarkup(<ModelAccessIcon />);
 
-        expect(html).toContain('aria-label="Works with any Pollen"');
+        expect(html).toContain('aria-label="Works with any balance"');
     });
 });

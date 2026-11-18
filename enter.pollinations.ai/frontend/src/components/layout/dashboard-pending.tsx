@@ -12,7 +12,7 @@ const pageTitles: Record<string, readonly string[]> = {
     "/keys": ["Keys"],
     "/pollen": ["Balances", "Top-up", "Billing"],
     "/activity": ["Overview", "Last events"],
-    "/quests": ["Claimed"],
+    "/quests": ["Progress", "Leaderboard"],
     "/account": [
         "Profile",
         "Community",

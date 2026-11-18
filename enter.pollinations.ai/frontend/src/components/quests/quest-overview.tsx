@@ -10,6 +10,8 @@ import {
     CopyField,
     formatCount,
     GitMergeIcon,
+    GitPullRequestIcon,
+    InfoTip,
     InlineLink,
     IssueClosedIcon,
     LayersIcon,
@@ -20,6 +22,7 @@ import {
     SparkleIcon,
     SproutIcon,
     Surface,
+    TabButton,
     TargetIcon,
     Text,
 } from "@pollinations/ui";
@@ -51,7 +54,7 @@ import {
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
-import { monthName, QuestStandings } from "./quest-standings.tsx";
+import { QuestStandings } from "./quest-standings.tsx";
 import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -313,94 +316,250 @@ export type QuestCard = {
 
 // Soft bucket-colored tile for the reward chip: amber paid / green Quest,
 // so the row's reward badge carries the bucket identity.
-const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
-    paid: "polli-wallet-chip-paid",
-    tier: "polli-wallet-chip-tier",
-};
-
-function QuestSummary({
-    quests,
-    pollen,
-    preview = false,
-    claimable,
-}: {
-    quests: number;
-    pollen: number;
-    preview?: boolean;
-    claimable?: {
-        count: number;
-        segments: { kind: RewardIconKind; pollen: number }[];
-    };
-}) {
+// Logged-out preview: what the public catalog offers, as two plain numbers.
+function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
     return (
         <div className="grid grid-cols-2 gap-3">
             <WalletBalanceCard
                 tone="neutral"
                 kind="paid"
-                label={preview ? "Available quests" : "Quests"}
+                label="Available quests"
                 value={quests}
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
-                footer={
-                    claimable && claimable.count > 0 ? (
-                        <Chip
-                            size="lg"
-                            className="polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug"
-                            style={{ height: "auto" }}
-                        >
-                            +{claimable.count}{" "}
-                            {claimable.count === 1 ? "quest" : "quests"} to
-                            claim
-                        </Chip>
-                    ) : undefined
-                }
             />
             <WalletBalanceCard
                 tone="neutral"
                 kind="tier"
-                label={preview ? "To earn" : "Earned"}
+                label="To earn"
                 value={formatRewardAmount(pollen)}
-                icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
-                footer={
-                    claimable && claimable.count > 0 ? (
-                        <span className="flex flex-wrap gap-1.5">
-                            {claimable.segments.map(({ kind, pollen }) => {
-                                const Icon =
-                                    kind === "paid" ? CardIcon : SproutIcon;
-                                return (
-                                    <Chip
-                                        key={kind}
-                                        intent="neutral"
-                                        size="lg"
-                                        className={`polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug gap-1.5 tabular-nums ${BUCKET_CHIP_CLASS[kind]}`}
-                                        style={{ height: "auto" }}
-                                    >
-                                        <Icon
-                                            className="h-4 w-4 shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        <span>
-                                            <span className="sr-only">
-                                                {kind === "paid"
-                                                    ? "Paid:"
-                                                    : "Quest:"}{" "}
-                                            </span>
-                                            +{formatRewardAmount(pollen)} to
-                                            claim
-                                        </span>
-                                    </Chip>
-                                );
-                            })}
-                        </span>
-                    ) : undefined
+                icon={
+                    <SproutIcon
+                        aria-hidden="true"
+                        className="polli-wallet-text-tier h-3.5 w-3.5 shrink-0"
+                    />
                 }
             />
         </div>
     );
 }
 
+// ── Progress ────────────────────────────────────────────────────────────────
+// One card for where you stand: a honeycomb with one cell per reward or open
+// quest (claimed, ready to claim, still to do), and the same states beside it,
+// one line each, as totals. A merged PR or a fixed issue counts like any other
+// quest you completed. Colours: green is pollen you earned, honey is waiting.
+const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
+// Past this many cells the comb keeps the proportions instead of growing.
+const MAX_CELLS = 200;
+// A small comb shows room to grow: faint empty cells up to GROW_CELLS, and the
+// way to add real ones. Seasoned combs need neither.
+const SMALL_COMB = 40;
+const GROW_CELLS = 68;
+// Where a new contributor starts: issues, quests, docs and apps.
+const CONTRIBUTING_URL =
+    "https://github.com/pollinations/pollinations/blob/main/CONTRIBUTING.md";
+// Rows a tab lists before "Show more".
+const SECTION_PAGE_SIZE = 10;
+const PROGRESS_STATES = {
+    claimed: {
+        label: "Claimed",
+        tone: "bg-tier-soft",
+        info: "Quests and contributions you claimed. They're in your balance.",
+    },
+    ready: {
+        label: "Ready to claim",
+        tone: "bg-theme-fill",
+        info: "Quests and contributions you completed. Claim them below to add them to your balance.",
+    },
+    open: {
+        label: "To do",
+        tone: "bg-theme-text-strong/10",
+        info: "Quests still open on the board.",
+    },
+} as const;
+type ProgressState = keyof typeof PROGRESS_STATES;
+const CARD_STATE: Record<QuestCardStatus, ProgressState> = {
+    claimed: "claimed",
+    claimable: "ready",
+    open: "open",
+};
+type ProgressPart = { count: number; pollen: number };
+
+function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
+    const parts: Record<ProgressState, ProgressPart> = {
+        claimed: { count: 0, pollen: 0 },
+        ready: { count: 0, pollen: 0 },
+        open: { count: 0, pollen: 0 },
+    };
+    for (const card of cards) {
+        // A repeatable quest counts each reward it earned, and itself while
+        // it is open to earn again.
+        for (const repeat of card.repeats ?? []) {
+            const part = parts[repeat.claimedAt ? "claimed" : "ready"];
+            part.count += 1;
+            part.pollen += repeat.pollenAmount;
+        }
+        if (card.repeats && card.status !== "open") continue;
+        const part = parts[CARD_STATE[card.status]];
+        part.count += 1;
+        part.pollen +=
+            (card.status === "open" ? null : card.earnedAmount) ??
+            card.reward ??
+            0;
+    }
+    return parts;
+}
+
+/** An amount: the sprout and a dollar amount, all in the Quest green.
+ *  Rewards still waiting to be claimed have a plus. */
+function ProgressPollen({ pollen, ready }: { pollen: number; ready: boolean }) {
+    const waiting = ready && pollen > 0;
+    return (
+        <span className="polli-wallet-text-tier inline-flex items-center gap-1">
+            <SproutIcon
+                aria-hidden="true"
+                className="polli-wallet-text-tier h-3.5 w-3.5 shrink-0"
+            />
+            {waiting ? "+" : ""}
+            {formatRewardAmount(pollen)}
+            <span className="sr-only"> in Quest rewards</span>
+        </span>
+    );
+}
+
+export function QuestProgress({
+    cards,
+}: {
+    /** Every quest on the board and every reward earned, without coming-soon
+     *  ones. */
+    cards: QuestCard[];
+}) {
+    const parts = progressOf(cards);
+    const states = Object.keys(PROGRESS_STATES) as ProgressState[];
+    // Count cells, not cards: a repeatable quest's card holds many rewards.
+    const total = states.reduce((sum, state) => sum + parts[state].count, 0);
+    const scale = total > MAX_CELLS ? MAX_CELLS / total : 1;
+    const cells = states.flatMap((state) =>
+        Array.from(
+            // A state that has anything always shows at least one cell.
+            {
+                length:
+                    parts[state].count > 0
+                        ? Math.max(1, Math.round(parts[state].count * scale))
+                        : 0,
+            },
+            (_, index) => ({
+                key: `${state}-${index}`,
+                tone: PROGRESS_STATES[state].tone,
+            }),
+        ),
+    );
+    const small = total < SMALL_COMB;
+    const growCells = small ? GROW_CELLS - total : 0;
+    return (
+        // The comb takes half the card on wide screens, with its line under
+        // it and the numbers beside it; on a phone they stack.
+        <Surface
+            variant="card"
+            className="grid gap-5 !p-5 sm:grid-cols-2 sm:gap-x-8 sm:!p-6"
+        >
+            <span
+                aria-hidden="true"
+                className="flex flex-wrap content-start gap-0.5"
+            >
+                {cells.map(({ key, tone }) => (
+                    <span
+                        key={key}
+                        className={`h-5 w-[1.1rem] ${HEX} ${tone}`}
+                    />
+                ))}
+                {Array.from({ length: growCells }, (_, index) => (
+                    <span
+                        key={`grow-${index}`}
+                        className={`h-5 w-[1.1rem] ${HEX} bg-theme-text-strong/[0.07]`}
+                        style={{
+                            opacity: Math.max(0.25, 1 - index / growCells),
+                        }}
+                    />
+                ))}
+            </span>
+            {/* One line per state, like a legend for the comb: label, count,
+                pollen, with the numbers lined up in columns. */}
+            <dl className="grid min-w-0 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5 sm:self-center">
+                {states.map((state) => {
+                    const { label, tone, info } = PROGRESS_STATES[state];
+                    return (
+                        <div key={state} className="contents">
+                            <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
+                                <span
+                                    aria-hidden="true"
+                                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+                                />
+                                {label}
+                                <InfoTip
+                                    text={info}
+                                    label={`${label} information`}
+                                />
+                            </dt>
+                            <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
+                                {/* Just the number: the label names it. */}
+                                {parts[state].count}
+                            </dd>
+                            <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
+                                {/* A quest still to do has no pollen yet. */}
+                                {state !== "open" && (
+                                    <ProgressPollen
+                                        pollen={parts[state].pollen}
+                                        ready={state === "ready"}
+                                    />
+                                )}
+                            </dd>
+                        </div>
+                    );
+                })}
+            </dl>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+                {small && (
+                    // One line under the comb; on a phone it may wrap.
+                    <p className="flex items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                        <SparkleIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="sm:whitespace-nowrap">
+                            Earn more with{" "}
+                            <InlineLink
+                                href={CONTRIBUTING_URL}
+                                tone="quiet"
+                                showIcon={false}
+                            >
+                                merged PRs
+                            </InlineLink>{" "}
+                            and fixed bugs
+                        </span>
+                    </p>
+                )}
+                <AlphaNote />
+            </div>
+        </Surface>
+    );
+}
+
+/** The one footnote: it sits in the Progress card, or under the preview. */
+function AlphaNote() {
+    return (
+        <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+            <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+                Quests are in alpha. Availability and amounts may change.
+            </span>
+        </p>
+    );
+}
+
 function QuestDescription({ children }: { children: string }) {
     return (
-        <Markdown className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline">
+        <Markdown
+            linkTone="quiet"
+            className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline"
+        >
             {children}
         </Markdown>
     );
@@ -437,7 +596,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
             >
                 <div
-                    className="h-full rounded-full bg-theme-text-soft"
+                    className="h-full rounded-full bg-tier-soft"
                     style={{ width: `${percentage}%` }}
                 />
             </div>
@@ -460,16 +619,26 @@ function QuestMarker({
     status,
     comingSoon,
     repeatable,
+    github,
 }: {
     status: QuestCardStatus;
     comingSoon?: boolean;
     /** Earned again and again: the open mark is a stack, like its rewards. */
     repeatable?: boolean;
+    /** Won with a pull request that closes its issue: the open mark says so. */
+    github?: boolean;
 }) {
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [repeatable ? LayersIcon : TargetIcon, "text-theme-text-strong"]
+          ? [
+                repeatable
+                    ? LayersIcon
+                    : github
+                      ? GitPullRequestIcon
+                      : TargetIcon,
+                "text-theme-text-strong",
+            ]
           : status === "claimable"
             ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
@@ -552,8 +721,10 @@ function InviteLink({ githubId }: { githubId: number | null }) {
     if (githubId === null) {
         return (
             <Text size="sm" tone="muted">
-                <InlineLink href="/account">Connect GitHub</InlineLink> to get
-                your invite link.
+                <InlineLink href="/account" tone="quiet">
+                    Connect GitHub
+                </InlineLink>{" "}
+                to get your invite link.
             </Text>
         );
     }
@@ -596,32 +767,26 @@ export function QuestRow({
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
     const rewardIcon = rewardIconKind(card.balanceBucket);
-    // The icon next to the number IS the "this is pollen" signal, so the word
-    // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
+    // The icon beside the amount names the balance it lands in.
+    // formatRewardAmount renders null as "TBD".
     const rewardLabel = formatRewardAmount(rewardAmount);
 
     // Shared pieces, placed differently per breakpoint below. A claimable
-    // title takes the amber accent, like its icon.
+    // title is amber in dark mode, like its icon. In light mode amber text on
+    // the cream panel reads weak, so it stays ink and the sparkle and the
+    // Claim button carry the amber.
     const title = (
         <Text
             as="span"
             weight="semibold"
-            tone={claimed ? "muted" : claimableRewardIds ? "soft" : "strong"}
+            tone={claimed ? "muted" : "strong"}
+            className={
+                claimableRewardIds
+                    ? "[.dark_&]:text-theme-text-soft"
+                    : undefined
+            }
         >
             {card.title}
-            {card.issueNumber != null && card.url && (
-                <>
-                    {" "}
-                    <InlineLink
-                        href={card.url}
-                        tone="quiet"
-                        showIcon={false}
-                        className="whitespace-nowrap text-sm font-normal tabular-nums"
-                    >
-                        #{card.issueNumber}
-                    </InlineLink>
-                </>
-            )}
             {card.repeats && card.repeats.length > 0 && (
                 <>
                     {" "}
@@ -639,13 +804,12 @@ export function QuestRow({
             )}
         </Text>
     );
-    // Show the "how to" description while the quest is actionable (open or
-    // claimable); drop it once it's done (claimed, or coming_soon, which also
-    // derives to "claimed"), and on a repeatable quest once it paid.
-    // A GitHub quest is its issue: the title says what to build, and the
-    // issue number beside it links to the details instead of a description.
+    // Show the "how to" description only while the quest is still open, and
+    // on a repeatable quest only until it paid: after that the title, the
+    // Claim button or the stack say enough. A GitHub quest has a link to its
+    // issue below instead.
     const description =
-        !claimed &&
+        card.status === "open" &&
         !card.repeats?.length &&
         card.description &&
         card.issueNumber == null
@@ -714,7 +878,7 @@ export function QuestRow({
         </span>
     );
     // A claimable quest's reward becomes the Claim button on the right: the
-    // standard large action button, "Claim" over its reward.
+    // standard action button, "Claim" and its reward on one line.
     const claimButton = claimableRewardIds ? (
         <Button
             type="button"
@@ -728,13 +892,26 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || progress) && (
+    // A GitHub quest is its issue: the title says what to build, and the
+    // link under it carries the details instead of a description.
+    const issueLink =
+        card.issueNumber != null && card.url ? (
+            <InlineLink
+                href={card.url}
+                tone="quiet"
+                className="w-fit text-sm tabular-nums"
+            >
+                #{card.issueNumber} on GitHub
+            </InlineLink>
+        ) : null;
+    const details = (description || issueLink || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
             {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
                     <QuestDescription>{description}</QuestDescription>
                 </div>
             )}
+            {issueLink}
             {progress}
         </div>
     );
@@ -743,6 +920,7 @@ export function QuestRow({
             status={card.status}
             comingSoon={card.comingSoon}
             repeatable={card.repeats !== undefined}
+            github={card.issueNumber != null}
         />
     );
     const reward = claimButton ?? rewardChip;
@@ -763,7 +941,7 @@ export function QuestRow({
             }
         >
             {/* Mobile: the title full width, then the description above the
-                reward or Claim button. */}
+                reward. */}
             <div className="flex flex-col gap-2 sm:hidden">
                 <div className="flex items-center gap-4">
                     {marker}
@@ -776,8 +954,7 @@ export function QuestRow({
                 </div>
             </div>
 
-            {/* Desktop: icon | title and description | reward, or the Claim
-                button holding it. */}
+            {/* Desktop: icon | title and description | reward. */}
             <div className="hidden items-center gap-4 sm:flex">
                 <div className="flex items-center">{marker}</div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
@@ -829,6 +1006,8 @@ function QuestOverviewContent({
 }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
+    const [openTab, setOpenTab] = useState<CategoryKey | null>(null);
+    const [expandedTabs, setExpandedTabs] = useState<CategoryKey[]>([]);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -1164,34 +1343,6 @@ function QuestOverviewContent({
         return { count, pollen };
     }, [sections]);
 
-    // Only banked rewards count as claimed; unclaimed rewards stay in the banner.
-    const claimedStats = useMemo(() => {
-        const stats = { quests: 0, pollen: 0 };
-        for (const reward of state.rewards) {
-            if (reward.claimedAt == null) continue;
-            stats.quests += 1;
-            stats.pollen += reward.pollenAmount;
-        }
-        return stats;
-    }, [state.rewards]);
-
-    // Keep pending rewards separate from the claimed totals above them.
-    const claimable = useMemo(() => {
-        const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
-        let count = 0;
-        for (const reward of state.rewards) {
-            if (reward.claimedAt == null) {
-                byKind[rewardIconKind(reward.balanceBucket)] +=
-                    reward.pollenAmount;
-                count += 1;
-            }
-        }
-        const segments = (["tier", "paid"] as RewardIconKind[])
-            .filter((kind) => byKind[kind] > 0)
-            .map((kind) => ({ kind, pollen: byKind[kind] }));
-        return { count, segments };
-    }, [state.rewards]);
-
     // Quests the viewer can still earn, for the leaderboard's "next step" line.
     const openQuests = useMemo(
         () =>
@@ -1207,6 +1358,11 @@ function QuestOverviewContent({
                 .map((card) => ({
                     title: card.title,
                     reward: card.reward ?? 0,
+                    // Where the quest is done: its own link, else the first
+                    // link in its description ("Create an API [key](/keys).").
+                    href:
+                        card.url ??
+                        card.description?.match(/\]\(([^)\s]+)\)/)?.[1],
                 })),
         [sections],
     );
@@ -1233,14 +1389,35 @@ function QuestOverviewContent({
         refreshRewards,
     );
 
+    // One tab per lane that has rows.
+    const tabs = CATEGORIES.map(({ key, label }) => ({
+        key,
+        label,
+        cards: sections[key],
+    })).filter((tab) => tab.cards.length > 0);
+    // Open the tab picked, else the first with a reward to claim.
+    const defaultTab =
+        tabs.find((tab) =>
+            tab.cards.some((card) => card.status === "claimable"),
+        ) ?? tabs[0];
+    const activeTab = tabs.find((tab) => tab.key === openTab) ?? defaultTab;
+    const expanded = activeTab && expandedTabs.includes(activeTab.key);
+    // Pin that default once the quests load, so a claim or the quest check
+    // can't move the view to another tab under the reader.
+    const defaultTabKey = defaultTab?.key;
+    useEffect(() => {
+        if (!state.loading && openTab === null && defaultTabKey) {
+            setOpenTab(defaultTabKey);
+        }
+    }, [state.loading, openTab, defaultTabKey]);
+
     return (
         <>
-            {/* Summary. The per-user accounting (completed/claimed cards +
-                claimable footers + checking indicator) is hidden for logged-out
-                visitors, but the alpha + claim-flow footer stays so the preview
-                still explains how quests work. */}
+            {/* Your quests in one card: where you stand at the top, then one
+                tab per kind of quest. The per-user accounting is hidden for
+                logged-out visitors, who see what the catalog offers. */}
             <Section
-                title={state.anonymous ? "Pollen you can earn" : "Claimed"}
+                title={state.anonymous ? "What you can earn" : "Progress"}
                 action={
                     state.checking && (
                         <LoadingStatus>Checking quests…</LoadingStatus>
@@ -1263,76 +1440,62 @@ function QuestOverviewContent({
                         </LoadError>
                     )}
                     {progressUnavailable && <OutageNotice retrying />}
-                    {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (
-                        <QuestSummary
-                            quests={claimedStats.quests}
-                            pollen={claimedStats.pollen}
-                            claimable={claimable}
+                        <QuestProgress
+                            cards={Object.values(sections)
+                                .flat()
+                                .filter((card) => !card.comingSoon)}
                         />
                     )}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (
-                        <QuestSummary
-                            preview
+                        <QuestPreview
                             quests={previewTotals.count}
                             pollen={previewTotals.pollen}
                         />
                     )}
                 </SectionContent>
-                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                    <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Quests are in alpha. Availability and amounts may
-                        change.
-                    </span>
-                </p>
-            </Section>
-
-            {state.standings ? (
-                <QuestStandings
-                    standings={state.standings}
-                    openQuests={openQuests}
-                />
-            ) : state.loading ? (
-                <Section
-                    title={`${monthName(new Date().toISOString().slice(0, 7))} leaderboard`}
-                >
-                    <CardLoading className="h-49.5 sm:h-50.5" />
-                </Section>
-            ) : (
-                standingsUnavailable && (
-                    <Section title="Leaderboard">
-                        <OutageNotice retrying />
-                    </Section>
-                )
-            )}
-
-            {CATEGORIES.map((category) => {
-                const cards = sections[category.key];
-                if (state.loading || cards.length === 0) return null;
-                // The progress chip counts only real (grantable) quests —
-                // coming_soon rows are excluded from both done and total.
-                const liveCards = cards.filter((card) => !card.comingSoon);
-                // A repeatable quest stays open, but counts once it paid.
-                const done = liveCards.filter(
-                    (card) => card.status !== "open" || card.repeats?.length,
-                ).length;
-                return (
-                    <Section
-                        key={category.key}
-                        title={category.label}
-                        action={
-                            !initialError &&
-                            !progressUnavailable && (
-                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                    {done} / {liveCards.length}
-                                </span>
-                            )
-                        }
-                    >
+                {!state.loading && activeTab && (
+                    <>
+                        <div className="flex flex-wrap gap-1.5">
+                            {tabs.map((tab) => {
+                                // Coming-soon rows count neither as done nor
+                                // in the total.
+                                const live = tab.cards.filter(
+                                    (card) => !card.comingSoon,
+                                );
+                                // A repeatable quest stays open, but counts
+                                // once it paid.
+                                const done = live.filter(
+                                    (card) =>
+                                        card.status !== "open" ||
+                                        card.repeats?.length,
+                                ).length;
+                                return (
+                                    <TabButton
+                                        key={tab.key}
+                                        active={tab.key === activeTab.key}
+                                        onClick={() => setOpenTab(tab.key)}
+                                        ariaLabel={tab.label}
+                                        detail={
+                                            initialError || progressUnavailable
+                                                ? undefined
+                                                : `${done}/${live.length}`
+                                        }
+                                    >
+                                        {tab.label}
+                                    </TabButton>
+                                );
+                            })}
+                        </div>
+                        {claimError && (
+                            <Alert intent="danger">{claimError}</Alert>
+                        )}
                         <div className="flex flex-col gap-2">
-                            {cards.map((card) => (
+                            {(expanded
+                                ? activeTab.cards
+                                : activeTab.cards.slice(0, SECTION_PAGE_SIZE)
+                            ).map((card) => (
                                 <QuestRow
                                     key={card.key}
                                     card={card}
@@ -1359,9 +1522,46 @@ function QuestOverviewContent({
                                 </QuestRow>
                             ))}
                         </div>
-                    </Section>
-                );
-            })}
+                        {!expanded &&
+                            activeTab.cards.length > SECTION_PAGE_SIZE && (
+                                <div
+                                    data-theme="neutral"
+                                    className="flex justify-center"
+                                >
+                                    <Button
+                                        size="sm"
+                                        onClick={() =>
+                                            setExpandedTabs((keys) => [
+                                                ...keys,
+                                                activeTab.key,
+                                            ])
+                                        }
+                                    >
+                                        Show more
+                                    </Button>
+                                </div>
+                            )}
+                    </>
+                )}
+                {/* The Progress card carries it for signed-in visitors. */}
+                {(state.anonymous || !showSummary) && <AlphaNote />}
+            </Section>
+
+            {/* This month's race: about everyone, so a card of its own. */}
+            {(state.standings || state.loading || standingsUnavailable) && (
+                <Section title="Leaderboard">
+                    {state.standings ? (
+                        <QuestStandings
+                            standings={state.standings}
+                            openQuests={openQuests}
+                        />
+                    ) : state.loading ? (
+                        <CardLoading className="h-49.5 sm:h-50.5" />
+                    ) : (
+                        <OutageNotice retrying />
+                    )}
+                </Section>
+            )}
         </>
     );
 }

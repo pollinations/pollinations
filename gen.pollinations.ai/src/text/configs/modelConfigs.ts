@@ -482,20 +482,24 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
+    // The Grok deployments cannot fetch remote image URLs, so Gen inlines them.
     "grok-4-20-non-reasoning": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4-20-reasoning": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4.3": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
     "grok-4.6": () => ({
         provider: "openai",
@@ -504,6 +508,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         directAuthHeader: "api-key",
         authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
         model: "grok-4.6",
+        requiresBase64ImageUrls: true,
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
@@ -682,6 +687,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen4-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen4-max",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "qwen4-max-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "alibaba/qwen4-max",
+        }),
     "qwen3.8-max-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max",
@@ -759,6 +773,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     // under a normal budget. Matches this route's own max_completion_tokens
     // cap. Callers who pass an explicit max_tokens still hit the same gap —
     // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-flash": () =>
+        createVercelAIGatewayModelConfig({
+            model: "tencent/hy4-flash",
+        }),
+    "tencent/hy4-flash:openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-flash",
+        }),
     "tencent/hy4-preview": () =>
         createOpenRouterModelConfig({
             model: "tencent/hy4-preview",
@@ -1184,7 +1206,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
             // Mistral's server rejects unknown message fields on Azure too.
-            { supportsReasoningHistory: false },
+            // It also cannot fetch remote image URLs, so Gen inlines them.
+            { supportsReasoningHistory: false, requiresBase64ImageUrls: true },
         ),
 
     // -- Claude via Anthropic and AWS Bedrock ---------------------------------
@@ -1429,6 +1452,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K3.1-Pro/chat/completions?api-version=2024-12-01-preview",
+            // Azure Kimi rejects remote image URLs.
+            { requiresBase64ImageUrls: true },
         ),
     "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({

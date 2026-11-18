@@ -144,8 +144,8 @@ export function CommunityEndpointCard({
 
             {endpoint.type === "proxy" && !isPublic && (
                 <p className="mt-3 px-2 text-sm text-theme-text-muted">
-                    Private calls are free. Your prices, Paid Pollen setting,
-                    and fallbacks are saved for when you publish.
+                    Private calls are free. Your prices, accepted balance, and
+                    fallbacks are saved for when you publish.
                 </p>
             )}
 
@@ -274,7 +274,7 @@ function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
                 <span>
                     Visibility: {VISIBILITY_LABELS[visibility]}
                     {pendingProxy &&
-                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                        ` · ${pendingProxy.paidOnly ? "Uses paid balance only" : "Uses Quest or paid balance"}`}
                 </span>
                 {pendingProxy && (
                     <span className="flex flex-wrap items-center gap-1.5">

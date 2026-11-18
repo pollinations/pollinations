@@ -72,6 +72,15 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
+export {
+    connectRealtime,
+    createAudioPlayer,
+    type RealtimeEvent,
+    type RealtimeOptions,
+    type RealtimeSession,
+    realtimeUrl,
+    startMicrophone,
+} from "./realtime.js";
 // Export all types
 export type {
     AccountBalance,

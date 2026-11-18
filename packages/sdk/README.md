@@ -687,6 +687,30 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice
+
+`connectRealtime()` opens an [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime) session and passes events through unchanged. The key goes in the URL (`?key=`) because a browser WebSocket cannot set headers, so use a key the user authorized. Billing settles when the session closes.
+
+```ts
+import { connectRealtime, createAudioPlayer, startMicrophone } from "@pollinations/sdk";
+
+const player = createAudioPlayer();
+const session = await connectRealtime({
+    apiKey, // the user's sk_ key
+    model: "openai/gpt-realtime-2.1", // or elevenlabs/scribe-v3-live for live transcription
+    onEvent: (event) => {
+        if (event.type === "response.output_audio.delta") player.play(event.delta as string);
+        if (event.type === "input_audio_buffer.speech_started") player.clear(); // the user interrupted
+    },
+});
+const stopMicrophone = await startMicrophone(session);
+// ...later
+stopMicrophone();
+session.close();
+```
+
+In React, `useRealtime({ model, onEvent })` uses the signed-in key and returns `{ status, error, connect, disconnect, send }`; it closes the session when the component unmounts. A runnable page is in [`examples/realtime.html`](examples/realtime.html).
+
 ## Vision (Image Input)
 
 ```javascript

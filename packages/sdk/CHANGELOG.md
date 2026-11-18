@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Added
+
+- `connectRealtime()` opens a realtime session on `wss://gen.pollinations.ai/v1/realtime` and passes OpenAI Realtime events through, for voice with `openai/gpt-realtime-2.1` or live transcription.
+- `startMicrophone()` and `createAudioPlayer()` send microphone audio to a session and play the model's audio.
+- `useRealtime()` React hook, next to the other hooks.
+
 ## [5.1.0-alpha.32] - 2026-11-18
 
 ### Changed

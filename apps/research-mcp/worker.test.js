@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "epss_score",
             ].sort(),
         );
     });
@@ -644,4 +645,108 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("EPSS returns the exploit probability for a CVE and rejects bad IDs before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.first.org");
+        assert.equal(url.pathname, "/data/v1/epss");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const cve = url.searchParams.get("cve");
+        if (cve === "CVE-1999-0001")
+            return Response.json({
+                status: "OK",
+                "status-code": 200,
+                version: "1.0",
+                access: "public",
+                total: 1,
+                offset: 0,
+                limit: 100,
+                data: [
+                    {
+                        cve: "CVE-1999-0001",
+                        epss: "0.047530000",
+                        percentile: "0.920540000",
+                        date: "2026-11-18",
+                    },
+                ],
+            });
+        return Response.json({
+            status: "OK",
+            "status-code": 200,
+            version: "1.0",
+            access: "public",
+            total: 0,
+            offset: 0,
+            limit: 100,
+            data: [],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "epss_score", { cve: "CVE-2021-44228" });
+    // The live Log4Shell fixture is asserted verbatim below via a second
+    // mock; this call exercises the empty-data error path first.
+    assert.equal(result.isError, true);
+    assert.match(
+        result.content[0].text,
+        /No EPSS score found for CVE-2021-44228/,
+    );
+    assert.equal(count, 1);
+
+    result = await call(c, "epss_score", { cve: "cve-1999-0001" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        cve: "CVE-1999-0001",
+        epss: 0.04753,
+        percentile: 0.92054,
+        date: "2026-11-18",
+    });
+    assert.equal(count, 2);
+
+    for (const bad of ["not-a-cve", "CVE-2021-1", "CVE-21-44228", " "]) {
+        result = await call(c, "epss_score", { cve: bad });
+        assert.equal(result.isError, true);
+        assert.match(result.content[0].text, /Use a CVE identifier/);
+    }
+    assert.equal(count, 2);
+});
+
+test("EPSS returns the verbatim live Log4Shell record", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.first.org");
+        assert.equal(url.searchParams.get("cve"), "CVE-2021-44228");
+        return Response.json({
+            status: "OK",
+            "status-code": 200,
+            version: "1.0",
+            access: "public",
+            total: 1,
+            offset: 0,
+            limit: 100,
+            data: [
+                {
+                    cve: "CVE-2021-44228",
+                    epss: "0.999990000",
+                    percentile: "1.000000000",
+                    date: "2026-11-18",
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "epss_score", { cve: "CVE-2021-44228" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        cve: "CVE-2021-44228",
+        epss: 0.99999,
+        percentile: 1,
+        date: "2026-11-18",
+    });
 });

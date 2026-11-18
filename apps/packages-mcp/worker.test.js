@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
+import { podVersions } from "./tools/cocoapods.js";
 import { imageTags } from "./tools/docker.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
@@ -81,6 +82,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "cocoapods_versions",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -770,4 +772,96 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+test("CocoaPods versions, newest first, and no-match", async (t) => {
+    const urls = [];
+    // Verbatim live records for Alamofire (first three and last three of
+    // the 101-version list), plus one owner record to prove the projection
+    // drops the maintainer emails.
+    const alamofire = {
+        versions: [
+            { name: "1.1.3", created_at: "2015-01-09 22:10:57 UTC" },
+            { name: "1.1.4", created_at: "2015-01-29 17:00:02 UTC" },
+            { name: "1.1.5", created_at: "2015-04-09 15:40:07 UTC" },
+            { name: "5.8.1", created_at: "2023-10-26 21:35:18 UTC" },
+            { name: "5.9.0", created_at: "2024-03-04 02:20:37 UTC" },
+            { name: "5.9.1", created_at: "2024-03-31 01:24:57 UTC" },
+        ],
+        owners: [
+            {
+                created_at: "2015-04-09 15:37:34 UTC",
+                email: "christian.noon@gmail.com",
+                name: "Christian Noon",
+            },
+        ],
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.includes("Zzzqqqxxyy"))
+            return new Response(
+                '{"error":"No pod found with the specified name."}',
+                { status: 404 },
+            );
+        return Response.json(alamofire);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "cocoapods_versions", {
+        pod: "Alamofire",
+        limit: 2,
+    });
+    await assert.rejects(
+        call(client, "cocoapods_versions", { pod: "Zzzqqqxxyy" }),
+        /No CocoaPod found named Zzzqqqxxyy/,
+    );
+    assert.deepEqual(urls, [
+        "https://trunk.cocoapods.org/api/v1/pods/Alamofire",
+        "https://trunk.cocoapods.org/api/v1/pods/Zzzqqqxxyy",
+    ]);
+    assert.deepEqual(data, {
+        pod: "Alamofire",
+        total: 6,
+        latest: "5.9.1",
+        versions: [
+            { version: "5.9.1", created: "2024-03-31 01:24:57 UTC" },
+            { version: "5.9.0", created: "2024-03-04 02:20:37 UTC" },
+        ],
+    });
+});
+test("CocoaPods rejects bad input before any fetch", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json({
+            versions: [
+                { name: "1.1.3", created_at: "2015-01-09 22:10:57 UTC" },
+                { name: "1.1.4", created_at: "2015-01-29 17:00:02 UTC" },
+                { name: "1.1.5", created_at: "2015-04-09 15:40:07 UTC" },
+                { name: "5.8.1", created_at: "2023-10-26 21:35:18 UTC" },
+                { name: "5.9.0", created_at: "2024-03-04 02:20:37 UTC" },
+                { name: "5.9.1", created_at: "2024-03-31 01:24:57 UTC" },
+            ],
+            owners: [],
+        });
+    });
+    for (const args of [
+        { pod: "Alamofire/Swift" },
+        { pod: " " },
+        { pod: "a b" },
+        { pod: ".Alamofire" },
+    ])
+        await assert.rejects(podVersions(args), /pod name/i);
+    assert.equal(urls.length, 0);
+    // The API is case-sensitive: a lowercase name is a different pod, so
+    // the tool never lowercases; an out-of-range limit falls back to 5.
+    const data = await podVersions({ pod: "Alamofire", limit: 99 });
+    assert.equal(urls.length, 1);
+    assert.equal(urls[0], "https://trunk.cocoapods.org/api/v1/pods/Alamofire");
+    assert.equal(data.total, 6);
+    assert.equal(data.latest, "5.9.1");
+    assert.equal(data.versions.length, 5);
 });

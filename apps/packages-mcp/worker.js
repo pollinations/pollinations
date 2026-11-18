@@ -1,5 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { cocoapodsTools } from "./tools/cocoapods.js";
 import { dockerTools } from "./tools/docker.js";
 import { hfTools } from "./tools/huggingface.js";
 import { osvTools } from "./tools/osv.js";
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
             ...packageTools,
             ...osvTools,
             ...hfTools,
+            ...cocoapodsTools,
         ]) {
             server.registerTool(
                 name,

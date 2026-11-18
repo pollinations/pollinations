@@ -47,6 +47,27 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Qwen 4 Max to Alibaba with a Vercel fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "qwen/qwen4-max",
+        });
+        expect(primary.options.model).toBe("qwen4-max");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "qwen/qwen4-max:vercel",
+        });
+        expect(fallback.options.model).toBe("alibaba/qwen4-max");
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+    });
+
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
             [

@@ -392,6 +392,16 @@ export const CHAT_PARAMETERS = {
         "include_reasoning",
         "reasoning_effort",
     ],
+    // Vercel AI Gateway Qwen 4 Max parameters (2026-11-16).
+    vercelQwen4Max: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     vercelMistralLarge4: [
         ...TOOL_CHAT,
         "temperature",

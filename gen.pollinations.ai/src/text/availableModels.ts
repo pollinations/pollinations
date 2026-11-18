@@ -480,6 +480,16 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen4-max",
+        config: portkeyConfig["qwen4-max-alibaba"],
+        transform: forcedToolWithoutReasoning,
+    },
+    {
+        name: "qwen/qwen4-max:vercel",
+        config: portkeyConfig["qwen4-max-vercel"],
+        transform: forcedToolWithoutReasoning,
+    },
+    {
         name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen3.8-max-alibaba"],
         transform: forcedToolWithoutReasoning,

@@ -687,6 +687,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen4-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen4-max",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "qwen4-max-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "alibaba/qwen4-max",
+        }),
     "qwen3.8-max-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max",

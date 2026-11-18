@@ -4693,6 +4693,36 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0,
     },
   },
+  "qwen/qwen4-max": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+  },
+  "qwen/qwen4-max:vercel": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "recraft/recraft-v4.1-flash": {
     "cost": {
       "completionImageTokens": 0.007,

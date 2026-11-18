@@ -255,6 +255,20 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
+    "qwen/qwen4-max": {
+        // Vercel AI Gateway lists the same Alibaba rates, with no gateway fee.
+        "qwen/qwen4-max:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelQwen4Max,
+            provider: "vercel",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.875),
+                completionTextTokens: perMillion(4.5),
+            },
+        },
+    },
     "qwen/qwen3.8-max": {
         "qwen/qwen3.8-max:openrouter:alibaba": {
             provider: "openrouter",

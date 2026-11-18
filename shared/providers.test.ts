@@ -76,6 +76,7 @@ const HOST_VENDORS: Record<string, string> = {
     "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
+    "ai-gateway.kilo.ai": "kilo",
     "ai-gateway.vercel.sh": "vercel",
     "decision.vllm-sr.ai": "vllm-sr",
     "api.x.ai": "xai",

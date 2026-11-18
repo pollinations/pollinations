@@ -862,6 +862,47 @@ describe("withModelFallback", () => {
                 : attempt.candidate.id,
         );
 
+    it.each([429, 503])(
+        "routes Glyph to Kilo only for an upstream 429 (got %s)",
+        async (status) => {
+            const id = "stealth/glyph-cluster";
+            const primary = await resolveModelDefinition(
+                id,
+                "generate.text",
+                env,
+            );
+            expect(primary.definition.provider).toBe("vercel");
+            const candidates = fallbackCandidates(primary);
+            const error = Object.assign(
+                new Error("upstream rejected request"),
+                {
+                    status: status === 429 ? 502 : status,
+                    upstreamStatus: status,
+                },
+            );
+            const attempts: FallbackAttempt[] = [];
+            const result = withModelFallback(
+                candidates,
+                async (candidate) => {
+                    if (candidate.id === id) throw error;
+                    return candidate.definition?.provider;
+                },
+                attempts,
+            );
+
+            if (status === 429) {
+                await expect(result).resolves.toMatchObject({
+                    result: "kilo",
+                    index: 1,
+                });
+                expect(seen(attempts)).toEqual([id, `${id}:kilo`]);
+            } else {
+                await expect(result).rejects.toBe(error);
+                expect(seen(attempts)).toEqual([`${id}!`]);
+            }
+        },
+    );
+
     it("reports every failure, marking the one that ended the request", async () => {
         const attempts: FallbackAttempt[] = [];
         const attempt = vi.fn(async () => {

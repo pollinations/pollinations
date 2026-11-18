@@ -169,10 +169,10 @@ test("get_token_activity returns mint signatures and matching Pump.fun trades", 
         }
         if (method === "getTransaction")
             return { slot: 18, blockTime: 1800000000, meta: { err: null, logMessages: [
-                \`Program \${PUMP_FUN_PROGRAM_ID} invoke [1]\`, \`Program data: \${encoded}\`,
-                \`Program \${PUMP_FUN_PROGRAM_ID} success\`,
+                `Program ${PUMP_FUN_PROGRAM_ID} invoke [1]`, `Program data: ${encoded}`,
+                `Program ${PUMP_FUN_PROGRAM_ID} success`,
             ] } };
-        assert.fail(\`unexpected RPC method \${method}\`);
+        assert.fail(`unexpected RPC method ${method}`);
     });
     const client = await clientFor(t);
     const result = await client.callTool({ name: "get_token_activity", arguments: { mint: MINT, limit: 5 } });

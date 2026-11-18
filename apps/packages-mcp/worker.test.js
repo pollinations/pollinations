@@ -421,6 +421,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "ctan", name: "Lipsum" }],
+        ["package_lookup", { ecosystem: "ctan", name: "lipsum/x" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -655,6 +657,62 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("CTAN lookup returns latest version, license, caption and authors; pinned versions must match latest", async (t) => {
+    const lipsum = {
+        id: "lipsum",
+        name: "lipsum",
+        caption: "Easy access to the Lorem Ipsum and other dummy texts",
+        authors: [
+            { id: "happel", active: false },
+            { id: "oleinik", active: true },
+        ],
+        license: "lppl1.3",
+        version: { number: "2.7", date: "" },
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("zzzznotarealpkg"))
+            return new Response('{"errors":["Not found"]}', { status: 404 });
+        return Response.json(lipsum);
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "ctan",
+        name: "lipsum",
+    });
+    assert.deepEqual(latest, {
+        ecosystem: "ctan",
+        name: "lipsum",
+        version: "2.7",
+        description: "Easy access to the Lorem Ipsum and other dummy texts",
+        license: "lppl1.3",
+        authors: ["happel", "oleinik"],
+        versionDate: null,
+        registryUrl: "https://ctan.org/pkg/lipsum",
+    });
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "ctan",
+        name: "lipsum",
+        version: "2.7",
+    });
+    assert.equal(pinned.version, "2.7");
+    await assert.rejects(
+        lookup({ ecosystem: "ctan", name: "lipsum", version: "2.6" }),
+        /CTAN version 2\.6 not found for lipsum \(latest is 2\.7/,
+    );
+    await assert.rejects(
+        lookup({ ecosystem: "ctan", name: "zzzznotarealpkg" }),
+        /ctan\.org returned HTTP 404/,
+    );
+    assert.deepEqual(urls, [
+        "https://ctan.org/json/2.0/pkg/lipsum",
+        "https://ctan.org/json/2.0/pkg/lipsum",
+        "https://ctan.org/json/2.0/pkg/lipsum",
+        "https://ctan.org/json/2.0/pkg/zzzznotarealpkg",
     ]);
 });
 

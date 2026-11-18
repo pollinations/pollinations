@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "swapi_character",
             ].sort(),
         );
     });
@@ -644,4 +645,177 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("swapi_character resolves homeworld and films by name", async (t) => {
+    let fetches = 0;
+    const luke = {
+        name: "Luke Skywalker",
+        height: "172",
+        mass: "77",
+        hair_color: "blond",
+        skin_color: "fair",
+        eye_color: "blue",
+        birth_year: "19BBY",
+        gender: "male",
+        homeworld: "https://swapi.dev/api/planets/1/",
+        films: [
+            "https://swapi.dev/api/films/1/",
+            "https://swapi.dev/api/films/2/",
+            "https://swapi.dev/api/films/3/",
+            "https://swapi.dev/api/films/6/",
+        ],
+        species: [],
+        vehicles: [
+            "https://swapi.dev/api/vehicles/14/",
+            "https://swapi.dev/api/vehicles/30/",
+        ],
+        starships: [
+            "https://swapi.dev/api/starships/12/",
+            "https://swapi.dev/api/starships/22/",
+        ],
+        created: "2014-12-09T13:50:51.644000Z",
+        edited: "2014-12-20T21:17:56.891000Z",
+        url: "https://swapi.dev/api/people/1/",
+    };
+    const anakin = {
+        name: "Anakin Skywalker",
+        height: "188",
+        mass: "84",
+        hair_color: "blond",
+        skin_color: "fair",
+        eye_color: "blue",
+        birth_year: "41.9BBY",
+        gender: "male",
+        homeworld: "https://swapi.dev/api/planets/1/",
+        films: [
+            "https://swapi.dev/api/films/4/",
+            "https://swapi.dev/api/films/5/",
+            "https://swapi.dev/api/films/6/",
+        ],
+        species: [],
+        vehicles: [],
+        starships: [],
+        url: "https://swapi.dev/api/people/11/",
+    };
+    const shmi = {
+        name: "Shmi Skywalker",
+        height: "163",
+        mass: "unknown",
+        hair_color: "black",
+        skin_color: "fair",
+        eye_color: "brown",
+        birth_year: "72BBY",
+        gender: "female",
+        homeworld: "https://swapi.dev/api/planets/1/",
+        films: [
+            "https://swapi.dev/api/films/4/",
+            "https://swapi.dev/api/films/5/",
+        ],
+        species: [],
+        vehicles: [],
+        starships: [],
+        url: "https://swapi.dev/api/people/43/",
+    };
+    const filmTitles = {
+        1: "A New Hope",
+        2: "The Empire Strikes Back",
+        3: "Return of the Jedi",
+        4: "The Phantom Menace",
+        5: "Attack of the Clones",
+        6: "Revenge of the Sith",
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "swapi.dev");
+        const headers = new Headers(init?.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.pathname === "/api/people/") {
+            const term = url.searchParams.get("search");
+            if (term === "skywalker")
+                return Response.json({
+                    count: 3,
+                    next: null,
+                    previous: null,
+                    results: [luke, anakin, shmi],
+                });
+            return Response.json({
+                count: 0,
+                next: null,
+                previous: null,
+                results: [],
+            });
+        }
+        if (url.pathname === "/api/people/1/") return Response.json(luke);
+        if (url.pathname === "/api/people/999999/")
+            return new Response('{"detail":"Not found."}', { status: 404 });
+        if (url.pathname === "/api/planets/1/")
+            return Response.json({ name: "Tatooine" });
+        const filmMatch = url.pathname.match(/^\/api\/films\/(\d+)\/$/);
+        if (filmMatch)
+            return Response.json({ title: filmTitles[filmMatch[1]] });
+        return new Response('{"detail":"Not found."}', { status: 404 });
+    });
+    const c = await client(t);
+
+    let result = await call(c, "swapi_character", { id: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).character, {
+        id: 1,
+        name: "Luke Skywalker",
+        height: "172",
+        mass: "77",
+        hair_color: "blond",
+        skin_color: "fair",
+        eye_color: "blue",
+        birth_year: "19BBY",
+        gender: "male",
+        homeworld: "Tatooine",
+        films: [
+            "A New Hope",
+            "The Empire Strikes Back",
+            "Return of the Jedi",
+            "Revenge of the Sith",
+        ],
+        url: "https://swapi.dev/api/people/1/",
+    });
+
+    result = await call(c, "swapi_character", {
+        name: "skywalker",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 3);
+    assert.equal(value(result).characters.length, 1);
+    assert.equal(value(result).characters[0].name, "Luke Skywalker");
+    assert.equal(value(result).characters[0].homeworld, "Tatooine");
+
+    result = await call(c, "swapi_character", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznonexistentqqq",
+        total: 0,
+        characters: [],
+    });
+
+    result = await call(c, "swapi_character", { id: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 404/);
+
+    const before = fetches;
+    result = await call(c, "swapi_character", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Provide a character name or id/);
+    result = await call(c, "swapi_character", { name: "Luke", id: 1 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /only one of name or id/);
+    result = await call(c, "swapi_character", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /non-empty character name/);
+    assert.equal(fetches, before);
 });

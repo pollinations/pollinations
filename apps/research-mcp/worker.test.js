@@ -342,6 +342,93 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Bored suggests a random activity, filters by type and participants, and reports no match as an error", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url.search);
+        assert.equal(url.hostname, "boredapi.com");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (
+            url.searchParams.get("type") === "charity" &&
+            url.searchParams.get("participants") === "10"
+        )
+            return Response.json({
+                error: "No activity found with the specified parameters",
+            });
+        if (url.searchParams.get("type") === "education")
+            return Response.json({
+                activity: "Learn how to fold a paper crane",
+                type: "education",
+                participants: 1,
+                price: 0.1,
+                link: "",
+                key: "3136036",
+                accessibility: 0.05,
+            });
+        return Response.json({
+            activity: "Learn to play a new instrument",
+            type: "music",
+            participants: 1,
+            price: 0.55,
+            link: "",
+            key: "3192099",
+            accessibility: 0.6,
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "bored_activity", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        activity: "Learn to play a new instrument",
+        type: "music",
+        participants: 1,
+        price: 0.55,
+        accessibility: 0.6,
+        link: "",
+    });
+    assert.equal(requests[0], "");
+    result = await call(c, "bored_activity", {
+        type: "education",
+        participants: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).activity, "Learn how to fold a paper crane");
+    assert.equal(value(result).type, "education");
+    assert.equal(requests[1], "?type=education&participants=1");
+    result = await call(c, "bored_activity", {
+        type: "charity",
+        participants: 10,
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Bored API: No activity found/);
+    assert.equal(requests.length, 3);
+});
+
+test("Bored rejects unknown types and out-of-range participants before any fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        throw new Error("unexpected");
+    });
+    const c = await client(t);
+    for (const args of [
+        { type: "bogus" },
+        { participants: 0 },
+        { participants: 11 },
+        { participants: 2.5 },
+    ]) {
+        const result = await call(c, "bored_activity", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, 0);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +451,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "bored_activity",
             ].sort(),
         );
     });

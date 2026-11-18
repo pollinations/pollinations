@@ -351,7 +351,7 @@ export const mediaRequestPrice = createMiddleware<Env>(async (c, next) => {
                 c.req.method === "POST"
                     ? (c.req.valid("json" as never) as Record<string, unknown>)
                     : undefined;
-            const quote = quoteMediaRequest(
+            return quoteMediaRequest(
                 resolved,
                 definition,
                 parseImageParams(
@@ -368,7 +368,6 @@ export const mediaRequestPrice = createMiddleware<Env>(async (c, next) => {
                     },
                 ),
             );
-            return typeof quote === "number" ? quote : undefined;
         } catch {
             // Invalid options are the generator's to report, as before;
             // the check then uses the model's average.

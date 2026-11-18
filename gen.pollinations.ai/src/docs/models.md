@@ -12,7 +12,6 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
-| `GET /models/quote` | Price of one image or video request with the chosen options |
 
 ### Filters
 
@@ -91,30 +90,6 @@ Built-in models may use separate upstream routes for Chat and Responses.
 Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
-
-### Price quote
-
-`GET /models/quote` returns what one image or video request costs before you
-send it. Pass `model` plus the query parameters of the generation request:
-
-```bash
-curl 'https://gen.pollinations.ai/models/quote?model=google/veo-3.1-fast&duration=8&resolution=1080p&audio=true'
-```
-
-```json
-{ "model": "google/veo-3.1-fast", "price": 0.96, "currency": "usd", "basis": "listed" }
-```
-
-`basis` is `listed` when the price is calculated from the model's listed rates
-for these options. When the charge is only known after generation, the answer
-carries a `reason`: `token_priced` (billed per token), `provider_metered`
-(billed from megapixels or other units the provider measures) or
-`input_dependent` (depends on the reference media). `price` is then the model's
-7-day median charge (`basis: average`), or null until the model has one. Text,
-audio and other models are not quoted.
-
-`price` is the base price, before any app markup. A quote is an estimate, not
-the charge: billing uses the usage the provider reports.
 
 ### Chat parameters
 

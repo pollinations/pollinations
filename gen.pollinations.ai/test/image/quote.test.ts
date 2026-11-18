@@ -7,10 +7,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
-import {
-    QUOTE_UNAVAILABLE_REASONS,
-    quoteMediaRequest,
-} from "../../src/image/quote.ts";
+import { quoteMediaRequest } from "../../src/image/quote.ts";
 
 /** The quote for a request as the media routes would parse it. */
 function quote(model: ImageModelName, options: Record<string, unknown> = {}) {
@@ -127,41 +124,34 @@ describe("quoteMediaRequest", () => {
     });
 
     it("gives no price when tokens set the charge", () => {
-        expect(quote("openai/gpt-image-2")).toBe("token_priced");
-        expect(quote("google/gemini-3.1-flash-image")).toBe("token_priced");
-        expect(quote("google/gemini-omni-1.2-flash")).toBe("token_priced");
+        expect(quote("openai/gpt-image-2")).toBeUndefined();
+        expect(quote("google/gemini-3.1-flash-image")).toBeUndefined();
+        expect(quote("google/gemini-omni-1.2-flash")).toBeUndefined();
     });
 
     it("gives no price when the provider meters the output", () => {
-        expect(quote("black-forest-labs/flux.2-pro")).toBe("provider_metered");
-        expect(quote("qwen/qwen-image-2.1")).toBe("provider_metered");
-        expect(quote("minimax/minimax-h3-max")).toBe("provider_metered");
+        expect(quote("black-forest-labs/flux.2-pro")).toBeUndefined();
+        expect(quote("qwen/qwen-image-2.1")).toBeUndefined();
+        expect(quote("minimax/minimax-h3-max")).toBeUndefined();
     });
 
     it("gives no price when the reference media sets the charge", () => {
         const withVideo = { reference_videos: referenceVideo };
 
-        expect(quote("mirelo/sfx-2.0", withVideo)).toBe("input_dependent");
-        expect(quote("bytedance/seedance-2.5", withVideo)).toBe(
-            "input_dependent",
-        );
-        expect(quote("alibaba/wan-3.0", withVideo)).toBe("input_dependent");
+        expect(quote("mirelo/sfx-2.0", withVideo)).toBeUndefined();
+        expect(quote("bytedance/seedance-2.5", withVideo)).toBeUndefined();
+        expect(quote("alibaba/wan-3.0", withVideo)).toBeUndefined();
         expect(
             quote("black-forest-labs/flux.2-pro", { image: referenceImage }),
-        ).toBe("input_dependent");
+        ).toBeUndefined();
         // The same models are quotable when the options alone set the length.
         expect(quote("bytedance/seedance-2.5")).toBeGreaterThan(0);
         expect(quote("alibaba/wan-3.0")).toBeGreaterThan(0);
     });
 
-    it("answers every listed model with a positive price or a reason", () => {
+    it("never quotes a listed model at zero", () => {
         for (const model of getVisibleImageModels()) {
-            const result = quote(model);
-            if (typeof result === "number") {
-                expect(result, model).toBeGreaterThan(0);
-            } else {
-                expect(QUOTE_UNAVAILABLE_REASONS, model).toHaveProperty(result);
-            }
+            expect(quote(model) ?? 1, model).toBeGreaterThan(0);
         }
     });
 });

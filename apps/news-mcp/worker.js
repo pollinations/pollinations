@@ -4,6 +4,7 @@ import { feeds } from "./tools/feeds.js";
 import { hackernews } from "./tools/hackernews.js";
 import { onThisDayTools } from "./tools/onthisday.js";
 import { wayback } from "./tools/wayback.js";
+import { xrayFlaresTools } from "./tools/xrayflares.js";
 
 const handler = createMcpHandler(
     () => {
@@ -13,6 +14,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, inputSchema, run] of [
             ...hackernews,
+            ...xrayFlaresTools,
             ...feeds,
             ...wayback,
             ...earthquakeTools,

@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -36,6 +36,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_search",
         "hn_stories",
         "wayback_snapshots",
+        "xray_flares",
     ]);
     await c.close();
     assert.equal(
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -383,6 +384,124 @@ test("Atom xml:base applies through feed, entry and link", () => {
         result.entries[0].link,
         "https://example.net/base/posts/2026/hello",
     );
+});
+
+test("xray_flares returns the latest flares newest first and no credentials", async (t) => {
+    const flares = [
+        {
+            time_tag: "2026-11-18T10:11:00Z",
+            begin_time: "2026-11-18T10:11:00Z",
+            begin_class: "C1.6",
+            max_time: "2026-11-18T10:15:00Z",
+            max_class: "C3.6",
+            max_xrlong: 3.6392534639162477e-6,
+            max_ratio: 0.10108532528916414,
+            max_ratio_time: "2026-11-18T10:14:49Z",
+            current_int_xrlong: 0.0017340612830594182,
+            end_time: "2026-11-18T10:20:00Z",
+            end_class: "C2.5",
+            satellite: 18,
+        },
+        {
+            time_tag: "2026-11-18T13:15:00Z",
+            begin_time: "2026-11-18T13:15:00Z",
+            begin_class: "B7.6",
+            max_time: "2026-11-18T13:20:00Z",
+            max_class: "C4.9",
+            max_xrlong: 4.9288346417597495e-6,
+            max_ratio: 0.18578340213749298,
+            max_ratio_time: "2026-11-18T13:19:06Z",
+            current_int_xrlong: 0.0015556487487629056,
+            end_time: "2026-11-18T13:23:00Z",
+            end_class: "C2.6",
+            satellite: 18,
+        },
+        {
+            time_tag: "2026-11-18T15:15:00Z",
+            begin_time: "2026-11-18T15:15:00Z",
+            begin_class: "B9.8",
+            max_time: "2026-11-18T15:22:00Z",
+            max_class: "C1.5",
+            max_xrlong: 1.5346131476690061e-6,
+            max_ratio: 0.13069790123845482,
+            max_ratio_time: "2026-11-18T15:16:08Z",
+            current_int_xrlong: 0.0009853016817942262,
+            end_time: "2026-11-18T15:26:00Z",
+            end_class: "C1.1",
+            satellite: 18,
+        },
+    ];
+    const fetch = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "services.swpc.noaa.gov");
+        assert.equal(url.pathname, "/json/goes/primary/xray-flares-7-day.json");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        assert.equal(init.redirect, "manual");
+        return Response.json(flares);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "xray_flares",
+        arguments: { limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        total: 3,
+        flares: [
+            {
+                begin_time: "2026-11-18T15:15:00Z",
+                max_time: "2026-11-18T15:22:00Z",
+                max_class: "C1.5",
+                begin_class: "B9.8",
+                end_time: "2026-11-18T15:26:00Z",
+                satellite: 18,
+            },
+            {
+                begin_time: "2026-11-18T13:15:00Z",
+                max_time: "2026-11-18T13:20:00Z",
+                max_class: "C4.9",
+                begin_class: "B7.6",
+                end_time: "2026-11-18T13:23:00Z",
+                satellite: 18,
+            },
+        ],
+    });
+    const bad = await c.callTool({
+        name: "xray_flares",
+        arguments: { limit: 4 },
+    });
+    assert.equal(bad.isError, true);
+    assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("xray_flares handles a quiet week and a non-list upstream answer", async (t) => {
+    const mock = t.mock.method(globalThis, "fetch", async () =>
+        Response.json([]),
+    );
+    const c = await client();
+    t.after(() => c.close());
+    const quiet = await c.callTool({
+        name: "xray_flares",
+        arguments: {},
+    });
+    assert.notEqual(quiet.isError, true, JSON.stringify(quiet));
+    assert.deepEqual(JSON.parse(quiet.content[0].text), {
+        total: 0,
+        flares: [],
+    });
+    mock.mock.mockImplementation(async () => Response.json({ nope: true }));
+    const broken = await c.callTool({
+        name: "xray_flares",
+        arguments: {},
+    });
+    assert.equal(broken.isError, true);
+    assert.match(broken.content[0].text, /flare list/);
 });
 
 test("history_on_this_day reads each offered type under its own key", async (t) => {

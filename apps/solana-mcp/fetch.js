@@ -24,7 +24,7 @@ export async function fetchJson(url) {
         if (!response.ok) {
             const retry = response.headers.get("retry-after");
             throw new Error(
-                \`DexScreener returned HTTP \${response.status}\${response.status === 429 ? \`; rate limited, retry later\${retry ? \` (Retry-After: \${retry})\` : ""}\` : ""}.\`,
+                `DexScreener returned HTTP ${response.status}${response.status === 429 ? `; rate limited, retry later${retry ? ` (Retry-After: ${retry})` : ""}` : ""}.`,
             );
         }
         const text = await readResponseText(

@@ -40,7 +40,7 @@ function pairSummary(pair, mint) {
     };
 }
 async function getTokenPairs(mint) {
-    const data = await fetchJson(\`\${BASE}/token-pairs/v1/solana/\${encodeURIComponent(mint)}\`);
+    const data = await fetchJson(`${BASE}/token-pairs/v1/solana/${encodeURIComponent(mint)}`);
     if (!Array.isArray(data))
         throw new Error("Unexpected response from DexScreener token-pairs endpoint.");
     return sortedPairs(data.filter((pair) =>
@@ -67,7 +67,7 @@ export const solanaTools = [
         "Search Solana token pairs by name, symbol, or address using public DexScreener data. Results are unique token candidates with their best-liquidity matching pair. This is not a token safety audit.",
         z.object({ query: query.describe("Token name, symbol, or mint address"), limit: limit.describe("Maximum unique candidates (default 10, max 30)") }),
         async ({ query: search, limit: maxResults }) => {
-            const data = await fetchJson(\`\${BASE}/latest/dex/search?q=\${encodeURIComponent(search)}\`);
+            const data = await fetchJson(`${BASE}/latest/dex/search?q=${encodeURIComponent(search)}`);
             const pairs = Array.isArray(data?.pairs)
                 ? sortedPairs(data.pairs.filter((pair) => pair?.chainId === "solana"))
                 : [];

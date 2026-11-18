@@ -42,11 +42,11 @@ test("private Worker config disables public routes and exposes only MCP endpoint
     }
     assert.ok(config.compatibility_flags.includes("global_fetch_strictly_public"));
     for (const path of ["/health", "/unknown"])
-        assert.equal(worker.fetch(new Request(\`https://solana.invalid\${path}\`)).status, 404);
+        assert.equal(worker.fetch(new Request(`https://solana.invalid${path}`)).status, 404);
 });
 
 for (const modern of [false, true]) {
-    test(\`stateless MCP transport (\${modern ? "modern" : "legacy"}) exposes six tools\`, async (t) => {
+    test(`stateless MCP transport (${modern ? "modern" : "legacy"}) exposes six tools`, async (t) => {
         const client = await clientFor(t, modern);
         assert.equal(client.getProtocolEra(), modern ? "modern" : "legacy");
         assert.deepEqual((await client.listTools()).tools.map((tool) => tool.name).sort(), [
@@ -60,7 +60,7 @@ test("token info uses fixed Solana DexScreener endpoint and never forwards calle
     t.mock.method(globalThis, "fetch", async (input, init) => {
         const url = new URL(input);
         assert.equal(url.origin, "https://api.dexscreener.com");
-        assert.equal(url.pathname, \`/token-pairs/v1/solana/\${MINT}\`);
+        assert.equal(url.pathname, `/token-pairs/v1/solana/${MINT}`);
         const headers = new Headers(init.headers);
         assert.equal(headers.has("authorization"), false);
         assert.equal(headers.has("cookie"), false);

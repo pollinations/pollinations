@@ -4,12 +4,12 @@ A read-only MCP server for researching Solana tokens and DEX pools through the p
 
 ## Tools
 
-- \`search_solana_tokens\` — search token listings by name, symbol, or mint.
-- \`get_token_info\` — token identity, DEX listings, and available public links.
-- \`get_token_pairs\` — pools and source-reported market metrics.
-- \`get_liquidity_metrics\` — per-pool liquidity without inventing consolidated depth.
-- \`get_price_changes\` — pool-level prices and percentage changes.
-- \`get_token_activity\` — DEX-pool aggregate buy/sell counts and volume.
+- `search_solana_tokens` — search token listings by name, symbol, or mint.
+- `get_token_info` — token identity, DEX listings, and available public links.
+- `get_token_pairs` — pools and source-reported market metrics.
+- `get_liquidity_metrics` — per-pool liquidity without inventing consolidated depth.
+- `get_price_changes` — pool-level prices and percentage changes.
+- `get_token_activity` — DEX-pool aggregate buy/sell counts and volume.
 
 ## Data limits
 
@@ -22,10 +22,10 @@ A read-only MCP server for researching Solana tokens and DEX pools through the p
 
 ## Local checks
 
-\`\`\`bash
+```bash
 npm ci --workspaces=false
 npm test
 npm run check
-\`\`\`
+```
 
-Hosted endpoint: \`https://gen.pollinations.ai/mcp/solana\` (Pollinations API key required).
+Hosted endpoint: `https://gen.pollinations.ai/mcp/solana` (Pollinations API key required).

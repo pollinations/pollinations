@@ -342,6 +342,98 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("RandomUser returns fabricated profiles with projected contact and location fields", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "randomuser.me");
+        assert.equal(url.pathname, "/api/");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            results: [
+                {
+                    gender: "male",
+                    name: {
+                        title: "Mr",
+                        first: "Brendan",
+                        last: "Smith",
+                    },
+                    location: {
+                        city: "Clonmel",
+                        state: "Dún Laoghaire–Rathdown",
+                        country: "Ireland",
+                        postcode: 76559,
+                    },
+                    email: "brendan.smith@example.com",
+                    phone: "041-838-7715",
+                    dob: { date: "1952-05-05T06:59:01.111Z", age: 74 },
+                    picture: {
+                        large: "https://randomuser.me/api/portraits/men/51.jpg",
+                        medium: "https://randomuser.me/api/portraits/med/men/51.jpg",
+                        thumbnail:
+                            "https://randomuser.me/api/portraits/thumb/men/51.jpg",
+                    },
+                    nat: "IE",
+                },
+                {
+                    gender: "female",
+                    name: { title: "Ms", first: "Ada", last: "Larsen" },
+                    location: { city: "Oslo", country: "Norway" },
+                    email: "ada.larsen@example.com",
+                    phone: "12-34-56-78",
+                    dob: { date: "1988-11-02T09:14:00.000Z", age: 37 },
+                    nat: "NO",
+                },
+            ],
+            info: { seed: "test", results: 2, page: 1, version: "1.4" },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "randomuser_profile", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests.at(-1).searchParams.get("results"), "2");
+    assert.deepEqual(value(result), {
+        total: 2,
+        profiles: [
+            {
+                name: "Mr Brendan Smith",
+                gender: "male",
+                country: "Ireland",
+                city: "Clonmel",
+                email: "brendan.smith@example.com",
+                phone: "041-838-7715",
+                date_of_birth: "1952-05-05",
+                nationality: "IE",
+                picture: "https://randomuser.me/api/portraits/men/51.jpg",
+            },
+            {
+                name: "Ms Ada Larsen",
+                gender: "female",
+                country: "Norway",
+                city: "Oslo",
+                email: "ada.larsen@example.com",
+                phone: "12-34-56-78",
+                date_of_birth: "1988-11-02",
+                nationality: "NO",
+                picture: null,
+            },
+        ],
+    });
+    result = await call(c, "randomuser_profile", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests.at(-1).searchParams.get("results"), "1");
+    const before = requests.length;
+    result = await call(c, "randomuser_profile", { limit: 99 });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +456,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "randomuser_profile",
             ].sort(),
         );
     });

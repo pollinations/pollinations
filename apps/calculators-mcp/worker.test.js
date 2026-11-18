@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "check_digit",
                 "integer_math",
                 "diff_text",
+                "gold_price",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -397,6 +398,67 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("gold_price returns the live spot price without forwarding caller credentials", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.gold-api.com");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        return Response.json(
+            target.pathname.endsWith("/XAG")
+                ? {
+                      currency: "USD",
+                      currencySymbol: "$",
+                      exchangeRate: 1.0,
+                      name: "Silver",
+                      price: 44.939999,
+                      symbol: "XAG",
+                      updatedAt: "2026-11-18T16:59:00Z",
+                      updatedAtReadable: "a few seconds ago",
+                  }
+                : {
+                      currency: "USD",
+                      currencySymbol: "$",
+                      exchangeRate: 1.0,
+                      name: "Gold",
+                      price: 3746.050049,
+                      symbol: "XAU",
+                      updatedAt: "2026-11-18T16:59:01Z",
+                      updatedAtReadable: "a few seconds ago",
+                  },
+        );
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "gold_price", { symbol: "XAU" }), {
+        symbol: "XAU",
+        name: "Gold",
+        price: 3746.050049,
+        currency: "USD",
+        updatedAt: "2026-11-18T16:59:01Z",
+    });
+    assert.deepEqual(await call(client, "gold_price", { symbol: "XAG" }), {
+        symbol: "XAG",
+        name: "Silver",
+        price: 44.939999,
+        currency: "USD",
+        updatedAt: "2026-11-18T16:59:00Z",
+    });
+    assert.equal(requests.length, 2);
+    assert.equal(
+        (
+            await client.callTool({
+                name: "gold_price",
+                arguments: { symbol: "BTC" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests.length, 2);
 });
 
 test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {

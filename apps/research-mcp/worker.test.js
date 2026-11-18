@@ -342,6 +342,84 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Valorant agent search filters the full agent list client-side and projects role and description", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "valorant-api.com");
+        assert.equal(url.pathname, "/v1/agents");
+        assert.equal(url.searchParams.get("isPlayableCharacter"), "true");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            status: 200,
+            data: [
+                {
+                    displayName: "Gekko",
+                    description:
+                        "Gekko the Angeleno leads a tight-knit crew of calamitous creatures. His buddies bound forward, scattering enemies out of the way, with Gekko chasing them down to regroup and go again.",
+                    role: { displayName: "Initiator" },
+                },
+                {
+                    displayName: "Jett",
+                    description:
+                        "Representing her home country of South Korea, Jett's agile and evasive fighting style lets her take risks no one else can. She runs circles around every skirmish, cutting enemies up before they even know what hit them.",
+                    role: { displayName: "Duelist" },
+                },
+                {
+                    displayName: "Sage",
+                    description:
+                        "The bastion of China, Sage creates safety for herself and her team wherever she goes. Able to revive fallen friends and stave off forceful assaults, she provides a calm center to a hellish battlefield.",
+                    role: { displayName: "Sentinel" },
+                },
+                {
+                    displayName: "Long",
+                    description: "x".repeat(600),
+                    role: { displayName: "Duelist" },
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "valorant_agent", { name: "gek", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "gek",
+        total: 1,
+        agents: [
+            {
+                name: "Gekko",
+                description:
+                    "Gekko the Angeleno leads a tight-knit crew of calamitous creatures. His buddies bound forward, scattering enemies out of the way, with Gekko chasing them down to regroup and go again.",
+                role: "Initiator",
+            },
+        ],
+    });
+    result = await call(c, "valorant_agent", { name: "e", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 3);
+    assert.equal(value(result).agents.length, 1);
+    result = await call(c, "valorant_agent", { name: "long" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).agents[0].description.length, 500);
+    result = await call(c, "valorant_agent", { name: "zzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        agents: [],
+    });
+    const before = requests.length;
+    result = await call(c, "valorant_agent", { name: " " });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +442,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "valorant_agent",
             ].sort(),
         );
     });

@@ -342,6 +342,110 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("finalspace_character returns one character and a clean error for an unknown id", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "finalspaceapi.com");
+        assert.equal(target.pathname, "/api/v0/character/1");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            id: 1,
+            name: "Gary Goodspeed",
+            status: "Alive",
+            species: "Human",
+            gender: "Male",
+            hair: "Blonde",
+            alias: [
+                "The Gary (by Lord Commander and Invictus)",
+                "Thunder Bandit(code name)",
+                "Star Dragon(new code name)",
+                "Primate(By Clarence)",
+                "The Captain (self-proclaimed)",
+                "Mommy (by the Dewinter children)",
+                "Jerry by (Quinn)",
+                "Gerald (by Quinn and the S.A.M.E.S)",
+                "Humanoid trash (by Avocato)",
+                "Generic Blonde Guy (by Ash)",
+                "No-Good Thief (by Avocato/Invictus)",
+                "Little Bastard (by Sheryl)",
+                "Larry Tumbleweed (by Tribore)",
+                "Harry Hoodseed (by Tribore)",
+                "Leslie (by Tribore)",
+                "Barry (by Tribore)",
+                "The Fool Who Died A Thousand Deaths (by Invictus)",
+            ],
+            origin: "Earth",
+            abilities: [
+                "Piloting",
+                "Marksmanship",
+                "Hand-to-hand combat",
+                "Weapons: Blasters",
+                "Weapons: Black hole gun (briefly)",
+                "Weapons: Robot arm",
+                "Weapons: Laser gun",
+                "Weapons: Laser sword",
+            ],
+            img_url:
+                "https://finalspaceapi.com/api/character/avatar/gary_goodspeed.png",
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "finalspace_character", { id: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        id: 1,
+        name: "Gary Goodspeed",
+        status: "Alive",
+        species: "Human",
+        gender: "Male",
+        origin: "Earth",
+        abilities: [
+            "Piloting",
+            "Marksmanship",
+            "Hand-to-hand combat",
+            "Weapons: Blasters",
+            "Weapons: Black hole gun (briefly)",
+        ],
+        alias: [
+            "The Gary (by Lord Commander and Invictus)",
+            "Thunder Bandit(code name)",
+            "Star Dragon(new code name)",
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(
+                JSON.stringify({
+                    success: false,
+                    message: "Something went wrong.",
+                }),
+                {
+                    status: 500,
+                    headers: { "content-type": "application/json" },
+                },
+            ),
+    );
+    const missing = await call(c, "finalspace_character", { id: 99999 });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /HTTP 500/);
+
+    fetches = 0;
+    const bad = await call(c, "finalspace_character", { id: 0 });
+    assert.equal(bad.isError, true);
+    assert.equal(fetches, 0);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +468,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "finalspace_character",
             ].sort(),
         );
     });

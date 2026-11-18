@@ -80,7 +80,7 @@ function mockRpc(t, handler) {
     });
 }
 
-test("private Worker config disables public routes and exposes only MCP endpoint", () => {
+test("private Worker config disables public routes and exposes MCP plus health endpoints", async () => {
     const config = JSON.parse(readFileSync(new URL("./wrangler.jsonc", import.meta.url)));
     for (const env of [config, config.env.staging]) {
         assert.equal(env.workers_dev, false);
@@ -88,8 +88,10 @@ test("private Worker config disables public routes and exposes only MCP endpoint
         assert.deepEqual(env.routes, []);
     }
     assert.ok(config.compatibility_flags.includes("global_fetch_strictly_public"));
-    for (const path of ["/health", "/unknown"])
-        assert.equal(worker.fetch(new Request(`https://solana.invalid${path}`)).status, 404);
+    const health = await worker.fetch(new Request("https://solana.invalid/health"));
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), { status: "ok" });
+    assert.equal(worker.fetch(new Request("https://solana.invalid/unknown")).status, 404);
 });
 
 for (const modern of [false, true]) {

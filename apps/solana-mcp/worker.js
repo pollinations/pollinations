@@ -31,8 +31,10 @@ const handler = createMcpHandler(
 // Private service binding only. Gen owns authentication, quotas and batch rejection.
 export default {
     fetch(request) {
-        if (new URL(request.url).pathname !== "/")
-            return new Response("Not found", { status: 404 });
+        const pathname = new URL(request.url).pathname;
+        if (pathname === "/health" && request.method === "GET")
+            return Response.json({ status: "ok" });
+        if (pathname !== "/") return new Response("Not found", { status: 404 });
         return handler.fetch(request);
     },
 };

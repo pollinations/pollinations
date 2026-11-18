@@ -167,6 +167,47 @@ export const ModelInfoSchema = z.object({
     duration_step: z.number().positive().optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
+    max_reference_audios: z.number().int().positive().optional(),
+    audio_input_constraints: z
+        .object({
+            min_seconds: z
+                .number()
+                .positive()
+                .optional()
+                .describe(
+                    "Minimum duration of each input audio clip, in seconds.",
+                ),
+            max_seconds: z
+                .number()
+                .positive()
+                .optional()
+                .describe(
+                    "Maximum duration of each input audio clip, in seconds.",
+                ),
+            max_total_seconds: z
+                .number()
+                .positive()
+                .optional()
+                .describe(
+                    "Maximum combined duration of all input audio clips, in seconds.",
+                ),
+            transcription_options: z
+                .array(z.enum(["language", "prompt"]))
+                .optional()
+                .describe(
+                    "Supported optional transcription inputs. An empty array means the model accepts neither language nor prompt.",
+                ),
+            requires_reference_visual: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Whether an audio reference must be accompanied by a reference image or video.",
+                ),
+        })
+        .optional()
+        .describe(
+            "Model-specific requirements for input audio. Only declared constraints are included.",
+        ),
     capabilities: z.array(ModelCapabilitySchema),
     supported_parameters: z
         .array(z.string())
@@ -323,6 +364,8 @@ export function modelInfoFromDefinition(
         duration_step: service.durationStep,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
+        max_reference_audios: service.maxReferenceAudios,
+        audio_input_constraints: service.audioInputConstraints,
         capabilities: getCapabilities(service),
         supported_parameters: service.supportedParameters,
         tools: service.tools,

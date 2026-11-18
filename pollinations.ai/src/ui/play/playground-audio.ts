@@ -1,23 +1,23 @@
-import type { AudioBinaryResponse, Pollinations } from "@pollinations/sdk";
+import type {
+    AudioBinaryResponse,
+    ModelInfo,
+    Pollinations,
+} from "@pollinations/sdk";
+import { audioEndpoint } from "./audio-endpoint";
 
 type AudioModel = {
     id: string;
     inputModalities: string[];
     supportedEndpoints: string[];
+    audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
 
-const AUDIO_ENDPOINTS = [
-    "/v1/audio/transcriptions",
-    "/v1/audio/voice-changer",
-    "/v1/audio/voice-isolator",
-    "/v1/audio/speech",
-    "/audio/{text}",
-] as const;
-
-export function audioEndpoint(model: AudioModel) {
-    return AUDIO_ENDPOINTS.find((endpoint) =>
-        model.supportedEndpoints.includes(endpoint),
-    );
+export function transcriptionControls(model: AudioModel) {
+    const options = model.audioInputConstraints?.transcription_options ?? [];
+    return {
+        language: options.includes("language"),
+        prompt: options.includes("prompt"),
+    };
 }
 
 export function supportsAudioLength(model: {
@@ -69,6 +69,25 @@ export function audioInputError(
     return null;
 }
 
+// Cache the pending upload too, so concurrent requests share it. Failed uploads can be retried.
+export function uploadReference(
+    client: Pollinations,
+    file: File,
+    urls?: WeakMap<File, Promise<string>>,
+) {
+    const previous = urls?.get(file);
+    if (previous) return previous;
+    const upload = client.upload(file, { name: file.name }).then(
+        (result) => result.url,
+        (error: unknown) => {
+            urls?.delete(file);
+            throw error;
+        },
+    );
+    urls?.set(file, upload);
+    return upload;
+}
+
 /**
  * Use the catalog's endpoint contract; never discard a selected file.
  * Callers check audioInputError first.
@@ -92,14 +111,19 @@ export async function generatePlaygroundAudio(
         language?: string;
     },
 ): Promise<
-    { type: "text"; text: string } | ({ type: "audio" } & AudioBinaryResponse)
+    | { type: "text"; text: string }
+    | { type: "stems"; archive: Blob }
+    | ({ type: "audio" } & AudioBinaryResponse)
 > {
     const endpoint = audioEndpoint(model);
     if (endpoint === "/v1/audio/transcriptions" && file) {
+        const controls = transcriptionControls(model);
         const result = await client.transcribe(file, {
             model: model.id,
-            prompt: prompt.trim() || undefined,
-            language,
+            prompt: controls.prompt ? prompt.trim() || undefined : undefined,
+            language: controls.language
+                ? language?.trim() || undefined
+                : undefined,
         });
         return { type: "text", text: result.text || "No transcript" };
     }
@@ -118,27 +142,79 @@ export async function generatePlaygroundAudio(
         });
         return { type: "audio", ...result };
     }
-    let referenceUrl = file && referenceUrls?.get(file);
-    if (file && !referenceUrl) {
-        referenceUrl = client.upload(file, { name: file.name }).then(
-            (upload) => upload.url,
-            (error: unknown) => {
-                referenceUrls?.delete(file);
-                throw error;
-            },
-        );
-        referenceUrls?.set(file, referenceUrl);
+    if (endpoint === "/alpha/audio/stem-separation" && file) {
+        return {
+            type: "stems",
+            archive: await client.separateStems(file, { model: model.id }),
+        };
     }
     const options = {
         model: model.id,
         voice,
         duration,
-        [file && isVideo(file) ? "referenceVideo" : "referenceAudio"]:
-            await referenceUrl,
+        [file && isVideo(file) ? "referenceVideo" : "referenceAudio"]: file
+            ? await uploadReference(client, file, referenceUrls)
+            : undefined,
     };
     const result =
         endpoint === "/audio/{text}"
             ? await client.audio(prompt.trim(), options)
             : await client.audioSpeech(prompt.trim(), options);
     return { type: "audio", ...result };
+}
+
+type AudioConstraints = NonNullable<ModelInfo["audio_input_constraints"]>;
+
+export function audioConstraintHint(rules?: AudioConstraints) {
+    if (!rules) return undefined;
+    const {
+        min_seconds: min,
+        max_seconds: max,
+        max_total_seconds: total,
+    } = rules;
+    return (
+        [
+            min && max
+                ? `Use ${min}–${max} seconds per clip.`
+                : min
+                  ? `Use at least ${min} seconds per clip.`
+                  : max
+                    ? `Use up to ${max} seconds per clip.`
+                    : "",
+            total ? `Up to ${total} seconds of audio in total.` : "",
+            rules.requires_reference_visual
+                ? "Include a reference image or video with audio."
+                : "",
+        ]
+            .filter(Boolean)
+            .join(" ") || undefined
+    );
+}
+
+export function audioConstraintError(
+    rules: AudioConstraints | undefined,
+    files: File[],
+    durations: ReadonlyMap<File, number | null>,
+    hasVisual: boolean,
+) {
+    if (!rules || !files.length) return null;
+    if (rules.requires_reference_visual && !hasVisual)
+        return "Add a reference image or video with the audio.";
+    if (!rules.min_seconds && !rules.max_seconds && !rules.max_total_seconds)
+        return null;
+    let total = 0;
+    for (const file of files) {
+        const seconds = durations.get(file);
+        if (seconds === undefined) return "Reading clip duration…";
+        // The API can decode formats the browser cannot preview.
+        if (seconds === null) continue;
+        if (rules.min_seconds && seconds < rules.min_seconds)
+            return `${file.name} must be at least ${rules.min_seconds} seconds long.`;
+        if (rules.max_seconds && seconds > rules.max_seconds)
+            return `${file.name} must be at most ${rules.max_seconds} seconds long.`;
+        total += seconds;
+    }
+    return rules.max_total_seconds && total > rules.max_total_seconds
+        ? `Use at most ${rules.max_total_seconds} seconds of audio in total.`
+        : null;
 }

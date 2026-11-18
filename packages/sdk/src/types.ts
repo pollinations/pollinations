@@ -564,6 +564,12 @@ export interface AudioTransformOptions extends RequestOptions {
     voice?: AudioVoice;
 }
 
+/** Multipart options for the stem separation endpoint. */
+export interface StemSeparationOptions extends RequestOptions {
+    model?: AudioModel;
+    stemVariationId?: "two_stems_v1" | "six_stems_v1";
+}
+
 /** Response from dedicated audio endpoints (binary audio data) */
 export interface AudioBinaryResponse {
     /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -1288,6 +1294,14 @@ export interface ModelInfo {
     duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
+    max_reference_audios?: number;
+    audio_input_constraints?: {
+        min_seconds?: number;
+        max_seconds?: number;
+        max_total_seconds?: number;
+        requires_reference_visual?: boolean;
+        transcription_options?: ("language" | "prompt")[];
+    };
     capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;

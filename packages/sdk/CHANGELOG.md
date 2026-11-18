@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Added
+
+- `ModelInfo.max_reference_audios` exposes the model’s maximum number of reference audio clips per request.
+- `ModelInfo.audio_input_constraints` describes audio duration limits, required visual references, and supported transcription inputs (`language` and `prompt`).
+- `separateStems()` submits an audio file for stem separation and returns the ZIP archive.
+
 ## [5.1.0-alpha.32] - 2026-11-18
 
 ### Changed

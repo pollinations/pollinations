@@ -28,7 +28,9 @@ export function apiExample(
             ),
         );
     }
-    if (!url.endsWith("/v1/audio/transcriptions")) {
+    if (url.endsWith("/alpha/audio/stem-separation")) {
+        command.push("  -o stems.zip");
+    } else if (!url.endsWith("/v1/audio/transcriptions")) {
         command.push("  -o output.mp3");
     }
     return command.join(" \\\n");

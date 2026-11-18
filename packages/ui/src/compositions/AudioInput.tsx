@@ -3,11 +3,7 @@ import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts
 import { mediaActionTileClass } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
-import {
-    CloudUploadIcon,
-    VideoIcon,
-    XIcon,
-} from "../primitives/icons/index.tsx";
+import { CloudUploadIcon, XIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 import { AudioPlayer } from "./AudioPlayer.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
@@ -16,6 +12,8 @@ export type AudioInputProps = {
     value: File[];
     onChange: (files: File[]) => void;
     onBusyChange?: (busy: boolean) => void;
+    /** Browser-readable duration in seconds, or null when local preview is unavailable. */
+    onClipDuration?: (file: File, seconds: number | null) => void;
     onReject?: (files: RejectedFile[]) => void;
     accept?: string;
     importLabel?: string;
@@ -27,10 +25,12 @@ export type AudioInputProps = {
 function Clip({
     file,
     onRemove,
+    onClipDuration,
     disabled,
 }: {
     file: File;
     onRemove: () => void;
+    onClipDuration?: AudioInputProps["onClipDuration"];
     disabled: boolean;
 }) {
     const [url, setUrl] = useState("");
@@ -44,21 +44,16 @@ function Clip({
             title={file.name}
             className="polli:relative polli:size-20 polli:shrink-0"
         >
-            {file.type.startsWith("video/") ? (
-                <div className="polli:flex polli:size-full polli:flex-col polli:items-center polli:justify-center polli:gap-2 polli:rounded-xl polli:bg-theme-bg-active polli:p-2 polli:text-xs">
-                    <VideoIcon className="polli:size-6" />
-                    <span className="polli:max-w-full polli:truncate">
-                        {file.name}
-                    </span>
-                </div>
-            ) : (
-                url && (
-                    <AudioPlayer
-                        src={url}
-                        label={file.name}
-                        disabled={disabled}
-                    />
-                )
+            {url && (
+                <AudioPlayer
+                    src={url}
+                    label={file.name}
+                    disabled={disabled}
+                    onDuration={
+                        onClipDuration &&
+                        ((seconds) => onClipDuration(file, seconds))
+                    }
+                />
             )}
             <div className="polli:absolute polli:-top-2 polli:right-1">
                 <IconButton
@@ -78,6 +73,7 @@ export function AudioInput({
     value,
     onChange,
     onBusyChange,
+    onClipDuration,
     onReject,
     accept = "audio/*",
     importLabel = "Import audio",
@@ -141,6 +137,7 @@ export function AudioInput({
                         <Clip
                             key={`${file.name}-${file.lastModified}-${i}`}
                             file={file}
+                            onClipDuration={onClipDuration}
                             disabled={disabled || busy}
                             onRemove={() =>
                                 onChange(value.filter((_, n) => n !== i))

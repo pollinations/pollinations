@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type SyntheticEvent, useEffect, useRef, useState } from "react";
 import { audioTime } from "../lib/audio-time.ts";
 import { cn } from "../lib/cn.ts";
 import { mediaActionTileClass } from "../lib/media-action-tile.ts";
@@ -8,10 +8,12 @@ export function AudioPlayer({
     src,
     label,
     disabled = false,
+    onDuration,
 }: {
     src: string;
     label: string;
     disabled?: boolean;
+    onDuration?: (seconds: number | null) => void;
 }) {
     const audio = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
@@ -21,6 +23,12 @@ export function AudioPlayer({
     useEffect(() => {
         if (disabled) audio.current?.pause();
     }, [disabled]);
+    function updateDuration(event: SyntheticEvent<HTMLAudioElement>) {
+        const seconds = event.currentTarget.duration;
+        const known = Number.isFinite(seconds) ? seconds : null;
+        setDuration(known ?? 0);
+        onDuration?.(known);
+    }
     return (
         <>
             {/* biome-ignore lint/a11y/useMediaCaption: This local audio preview has no timed captions. */}
@@ -35,13 +43,8 @@ export function AudioPlayer({
                     setDuration(0);
                     setError(false);
                 }}
-                onDurationChange={(e) =>
-                    setDuration(
-                        Number.isFinite(e.currentTarget.duration)
-                            ? e.currentTarget.duration
-                            : 0,
-                    )
-                }
+                onLoadedMetadata={updateDuration}
+                onDurationChange={updateDuration}
                 onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
                 onPlay={() => setPlaying(true)}
                 onPause={(e) => {
@@ -49,7 +52,10 @@ export function AudioPlayer({
                     if (!e.currentTarget.ended) e.currentTarget.currentTime = 0;
                 }}
                 onEnded={() => setPlaying(false)}
-                onError={() => setError(true)}
+                onError={() => {
+                    setError(true);
+                    onDuration?.(null);
+                }}
             />
             <button
                 type="button"

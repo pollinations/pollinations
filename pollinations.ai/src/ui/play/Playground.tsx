@@ -59,17 +59,21 @@ import {
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
+import { audioEndpoint } from "./audio-endpoint";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
     mediaModelSettings,
 } from "./media-model-settings";
 import {
-    audioEndpoint,
+    audioConstraintError,
+    audioConstraintHint,
     audioInputError,
     generatePlaygroundAudio,
     isVideo,
     supportsAudioLength,
+    transcriptionControls,
+    uploadReference,
     VIDEO_EXTENSIONS,
 } from "./playground-audio";
 import { type ModelRunStat, runStatsLine } from "./run-stats";
@@ -94,6 +98,8 @@ type PlaygroundModel = MediaModelMetadata & {
     paidOnly: boolean;
     publisher?: string;
     maxReferenceVideos?: number;
+    maxReferenceAudios?: number;
+    audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
 
 // Groups the audio model list; the first group holds the default model.
@@ -137,6 +143,8 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
         maxReferenceVideos: model.max_reference_videos,
+        maxReferenceAudios: model.max_reference_audios,
+        audioInputConstraints: model.audio_input_constraints,
     };
 }
 
@@ -176,7 +184,7 @@ const UPLOAD_MAX_MB: Record<UploadMedia, number> = {
 
 type PlaygroundResult =
     | {
-          type: "image" | "video" | "audio";
+          type: "image" | "video" | "audio" | "stems";
           url: string;
           filename: string;
       }
@@ -243,12 +251,22 @@ function uploadMediaForModel(model: PlaygroundModel): UploadMedia[] {
     );
 }
 
+function exampleReferenceUrls(media: UploadMedia, files: File[]) {
+    return files
+        .map(
+            (_, index) =>
+                `YOUR_UPLOADED_${media.toUpperCase()}_URL_${index + 1}`,
+        )
+        .join("|");
+}
+
 function audioTaskForModel(model: PlaygroundModel): AudioTask {
     const endpoint = audioEndpoint(model);
     if (endpoint === "/v1/audio/transcriptions") return "transcription";
     if (
         endpoint === "/v1/audio/voice-changer" ||
-        endpoint === "/v1/audio/voice-isolator"
+        endpoint === "/v1/audio/voice-isolator" ||
+        endpoint === "/alpha/audio/stem-separation"
     )
         return "audio-processing";
     const audioPurpose = `${model.title} ${model.description}`.toLowerCase();
@@ -587,6 +605,17 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     const zoomButtonClass =
         "block w-full cursor-zoom-in border-0 bg-transparent p-0";
 
+    if (result.type === "stems") {
+        return (
+            <Surface
+                variant="card"
+                className="flex items-center justify-between gap-3"
+            >
+                <Text>Separated stems (ZIP)</Text>
+                <ResultDownloadButton result={result} />
+            </Surface>
+        );
+    }
     if (result.type === "audio") {
         return (
             <Surface variant="card" className="flex items-center gap-3">
@@ -677,16 +706,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
             />
         </div>
     );
-}
-
-async function uploadFiles(
-    client: Pollinations,
-    files: File[],
-): Promise<string[]> {
-    const uploads = await Promise.all(
-        files.map((file) => client.upload(file, { name: file.name })),
-    );
-    return uploads.map((upload) => upload.url);
 }
 
 export function Playground() {
@@ -952,6 +971,10 @@ export function Playground() {
             : undefined;
     const isAudioTranscription =
         currentAudioEndpoint === "/v1/audio/transcriptions";
+    const transcription =
+        isAudioTranscription && currentModel
+            ? transcriptionControls(currentModel)
+            : undefined;
     const showsAudioLength =
         currentModel &&
         audioTask === "music-and-sound-effects" &&
@@ -959,7 +982,7 @@ export function Playground() {
     const audioDuration = showsAudioLength
         ? Number(audioLength) || undefined
         : undefined;
-    const audioError =
+    const audioRequestError =
         currentModel?.category === "audio"
             ? audioInputError(currentModel, prompt, audioFiles[0])
             : null;
@@ -978,8 +1001,8 @@ export function Playground() {
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
     const showPromptInput =
         currentModel?.category !== "audio" ||
-        isAudioTranscription ||
-        currentModel.inputModalities.includes("text");
+        (transcription?.prompt ??
+            currentModel.inputModalities.includes("text"));
     const promptLabel = isAudioTranscription
         ? "Instructions (optional)"
         : "Description";
@@ -1008,6 +1031,47 @@ export function Playground() {
                   ),
               )
             : [];
+    const selectedAudioClips =
+        currentModel?.category === "video" ? videoReferences.audio : audioFiles;
+    const [clipDurations, setClipDurations] = useState(
+        () => new Map<File, number | null>(),
+    );
+    useEffect(() => {
+        setClipDurations(
+            (previous) =>
+                new Map(
+                    [...previous].filter(([file]) =>
+                        selectedAudioClips.includes(file),
+                    ),
+                ),
+        );
+    }, [selectedAudioClips]);
+    const rememberClipDuration = (file: File, seconds: number | null) => {
+        setClipDurations((previous) =>
+            previous.get(file) === seconds
+                ? previous
+                : new Map(previous).set(file, seconds),
+        );
+    };
+    const inputConstraints = currentModel?.audioInputConstraints;
+    const onClipDuration =
+        inputConstraints?.min_seconds ||
+        inputConstraints?.max_seconds ||
+        inputConstraints?.max_total_seconds
+            ? rememberClipDuration
+            : undefined;
+    const clipError =
+        currentModel?.category === "audio" ||
+        videoReferenceMedia.includes("audio")
+            ? audioConstraintError(
+                  inputConstraints,
+                  selectedAudioClips,
+                  clipDurations,
+                  videoReferences.image.length + videoReferences.video.length >
+                      0,
+              )
+            : null;
+    const audioError = clipError ?? audioRequestError;
     // An input image or video fixes the output shape, so Auto follows it;
     // otherwise Auto may render square and the default ratio applies.
     const sendsVisualInput =
@@ -1043,7 +1107,7 @@ export function Playground() {
         : {};
     // Blank means a new random seed each run; a fixed seed repeats a result.
     const fixedSeed = Number(seed) || undefined;
-    // GET examples omit uploaded references; file-based audio needs POST.
+    // A speech reference travels in the POST body.
     const audioGet =
         currentModel?.supportedEndpoints.includes("/audio/{text}") &&
         audioFiles.length === 0;
@@ -1068,7 +1132,7 @@ export function Playground() {
                   ...(audioDuration !== undefined
                       ? { duration: audioDuration }
                       : {}),
-                  ...(isAudioTranscription && language.trim()
+                  ...(transcription?.language && language.trim()
                       ? { language: language.trim() }
                       : {}),
                   ...(requiresMediaUpload
@@ -1097,6 +1161,22 @@ export function Playground() {
                                 aspectRatio: videoAspectRatio,
                                 duration: videoDuration?.value,
                                 seed: fixedSeed,
+                                image:
+                                    supportsReferenceImages && !usesReferences
+                                        ? exampleReferenceUrls(
+                                              "image",
+                                              referenceImages,
+                                          )
+                                        : undefined,
+                                ...Object.fromEntries(
+                                    videoReferenceMedia.map((media) => [
+                                        REFERENCE_CAPABILITY[media],
+                                        exampleReferenceUrls(
+                                            media,
+                                            videoReferences[media],
+                                        ),
+                                    ]),
+                                ),
                                 ...(currentModel.category === "video" &&
                                 videoConfig.sound === "optional"
                                     ? { audio: videoSound }
@@ -1125,8 +1205,7 @@ export function Playground() {
     function selectCategory(category: PlaygroundCategory) {
         if (category === activeCategory) return;
         setActiveCategory(category);
-        setAudioFiles([]);
-        setSelectedModel(defaultModelId(visibleModels, category));
+        selectModel(defaultModelId(visibleModels, category));
     }
 
     function selectModel(modelId: string) {
@@ -1155,20 +1234,23 @@ export function Playground() {
 
         try {
             const { client } = session;
+            const uploadFiles = (files: File[]) =>
+                Promise.all(
+                    files.map((file) =>
+                        uploadReference(client, file, session.referenceUrls),
+                    ),
+                );
             const requestSeed = fixedSeed ?? randomGenerationSeed();
             const referenceUrls =
                 supportsReferenceImages && !usesReferences
-                    ? await uploadFiles(client, referenceImages)
+                    ? await uploadFiles(referenceImages)
                     : [];
 
             if (currentModel.category === "video") {
                 const [images, videos, audios] = await Promise.all(
                     UPLOAD_MEDIA_ORDER.map((media) =>
-                        currentModel.videoCapabilities.includes(
-                            REFERENCE_CAPABILITY[media],
-                        ) &&
-                        (!videoConfig.exclusiveReferences || usesReferences)
-                            ? uploadFiles(client, videoReferences[media])
+                        videoReferenceMedia.includes(media)
+                            ? uploadFiles(videoReferences[media])
                             : Promise.resolve([]),
                     ),
                 );
@@ -1216,16 +1298,20 @@ export function Playground() {
                         referenceUrls: session.referenceUrls,
                         voice: selectedVoice || undefined,
                         duration: audioDuration,
-                        language: isAudioTranscription
-                            ? language.trim() || undefined
-                            : undefined,
+                        language,
                     },
                 );
                 runStore.set({
                     result:
                         response.type === "text"
                             ? response
-                            : mediaResult("audio", response),
+                            : response.type === "stems"
+                              ? {
+                                    type: "stems",
+                                    url: URL.createObjectURL(response.archive),
+                                    filename: "stems.zip",
+                                }
+                              : mediaResult("audio", response),
                 });
                 return;
             }
@@ -1246,7 +1332,9 @@ export function Playground() {
                     ? "Change voice"
                     : currentAudioEndpoint === "/v1/audio/voice-isolator"
                       ? "Isolate speech"
-                      : "Generate audio"
+                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                        ? "Separate stems"
+                        : "Generate audio"
               : "Generate image";
     const GenerateIcon = isAudioTranscription
         ? MicIcon
@@ -1257,7 +1345,8 @@ export function Playground() {
         running === "image" || running === "video" ? running : null;
     const hasResult =
         result &&
-        (result.type === "text" ? "audio" : result.type) === activeCategory;
+        (["text", "stems"].includes(result.type) ? "audio" : result.type) ===
+            activeCategory;
     const againLabel = generateLabel.startsWith("Generate ")
         ? "Generate again"
         : generateLabel;
@@ -1318,7 +1407,7 @@ export function Playground() {
     const canUseAudioInput = isHydrated && isLoggedIn;
     const audioInputHint = needsSignIn
         ? "Connect your Pollinations account to import or record audio."
-        : undefined;
+        : audioConstraintHint(inputConstraints);
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
@@ -1349,6 +1438,7 @@ export function Playground() {
                         value={audioFiles}
                         onChange={setAudioFiles}
                         onBusyChange={setRecording}
+                        onClipDuration={onClipDuration}
                         disabled={!canUseAudioInput || isGenerating}
                         importLabel={`Import ${mediaUploadLabel}`}
                         {...uploadProps(uploadMedia, "Use one media file.")}
@@ -1472,7 +1562,7 @@ export function Playground() {
                             )}
                             {audioInput}
 
-                            {isAudioTranscription && (
+                            {transcription?.language && (
                                 <FieldStack
                                     label="Language"
                                     orientation="inline"
@@ -1601,12 +1691,14 @@ export function Playground() {
                                                     )
                                                 }
                                                 onBusyChange={setRecording}
+                                                onClipDuration={onClipDuration}
                                                 disabled={
                                                     !canUseAudioInput ||
                                                     isGenerating
                                                 }
                                                 maxFiles={
-                                                    videoConfig.maxReferenceAudios
+                                                    currentModel?.maxReferenceAudios ??
+                                                    Infinity
                                                 }
                                                 {...uploadProps(
                                                     ["audio"],

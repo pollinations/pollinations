@@ -328,6 +328,7 @@ const AUDIO_BASE_SERVICES = {
             "Multilingual file transcription with automatic language detection and timed segments",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: [] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/eleven-v4": {
@@ -495,6 +496,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Preserves delivery and emotion while transforming speaker identity",
         inputModalities: ["audio"],
+        audioInputConstraints: { max_seconds: 300 },
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: ["/v1/audio/voice-changer"],
@@ -515,6 +517,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Removes background noise while preserving clear spoken audio",
         inputModalities: ["audio", "video"],
+        audioInputConstraints: { min_seconds: 4.6 },
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
@@ -576,6 +579,7 @@ const AUDIO_BASE_SERVICES = {
         title: "Eleven Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
+        audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
         maxDuration: 300,
@@ -598,6 +602,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
+        audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
         maxDuration: 300,
@@ -711,6 +716,9 @@ const AUDIO_BASE_SERVICES = {
         description: "Accurate, affordable speech-to-text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: {
+            transcription_options: ["language", "prompt"],
+        },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
@@ -733,6 +741,9 @@ const AUDIO_BASE_SERVICES = {
             "Fast multilingual speech recognition with optional language and prompt context",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: {
+            transcription_options: ["language", "prompt"],
+        },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/scribe-v3": {
@@ -750,6 +761,7 @@ const AUDIO_BASE_SERVICES = {
             "Accurate multilingual transcription with speaker labels and word timestamps",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: ["language"] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/scribe-v2": {
@@ -768,6 +780,7 @@ const AUDIO_BASE_SERVICES = {
         description: "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: ["language"] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-transcribe": {
@@ -787,6 +800,7 @@ const AUDIO_BASE_SERVICES = {
             "Fast multilingual speech recognition with word timestamps, speaker labels, and text formatting",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: ["language"] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "google/gemini-3.5-transcribe": {
@@ -810,6 +824,7 @@ const AUDIO_BASE_SERVICES = {
             "Speech recognition with word timestamps and speaker labels for up to eight speakers",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: ["language"] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-tts": {
@@ -952,6 +967,7 @@ const AUDIO_BASE_SERVICES = {
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: { transcription_options: ["language"] },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "assemblyai/universal-3.5-pro": {
@@ -1041,6 +1057,9 @@ const AUDIO_BASE_SERVICES = {
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        audioInputConstraints: {
+            transcription_options: ["language", "prompt"],
+        },
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stability-ai/stable-audio-3-medium": {

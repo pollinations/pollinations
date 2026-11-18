@@ -1,7 +1,8 @@
 import { Pollinations } from "@pollinations/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { audioEndpoint } from "./audio-endpoint";
 import {
-    audioEndpoint,
+    audioConstraintError,
     audioInputError,
     generatePlaygroundAudio,
     supportsAudioLength,
@@ -216,6 +217,29 @@ describe("catalog-driven audio requests", () => {
         expect(await uploaded.text()).toBe("video bytes");
     });
 
+    it("posts stems directly and returns the ZIP archive for download", async () => {
+        const archive = new Blob(["stem archive"], { type: "application/zip" });
+        const send = vi.fn().mockResolvedValue(new Response(archive));
+        vi.stubGlobal("fetch", send);
+        const spec = model("/alpha/audio/stem-separation");
+        expect(audioInputError(spec, "")).toContain("Upload");
+        expect(audioInputError(spec, "", file)).toBeNull();
+        const result = await generatePlaygroundAudio(client, spec, {
+            prompt: "",
+            file,
+        });
+        expect(send).toHaveBeenCalledTimes(1);
+        const [url, request] = send.mock.calls[0];
+        expect(url).toBe("https://example.test/alpha/audio/stem-separation");
+        expect(request.body.get("file").name).toBe(file.name);
+        expect(request.body.get("model")).toBe(spec.id);
+        expect(result.type).toBe("stems");
+        if (result.type === "stems") {
+            expect(result.archive.type).toBe("application/zip");
+            expect(await result.archive.text()).toBe("stem archive");
+        }
+    });
+
     it("keeps transcription and its optional instructions working", async () => {
         const fetchRequest = vi
             .fn()
@@ -224,7 +248,12 @@ describe("catalog-driven audio requests", () => {
         expect(
             await generatePlaygroundAudio(
                 client,
-                model("/v1/audio/transcriptions"),
+                {
+                    ...model("/v1/audio/transcriptions"),
+                    audioInputConstraints: {
+                        transcription_options: ["prompt", "language"],
+                    },
+                },
                 {
                     prompt: "Names: Polly",
                     file,
@@ -238,6 +267,34 @@ describe("catalog-driven audio requests", () => {
         expect(request.body.get("prompt")).toBe("Names: Polly");
         expect(request.body.get("language")).toBe("de");
     });
+
+    it.each([
+        { options: undefined, prompt: null, language: null },
+        { options: [], prompt: null, language: null },
+        { options: ["language"], prompt: null, language: "de" },
+        { options: ["prompt"], prompt: "Polly", language: null },
+    ] as const)(
+        "submits the advertised transcription options ($options)",
+        async ({ options, prompt, language }) => {
+            const send = vi
+                .fn()
+                .mockResolvedValue(Response.json({ text: "hello" }));
+            vi.stubGlobal("fetch", send);
+            await generatePlaygroundAudio(
+                client,
+                {
+                    ...model("/v1/audio/transcriptions"),
+                    audioInputConstraints: options
+                        ? { transcription_options: [...options] }
+                        : undefined,
+                },
+                { file, prompt: "Polly", language: "de" },
+            );
+            const body = send.mock.calls[0][1].body as FormData;
+            expect(body.get("prompt")).toBe(prompt);
+            expect(body.get("language")).toBe(language);
+        },
+    );
 
     it.each(["/v1/audio/speech", "/audio/{text}"])(
         "keeps text-only speech working through %s",
@@ -316,5 +373,48 @@ describe("catalog-driven audio requests", () => {
             ),
         ).rejects.toThrow();
         expect(fetchRequest).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("catalog audio input constraints", () => {
+    const rules = {
+        min_seconds: 2,
+        max_seconds: 8,
+        max_total_seconds: 10,
+        requires_reference_visual: true,
+    };
+    const next = new File(["sample"], "second.wav");
+    const files = [file, next];
+    function validate(
+        first: number | null,
+        second: number | null,
+        visual = true,
+    ) {
+        return audioConstraintError(
+            rules,
+            files,
+            new Map([
+                [file, first],
+                [next, second],
+            ]),
+            visual,
+        );
+    }
+    it("checks clip duration, combined duration, and reference visuals independently", () => {
+        expect(validate(2, 8)).toBeNull();
+        expect(validate(1, 3)).toContain("at least 2");
+        expect(validate(9, 2)).toContain("at most 8");
+        expect(validate(4, 7)).toContain("10 seconds of audio in total");
+        expect(validate(2, 3, false)).toContain("reference image or video");
+    });
+    it("waits for metadata and lets the API handle formats without a local preview", () => {
+        expect(audioConstraintError(rules, files, new Map(), true)).toContain(
+            "Reading",
+        );
+        expect(validate(null, 8)).toBeNull();
+        expect(audioConstraintError(rules, [], new Map(), false)).toBeNull();
+        expect(
+            audioConstraintError(undefined, files, new Map(), false),
+        ).toBeNull();
     });
 });

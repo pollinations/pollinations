@@ -512,6 +512,23 @@ describe("audio inputs", () => {
         });
     });
 
+    it("sends the selected stem variation as multipart and returns a ZIP", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(new Blob(["archive"], { type: "application/zip" })),
+        );
+        const zip = await newClient().separateStems(
+            new File(["music"], "music.wav"),
+            { model: "catalog-model", stemVariationId: "two_stems_v1" },
+        );
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/alpha/audio/stem-separation");
+        expect(init.body.get("file").name).toBe("music.wav");
+        expect(init.body.get("stem_variation_id")).toBe("two_stems_v1");
+        expect(init.body.get("model")).toBe("catalog-model");
+        expect(zip.type).toBe("application/zip");
+        expect(await zip.text()).toBe("archive");
+    });
+
     it.each(["voice-changer", "voice-isolator"] as const)(
         "posts the original file to %s without a text prompt",
         async (operation) => {

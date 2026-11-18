@@ -15,6 +15,7 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect, vi } from "vitest";
+import { audioEndpoint } from "../../pollinations.ai/src/ui/play/audio-endpoint.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -481,11 +482,36 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
-test("model listings expose reference media limits on /v1/models", async () => {
+test("the playground can submit audio to each official media model that accepts it", async () => {
+    const response = await fetchWorker("/models");
+    expect(response.status).toBe(200);
+    const catalog = (await response.json()) as ModelInfo[];
+    for (const model of catalog) {
+        if (model.community || !model.input_modalities?.includes("audio"))
+            continue;
+        if (model.category === "audio") {
+            expect(
+                audioEndpoint({
+                    supportedEndpoints: model.supported_endpoints ?? [],
+                }),
+                model.name,
+            ).toBeDefined();
+        } else if (model.category === "image" || model.category === "video") {
+            expect(model.category, model.name).toBe("video");
+            expect(model.video_capabilities, model.name).toContain(
+                "reference_audios",
+            );
+        }
+    }
+});
+
+test("model listings and retrieval expose reference media limits", async () => {
     type ListedModel = {
         id: string;
         max_reference_images?: number;
         max_reference_videos?: number;
+        max_reference_audios?: number;
+        audio_input_constraints?: ModelInfo["audio_input_constraints"];
     };
     const list = (await (await fetchWorker("/v1/models")).json()) as {
         data: ListedModel[];
@@ -501,8 +527,58 @@ test("model listings expose reference media limits on /v1/models", async () => {
         expect(model.max_reference_videos, model.id).toEqual(
             info?.max_reference_videos,
         );
+        expect(model.max_reference_audios, model.id).toEqual(
+            info?.max_reference_audios,
+        );
+        expect(model.audio_input_constraints, model.id).toEqual(
+            info?.audio_input_constraints,
+        );
     }
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
+
+    expect(
+        list.data.find((model) => model.id === "microsoft/mai-transcribe-2")
+            ?.audio_input_constraints?.transcription_options,
+    ).toEqual([]);
+
+    for (const path of [
+        "/models",
+        "/audio/models",
+        "/image/models",
+        "/video/models",
+    ]) {
+        const response = await fetchWorker(path);
+        expect(response.status, path).toBe(200);
+        const models = (await response.json()) as ModelInfo[];
+        expect(
+            models.some((model) => model.audio_input_constraints),
+            path,
+        ).toBe(true);
+        for (const model of models) {
+            const info = registry.resolve(model.name)?.info;
+            expect(model.max_reference_audios, model.name).toEqual(
+                info?.max_reference_audios,
+            );
+            expect(model.audio_input_constraints, model.name).toEqual(
+                info?.audio_input_constraints,
+            );
+        }
+    }
+    for (const model of list.data.filter(
+        (entry) => entry.audio_input_constraints || entry.max_reference_audios,
+    )) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.max_reference_audios, model.id).toEqual(
+            model.max_reference_audios,
+        );
+        expect(retrieved.audio_input_constraints, model.id).toEqual(
+            model.audio_input_constraints,
+        );
+    }
 });
 
 test("retrieves a model by canonical ID", async () => {

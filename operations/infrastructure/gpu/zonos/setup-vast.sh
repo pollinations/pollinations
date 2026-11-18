@@ -24,7 +24,7 @@ fi
 # The pinned text normalizer uses Rust 2024 and requires Rust 1.88.
 node -e 'const [,major,minor]=process.argv[1].match(/cargo (\d+)\.(\d+)/); if (+major < 1 || (+major === 1 && +minor < 88)) process.exit(1)' "$(cargo --version)"
 
-for weight in backbone-ptq.gguf zac-keep2.gguf; do
+for weight in backbone-ptq.gguf zac-keep2.gguf spk-encoder.gguf; do
     path="$root/models/$weight"
     if [[ ! -s "$path" ]]; then
         curl -fLsS --retry 3 "https://huggingface.co/Zyphra/ZONOS3-Mini/resolve/$weight_revision/gguf/$weight" -o "$path.part"
@@ -34,4 +34,7 @@ done
 
 cmake -S "$root/source/servers/ggml" -B "$root/build" -G Ninja -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=86 -DGGML_NATIVE=OFF
 cmake --build "$root/build" --target zonos3-server -j 8
+# The runtime discovers ffmpeg next to its executable. Restrict user references
+# to self-contained audio demuxers and local input files.
+install -m 0755 "$(dirname "${BASH_SOURCE[0]}")/decode-reference.sh" "$root/build/ffmpeg"
 install -m 0644 "$(dirname "${BASH_SOURCE[0]}")/speech.mjs" "$root/speech.mjs"

@@ -146,7 +146,7 @@ export const CreateSpeechRequestSchema = z
         }),
         reference_audio: z.url().optional().meta({
             description:
-                "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                "Public HTTP(S) audio URL for voice cloning on zyphra/zonos3-mini, music conditioning, or audio-to-audio generation.",
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
         }),
@@ -2192,12 +2192,11 @@ function requireElevenMusicOptions(
         opts.conditioningRef !== undefined ||
         opts.storeForInpainting === true;
 
-    // stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3
-    // accept reference_audio for audio-to-audio, but not the ElevenLabs
-    // composition/conditioning options.
+    // Stable Audio and ZONOS accept a reference clip on its own.
     if (
         model === "stability-ai/stable-audio-3-medium" ||
-        model === "stability-ai/stable-audio-3"
+        model === "stability-ai/stable-audio-3" ||
+        model === "zyphra/zonos3-mini"
     ) {
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -2213,7 +2212,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, and zyphra/zonos3-mini also accept reference_audio).",
     });
 }
 
@@ -3814,6 +3813,7 @@ async function dispatchAudioGeneration(
                     text,
                     voice,
                     responseFormat,
+                    referenceAudio,
                 ),
             );
         case "fish-audio/s2.1-pro":
@@ -4629,6 +4629,8 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3` (`strength` 0-1 sets how far the output may depart from it), or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
+                `**\`zyphra/zonos3-mini\`** — ${AUDIO_SERVICES["zyphra/zonos3-mini"].description} Start with 5–10 seconds of clear speech from one speaker. Output length follows the text. Reuse the same reference URL with new text for another generation.`,
+                "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
                 `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
@@ -4695,7 +4697,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     format: "uri",
                                     description:
-                                        "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                                        "Public HTTP(S) audio URL for voice cloning on zyphra/zonos3-mini, music conditioning, or audio-to-audio generation.",
                                 },
                                 strength: {
                                     type: "number",
@@ -4725,6 +4727,15 @@ export const audioRoutes = new Hono<Env>()
                             },
                         },
                         examples: {
+                            referenceVoice: {
+                                summary: "Speak new text in a reference voice",
+                                value: {
+                                    model: "zyphra/zonos3-mini",
+                                    input: "Good morning from Berlin.",
+                                    reference_audio:
+                                        "https://example.com/voice.wav",
+                                },
+                            },
                             dialogue: {
                                 summary: "Multi-speaker dialogue",
                                 value: {

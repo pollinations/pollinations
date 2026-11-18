@@ -26,3 +26,30 @@ it("rejects unsupported encodings and reports an unbound backend as unavailable"
         generateZonosSpeech(undefined, "Hello", "alloy", "pcm"),
     ).rejects.toMatchObject({ status: 503 });
 });
+
+it("forwards the reference recording and labels the generated voice", async () => {
+    const clip = new File([new Uint8Array([1, 2, 3])], "voice.wav", {
+        type: "audio/wav",
+    });
+    const binding = {
+        async fetch(url: string, init: RequestInit) {
+            const form = await new Request(url, init).formData();
+            expect(form.get("text")).toBe("Hello");
+            expect(form.get("format")).toBe("mp3");
+            const reference = form.get("reference_audio") as File;
+            expect(reference.type).toBe(clip.type);
+            expect(await reference.arrayBuffer()).toEqual(
+                await clip.arrayBuffer(),
+            );
+            return new Response();
+        },
+    } as Fetcher;
+    const result = await generateZonosSpeech(
+        binding,
+        "Hello",
+        "alloy",
+        "mp3",
+        clip,
+    );
+    expect(result.headers.get("x-tts-voice")).toBe("reference_audio");
+});

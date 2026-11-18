@@ -64,6 +64,7 @@ type StripeCheckoutSession = {
     metadata?: Record<string, string>;
     payment_status?: "paid" | "unpaid";
     payment_intent?: string | null;
+    amount_subtotal?: number | null;
 };
 
 type StripePortalSession = {
@@ -394,10 +395,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             recordRequest(c, state);
             const customer = c.req.query("customer");
             const status = c.req.query("status");
+            const paymentIntent = c.req.query("payment_intent");
             const data = state.checkoutSessions.filter(
                 (session) =>
                     (!customer || session.customer === customer) &&
-                    (!status || session.status === status),
+                    (!status || session.status === status) &&
+                    (!paymentIntent ||
+                        session.payment_intent === paymentIntent),
             );
             return c.json({
                 object: "list",

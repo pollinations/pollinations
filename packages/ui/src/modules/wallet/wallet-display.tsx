@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
+import { Tooltip } from "../../primitives/Tooltip.tsx";
 
 type WalletBalanceKind = "paid" | "tier";
 
@@ -47,21 +48,32 @@ const walletKindNames: Record<WalletBalanceKind, string> = {
     tier: "Quest",
 };
 
+// Same wording as the balance tooltips on the Credits page.
+const walletKindHints: Record<WalletBalanceKind, string> = {
+    paid: "Paid balance: top-ups you bought. Used for paid-only models, or when Quest balance can't cover.",
+    tier: "Quest balance: earned from quests and your apps. Used first for regular models.",
+};
+
 export type WalletAmountProps = {
     kind: WalletBalanceKind;
     /** The formatted amount, e.g. "$5". */
     children: ReactNode;
     /** Grey name and icon, for amounts already claimed. */
     muted?: boolean;
+    /** Inside a button the hint opens on hover only, so a tap still
+     *  presses the button. */
+    inButton?: boolean;
     className?: string;
 };
 
 /** An amount with the balance it belongs to: "$5 🌱 Quest" or "$5 💳 Paid".
- *  Both balances are dollars, so the name tells them apart. */
+ *  Both balances are dollars, so the name tells them apart; hovering or
+ *  tapping the name explains the balance, like the Models page chips. */
 export const WalletAmount: FC<WalletAmountProps> = ({
     kind,
     children,
     muted = false,
+    inButton = false,
     className,
 }) => {
     const Icon = walletKindIcons[kind];
@@ -73,7 +85,12 @@ export const WalletAmount: FC<WalletAmountProps> = ({
             )}
         >
             {children}
-            <span
+            <Tooltip
+                triggerAs="span"
+                content={walletKindHints[kind]}
+                ariaLabel={walletKindHints[kind]}
+                tapEnabled={!inButton}
+                stopClickPropagation={!inButton}
                 className={cn(
                     "polli:inline-flex polli:items-center polli:gap-0.5 polli:text-xs polli:font-semibold",
                     muted
@@ -86,7 +103,7 @@ export const WalletAmount: FC<WalletAmountProps> = ({
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
                 {walletKindNames[kind]}
-            </span>
+            </Tooltip>
         </span>
     );
 };

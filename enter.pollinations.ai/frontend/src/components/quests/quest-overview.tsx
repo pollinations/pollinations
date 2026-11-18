@@ -840,7 +840,12 @@ export function QuestRow({
             }`}
         >
             {amounts.map(({ kind, label }) => (
-                <WalletAmount key={kind} kind={kind} muted={claimed}>
+                <WalletAmount
+                    key={kind}
+                    kind={kind}
+                    muted={claimed}
+                    inButton={Boolean(claimableRewardIds)}
+                >
                     {label}
                 </WalletAmount>
             ))}

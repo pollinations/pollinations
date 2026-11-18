@@ -342,6 +342,178 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("D&D 5e SRD lookup resolves spells, monsters and equipment by name or index", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests.push(url.pathname);
+        assert.equal(url.hostname, "www.dnd5eapi.co");
+        // The unversioned /api/spells/... path 301s to /api/2014/... — the
+        // tool calls the versioned URL directly.
+        assert.match(url.pathname, /^\/api\/2014\//);
+        if (url.pathname === "/api/2014/spells/fireball")
+            return Response.json({
+                index: "fireball",
+                name: "Fireball",
+                desc: [
+                    "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
+                    "The fire spreads around corners.",
+                ],
+                higher_level: [
+                    "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+                ],
+                range: "150 feet",
+                components: ["V", "S", "M"],
+                material: "A tiny ball of bat guano and sulfur.",
+                ritual: false,
+                duration: "Instantaneous",
+                concentration: false,
+                casting_time: "1 action",
+                level: 3,
+                damage: [
+                    {
+                        damage_type: { index: "fire", name: "Fire" },
+                        damage_at_slot_level: { 3: "8d6", 4: "9d6" },
+                    },
+                ],
+                dc: {
+                    dc_type: { index: "dex", name: "DEX" },
+                    dc_success: "half",
+                },
+                area_of_effect: { type: "sphere", size: 20 },
+                school: { index: "evocation", name: "Evocation" },
+                classes: [
+                    { index: "sorcerer", name: "Sorcerer" },
+                    { index: "wizard", name: "Wizard" },
+                ],
+                subclasses: [{ index: "lore", name: "Lore" }],
+            });
+        if (url.pathname === "/api/2014/monsters/goblin")
+            return Response.json({
+                index: "goblin",
+                name: "Goblin",
+                size: "Small",
+                type: "humanoid",
+                subtype: "goblinoid",
+                alignment: "neutral evil",
+                armor_class: [{ type: "armor", value: 15 }],
+                hit_points: 7,
+                hit_dice: "2d6",
+                speed: { walk: "30 ft." },
+                strength: 8,
+                dexterity: 14,
+                constitution: 10,
+                intelligence: 10,
+                wisdom: 8,
+                charisma: 8,
+                challenge_rating: 0.25,
+                proficiency_bonus: 2,
+                xp: 50,
+                senses: { darkvision: "60 ft.", passive_perception: 9 },
+                languages: "Common, Goblin",
+                damage_vulnerabilities: [],
+                damage_resistances: [],
+                damage_immunities: [],
+                condition_immunities: [],
+                special_abilities: [
+                    {
+                        name: "Nimble Escape",
+                        desc: "The goblin can take the Disengage or Hide action as a bonus action on each of its turns.",
+                    },
+                ],
+                actions: [
+                    {
+                        name: "Scimitar",
+                        desc: "Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.",
+                        attack_bonus: 4,
+                        damage: [
+                            {
+                                damage_type: {
+                                    index: "slashing",
+                                    name: "Slashing",
+                                },
+                                damage_dice: "1d6+2",
+                            },
+                        ],
+                    },
+                ],
+                legendary_actions: [],
+            });
+        if (url.pathname === "/api/2014/equipment/longsword")
+            return Response.json({
+                index: "longsword",
+                name: "Longsword",
+                desc: [],
+                special: [],
+                equipment_category: { index: "weapon", name: "Weapon" },
+                weapon_category: "Martial",
+                weapon_range: "Melee",
+                category_range: "Martial Melee",
+                cost: { quantity: 15, unit: "gp" },
+                damage: {
+                    damage_dice: "1d8",
+                    damage_type: { index: "slashing", name: "Slashing" },
+                },
+                range: { normal: 5 },
+                weight: 3,
+                properties: [{ index: "versatile", name: "Versatile" }],
+                two_handed_damage: {
+                    damage_dice: "1d10",
+                    damage_type: { index: "slashing", name: "Slashing" },
+                },
+            });
+        return new Response("Not Found", { status: 404 });
+    });
+    const c = await client(t);
+    let result = await call(c, "dnd_spell", { name: "Fireball" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0], "/api/2014/spells/fireball");
+    const spell = value(result);
+    assert.equal(spell.name, "Fireball");
+    assert.equal(spell.level, 3);
+    assert.equal(spell.school, "Evocation");
+    assert.equal(spell.range, "150 feet");
+    assert.equal(spell.damage.type, "Fire");
+    assert.equal(spell.damage.at_slot_level["3"], "8d6");
+    assert.equal(spell.dc.type, "DEX");
+    assert.deepEqual(spell.classes, ["Sorcerer", "Wizard"]);
+    assert.match(spell.desc, /bright streak/);
+
+    result = await call(c, "dnd_monster", { name: "goblin" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const monster = value(result);
+    assert.equal(monster.name, "Goblin");
+    assert.equal(monster.armor_class.value, 15);
+    assert.equal(monster.hit_points, 7);
+    assert.equal(monster.challenge_rating, 0.25);
+    assert.equal(monster.xp, 50);
+    assert.equal(monster.abilities.dexterity, 14);
+    assert.equal(monster.special_abilities[0].name, "Nimble Escape");
+    assert.equal(monster.actions[0].name, "Scimitar");
+    assert.equal(monster.actions[0].damage[0].dice, "1d6+2");
+
+    result = await call(c, "dnd_equipment", { name: "longsword" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const item = value(result);
+    assert.equal(item.name, "Longsword");
+    assert.equal(item.cost.quantity, 15);
+    assert.equal(item.cost.unit, "gp");
+    assert.equal(item.damage.dice, "1d8");
+    assert.equal(item.damage.type, "Slashing");
+    assert.deepEqual(item.properties, ["Versatile"]);
+    assert.equal(item.two_handed_damage.dice, "1d10");
+
+    result = await call(c, "dnd_spell", { name: "zzzznonexistent" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /404/);
+
+    const before = requests.length;
+    result = await call(c, "dnd_spell", { name: "fireball!!" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Use a D&D 5e name or index/);
+    assert.equal(requests.length, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +536,9 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dnd_spell",
+                "dnd_monster",
+                "dnd_equipment",
             ].sort(),
         );
     });

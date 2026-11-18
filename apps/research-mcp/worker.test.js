@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "flood_warnings",
             ].sort(),
         );
     });
@@ -644,4 +645,127 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("flood_warnings lists live UK warnings, filters expired ones and county client-side", async (t) => {
+    const fixture = {
+        items: [
+            {
+                description: "North Sea at Scarborough - Sandside",
+                eaAreaName: "Yorkshire",
+                floodArea: {
+                    county: "North Yorkshire",
+                    riverOrSea: "North Sea",
+                },
+                floodAreaID: "122FWC045",
+                isTidal: true,
+                message:
+                    "There is no longer a threat of flooding, though standing water and debris may still remain. \nCoastal conditions are expected to improve and no flooding is expected.   \nWe will continue to monitor the situation and will issue further alerts or warnings if necessary.   \nContinue to take care on waterside roads and footpaths and don't put yourself in unnecessary danger.  \n",
+                severity: "Warning no longer in force",
+                severityLevel: 4,
+                timeMessageChanged: "2026-11-18T09:17:00",
+                timeRaised: "2026-11-18T09:17:33",
+            },
+            {
+                description: "North Sea coast from Whitby to Filey",
+                eaAreaName: "Yorkshire",
+                floodArea: {
+                    county: "East Riding of Yorkshire, North Yorkshire",
+                    riverOrSea: "North Sea",
+                },
+                floodAreaID: "122WAC953",
+                isTidal: true,
+                message:
+                    "There is no longer a threat of flooding, though standing water and debris may still remain.\nCoastal conditions are expected to improve and no flooding is expected.  \nWe will continue to monitor the situation and will issue further alerts or warnings if necessary.  \nContinue to take care on waterside roads and footpaths and don't put yourself in unnecessary danger.  \n",
+                severity: "Warning no longer in force",
+                severityLevel: 4,
+                timeMessageChanged: "2026-11-18T09:17:00",
+                timeRaised: "2026-11-18T09:17:28",
+            },
+            {
+                description: "Upper Bristol Avon area",
+                eaAreaName: "Wessex",
+                floodArea: {
+                    county: "Gloucestershire, South Gloucestershire, Wiltshire",
+                    riverOrSea: "Bristol River Avon",
+                },
+                floodAreaID: "112WAFTUBA",
+                isTidal: false,
+                message:
+                    "Areas most at risk include low lying areas in Tetbury, Badminton, Brook End at Luckington, Corsham, Lacock and the road at Reybridge. Further flooding is possible overnight and on Thursday as river levels continue to rise in response to forecast overnight rainfall.\n",
+                severity: "Flood alert",
+                severityLevel: 3,
+                timeMessageChanged: "2026-11-18T16:30:00",
+                timeRaised: "2026-11-18T16:30:57",
+            },
+        ],
+    };
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "environment.data.gov.uk");
+        assert.equal(target.searchParams.get("_limit"), "100");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json(fixture);
+    });
+
+    const c = await client(t);
+    const res = await call(c, "flood_warnings", { limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(fetches, 1);
+    // The two expired (level 4) warnings are dropped by default.
+    assert.equal(val.total, 1);
+    assert.deepEqual(val.warnings, [
+        {
+            id: "112WAFTUBA",
+            description: "Upper Bristol Avon area",
+            severity: "Flood alert",
+            severityLevel: 3,
+            area: "Wessex",
+            county: "Gloucestershire, South Gloucestershire, Wiltshire",
+            riverOrSea: "Bristol River Avon",
+            isTidal: false,
+            message:
+                "Areas most at risk include low lying areas in Tetbury, Badminton, Brook End at Luckington, Corsham, Lacock and the road at Reybridge. Further flooding is possible overnight and on Thursday as river levels continue to rise in response to forecast overnight rainfall.",
+            timeRaised: "2026-11-18T16:30:57",
+            timeMessageChanged: "2026-11-18T16:30:00",
+        },
+    ]);
+
+    const allRes = await call(c, "flood_warnings", {
+        active_only: false,
+        limit: 5,
+    });
+    const allVal = value(allRes);
+    assert.equal(allVal.total, 3);
+    assert.equal(allVal.warnings[0].id, "122FWC045");
+    assert.equal(allVal.warnings[0].severityLevel, 4);
+    assert.match(allVal.warnings[0].message, /no longer a threat of flooding/);
+    assert.equal(fetches, 2);
+
+    const countyRes = await call(c, "flood_warnings", {
+        active_only: false,
+        county: "yorkshire",
+    });
+    const countyVal = value(countyRes);
+    assert.equal(countyVal.total, 2);
+    assert.deepEqual(
+        countyVal.warnings.map((w) => w.id),
+        ["122FWC045", "122WAC953"],
+    );
+
+    const noneRes = await call(c, "flood_warnings", { county: "zzzqqq" });
+    assert.equal(value(noneRes).total, 0);
+    assert.deepEqual(value(noneRes).warnings, []);
+    assert.equal(fetches, 4);
+
+    const badRes = await call(c, "flood_warnings", { limit: 99 });
+    assert.equal(badRes.isError, true);
+    assert.equal(fetches, 4);
 });

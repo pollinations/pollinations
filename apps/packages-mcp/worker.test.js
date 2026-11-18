@@ -81,6 +81,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "artifacthub_search",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -412,6 +413,86 @@ test("HF search forwards task and limit; info exposes license and Space stage", 
         assert.equal(data.tags.length, 20);
         assert.equal(data.tagsTruncated, true);
     }
+});
+test("Artifact Hub search returns Helm charts; empty results and blank queries", async (t) => {
+    const nginxFixture = {
+        packages: [
+            {
+                name: "nginx",
+                normalized_name: "nginx",
+                category: 5,
+                category_display_name: "Networking",
+                stars: 107,
+                description:
+                    "NGINX Open Source is a web server that can be also used as a reverse proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due to its ability to provide faster content.",
+                version: "25.2.14",
+                repository: {
+                    url: "https://charts.bitnami.com/bitnami",
+                    kind: 0,
+                    name: "bitnami",
+                    display_name: "Bitnami",
+                },
+            },
+            { name: "extra" },
+        ],
+    };
+    let fetches = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.origin, "https://artifacthub.io");
+        assert.equal(url.pathname, "/api/v1/packages/search");
+        assert.equal(url.searchParams.get("kind"), "0");
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        if (url.searchParams.get("ts_query_web") === "zzzznotrealxyz")
+            return Response.json({ packages: [] });
+        assert.equal(url.searchParams.get("ts_query_web"), "nginx");
+        assert.equal(url.searchParams.get("limit"), "1");
+        return Response.json(nginxFixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "artifacthub_search", {
+            query: "nginx",
+            limit: 1,
+        }),
+        {
+            total: 1,
+            packages: [
+                {
+                    name: "nginx",
+                    normalized_name: "nginx",
+                    description:
+                        "NGINX Open Source is a web server that can be also used as a reverse proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due to its ability to provide faster content.",
+                    descriptionTruncated: false,
+                    stars: 107,
+                    version: "25.2.14",
+                    category: "Networking",
+                    repository: "Bitnami",
+                    repository_url: "https://charts.bitnami.com/bitnami",
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "artifacthub_search", {
+            query: "zzzznotrealxyz",
+        }),
+        { total: 0, packages: [] },
+    );
+    const before = fetches;
+    assert.equal(
+        (
+            await client.callTool({
+                name: "artifacthub_search",
+                arguments: { query: "   " },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(fetches, before);
 });
 test("invalid input cannot escape provider paths and makes no upstream request", async (t) => {
     t.mock.method(globalThis, "fetch", () => {

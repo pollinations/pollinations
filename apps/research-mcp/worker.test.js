@@ -342,6 +342,91 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("EOL species search returns projected results and caps long content", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "eol.org");
+        assert.equal(url.searchParams.get("q"), "Panthera leo");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            totalResults: 155,
+            startIndex: 1,
+            itemsPerPage: 50,
+            results: [
+                {
+                    id: 1270491,
+                    title: "Panthera leo nubica",
+                    link: "https://eol.org/pages/1270491",
+                    content:
+                        "Panthera leo nubica; Panthera leo massaica; Panthera leo nubica (de Blainville, 1843); Panthera leo nyanzae; Panthera leo hollisteri; Panthera leo hollisteri (J. A. Allen, 1924); Panthera leo massaica (Neumann, 1900); Panthera leo nyanzae (Heller, 1913)",
+                },
+                {
+                    id: 1270487,
+                    title: "Panthera leo senegalensis",
+                    link: "https://eol.org/pages/1270487",
+                    content:
+                        "Panthera leo senegalensis; Panthera leo senegalensis (J.N.von Meyer, 1826); Panthera leo kamptzi; Panthera leo senegalensis (J. N. von Meyer, 1826); Panthera leo kamptzi (Matschie, 1900)",
+                },
+                {
+                    id: 328672,
+                    title: "Panthera leo",
+                    link: "https://eol.org/pages/328672",
+                    content:
+                        "Panthera leo; Panthera leo (Linnaeus, 1758); Panthera leo persica; Panthera leo (Linnaeus 1758)",
+                },
+                {
+                    id: 999,
+                    title: "Long content",
+                    link: "https://eol.org/pages/999",
+                    content: "x".repeat(400),
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "eol_species", {
+        query: "Panthera leo",
+        limit: 3,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Panthera leo",
+        total: 155,
+        species: [
+            {
+                id: 1270491,
+                title: "Panthera leo nubica",
+                link: "https://eol.org/pages/1270491",
+                content:
+                    "Panthera leo nubica; Panthera leo massaica; Panthera leo nubica (de Blainville, 1843); Panthera leo nyanzae; Panthera leo hollisteri; Panthera leo hollisteri (J. A. Allen, 1924); Panthera leo massaica (Neumann, 1900); Panthera leo nyanzae (Heller, 1913)",
+            },
+            {
+                id: 1270487,
+                title: "Panthera leo senegalensis",
+                link: "https://eol.org/pages/1270487",
+                content:
+                    "Panthera leo senegalensis; Panthera leo senegalensis (J.N.von Meyer, 1826); Panthera leo kamptzi; Panthera leo senegalensis (J. N. von Meyer, 1826); Panthera leo kamptzi (Matschie, 1900)",
+            },
+            {
+                id: 328672,
+                title: "Panthera leo",
+                link: "https://eol.org/pages/328672",
+                content:
+                    "Panthera leo; Panthera leo (Linnaeus, 1758); Panthera leo persica; Panthera leo (Linnaeus 1758)",
+            },
+        ],
+    });
+    result = await call(c, "eol_species", { query: "Panthera leo", limit: 4 });
+    assert.equal(value(result).species[3].content, `${"x".repeat(300)}…`);
+    result = await call(c, "eol_species", { query: " " });
+    assert.equal(result.isError, true);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +449,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "eol_species",
             ].sort(),
         );
     });

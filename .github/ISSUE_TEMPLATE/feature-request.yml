@@ -1,22 +1,24 @@
 name: Feature Request
-description: Suggest a feature. If a merged PR builds it, you earn 2 Quest Pollen.
+description: Tell us where Pollinations held you back. If a merged PR builds it, you earn 2 Quest Pollen.
 title: "Feature: "
 body:
   - type: markdown
     attributes:
       value: |
-        When a merged pull request closes this issue, you earn 2 Quest Pollen. Claim them on the [Quests page](https://enter.pollinations.ai/quests) while signed in with this GitHub account.
+        The best requests come from something you were actually building. When a merged pull request closes this issue, you earn 2 Quest Pollen on the [Quests page](https://enter.pollinations.ai/quests).
 
   - type: textarea
-    id: feature
+    id: use-case
     attributes:
-      label: What should Pollinations do?
-      placeholder: "e.g., Let /v1/models filter by input type"
+      label: What were you trying to do?
+      description: Your project, and the point where Pollinations got in the way.
+      placeholder: "e.g., My Discord bot makes images per user, but I couldn't see which user spent how much"
     validations:
       required: true
 
   - type: textarea
-    id: why
+    id: feature
     attributes:
-      label: Why do you need it?
-      description: What you are building, or what is hard today without it.
+      label: What would help?
+    validations:
+      required: true

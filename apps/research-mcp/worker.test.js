@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "bible_verse",
             ].sort(),
         );
     });
@@ -644,4 +645,151 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("bible_verse returns passage text, translation and per-verse projection", async (t) => {
+    const fetched = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        fetched.push(url.href);
+        assert.equal(url.hostname, "bible-api.com");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (
+            url.pathname.toLowerCase() === "/john%203%3a16" &&
+            !url.searchParams.has("translation")
+        )
+            return Response.json({
+                reference: "John 3:16",
+                verses: [
+                    {
+                        book_id: "JHN",
+                        book_name: "John",
+                        chapter: 3,
+                        verse: 16,
+                        text: "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+                    },
+                ],
+                text: "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+                translation_id: "web",
+                translation_name: "World English Bible",
+                translation_note: "Public Domain",
+            });
+        if (
+            url.pathname.toLowerCase() === "/john%203%3a16" &&
+            url.searchParams.get("translation") === "kjv"
+        )
+            return Response.json({
+                reference: "John 3:16",
+                verses: [
+                    {
+                        book_id: "JHN",
+                        book_name: "John",
+                        chapter: 3,
+                        verse: 16,
+                        text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+                    },
+                ],
+                text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+                translation_id: "kjv",
+                translation_name: "King James Version",
+                translation_note: "Public Domain",
+            });
+        if (url.pathname.toLowerCase() === "/psalm%2023")
+            return Response.json({
+                reference: "Psalms 23",
+                verses: [
+                    {
+                        book_id: "PSA",
+                        book_name: "Psalms",
+                        chapter: 23,
+                        verse: 1,
+                        text: "Yahweh is my shepherd:\nI shall lack nothing.",
+                    },
+                    {
+                        book_id: "PSA",
+                        book_name: "Psalms",
+                        chapter: 23,
+                        verse: 2,
+                        text: "He makes me lie down in green pastures.\nHe leads me beside still waters.",
+                    },
+                ],
+                text: "Yahweh is my shepherd:\nI shall lack nothing. He makes me lie down in green pastures.\nHe leads me beside still waters.",
+                translation_id: "web",
+                translation_name: "World English Bible",
+                translation_note: "Public Domain",
+            });
+        return new Response(JSON.stringify({ error: "not found" }), {
+            status: 404,
+        });
+    });
+    const c = await client(t);
+    assert.deepEqual(
+        value(await call(c, "bible_verse", { reference: "John 3:16" })),
+        {
+            reference: "John 3:16",
+            text: "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+            translation: "World English Bible",
+            translation_id: "web",
+            verses: [
+                {
+                    book: "John",
+                    chapter: 3,
+                    verse: 16,
+                    text: "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+                },
+            ],
+        },
+    );
+    const kjv = value(
+        await call(c, "bible_verse", {
+            reference: "  john   3:16 ",
+            translation: "kjv",
+        }),
+    );
+    assert.equal(kjv.translation, "King James Version");
+    assert.equal(kjv.translation_id, "kjv");
+    assert.match(kjv.text, /only begotten Son/);
+    const psalm = value(
+        await call(c, "bible_verse", { reference: "Psalm 23" }),
+    );
+    assert.equal(psalm.reference, "Psalms 23");
+    assert.equal(psalm.verses.length, 2);
+    assert.match(psalm.verses[0].text, /Yahweh is my shepherd/);
+    const missing = await call(c, "bible_verse", {
+        reference: "zzzznonexistent 99:99",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /404/);
+    assert.deepEqual(fetched, [
+        "https://bible-api.com/John%203%3A16",
+        "https://bible-api.com/john%203%3A16?translation=kjv",
+        "https://bible-api.com/Psalm%2023",
+        "https://bible-api.com/zzzznonexistent%2099%3A99",
+    ]);
+});
+
+test("bible_verse rejects blank references and unknown translations before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        throw new Error("unexpected");
+    });
+    const c = await client(t);
+    for (const args of [
+        { reference: " " },
+        { reference: "John 3:16", translation: "akjv" },
+        { reference: "John 3:16", translation: "cherokee" },
+    ]) {
+        const result = await call(c, "bible_verse", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, 0);
 });

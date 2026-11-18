@@ -8,8 +8,10 @@ import {
     Chip,
     ClockIcon,
     CopyField,
+    ExternalLinkButton,
     formatCount,
     GitMergeIcon,
+    GitPullRequestIcon,
     InfoTip,
     InlineLink,
     IssueClosedIcon,
@@ -350,6 +352,13 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
 const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
 // Past this many cells the comb keeps the proportions instead of growing.
 const MAX_CELLS = 200;
+// A small comb shows room to grow: faint empty cells up to GROW_CELLS, and the
+// way to add real ones. Seasoned combs need neither.
+const SMALL_COMB = 40;
+const GROW_CELLS = 68;
+// Where a new contributor starts: issues, quests, docs and apps.
+const CONTRIBUTING_URL =
+    "https://github.com/pollinations/pollinations/blob/main/CONTRIBUTING.md";
 // Rows a tab lists before "Show more".
 const SECTION_PAGE_SIZE = 10;
 const PROGRESS_STATES = {
@@ -446,56 +455,87 @@ export function QuestProgress({
             }),
         ),
     );
+    const small = total < SMALL_COMB;
+    const growCells = small ? GROW_CELLS - total : 0;
     return (
         // The comb is a block beside the numbers on wide screens, above them
         // on a phone.
-        <Surface
-            variant="card"
-            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8"
-        >
-            <span
-                aria-hidden="true"
-                className="flex flex-wrap content-start gap-0.5 sm:w-2/5 sm:shrink-0"
-            >
-                {cells.map(({ key, tone }) => (
-                    <span key={key} className={`h-4 w-3.5 ${HEX} ${tone}`} />
-                ))}
-            </span>
-            {/* One line per state, like a legend for the comb: label, count,
+        <Surface variant="card" className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+                <span
+                    aria-hidden="true"
+                    className="flex flex-wrap content-start gap-0.5 sm:w-2/5 sm:shrink-0"
+                >
+                    {cells.map(({ key, tone }) => (
+                        <span
+                            key={key}
+                            className={`h-4 w-3.5 ${HEX} ${tone}`}
+                        />
+                    ))}
+                    {Array.from({ length: growCells }, (_, index) => (
+                        <span
+                            key={`grow-${index}`}
+                            className={`h-4 w-3.5 ${HEX} bg-theme-text-strong/5`}
+                            style={{
+                                opacity: Math.max(0.25, 1 - index / growCells),
+                            }}
+                        />
+                    ))}
+                </span>
+                {/* One line per state, like a legend for the comb: label, count,
                 pollen, with the numbers lined up in columns. */}
-            <dl className="grid min-w-0 flex-1 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
-                {states.map((state) => {
-                    const { label, tone, info } = PROGRESS_STATES[state];
-                    return (
-                        <div key={state} className="contents">
-                            <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
-                                <span
-                                    aria-hidden="true"
-                                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
-                                />
-                                {label}
-                                <InfoTip
-                                    text={info}
-                                    label={`${label} information`}
-                                />
-                            </dt>
-                            <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
-                                {/* Just the number: the label names it. */}
-                                {parts[state].count}
-                            </dd>
-                            <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
-                                {/* A quest still to do has no pollen yet. */}
-                                {state !== "open" && (
-                                    <ProgressPollen
-                                        pollen={parts[state].pollen}
-                                        ready={state === "ready"}
+                <dl className="grid min-w-0 flex-1 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
+                    {states.map((state) => {
+                        const { label, tone, info } = PROGRESS_STATES[state];
+                        return (
+                            <div key={state} className="contents">
+                                <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
+                                    <span
+                                        aria-hidden="true"
+                                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
                                     />
-                                )}
-                            </dd>
-                        </div>
-                    );
-                })}
-            </dl>
+                                    {label}
+                                    <InfoTip
+                                        text={info}
+                                        label={`${label} information`}
+                                    />
+                                </dt>
+                                <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
+                                    {/* Just the number: the label names it. */}
+                                    {parts[state].count}
+                                </dd>
+                                <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
+                                    {/* A quest still to do has no pollen yet. */}
+                                    {state !== "open" && (
+                                        <ProgressPollen
+                                            pollen={parts[state].pollen}
+                                            ready={state === "ready"}
+                                        />
+                                    )}
+                                </dd>
+                            </div>
+                        );
+                    })}
+                </dl>
+            </div>
+            {small && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                        <SparkleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Every merged pull request and every issue it fixes
+                            adds a cell. The comb has no limit.
+                        </span>
+                    </p>
+                    <ExternalLinkButton
+                        href={CONTRIBUTING_URL}
+                        size="sm"
+                        className="shrink-0 self-start"
+                    >
+                        How to contribute
+                    </ExternalLinkButton>
+                </div>
+            )}
         </Surface>
     );
 }
@@ -562,16 +602,26 @@ function QuestMarker({
     status,
     comingSoon,
     repeatable,
+    github,
 }: {
     status: QuestCardStatus;
     comingSoon?: boolean;
     /** Earned again and again: the open mark is a stack, like its rewards. */
     repeatable?: boolean;
+    /** Won with a pull request that closes its issue: the open mark says so. */
+    github?: boolean;
 }) {
     const [Icon, tone] = comingSoon
         ? [ClockIcon, "text-theme-text-muted"]
         : status === "open"
-          ? [repeatable ? LayersIcon : TargetIcon, "text-theme-text-strong"]
+          ? [
+                repeatable
+                    ? LayersIcon
+                    : github
+                      ? GitPullRequestIcon
+                      : TargetIcon,
+                "text-theme-text-strong",
+            ]
           : status === "claimable"
             ? [SparkleIcon, "text-theme-text-soft"]
             : [CheckIcon, "text-theme-text-muted"];
@@ -718,19 +768,6 @@ export function QuestRow({
             }
         >
             {card.title}
-            {card.issueNumber != null && card.url && (
-                <>
-                    {" "}
-                    <InlineLink
-                        href={card.url}
-                        tone="quiet"
-                        showIcon={false}
-                        className="whitespace-nowrap text-sm font-normal tabular-nums"
-                    >
-                        #{card.issueNumber}
-                    </InlineLink>
-                </>
-            )}
             {card.repeats && card.repeats.length > 0 && (
                 <>
                     {" "}
@@ -750,9 +787,8 @@ export function QuestRow({
     );
     // Show the "how to" description only while the quest is still open, and
     // on a repeatable quest only until it paid: after that the title, the
-    // Claim button or the stack say enough.
-    // A GitHub quest is its issue: the title says what to build, and the
-    // issue number beside it links to the details instead of a description.
+    // Claim button or the stack say enough. A GitHub quest has a link to its
+    // issue below instead.
     const description =
         card.status === "open" &&
         !card.repeats?.length &&
@@ -837,13 +873,26 @@ export function QuestRow({
             {rewardChip}
         </Button>
     ) : null;
-    const details = (description || progress) && (
+    // A GitHub quest is its issue: the title says what to build, and the
+    // link under it carries the details instead of a description.
+    const issueLink =
+        card.issueNumber != null && card.url ? (
+            <InlineLink
+                href={card.url}
+                tone="quiet"
+                className="w-fit text-sm tabular-nums"
+            >
+                #{card.issueNumber} on GitHub
+            </InlineLink>
+        ) : null;
+    const details = (description || issueLink || progress) && (
         <div className="flex min-w-0 flex-col gap-1">
             {description && (
                 <div className="text-sm text-theme-text-muted [&_.polli-link-external-icon]:!hidden">
                     <QuestDescription>{description}</QuestDescription>
                 </div>
             )}
+            {issueLink}
             {progress}
         </div>
     );
@@ -852,6 +901,7 @@ export function QuestRow({
             status={card.status}
             comingSoon={card.comingSoon}
             repeatable={card.repeats !== undefined}
+            github={card.issueNumber != null}
         />
     );
     const reward = claimButton ?? rewardChip;

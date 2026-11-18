@@ -65,7 +65,7 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 ## 🔑 Which API key should I use?
 
 - **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a spending budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)**: a publishable OAuth client identifier for Pollinations Connect. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
+- **App Key (`pk_`)**: a publishable OAuth client identifier for Pollinations Pay. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 

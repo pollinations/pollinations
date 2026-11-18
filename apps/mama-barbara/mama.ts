@@ -161,7 +161,7 @@ async function signIn(from: TgUser) {
                     inline_keyboard: [
                         [
                             {
-                                text: "Pollinations Connect",
+                                text: "Connect your Pollinations account",
                                 url: code.verification_uri_complete,
                             },
                         ],

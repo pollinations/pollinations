@@ -1,6 +1,6 @@
 ## Authentication
 
-In the [interactive docs](https://gen.pollinations.ai/docs), select **Pollinations Connect** to authorize a docs key using your account. The consent screen defaults to a $5 spending cap and a 7-day expiry; both are editable. The approved key authenticates the request tester, and the account menu shows your profile and its remaining budget. Requests spend from your balance; the key's budget is a spending limit, not a separate balance.
+In the [interactive docs](https://gen.pollinations.ai/docs), select **Connect your Pollinations account** to authorize a docs key using your account. The consent screen defaults to a $5 spending cap and a 7-day expiry; both are editable. The approved key authenticates the request tester, and the account menu shows your profile and its remaining budget. Requests spend from your balance; the key's budget is a spending limit, not a separate balance.
 
 The connection stays in the current browser tab. Copied examples contain `YOUR_API_KEY`; the docs add your connected key only when sending a request to a Pollinations API. Select **Disconnect** before entering a different key in the request tester. Disconnect clears this tab's connection; it does not revoke the key or disconnect other tabs. Revoke keys on the [Keys page](https://enter.pollinations.ai/keys). Each new consent creates a separate key that remains valid until expiry or revocation. Sandbox and account-management endpoints require their respective permissions; the default docs connection does not grant them.
 
@@ -11,7 +11,7 @@ Use a secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
 | Secret key | `sk_` | API requests | None | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). Secret keys have configurable model permissions, account permissions, and budgets. |
-| App key (Pollinations Connect) | `pk_` | Client apps via OAuth / device flow | — | Publishable App Key used as the OAuth `client_id`. Users authorize; your app receives a scoped secret key (`sk_`). |
+| App key (Pollinations Pay) | `pk_` | Client apps via OAuth / device flow | — | Publishable App Key used as the OAuth `client_id`. Users authorize; your app receives a scoped secret key (`sk_`). |
 
 > **Note:** Since November 1, 2026, a `pk_` key only identifies your app; requests that send one get `401`. Frontend and mobile apps use **Pollinations Pay**, also called BYOP: register an App Key at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys), then run the OAuth authorization-code flow with PKCE (or the device flow) to obtain a temporary user-authorized secret key (`sk_`). The legacy fragment redirect and device flow remain supported.
 

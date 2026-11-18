@@ -1124,9 +1124,9 @@ const SCALAR_CDN =
 const SCALAR_INTEGRITY =
     "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
 const CONNECT_CDN =
-    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.41/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-9e0ucXSJrvLUvlRtPQ2N/j41OJx/5ob+9qk9CaJK9PaY477QIQiQFWE+l/RofoSi";
+    "sha384-0AH5BRM416sdgU5dUihJpBjwgIUEqFKvDMZ4KPjtjVIuARqp5FRw6TrucZOqk+bR";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()

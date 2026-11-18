@@ -128,13 +128,16 @@ export async function callHappyHorseAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
-            // OpenRouter bills at least the registry's minimum per clip.
+            // Without OpenRouter's cost, bill its per-clip minimum.
             usage: {
-                completionVideoSeconds: Math.max(
-                    duration,
-                    IMAGE_SERVICES["alibaba/happyhorse-1.1"].minBilledSeconds ??
-                        0,
-                ),
+                completionVideoSeconds:
+                    providerCost != null
+                        ? duration
+                        : Math.max(
+                              duration,
+                              IMAGE_SERVICES["alibaba/happyhorse-1.1"]
+                                  .minBilledSeconds ?? 0,
+                          ),
             },
             ...(providerCost != null && {
                 providerBilling: { units: providerCost, unitCost: 1.055 },

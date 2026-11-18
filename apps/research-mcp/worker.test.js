@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ols_term",
             ].sort(),
         );
     });
@@ -644,4 +645,121 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OLS term search projects ontology terms and caps descriptions and synonyms", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.ebi.ac.uk");
+        assert.equal(url.pathname, "/ols4/api/search");
+        const headers = init?.headers ?? {};
+        assert.equal(headers.Authorization, undefined);
+        assert.equal(headers.Cookie, undefined);
+        assert.match(headers["User-Agent"], /hello@pollinations\.ai/);
+        if (url.searchParams.get("q") === "zzzzqqqxxyy") {
+            return Response.json({
+                response: { numFound: 0, start: 0, docs: [] },
+            });
+        }
+        return Response.json({
+            response: {
+                numFound: 13396,
+                start: 0,
+                docs: [
+                    {
+                        iri: "http://purl.obolibrary.org/obo/HP_0005978",
+                        ontology_name: "hp",
+                        related_synonyms: [
+                            "Diabetes mellitus type 2",
+                            "Noninsulin-dependent diabetes mellitus",
+                        ],
+                        ontology_prefix: "HP",
+                        short_form: "HP_0005978",
+                        description: [
+                            "Persons with type II diabetes mellitus rarely develop ketoacidosis.",
+                            "A type of diabetes mellitus initially characterized by insulin resistance and hyperinsulinemia and subsequently by glucose interolerance and hyperglycemia.",
+                        ],
+                        label: "Type II diabetes mellitus",
+                        obo_id: "HP:0005978",
+                        type: "class",
+                        exact_synonyms: [
+                            "Diabetes mellitus Type II",
+                            "Diabetes mellitus, noninsulin-dependent",
+                            "NIDDM diabetes mellitus",
+                            "Non-insulin dependent diabetes",
+                            "Noninsulin dependent diabetes mellitus",
+                            "NIDDM",
+                            "Noninsulin-dependent diabetes",
+                            "Type 2 diabetes",
+                            "Type II diabetes",
+                        ],
+                    },
+                    {
+                        iri: "http://id.nlm.nih.gov/mesh/D003929",
+                        ontology_name: "mesh",
+                        related_synonyms: [
+                            "Amyotrophies, Diabetic",
+                            "Amyotrophy, Diabetic",
+                            "Asymmetric Diabetic Proximal Motor Neuropathy",
+                            "Asymmetric Polyneuropathies, Diabetic",
+                            "Asymmetric Polyneuropathy, Diabetic",
+                            "Autonomic Neuropathies, Diabetic",
+                        ],
+                        ontology_prefix: "mesh",
+                        short_form: "mesh_D003929",
+                        description: [
+                            "Peripheral, autonomic, and cranial nerve disorders that are associated with DIABETES MELLITUS. These conditions usually result from diabetic microvascular injury involving small blood vessels that supply nerves (VASA NERVORUM). Relatively common conditions which may be associated with diabetic neuropathy include third nerve palsy (see OCULOMOTOR NERVE DISEASES); MONONEUROPATHY; mononeuropathy multiplex; diabetic amyotrophy; a painful POLYNEUROPATHY; autonomic neuropathy; and thoracoabdominal neuropathy. (From Adams et al., Principles of Neurology, 6th ed, p1325)",
+                        ],
+                        label: "Diabetic Neuropathies",
+                        obo_id: "mesh:D003929",
+                        type: "class",
+                        exact_synonyms: [],
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "ols_term", { query: "diabetes", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(val.query, "diabetes");
+    assert.equal(val.total, 13396);
+    assert.equal(val.terms.length, 2);
+    assert.deepEqual(val.terms[0], {
+        label: "Type II diabetes mellitus",
+        ontology: "hp",
+        ontology_prefix: "HP",
+        obo_id: "HP:0005978",
+        description:
+            "Persons with type II diabetes mellitus rarely develop ketoacidosis.",
+        synonyms: [
+            "Diabetes mellitus Type II",
+            "Diabetes mellitus, noninsulin-dependent",
+            "NIDDM diabetes mellitus",
+            "Non-insulin dependent diabetes",
+            "Noninsulin dependent diabetes mellitus",
+        ],
+    });
+    assert.equal(val.terms[1].label, "Diabetic Neuropathies");
+    assert.equal(val.terms[1].ontology, "mesh");
+    assert.equal(val.terms[1].obo_id, "mesh:D003929");
+    assert.equal(val.terms[1].description.length, 503);
+    assert.match(val.terms[1].description, /\.\.\.$/);
+    assert.equal(val.terms[1].synonyms.length, 5);
+
+    const empty = await call(c, "ols_term", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        terms: [],
+    });
+
+    const blank = await call(c, "ols_term", { query: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 2);
 });

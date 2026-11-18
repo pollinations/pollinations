@@ -101,7 +101,7 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A reward label on the PR, or on the quest it closes, sets another amount. [Connect GitHub](/account) so we can match your pull requests.`,
+    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A label on the PR, or on the quest it closes, can set another amount. [Connect GitHub](/account) so we can match your pull requests.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     // Each merged PR is its own reward (github:merged_pr:N), kept on this card.

@@ -1,5 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { clojarsTools } from "./tools/clojars.js";
 import { dockerTools } from "./tools/docker.js";
 import { hfTools } from "./tools/huggingface.js";
 import { osvTools } from "./tools/osv.js";
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
             ...packageTools,
             ...osvTools,
             ...hfTools,
+            ...clojarsTools,
         ]) {
             server.registerTool(
                 name,

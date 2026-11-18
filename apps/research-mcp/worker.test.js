@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "digimon",
             ].sort(),
         );
     });
@@ -644,4 +645,59 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Digimon looks up a name, surfaces unknown names and rejects blanks before fetch", async (t) => {
+    const agumon = [
+        {
+            name: "Agumon",
+            img: "https://digimon.shadowsmith.com/img/agumon.jpg",
+            level: "Rookie",
+        },
+    ];
+    let fetchCount = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "digimon-api.vercel.app");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname === "/api/digimon/name/agumon")
+            return Response.json(agumon);
+        if (url.pathname === "/api/digimon/name/zzzznonexistentqqq")
+            return new Response(
+                JSON.stringify({
+                    ErrorMsg:
+                        "Zzzznonexistentqqq is not a Digimon in our database.",
+                }),
+                { status: 400 },
+            );
+        return new Response("{}", { status: 404 });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "digimon", { name: "agumon" });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.deepEqual(value(res), {
+        name: "Agumon",
+        level: "Rookie",
+        image_url: "https://digimon.shadowsmith.com/img/agumon.jpg",
+    });
+
+    const unknownRes = await call(c, "digimon", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.equal(unknownRes.isError, true, JSON.stringify(unknownRes));
+    assert.match(
+        unknownRes.content[0].text,
+        /digimon-api\.vercel\.app returned HTTP 400/,
+    );
+
+    const before = fetchCount;
+    const blankRes = await call(c, "digimon", { name: "   " });
+    assert.equal(blankRes.isError, true, JSON.stringify(blankRes));
+    assert.equal(fetchCount, before);
 });

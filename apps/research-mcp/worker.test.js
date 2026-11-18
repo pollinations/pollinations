@@ -342,6 +342,136 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("medlineplus topics return plain-text titles and snippets with retmax", async (t) => {
+    const fixture = `<?xml version="1.0" encoding="UTF-8"?>
+<nlmSearchResult>
+  <term>diabetes</term>
+  <count>295</count>
+  <retstart>0</retstart>
+  <retmax>2</retmax>
+  <list num="295" start="0" per="2">
+<document rank="2" url="https://medlineplus.gov/diabetes.html">
+      <content name="title">&lt;span class="qt0"&gt;Diabetes&lt;/span&gt;</content>
+      <content name="organizationName">National Library of Medicine</content>
+      <content name="altTitle">&lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;</content>
+      <content name="altTitle">Sugar &lt;span class="qt0"&gt;Diabetes&lt;/span&gt;</content>
+      <content name="altTitle">DM</content>
+      <content name="FullSummary">What is &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;&lt;span class="qt0"&gt;Diabetes&lt;/span&gt;, also known as &lt;span class="qt0"&gt;diabetes mellitus&lt;/span&gt;, is a disease in which your blood glucose, or blood sugar, levels are too high. Glucose is your body's main source of energy. Your body can make glucose, but it also comes from the food you eat. Insulin is a hormone made by your pancreas. Insulin helps move glucose from your bloodstream into your cells, where it can be used for energy.&lt;/p&gt;&lt;p&gt;If you have &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your body can't make insulin, can't use insulin as well as it should, or both. Too much glucose stays in your blood and doesn't reach your cells. This can cause glucose levels to get too high. Over time, high blood glucose levels can lead to serious health conditions. But you can take steps to manage your &lt;span class="qt0"&gt;diabetes&lt;/span&gt; and try to prevent these health problems.&lt;/p&gt;What are the types of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;There are different types of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;. If you have type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your body makes little or no insulin. It happens when your immune system attacks and destroys the cells that produce insulin. &lt;/li&gt;&lt;li&gt;Type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;. This is the most common form of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;. If you have type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your body may still be able to make insulin, but your cells don't respond well to insulin. They can't easily take up enough glucose from your blood.&lt;/li&gt;&lt;li&gt;Gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt;. This is a form of &lt;span class="qt0"&gt;diabetes&lt;/span&gt; that develops during pregnancy. It happens when your body can't make the extra insulin it needs during pregnancy.&lt;/li&gt;&lt;/ul&gt;What causes &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;The different types of &lt;span class="qt0"&gt;diabetes&lt;/span&gt; have different causes:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Researchers think type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; is caused by genes and factors in the environment that might trigger the disease.&lt;/li&gt;&lt;li&gt;Type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; is caused by several factors, including lifestyle factors and genes. The lifestyle factors include not being physically active and being overweight or having obesity.&lt;/li&gt;&lt;li&gt;Researchers think gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt; is caused by the hormonal changes of pregnancy along with genetic and lifestyle factors.&lt;/li&gt;&lt;/ul&gt;Who is more likely to develop &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;The different types of &lt;span class="qt0"&gt;diabetes&lt;/span&gt; have different risk factors:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;You can develop type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; at any age, but it most often starts in childhood. Having a parent or sibling with type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; may increase your chance of developing it.&lt;/li&gt;&lt;li&gt;You are at higher risk of developing type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; if you:&lt;/li&gt;&lt;ul&gt;&lt;li&gt;Are overweight or have obesity.&lt;/li&gt;&lt;li&gt;Are over age 35. Children, teenagers, and younger adults can get &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, but it is more common in middle-aged and older adults.&lt;/li&gt;&lt;li&gt;Have a family history of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/li&gt;&lt;li&gt;Have prediabetes. This means that your blood glucose is higher than normal, but it's not high enough to be called &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/li&gt;&lt;li&gt;Had gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/li&gt;&lt;li&gt;Have given birth to a baby weighing 9 pounds or more.&lt;/li&gt;&lt;li&gt;Are African American, American Indian, Asian American, Hispanic/Latino, or Pacific Islander.&lt;/li&gt;&lt;li&gt;Are not physically active.&lt;/li&gt;&lt;li&gt;Have certain other health conditions, such as high blood pressure or polycystic ovary syndrome (PCOS).&lt;/li&gt;&lt;/ul&gt;&lt;li&gt;You are at higher risk of developing gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt; if you:&lt;/li&gt;&lt;ul&gt;&lt;li&gt;Are overweight or have obesity.&lt;/li&gt;&lt;li&gt;Have a family history of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/li&gt;&lt;li&gt;Had gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt; in a previous pregnancy.&lt;/li&gt;&lt;li&gt;Have given birth to a baby weighing 9 pounds or more.&lt;/li&gt;&lt;li&gt;Have polycystic ovary syndrome (PCOS).&lt;/li&gt;&lt;li&gt;Are African American, Hispanic/Latino, American Indian, Alaska Native, Native Hawaiian, or Pacific Islander.&lt;/li&gt;&lt;/ul&gt;&lt;/ul&gt;What are the symptoms of &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;The symptoms of &lt;span class="qt0"&gt;diabetes&lt;/span&gt; may include:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Feeling very thirsty&lt;/li&gt;&lt;li&gt;Feeling very hungry&lt;/li&gt;&lt;li&gt;Urinating (peeing) more often, including at night&lt;/li&gt;&lt;li&gt;Fatigue&lt;/li&gt;&lt;li&gt;Blurry vision&lt;/li&gt;&lt;li&gt;Numbness or tingling in the feet or hands&lt;/li&gt;&lt;li&gt;Sores that do not heal&lt;/li&gt;&lt;li&gt;Losing weight without trying&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;But it's important to know that your symptoms may vary, depending on which type you have:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;The symptoms of type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; usually come on quickly and can be severe.&lt;/li&gt;&lt;li&gt;With type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, the symptoms often develop slowly, over several years. The symptoms can be so mild that you might not even notice them.&lt;/li&gt;&lt;li&gt;Gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt; often has no symptoms. If you do have symptoms, they may be mild. If you are pregnant, you will usually be screened for this condition between 24 and 28 weeks of pregnancy. &lt;/li&gt;&lt;/ul&gt;How is &lt;span class="qt0"&gt;diabetes&lt;/span&gt; diagnosed?&lt;p&gt;To find out if you have &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your health care provider will use one or more glucose blood tests. There are several types, including the A1C test.&lt;/p&gt;What are the treatments for &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;Treatment for &lt;span class="qt0"&gt;diabetes&lt;/span&gt; involves managing your blood glucose levels:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;If you have type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, you will need to take daily doses of insulin, either by injection or through a special pump. Some people also need to take another type of &lt;span class="qt0"&gt;diabetes&lt;/span&gt; medicine that works with insulin.&lt;/li&gt;&lt;li&gt;If you have type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, you may be able to manage or even reverse it by making lifestyle changes. These include eating a healthy diet, staying at healthy weight, and getting regular physical activity. Some people also need to take &lt;span class="qt0"&gt;diabetes&lt;/span&gt; medicines to manage their &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/li&gt;&lt;li&gt;If you have gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, you may be able to lower your glucose levels by eating a healthy diet and getting regular exercise. But be sure to talk to your provider about your treatment options. Gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt; usually goes away after you give birth. But you will have a higher risk of developing type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; later.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Checking your blood glucose levels is also an important part of managing your &lt;span class="qt0"&gt;diabetes&lt;/span&gt;. Ask your provider about the best way to check your blood glucose level and how often you should check it.&lt;/p&gt;Can &lt;span class="qt0"&gt;diabetes&lt;/span&gt; be prevented?&lt;p&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; can't be prevented.&lt;/p&gt;&lt;p&gt;You may be able to delay or prevent type 2 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; through the same lifestyle changes that are used to manage &lt;span class="qt0"&gt;diabetes&lt;/span&gt; (eating a healthy diet, staying at a healthy weight, and getting regular physical activity). These lifestyle changes may also help prevent gestational &lt;span class="qt0"&gt;diabetes&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;NIH: National Institute of &lt;span class="qt0"&gt;Diabetes&lt;/span&gt; and Digestive and Kidney Diseases&lt;/p&gt;</content>
+      <content name="mesh">&lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;</content>
+      <content name="groupName">Older Adults</content>
+      <content name="groupName">Endocrine System</content>
+      <content name="groupName">Metabolic Problems</content>
+      <content name="groupName">&lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;</content>
+      <content name="snippet">What is &lt;span class="qt0"&gt;diabetes? Diabetes&lt;/span&gt;, also known as &lt;span class="qt0"&gt;diabetes mellitus&lt;/span&gt;, is a disease in which your blood glucose, or blood sugar, levels are too high. Glucose is  ... </content>
+    </document>
+<document rank="0" url="https://medlineplus.gov/diabetestype1.html">
+      <content name="title">&lt;span class="qt0"&gt;Diabetes&lt;/span&gt; Type 1</content>
+      <content name="organizationName">National Library of Medicine</content>
+      <content name="altTitle">Insulin-Dependent &lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;</content>
+      <content name="altTitle">Juvenile &lt;span class="qt0"&gt;Diabetes&lt;/span&gt;</content>
+      <content name="altTitle">Type 1 &lt;span class="qt0"&gt;Diabetes&lt;/span&gt;</content>
+      <content name="altTitle">Insulin-dependent &lt;span class="qt0"&gt;diabetes&lt;/span&gt;</content>
+      <content name="altTitle">Type I &lt;span class="qt0"&gt;diabetes&lt;/span&gt;</content>
+      <content name="FullSummary">What is type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;&lt;span class="qt0"&gt;Diabetes&lt;/span&gt; means your blood glucose, also called blood sugar, is too high. With type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your body makes little or no insulin. Insulin is a hormone from your pancreas that helps glucose move from your body into your cells, where it is used for energy. Your body can make glucose, but it also comes from the food you eat. Without insulin, too much glucose stays in your blood. &lt;/p&gt;&lt;p&gt;Over time, high blood glucose can lead to serious problems with your heart, eyes, kidneys, nerves, gums, and teeth.  &lt;/p&gt;&lt;p&gt;If your blood glucose gets very high, you can develop diabetic ketoacidosis (DKA). It happens when your body doesn't have enough insulin to allow glucose into your cells. Instead, your liver breaks down fat for energy, which produces ketones. When ketones build up too quickly, they can reach dangerous levels. DKA is a life-threatening emergency. &lt;/p&gt;What causes type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; is an autoimmune disease. Your immune system mistakenly attacks the cells in your pancreas that make insulin. Researchers don't yet know exactly why this happens. Genes and environmental factors may play a role in triggering the disease. &lt;/p&gt;Who is more likely to develop type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; often begins in children and young adults, but it can appear at any age. Having a parent or sibling with type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; may increase your chance of developing it. &lt;/p&gt;What are the symptoms of type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;Symptoms often start quickly, especially in children. In adults, they may develop more slowly. Symptoms may include: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;Feeling very thirsty &lt;/li&gt;&lt;li&gt;Feeling very hungry &lt;/li&gt;&lt;li&gt;Urinating (peeing) more often, including at night &lt;/li&gt;&lt;li&gt;Having fatigue&lt;/li&gt;&lt;li&gt;Having blurry vision &lt;/li&gt;&lt;li&gt;Losing feeling in your feet, or having tingling in your feet or hands &lt;/li&gt;&lt;li&gt;Having sores that don't heal  &lt;/li&gt;&lt;li&gt;Losing weight without trying &lt;/li&gt;&lt;/ul&gt;How is type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; diagnosed?&lt;p&gt;Blood tests that measure your blood glucose level can show whether it is higher than normal for you. &lt;/p&gt;What are the treatments for type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;?&lt;p&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; is a chronic (long-term) condition. You will need daily insulin, either through injections or an insulin pump. Some people also take another &lt;span class="qt0"&gt;diabetes&lt;/span&gt; medicine that works with insulin. &lt;/p&gt;&lt;p&gt;Ask your health care provider about the best way to check your blood glucose level and how often you should check it. &lt;/p&gt;Can type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; be prevented?&lt;p&gt;Type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt; can't be prevented. But you may be able to prevent or delay health problems related to &lt;span class="qt0"&gt;diabetes&lt;/span&gt; by: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;Managing your blood glucose level with finger prick tests or a continuous glucose monitor (CGM) &lt;/li&gt;&lt;li&gt;Making healthy food choices&lt;/li&gt;&lt;li&gt;Getting regular exercise&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;A blood test called the A1C can show how well you are managing your &lt;span class="qt0"&gt;diabetes&lt;/span&gt; over time. &lt;/p&gt;&lt;p&gt;NIH: National Institute of &lt;span class="qt0"&gt;Diabetes&lt;/span&gt; and Digestive and Kidney Diseases&lt;/p&gt;</content>
+      <content name="mesh">&lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;, Type 1</content>
+      <content name="groupName">Children and Teenagers</content>
+      <content name="groupName">Immune System</content>
+      <content name="groupName">Endocrine System</content>
+      <content name="groupName">&lt;span class="qt0"&gt;Diabetes Mellitus&lt;/span&gt;</content>
+      <content name="snippet">What is type 1 &lt;span class="qt0"&gt;diabetes? Diabetes&lt;/span&gt; means your blood glucose, also called blood sugar, is too high. With type 1 &lt;span class="qt0"&gt;diabetes&lt;/span&gt;, your body makes little or no insulin.  ... </content>
+    </document>
+  </list>
+</nlmSearchResult>
+`;
+    const noMatch = `<?xml version="1.0" encoding="UTF-8"?>
+<nlmSearchResult>
+  <term>zzzzqqqxxyy</term>
+  <count>0</count>
+</nlmSearchResult>
+`;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "wsearch.nlm.nih.gov");
+        assert.equal(target.searchParams.get("db"), "healthTopics");
+        assert.equal(target.searchParams.get("term"), "diabetes");
+        assert.equal(target.searchParams.get("retmax"), "2");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        assert.equal(headers.get("accept"), "application/xml");
+        return new Response(fixture, {
+            headers: { "Content-Type": "application/xml" },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "medlineplus_topics", {
+        query: "diabetes",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "diabetes",
+        total: 295,
+        topics: [
+            {
+                "rank": 2,
+                "title": "Diabetes",
+                "snippet":
+                    "What is diabetes? Diabetes, also known as diabetes mellitus, is a disease in which your blood glucose, or blood sugar, levels are too high. Glucose is ...",
+                "truncated": false,
+                "url": "https://medlineplus.gov/diabetes.html",
+            },
+            {
+                "rank": 0,
+                "title": "Diabetes Type 1",
+                "snippet":
+                    "What is type 1 diabetes? Diabetes means your blood glucose, also called blood sugar, is too high. With type 1 diabetes, your body makes little or no insulin. ...",
+                "truncated": false,
+                "url": "https://medlineplus.gov/diabetestype1.html",
+            },
+        ],
+    });
+    mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(noMatch, {
+                headers: { "Content-Type": "application/xml" },
+            }),
+    );
+    const empty = await call(c, "medlineplus_topics", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        topics: [],
+    });
+});
+
+test("medlineplus rejects blank queries and out-of-range limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        throw new Error("unexpected");
+    });
+    const c = await client(t);
+    for (const args of [
+        { query: " " },
+        { query: "diabetes", limit: 99 },
+        { query: "diabetes", limit: 0 },
+    ]) {
+        const result = await call(c, "medlineplus_topics", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, 0);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +494,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "medlineplus_topics",
             ].sort(),
         );
     });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "yugioh_card",
             ].sort(),
         );
     });
@@ -644,4 +645,200 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Yu-Gi-Oh! card lookup returns the best fuzzy match, first image only, and nulls for spell stats", async (t) => {
+    let fetchCount = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "db.ygoprodeck.com");
+        assert.equal(url.pathname, "/api/v7/cardinfo.php");
+        assert.equal(url.searchParams.get("num"), "1");
+        assert.equal(url.searchParams.get("offset"), "0");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const fname = url.searchParams.get("fname");
+        if (fname === "dark magician") {
+            return Response.json({
+                data: [
+                    {
+                        id: 46986414,
+                        name: "Dark Magician",
+                        type: "Normal Monster",
+                        race: "Spellcaster",
+                        atk: 2500,
+                        def: 2100,
+                        level: 7,
+                        attribute: "DARK",
+                        archetype: "Dark Magician",
+                        desc: "''The ultimate wizard in terms of attack and defense.''",
+                        card_images: [
+                            {
+                                id: 46986414,
+                                image_url:
+                                    "https://images.ygoprodeck.com/images/cards/46986414.jpg",
+                                image_url_small:
+                                    "https://images.ygoprodeck.com/images/cards_small/46986414.jpg",
+                            },
+                            {
+                                id: 46986415,
+                                image_url:
+                                    "https://images.ygoprodeck.com/images/cards/46986415.jpg",
+                                image_url_small:
+                                    "https://images.ygoprodeck.com/images/cards_small/46986415.jpg",
+                            },
+                        ],
+                        card_sets: [
+                            {
+                                set_name: "Legend of Blue Eyes White Dragon",
+                                set_code: "LOB-EN005",
+                            },
+                            {
+                                set_name: "Starter Deck: Yugi",
+                                set_code: "SDY-006",
+                            },
+                        ],
+                        card_prices: [
+                            {
+                                cardmarket_price: "0.02",
+                                tcgplayer_price: "0.33",
+                                ebay_price: "0.99",
+                                amazon_price: "14.45",
+                                coolstuffinc_price: "0.39",
+                            },
+                        ],
+                        ygoprodeck_url:
+                            "https://ygoprodeck.com/card/dark-magician-4003",
+                    },
+                    {
+                        id: 46986421,
+                        name: "Dark Magician Girl",
+                        type: "Effect Monster",
+                        race: "Spellcaster",
+                        atk: 2000,
+                        def: 1700,
+                        level: 6,
+                        attribute: "DARK",
+                        archetype: "Dark Magician",
+                        desc: "Gains 300 ATK for every 'Dark Magician' or 'Magician of Black Chaos' in the GY.",
+                        card_images: [
+                            {
+                                id: 46986421,
+                                image_url:
+                                    "https://images.ygoprodeck.com/images/cards/46986421.jpg",
+                                image_url_small:
+                                    "https://images.ygoprodeck.com/images/cards_small/46986421.jpg",
+                            },
+                        ],
+                        card_sets: [],
+                        card_prices: [
+                            {
+                                cardmarket_price: "0.10",
+                                tcgplayer_price: "0.50",
+                                ebay_price: "1.20",
+                                amazon_price: "9.99",
+                                coolstuffinc_price: "0.75",
+                            },
+                        ],
+                        ygoprodeck_url:
+                            "https://ygoprodeck.com/card/dark-magician-girl-4008",
+                    },
+                ],
+                meta: { total_rows: 15 },
+            });
+        }
+        if (fname === "pot of greed") {
+            return Response.json({
+                data: [
+                    {
+                        id: 55144522,
+                        name: "Pot of Greed",
+                        type: "Spell Card",
+                        race: "Normal",
+                        desc: "Draw 2 cards.",
+                        card_images: [
+                            {
+                                id: 55144522,
+                                image_url:
+                                    "https://images.ygoprodeck.com/images/cards/55144522.jpg",
+                                image_url_small:
+                                    "https://images.ygoprodeck.com/images/cards_small/55144522.jpg",
+                            },
+                        ],
+                        card_sets: [],
+                        card_prices: [
+                            {
+                                cardmarket_price: "0.03",
+                                tcgplayer_price: "0.25",
+                                ebay_price: "0.80",
+                                amazon_price: "5.00",
+                                coolstuffinc_price: "0.30",
+                            },
+                        ],
+                        ygoprodeck_url:
+                            "https://ygoprodeck.com/card/pot-of-greed-7000",
+                    },
+                ],
+                meta: { total_rows: 1 },
+            });
+        }
+        return new Response(
+            JSON.stringify({
+                error: "No card matching your query was found in the database.",
+            }),
+            { status: 400, headers: { "content-type": "application/json" } },
+        );
+    });
+
+    const c = await client(t);
+    let result = await call(c, "yugioh_card", { name: "dark magician" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.total_matches, 15);
+    let card = val.card;
+    assert.equal(card.name, "Dark Magician");
+    assert.equal(card.type, "Normal Monster");
+    assert.equal(card.race, "Spellcaster");
+    assert.equal(card.atk, 2500);
+    assert.equal(card.def, 2100);
+    assert.equal(card.level, 7);
+    assert.equal(card.attribute, "DARK");
+    assert.equal(card.archetype, "Dark Magician");
+    assert.equal(card.prices.tcgplayer, "0.33");
+    assert.equal(card.prices.cardmarket, "0.02");
+    assert.equal(
+        card.image_url,
+        "https://images.ygoprodeck.com/images/cards/46986414.jpg",
+    );
+    assert.equal("card_sets" in card, false);
+    assert.equal(
+        card.ygoprodeck_url,
+        "https://ygoprodeck.com/card/dark-magician-4003",
+    );
+
+    result = await call(c, "yugioh_card", { name: "pot of greed" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    card = value(result).card;
+    assert.equal(card.name, "Pot of Greed");
+    assert.equal(card.type, "Spell Card");
+    assert.equal(card.atk, null);
+    assert.equal(card.def, null);
+    assert.equal(card.level, null);
+    assert.equal(card.attribute, null);
+    assert.equal(card.archetype, null);
+
+    result = await call(c, "yugioh_card", { name: "zzzznonexistentcardxyz" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 400/);
+
+    const before = fetchCount;
+    result = await call(c, "yugioh_card", { name: "" });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCount, before);
 });

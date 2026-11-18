@@ -25,9 +25,10 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
+        "astro_forecast",
         "earthquake_event",
         "earthquake_search",
         "feed_read",
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -437,5 +438,137 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.equal(missing.isError, true);
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
+    await c.close();
+});
+
+test("astro_forecast returns the first four hours for given coordinates", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const u = new URL(url);
+        assert.equal(u.hostname, "www.7timer.info");
+        urls.push(u.href);
+        return Response.json({
+            product: "astro",
+            init: "2026111812",
+            dataseries: [
+                {
+                    timepoint: 3,
+                    cloudcover: 9,
+                    seeing: 6,
+                    transparency: 3,
+                    lifted_index: 2,
+                    rh2m: 10,
+                    wind10m: { direction: "SW", speed: 3 },
+                    temp2m: 11,
+                    prec_type: "rain",
+                },
+                {
+                    timepoint: 6,
+                    cloudcover: 7,
+                    seeing: 6,
+                    transparency: 5,
+                    lifted_index: 2,
+                    rh2m: 12,
+                    wind10m: { direction: "SW", speed: 3 },
+                    temp2m: 9,
+                    prec_type: "rain",
+                },
+                {
+                    timepoint: 9,
+                    cloudcover: 5,
+                    seeing: 7,
+                    transparency: 6,
+                    lifted_index: 1,
+                    temp2m: 8,
+                    prec_type: "none",
+                },
+                {
+                    timepoint: 12,
+                    cloudcover: 4,
+                    seeing: 7,
+                    transparency: 7,
+                    lifted_index: 1,
+                    temp2m: 7,
+                    prec_type: "none",
+                },
+                {
+                    timepoint: 15,
+                    cloudcover: 3,
+                    seeing: 8,
+                    transparency: 8,
+                    lifted_index: 0,
+                    temp2m: 6,
+                    prec_type: "none",
+                },
+            ],
+        });
+    });
+    const c = await client();
+    const result = await c.callTool({
+        name: "astro_forecast",
+        arguments: { lat: 51.5, lon: -0.12 },
+    });
+    assert.equal(result.isError, undefined);
+    const parsed = JSON.parse(result.content[0].text);
+    assert.deepEqual(parsed, {
+        lat: 51.5,
+        lon: -0.12,
+        init: "2026111812",
+        forecast: [
+            {
+                timepoint: 3,
+                cloudcover: 9,
+                seeing: 6,
+                transparency: 3,
+                lifted_index: 2,
+                temp2m: 11,
+                prec_type: "rain",
+            },
+            {
+                timepoint: 6,
+                cloudcover: 7,
+                seeing: 6,
+                transparency: 5,
+                lifted_index: 2,
+                temp2m: 9,
+                prec_type: "rain",
+            },
+            {
+                timepoint: 9,
+                cloudcover: 5,
+                seeing: 7,
+                transparency: 6,
+                lifted_index: 1,
+                temp2m: 8,
+                prec_type: "none",
+            },
+            {
+                timepoint: 12,
+                cloudcover: 4,
+                seeing: 7,
+                transparency: 7,
+                lifted_index: 1,
+                temp2m: 7,
+                prec_type: "none",
+            },
+        ],
+    });
+    // Sliced to four entries even though the fixture carries five, and the
+    // dropped rh2m/wind10m fields never leak through.
+    assert.equal(parsed.forecast.length, 4);
+    assert.equal("rh2m" in parsed.forecast[0], false);
+    assert.equal("wind10m" in parsed.forecast[0], false);
+    assert.equal(urls.length, 1);
+    assert.equal(
+        urls[0],
+        "https://www.7timer.info/bin/astro.php?lon=-0.12&lat=51.5&ac=0&unit=metric&output=json&tzshift=0",
+    );
+
+    const outOfRange = await c.callTool({
+        name: "astro_forecast",
+        arguments: { lat: 91, lon: 0 },
+    });
+    assert.equal(outOfRange.isError, true);
+    assert.equal(urls.length, 1);
     await c.close();
 });

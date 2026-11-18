@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "archwiki_search",
             ].sort(),
         );
     });
@@ -644,4 +645,296 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+// Verbatim live `action=parse&prop=text&section=0` fixtures (Arch Wiki,
+// 2026-11-19): the Firefox lead section with its "Related articles"
+// navigation box, and the Installation guide lead section.
+const ARCHWIKI_FIREFOX_HTML = `<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><div class="archwiki-template-meta-related-articles"><p>Related articles</p><ul>
+<li><a href="/title/Firefox/Privacy" title="Firefox/Privacy">/Privacy</a></li>
+<li><a href="/title/Firefox/Profile_on_RAM" title="Firefox/Profile on RAM">/Profile on RAM</a></li>
+<li><a href="/title/Firefox/Tweaks" title="Firefox/Tweaks">/Tweaks</a></li>
+<li><a href="/title/Browser_extensions" title="Browser extensions">Browser extensions</a></li>
+<li><a href="/title/Tor" title="Tor">Tor</a></li>
+</ul></div>
+<p><a rel="nofollow" class="external text" href="https://www.firefox.com/">Firefox</a> is a popular open-source graphical web browser developed by <a rel="nofollow" class="external text" href="https://www.mozilla.org/">Mozilla</a>.
+</p>
+<!-- 
+NewPP limit report
+Cached time: 20261118203743
+Cache expiry: 86400
+Reduced expiry: false
+Complications: []
+CPU time usage: 0.018 seconds
+Real time usage: 0.021 seconds
+Preprocessor visited node count: 29/1000000
+Revision size: 445/2097152 bytes
+Post‐expand include size: 287/2097152 bytes
+Template argument size: 67/2097152 bytes
+Highest expansion depth: 4/100
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 0/5000000 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%   10.983      1 -total
+ 53.76%    5.904      1 Template:Related_articles_start
+ 22.87%    2.512      1 Template:META_Related_articles_start
+ 22.84%    2.509      1 Template:Related_articles_end
+ 21.53%    2.364      5 Template:Related
+-->
+
+<!-- Render ID e7901389-e38f-11f1-82f6-fd494e25102f -->
+</div>`;
+const ARCHWIKI_INSTALL_HTML = `<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p>This document is a guide for installing <a href="/title/Arch_Linux" title="Arch Linux">Arch Linux</a> using the live system booted from an installation medium made from an official installation image. Its accessibility features are described on the page <a href="/title/Install_Arch_Linux_with_accessibility_options" title="Install Arch Linux with accessibility options">Install Arch Linux with accessibility options</a>. For alternative means of installation, see <a href="/title/Category:Installation_process" title="Category:Installation process">Category:Installation process</a>.
+</p><p>Before installing, it would be advised to view the <a href="/title/FAQ" class="mw-redirect" title="FAQ">FAQ</a>. For conventions used in this document, see <a href="/title/Help:Reading" title="Help:Reading">Help:Reading</a>. In particular, code examples may contain placeholders (formatted in <code><i>italics</i></code>) that must be replaced manually.
+</p><p>This guide is kept concise and you are advised to follow the instructions in the presented order per section. For more detailed instructions, see the respective <a href="/title/ArchWiki" class="mw-redirect" title="ArchWiki">ArchWiki</a> articles or the various programs' <a href="/title/Man_page" title="Man page">man pages</a>, both linked from this guide. For interactive help, the <a href="/title/IRC_channel" class="mw-redirect" title="IRC channel">IRC channel</a> and the <a rel="nofollow" class="external text" href="https://bbs.archlinux.org/">forums</a> are also available.
+</p><p>Arch Linux should run on any <a href="https://en.wikipedia.org/wiki/X86-64" class="extiw" title="wikipedia:X86-64">x86_64</a>-compatible machine with a minimum of 512 MiB RAM, though <a href="/title/Frequently_asked_questions#How_much_RAM_is_needed_to_boot_the_live_environment?" title="Frequently asked questions">more memory is needed to boot the live system</a> for installation. A basic installation should take less than 2 GiB of disk space. As the installation process needs to retrieve packages from a remote repository, this guide assumes a working internet connection is available.
+</p>
+<!-- 
+NewPP limit report
+Cached time: 20261118203744
+Cache expiry: 86400
+Reduced expiry: false
+Complications: []
+CPU time usage: 0.020 seconds
+Real time usage: 0.023 seconds
+Preprocessor visited node count: 6/1000000
+Revision size: 2107/2097152 bytes
+Post‐expand include size: 24/2097152 bytes
+Template argument size: 11/2097152 bytes
+Highest expansion depth: 3/100
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 0/5000000 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%    2.288      1 Template:Ic
+100.00%    2.288      1 -total
+-->
+
+<!-- Render ID e828aa09-e38f-11f1-82f6-fd494e25102f -->
+</div>`;
+const ARCHWIKI_REDIRECT_HTML = `<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><div class="archwiki-template-meta-related-articles"><p>Related articles</p><ul>
+<li><a href="/title/Arch_compared_to_other_distributions" title="Arch compared to other distributions">Arch compared to other distributions</a></li>
+<li><a href="/title/Arch_terminology" title="Arch terminology">Arch terminology</a></li>
+<li><a href="/title/Arch-based_distributions" title="Arch-based distributions">Arch-based distributions</a></li>
+<li><a href="/title/Frequently_asked_questions" title="Frequently asked questions">Frequently asked questions</a></li>
+<li><a href="/title/Trademark_policy" class="mw-redirect" title="Trademark policy">Trademark policy</a></li>
+<li><a href="/title/Archiso" title="Archiso">archiso</a></li>
+</ul></div>
+<p><a href="https://en.wikipedia.org/wiki/Arch_Linux" class="extiw" title="wikipedia:Arch Linux">Arch Linux</a> is an independently developed, <a href="https://en.wikipedia.org/wiki/x86-64" class="extiw" title="wikipedia:x86-64">x86-64</a> general-purpose <a href="https://en.wikipedia.org/wiki/GNU/Linux_naming_controversy" class="extiw" title="wikipedia:GNU/Linux naming controversy">GNU/Linux</a> distribution that strives to provide the <b>latest stable versions</b> of most software by following a <a href="https://en.wikipedia.org/wiki/Rolling_release#Model" class="extiw" title="wikipedia:Rolling release">rolling release model</a>.
+</p><p>The default installation is a <a href="/title/Installation_guide#Install_essential_packages" title="Installation guide">minimal base system</a>, configured by the user to only add what is purposely required.
+</p>
+<!-- 
+NewPP limit report
+Cached time: 20261118203856
+Cache expiry: 86400
+Reduced expiry: false
+Complications: []
+CPU time usage: 0.026 seconds
+Real time usage: 0.030 seconds
+Preprocessor visited node count: 33/1000000
+Revision size: 1194/2097152 bytes
+Post‐expand include size: 374/2097152 bytes
+Template argument size: 141/2097152 bytes
+Highest expansion depth: 4/100
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 0/5000000 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%    9.825      1 -total
+ 49.21%    4.835      1 Template:Related_articles_start
+ 26.62%    2.616      6 Template:Related
+ 23.17%    2.277      1 Template:META_Related_articles_start
+ 21.64%    2.126      1 Template:Related_articles_end
+-->
+
+<!-- Render ID 1312fe07-e390-11f1-82f6-fd494e25102f -->
+</div>`;
+
+test("Arch Wiki search returns lead-section text with the navigation box dropped", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url.toString());
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        assert.equal(url.hostname, "wiki.archlinux.org");
+        if (url.searchParams.get("list") === "search") {
+            assert.equal(url.searchParams.get("srsearch"), "firefox");
+            assert.equal(url.searchParams.get("srlimit"), "2");
+            return Response.json({
+                query: {
+                    searchinfo: { totalhits: 36 },
+                    search: [
+                        {
+                            ns: 0,
+                            title: "Firefox",
+                            pageid: 3157,
+                            snippet:
+                                '[[de:<span class="searchmatch">Firefox</span>]]\n[[es:<span class="searchmatch">Firefox</span>]]\n',
+                        },
+                        {
+                            ns: 0,
+                            title: "Installation guide",
+                            pageid: 2073,
+                            snippet:
+                                'guide for <span class="searchmatch">firefox</span> install',
+                        },
+                    ],
+                },
+            });
+        }
+        assert.equal(url.searchParams.get("prop"), "text");
+        assert.equal(url.searchParams.get("section"), "0");
+        assert.equal(url.searchParams.get("redirects"), "1");
+        const page = url.searchParams.get("page");
+        const html =
+            page === "Firefox" ? ARCHWIKI_FIREFOX_HTML : ARCHWIKI_INSTALL_HTML;
+        return Response.json({
+            parse: { title: page, pageid: 1, text: { "*": html } },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "archwiki_search", {
+        query: "firefox",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.query, "firefox");
+    assert.equal(val.total, 36);
+    assert.equal(val.results.length, 2);
+    assert.deepEqual(val.results[0], {
+        title: "Firefox",
+        pageid: 3157,
+        snippet: "[[de:Firefox]] [[es:Firefox]]",
+        text: "Firefox is a popular open-source graphical web browser developed by Mozilla.",
+        truncated: false,
+        url: "https://wiki.archlinux.org/title/Firefox",
+    });
+    assert.deepEqual(val.results[1], {
+        title: "Installation guide",
+        pageid: 2073,
+        snippet: "guide for firefox install",
+        text: `This document is a guide for installing Arch Linux using the live system booted from an installation medium made from an official installation image. Its accessibility features are described on the page Install Arch Linux with accessibility options. For alternative means of installation, see Category:Installation process. Before installing, it would be advised to view the FAQ. For conventions used in this document, see Help:Reading. In particular, code examples may contain placeholders (formatted in italics) that must be replaced manually. This guide is kept concise and you are advised to follow the instructions in the presented order per section. For more detailed instructions, see the respective ArchWiki articles or the various programs' man pages, both linked from this guide. For interactive help, the IRC channel and the forums are also available. Arch Linux should run on any x86_64-compatible machine with a minimum of 512 MiB RAM, though more memory is needed to boot the live system for installation. A basic installation should take less than 2 GiB of disk space. As the installation process needs to retrieve packages from a remote repository, this guide assumes a working internet connection is available.`,
+        truncated: false,
+        url: "https://wiki.archlinux.org/title/Installation%20guide",
+    });
+    // One search fetch plus one parse fetch per hit.
+    assert.equal(requests.length, 3);
+});
+
+test("Arch Wiki search returns an empty list for no match and rejects blank queries and out-of-range limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({
+            query: { searchinfo: { totalhits: 0 }, search: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "archwiki_search", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(count, 1);
+    for (const args of [{ query: " " }, { query: "x", limit: 99 }]) {
+        const bad = await call(c, "archwiki_search", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, 1);
+});
+
+test("Arch Wiki search keeps a result whose page cannot be read, follows redirects, and caps long text at 2000 characters", async (t) => {
+    const searchBody = (title) => ({
+        query: {
+            searchinfo: { totalhits: 1 },
+            search: [{ title, pageid: 1, snippet: title }],
+        },
+    });
+    const c = await client(t);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody("Zzzqqqxxyy No Such Page"));
+        return Response.json({
+            error: {
+                code: "missingtitle",
+                info: "The page you specified doesn't exist.",
+            },
+        });
+    });
+    let result = await call(c, "archwiki_search", {
+        query: "zzzzqqqxxyy",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text, null);
+    assert.equal(value(result).results[0].truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody("ArchLinux"));
+        assert.equal(url.searchParams.get("redirects"), "1");
+        return Response.json({
+            parse: {
+                title: "Arch Linux",
+                pageid: 2072,
+                text: { "*": ARCHWIKI_REDIRECT_HTML },
+            },
+        });
+    });
+    result = await call(c, "archwiki_search", {
+        query: "archlinux",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const redirected = value(result).results[0];
+    assert.match(
+        redirected.text,
+        /^Arch Linux is an independently developed, x86-64 general-purpose GNU\/Linux distribution/,
+    );
+    assert.equal(redirected.text.includes("Related articles"), false);
+    assert.equal(redirected.truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody("Installation guide"));
+        return Response.json({
+            parse: {
+                title: "Installation guide",
+                pageid: 1,
+                text: { "*": ARCHWIKI_INSTALL_HTML.repeat(6) },
+            },
+        });
+    });
+    result = await call(c, "archwiki_search", {
+        query: "installation",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text.length, 2000);
+    assert.equal(value(result).results[0].truncated, true);
+    assert.match(
+        value(result).results[0].text,
+        /^This document is a guide for installing Arch Linux/,
+    );
 });

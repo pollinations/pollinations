@@ -421,6 +421,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "jsr", name: "std/path" }],
+        ["package_lookup", { ecosystem: "jsr", name: "@STD/path" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -655,6 +657,85 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("JSR lookup resolves latest and pinned versions with license and yanked status", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("zzzznonexistentqqq"))
+            return new Response("404 - Not Found", { status: 404 });
+        if (String(url).includes("/api/scopes/")) {
+            const version = new URL(url).pathname.split("/").at(-1);
+            return Response.json({
+                scope: "std",
+                package: "path",
+                version,
+                yanked: version === "0.225.0",
+                license: "MIT",
+                newerVersionsCount: version === "1.1.6" ? 0 : 57,
+                createdAt: "2026-06-30T10:24:29.944663Z",
+            });
+        }
+        return Response.json({
+            scope: "std",
+            name: "path",
+            latest: "1.1.6",
+            versions: {
+                "0.225.0": {
+                    yanked: true,
+                    createdAt: "2024-04-29T16:05:05.405226Z",
+                },
+                "1.1.5": { createdAt: "2026-05-26T09:57:13.079190Z" },
+                "1.1.6": { createdAt: "2026-06-30T10:24:29.944663Z" },
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "jsr",
+        name: "@std/path",
+    });
+    assert.equal(latest.name, "@std/path");
+    assert.equal(latest.version, "1.1.6");
+    assert.equal(latest.latest, "1.1.6");
+    assert.equal(latest.versionCount, 3);
+    assert.equal(latest.license, "MIT");
+    assert.equal(latest.yanked, false);
+    assert.equal(latest.publishedAt, "2026-06-30T10:24:29.944663Z");
+    assert.equal(latest.registryUrl, "https://jsr.io/@std/path@1.1.6");
+    // JSR metadata carries no description or dependencies.
+    assert.equal(latest.description, undefined);
+    assert.equal(latest.dependencies, undefined);
+
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "jsr",
+        name: "@std/path",
+        version: "0.225.0",
+    });
+    assert.equal(pinned.version, "0.225.0");
+    assert.equal(pinned.yanked, true);
+    assert.equal(pinned.registryUrl, "https://jsr.io/@std/path@0.225.0");
+
+    // An unknown version is rejected from the meta map before a second fetch.
+    await assert.rejects(
+        lookup({ ecosystem: "jsr", name: "@std/path", version: "9.9.9" }),
+        /JSR version 9\.9\.9 not found for @std\/path/,
+    );
+    const missing = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "jsr", name: "@std/zzzznonexistentqqq" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /jsr\.io returned HTTP 404/);
+    assert.deepEqual(urls, [
+        "https://jsr.io/@std/path/meta.json",
+        "https://jsr.io/api/scopes/std/packages/path/versions/1.1.6",
+        "https://jsr.io/@std/path/meta.json",
+        "https://jsr.io/api/scopes/std/packages/path/versions/0.225.0",
+        "https://jsr.io/@std/path/meta.json",
+        "https://jsr.io/@std/zzzznonexistentqqq/meta.json",
     ]);
 });
 

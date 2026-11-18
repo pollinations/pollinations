@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "spaceflight_news",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,126 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("spaceflight_news lists recent articles; long summaries are capped", async (t) => {
+    const fixture = {
+        count: 36936,
+        next: "https://api.spaceflightnewsapi.net/v4/articles/?limit=2&offset=2",
+        previous: null,
+        results: [
+            {
+                id: 40887,
+                title: "PLD Space Investor Selects MIURA 5 to Launch Demo Mission",
+                authors: [{ name: "European Spaceflight", socials: null }],
+                url: "https://europeanspaceflight.com/pld-space-investor-selects-miura-5-to-launch-demo-mission/",
+                image_url:
+                    "https://europeanspaceflight.com/wp-content/uploads/2026/11/PLD-Space-Investor-Selects-MIURA-5-to-Launch-Demo-Mission.webp",
+                news_site: "European Spaceflight",
+                summary:
+                    "Japanese satellite manufacturer Mitsubishi Electric has signed a contract with Spanish rocket builder PLD Space to launch a small satellite aboard the company’s second MIURA 5 test flight. PLD Space announced that it had signed the launch contract on 18 November, describing the agreement as “a new stage in the relationship between the two companies.” […]\r\nThe post PLD Space Investor Selects MIURA 5 to Launch Demo Mission appeared first on European Spaceflight.",
+                published_at: "2026-11-18T07:25:17Z",
+                updated_at: "2026-11-18T08:14:55.637181Z",
+                featured: false,
+                launches: [],
+                events: [],
+            },
+            {
+                id: 40886,
+                title: "APOD: 2026 November 18 – An M-class Solar Flare",
+                authors: [{ name: "NASA", socials: null }],
+                url: "https://science.nasa.gov/image-article/apod-2026-november-18-an-m-class-solar-flare/",
+                image_url:
+                    "https://assets.science.nasa.gov/dynamicimage/assets/science/cds/apod/apod/2026/november/solar_M_flare.jpg",
+                news_site: "NASA",
+                summary:
+                    "APOD Science APOD APOD: 2026 November 18 – An… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss   APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. A Medium-Sized […]",
+                published_at: "2026-11-18T05:05:00Z",
+                updated_at: "2026-11-18T08:10:04.737551Z",
+                featured: false,
+                launches: [],
+                events: [],
+            },
+        ],
+    };
+    const fetch = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.spaceflightnewsapi.net");
+        assert.equal(url.pathname, "/v4/articles/");
+        assert.equal(url.searchParams.get("limit"), "2");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        return Response.json(fixture);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "spaceflight_news",
+        arguments: { limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        total: 36936,
+        articles: [
+            {
+                id: 40887,
+                title: "PLD Space Investor Selects MIURA 5 to Launch Demo Mission",
+                summary:
+                    "Japanese satellite manufacturer Mitsubishi Electric has signed a contract with Spanish rocket builder PLD Space to launch a small satellite aboard the company’s second MIURA 5 test flight. PLD Space announced that it had signed the launch contract on 18 November, describing the agreement as “a new stage in the relationship between the two companies.” […] The post PLD Space Investor Selects MIURA 5 to Launch Demo Mission appeared first on European Spaceflight.",
+                news_site: "European Spaceflight",
+                published_at: "2026-11-18T07:25:17Z",
+                url: "https://europeanspaceflight.com/pld-space-investor-selects-miura-5-to-launch-demo-mission/",
+            },
+            {
+                id: 40886,
+                title: "APOD: 2026 November 18 – An M-class Solar Flare",
+                summary:
+                    "APOD Science APOD APOD: 2026 November 18 – An… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. A Medium-Sized […]",
+                news_site: "NASA",
+                published_at: "2026-11-18T05:05:00Z",
+                url: "https://science.nasa.gov/image-article/apod-2026-november-18-an-m-class-solar-flare/",
+            },
+        ],
+    });
+    fetch.mock.mockImplementation(async () =>
+        Response.json({
+            count: 1,
+            next: null,
+            previous: null,
+            results: [
+                {
+                    id: 1,
+                    title: "Long one",
+                    summary: "S".repeat(600),
+                    news_site: "Test",
+                    published_at: "2026-11-18T00:00:00Z",
+                    url: "https://example.invalid/long",
+                },
+            ],
+        }),
+    );
+    const capped = await c.callTool({
+        name: "spaceflight_news",
+        arguments: { limit: 1 },
+    });
+    const cappedArticle = JSON.parse(capped.content[0].text).articles[0];
+    assert.equal(cappedArticle.summary, `${"S".repeat(500)}…`);
+    fetch.mock.mockImplementation(async () =>
+        Response.json({ count: 0, results: [] }),
+    );
+    const empty = await c.callTool({
+        name: "spaceflight_news",
+        arguments: { limit: 1 },
+    });
+    assert.deepEqual(JSON.parse(empty.content[0].text), {
+        total: 0,
+        articles: [],
+    });
+    fetch.mock.mockImplementation(() => assert.fail("must not fetch"));
+    const invalid = await c.callTool({
+        name: "spaceflight_news",
+        arguments: { limit: 21 },
+    });
+    assert.equal(invalid.isError, true);
+    assert.equal(fetch.mock.callCount(), 3);
 });

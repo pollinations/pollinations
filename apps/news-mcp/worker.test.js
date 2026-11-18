@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "kp_index",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,64 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("planetary K-index returns the latest entry from the full file", async (t) => {
+    const entries = [
+        {
+            time_tag: "2026-11-18T15:49:00",
+            kp_index: 2,
+            estimated_kp: 1.67,
+            kp: "2M",
+        },
+        {
+            time_tag: "2026-11-18T15:50:00",
+            kp_index: 1,
+            estimated_kp: 1.33,
+            kp: "1Z",
+        },
+        {
+            time_tag: "2026-11-18T15:51:00",
+            kp_index: 2,
+            estimated_kp: 1.67,
+            kp: "2M",
+        },
+    ];
+    const mock = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "services.swpc.noaa.gov");
+        assert.equal(url.pathname, "/json/planetary_k_index_1m.json");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        return Response.json(entries);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({ name: "kp_index", arguments: {} });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        time_tag: "2026-11-18T15:51:00",
+        kp_index: 2,
+        estimated_kp: 1.67,
+        kp: "2M",
+        previous: {
+            time_tag: "2026-11-18T15:50:00",
+            kp_index: 1,
+            estimated_kp: 1.33,
+            kp: "1Z",
+        },
+    });
+    mock.mock.mockImplementation(async () => Response.json([]));
+    const empty = await c.callTool({ name: "kp_index", arguments: {} });
+    assert.equal(empty.isError, true);
+    assert.match(empty.content[0].text, /no planetary K-index entries/);
+    mock.mock.mockImplementation(async () =>
+        Response.json([{ time_tag: "2026-11-18T15:51:00" }]),
+    );
+    const malformed = await c.callTool({
+        name: "kp_index",
+        arguments: {},
+    });
+    assert.equal(malformed.isError, true);
+    assert.match(malformed.content[0].text, /without a time or Kp value/);
 });

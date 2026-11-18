@@ -89,6 +89,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "scoop_package",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -421,6 +422,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["scoop_package", { name: "../bad" }],
+        ["scoop_package", { name: "Git" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -770,4 +773,71 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("Scoop tries Main then Extras, normalizes the license object and reports unknown packages", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        const target = new URL(url);
+        if (target.pathname.endsWith("/bucket/git.json"))
+            return Response.json({
+                version: "2.56.1",
+                description:
+                    "A free and open source distributed version control system.",
+                homepage: "https://gitforwindows.org",
+                license: {
+                    identifier: "GPL-2.0-only",
+                    url: "https://github.com/git-for-windows/git/blob/HEAD/COPYING",
+                },
+            });
+        if (target.pathname.endsWith("/Extras/master/bucket/firefox.json"))
+            return Response.json({
+                version: "160.0.1",
+                description: "Popular open source web browser.",
+                homepage: "https://www.firefox.com/",
+                license: "MPL-2.0",
+            });
+        return new Response("404: Not Found", { status: 404 });
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "scoop_package", { name: "git" }), {
+        name: "git",
+        bucket: "Main",
+        version: "2.56.1",
+        description:
+            "A free and open source distributed version control system.",
+        homepage: "https://gitforwindows.org",
+        license: "GPL-2.0-only",
+        bucketUrl:
+            "https://github.com/ScoopInstaller/Main/blob/master/bucket/git.json",
+    });
+    assert.deepEqual(await call(client, "scoop_package", { name: "firefox" }), {
+        name: "firefox",
+        bucket: "Extras",
+        version: "160.0.1",
+        description: "Popular open source web browser.",
+        homepage: "https://www.firefox.com/",
+        license: "MPL-2.0",
+        bucketUrl:
+            "https://github.com/ScoopInstaller/Extras/blob/master/bucket/firefox.json",
+    });
+    const missing = await client.callTool({
+        name: "scoop_package",
+        arguments: { name: "zzzqqqxxyy" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /not found in Main or Extras/);
+    assert.deepEqual(urls, [
+        "https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/git.json",
+        "https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/firefox.json",
+        "https://raw.githubusercontent.com/ScoopInstaller/Extras/master/bucket/firefox.json",
+        "https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/zzzqqqxxyy.json",
+        "https://raw.githubusercontent.com/ScoopInstaller/Extras/master/bucket/zzzqqqxxyy.json",
+    ]);
 });

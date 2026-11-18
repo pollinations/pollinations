@@ -70,6 +70,7 @@ for (const modern of [false, true])
                 "convert_number_base",
                 "check_digit",
                 "integer_math",
+                "solve_quadratic",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -926,6 +927,81 @@ test("integer_math truncates toward zero and takes the gcd of signed values", as
         ).result,
         "-15",
     );
+});
+
+test("solve_quadratic returns stable real and complex roots", async (t) => {
+    const client = await clientFor(t);
+    const simple = await call(client, "solve_quadratic", {
+        a: 1,
+        b: -3,
+        c: 2,
+    });
+    assert.equal(simple.kind, "two-real");
+    assert.deepEqual(
+        simple.roots.map(({ imaginary }) => imaginary),
+        [0, 0],
+    );
+    assert.ok(Math.abs(simple.roots[0].real - 1) < 1e-12);
+    assert.ok(Math.abs(simple.roots[1].real - 2) < 1e-12);
+    assert.deepEqual(
+        await call(client, "solve_quadratic", { a: 1, b: 2, c: 1 }),
+        { kind: "repeated-real", roots: [{ real: -1, imaginary: 0 }] },
+    );
+    assert.deepEqual(
+        await call(client, "solve_quadratic", { a: 1, b: 2, c: 5 }),
+        {
+            kind: "complex",
+            roots: [
+                { real: -1, imaginary: 2 },
+                { real: -1, imaginary: -2 },
+            ],
+        },
+    );
+
+    // The stable formula preserves the small root that the direct formula loses.
+    const stable = await call(client, "solve_quadratic", {
+        a: 1,
+        b: 1e16,
+        c: 1,
+    });
+    assert.equal(stable.kind, "two-real");
+    assert.equal(stable.roots[0].real, -1e16);
+    assert.ok(Math.abs((stable.roots[1].real + 1e-16) / 1e-16) < 1e-12);
+});
+
+test("solve_quadratic handles linear and degenerate equations", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "solve_quadratic", { a: 0, b: 2, c: -4 }),
+        { kind: "linear", roots: [{ real: 2, imaginary: 0 }] },
+    );
+    assert.deepEqual(
+        await call(client, "solve_quadratic", { a: 0, b: 0, c: 0 }),
+        { kind: "all-real", roots: null },
+    );
+    assert.deepEqual(
+        await call(client, "solve_quadratic", { a: 0, b: 0, c: 1 }),
+        { kind: "no-solution", roots: [] },
+    );
+});
+
+test("solve_quadratic rejects inputs outside reliable numeric range", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { a: 1e-300, b: 1e300, c: 1 },
+        { a: 0, b: Number.MIN_VALUE, c: Number.MAX_VALUE },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "solve_quadratic",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
 });
 
 test("integer_math rejects what is not integer arithmetic", async (t) => {

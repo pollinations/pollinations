@@ -342,6 +342,143 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("JPL fireball events project the tabular rows down and treat a date with no events as empty, not an error", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "ssd-api.jpl.nasa.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("date-min") === "2030-01-01") {
+            return Response.json({
+                count: "0",
+                signature: {
+                    source: "NASA/JPL Fireball Data API",
+                    version: "1.2",
+                },
+            });
+        }
+        return Response.json({
+            signature: {
+                version: "1.2",
+                source: "NASA/JPL Fireball Data API",
+            },
+            count: "2",
+            fields: [
+                "date",
+                "energy",
+                "impact-e",
+                "lat",
+                "lat-dir",
+                "lon",
+                "lon-dir",
+                "alt",
+                "vel",
+            ],
+            data: [
+                [
+                    "2026-10-04 03:14:45",
+                    "5.4",
+                    "0.18",
+                    "41.8",
+                    "S",
+                    "173.1",
+                    "W",
+                    "26.9",
+                    "13.8",
+                ],
+                [
+                    "2026-09-15 11:26:13",
+                    "2.2",
+                    "0.079",
+                    "37.6",
+                    "S",
+                    "161.6",
+                    "W",
+                    "37.0",
+                    null,
+                ],
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "fireball_events", {
+        date_min: "2026-01-01",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].searchParams.get("date-min"), "2026-01-01");
+    assert.equal(requests[0].searchParams.get("req-alt"), "true");
+    assert.equal(requests[0].searchParams.get("limit"), "2");
+    assert.deepEqual(value(result), {
+        date_min: "2026-01-01",
+        total: 2,
+        events: [
+            {
+                date: "2026-10-04 03:14:45",
+                energy_kt: 5.4,
+                impact_energy_kt: 0.18,
+                latitude: -41.8,
+                longitude: -173.1,
+                altitude_km: 26.9,
+                velocity_km_s: 13.8,
+            },
+            {
+                date: "2026-09-15 11:26:13",
+                energy_kt: 2.2,
+                impact_energy_kt: 0.079,
+                latitude: -37.6,
+                longitude: -161.6,
+                altitude_km: 37.0,
+                velocity_km_s: null,
+            },
+        ],
+    });
+
+    // A date range with no events answers with an empty list.
+    result = await call(c, "fireball_events", { date_min: "2030-01-01" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        date_min: "2030-01-01",
+        total: 0,
+        events: [],
+    });
+    // No limit given defaults to limit=5.
+    assert.equal(requests[1].searchParams.get("limit"), "5");
+
+    // A bad date and an out-of-range limit are rejected with no fetch.
+    const before = requests.length;
+    for (const args of [
+        { date_min: "not-a-date" },
+        { date_min: "2026-01-01", limit: 99 },
+    ]) {
+        const bad = await call(c, "fireball_events", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true, JSON.stringify(args));
+    }
+    assert.equal(requests.length, before);
+
+    // The handler itself falls back to the defaults on a direct call.
+    const { fireballTools } = await import("./tools/fireball.js");
+    const seen = [];
+    const out = await fireballTools[0][3](
+        { date_min: "not-a-date", limit: 99 },
+        async (url) => {
+            seen.push(url);
+            return { count: "0" };
+        },
+    );
+    assert.equal(out.total, 0);
+    assert.match(seen[0], /date-min=2026-01-01/);
+    assert.match(seen[0], /limit=5/);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +501,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "fireball_events",
             ].sort(),
         );
     });

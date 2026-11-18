@@ -137,7 +137,7 @@ export function QuestLeaderboard() {
                                                     )}
                                                     <span className="sr-only">
                                                         {" "}
-                                                        in Quest rewards
+                                                        in Quest balance
                                                     </span>
                                                 </Text>
                                             </span>

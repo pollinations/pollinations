@@ -133,7 +133,7 @@ body:
     id: quest
     attributes:
       label: Quest
-      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
+      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its amount.
       placeholder: "#15600"
 
   - type: markdown

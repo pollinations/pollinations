@@ -10,9 +10,9 @@ The repository contains several projects. To get started:
 
 Read the [README](README.md) for an overview of the projects, then browse the [issues](https://github.com/pollinations/pollinations/issues).
 
-Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated reward.
+Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated amount.
 
-If a quest asks for an app, submit it with the [app submission form](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) and enter the quest number in its Quest field. Approving the app completes the quest, and you can claim the reward.
+If a quest asks for an app, submit it with the [app submission form](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) and enter the quest number in its Quest field. Approving the app completes the quest, and you can claim what it pays.
 
 ### 2. Understand the Issue and Build an MVP
 

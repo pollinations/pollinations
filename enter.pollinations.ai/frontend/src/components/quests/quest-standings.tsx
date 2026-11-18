@@ -34,7 +34,7 @@ function Amount({ value }: { value: number }) {
                 className="h-3.5 w-3.5 self-center"
             />
             ${formatPollen(value)}
-            <span className="sr-only"> in Quest rewards</span>
+            <span className="sr-only"> in Quest balance</span>
         </span>
     );
 }

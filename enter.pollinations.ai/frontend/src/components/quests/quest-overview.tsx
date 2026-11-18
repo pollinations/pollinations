@@ -137,7 +137,7 @@ const CATEGORIES: CategoryMeta[] = [
 const OTHER_CONTRIBUTIONS: QuestCatalogItem = {
     id: "other_contributions",
     title: "Other contributions",
-    description: "Rewards from the team for help beyond a PR or issue.",
+    description: "Given by the team for help beyond a PR or issue.",
     category: "contribute",
     state: "completed",
     repeatable: true,
@@ -909,7 +909,7 @@ export function QuestRow({
                     <button
                         type="button"
                         aria-expanded={showRewards}
-                        aria-label={`${card.repeats.length} earned rewards for ${card.title}`}
+                        aria-label={`Earned ${card.repeats.length} times: ${card.title}`}
                         onClick={() => setShowRewards((shown) => !shown)}
                         className="polli-control inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap text-xs font-normal text-theme-text-muted hover:text-theme-text-strong"
                     >

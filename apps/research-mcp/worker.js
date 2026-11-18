@@ -9,6 +9,7 @@ import { wikidataTools } from "./tools/wikidata.js";
 import { wikipediaTools } from "./tools/wikipedia.js";
 import { wiktionaryTools } from "./tools/wiktionary.js";
 import { worldBankTools } from "./tools/worldbank.js";
+import { xkcdTools } from "./tools/xkcd.js";
 
 const handler = () =>
     createMcpHandler(
@@ -26,6 +27,7 @@ const handler = () =>
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,
+                ...xkcdTools,
             ]) {
                 server.registerTool(
                     name,

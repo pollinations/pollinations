@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "airbender_character",
             ].sort(),
         );
     });
@@ -644,4 +645,148 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Last Airbender character search projects fields, trims affiliations and caps enemy lists", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "last-airbender-api.fly.dev");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        // perPage is honoured upstream; limit is never sent (it empties
+        // the result upstream).
+        assert.equal(url.searchParams.get("limit"), null);
+        const name = url.searchParams.get("name");
+        if (name === "aang") {
+            assert.equal(url.searchParams.get("perPage"), "5");
+            return Response.json([
+                {
+                    _id: "5cf5679a915ecad153ab68c9",
+                    allies: ["Appa"],
+                    enemies: ["Azula"],
+                    photoUrl:
+                        "https://vignette.wikia.nocookie.net/avatar/images/a/ae/Aang_at_Jasmine_Dragon.png/revision/latest?cb=20130612174003",
+                    name: "Aang",
+                    affiliation:
+                        " Air Acolytes Air Nomads Air Scouts (formerly) Team Avatar",
+                },
+            ]);
+        }
+        if (name === "azula") {
+            return Response.json([
+                {
+                    _id: "5cf5679a915ecad153ab68da",
+                    allies: ["Ozai", "Zuko "],
+                    enemies: [
+                        "Iroh",
+                        "Zuko",
+                        "Kuei",
+                        "Long Feng",
+                        "Mai",
+                        "Ty Lee",
+                        "Ursa ",
+                    ],
+                    photoUrl:
+                        "https://vignette.wikia.nocookie.net/avatar/images/1/12/Azula.png/revision/latest?cb=20140905084941",
+                    name: "Azula",
+                    affiliation:
+                        " Azula's team (formerly) Dai Li (formerly) Fire Nation Fire Nation Royal Family Fire Warriors Royal Fire Academy for Girls (formerly)",
+                },
+            ]);
+        }
+        if (name === "a") {
+            assert.equal(url.searchParams.get("perPage"), "2");
+            return Response.json([
+                {
+                    _id: "5cf5679a915ecad153ab68c9",
+                    allies: ["Appa"],
+                    enemies: ["Azula"],
+                    photoUrl:
+                        "https://vignette.wikia.nocookie.net/avatar/images/a/ae/Aang_at_Jasmine_Dragon.png/revision/latest?cb=20130612174003",
+                    name: "Aang",
+                    affiliation:
+                        " Air Acolytes Air Nomads Air Scouts (formerly) Team Avatar",
+                },
+                {
+                    _id: "5cf5679a915ecad153ab68da",
+                    allies: ["Ozai"],
+                    enemies: ["Iroh"],
+                    photoUrl:
+                        "https://vignette.wikia.nocookie.net/avatar/images/1/12/Azula.png/revision/latest?cb=20140905084941",
+                    name: "Azula",
+                    affiliation: " Fire Nation",
+                },
+            ]);
+        }
+        return Response.json([]);
+    });
+
+    const c = await client(t);
+    const aangRes = await call(c, "airbender_character", { name: "aang" });
+    assert.notEqual(aangRes.isError, true, JSON.stringify(aangRes));
+    assert.deepEqual(value(aangRes), {
+        name: "aang",
+        total: 1,
+        characters: [
+            {
+                id: "5cf5679a915ecad153ab68c9",
+                name: "Aang",
+                affiliation:
+                    "Air Acolytes Air Nomads Air Scouts (formerly) Team Avatar",
+                allies: ["Appa"],
+                alliesCount: 1,
+                enemies: ["Azula"],
+                enemiesCount: 1,
+                photo_url:
+                    "https://vignette.wikia.nocookie.net/avatar/images/a/ae/Aang_at_Jasmine_Dragon.png/revision/latest?cb=20130612174003",
+            },
+        ],
+    });
+
+    // Enemy lists cap at 3 with a count: Azula has 7 enemies upstream.
+    const azulaRes = await call(c, "airbender_character", { name: "azula" });
+    assert.notEqual(azulaRes.isError, true, JSON.stringify(azulaRes));
+    const azulaVal = value(azulaRes);
+    assert.equal(azulaVal.total, 1);
+    assert.deepEqual(azulaVal.characters[0].enemies, ["Iroh", "Zuko", "Kuei"]);
+    assert.equal(azulaVal.characters[0].enemiesCount, 7);
+
+    // perPage is passed through: limit 2 returns 2 records.
+    const manyRes = await call(c, "airbender_character", {
+        name: "a",
+        limit: 2,
+    });
+    assert.notEqual(manyRes.isError, true, JSON.stringify(manyRes));
+    const manyVal = value(manyRes);
+    assert.equal(manyVal.total, 2);
+    assert.equal(manyVal.characters.length, 2);
+
+    const emptyRes = await call(c, "airbender_character", {
+        name: "zzzznotreal",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        name: "zzzznotreal",
+        total: 0,
+        characters: [],
+    });
+
+    const before = fetches;
+    for (const args of [
+        { name: "   " },
+        { name: "aang", limit: 0 },
+        { name: "aang", limit: 26 },
+    ]) {
+        const result = await call(c, "airbender_character", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(fetches, before);
 });

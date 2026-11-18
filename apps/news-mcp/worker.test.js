@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { getText } from "./fetch.js";
+import { dailymotionTools } from "./tools/dailymotion.js";
 import { parseFeed } from "./tools/feeds.js";
 import worker from "./worker.js";
 
@@ -25,9 +26,10 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
+        "dailymotion_search",
         "earthquake_event",
         "earthquake_search",
         "feed_read",
@@ -59,7 +61,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -437,5 +439,99 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.equal(missing.isError, true);
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
+    await c.close();
+});
+
+test("dailymotion_search returns projected videos and rejects bad args before fetch", async (t) => {
+    let fetches = 0;
+    const limits = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        fetches += 1;
+        const u = new URL(url);
+        assert.equal(u.hostname, "api.dailymotion.com");
+        assert.equal(u.pathname, "/videos");
+        assert.equal(u.searchParams.get("fields"), "id,title,duration,url");
+        limits.push(u.searchParams.get("limit"));
+        assert.equal(init.redirect, "manual");
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        if (u.searchParams.get("search") === "zzzqqqxxyy") {
+            return Response.json({ page: 1, limit: 2, total: 0, list: [] });
+        }
+        return Response.json({
+            page: 1,
+            limit: 2,
+            total: 1000,
+            list: [
+                {
+                    id: "x31fskg",
+                    title: "Python Attack - Reticulated Python",
+                    duration: 645,
+                    url: "https://www.dailymotion.com/video/x31fskg",
+                },
+                {
+                    id: "x8eow6z",
+                    title: "Python video | giant python",
+                    duration: 7,
+                    url: "https://www.dailymotion.com/video/x8eow6z",
+                },
+            ],
+        });
+    });
+    const c = await client();
+    const result = await c.callTool({
+        name: "dailymotion_search",
+        arguments: { query: "python", limit: 2 },
+    });
+    assert.equal(result.isError, undefined);
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        query: "python",
+        total: 1000,
+        videos: [
+            {
+                id: "x31fskg",
+                title: "Python Attack - Reticulated Python",
+                duration: 645,
+                url: "https://www.dailymotion.com/video/x31fskg",
+            },
+            {
+                id: "x8eow6z",
+                title: "Python video | giant python",
+                duration: 7,
+                url: "https://www.dailymotion.com/video/x8eow6z",
+            },
+        ],
+    });
+
+    const missing = await c.callTool({
+        name: "dailymotion_search",
+        arguments: { query: "zzzqqqxxyy", limit: 2 },
+    });
+    assert.equal(missing.isError, undefined);
+    assert.deepEqual(JSON.parse(missing.content[0].text), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        videos: [],
+    });
+
+    const empty = await c.callTool({
+        name: "dailymotion_search",
+        arguments: { query: "" },
+    });
+    assert.equal(empty.isError, true);
+    const tooMany = await c.callTool({
+        name: "dailymotion_search",
+        arguments: { query: "python", limit: 99 },
+    });
+    assert.equal(tooMany.isError, true);
+    assert.equal(fetches, 2);
+
+    // The handler itself falls back to 5 when called directly, bypassing the
+    // MCP server's zod layer.
+    const direct = await dailymotionTools[0][3]({ query: "python", limit: 99 });
+    assert.equal(direct.videos.length, 2);
+    assert.equal(fetches, 3);
+    assert.deepEqual(limits, ["2", "2", "5"]);
     await c.close();
 });

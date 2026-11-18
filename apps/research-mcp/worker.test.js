@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { prideTools } from "./tools/pride.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "pride_projects",
             ].sort(),
         );
     });
@@ -644,4 +646,95 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("PRIDE search projects by keyword and drops long descriptions", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "www.ebi.ac.uk");
+        assert.equal(url.pathname, "/pride/ws/archive/v2/search/projects");
+        assert.equal(request.redirect, "follow");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.searchParams.get("keyword") === "zzzqqqxxyy")
+            return Response.json([]);
+        return Response.json([
+            {
+                accession: "PXD087532",
+                title: "A NOD2-Encoded Toggle Switch Resolves the Host–Microbe Battle Over Cyclic AMP Control",
+                projectDescription:
+                    "Pathogens hijack macrophages by triggering pathological cAMP surges that block phagolysosomal killing—a defect mirrored in phagocytes from refractory colitis. We identify a host-encoded, pathogen-specific surge-protector comprised of a three-protein toggle: The innate sensor NOD2 binds and masks an evolutionarily conserved motif in GIVthat activates trimeric-GTPase Gαi, enforcing a biphasic surge-to-plunge cAMP-program: early, NOD2•GIV assembly permits a brief, tolerogenic cAMP rise, whereas subsequent GIV•Gαi engagement collapses cAMP to drive phagolysosomal fusion and microbial clearance. Structural, biochemical, and ultrastructural analyses reveal how molecular toggling imposes precise spatial and temporal control. Pharmacogenomic perturbations pinpoint cAMP–PKA hyperactivation as the defining lesion in GIV-deficient macrophages. Functional studies in primary macrophages and human gut organoid co-cultures show that toggling the NOD2•GIV•Gαi-axis is necessary and sufficient to convert tolerant macrophages into microbicidal machines that preserve mucosal barrier integrity. These findings uncover a druggable cAMP-control pathway with therapeutic promise in colitis.",
+                doi: "",
+                organisms: ["Mus musculus (mouse)"],
+            },
+            {
+                accession: "PXD087266",
+                title: "FOXK2 lactylation drives sorafenib resistance in hepatocellular carcinoma by activating fatty acid oxidation",
+                projectDescription:
+                    "Protein lactylation plays a crucial role in tumor cells. This dataset contains mass spectrometry data on protein lactylation identified in liver cancer cells, providing a valuable resource for identifying key lactylated proteins in liver cancer cells.",
+                doi: "",
+                organisms: ["Homo sapiens (human)"],
+            },
+        ]);
+    });
+
+    const c = await client(t);
+    const result = await call(c, "pride_projects", {
+        keyword: "cancer",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        keyword: "cancer",
+        total: 2,
+        projects: [
+            {
+                accession: "PXD087532",
+                title: "A NOD2-Encoded Toggle Switch Resolves the Host–Microbe Battle Over Cyclic AMP Control",
+            },
+            {
+                accession: "PXD087266",
+                title: "FOXK2 lactylation drives sorafenib resistance in hepatocellular carcinoma by activating fatty acid oxidation",
+            },
+        ],
+    });
+
+    const empty = await call(c, "pride_projects", {
+        keyword: "zzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        keyword: "zzzqqqxxyy",
+        total: 0,
+        projects: [],
+    });
+    assert.equal(fetches, 2);
+
+    const badKeyword = await call(c, "pride_projects", { keyword: "" });
+    assert.equal(badKeyword.isError, true);
+    const badLimit = await call(c, "pride_projects", {
+        keyword: "cancer",
+        limit: 99,
+    });
+    assert.equal(badLimit.isError, true);
+    assert.equal(fetches, 2);
+});
+
+test("PRIDE handler falls back to pageSize 5 for an out-of-range limit", async () => {
+    const fetched = [];
+    const run = prideTools[0][3];
+    const result = await run({ keyword: "cancer", limit: 99 }, async (url) => {
+        fetched.push(new URL(url));
+        return [];
+    });
+    assert.equal(fetched.length, 1);
+    assert.equal(fetched[0].searchParams.get("pageSize"), "5");
+    assert.deepEqual(result, { keyword: "cancer", total: 0, projects: [] });
 });

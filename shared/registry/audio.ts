@@ -1120,7 +1120,7 @@ const AUDIO_BASE_SERVICES = {
         priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "ZONOS3-Mini",
         description:
-            "Speech with the Alloy preset or a reference voice. Pass a public HTTP(S) audio URL in reference_audio (WAV, MP3, FLAC, Ogg, AAC, M4A/MP4 audio, or WebM audio, up to 20 MiB). The first 60 seconds are used. Returns mono 24 kHz MP3 or raw signed 16-bit little-endian PCM.",
+            "Speech in the Alloy voice or a voice cloned from a reference recording.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         voices: ["alloy"],

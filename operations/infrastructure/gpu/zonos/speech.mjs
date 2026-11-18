@@ -123,7 +123,7 @@ async function handleSpeech(request, response) {
         }
         const pcm = input.format === "pcm";
         ffmpeg = spawn(
-            "ffmpeg",
+            "/usr/bin/ffmpeg",
             [
                 "-loglevel",
                 "error",

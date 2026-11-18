@@ -25,12 +25,13 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
         "earthquake_search",
         "feed_read",
+        "gdacs_event",
         "history_on_this_day",
         "hn_item",
         "hn_search",
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,120 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("gdacs_event filters the shared current-events list by type", async (t) => {
+    const features = [
+        {
+            properties: {
+                eventtype: "EQ",
+                eventid: 1573141,
+                eventname: "",
+                name: "Earthquake in China",
+                description: "Earthquake in China",
+                alertlevel: "Orange",
+                country: "China",
+                fromdate: "2026-10-22T14:33:40",
+                todate: "2026-10-22T14:33:40",
+                url: {
+                    report: "https://www.gdacs.org/report.aspx?eventid=1573141&episodeid=1741837&eventtype=EQ",
+                },
+            },
+        },
+        {
+            properties: {
+                eventtype: "TC",
+                eventid: 1001351,
+                eventname: "AKVAN-26",
+                name: "Tropical Cyclone AKVAN-26",
+                description: "Tropical Cyclone AKVAN-26",
+                alertlevel: "Orange",
+                country: "India",
+                fromdate: "2026-11-16T18:00:00",
+                todate: "2026-11-18T12:00:00",
+                url: {
+                    report: "https://www.gdacs.org/report.aspx?eventid=1001351&episodeid=8&eventtype=TC",
+                },
+            },
+        },
+        {
+            properties: {
+                eventtype: "VO",
+                eventid: 9999999,
+                eventname: "Long",
+                name: "x".repeat(600),
+                description: "y".repeat(600),
+                alertlevel: "Red",
+                country: "Nowhere",
+                fromdate: "2026-11-01T00:00:00",
+                todate: "2026-11-02T00:00:00",
+                url: {
+                    report: "https://www.gdacs.org/report.aspx?eventid=9999999",
+                },
+            },
+        },
+    ];
+    const stub = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.gdacs.org");
+        assert.equal(url.pathname, "/gdacsapi/api/events/geteventlist/SEARCH");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.ok(init.signal instanceof AbortSignal);
+        return Response.json({ type: "FeatureCollection", features });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "gdacs_event",
+        arguments: { eventtype: "EQ", limit: 5 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        eventtype: "EQ",
+        total: 1,
+        events: [
+            {
+                eventid: 1573141,
+                name: "Earthquake in China",
+                eventname: "",
+                alertlevel: "Orange",
+                description: "Earthquake in China",
+                country: "China",
+                fromdate: "2026-10-22T14:33:40",
+                todate: "2026-10-22T14:33:40",
+                report: "https://www.gdacs.org/report.aspx?eventid=1573141&episodeid=1741837&eventtype=EQ",
+            },
+        ],
+    });
+    // A type with no current events answers with an empty list, not an error.
+    const empty = await c.callTool({
+        name: "gdacs_event",
+        arguments: { eventtype: "FL", limit: 5 },
+    });
+    assert.deepEqual(JSON.parse(empty.content[0].text), {
+        eventtype: "FL",
+        total: 0,
+        events: [],
+    });
+    // Long names and descriptions are capped at 500 characters.
+    const volcano = await c.callTool({
+        name: "gdacs_event",
+        arguments: { eventtype: "VO", limit: 1 },
+    });
+    const [event] = JSON.parse(volcano.content[0].text).events;
+    assert.equal(event.name.length, 503);
+    assert.equal(event.description.length, 503);
+    // Invalid type and out-of-range limit are rejected before any fetch.
+    for (const arguments_ of [
+        { eventtype: "XX" },
+        { eventtype: "EQ", limit: 99 },
+    ]) {
+        assert.equal(
+            (await c.callTool({ name: "gdacs_event", arguments: arguments_ }))
+                .isError,
+            true,
+        );
+    }
+    assert.equal(stub.mock.callCount(), 3);
 });

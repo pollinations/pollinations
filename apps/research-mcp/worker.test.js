@@ -342,6 +342,78 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Chess.com player profile resolves the country code and converts epoch dates", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.chess.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname.endsWith("/zzznotaplayer999"))
+            return new Response(
+                JSON.stringify({
+                    code: 0,
+                    message: 'User "zzznotaplayer999" not found.',
+                }),
+                { status: 404 },
+            );
+        assert.equal(url.pathname, "/pub/player/hikaru");
+        return Response.json({
+            avatar: "https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png",
+            player_id: 15448422,
+            "@id": "https://api.chess.com/pub/player/hikaru",
+            url: "https://www.chess.com/member/Hikaru",
+            name: "Hikaru Nakamura",
+            username: "hikaru",
+            title: "GM",
+            followers: 1434790,
+            country: "https://api.chess.com/pub/country/US",
+            location: "Florida",
+            last_online: 1795004489,
+            joined: 1389043258,
+            status: "premium",
+            is_streamer: true,
+            twitch_url: "https://twitch.tv/gmhikaru",
+            verified: false,
+            league: "Legend",
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "chess_player", { username: "Hikaru" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        username: "hikaru",
+        name: "Hikaru Nakamura",
+        title: "GM",
+        followers: 1434790,
+        country: "US",
+        location: "Florida",
+        joined: "2014-01-06T21:20:58.000Z",
+        last_online: "2026-11-18T12:21:29.000Z",
+        status: "premium",
+        is_streamer: true,
+        avatar: "https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png",
+        twitch_url: "https://twitch.tv/gmhikaru",
+        url: "https://www.chess.com/member/Hikaru",
+    });
+    result = await call(c, "chess_player", {
+        username: "zzznotaplayer999",
+    });
+    assert.equal(result.isError, true);
+    assert.match(
+        result.content[0].text,
+        /No Chess\.com player found for "zzznotaplayer999"/,
+    );
+    result = await call(c, "chess_player", { username: " " });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 2);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +436,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "chess_player",
             ].sort(),
         );
     });

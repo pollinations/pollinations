@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "trade_stats",
             ].sort(),
         );
     });
@@ -644,4 +645,229 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("trade_stats returns UN Comtrade values with name resolution and no credentials", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "comtradeapi.un.org");
+        assert.equal(target.pathname, "/public/v1/preview/C/A/HS");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const q = target.searchParams;
+        if (q.get("reporterCode") === "999") {
+            return Response.json({
+                elapsedTime: "0.03 secs",
+                count: 0,
+                data: [],
+                error: "",
+            });
+        }
+        if (q.get("cmdCode") === "8703") {
+            assert.equal(q.get("reporterCode"), "842");
+            assert.equal(q.get("period"), "2023");
+            assert.equal(q.get("flowCode"), "M");
+            return Response.json({
+                elapsedTime: "0.09 secs",
+                count: 1,
+                data: [
+                    {
+                        typeCode: "C",
+                        freqCode: "A",
+                        refPeriodId: 20230101,
+                        refYear: 2023,
+                        period: "2023",
+                        reporterCode: 842,
+                        reporterDesc: null,
+                        flowCode: "M",
+                        flowDesc: null,
+                        partnerCode: 0,
+                        partnerDesc: null,
+                        cmdCode: "8703",
+                        cmdDesc: null,
+                        qtyUnitCode: 5,
+                        qty: 7361829.0,
+                        netWgt: 12146901529.788,
+                        grossWgt: 0.0,
+                        cifvalue: 210288252659.0,
+                        fobvalue: 207960693651.0,
+                        primaryValue: 210288252659.0,
+                        isAggregate: true,
+                    },
+                ],
+                error: "",
+            });
+        }
+        if (q.get("flowCode") === "X") {
+            assert.equal(q.get("reporterCode"), "842");
+            return Response.json({
+                elapsedTime: "0.12 secs",
+                count: 1,
+                data: [
+                    {
+                        typeCode: "C",
+                        freqCode: "A",
+                        refPeriodId: 20230101,
+                        refYear: 2023,
+                        period: "2023",
+                        reporterCode: 842,
+                        reporterDesc: null,
+                        flowCode: "X",
+                        flowDesc: null,
+                        partnerCode: 0,
+                        partnerDesc: null,
+                        cmdCode: "TOTAL",
+                        cmdDesc: null,
+                        qty: 0.0,
+                        netWgt: 0.0,
+                        grossWgt: 0.0,
+                        cifvalue: null,
+                        fobvalue: 2018542583771.0,
+                        primaryValue: 2018542583771.0,
+                        isAggregate: true,
+                    },
+                ],
+                error: "",
+            });
+        }
+        assert.equal(q.get("reporterCode"), "842");
+        assert.equal(q.get("period"), "2023");
+        assert.equal(q.get("partnerCode"), "0");
+        assert.equal(q.get("flowCode"), "M");
+        assert.equal(q.get("cmdCode"), "TOTAL");
+        return Response.json({
+            elapsedTime: "0.03 secs",
+            count: 1,
+            data: [
+                {
+                    typeCode: "C",
+                    freqCode: "A",
+                    refPeriodId: 20230101,
+                    refYear: 2023,
+                    period: "2023",
+                    reporterCode: 842,
+                    reporterDesc: null,
+                    flowCode: "M",
+                    flowDesc: null,
+                    partnerCode: 0,
+                    partnerDesc: null,
+                    cmdCode: "TOTAL",
+                    cmdDesc: null,
+                    qtyUnitCode: -1,
+                    qty: 0.0,
+                    netWgt: 0.0,
+                    grossWgt: 0.0,
+                    cifvalue: 3168471121076.0,
+                    fobvalue: 3080052528515.0,
+                    primaryValue: 3168471121076.0,
+                    isAggregate: true,
+                },
+            ],
+            error: "",
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "trade_stats", {
+        reporter: "United States",
+        period: "2023",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 1,
+        records: [
+            {
+                reporter: 842,
+                reporter_name: "United States",
+                partner: 0,
+                partner_name: "World",
+                period: "2023",
+                flow: "M",
+                flow_desc: "Imports",
+                commodity: "TOTAL",
+                currency: "USD",
+                cif_value: 3168471121076,
+                fob_value: 3080052528515,
+                primary_value: 3168471121076,
+                quantity: null,
+                net_weight_kg: null,
+            },
+        ],
+    });
+
+    const cars = await call(c, "trade_stats", {
+        reporter: 842,
+        period: 2023,
+        cmdCode: "8703",
+    });
+    assert.notEqual(cars.isError, true, JSON.stringify(cars));
+    assert.deepEqual(value(cars).records[0], {
+        reporter: 842,
+        reporter_name: "United States",
+        partner: 0,
+        partner_name: "World",
+        period: "2023",
+        flow: "M",
+        flow_desc: "Imports",
+        commodity: "8703",
+        currency: "USD",
+        cif_value: 210288252659,
+        fob_value: 207960693651,
+        primary_value: 210288252659,
+        quantity: 7361829,
+        net_weight_kg: 12146901529.788,
+    });
+
+    const exportsResult = await call(c, "trade_stats", {
+        reporter: "usa",
+        period: "2023",
+        flow: "X",
+    });
+    assert.notEqual(exportsResult.isError, true, JSON.stringify(exportsResult));
+    const exportRecord = value(exportsResult).records[0];
+    assert.equal(exportRecord.cif_value, null);
+    assert.equal(exportRecord.fob_value, 2018542583771);
+    assert.equal(exportRecord.primary_value, 2018542583771);
+    assert.equal(exportRecord.flow_desc, "Exports");
+
+    const empty = await call(c, "trade_stats", {
+        reporter: 999,
+        period: "2023",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), { total: 0, records: [] });
+
+    const before = fetches;
+    for (const bad of [
+        { reporter: "Atlantis", period: "2023" },
+        { reporter: 842, period: "abcd" },
+        { reporter: 842, period: "2023", flow: "Z" },
+        { reporter: 842, period: "2023", cmdCode: "ABC" },
+        { reporter: "", period: "2023" },
+    ]) {
+        const res = await call(c, "trade_stats", bad);
+        assert.equal(res.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
+});
+
+test("trade_stats surfaces a Comtrade 429 as a rate-limit error", async (t) => {
+    mock.method(globalThis, "fetch", async () => {
+        return new Response("Too Many Requests", { status: 429 });
+    });
+    const c = await client(t);
+    const result = await call(c, "trade_stats", {
+        reporter: 842,
+        period: "2023",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /429/);
+    assert.match(result.content[0].text, /rate limited, retry later/);
 });

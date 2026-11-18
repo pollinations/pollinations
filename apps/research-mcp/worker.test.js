@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { yesnoTools } from "./tools/yesno.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "yesno_answer",
             ].sort(),
         );
     });
@@ -644,4 +646,71 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("yesno_answer returns random answers with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveAnswers = [
+        {
+            answer: "yes",
+            image: "https://yesno.wtf/assets/yes/13-c3082a998e7758be8e582276f35d1336.gif",
+        },
+        {
+            answer: "no",
+            image: "https://yesno.wtf/assets/no/22-8806dbccb1edf544723b7f095ff722e8.gif",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "yesno.wtf");
+        assert.equal(target.pathname, "/api");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            answer: liveAnswers[(fetchCalls - 1) % liveAnswers.length].answer,
+            forced: false,
+            image: liveAnswers[(fetchCalls - 1) % liveAnswers.length].image,
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "yesno_answer", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), { limit: 2, answers: liveAnswers });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "yesno_answer", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "yesno_answer", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = yesnoTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return { answer: "maybe", forced: false, image: "https://x.gif" };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        answers: [{ answer: "maybe", image: "https://x.gif" }],
+    });
+    assert.equal(stubCalls, 1);
+});
+
+test("yesno_answer errors cleanly when the API returns an answer without text", async (t) => {
+    mock.method(globalThis, "fetch", async () => Response.json({}));
+    const c = await client(t);
+    const result = await call(c, "yesno_answer", { limit: 1 });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /without text/);
 });

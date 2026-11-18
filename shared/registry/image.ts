@@ -2202,6 +2202,40 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(1.5 * 1.055),
             completionImageTokens: perMillion(3.8 * 1.055),
         },
+        // Image sizes change the number of metered tokens, not their rate.
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptTextTokens: perMillion(2.3 * 1.055),
+                    promptImageTokens: perMillion(1.5 * 1.055),
+                    completionImageTokens: perMillion(3.8 * 1.055),
+                },
+                "4k": {
+                    promptTextTokens: perMillion(2.3 * 1.055),
+                    promptImageTokens: perMillion(1.5 * 1.055),
+                    completionImageTokens: perMillion(3.8 * 1.055),
+                },
+            },
+            matchResolution("2k", "4k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "Same token rates at 2K; larger output uses more tokens.",
+                },
+                "4k": {
+                    label: "4K",
+                    description: "Same token rates at 4K; larger output uses more tokens.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K", "4k": "4K" },
+                },
+            ],
+        ),
         resolutions: ["1k", "2k", "4k"],
         title: "MiniMax H3 Image",
         description:

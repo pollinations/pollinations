@@ -83,13 +83,21 @@ type CloseHandler = (event: CloseEvent) => void;
  * from logs.
  */
 export function realtimeUrl(options: RealtimeSessionOptions = {}): string {
-    const baseUrl = (options.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
+    const baseUrl = trimTrailingSlashes(options.baseUrl || DEFAULT_BASE_URL);
     const url = new URL(`${baseUrl}/v1/realtime`);
     url.protocol = url.protocol === "http:" ? "ws:" : "wss:";
     url.searchParams.set("model", options.model || DEFAULT_REALTIME_MODEL);
     const apiKey = options.apiKey || getEnvVar("POLLINATIONS_API_KEY");
     if (apiKey) url.searchParams.set("key", apiKey);
     return url.toString();
+}
+
+// A loop, not `/\/+$/`: the base URL is caller input and a regex over a long
+// run of slashes backtracks.
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+    return value.slice(0, end);
 }
 
 /** One open realtime session. Events pass through untouched. */

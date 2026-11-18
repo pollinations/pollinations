@@ -73,6 +73,12 @@ describe("realtimeUrl", () => {
         );
     });
 
+    it("trims every trailing slash from a caller-supplied base url", () => {
+        expect(realtimeUrl({ baseUrl: "https://x.test////" })).toBe(
+            "wss://x.test/v1/realtime?model=openai%2Fgpt-realtime-2.1",
+        );
+    });
+
     it("reads POLLINATIONS_API_KEY from the environment", () => {
         const global = globalThis as {
             process?: { env?: Record<string, string> };

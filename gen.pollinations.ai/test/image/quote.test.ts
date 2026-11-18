@@ -58,6 +58,18 @@ describe("quoteMediaRequest", () => {
         );
     });
 
+    it("quotes the seconds the provider bills when a clip is shorter", () => {
+        // OpenRouter bills at least 5 seconds per HappyHorse clip.
+        const model = "alibaba/happyhorse-1.1";
+        const fiveSeconds = billed(model, { completionVideoSeconds: 5 });
+
+        expect(quote(model, { duration: 3 })).toBe(fiveSeconds);
+        expect(quote(model, { duration: 5 })).toBe(fiveSeconds);
+        expect(quote(model, { duration: 8 })).toBe(
+            billed(model, { completionVideoSeconds: 8 }),
+        );
+    });
+
     it("applies the rate sheet billing selects for the resolution", () => {
         const model = "google/veo-3.1-fast";
         const usage = { completionVideoSeconds: 8 };

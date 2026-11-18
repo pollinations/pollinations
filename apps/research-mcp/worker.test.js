@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "trivia_question",
             ].sort(),
         );
     });
@@ -644,4 +645,95 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("trivia questions decode HTML entities and honour amount, category and difficulty", async (t) => {
+    const fetched = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        fetched.push(url);
+        assert.equal(url.hostname, "opentdb.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("category") === "9999")
+            return Response.json({ response_code: 1, results: [] });
+        const amount = Number(url.searchParams.get("amount"));
+        return Response.json({
+            response_code: 0,
+            results: [
+                {
+                    type: "boolean",
+                    difficulty: "easy",
+                    category: "General Knowledge",
+                    question:
+                        "In architecture, a &quot;pecklesteiner&quot; is a set of doors that overlap each other when closed, and can be locked through a single keyhole.",
+                    correct_answer: "False",
+                    incorrect_answers: ["True"],
+                },
+                {
+                    type: "multiple",
+                    difficulty: "easy",
+                    category: "General Knowledge",
+                    question:
+                        "What nuts are used in the production of marzipan?",
+                    correct_answer: "Almonds",
+                    incorrect_answers: ["Peanuts", "Walnuts", "Pistachios"],
+                },
+                {
+                    type: "multiple",
+                    difficulty: "medium",
+                    category: "Entertainment: Film",
+                    question:
+                        "In Tron: Legacy, Kevin Flynn wrote a program to create the perfect system. What was the program&#039;s name?",
+                    correct_answer: "Clu",
+                    incorrect_answers: ["Tron", "MCP", "Quorra"],
+                },
+            ].slice(0, amount),
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "trivia_question", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 1,
+        questions: [
+            {
+                type: "boolean",
+                difficulty: "easy",
+                category: "General Knowledge",
+                question:
+                    'In architecture, a "pecklesteiner" is a set of doors that overlap each other when closed, and can be locked through a single keyhole.',
+                correct_answer: "False",
+                incorrect_answers: ["True"],
+            },
+        ],
+    });
+    assert.equal(fetched[0].searchParams.get("amount"), "1");
+    result = await call(c, "trivia_question", {
+        amount: 3,
+        category: 9,
+        difficulty: "easy",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 3);
+    assert.equal(
+        value(result).questions[2].question,
+        "In Tron: Legacy, Kevin Flynn wrote a program to create the perfect system. What was the program's name?",
+    );
+    assert.equal(fetched[1].searchParams.get("amount"), "3");
+    assert.equal(fetched[1].searchParams.get("category"), "9");
+    assert.equal(fetched[1].searchParams.get("difficulty"), "easy");
+    result = await call(c, "trivia_question", { category: 9999 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), { total: 0, questions: [] });
+    const before = fetched.length;
+    for (const args of [{ amount: 0 }, { amount: 11 }, { amount: 1.5 }]) {
+        result = await call(c, "trivia_question", args);
+        assert.equal(result.isError, true, JSON.stringify(args));
+    }
+    assert.equal(fetched.length, before);
 });

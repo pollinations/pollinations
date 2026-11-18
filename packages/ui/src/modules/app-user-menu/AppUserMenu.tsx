@@ -57,7 +57,7 @@ export type AppUserMenuProps = {
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Pollinations Connect",
+    authorize: "Connect your Pollinations account",
     appUserMenu: "App user menu",
     permissions: "Permissions",
     buyPollen: "Top up",

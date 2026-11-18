@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
-import { createReasoningEffortTransform } from "../../../src/text/transforms/createReasoningEffortTransform.js";
+import {
+    createReasoningEffortTransform,
+    remapReasoningEffort,
+} from "../../../src/text/transforms/createReasoningEffortTransform.js";
 
 describe("createReasoningEffortTransform — toggle", () => {
     const toggle = createReasoningEffortTransform("toggle");
@@ -74,53 +77,10 @@ describe("createReasoningEffortTransform — strip", () => {
     });
 });
 
-describe("createReasoningEffortTransform — high-max", () => {
-    const highMax = createReasoningEffortTransform("high-max");
-
-    it.each([
-        ["minimal", "none"],
-        ["low", "high"],
-        ["medium", "high"],
-        ["xhigh", "max"],
-        ["none", "none"],
-        ["high", "high"],
-        ["max", "max"],
-    ])("normalizes %s to %s", async (input, expected) => {
-        const { options } = await highMax([], { reasoning_effort: input });
-        expect(options.reasoning_effort).toBe(expected);
-    });
-
-    it("is a no-op when nothing reasoning-related is set", async () => {
-        const { options } = await highMax([], { temperature: 0.5 });
-        expect(options.reasoning_effort).toBeUndefined();
-        expect(options.temperature).toBe(0.5);
-    });
-});
-
 describe("reasoning_effort model wiring", () => {
     it("leaves Inkling reasoning and tool schemas to OpenRouter", () => {
         expect(findModelByName("inkling")?.transform).toBeUndefined();
     });
-
-    it.each([
-        "deepseek/deepseek-v4-flash",
-        "deepseek/deepseek-v4.1-flash",
-        "deepseek/deepseek-v4.1-flash-1017",
-    ])(
-        "maps low and xhigh onto the Azure levels accepted by %s",
-        async (modelName) => {
-            const transform = findModelByName(modelName)?.transform;
-            if (!transform) throw new Error(`${modelName} transform missing`);
-            const low = await transform([{ role: "user", content: "hi" }], {
-                reasoning_effort: "low",
-            });
-            const xhigh = await transform([{ role: "user", content: "hi" }], {
-                reasoning_effort: "xhigh",
-            });
-            expect(low.options.reasoning_effort).toBe("high");
-            expect(xhigh.options.reasoning_effort).toBe("max");
-        },
-    );
 
     it.each([
         "glm",
@@ -226,5 +186,53 @@ describe("direct Novita Ling reasoning controls", () => {
         });
         const untouched = await transform?.([], {});
         expect(untouched?.options.enable_thinking).toBeUndefined();
+    });
+});
+
+describe("remapReasoningEffort", () => {
+    const remap = remapReasoningEffort({ max: "xhigh" });
+
+    it("rewrites a rejected value, case-insensitively", async () => {
+        const { options } = await remap([], { reasoning_effort: "MAX" });
+        expect(options.reasoning_effort).toBe("xhigh");
+    });
+
+    it("leaves other values and an omitted field alone", async () => {
+        const high = await remap([], { reasoning_effort: "high" });
+        expect(high.options.reasoning_effort).toBe("high");
+        const omitted = await remap([], { temperature: 0.5 });
+        expect(omitted.options).toEqual({ temperature: 0.5 });
+    });
+});
+
+describe("reasoning_effort levels providers reject (#19784)", () => {
+    it.each([
+        ["openai/gpt-5.4-nano", "max", "xhigh"],
+        ["openai/gpt-5.4-mini", "max", "xhigh"],
+        ["openai/gpt-5.3-codex", "max", "xhigh"],
+        ["openai/gpt-5.5", "max", "xhigh"],
+        ["pollinations/midijourney-large", "max", "xhigh"],
+        ["openai/gpt-6.1-sol", "none", "low"],
+        ["openai/gpt-6-astra", "none", "low"],
+        ["openai/gpt-oss-20b", "none", "low"],
+        ["openai/gpt-oss-20b", "xhigh", "high"],
+        ["openai/gpt-oss-20b", "max", "high"],
+        ["x-ai/grok-4.6", "none", "low"],
+        ["x-ai/grok-4.6", "max", "xhigh"],
+        ["x-ai/grok-4.3", "max", "xhigh"],
+        ["x-ai/grok-4.20", "max", "xhigh"],
+        ["moonshotai/kimi-k2.6", "xhigh", "max"],
+        ["deepseek/deepseek-v4-flash", "low", "high"],
+        ["deepseek/deepseek-v4.1-flash", "medium", "high"],
+        ["deepseek/deepseek-v4.1-flash-1017", "xhigh", "max"],
+        ["deepseek/deepseek-v4.1-flash-1017", "minimal", "none"],
+        ["deepseek/deepseek-v4.1-flash-1017", "NONE", "none"],
+    ])("%s sends %s as %s", async (modelName, sent, expected) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: sent,
+        });
+        expect(options.reasoning_effort).toBe(expected);
     });
 });

@@ -3,7 +3,7 @@
 A code-only model router for [Pollinations](https://pollinations.ai). For each
 request it picks **the cheapest healthy model that fits the request's
 complexity**, then forwards the conversation unchanged - callers see only the
-chosen model's answer. Routing and model calls use the caller's Pollen.
+chosen model's answer. Routing and model calls draw from the caller’s balance.
 
 Built from the
 [pollinations-router-agent](https://github.com/pollinations/pollinations-router-agent)

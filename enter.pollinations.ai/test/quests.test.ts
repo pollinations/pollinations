@@ -70,7 +70,7 @@ type SeedQuestIssue = {
     updatedAt?: Date;
 };
 
-// Seed a POLLEN-QUEST bounty into the GitHub mock exactly as the lazy GitHub
+// Seed a QUEST bounty into the GitHub mock exactly as the lazy GitHub
 // reader sees it: issue fields plus the PRs that GitHub says closed it.
 function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const assigneeGithubId = issue.assigneeGithubId ?? null;
@@ -97,7 +97,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
             : [],
         labels: [
-            { name: "POLLEN-QUEST" },
+            { name: "QUEST" },
             ...(issue.reward !== null
                 ? [{ name: `reward-${issue.reward}` }]
                 : []),
@@ -2191,7 +2191,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(15);
 });
 
-// Regression guard: GitHub search returns at most 100 issues per page, so a
+// Regression guard: the label query reads 100 issues per page, so a
 // bounty ranked past the first page must still be loaded and rewarded.
 test("issue bounties beyond the first 100 quest issues still record", async ({
     mocks,
@@ -2393,7 +2393,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         "http://localhost:3000/api/quests/catalog",
     );
     expect(response.status).toBe(200);
-    // One issue search page plus one commit-author lookup for both PRs.
+    // One label issues page plus one commit-author lookup for both PRs.
     expect(
         mocks.github.state.requests.filter(({ path }) => path === "/graphql"),
     ).toHaveLength(2);
@@ -2437,7 +2437,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
         },
         {
             number: 9105,
-            labels: [{ name: "POLLEN-QUEST" }],
+            labels: [{ name: "QUEST" }],
             mergedAt: afterLaunch,
         },
         { number: 9106, labels: [], mergedAt: null },

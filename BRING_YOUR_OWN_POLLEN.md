@@ -1,6 +1,6 @@
 # Pollinations Pay
 
-Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay, also called BYOP, lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -76,7 +76,7 @@ User pays:         $1.25
 You receive:       $0.25
 ```
 
-Credits land in the same balance type the user paid from: the Quest balance when the request used the Quest balance, the paid balance when it used the paid balance.
+Credits land in the same balance type the user paid from: the 🌱 Quest balance when the request used the Quest balance, the paid balance when it used the paid balance.
 
 Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
@@ -87,7 +87,7 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
 
-New users who sign up through your app count as your referrals. You earn $2 in Quest balance for each one who tops up more than $2. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
+New users who sign up through your app count as your referrals. You earn $2 in 🌱 Quest balance for each one who tops up more than $2. This works whether or not earnings are enabled. Claim it from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 

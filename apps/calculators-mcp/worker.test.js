@@ -70,6 +70,7 @@ for (const modern of [false, true])
                 "convert_number_base",
                 "check_digit",
                 "integer_math",
+                "morse_code",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -754,6 +755,164 @@ test("convert_number_base rejects digits that do not exist in the source base", 
             JSON.stringify(args),
         );
     }
+});
+
+test("morse_code encodes letters, digits and punctuation", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "morse_code", { text: "SOS" }), {
+        text: "SOS",
+        morse: "... --- ...",
+    });
+    assert.deepEqual(
+        await call(client, "morse_code", {
+            text: "Hello World",
+            direction: "encode",
+        }),
+        {
+            text: "HELLO WORLD",
+            morse: ".... . .-.. .-.. --- / .-- --- .-. .-.. -..",
+        },
+    );
+    assert.equal(
+        (await call(client, "morse_code", { text: "123" })).morse,
+        ".---- ..--- ...--",
+    );
+    // "?" and "." are in the standard punctuation set; the slash character
+    // encodes to -..-., which is distinct from the " / " word separator.
+    assert.equal(
+        (await call(client, "morse_code", { text: "Hi." })).morse,
+        ".... .. .-.-.-",
+    );
+    assert.equal(
+        (await call(client, "morse_code", { text: "A/B" })).morse,
+        ".- -..-. -...",
+    );
+    // Lowercase is read as uppercase, and direction defaults to encode.
+    assert.equal(
+        (await call(client, "morse_code", { text: "sos" })).morse,
+        "... --- ...",
+    );
+});
+
+test("morse_code decodes multi-word messages", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "morse_code", {
+            text: "... --- ...",
+            direction: "decode",
+        }),
+        { text: "SOS", morse: "... --- ..." },
+    );
+    assert.equal(
+        (
+            await call(client, "morse_code", {
+                text: ".... . .-.. .-.. --- / .-- --- .-. .-.. -..",
+                direction: "decode",
+            })
+        ).text,
+        "HELLO WORLD",
+    );
+    assert.equal(
+        (
+            await call(client, "morse_code", {
+                text: ".---- ..--- ...--",
+                direction: "decode",
+            })
+        ).text,
+        "123",
+    );
+    assert.equal(
+        (
+            await call(client, "morse_code", {
+                text: ".... .. .-.-.-",
+                direction: "decode",
+            })
+        ).text,
+        "HI.",
+    );
+});
+
+test("morse_code round-trips every mapped character", async (t) => {
+    const client = await clientFor(t);
+    const plain = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?'!/()&:;=+-_\"$@";
+    // The full ITU table, one code per character in the same order.
+    const morse =
+        ".- -... -.-. -.. . ..-. --. .... .. .--- -.- .-.. -- -. --- .--. --.- .-. ... - ..- ...- .-- -..- -.-- --.. ----- .---- ..--- ...-- ....- ..... -.... --... ---.. ----. .-.-.- --..-- ..--.. .----. -.-.-- -..-. -.--. -.--.- .-... ---... -.-.-. -...- .-.-. -....- ..--.- .-..-. ...-..- .--.-.";
+    assert.equal(morse.split(" ").length, 54);
+    assert.deepEqual(await call(client, "morse_code", { text: plain }), {
+        text: plain,
+        morse,
+    });
+    assert.deepEqual(
+        await call(client, "morse_code", { text: morse, direction: "decode" }),
+        { text: plain, morse },
+    );
+    // A few ordinary strings round-trip through both directions.
+    for (const phrase of ["SOS", "HELLO WORLD", "MEET AT 5 PM?", "A/B TEST"]) {
+        const encoded = await call(client, "morse_code", { text: phrase });
+        assert.equal(
+            (
+                await call(client, "morse_code", {
+                    text: encoded.morse,
+                    direction: "decode",
+                })
+            ).text,
+            phrase,
+        );
+    }
+});
+
+test("morse_code rejects unsupported characters", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { text: "café" },
+        { text: "hello#" },
+        { text: "a*b" },
+        { text: "   " },
+        { text: "" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "morse_code", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("morse_code rejects invalid Morse tokens", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { text: "......", direction: "decode" },
+        { text: "..-..", direction: "decode" },
+        { text: ".... x", direction: "decode" },
+        { text: ".-.-", direction: "decode" },
+        { text: "... --- ... .-.-", direction: "decode" },
+        { text: "   ", direction: "decode" },
+        { text: "", direction: "decode" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "morse_code", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("morse_code accepts lowercase and trims whitespace", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "morse_code", { text: "  sos  " }), {
+        text: "SOS",
+        morse: "... --- ...",
+    });
+    assert.deepEqual(
+        await call(client, "morse_code", {
+            text: "  ... --- ...  ",
+            direction: "decode",
+        }),
+        { text: "SOS", morse: "... --- ..." },
+    );
 });
 
 test("check_digit validates published test numbers", async (t) => {

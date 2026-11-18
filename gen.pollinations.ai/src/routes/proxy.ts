@@ -23,7 +23,7 @@ import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
-    mediaGenerationAccess,
+    mediaRequestPrice,
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
@@ -211,7 +211,7 @@ const imageResponseHeaders = {
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageCache,
-    mediaGenerationAccess,
+    every(mediaRequestPrice, generationAccess),
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateImageVideo,
@@ -1292,7 +1292,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        mediaGenerationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         every(apiKeyBudgetReservation, handleImageGeneration),
     )
@@ -1351,7 +1351,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        mediaGenerationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         apiKeyBudgetReservation,
         handleImageGeneration,

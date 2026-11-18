@@ -20,12 +20,6 @@ export const QUOTE_UNAVAILABLE_REASONS = {
 
 export type QuoteUnavailableReason = keyof typeof QUOTE_UNAVAILABLE_REASONS;
 
-/** Seconds the provider bills at least, where a model accepts shorter clips. */
-const MIN_BILLED_SECONDS: Record<string, number> = {
-    // OpenRouter bills at least 5 seconds per HappyHorse clip.
-    "alibaba/happyhorse-1.1": 5,
-};
-
 /**
  * Listed price of one image or video request with these options, or the reason
  * it cannot be known up front. A quote, never the charge: billing rates the
@@ -39,12 +33,7 @@ export function quoteMediaRequest(
     params: Omit<ImageParams, "model">,
 ): number | QuoteUnavailableReason {
     const input = pricingInputFromParams(params);
-    // These bill the length of the video they return, which follows the
-    // reference video rather than `duration`.
-    if (
-        model === "mirelo/sfx-2.0" ||
-        (model === "bytedance/seedance-2.5" && input.hasReferenceVideo)
-    ) {
+    if (definition.billedSecondsFollowReference && input.hasReferenceVideo) {
         return "input_dependent";
     }
 
@@ -52,7 +41,7 @@ export function quoteMediaRequest(
         calculateUsageBilling({ model, usage, servedBy: definition, input });
     const requested = params.duration ?? definition.defaultDuration;
     const duration =
-        requested && Math.max(requested, MIN_BILLED_SECONDS[model] ?? 0);
+        requested && Math.max(requested, definition.minBilledSeconds ?? 0);
     const usage: Usage = {};
     for (const [usageType, rate] of Object.entries(bill({}).priceDefinition)) {
         if (!rate) continue;

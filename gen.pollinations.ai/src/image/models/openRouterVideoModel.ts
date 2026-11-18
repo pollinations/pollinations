@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -127,8 +128,14 @@ export async function callHappyHorseAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
-            usage: { completionVideoSeconds: duration },
-            // OpenRouter bills at least 5 seconds per clip.
+            // OpenRouter bills at least the registry's minimum per clip.
+            usage: {
+                completionVideoSeconds: Math.max(
+                    duration,
+                    IMAGE_SERVICES["alibaba/happyhorse-1.1"].minBilledSeconds ??
+                        0,
+                ),
+            },
             ...(providerCost != null && {
                 providerBilling: { units: providerCost, unitCost: 1.055 },
             }),

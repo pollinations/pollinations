@@ -1996,6 +1996,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,
+        billedSecondsFollowReference: true,
     },
     "alibaba/happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
@@ -2018,6 +2019,8 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+        // OpenRouter bills at least 5 seconds per clip.
+        minBilledSeconds: 5,
     },
     "kwaivgi/kling-v3.0-std": {
         aliases: [],
@@ -2550,6 +2553,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 120,
         defaultDuration: 120,
+        billedSecondsFollowReference: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

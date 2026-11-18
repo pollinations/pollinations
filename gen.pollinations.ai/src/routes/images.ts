@@ -20,7 +20,6 @@ import {
 } from "@shared/schemas/openai.ts";
 import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
-import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
 import {
@@ -32,7 +31,6 @@ import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
-import { generationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
@@ -340,50 +338,45 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
 );
 
 /**
- * Balance check for image and video requests. Where the options set the price
- * (duration, resolution, sound, references), it checks against that price
- * instead of the model's average. Each model of a caller's list is priced on
- * its own definition.
+ * Prices an image or video request for the balance check. Where the options
+ * set the price (duration, resolution, sound, references), the check uses that
+ * price instead of the model's average. Each model of a caller's list is
+ * priced on its own definition. Runs before the entry check and again in the
+ * durable execution, which re-checks each model it tries.
  */
-export const mediaGenerationAccess = every(
-    createMiddleware<Env>(async (c, next) => {
-        c.var.balance.requestPrice = ({ resolved, definition }) => {
-            try {
-                const json =
-                    c.req.method === "POST"
-                        ? (c.req.valid("json" as never) as Record<
-                              string,
-                              unknown
-                          >)
-                        : undefined;
-                const quote = quoteMediaRequest(
-                    resolved,
-                    definition,
-                    parseImageParams(
-                        c,
-                        json ? { ...json, ...resolveParams(json) } : {},
-                        {
-                            ...c.var.model,
-                            resolved,
-                            definition,
-                            communityEndpoint:
-                                resolved === c.var.model.resolved
-                                    ? c.var.model.communityEndpoint
-                                    : undefined,
-                        },
-                    ),
-                );
-                return typeof quote === "number" ? quote : undefined;
-            } catch {
-                // Invalid options are the generator's to report, as before;
-                // the check then uses the model's average.
-                return undefined;
-            }
-        };
-        await next();
-    }),
-    generationAccess,
-);
+export const mediaRequestPrice = createMiddleware<Env>(async (c, next) => {
+    c.var.balance.requestPrice = ({ resolved, definition }) => {
+        try {
+            const json =
+                c.req.method === "POST"
+                    ? (c.req.valid("json" as never) as Record<string, unknown>)
+                    : undefined;
+            const quote = quoteMediaRequest(
+                resolved,
+                definition,
+                parseImageParams(
+                    c,
+                    json ? { ...json, ...resolveParams(json) } : {},
+                    {
+                        ...c.var.model,
+                        resolved,
+                        definition,
+                        communityEndpoint:
+                            resolved === c.var.model.resolved
+                                ? c.var.model.communityEndpoint
+                                : undefined,
+                    },
+                ),
+            );
+            return typeof quote === "number" ? quote : undefined;
+        } catch {
+            // Invalid options are the generator's to report, as before;
+            // the check then uses the model's average.
+            return undefined;
+        }
+    };
+    await next();
+});
 
 /** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(

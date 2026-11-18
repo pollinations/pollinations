@@ -421,6 +421,9 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "chef", name: "Nginx" }],
+        ["package_lookup", { ecosystem: "chef", name: "../nginx" }],
+        ["package_lookup", { ecosystem: "chef", name: "my cookbook" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -770,4 +773,138 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("Chef Supermarket lookup resolves latest and pinned versions with license and downloads", async (t) => {
+    const urls = [];
+    const longDescription = "Installs and configures nginx. ".repeat(20);
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("zzzznonexistentqqq"))
+            return new Response("Resource does not exist.", { status: 404 });
+        if (String(url).includes("/versions/")) {
+            const version = new URL(url).pathname.split("/").at(-1);
+            if (version === "2.5.0")
+                return Response.json({
+                    license: "Apache 2.0",
+                    tarball_file_size: 30686,
+                    version: "2.5.0",
+                    published_at: "2014-03-28T03:29:06Z",
+                    average_rating: null,
+                    cookbook:
+                        "https://supermarket.chef.io/api/v1/cookbooks/nginx",
+                    file: "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/2.5.0/download",
+                    quality_metrics: [],
+                    supports: { ubuntu: ">= 0.0.0", debian: ">= 0.0.0" },
+                    dependencies: {
+                        apt: "~> 2.2",
+                        "build-essential": "~> 2.0",
+                    },
+                });
+            return Response.json({
+                license: "Apache-2.0",
+                tarball_file_size: 21053,
+                version: "12.3.4",
+                published_at: "2026-09-14T15:40:51Z",
+                average_rating: null,
+                cookbook: "https://supermarket.chef.io/api/v1/cookbooks/nginx",
+                file: "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.4/download",
+                quality_metrics: [],
+                supports: { ubuntu: ">= 0.0.0", debian: ">= 0.0.0" },
+                dependencies: null,
+            });
+        }
+        return Response.json({
+            name: "nginx",
+            maintainer: "sous-chefs",
+            description: longDescription,
+            category: "Other",
+            latest_version:
+                "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.4",
+            external_url: "https://github.com/sous-chefs/nginx",
+            source_url: "https://github.com/sous-chefs/nginx",
+            issues_url: "https://github.com/sous-chefs/nginx/issues",
+            average_rating: null,
+            created_at: "2009-10-25T23:52:41.000Z",
+            updated_at: "2026-09-14T15:40:51.688Z",
+            up_for_adoption: null,
+            deprecated: false,
+            versions: [
+                "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.4",
+                "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.3",
+                "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.1",
+                "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/2.5.0",
+            ],
+            metrics: {
+                downloads: { total: 72182599, versions: { "12.3.4": 7128 } },
+                followers: 785,
+                collaborators: 3,
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "chef",
+        name: "nginx",
+    });
+    assert.equal(latest.name, "nginx");
+    assert.equal(latest.version, "12.3.4");
+    assert.equal(latest.latest, "12.3.4");
+    assert.equal(latest.versionCount, 4);
+    assert.equal(latest.description, `${longDescription.slice(0, 500)}…`);
+    assert.equal(latest.license, "Apache-2.0");
+    assert.equal(latest.maintainer, "sous-chefs");
+    assert.equal(latest.category, "Other");
+    assert.equal(latest.downloads, 72182599);
+    assert.equal(latest.followers, 785);
+    assert.equal(latest.publishedAt, "2026-09-14T15:40:51Z");
+    assert.equal(latest.deprecated, false);
+    assert.equal(latest.sourceUrl, "https://github.com/sous-chefs/nginx");
+    assert.equal(
+        latest.registryUrl,
+        "https://supermarket.chef.io/cookbooks/nginx",
+    );
+    assert.deepEqual(latest.dependencies, {});
+    assert.equal(latest.supports.ubuntu, ">= 0.0.0");
+
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "chef",
+        name: "nginx",
+        version: "2.5.0",
+    });
+    assert.equal(pinned.version, "2.5.0");
+    assert.equal(pinned.latest, "12.3.4");
+    assert.equal(pinned.license, "Apache 2.0");
+    assert.equal(pinned.publishedAt, "2014-03-28T03:29:06Z");
+    assert.deepEqual(pinned.dependencies, {
+        apt: "~> 2.2",
+        "build-essential": "~> 2.0",
+    });
+    assert.equal(
+        pinned.registryUrl,
+        "https://supermarket.chef.io/cookbooks/nginx",
+    );
+
+    // An unknown version is rejected from the versions list before a second fetch.
+    await assert.rejects(
+        lookup({ ecosystem: "chef", name: "nginx", version: "9.9.9" }),
+        /Chef version 9\.9\.9 not found for nginx/,
+    );
+    const missing = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "chef", name: "zzzznonexistentqqq" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(
+        missing.content[0].text,
+        /supermarket\.chef\.io returned HTTP 404/,
+    );
+    assert.deepEqual(urls, [
+        "https://supermarket.chef.io/api/v1/cookbooks/nginx",
+        "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/12.3.4",
+        "https://supermarket.chef.io/api/v1/cookbooks/nginx",
+        "https://supermarket.chef.io/api/v1/cookbooks/nginx/versions/2.5.0",
+        "https://supermarket.chef.io/api/v1/cookbooks/nginx",
+        "https://supermarket.chef.io/api/v1/cookbooks/zzzznonexistentqqq",
+    ]);
 });

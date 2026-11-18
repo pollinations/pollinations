@@ -13,6 +13,7 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        sourceforge: /^[a-z0-9][a-z0-9.-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +167,48 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "sourceforge") {
+        // best_release.json is latest-only: there is no version listing, and
+        // some real projects answer with a null release (filezilla does).
+        const data = await fetchJson(
+            `https://sourceforge.net/projects/${encoded}/best_release.json`,
+        );
+        const release = data.release;
+        if (!release)
+            throw new Error(`SourceForge project ${name} has no release`);
+        // The version lives in the release folder: /7-Zip/26.06/7z2606-x64.exe
+        // or /v8.9.9.1/npp.8.9.9.1.Installer.arm64.exe.
+        const latest =
+            release.filename
+                .split("/")
+                .find((part) => /^v?\d+(\.\d+)*$/.test(part))
+                ?.replace(/^v/, "") ?? null;
+        if (version && latest && version.replace(/^v/, "") !== latest)
+            throw new Error(
+                `SourceForge version ${version} not found for ${name} (latest is ${latest}; only the latest release is available)`,
+            );
+        if (version && !latest)
+            throw new Error(
+                `SourceForge cannot check version ${version} for ${name}: the latest version cannot be read from the release filename`,
+            );
+        return {
+            ecosystem,
+            name,
+            version: latest,
+            latest,
+            filename: release.filename,
+            downloadUrl: release.url,
+            releaseDate: release.date ?? null,
+            bytes: release.bytes ?? null,
+            fileType: release.file_type ?? null,
+            sha256: release.sha256sum ?? null,
+            md5: release.md5sum ?? null,
+            platforms: Object.entries(data.platform_releases ?? {})
+                .filter(([, value]) => value)
+                .map(([key]) => key),
+            registryUrl: `https://sourceforge.net/projects/${encoded}/`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +246,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or SourceForge latest-release filename, download URL and date. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, SourceForge latest release only (a pinned version is accepted only when it matches the latest). Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +256,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "sourceforge",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

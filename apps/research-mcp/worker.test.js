@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "monarch_search",
             ].sort(),
         );
     });
@@ -644,4 +645,175 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Monarch search returns ontology ids, categories and cross-references", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.monarchinitiative.org");
+        assert.equal(target.searchParams.get("q"), "breast cancer");
+        assert.equal(target.searchParams.get("limit"), "2");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            limit: 2,
+            offset: 0,
+            total: 281,
+            items: [
+                {
+                    id: "MONDO:0007254",
+                    category: "biolink:Disease",
+                    name: "breast cancer",
+                    description:
+                        "A primary or metastatic malignant neoplasm involving the breast. The vast majority of cases are carcinomas arising from the breast parenchyma or the nipple. Malignant breast neoplasms occur more frequently in females than in males.",
+                    xref: [
+                        "DOID:1612",
+                        "ICD10CM:C50",
+                        "ICD9:174.8",
+                        "MEDGEN:651",
+                        "NCIT:C9335",
+                        "SCTID:254837009",
+                        "UMLS:C0006142",
+                        "icd11.foundation:1047754165",
+                    ],
+                    synonym: ["breast cancer", "breast tumor"],
+                },
+                {
+                    id: "MONDO:0004438",
+                    category: "biolink:Disease",
+                    name: "sporadic breast cancer",
+                    description:
+                        "A carcinoma that arises from the breast and is not caused by inherited genetic mutations.",
+                    xref: [
+                        "DOID:8029",
+                        "MEDGEN:233463",
+                        "NCIT:C7566",
+                        "UMLS:C1336076",
+                    ],
+                    synonym: ["sporadic breast cancer"],
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "monarch_search", {
+        query: "breast cancer",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        query: "breast cancer",
+        total: 281,
+        results: [
+            {
+                id: "MONDO:0007254",
+                category: "biolink:Disease",
+                name: "breast cancer",
+                description:
+                    "A primary or metastatic malignant neoplasm involving the breast. The vast majority of cases are carcinomas arising from the breast parenchyma or the nipple. Malignant breast neoplasms occur more frequently in females than in males.",
+                xref: [
+                    "DOID:1612",
+                    "ICD10CM:C50",
+                    "ICD9:174.8",
+                    "MEDGEN:651",
+                    "NCIT:C9335",
+                    "SCTID:254837009",
+                    "UMLS:C0006142",
+                    "icd11.foundation:1047754165",
+                ],
+            },
+            {
+                id: "MONDO:0004438",
+                category: "biolink:Disease",
+                name: "sporadic breast cancer",
+                description:
+                    "A carcinoma that arises from the breast and is not caused by inherited genetic mutations.",
+                xref: [
+                    "DOID:8029",
+                    "MEDGEN:233463",
+                    "NCIT:C7566",
+                    "UMLS:C1336076",
+                ],
+            },
+        ],
+    });
+});
+
+test("Monarch search handles no match, null descriptions and bad inputs", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url) => {
+        fetches += 1;
+        const target = new URL(url);
+        assert.equal(target.hostname, "api.monarchinitiative.org");
+        if (target.searchParams.get("q") === "zzzqqqxxyy") {
+            return Response.json({
+                limit: 2,
+                offset: 0,
+                total: 0,
+                items: [],
+            });
+        }
+        return Response.json({
+            limit: 1,
+            offset: 0,
+            total: 385,
+            items: [
+                {
+                    id: "HGNC:1100",
+                    category: "biolink:Gene",
+                    name: "BRCA1",
+                    description: null,
+                    xref: ["NCBIGene:672", "ENSEMBL:ENSG00000012048"],
+                    synonym: ["BRCA1"],
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const empty = await call(c, "monarch_search", {
+        query: "zzzqqqxxyy",
+        limit: 2,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+
+    const gene = await call(c, "monarch_search", {
+        query: "BRCA1",
+        limit: 1,
+    });
+    assert.notEqual(gene.isError, true, JSON.stringify(gene));
+    assert.deepEqual(value(gene).results, [
+        {
+            id: "HGNC:1100",
+            category: "biolink:Gene",
+            name: "BRCA1",
+            description: null,
+            xref: ["NCBIGene:672", "ENSEMBL:ENSG00000012048"],
+        },
+    ]);
+
+    const before = fetches;
+    const blank = await call(c, "monarch_search", { query: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
+    const badLimit = await call(c, "monarch_search", {
+        query: "breast cancer",
+        limit: 99,
+    });
+    assert.equal(badLimit.isError, true);
+    assert.equal(fetches, before);
 });

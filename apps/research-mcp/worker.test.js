@@ -342,6 +342,46 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("rxnorm_code returns the RxCUI id and null for an unknown name", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "rxnav.nlm.nih.gov");
+        assert.equal(target.pathname, "/REST/rxcui.json");
+        assert.equal(target.searchParams.get("name"), "lipitor");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({ idGroup: { rxnormId: ["153165"] } });
+    });
+    const c = await client(t);
+    const result = await call(c, "rxnorm_code", { name: "lipitor" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), { name: "lipitor", rxcui: "153165" });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ idGroup: {} }),
+    );
+    const missing = await call(c, "rxnorm_code", {
+        name: "zzzzqqqxxyy",
+    });
+    assert.notEqual(missing.isError, true, JSON.stringify(missing));
+    assert.deepEqual(value(missing), {
+        name: "zzzzqqqxxyy",
+        rxcui: null,
+    });
+
+    fetches = 0;
+    const blank = await call(c, "rxnorm_code", { name: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 0);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -354,6 +394,7 @@ for (const modern of [false, true]) {
                 "rfc_search",
                 "rfc_metadata",
                 "rfc_section",
+                "rxnorm_code",
                 "search_entities",
                 "get_entity",
                 "search_articles",

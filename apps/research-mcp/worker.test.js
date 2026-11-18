@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "tfl_stop",
             ].sort(),
         );
     });
@@ -644,4 +645,88 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("tfl_stop returns projected stops, caps the list, and treats no match as an empty list", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.tfl.gov.uk");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.pathname.endsWith("zzznotastop999"))
+            return Response.json({
+                $type: "Tfl.Api.Presentation.Entities.SearchResponse, Tfl.Api.Presentation.Entities",
+                query: "zzznotastop999",
+                total: 0,
+                matches: [],
+            });
+        return Response.json({
+            $type: "Tfl.Api.Presentation.Entities.SearchResponse, Tfl.Api.Presentation.Entities",
+            query: "oxford circus",
+            total: 6,
+            matches: [
+                {
+                    $type: "Tfl.Api.Presentation.Entities.MatchedStop, Tfl.Api.Presentation.Entities",
+                    icsId: "1000173",
+                    topMostParentId: "940GZZLUOXC",
+                    modes: ["tube"],
+                    zone: "1",
+                    id: "940GZZLUOXC",
+                    name: "Oxford Circus Underground Station",
+                    lat: 51.515224,
+                    lon: -0.141903,
+                },
+                {
+                    $type: "Tfl.Api.Presentation.Entities.MatchedStop, Tfl.Api.Presentation.Entities",
+                    icsId: "1001034",
+                    topMostParentId: "490G00001034",
+                    modes: ["bus"],
+                    id: "490G00001034",
+                    name: "Oxford Circus / Cavendish Place",
+                    lat: 51.51727,
+                    lon: -0.14382,
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "tfl_stop", {
+        query: "oxford circus",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "oxford circus",
+        total: 6,
+        stops: [
+            {
+                id: "940GZZLUOXC",
+                name: "Oxford Circus Underground Station",
+                modes: ["tube"],
+                zone: "1",
+                lat: 51.515224,
+                lon: -0.141903,
+            },
+        ],
+    });
+
+    const bus = await call(c, "tfl_stop", { query: "oxford circus" });
+    assert.notEqual(bus.isError, true, JSON.stringify(bus));
+    assert.equal(value(bus).stops[1].zone, null);
+    assert.equal(value(bus).stops[1].name, "Oxford Circus / Cavendish Place");
+
+    const empty = await call(c, "tfl_stop", { query: "zzznotastop999" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzznotastop999",
+        total: 0,
+        stops: [],
+    });
+
+    const blank = await call(c, "tfl_stop", { query: " " });
+    assert.equal(blank.isError, true);
 });

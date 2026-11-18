@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "exoplanet_search",
             ].sort(),
         );
     });
@@ -644,4 +645,116 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Exoplanet search dedupes archive rows, escapes ADQL and reports the distinct-planet total", async (t) => {
+    let fetchCount = 0;
+    let lastRowsQuery = "";
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "exoplanetarchive.ipac.caltech.edu");
+        assert.equal(url.pathname, "/TAP/sync");
+        assert.equal(url.searchParams.get("format"), "json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const query = url.searchParams.get("query") ?? "";
+        if (query.includes("count(distinct pl_name)")) {
+            return Response.json(
+                query.includes("ZZZQQQ") ? [{ n: 0 }] : [{ n: 2759 }],
+            );
+        }
+        lastRowsQuery = query;
+        if (query.includes("ZZZQQQ")) return Response.json([]);
+        return Response.json([
+            {
+                pl_name: "Kepler-180 c",
+                hostname: "Kepler-180",
+                disc_year: 2014,
+                sy_dist: 695.65,
+                pl_orbper: 41.8854433,
+                pl_rade: null,
+                pl_bmasse: null,
+            },
+            {
+                pl_name: "Kepler-180 c",
+                hostname: "Kepler-180",
+                disc_year: 2014,
+                sy_dist: 695.65,
+                pl_orbper: 41.9,
+                pl_rade: null,
+                pl_bmasse: null,
+            },
+            {
+                pl_name: "Kepler-1805 b",
+                hostname: "Kepler-1805",
+                disc_year: 2021,
+                sy_dist: 221.639,
+                pl_orbper: 8.84786839,
+                pl_rade: 1.01,
+                pl_bmasse: null,
+            },
+        ]);
+    });
+
+    const c = await client(t);
+    const result = await call(c, "exoplanet_search", {
+        name: "Kepler",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.match(lastRowsQuery, /upper\(pl_name\) like '%KEPLER%'/);
+    assert.match(lastRowsQuery, /select distinct top 10/);
+    assert.deepEqual(value(result), {
+        query: "Kepler",
+        total: 2759,
+        planets: [
+            {
+                name: "Kepler-180 c",
+                host_star: "Kepler-180",
+                discovery_year: 2014,
+                distance_pc: 695.65,
+                orbital_period_days: 41.8854433,
+                radius_earth: null,
+                mass_earth: null,
+            },
+            {
+                name: "Kepler-1805 b",
+                host_star: "Kepler-1805",
+                discovery_year: 2021,
+                distance_pc: 221.639,
+                orbital_period_days: 8.84786839,
+                radius_earth: 1.01,
+                mass_earth: null,
+            },
+        ],
+    });
+
+    const quoted = await call(c, "exoplanet_search", {
+        name: "Kepler's",
+        limit: 1,
+    });
+    assert.notEqual(quoted.isError, true, JSON.stringify(quoted));
+    assert.match(lastRowsQuery, /KEPLER''S/);
+
+    const empty = await call(c, "exoplanet_search", {
+        name: "zzzqqqxxyy",
+        limit: 5,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        planets: [],
+    });
+
+    const beforeBlank = fetchCount;
+    const blank = await call(c, "exoplanet_search", { name: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetchCount, beforeBlank);
 });

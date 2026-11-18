@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "quote",
             ].sort(),
         );
     });
@@ -644,4 +645,57 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("quote returns a random ZenQuotes quote", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        assert.equal(request.url, "https://zenquotes.io/api/random");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json([
+            {
+                q: "Changing minds is harder than finding people who already agree.",
+                a: "Jack Butcher",
+                h: "<blockquote>&ldquo;Changing minds is harder than finding people who already agree.&rdquo; &mdash; <footer>Jack Butcher<\\/footer><\\/blockquote>",
+            },
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "quote", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        quote: "Changing minds is harder than finding people who already agree.",
+        author: "Jack Butcher",
+    });
+});
+
+test("quote rejects a malformed or key-gated upstream response", async (t) => {
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ error: false }),
+    );
+    const c = await client(t);
+    const malformed = await call(c, "quote", {});
+    assert.equal(malformed.isError, true);
+    assert.match(malformed.content[0].text, /Invalid ZenQuotes response/);
+});
+
+test("quote rejects the ZenQuotes unauthorized payload", async (t) => {
+    mock.method(globalThis, "fetch", async () =>
+        Response.json([
+            {
+                q: "Unauthorized API request, key required. Visit zenquotes.io for documentation.",
+                a: "zenquotes.io",
+                h: "<blockquote>Unauthorized API request, key required.</blockquote>",
+            },
+        ]),
+    );
+    const c = await client(t);
+    const result = await call(c, "quote", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /ZenQuotes refused the request/);
 });

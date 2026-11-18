@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ror_search",
+                "ror_organization",
             ].sort(),
         );
     });
@@ -644,4 +646,135 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ROR search and organization lookup project display names, countries and links", async (t) => {
+    const oxford = {
+        id: "https://ror.org/052gg0110",
+        names: [
+            { lang: "en", types: ["alias"], value: "Oxford University" },
+            {
+                lang: "en",
+                types: ["ror_display", "label"],
+                value: "University of Oxford",
+            },
+        ],
+        types: ["education", "funder"],
+        status: "active",
+        established: 1096,
+        links: [
+            { type: "website", value: "https://www.ox.ac.uk" },
+            {
+                type: "wikipedia",
+                value: "http://en.wikipedia.org/wiki/University_of_Oxford",
+            },
+        ],
+        locations: [
+            {
+                geonames_details: {
+                    country_code: "GB",
+                    country_name: "United Kingdom",
+                    name: "Oxford",
+                },
+            },
+        ],
+    };
+    const brookes = {
+        id: "https://ror.org/04v2twj65",
+        names: [
+            {
+                lang: "en",
+                types: ["ror_display", "label"],
+                value: "Oxford Brookes University",
+            },
+        ],
+        types: ["education", "funder"],
+        status: "active",
+        established: 1865,
+        links: [{ type: "website", value: "https://www.brookes.ac.uk/" }],
+        locations: [
+            {
+                geonames_details: {
+                    country_code: "GB",
+                    country_name: "United Kingdom",
+                    name: "Oxford",
+                },
+            },
+        ],
+    };
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests.push(url.pathname);
+        assert.equal(url.hostname, "api.ror.org");
+        if (url.pathname === "/organizations") {
+            if (url.searchParams.get("query") === "zzzznonexistentorgxyz123")
+                return Response.json({ number_of_results: 0, items: [] });
+            return Response.json({
+                number_of_results: 36595,
+                items: [oxford, brookes],
+            });
+        }
+        if (url.pathname === "/organizations/052gg0110")
+            return Response.json(oxford);
+        return new Response(
+            JSON.stringify({
+                errors: ["ROR ID 'https://ror.org/000000000' does not exist"],
+            }),
+            { status: 404 },
+        );
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "ror_search", {
+        query: "University of Oxford",
+        limit: 2,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    const searchVal = value(searchRes);
+    assert.equal(searchVal.totalResults, 36595);
+    assert.equal(searchVal.organizations.length, 2);
+    assert.equal(searchVal.organizations[0].name, "University of Oxford");
+    assert.equal(searchVal.organizations[0].id, "https://ror.org/052gg0110");
+    assert.deepEqual(searchVal.organizations[0].types, ["education", "funder"]);
+    assert.equal(searchVal.organizations[0].country, "United Kingdom");
+    assert.equal(searchVal.organizations[0].country_code, "GB");
+    assert.equal(searchVal.organizations[0].city, "Oxford");
+    assert.equal(searchVal.organizations[0].established, 1096);
+    assert.equal(
+        searchVal.organizations[0].links[0].value,
+        "https://www.ox.ac.uk",
+    );
+    assert.equal(searchVal.organizations[1].name, "Oxford Brookes University");
+
+    const emptyRes = await call(c, "ror_search", {
+        query: "zzzznonexistentorgxyz123",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.equal(value(emptyRes).totalResults, 0);
+    assert.deepEqual(value(emptyRes).organizations, []);
+
+    const orgRes = await call(c, "ror_organization", { id: "052gg0110" });
+    assert.notEqual(orgRes.isError, true, JSON.stringify(orgRes));
+    assert.equal(value(orgRes).organization.name, "University of Oxford");
+    assert.equal(value(orgRes).organization.country, "United Kingdom");
+
+    const urlRes = await call(c, "ror_organization", {
+        id: "https://ror.org/052gg0110",
+    });
+    assert.notEqual(urlRes.isError, true, JSON.stringify(urlRes));
+    assert.equal(value(urlRes).organization.id, "https://ror.org/052gg0110");
+    assert.equal(requests.at(-1), "/organizations/052gg0110");
+
+    const unknownRes = await call(c, "ror_organization", {
+        id: "000000000",
+    });
+    assert.equal(unknownRes.isError, true);
+    assert.match(unknownRes.content[0].text, /404/);
+
+    const before = requests.length;
+    const badRes = await call(c, "ror_organization", { id: "not-an-id" });
+    assert.equal(badRes.isError, true);
+    assert.match(badRes.content[0].text, /ROR ID/);
+    assert.equal(requests.length, before);
 });

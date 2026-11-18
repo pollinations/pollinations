@@ -284,6 +284,182 @@ test("arXiv error entries pass on arXiv's message", async (t) => {
     assert.match(result.content[0].text, /arXiv: incorrect id format for x/);
 });
 
+test("INSPIRE-HEP searches literature newest-first with a small field projection and caps authors", async (t) => {
+    const requests = [];
+    const fixture = {
+        hits: {
+            total: 86410,
+            hits: [
+                {
+                    metadata: {
+                        control_number: 1234567,
+                        titles: [
+                            {
+                                source: "Springer",
+                                title: "Violation of bound on chaos for charged probe in Kerr-Newman-AdS black hole",
+                            },
+                            {
+                                source: "arXiv",
+                                title: "Violation of bound on chaos for charged probe in Kerr-Newman-AdS black hole",
+                            },
+                        ],
+                        authors: [
+                            { full_name: "Gwak, Bogeun" },
+                            { full_name: "Kan, Naoto" },
+                            { full_name: "Lee, Bum-Hoon" },
+                            { full_name: "Lee, Hocheol" },
+                        ],
+                        publication_info: [
+                            {
+                                journal_volume: "09",
+                                artid: "026",
+                                year: 2022,
+                                journal_title: "JHEP",
+                            },
+                        ],
+                        arxiv_eprints: [
+                            {
+                                categories: ["gr-qc", "hep-th"],
+                                value: "2203.07298",
+                            },
+                        ],
+                        dois: [
+                            {
+                                source: "Springer",
+                                value: "10.1007/JHEP09(2022)026",
+                            },
+                        ],
+                        citation_count: 59,
+                    },
+                },
+                {
+                    metadata: {
+                        control_number: 1234568,
+                        titles: [
+                            {
+                                source: "arXiv",
+                                title: "Quantum-Gravity Fluctuations and the Black-Hole Temperature",
+                            },
+                        ],
+                        authors: [{ full_name: "Hod, Shahar" }],
+                        publication_info: [
+                            {
+                                journal_volume: "75",
+                                artid: "233",
+                                year: 2015,
+                                journal_title: "Eur.Phys.J.C",
+                            },
+                        ],
+                        arxiv_eprints: [
+                            {
+                                categories: ["gr-qc", "astro-ph.HE", "hep-th"],
+                                value: "1505.04718",
+                            },
+                        ],
+                        dois: [
+                            {
+                                source: "bibmatch",
+                                value: "10.1140/epjc/s10052-015-3465-y",
+                            },
+                        ],
+                        citation_count: 12,
+                    },
+                },
+                {
+                    metadata: {
+                        control_number: 9999999,
+                        titles: [
+                            {
+                                source: "arXiv",
+                                title: "Seven Author Test Paper",
+                            },
+                        ],
+                        authors: Array.from({ length: 7 }, (_, i) => ({
+                            full_name: `Author, A${i}`,
+                        })),
+                        publication_info: [{ year: 2026 }],
+                        arxiv_eprints: [{ value: "2601.00001" }],
+                        dois: [{ value: "10.1007/JHEP01(2026)001" }],
+                        citation_count: 3,
+                    },
+                },
+            ],
+        },
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "inspirehep.net");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        requests.push(url.searchParams);
+        if (url.searchParams.get("q") === "zzzznonsenseqqq123")
+            return Response.json({ hits: { total: 0, hits: [] } });
+        return Response.json(fixture);
+    });
+    const c = await client(t);
+    const result = await call(c, "inspirehep_search", {
+        query: "black hole",
+        limit: 3,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].get("q"), "black hole");
+    assert.equal(requests[0].get("size"), "3");
+    assert.equal(requests[0].get("sort"), "mostrecent");
+    assert.equal(
+        requests[0].get("fields"),
+        "titles,authors.full_name,arxiv_eprints,dois,publication_info,citation_count",
+    );
+    assert.equal(value(result).total, 86410);
+    const [first, second, third] = value(result).results;
+    assert.equal(
+        first.title,
+        "Violation of bound on chaos for charged probe in Kerr-Newman-AdS black hole",
+    );
+    assert.deepEqual(first.authors, [
+        "Gwak, Bogeun",
+        "Kan, Naoto",
+        "Lee, Bum-Hoon",
+        "Lee, Hocheol",
+    ]);
+    assert.equal(first.author_count, 4);
+    assert.equal(first.year, 2022);
+    assert.equal(first.journal, "JHEP");
+    assert.equal(first.arxiv_id, "2203.07298");
+    assert.equal(first.doi, "10.1007/JHEP09(2022)026");
+    assert.equal(first.citation_count, 59);
+    assert.equal(first.url, "https://inspirehep.net/literature/1234567");
+    assert.equal(second.year, 2015);
+    assert.equal(second.journal, "Eur.Phys.J.C");
+    assert.equal(second.arxiv_id, "1505.04718");
+    // Seven authors project to the first five plus the full count.
+    assert.deepEqual(third.authors, [
+        "Author, A0",
+        "Author, A1",
+        "Author, A2",
+        "Author, A3",
+        "Author, A4",
+    ]);
+    assert.equal(third.author_count, 7);
+    assert.equal(third.journal, null);
+
+    const empty = await call(c, "inspirehep_search", {
+        query: "zzzznonsenseqqq123",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.equal(value(empty).total, 0);
+    assert.deepEqual(value(empty).results, []);
+
+    const bad = await call(c, "inspirehep_search", {
+        query: "   ",
+        limit: 11,
+    });
+    assert.equal(bad.isError, true);
+    assert.equal(requests.length, 2);
+});
+
 test("World Bank uses arbitrary official codes, source metadata, descending years, missing-value filtering and country lookup", async (t) => {
     mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
@@ -361,6 +537,7 @@ for (const modern of [false, true]) {
                 "arxiv_search",
                 "arxiv_paper",
                 "get_indicator_data",
+                "inspirehep_search",
                 "list_countries",
                 "crossref_search",
                 "crossref_work",

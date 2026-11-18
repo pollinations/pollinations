@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "deezer_search",
             ].sort(),
         );
     });
@@ -644,4 +645,107 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Deezer search projects tracks and rejects bad input before any fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.deezer.com");
+        assert.equal(url.searchParams.get("q"), "beatles");
+        assert.equal(url.searchParams.get("limit"), "2");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            data: [
+                {
+                    id: 116348656,
+                    title: "Let It Be (Remastered 2009)",
+                    duration: 243,
+                    rank: 892844,
+                    explicit_lyrics: false,
+                    preview:
+                        "https://cdnt-preview.dzcdn.net/api/1/1/a/f/5/0/af5b351b100513b1c167e5ed96b7ece3.mp3",
+                    link: "https://www.deezer.com/track/116348656",
+                    artist: { id: 1, name: "The Beatles" },
+                    album: {
+                        id: 12047958,
+                        title: "Let It Be (Remastered 2009)",
+                    },
+                },
+                {
+                    id: 116348464,
+                    title: "Here Comes The Sun (Remastered 2009)",
+                    duration: 184,
+                    rank: 886736,
+                    explicit_lyrics: false,
+                    preview:
+                        "https://cdnt-preview.dzcdn.net/api/1/1/d/7/0/0/d702cdd1d89e261b22fc740f854c1a0f.mp3",
+                    link: "https://www.deezer.com/track/116348464",
+                    artist: { id: 1, name: "The Beatles" },
+                    album: {
+                        id: 12047958,
+                        title: "Let It Be (Remastered 2009)",
+                    },
+                },
+            ],
+            total: 2,
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "deezer_search", {
+        query: "beatles",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 2,
+        tracks: [
+            {
+                title: "Let It Be (Remastered 2009)",
+                artist: "The Beatles",
+                album: "Let It Be (Remastered 2009)",
+                duration: 243,
+                rank: 892844,
+                explicit_lyrics: false,
+                preview:
+                    "https://cdnt-preview.dzcdn.net/api/1/1/a/f/5/0/af5b351b100513b1c167e5ed96b7ece3.mp3",
+                link: "https://www.deezer.com/track/116348656",
+            },
+            {
+                title: "Here Comes The Sun (Remastered 2009)",
+                artist: "The Beatles",
+                album: "Let It Be (Remastered 2009)",
+                duration: 184,
+                rank: 886736,
+                explicit_lyrics: false,
+                preview:
+                    "https://cdnt-preview.dzcdn.net/api/1/1/d/7/0/0/d702cdd1d89e261b22fc740f854c1a0f.mp3",
+                link: "https://www.deezer.com/track/116348464",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({ data: [], total: 0 });
+    });
+    const empty = await call(c, "deezer_search", { query: "zzznomatch" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), { total: 0, tracks: [] });
+
+    const before = fetches;
+    for (const args of [
+        { query: "   " },
+        { query: "beatles", limit: 0 },
+        { query: "beatles", limit: 26 },
+    ]) {
+        const bad = await call(c, "deezer_search", args);
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
 });

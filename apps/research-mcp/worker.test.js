@@ -342,6 +342,62 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("xkcd returns the latest comic, a numbered comic and a 404 for unknown numbers", async (t) => {
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "xkcd.com");
+        if (url.pathname === "/info.0.json")
+            return Response.json({
+                month: "11",
+                num: 3325,
+                link: "",
+                year: "2026",
+                news: "",
+                safe_title: "Light-Day",
+                transcript: "A very long transcript.",
+                alt: "After 49 years, NASA is considering shutting down Voyager 1's multiplayer gaming server.",
+                img: "https://imgs.xkcd.com/comics/light_day.png",
+                title: "Light-Day",
+                day: "16",
+            });
+        if (url.pathname === "/1/info.0.json")
+            return Response.json({
+                month: "1",
+                num: 1,
+                link: "",
+                year: "2006",
+                news: "",
+                safe_title: "Barrel - Part 1",
+                transcript: "[[A boy sits in a barrel.]]",
+                alt: "Don't we all.",
+                img: "https://imgs.xkcd.com/comics/barrel_cropped_(1).jpg",
+                title: "Barrel - Part 1",
+                day: "1",
+            });
+        return new Response("404 Not Found", { status: 404 });
+    });
+    const c = await client(t);
+    let result = await call(c, "xkcd", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        number: 3325,
+        title: "Light-Day",
+        alt: "After 49 years, NASA is considering shutting down Voyager 1's multiplayer gaming server.",
+        image_url: "https://imgs.xkcd.com/comics/light_day.png",
+        date: "2026-11-16",
+        link: null,
+    });
+    result = await call(c, "xkcd", { number: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).number, 1);
+    assert.equal(value(result).title, "Barrel - Part 1");
+    assert.equal(value(result).date, "2006-01-01");
+    assert.equal(value(result).alt, "Don't we all.");
+    result = await call(c, "xkcd", { number: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /404/);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +420,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "xkcd",
             ].sort(),
         );
     });

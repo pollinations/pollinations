@@ -98,6 +98,9 @@
             let micContext = null;
             let playContext = null;
             let playDestination = null;
+            // The next chunk starts where the last one ends, so the reply has
+            // no gaps between the chunks.
+            let playAt = 0;
 
             // Sends microphone frames to the model as PCM16.
             function micWorklet() {
@@ -128,7 +131,9 @@
                 const source = playContext.createBufferSource();
                 source.buffer = buffer;
                 source.connect(playDestination);
-                source.start();
+                playAt = Math.max(playAt, playContext.currentTime);
+                source.start(playAt);
+                playAt += buffer.duration;
             }
 
             function handleEvent(event) {

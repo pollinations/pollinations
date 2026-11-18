@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "icd10_code",
             ].sort(),
         );
     });
@@ -644,4 +645,56 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("icd10_code decodes the positional Clinical Tables response", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "clinicaltables.nlm.nih.gov");
+        assert.equal(target.searchParams.get("sf"), "code,name");
+        assert.equal(target.searchParams.get("terms"), "E11");
+        assert.equal(target.searchParams.get("maxList"), "2");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json([
+            87,
+            ["E11.00", "E11.01"],
+            null,
+            [
+                [
+                    "E11.00",
+                    "Type 2 diabetes mellitus with hyperosmolarity without nonketotic hyperglycemic-hyperosmolar coma (NKHHC)",
+                ],
+                [
+                    "E11.01",
+                    "Type 2 diabetes mellitus with hyperosmolarity with coma",
+                ],
+            ],
+        ]);
+    });
+    const c = await client(t);
+    let result = await call(c, "icd10_code", { query: "E11", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "E11",
+        total: 87,
+        codes: [
+            {
+                code: "E11.00",
+                description:
+                    "Type 2 diabetes mellitus with hyperosmolarity without nonketotic hyperglycemic-hyperosmolar coma (NKHHC)",
+            },
+            {
+                code: "E11.01",
+                description:
+                    "Type 2 diabetes mellitus with hyperosmolarity with coma",
+            },
+        ],
+    });
+    result = await call(c, "icd10_code", { query: "   " });
+    assert.equal(result.isError, true);
 });

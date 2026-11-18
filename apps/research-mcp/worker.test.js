@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "itis_taxon",
             ].sort(),
         );
     });
@@ -575,6 +576,129 @@ test("declared oversized body is rejected before reading", async (t) => {
         query: "large",
     });
     assert.equal(result.isError, true);
+});
+
+test("ITIS resolves scientific names to TSNs and survives its non-UTF-8 bytes", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "www.itis.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(url.pathname.endsWith("searchByScientificName"), true);
+        if (url.searchParams.get("srchKey") === "Zzzqqqxxyy")
+            return Response.json({ scientificNames: [] });
+        if (url.searchParams.get("srchKey") === "Panthera leo bleyenberghi") {
+            // The live ITIS answer carries a raw latin-1 byte (0xf6) in the
+            // author "(Lönnberg, 1914)" — feed it as raw bytes so the real
+            // shared fetch layer has to decode it.
+            const body = Buffer.from(
+                JSON.stringify({
+                    scientificNames: [
+                        {
+                            author: "(L\xf6nnberg, 1914)",
+                            class: "gov.usgs.itis.itis_service.data.SvcScientificName",
+                            combinedName: "Panthera leo bleyenberghi",
+                            kingdom: "Animalia",
+                            tsn: "726447",
+                            unitInd1: null,
+                            unitInd2: null,
+                            unitInd3: null,
+                            unitInd4: null,
+                            unitName1: "Panthera",
+                            unitName2: "leo",
+                            unitName3: "bleyenberghi",
+                            unitName4: null,
+                        },
+                    ],
+                }),
+                "latin1",
+            );
+            return new Response(body);
+        }
+        return Response.json({
+            scientificNames: [
+                {
+                    author: "(Linnaeus, 1758)",
+                    class: "gov.usgs.itis.itis_service.data.SvcScientificName",
+                    combinedName: "Panthera leo",
+                    kingdom: "Animalia",
+                    tsn: "183803",
+                    unitInd1: null,
+                    unitInd2: null,
+                    unitInd3: null,
+                    unitInd4: null,
+                    unitName1: "Panthera",
+                    unitName2: "leo",
+                    unitName3: null,
+                    unitName4: null,
+                },
+                {
+                    author: "(Meyer, 1826)",
+                    class: "gov.usgs.itis.itis_service.data.SvcScientificName",
+                    combinedName: "Panthera leo persica",
+                    kingdom: "Animalia",
+                    tsn: "622026",
+                    unitInd1: null,
+                    unitInd2: null,
+                    unitInd3: null,
+                    unitInd4: null,
+                    unitName1: "Panthera",
+                    unitName2: "leo",
+                    unitName3: "persica",
+                    unitName4: null,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "itis_taxon", {
+        name: "Panthera leo",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Panthera leo",
+        total: 2,
+        taxa: [
+            {
+                tsn: "183803",
+                combined_name: "Panthera leo",
+                author: "(Linnaeus, 1758)",
+                kingdom: "Animalia",
+                rank: "species",
+            },
+            {
+                tsn: "622026",
+                combined_name: "Panthera leo persica",
+                author: "(Meyer, 1826)",
+                kingdom: "Animalia",
+                rank: "subspecies",
+            },
+        ],
+    });
+    result = await call(c, "itis_taxon", {
+        name: "Panthera leo bleyenberghi",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).taxa[0].tsn, "726447");
+    assert.equal(value(result).taxa[0].author, "(L\u{FFFD}nnberg, 1914)");
+    result = await call(c, "itis_taxon", { name: "Zzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Zzzqqqxxyy",
+        total: 0,
+        taxa: [],
+    });
+    result = await call(c, "itis_taxon", { name: " " });
+    assert.equal(result.isError, true);
+    assert.equal(count, 3);
 });
 
 test("CrossRef search and work lookup formats DOIs, authors and citation metrics", async (t) => {

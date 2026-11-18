@@ -22,6 +22,7 @@ import {
 import {
     callHappyHorseAPI,
     callHeyGenVideoAPI,
+    callOpenRouterSeedance25FlashAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
@@ -131,6 +132,9 @@ export async function createAndReturnVideo(
                 safeParams,
                 "grok-imagine-video-1.5-lite",
             );
+            break;
+        case "bytedance/seedance-2.5-flash":
+            result = await callOpenRouterSeedance25FlashAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

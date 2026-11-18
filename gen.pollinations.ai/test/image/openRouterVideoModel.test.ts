@@ -5,6 +5,7 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callHeyGenVideoAPI,
+    callOpenRouterSeedance25FlashAPI,
     callOpenRouterGrokVideoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -78,6 +79,62 @@ function mockHappyHorseSuccess(
 afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+});
+
+describe("OpenRouter Seedance 2.5 Flash", () => {
+    it("routes first/last frames, references and audio and settles on provider cost", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests, 0.5);
+        const result = await callOpenRouterSeedance25FlashAPI("animate the scene", {
+            ...baseParams,
+            model: "bytedance/seedance-2.5-flash",
+            duration: 8,
+            resolution: "720p",
+            aspectRatio: "9:16",
+            audio: true,
+            image: [
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ],
+            reference_images: ["https://example.com/reference.png"],
+            reference_videos: ["https://example.com/reference.mp4"],
+            reference_audios: ["https://example.com/reference.mp3"],
+        });
+        expect(requests[0]).toEqual({
+            model: "bytedance/seedance-2.5-flash",
+            prompt: "animate the scene",
+            resolution: "720p",
+            duration: 8,
+            generate_audio: true,
+            seed: 42,
+            aspect_ratio: "9:16",
+            provider: { only: ["seed"], allow_fallbacks: false },
+            frame_images: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/start.png" },
+                    frame_type: "first_frame",
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/end.png" },
+                    frame_type: "last_frame",
+                },
+            ],
+            input_references: [
+                { type: "image_url", image_url: { url: "https://example.com/reference.png" } },
+                { type: "video_url", video_url: { url: "https://example.com/reference.mp4" } },
+                { type: "audio_url", audio_url: { url: "https://example.com/reference.mp3" } },
+            ],
+        });
+        expect(result.durationSeconds).toBe(8);
+        expect(result.trackingData).toEqual({
+            actualModel: "bytedance/seedance-2.5-flash",
+            usage: { completionVideoSeconds: 8 },
+            providerBilling: { units: 0.5, unitCost: 1.055 },
+        });
+    });
 });
 
 describe("openRouterVideoModel", () => {

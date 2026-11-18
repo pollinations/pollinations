@@ -776,6 +776,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.09,
     },
   },
+  "bytedance/seedance-2.5-flash": {
+    "cost": {
+      "completionVideoSeconds": 0.0709593,
+    },
+    "costVariants": {
+      "720p": {
+        "completionVideoSeconds": 0.159516,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.0709593,
+    },
+  },
   "bytedance/seedance-2.5": {
     "cost": {
       "completionVideoSeconds": 0.1028,

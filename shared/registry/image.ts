@@ -1951,6 +1951,56 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "bytedance/seedance-2.5-flash": {
+        aliases: ["seedance-2.5-flash"],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // 480p entry quote; actual OpenRouter receipt determines final charge.
+            completionVideoSeconds: 0.06726 * 1.055,
+        },
+        ...defineCostVariants(
+            {
+                "720p": { completionVideoSeconds: 0.1512 * 1.055 },
+            },
+            matchResolution("720p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description: "Estimated 720p video rate; actual cost follows OpenRouter's receipt.",
+                },
+            },
+            "480p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "480p", "720p": "720p" },
+                },
+            ],
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5 Flash",
+        description: "Fast video generation from text, keyframes, and multimodal references with optional audio",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+            "audio_output",
+        ],
+        maxReferenceImages: 2,
+        minDuration: 4,
+        maxDuration: 30,
+        defaultDuration: 5,
+    },
     "bytedance/seedance-2.5": {
         aliases: ["seedance-2.5"],
         provider: "replicate",

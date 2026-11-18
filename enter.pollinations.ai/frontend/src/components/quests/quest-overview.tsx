@@ -8,7 +8,6 @@ import {
     Chip,
     ClockIcon,
     CopyField,
-    ExternalLinkButton,
     formatCount,
     GitMergeIcon,
     GitPullRequestIcon,
@@ -458,92 +457,109 @@ export function QuestProgress({
     const small = total < SMALL_COMB;
     const growCells = small ? GROW_CELLS - total : 0;
     return (
-        // The comb is a block beside the numbers on wide screens, above them
-        // on a phone.
-        <Surface variant="card" className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
-                <span
-                    aria-hidden="true"
-                    className="flex flex-wrap content-start gap-0.5 sm:w-2/5 sm:shrink-0"
-                >
-                    {cells.map(({ key, tone }) => (
-                        <span
-                            key={key}
-                            className={`h-4 w-3.5 ${HEX} ${tone}`}
-                        />
-                    ))}
-                    {Array.from({ length: growCells }, (_, index) => (
-                        <span
-                            key={`grow-${index}`}
-                            className={`h-4 w-3.5 ${HEX} bg-theme-text-strong/5`}
-                            style={{
-                                opacity: Math.max(0.25, 1 - index / growCells),
-                            }}
-                        />
-                    ))}
-                </span>
-                {/* One line per state, like a legend for the comb: label, count,
+        // The comb takes half the card on wide screens, with its line under
+        // it and the numbers beside it; on a phone they stack.
+        <Surface
+            variant="card"
+            className="grid gap-5 !p-5 sm:grid-cols-2 sm:gap-x-8 sm:!p-6"
+        >
+            <span
+                aria-hidden="true"
+                className="flex flex-wrap content-start gap-0.5"
+            >
+                {cells.map(({ key, tone }) => (
+                    <span
+                        key={key}
+                        className={`h-5 w-[1.1rem] ${HEX} ${tone}`}
+                    />
+                ))}
+                {Array.from({ length: growCells }, (_, index) => (
+                    <span
+                        key={`grow-${index}`}
+                        className={`h-5 w-[1.1rem] ${HEX} bg-theme-text-strong/[0.07]`}
+                        style={{
+                            opacity: Math.max(0.25, 1 - index / growCells),
+                        }}
+                    />
+                ))}
+            </span>
+            {/* One line per state, like a legend for the comb: label, count,
                 pollen, with the numbers lined up in columns. */}
-                <dl className="grid min-w-0 flex-1 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
-                    {states.map((state) => {
-                        const { label, tone, info } = PROGRESS_STATES[state];
-                        return (
-                            <div key={state} className="contents">
-                                <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
-                                    <span
-                                        aria-hidden="true"
-                                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+            <dl className="grid min-w-0 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5 sm:self-center">
+                {states.map((state) => {
+                    const { label, tone, info } = PROGRESS_STATES[state];
+                    return (
+                        <div key={state} className="contents">
+                            <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
+                                <span
+                                    aria-hidden="true"
+                                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+                                />
+                                {label}
+                                <InfoTip
+                                    text={info}
+                                    label={`${label} information`}
+                                />
+                            </dt>
+                            <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
+                                {/* Just the number: the label names it. */}
+                                {parts[state].count}
+                            </dd>
+                            <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
+                                {/* A quest still to do has no pollen yet. */}
+                                {state !== "open" && (
+                                    <ProgressPollen
+                                        pollen={parts[state].pollen}
+                                        ready={state === "ready"}
                                     />
-                                    {label}
-                                    <InfoTip
-                                        text={info}
-                                        label={`${label} information`}
-                                    />
-                                </dt>
-                                <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
-                                    {/* Just the number: the label names it. */}
-                                    {parts[state].count}
-                                </dd>
-                                <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
-                                    {/* A quest still to do has no pollen yet. */}
-                                    {state !== "open" && (
-                                        <ProgressPollen
-                                            pollen={parts[state].pollen}
-                                            ready={state === "ready"}
-                                        />
-                                    )}
-                                </dd>
-                            </div>
-                        );
-                    })}
-                </dl>
-            </div>
-            {small && (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                        <SparkleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Every merged pull request adds a cell, and so does
-                            every bug you report that someone else fixes. The
-                            comb has no limit.
+                                )}
+                            </dd>
+                        </div>
+                    );
+                })}
+            </dl>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+                {small && (
+                    // One line under the comb; on a phone it may wrap.
+                    <p className="flex items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                        <SparkleIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="sm:whitespace-nowrap">
+                            Earn more with{" "}
+                            <InlineLink
+                                href={CONTRIBUTING_URL}
+                                tone="quiet"
+                                showIcon={false}
+                            >
+                                merged PRs
+                            </InlineLink>{" "}
+                            and fixed bugs
                         </span>
                     </p>
-                    <ExternalLinkButton
-                        href={CONTRIBUTING_URL}
-                        size="sm"
-                        className="shrink-0 self-start"
-                    >
-                        How to contribute
-                    </ExternalLinkButton>
-                </div>
-            )}
+                )}
+                <AlphaNote />
+            </div>
         </Surface>
+    );
+}
+
+/** The one footnote: it sits in the Progress card, or under the preview. */
+function AlphaNote() {
+    return (
+        <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+            <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+                Quests are in alpha. Availability and amounts may change.
+            </span>
+        </p>
     );
 }
 
 function QuestDescription({ children }: { children: string }) {
     return (
-        <Markdown className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline">
+        <Markdown
+            linkTone="quiet"
+            className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline"
+        >
             {children}
         </Markdown>
     );
@@ -705,8 +721,10 @@ function InviteLink({ githubId }: { githubId: number | null }) {
     if (githubId === null) {
         return (
             <Text size="sm" tone="muted">
-                <InlineLink href="/account">Connect GitHub</InlineLink> to get
-                your invite link.
+                <InlineLink href="/account" tone="quiet">
+                    Connect GitHub
+                </InlineLink>{" "}
+                to get your invite link.
             </Text>
         );
     }
@@ -1525,13 +1543,8 @@ function QuestOverviewContent({
                             )}
                     </>
                 )}
-                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                    <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Quests are in alpha. Availability and amounts may
-                        change.
-                    </span>
-                </p>
+                {/* The Progress card carries it for signed-in visitors. */}
+                {(state.anonymous || !showSummary) && <AlphaNote />}
             </Section>
 
             {/* This month's race: about everyone, so a card of its own. */}

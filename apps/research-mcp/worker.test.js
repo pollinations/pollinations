@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "vam_search",
             ].sort(),
         );
     });
@@ -644,4 +645,99 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("V&A search returns projected objects and an empty list for no matches", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.vam.ac.uk");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("q") === "zzzzqqqq") {
+            return Response.json({
+                info: { version: "2.0", record_count: 0, page_size: 2 },
+                records: [],
+            });
+        }
+        assert.equal(url.searchParams.get("q"), "monet");
+        assert.equal(url.searchParams.get("page_size"), "2");
+        return Response.json({
+            info: { version: "2.0", record_count: 23, page_size: 2 },
+            records: [
+                {
+                    systemNumber: "O132743",
+                    accessionNumber: "B.208-2015",
+                    objectType: "Model",
+                    _primaryTitle: "Claude Monet, Maisons et Jadins de Giverny",
+                    _primaryMaker: {
+                        name: "L'Instant Durable",
+                        association: "publisher",
+                    },
+                    _primaryDate: "1989",
+                    _primaryPlace: "France",
+                    _images: {
+                        _primary_thumbnail:
+                            "https://framemark.vam.ac.uk/collections/2015HK9614/full/!100,100/0/default.jpg",
+                    },
+                    _currentLocation: { displayName: "In Store" },
+                },
+                {
+                    systemNumber: "O222840",
+                    accessionNumber: "E.2056-1997",
+                    objectType: "Photograph",
+                    _primaryTitle: "Homage to Monet (before manipulation) 1990",
+                    _primaryMaker: {
+                        name: "Tessa Traeger",
+                        association: "maker",
+                    },
+                    _primaryDate: "",
+                    _primaryPlace: "",
+                },
+            ],
+            clusters: { venue: { terms: [] } },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "vam_search", { query: "monet", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "monet",
+        total: 23,
+        objects: [
+            {
+                id: "O132743",
+                title: "Claude Monet, Maisons et Jadins de Giverny",
+                object_type: "Model",
+                maker: "L'Instant Durable",
+                maker_association: "publisher",
+                date_text: "1989",
+                place: "France",
+                accession_number: "B.208-2015",
+                url: "https://collections.vam.ac.uk/item/O132743/",
+            },
+            {
+                id: "O222840",
+                title: "Homage to Monet (before manipulation) 1990",
+                object_type: "Photograph",
+                maker: "Tessa Traeger",
+                maker_association: "maker",
+                date_text: null,
+                place: null,
+                accession_number: "E.2056-1997",
+                url: "https://collections.vam.ac.uk/item/O222840/",
+            },
+        ],
+    });
+    result = await call(c, "vam_search", { query: "zzzzqqqq" });
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqq",
+        total: 0,
+        objects: [],
+    });
+    result = await call(c, "vam_search", { query: " " });
+    assert.equal(result.isError, true);
 });

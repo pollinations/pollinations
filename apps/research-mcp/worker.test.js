@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "mdn_search",
             ].sort(),
         );
     });
@@ -414,6 +415,113 @@ test("search uses fixed Wikipedia edition, bounded query and no credentials", as
             url: "https://de.wikipedia.org/wiki/A",
         },
     ]);
+});
+
+test("MDN search returns titles, summaries, scores and URLs", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "developer.mozilla.org");
+        assert.equal(target.searchParams.get("q"), "fetch");
+        assert.equal(target.searchParams.get("locale"), "en-US");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            documents: [
+                {
+                    title: "Fetch API",
+                    summary:
+                        "The Fetch API provides an interface for fetching resources (including across the network). It is a more powerful and flexible replacement for XMLHttpRequest.",
+                    score: 43.80415,
+                    popularity: 0.12247126190169688,
+                    mdn_url: "/en-US/docs/Web/API/Fetch_API",
+                    slug: "Web/API/Fetch_API",
+                    locale: "en-us",
+                    highlight: { body: [] },
+                },
+                {
+                    title: "BackgroundFetchManager: fetch() method",
+                    summary:
+                        "The fetch() method of the BackgroundFetchManager interface initiates a background fetch operation, given one or more URLs or Request objects.",
+                    score: 43.731716,
+                    popularity: 0.0008057633535012563,
+                    mdn_url: "/en-US/docs/Web/API/BackgroundFetchManager/fetch",
+                    slug: "Web/API/BackgroundFetchManager/fetch",
+                    locale: "en-us",
+                    highlight: { body: [] },
+                },
+            ],
+            metadata: {
+                took_ms: 19,
+                size: 10,
+                page: 1,
+                total: { value: 965, relation: "eq" },
+            },
+            suggestions: [],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "mdn_search", { query: "fetch", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        query: "fetch",
+        total: 965,
+        results: [
+            {
+                title: "Fetch API",
+                summary:
+                    "The Fetch API provides an interface for fetching resources (including across the network). It is a more powerful and flexible replacement for XMLHttpRequest.",
+                score: 43.80415,
+                url: "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+            },
+            {
+                title: "BackgroundFetchManager: fetch() method",
+                summary:
+                    "The fetch() method of the BackgroundFetchManager interface initiates a background fetch operation, given one or more URLs or Request objects.",
+                score: 43.731716,
+                url: "https://developer.mozilla.org/en-US/docs/Web/API/BackgroundFetchManager/fetch",
+            },
+        ],
+    });
+});
+
+test("MDN search returns an empty list on no match and rejects bad input without fetching", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({
+            documents: [],
+            metadata: {
+                took_ms: 5,
+                size: 10,
+                page: 1,
+                total: { value: 0, relation: "eq" },
+            },
+            suggestions: [],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "mdn_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    const before = fetches;
+    assert.equal((await call(c, "mdn_search", { query: " " })).isError, true);
+    assert.equal(
+        (await call(c, "mdn_search", { query: "fetch", limit: 99 })).isError,
+        true,
+    );
+    assert.equal(fetches, before);
 });
 
 test("summary and full article preserve source citation and report truncation", async (t) => {

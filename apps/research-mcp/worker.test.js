@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dad_joke",
             ].sort(),
         );
     });
@@ -644,4 +645,38 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("dad_joke returns one random joke and asks for JSON", async (t) => {
+    const urls = [];
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        urls.push(request.url);
+        assert.equal(new URL(request.url).hostname, "icanhazdadjoke.com");
+        // The endpoint answers HTML unless the request asks for JSON.
+        assert.equal(request.headers.get("accept"), "application/json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        return Response.json({
+            id: "tWL6U01obpb",
+            joke: 'Thanks for explaining the word "many" to me. It means a lot.',
+            status: 200,
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "dad_joke", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        id: "tWL6U01obpb",
+        joke: 'Thanks for explaining the word "many" to me. It means a lot.',
+    });
+    assert.deepEqual(urls, ["https://icanhazdadjoke.com/"]);
+});
+
+test("dad_joke rejects a malformed upstream response", async (t) => {
+    mock.method(globalThis, "fetch", async () => Response.json({}));
+    const c = await client(t);
+    const result = await call(c, "dad_joke", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Invalid dad joke response/);
 });

@@ -56,7 +56,7 @@ Every answer carries headers, so one call shows both the answer and the reasonin
 | `x-router-model` | model that produced the answer |
 | `x-router-tier` | `fast` / `balanced` / `deep` |
 | `x-router-why` | one-sentence reason, including skipped candidates |
-| `x-router-pool` | every candidate with its score in 1e-9 pollen/token and its health note |
+| `x-router-pool` | every candidate with its score in billionths of a US dollar per token and its health note |
 | `x-router-degraded` | candidates excluded for poor health |
 | `x-router-escalated-to` | set when a failed tier was escalated |
 

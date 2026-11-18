@@ -1,6 +1,6 @@
 # Pollinations Pay
 
-Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay, also called BYOP, lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 

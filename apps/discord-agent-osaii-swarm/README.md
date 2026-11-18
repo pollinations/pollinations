@@ -20,7 +20,7 @@ The Community Agent remains the source of behavior. This app adds only Discord i
 Pollinations' SDK device helper currently transports `client_id` and OAuth account `scope`, while model permissions are selected on the consent page. This adapter keeps the SDK's device-code issuance and polling, but sends the user directly to the same Pollinations `/authorize` page with safe defaults:
 
 - requested models: `morriszdweck/osaii-swarm` and its base model `morriszdweck/osaii-api-smart`, which the key grants as their category (text models);
-- Pollen budget: `5`;
+- Spending budget: `$5`;
 - expiry: `7` days;
 - no `profile`, `usage`, or `keys` account permission requested.
 
@@ -45,7 +45,7 @@ POLLINATIONS_APP_KEY=pk_...
 DISCORD_GUILD_ID=<optional test guild id>
 ```
 
-`POLLINATIONS_APP_KEY` is the publishable App Key (`pk_...`) used as the BYOP `client_id`. It identifies the app; it does not spend the developer's Pollen. Each Discord user authorizes their own scoped `sk_...` key.
+`POLLINATIONS_APP_KEY` is the publishable App Key (`pk_...`) used as the BYOP `client_id`. It identifies the app; it does not spend the developer’s balance. Each Discord user authorizes their own scoped `sk_...` key.
 
 Register slash commands and start:
 
@@ -67,7 +67,7 @@ If Pollinations reports an expired or revoked authorization, the local token is 
 ## Reproducible connect → use → disconnect
 
 1. Start the bot and run `/connect`.
-2. Review the Pollinations consent page: OSAII Swarm + its base model, 5-Pollen budget, seven-day expiry.
+2. Review the Pollinations consent page: OSAII Swarm + its base model, $5 budget, seven-day expiry.
 3. Approve; the Discord response confirms connection without exposing the token.
 4. Run `/status`.
 5. Run `/ask prompt:"Give me one practical idea for this Discord discussion"`.

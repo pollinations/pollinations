@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.32] - 2026-11-18
+
+### Changed
+
+- Use Pollinations Pay terminology in the README.
+
 ## [5.1.0-alpha.31] - 2026-11-17
 
 ### Changed

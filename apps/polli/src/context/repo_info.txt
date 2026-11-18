@@ -43,7 +43,7 @@ Per-key features: model restrictions, budget cap in US dollars, expiry (0-365 da
 Balances: Quest balance and paid balance, both in US dollars (the API still names amounts `pollen`)
 Empty balance: HTTP 402 | Rate limited: HTTP 429 with Retry-After
 
-## BYOP (Bring Your Own Pollen)
+## Pollinations Pay (BYOP)
 
 App redirects user to: `https://enter.pollinations.ai/authorize?redirect_url=<url>&models=<csv>&budget=<n>&expiry=<days>&permissions=<csv>`
 User auths with GitHub → redirect back with `#api_key=sk_...` in URL fragment. Developer pays $0.

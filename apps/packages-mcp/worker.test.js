@@ -421,6 +421,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "sourceforge", name: "SevenZip" }],
+        ["package_lookup", { ecosystem: "sourceforge", name: "../bad" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -655,6 +657,97 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("SourceForge lookup returns the latest release and rejects pinned versions past it", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("zzzznonexistentqqq"))
+            return new Response("Not Found", { status: 404 });
+        if (String(url).includes("filezilla"))
+            return Response.json({
+                release: null,
+                platform_releases: { mac: null, windows: null, linux: null },
+            });
+        return Response.json({
+            release: {
+                bytes: 1659704,
+                date: "2026-11-08 09:47:36",
+                file_type: "PE32+ executable",
+                filename: "/7-Zip/26.06/7z2606-x64.exe",
+                md5sum: "8ac81970cf3be1d03cc18328324287bc",
+                sha256sum:
+                    "9b697f65ecc2d9b0152f5ee96d72dde522a7827690349d9307935dacf40f42ec",
+                url: "https://sourceforge.net/projects/sevenzip/files/7-Zip/26.06/7z2606-x64.exe/download",
+            },
+            platform_releases: {
+                mac: { date: "2026-11-08 09:47:33" },
+                windows: { date: "2026-11-08 09:47:36" },
+                linux: null,
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "sourceforge",
+        name: "sevenzip",
+    });
+    assert.deepEqual(latest, {
+        ecosystem: "sourceforge",
+        name: "sevenzip",
+        version: "26.06",
+        latest: "26.06",
+        filename: "/7-Zip/26.06/7z2606-x64.exe",
+        downloadUrl:
+            "https://sourceforge.net/projects/sevenzip/files/7-Zip/26.06/7z2606-x64.exe/download",
+        releaseDate: "2026-11-08 09:47:36",
+        bytes: 1659704,
+        fileType: "PE32+ executable",
+        sha256: "9b697f65ecc2d9b0152f5ee96d72dde522a7827690349d9307935dacf40f42ec",
+        md5: "8ac81970cf3be1d03cc18328324287bc",
+        platforms: ["mac", "windows"],
+        registryUrl: "https://sourceforge.net/projects/sevenzip/",
+    });
+    // SourceForge metadata carries no description or dependencies.
+    assert.equal(latest.description, undefined);
+    assert.equal(latest.dependencies, undefined);
+
+    // A pinned version that matches the latest is accepted.
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "sourceforge",
+        name: "sevenzip",
+        version: "26.06",
+    });
+    assert.equal(pinned.version, "26.06");
+
+    // Any other pinned version is rejected: best_release.json is latest-only.
+    await assert.rejects(
+        lookup({
+            ecosystem: "sourceforge",
+            name: "sevenzip",
+            version: "25.00",
+        }),
+        /SourceForge version 25\.00 not found for sevenzip \(latest is 26\.06; only the latest release is available\)/,
+    );
+    // A real project with a null release is a clean error, not an empty result.
+    await assert.rejects(
+        lookup({ ecosystem: "sourceforge", name: "filezilla" }),
+        /SourceForge project filezilla has no release/,
+    );
+    const missing = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "sourceforge", name: "zzzznonexistentqqq" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /sourceforge\.net returned HTTP 404/);
+    assert.deepEqual(urls, [
+        "https://sourceforge.net/projects/sevenzip/best_release.json",
+        "https://sourceforge.net/projects/sevenzip/best_release.json",
+        "https://sourceforge.net/projects/sevenzip/best_release.json",
+        "https://sourceforge.net/projects/filezilla/best_release.json",
+        "https://sourceforge.net/projects/zzzznonexistentqqq/best_release.json",
     ]);
 });
 

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "useless_fact",
             ].sort(),
         );
     });
@@ -644,4 +645,106 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+const uselessFactFixtures = [
+    {
+        id: "74b407f3cd0622b91c55c34b7136349c",
+        text: "A cow gives nearly 200,000 glasses of milk in her lifetime.",
+        source: "djtech.net",
+        source_url: "https://www.djtech.net/humor/shorty_useless_facts.htm",
+        language: "en",
+        permalink:
+            "https://uselessfacts.jsph.pl/api/v2/facts/74b407f3cd0622b91c55c34b7136349c",
+    },
+    {
+        id: "b862cae8b3b28bbd8734492e9e4d3ec5",
+        text: "Our eyes are always the same size from birth but our nose and ears never stop growing.",
+        source: "djtech.net",
+        source_url: "https://www.djtech.net/humor/shorty_useless_facts.htm",
+        language: "en",
+        permalink:
+            "https://uselessfacts.jsph.pl/api/v2/facts/b862cae8b3b28bbd8734492e9e4d3ec5",
+    },
+];
+
+test("useless_fact returns projected random facts, one fetch per fact", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "uselessfacts.jsph.pl");
+        assert.equal(url.pathname, "/api/v2/facts/random");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(
+            uselessFactFixtures[count++ % uselessFactFixtures.length],
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "useless_fact", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        facts: [
+            {
+                text: "A cow gives nearly 200,000 glasses of milk in her lifetime.",
+                source: "djtech.net",
+                permalink:
+                    "https://uselessfacts.jsph.pl/api/v2/facts/74b407f3cd0622b91c55c34b7136349c",
+            },
+            {
+                text: "Our eyes are always the same size from birth but our nose and ears never stop growing.",
+                source: "djtech.net",
+                permalink:
+                    "https://uselessfacts.jsph.pl/api/v2/facts/b862cae8b3b28bbd8734492e9e4d3ec5",
+            },
+        ],
+    });
+    assert.equal(count, 2);
+    const single = await call(c, "useless_fact", {});
+    assert.notEqual(single.isError, true, JSON.stringify(single));
+    assert.equal(value(single).limit, 1);
+    assert.equal(value(single).facts.length, 1);
+    assert.equal(count, 3);
+});
+
+test("useless_fact rejects an out-of-range limit without fetching and errors on a textless fact", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({ id: "x" });
+    });
+    const c = await client(t);
+    const rejected = await call(c, "useless_fact", { limit: 99 }).catch(() => ({
+        isError: true,
+    }));
+    assert.equal(rejected.isError, true);
+    assert.equal(count, 0);
+    const malformed = await call(c, "useless_fact", {});
+    assert.equal(malformed.isError, true);
+    assert.match(malformed.content[0].text, /without text/);
+    assert.equal(count, 1);
+});
+
+test("useless_fact handler falls back to one fetch for out-of-range limits and dedupes repeats", async () => {
+    const { uselessFactsTools } = await import("./tools/uselessfacts.js");
+    const run = uselessFactsTools[0][3];
+    let stubCount = 0;
+    const stubFetch = async () => {
+        stubCount++;
+        return uselessFactFixtures[0];
+    };
+    const fallback = await run({ limit: 99 }, stubFetch);
+    assert.equal(fallback.limit, 1);
+    assert.equal(fallback.facts.length, 1);
+    assert.equal(stubCount, 1);
+    const deduped = await run({ limit: 3 }, stubFetch);
+    assert.equal(deduped.limit, 3);
+    assert.equal(deduped.facts.length, 1);
+    assert.equal(stubCount, 4);
 });

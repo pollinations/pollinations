@@ -362,6 +362,7 @@ for (const modern of [false, true]) {
                 "arxiv_paper",
                 "get_indicator_data",
                 "list_countries",
+                "lyrics",
                 "crossref_search",
                 "crossref_work",
             ].sort(),
@@ -644,4 +645,57 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("lyrics returns a song's words by artist and title, and rejects blanks before any fetch", async (t) => {
+    // Fixture is a short excerpt (the opening two lines), not the full song.
+    const excerpt = "Look at the stars\nLook how they shine for you";
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.lyrics.ovh");
+        assert.equal(url.href, "https://api.lyrics.ovh/v1/Coldplay/Yellow");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({ lyrics: excerpt });
+    });
+    const c = await client(t);
+    const result = await call(c, "lyrics", {
+        artist: "Coldplay",
+        title: "Yellow",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        artist: "Coldplay",
+        title: "Yellow",
+        lyrics: excerpt,
+        length: 45,
+    });
+
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return new Response('{"error":"No lyrics found"}', { status: 404 });
+    });
+    const missing = await call(c, "lyrics", {
+        artist: "zzzznotreal",
+        title: "bogussongxyz",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /404/);
+
+    const before = count;
+    for (const args of [
+        { artist: " ", title: "Yellow" },
+        { artist: "Coldplay", title: "" },
+        { artist: "", title: "" },
+    ]) {
+        const bad = await call(c, "lyrics", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, before);
 });

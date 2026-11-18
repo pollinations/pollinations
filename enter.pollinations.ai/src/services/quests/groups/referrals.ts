@@ -24,9 +24,11 @@ export const POLLINATIONS_AI_GITHUB_ID = 314960022;
 const inviteFriendsQuest: QuestDefinition = {
     id: "invite_friends",
     title: "Invite friends",
-    description: `Share your invite link from the bottom of this page, or let people sign up through your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets). You earn 2 Pollen for each new user who buys more than ${MIN_POLLEN_BOUGHT} Pollen.`,
-    category: "grow",
+    description: `Share your invite link below, or let people sign up through your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Each friend who tops up more than $${MIN_POLLEN_BOUGHT} counts.`,
+    category: "community",
     scope: "perUser",
+    // One reward per friend, keyed on the friend's account.
+    repeatable: true,
     rewardAmount: 2,
     balanceBucket: "tier",
 };

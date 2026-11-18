@@ -32,7 +32,7 @@ export const x402KeysRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Choose an x402 prepaid API key amount",
             description:
-                "Buy a new secret API key without a Pollinations login. GET or POST to /api/x402/keys/0.50 for 0.50 Pollen, or use one of the existing pack URLs below. Choose any amount from $0.01 to $10,000 in cents.",
+                "Buy a new secret API key without a Pollinations login. GET or POST to /api/x402/keys/0.50 for a $0.50 key, or use one of the existing pack URLs below. Choose any amount from $0.01 to $10,000 in cents.",
         }),
         (c) => {
             c.header("Cache-Control", "public, max-age=300");
@@ -57,7 +57,7 @@ export const x402KeysRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Buy a prepaid API key with x402",
             description:
-                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment returns its key once; any later request with it gets 409.",
+                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive a new secret API key with that budget. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Each payment returns its key once; any later request with it gets 409.",
             responses: {
                 200: { description: "Prepaid API key" },
                 402: { description: "x402 payment required" },
@@ -70,7 +70,7 @@ export const x402KeysRoutes = new Hono<Env>()
             const amountUsd = purchaseAmountUsd(purchaseKey);
             if (!amountUsd)
                 throw new HTTPException(404, {
-                    message: "Invalid prepaid amount or Pollen pack",
+                    message: "Invalid prepaid amount or pack",
                 });
 
             const { WEFT_SELLER_API_KEY, WEFT_PAY_TO, WEFT_NETWORK } = c.env;
@@ -129,7 +129,7 @@ export const x402KeysRoutes = new Hono<Env>()
                         price: `$${amountUsd}`,
                     },
                 ],
-                description: `${amountUsd} prepaid Pollinations Pollen in a new API key`,
+                description: `Pollinations API key with $${amountUsd} prepaid`,
             };
             const payment = (
                 weftPaymentMiddlewareHono as unknown as (

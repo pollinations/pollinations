@@ -39,6 +39,7 @@ import { generateFunName } from "../lib/fun-name.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
 import { readError } from "./community-endpoints/types.ts";
+import { CopyDocs } from "./copy-docs.tsx";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
@@ -109,9 +110,9 @@ type Pending =
     | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
-// Gen takes the Pollen 10 minutes at a time and refuses a step the wallet
+// Gen takes the balance 10 minutes at a time and refuses a step the wallet
 // can't pay with 402.
-const NO_POLLEN = "Not enough Pollen to pay for the next 10 minutes.";
+const NO_POLLEN = "Your balance is too low for the next 10 minutes.";
 
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
@@ -131,7 +132,7 @@ const perSecond = (pricing: Pricing, template: string, size: Size) => {
     return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
 };
 
-const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
+const pollen = (amount: number) => `$${Number(amount.toPrecision(2))}`;
 
 // What a template gives you, as its title: "2 vCPU · 2 GB memory · 26 GB
 // disk". The size comes from the registry, or from the sandbox or pricing for
@@ -234,6 +235,7 @@ function TemplatePicker({
                     trigger={(open) => (
                         <Button
                             type="button"
+                            intent="neutral"
                             aria-label="Choose sandbox template"
                             className="w-full min-w-0 self-stretch justify-between gap-2"
                         >
@@ -637,7 +639,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
             {actionError === NO_POLLEN && (
                 <>
                     {" "}
-                    <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                    <InlineLink href="/pollen">Top up</InlineLink>
                 </>
             )}
         </Alert>
@@ -721,7 +723,10 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     </Footnotes>
                 </Section>
             )}
-            <Section title="Sandboxes">
+            <Section
+                title="Sandboxes"
+                action={<CopyDocs section="sandboxes" />}
+            >
                 {loadError && (
                     <LoadError onRetry={load} paths={["/alpha/e2b/pricing"]}>
                         {loadError}
@@ -783,13 +788,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            A Linux computer in the cloud. See the{" "}
-                            <InlineLink href={genDocsUrl("#tag/sandboxes")}>
-                                Sandboxes docs
-                            </InlineLink>
-                            .
-                        </span>
+                        <span>A Linux computer in the cloud.</span>
                     </p>
                 </Footnotes>
             </Section>

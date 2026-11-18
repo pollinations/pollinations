@@ -8,7 +8,7 @@
 - 500+ apps built by people around the world
 - Used by indie devs, artists, tinkerers, students, researchers, hobbyists, people with more ideas than budget
 - The code, roadmap, and conversations are public
-- Pollen credits for heavy usage. earn Pollen from Quests. no subscriptions
+- prepaid credit for heavy usage, priced in dollars. complete Quests to add to your balance. no subscriptions
 
 ## What You Can Build With It
 
@@ -32,11 +32,11 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 
 ## Quests
 
-Earn Pollen through onboarding, using models, growing an app, or GitHub contributions.
-- complete a Quest, claim the reward, Pollen lands in your wallet
-- Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed reward
-- A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims the reward once the app is approved
-- in alpha; rewards and availability may change
+Complete Quests to add to your balance: onboarding, using models, growing an app, or GitHub contributions.
+- complete a Quest, claim what you earned, it lands in your Quest balance
+- Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed amount
+- A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims it after the catalog PR merges
+- in alpha; amounts and availability may change
 
 ## Public Content
 

@@ -100,15 +100,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     value={formatUsd(displayPaidBalance)}
                     info={
                         <InfoTip
-                            label="About Paid pollen"
+                            label="About Paid balance"
                             text={
                                 <TooltipList
-                                    title="Paid pollen"
+                                    title="Paid balance"
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
-                                        "pollen you bought",
+                                        "Top-ups you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Quest pollen can't cover",
+                                        "Used for paid-only models, or when Quest balance can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -142,13 +142,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     }
                     info={
                         <InfoTip
-                            label="About Quest pollen"
+                            label="About Quest balance"
                             text={
                                 <TooltipList
-                                    title="Quest pollen"
+                                    title="Quest balance"
                                     icon={<SproutIcon className="h-4 w-4" />}
                                     items={[
-                                        "pollen earned from completing Quests",
+                                        "Earned from completing Quests",
                                         "Earnings credited from your apps",
                                         questPollenRestricted
                                             ? "Available after your account is verified"
@@ -177,11 +177,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Total + 7d earnings below */}
                     <Surface className="flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-3">
-                            <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                            <span className="text-sm font-bold uppercase tracking-wide text-theme-text-base pt-1">
                                 {questPollenRestricted ? "Available" : "Total"}
                             </span>
                             <div className="flex flex-col items-end leading-tight">
-                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-strong">
                                     {formatUsd(totalPollen)}
                                 </span>
                                 {totalWeek > 0 && (
@@ -203,7 +203,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 <span>
                                     <span className="font-semibold text-theme-text-strong">
                                         {formatUsd(displayTierBalance)} Quest
-                                        pollen locked.
+                                        balance locked.
                                     </span>{" "}
                                     Verification needed:{" "}
                                     <InlineLink
@@ -287,7 +287,11 @@ export const SidebarBalance: FC<{
     <Chip
         intent="neutral"
         size="sm"
-        className="ml-auto gap-1 bg-transparent tabular-nums text-theme-text-soft"
+        // Paid is the honey orange, Quest the Quest green, as everywhere.
+        className={cn(
+            "ml-auto gap-1 bg-transparent tabular-nums",
+            kind === "paid" ? "text-paid-deep" : "text-tier-deep",
+        )}
     >
         <WalletKindIcon kind={kind} />
         {balance === undefined ? (
@@ -301,7 +305,7 @@ export const SidebarBalance: FC<{
             <>
                 {formatUsd(normalizeDisplayBalance(balance))}
                 <span className="sr-only">
-                    {kind === "paid" ? " paid" : " Quest"} pollen
+                    {kind === "paid" ? " paid" : " Quest"} balance
                 </span>
             </>
         )}
@@ -310,7 +314,7 @@ export const SidebarBalance: FC<{
             <LockIcon
                 aria-hidden={false}
                 role="img"
-                aria-label="Quest pollen needs verification"
+                aria-label="Quest balance needs verification"
                 className="h-3 w-3 shrink-0 text-theme-text-muted"
             />
         )}
@@ -405,17 +409,16 @@ export const PaymentHelp: FC = () => (
                 the line breaks after "Payment help:", never inside. */}
             <span className="whitespace-nowrap">
                 {/* Styled like Terms and Refund; a copy icon where theirs
-                    has the arrow. The icon says copy and the text says
-                    Copied, so no tooltip. */}
+                    has the arrow. */}
                 <CopyButton
                     value="billing@pollinations.ai"
+                    aria-label="Copy billing@pollinations.ai"
                     className="polli-link"
                     data-tone="accent"
-                    tooltip={null}
                 >
                     {(copied) => (
                         <>
-                            {copied ? "Copied" : "billing@pollinations.ai"}
+                            billing@pollinations.ai
                             <CopyStateIcon
                                 copied={copied}
                                 aria-hidden="true"

@@ -457,14 +457,32 @@ const NavRow: FC<{
     >
         {item.label}
         {/* Quests waiting to be claimed: their count in the "New!" badge
-            style, right by the label. */}
+            green, right by the label, on the card colour so it reads on the
+            selected row too. */}
         {item.id === "quests" && claimableCount(questStatus) && (
-            <Chip intent="news" size="sm" title={questStatus ?? undefined}>
+            <Chip
+                intent="news"
+                size="sm"
+                title={questStatus ?? undefined}
+                className="!bg-surface-opaque"
+            >
                 {claimableCount(questStatus)}
                 <span className="sr-only"> claimable</span>
             </Chip>
         )}
-        {rowStatus?.[item.id]}
+        {/* A row's balance keeps its paid/Quest colours on the desk; on the
+            honey of the current row everything in it takes the row's dark
+            text, still told apart by its icon. */}
+        {rowStatus?.[item.id] && (
+            <span
+                className={cn(
+                    "ml-auto inline-flex items-center",
+                    active && "[&_*]:text-current!",
+                )}
+            >
+                {rowStatus[item.id]}
+            </span>
+        )}
     </NavItem>
 );
 
@@ -482,11 +500,9 @@ const DocsRow: FC = () => (
                 const res = await fetch(`${genDocsUrl()}/llm.txt`);
                 return res.text();
             }}
-            copiedTimeoutMs={1500}
             data-theme="accent"
-            tooltip="Copy all docs as text"
             aria-label="Copy all docs as text"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-bg-active/40 hover:text-theme-text-strong"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-theme-fill-wash hover:text-theme-text-strong"
         >
             {(copied) => <CopyStateIcon copied={copied} className="h-4 w-4" />}
         </CopyButton>

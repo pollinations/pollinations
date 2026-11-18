@@ -10,7 +10,7 @@ import { Alert } from "./Alert.tsx";
 
 /** The one outage message, wherever account data can't load. */
 export const OUTAGE_MESSAGE =
-    "Pollinations is having a temporary outage. Some services are down for now. Your account, keys and pollen are safe, and nothing is lost.";
+    "Pollinations is having a temporary outage. Some services are down for now. Your account, keys and balance are safe, and nothing is lost.";
 
 function subscribeOnline(listener: () => void): () => void {
     window.addEventListener("online", listener);

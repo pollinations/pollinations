@@ -921,14 +921,14 @@ export function CommunityEndpointDialog({
                         <div className="space-y-3">
                             {isShared && (
                                 <ModelFormRow
-                                    label="Accepted Pollen"
+                                    label="Accepted balance"
                                     help={
                                         form.paidOnly
-                                            ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
-                                            : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                                            ? "Paid only: callers must spend from their paid balance. Use this when your upstream bills per use, so free Quest balance cannot cover the price."
+                                            : "Any: callers can pay from their Quest or paid balance."
                                     }
                                 >
-                                    <ButtonGroup aria-label="Accepted Pollen">
+                                    <ButtonGroup aria-label="Accepted balance">
                                         <TabButton
                                             active={!form.paidOnly}
                                             onClick={() =>
@@ -943,7 +943,7 @@ export function CommunityEndpointDialog({
                                             {!form.paidOnly && (
                                                 <CheckIcon className="h-3.5 w-3.5" />
                                             )}
-                                            Any Pollen
+                                            Any
                                         </TabButton>
                                         <TabButton
                                             active={form.paidOnly}
@@ -1018,6 +1018,7 @@ export function CommunityEndpointDialog({
                                             trigger={(open) => (
                                                 <Button
                                                     type="button"
+                                                    intent="neutral"
                                                     aria-label={`Fallback model ${index + 1}: ${selected || "None"}`}
                                                     className="w-full min-w-0 self-stretch justify-between gap-2"
                                                 >
@@ -1064,7 +1065,7 @@ export function CommunityEndpointDialog({
                                                                 className={
                                                                     modelId ===
                                                                     selected
-                                                                        ? "bg-theme-bg-active text-theme-text-strong"
+                                                                        ? "bg-theme-fill text-theme-on-fill"
                                                                         : undefined
                                                                 }
                                                                 onClick={() => {

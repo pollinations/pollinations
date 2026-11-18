@@ -34,8 +34,8 @@ describe("TabButton", () => {
             </TabButton>,
         );
 
-        expect(active).toContain("polli:bg-theme-bg-active");
-        expect(active).toContain("polli:text-theme-text-strong");
+        expect(active).toContain("polli:bg-theme-fill");
+        expect(active).toContain("polli:text-theme-on-fill");
         expect(inactive).toContain("polli:bg-theme-bg-subtle");
         expect(inactive).toContain("polli:text-theme-text-base");
     });
@@ -46,7 +46,7 @@ describe("TabButton", () => {
         );
 
         expect(mixed).toContain('aria-pressed="mixed"');
-        expect(mixed).toContain("polli:bg-theme-bg-active/45");
+        expect(mixed).toContain("polli:bg-theme-fill/45");
         expect(mixed).not.toContain("polli:bg-theme-bg-subtle");
     });
 
@@ -77,7 +77,7 @@ describe("TabButton", () => {
 
         expect(active).toContain("polli:bg-paid-pale");
         expect(active).toContain("polli:text-paid-deep");
-        expect(active).not.toContain("polli:bg-theme-bg-active");
+        expect(active).not.toContain("polli:bg-theme-fill");
     });
 
     test("renders the detail after the label", () => {

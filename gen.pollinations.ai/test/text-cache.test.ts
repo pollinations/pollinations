@@ -221,6 +221,38 @@ describe("text cache", () => {
         },
     );
 
+    it("shares non-streaming cache identity while keeping SSE separate", async () => {
+        const base = {
+            model: "openai/gpt-5.4-nano",
+            messages: [{ role: "user", content: "cache me" }],
+            seed: 7,
+        };
+        const keyFor = async (body: Record<string, unknown>, query = "") => {
+            const request = new Request(
+                `https://gen.pollinations.ai/v1/chat/completions${query}`,
+                chatInit(body),
+            );
+            return generateCacheKey(request, await request.clone().text());
+        };
+        const omitted = await keyFor(base);
+        expect(await keyFor({ ...base, stream: false })).toBe(omitted);
+        expect(await keyFor({ ...base, stream: null })).toBe(omitted);
+        expect(await keyFor(base, "?stream=false")).toBe(omitted);
+        const streaming = await keyFor({ ...base, stream: true });
+        expect(streaming).not.toBe(omitted);
+        // POST response format comes only from the JSON body.
+        expect(await keyFor(base, "?stream=true")).toBe(omitted);
+        expect(await keyFor({ ...base, stream: false }, "?stream=true")).toBe(
+            omitted,
+        );
+        expect(await keyFor({ ...base, stream: null }, "?stream=true")).toBe(
+            omitted,
+        );
+        expect(await keyFor({ ...base, stream: true }, "?stream=false")).toBe(
+            streaming,
+        );
+    });
+
     it("partitions managed-agent cache keys by caller API key", async () => {
         const request = new Request(
             "https://gen.pollinations.ai/v1/chat/completions",
@@ -675,7 +707,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(2);
     });
 
-    it("caches seed -1 in POST bodies and GET query params", async () => {
+    it("generates fresh results for seed -1 even when request IDs repeat", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();
@@ -721,10 +753,15 @@ describe("text cache", () => {
         await consumeAndWait(secondGet);
 
         expect(firstPost.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondPost.response.headers.get("X-Cache")).toBe("HIT");
+        expect(secondPost.response.headers.get("X-Cache")).toBe("MISS");
         expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
-        expect(cache.originHits).toBe(2);
+        expect(secondGet.response.headers.get("X-Cache")).toBe("MISS");
+        expect(cache.originHits).toBe(4);
+        for (const result of [firstPost, secondPost, firstGet, secondGet]) {
+            expect(result.response.headers.get("Cache-Control")).toBe(
+                "private, no-store",
+            );
+        }
     });
 
     it("does not cache SSE protocol errors", async () => {

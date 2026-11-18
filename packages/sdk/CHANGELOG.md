@@ -2,6 +2,27 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.32] - 2026-11-18
+
+### Changed
+
+- Use Pollinations Pay terminology in the README.
+
+## [5.1.0-alpha.31] - 2026-11-17
+
+### Changed
+- Docs and type comments describe amounts as US dollars and the two balances as the paid balance and the Quest balance, instead of Pollen.
+
+## [5.1.0-alpha.30] - 2026-11-17
+
+### Added
+- `audioSpeech()` accepts `referenceVideo`, the video that `sonilo/sonilo-1.1-sfx` adds sound effects to.
+
+## [5.1.0-alpha.29] - 2026-11-14
+
+### Added
+- `ModelInfo.required_safety` exposes the mandatory safety checks applied to a model.
+
 ## [5.1.0-alpha.28] - 2026-11-11
 
 ### Fixed

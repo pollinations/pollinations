@@ -68,6 +68,13 @@ export function monthlyProductMix(
         });
         if (
             apps.some((row) => {
+                if (
+                    row[`${funding}_usage`] === 0 &&
+                    row[`${funding}_community_usage`] === 0 &&
+                    row[`${funding}_creator_earnings`] === 0 &&
+                    row[`${funding}_model_creator_earnings`] === 0
+                )
+                    return false;
                 const attributed = parseRevenueShareSources(
                     row.sources_json,
                 ).flatMap((source) => source.models);

@@ -139,7 +139,7 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
 
     it("shows gen's notice when the sandbox's login needs a budget", async () => {
         const notice =
-            "This sandbox's polli login has a budget of 0 Pollen. Give the login a budget at https://enter.pollinations.ai/edit-key?id=k1";
+            "This sandbox's polli login has a budget of $0. Give the login a budget at https://enter.pollinations.ai/edit-key?id=k1";
         const command = await prepare(
             Response.json({ sandboxID: "created123", notice }),
         );

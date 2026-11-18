@@ -703,6 +703,119 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6.2-astra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(16),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(20),
+                    completionTextTokens: perMillion(60),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Astra",
+        description:
+            "Frontier reasoning for the most demanding professional and agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6.2-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(5),
+                    promptImageTokens: perMillion(4),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Sol",
+        description: "Efficient reasoning for coding and agentic workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "openai/gpt-6.1-sol": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],
@@ -1340,7 +1453,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
-        // Azure accepts this full set (probed 2026-10-15).
+        // Azure accepts none, high and max for reasoning_effort.
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
         provider: "azure",
@@ -1371,19 +1484,22 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        // Azure accepts none, high and max for reasoning_effort.
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-10-18").getTime(),
-        // 0.5x matches DeepInfra's output price (0.60 per M).
+        // 0.5x matches the output price of the Azure V4.1 Flash route.
         priceMultiplier: 0.5,
-        paidOnly: true,
-        // Fireworks standard serverless rates (2026-10-18).
+        paidOnly: false,
+        perUserRpm: 60,
+        // Azure Sweden Central Global Standard Flash1017 meters (2026-11-01).
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
+            promptImageTokens: perMillion(0.3),
             completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash 1017",
@@ -1888,6 +2004,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "liquid/d1.2": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: ["d1.2"],
+        provider: "vercel",
+        publisher: "Liquid AI",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "d1.2",
+        description:
+            "Structured choices, scores and probabilities over text or JSON " +
+            "state. Use /alpha/decisions or the chat-completions adapter",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
     "inferenceport-ai/lightning-text-v2.1": {
         supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
         aliases: [],
@@ -1939,6 +2080,35 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         contextLength: 128000,
         isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1.1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            // Azure East US Global Standard retail meter, verified 2026-11-17.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1.1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
     },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
@@ -2714,6 +2884,31 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "tencent/hy4-flash": {
+        supportedParameters: CHAT_PARAMETERS.vercelHy4Flash,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-11-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
+            promptTextTokens: perMillion(0.035),
+            promptCachedTokens: perMillion(0.0015),
+            completionTextTokens: perMillion(0.1405),
+        },
+        title: "Hy4 Flash",
+        description:
+            "Low-cost reasoning and agentic coding model with a 1M-token context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1024000,
         isSpecialized: false,
     },
     "tencent/hy4-preview": {
@@ -3910,6 +4105,35 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen/qwen4-max": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-11-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Alibaba Model Studio pay-as-you-go list rates, 0-1M tier (CNY 10 in,
+            // CNY 0.5 cached, CNY 12.5 5-minute write, CNY 30 out per 1M tokens),
+            // converted at the rate Vercel's listing implies (6.67 CNY per USD).
+            promptImageTokens: perMillion(1.5),
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(1.875),
+            completionTextTokens: perMillion(4.5),
+        },
+        title: "Qwen 4 Max",
+        description:
+            "Reasoning and agentic coding model with a 1M-token context and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {

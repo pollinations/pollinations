@@ -148,23 +148,38 @@ function AccountDetails({
     name,
     secondaryContent,
     secondaryId,
+    onFill = false,
 }: {
     name: string;
     secondaryContent?: ReactNode;
     secondaryId?: string;
+    /** On the honey pill the text inherits on-fill instead of theme text. */
+    onFill?: boolean;
 }) {
     return (
         <span className="polli:flex polli:min-w-0 polli:flex-col polli:items-start polli:text-left">
             <span
                 title={name}
-                className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5 polli:text-theme-text-strong"
+                className={cn(
+                    "polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5",
+                    !onFill && "polli:text-theme-text-strong",
+                )}
             >
                 {name}
             </span>
             {secondaryContent != null && (
                 <span
                     id={secondaryId}
-                    className="polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4 polli:text-theme-text-base"
+                    className={cn(
+                        "polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4",
+                        // On the honey, icons (e.g. the paid and Quest
+                        // markers) take the pill's text colour; they still
+                        // differ by shape. `!` beats the unlayered wallet
+                        // colour classes.
+                        onFill
+                            ? "polli:opacity-80 polli:[&_svg]:text-current!"
+                            : "polli:text-theme-text-base",
+                    )}
                 >
                     {secondaryContent}
                 </span>
@@ -210,7 +225,7 @@ export function AccountMenu({
         <div
             data-theme="accent"
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:p-1 polli:pr-3 polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-bg-hover",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-fill polli:p-1 polli:pr-3 polli:text-theme-on-fill polli:transition-colors polli:hover:bg-theme-fill-hover",
                 className,
             )}
         >
@@ -229,17 +244,18 @@ export function AccountMenu({
                         aria-describedby={
                             secondaryContent != null ? statusId : undefined
                         }
-                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full polli:text-theme-text-strong"
+                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full polli:text-theme-on-fill"
                     >
                         {!dashboardHref && avatar}
                         <AccountDetails
                             name={name}
                             secondaryContent={secondaryContent}
                             secondaryId={statusId}
+                            onFill
                         />
                         <ChevronIcon
                             expanded={open}
-                            className="polli:ml-auto polli:h-4 polli:w-4 polli:text-theme-text-strong"
+                            className="polli:ml-auto polli:h-4 polli:w-4"
                         />
                     </button>
                 )}

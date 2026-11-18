@@ -19,7 +19,6 @@ import type { QuestGroup } from "../src/services/quests/types.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
-const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
 const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
 const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
@@ -71,7 +70,7 @@ type SeedQuestIssue = {
     updatedAt?: Date;
 };
 
-// Seed a POLLEN-QUEST bounty into the GitHub mock exactly as the lazy GitHub
+// Seed a QUEST bounty into the GitHub mock exactly as the lazy GitHub
 // reader sees it: issue fields plus the PRs that GitHub says closed it.
 function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const assigneeGithubId = issue.assigneeGithubId ?? null;
@@ -98,7 +97,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
             : [],
         labels: [
-            { name: "POLLEN-QUEST" },
+            { name: "QUEST" },
             ...(issue.reward !== null
                 ? [{ name: `reward-${issue.reward}` }]
                 : []),
@@ -501,6 +500,7 @@ test("catalog lists the pull request and issue rewards", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
+        repeatable: true,
         rewardAmount: 5,
         balanceBucket: "tier",
     });
@@ -509,6 +509,7 @@ test("catalog lists the pull request and issue rewards", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
+        repeatable: true,
         rewardAmount: 2,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
@@ -1988,55 +1989,6 @@ test("github public repo stars quest is coming_soon and never records", async ({
     ).toBe(false);
 });
 
-test("quest check records elixpo intern easter egg once", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    const targetGithubId = 161_109_909;
-    await db
-        .update(schema.user)
-        .set({
-            githubId: targetGithubId,
-            githubUsername: "elixpo",
-        })
-        .where(eq(schema.user.id, user.id));
-
-    mocks.github.state.user = {
-        ...mocks.github.state.user,
-        id: targetGithubId,
-        login: "elixpo",
-        name: "elixpo",
-        avatar_url: "https://avatars.githubusercontent.com/u/161109909?v=4",
-    };
-    await mocks.enable("github", "tinybird");
-
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
-
-    const second = await checkQuestsForUser(env, user.id);
-    expect(second.recorded).toBe(0);
-
-    const rewards = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            questId: schema.rewards.questId,
-            title: schema.rewards.title,
-            pollenAmount: schema.rewards.pollenAmount,
-            balanceBucket: schema.rewards.balanceBucket,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, ELIXPO_INTERN_QUEST_ID));
-
-    expect(rewards).toHaveLength(1);
-    expect(rewards[0]).toMatchObject({
-        idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:github:${targetGithubId}`,
-        pollenAmount: 100,
-        balanceBucket: "tier",
-    });
-});
-
 test("quest check rewards every merged author without duplicating a legacy assignee", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -2100,7 +2052,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
         idempotencyKey: migratedRewardKey,
         userId: "github-quest-second-author",
         questId: issueQuestId,
-        title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+        title: issueTitle,
         pollenAmount: 25,
         balanceBucket: "tier",
         earnedAt: new Date(),
@@ -2143,7 +2095,7 @@ test("quest check rewards every merged author without duplicating a legacy assig
             expect.objectContaining({
                 idempotencyKey: `quest:${issueQuestId}:github:${user.githubId}`,
                 userId: user.id,
-                title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+                title: issueTitle,
                 pollenAmount: 25,
                 balanceBucket: "tier",
             }),
@@ -2239,7 +2191,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(15);
 });
 
-// Regression guard: GitHub search returns at most 100 issues per page, so a
+// Regression guard: the label query reads 100 issues per page, so a
 // bounty ranked past the first page must still be loaded and rewarded.
 test("issue bounties beyond the first 100 quest issues still record", async ({
     mocks,
@@ -2441,7 +2393,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         "http://localhost:3000/api/quests/catalog",
     );
     expect(response.status).toBe(200);
-    // One issue search page plus one commit-author lookup for both PRs.
+    // One label issues page plus one commit-author lookup for both PRs.
     expect(
         mocks.github.state.requests.filter(({ path }) => path === "/graphql"),
     ).toHaveLength(2);
@@ -2485,7 +2437,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
         },
         {
             number: 9105,
-            labels: [{ name: "POLLEN-QUEST" }],
+            labels: [{ name: "QUEST" }],
             mergedAt: afterLaunch,
         },
         { number: 9106, labels: [], mergedAt: null },

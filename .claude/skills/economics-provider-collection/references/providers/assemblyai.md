@@ -22,9 +22,12 @@ Collection steps:
 - The Cost dashboard takes the month as URL parameters (UTC days):
 
   ```
-  https://www.assemblyai.com/dashboard/cost?window_size=day&starting_on=<YYYY-MM-01>&ending_before=<next-YYYY-MM-01>
+  https://www.assemblyai.com/dashboard/cost?window_size=day&starting_on=<YYYY-MM-01>&ending_before=<YYYY-MM-last-day>
   ```
 
+  Despite its name, `ending_before` includes that calendar day in the export
+  (verified November 3, 2026). Select the first and last days inclusive, all
+  active and deleted API keys, all regions, and API plus Playground traffic.
   Read "Spend by feature"; book one row per feature (Universal-2, Universal-3
   Pro, Universal-3.5 Pro, the Prompting add-ons on the same models).
 
@@ -34,9 +37,9 @@ Collection steps:
   Select both endpoints of the requested calendar month. Sum the CSV's
   `value` column and reconcile to the dashboard total. The relative date label
   can understate the selected span by a day; verify coverage from the export.
-- `Billing` shows current prepaid balance and available invoices. A just-ended
-  month's invoice may be absent on the first day of the next month; record
-  this in the collection manifest and revisit.
+- `Billing` shows aggregate balance and available invoices. Check the complete
+  history and pagination state. If no purchase or issued-document signal exists,
+  record confirmed invoice absence; do not repeatedly request a nonexistent bill.
 
 Known traps:
 
@@ -54,3 +57,6 @@ Known traps:
   current grant lots. Do not classify the whole balance as prepaid cash or
   reuse an older snapshot's user-approved expiry exception. Request the
   current credit-lot breakdown when the dashboard does not expose it.
+- Retain established startup terms. A new final-award notice is material evidence:
+  record its end date and stop projecting subsequent replenishment. An exception
+  approved for an older snapshot does not establish terms for a new award.

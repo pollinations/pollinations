@@ -21,7 +21,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
         // edge too.
         <Alert
             intent="advisory"
-            title="Out of pollen"
+            title="Your balance is empty"
             className="max-lg:first:-mt-[3.25rem] max-lg:first:ml-14 max-sm:mr-3"
         >
             API requests fail until you add more.{" "}
@@ -31,7 +31,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
                 hash="buy-pollen"
                 external={false}
             >
-                Buy pollen
+                Top up
             </InlineLink>
             {!questPollenRestricted && (
                 <>

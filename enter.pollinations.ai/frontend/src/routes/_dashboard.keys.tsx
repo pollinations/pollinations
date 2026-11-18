@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { accountClient } from "../api.ts";
-import { CliHint } from "../components/cli-hint.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -83,7 +82,8 @@ function KeysPage() {
             },
         });
 
-        await refreshKeys();
+        // The key is shown only once: hand it over even if the refresh fails.
+        void refreshKeys().catch(() => {});
         return {
             id: created.id,
             key: created.key,
@@ -166,7 +166,6 @@ function KeysContent({
                 }
                 {...actions}
             />
-            <CliHint command="keys create --name my-app" />
         </>
     );
 }

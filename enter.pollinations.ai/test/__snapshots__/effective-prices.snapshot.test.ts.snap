@@ -2544,6 +2544,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.25,
     },
   },
+  "minimax/minimax-h3-image": {
+    "cost": {
+      "completionImageTokens": 0.000004009,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000024265,
+    },
+    "price": {
+      "completionImageTokens": 0.000004009,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000024265,
+    },
+  },
   "minimax/minimax-h3": {
     "cost": {
       "completionVideoSeconds": 0.05,

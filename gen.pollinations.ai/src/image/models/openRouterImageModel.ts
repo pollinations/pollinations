@@ -622,6 +622,76 @@ export function callOpenRouterQwenImage21ProAPI(
     );
 }
 
+export async function callOpenRouterMiniMaxH3ImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const references = await Promise.all(safeParams.image.map(toDataUri));
+    const requestBody: Record<string, unknown> = {
+        model: "minimax/minimax-h3-image",
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        resolution: (safeParams.resolution ?? "1k").toUpperCase(),
+        provider: { only: ["minimax"], allow_fallbacks: false },
+    };
+    if (safeParams.aspectRatio !== "adaptive") {
+        requestBody.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(safeParams.width, safeParams.height, [
+                "1:1", "1:2", "1:3", "2:1", "2:3", "3:1",
+                "3:2", "4:3", "3:4", "16:9", "9:16", "21:9",
+            ]);
+    }
+    if (references.length > 0) {
+        requestBody.input_references = references.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        }));
+    }
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter MiniMax H3 Image request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) throw buildOpenRouterNoImageError(data);
+    const providerCost = data.usage?.cost;
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+    const promptTotal = data.usage?.prompt_tokens;
+    const promptImage = data.usage?.prompt_tokens_details?.image_tokens;
+    const completionImage = data.usage?.completion_tokens_details?.image_tokens;
+    const completionTotal = data.usage?.completion_tokens;
+    const usage: Usage = {
+        ...(isTokenCount(promptTotal) ? {
+            promptTextTokens: Math.max(
+                0, promptTotal - (isTokenCount(promptImage) ? promptImage : 0),
+            ),
+        } : {}),
+        ...(isTokenCount(promptImage) ? { promptImageTokens: promptImage } : {}),
+        ...(isTokenCount(completionImage)
+            ? { completionImageTokens: completionImage }
+            : isTokenCount(completionTotal)
+              ? { completionImageTokens: completionTotal }
+              : {}),
+    };
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: "minimax/minimax-h3-image",
+            usage,
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+        },
+    };
+}
+
 export async function callOpenRouterGrokImagineProAPI(
     prompt: string,
     safeParams: ImageParams,

@@ -504,7 +504,7 @@ export interface UseRealtimeValue {
     /** The open session, or null. Listen with `session.on()`, send with `session.send()`. */
     session: RealtimeSession | null;
     error: Error | null;
-    /** Opens a session on the signed-in user's key, closing any previous one. */
+    /** Opens a session on the signed-in user's key, closing any previous one. Add listeners to the session it returns, so none miss `session.created`. */
     connect: () => Promise<RealtimeSession | null>;
     close: () => void;
 }
@@ -551,11 +551,13 @@ export function useRealtime(
             });
             setSession(next);
             setStatus("open");
-            next.closed.then(() => {
+            next.closed.then(({ code, reason }) => {
                 if (controllerRef.current !== controller) return;
-                controllerRef.current = null;
-                setSession(null);
-                setStatus("closed");
+                // The gateway reports refused events and failures only as the close reason.
+                if (code !== 1000) {
+                    setError(new Error(reason || `Session closed (${code})`));
+                }
+                close();
             });
             return next;
         } catch (err) {

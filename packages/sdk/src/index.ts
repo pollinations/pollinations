@@ -75,7 +75,6 @@ export {
 export {
     base64ToPcm16,
     connectRealtime,
-    DEFAULT_REALTIME_MODEL,
     pcm16ToBase64,
     type RealtimeEvent,
     type RealtimeOptions,

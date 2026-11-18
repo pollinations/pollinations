@@ -6,7 +6,7 @@
 
 import { PollinationsError } from "./types.js";
 
-export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1";
+const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1";
 
 /** One OpenAI Realtime event, sent or received. */
 export interface RealtimeEvent {
@@ -15,19 +15,15 @@ export interface RealtimeEvent {
 }
 
 export interface RealtimeOptions {
-    /** Secret key (`sk_`). Defaults to `POLLINATIONS_API_KEY` where `process` exists. */
-    apiKey?: string;
-    /** Defaults to `openai/gpt-realtime-2.1`. A transcription model such as `microsoft/mai-transcribe-2-streaming` opens a transcription session. */
+    /** The user's secret key (`sk_`). It is sent as `?key=`. */
+    apiKey: string;
+    /** Defaults to `openai/gpt-realtime-2.1`. A transcription model such as `openai/gpt-live-transcribe` opens a transcription session. */
     model?: string;
     baseUrl?: string;
     /** Sent as `session.update` before any other event. */
     session?: Record<string, unknown>;
     /** Aborting closes the session, or cancels it while connecting. */
     signal?: AbortSignal;
-    /** A WebSocket class for runtimes without a global one, e.g. `ws` on Node < 22. */
-    WebSocket?: new (
-        url: string,
-    ) => WebSocket;
 }
 
 export interface RealtimeSession {
@@ -43,13 +39,9 @@ export interface RealtimeSession {
 
 /** Session URL with the key in `?key=`, since browsers cannot set WebSocket headers. */
 export function realtimeUrl(
-    options: Pick<RealtimeOptions, "apiKey" | "model" | "baseUrl"> = {},
+    options: Pick<RealtimeOptions, "apiKey" | "model" | "baseUrl">,
 ): string {
-    const apiKey =
-        options.apiKey ??
-        (typeof process === "undefined"
-            ? undefined
-            : process.env?.POLLINATIONS_API_KEY);
+    const { apiKey } = options;
     if (!apiKey) {
         throw new Error("A Pollinations secret key (sk_) is required");
     }
@@ -70,18 +62,13 @@ export function realtimeUrl(
 }
 
 /** Opens a session and resolves once the socket is open and `session` has been sent. */
-export function connectRealtime(
-    options: RealtimeOptions = {},
+export async function connectRealtime(
+    options: RealtimeOptions,
 ): Promise<RealtimeSession> {
-    const Socket = options.WebSocket ?? globalThis.WebSocket;
-    if (!Socket) {
-        throw new Error(
-            "No global WebSocket: pass options.WebSocket (e.g. from the ws package)",
-        );
-    }
     const { signal } = options;
     signal?.throwIfAborted();
-    const socket = new Socket(realtimeUrl(options));
+    // Browsers and Node 22+ have a global WebSocket.
+    const socket = new WebSocket(realtimeUrl(options));
     const listeners = new Map<string, Set<(event: RealtimeEvent) => void>>();
     const emit = (type: string, event: RealtimeEvent) => {
         for (const listener of listeners.get(type) ?? []) listener(event);
@@ -96,8 +83,12 @@ export function connectRealtime(
         });
     });
     socket.addEventListener("message", (message) => {
-        if (typeof message.data !== "string") return;
-        const event = JSON.parse(message.data) as RealtimeEvent;
+        let event: RealtimeEvent;
+        try {
+            event = JSON.parse(message.data);
+        } catch {
+            return; // the gateway sends JSON text frames only
+        }
         emit(event.type, event);
         emit("*", event);
     });

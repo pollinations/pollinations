@@ -1,5 +1,5 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isOutageError } from "../error-response.js";
 import type { PollinationsError } from "../types.js";
 import {
@@ -535,12 +535,14 @@ class FakeSocket extends EventTarget {
 }
 
 describe("useRealtime", () => {
-    const WebSocket = FakeSocket as unknown as new (url: string) => WebSocket;
+    beforeEach(() => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+    });
 
     async function mount(value: AuthContextValue) {
         const probe: { rt?: ReturnType<typeof useRealtime> } = {};
         function Probe() {
-            probe.rt = useRealtime({ WebSocket });
+            probe.rt = useRealtime();
             return null;
         }
         const element = (v: AuthContextValue) => (
@@ -586,6 +588,7 @@ describe("useRealtime", () => {
         });
         await waitFor(() => probe.rt?.status === "closed");
         expect(probe.rt?.session).toBeNull();
+        expect(probe.rt?.error?.message).toBe("Insufficient balance");
     });
 
     it("reports a session that never opens", async () => {

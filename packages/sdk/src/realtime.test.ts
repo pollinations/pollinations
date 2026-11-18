@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     base64ToPcm16,
     connectRealtime,
@@ -34,7 +34,9 @@ class FakeSocket extends EventTarget {
     }
 }
 
-const WebSocket = FakeSocket as unknown as new (url: string) => WebSocket;
+beforeEach(() => {
+    vi.stubGlobal("WebSocket", FakeSocket);
+});
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("realtimeUrl", () => {
@@ -52,8 +54,11 @@ describe("realtimeUrl", () => {
         );
     });
 
-    it("refuses tokens the gateway does not accept in a query", () => {
+    it("refuses tokens the gateway does not accept in a query", async () => {
         expect(() => realtimeUrl({ apiKey: "sess_abc" })).toThrow(/sk_/);
+        // connectRealtime reports it as a rejection, not a synchronous throw
+        const pending = connectRealtime({ apiKey: "ag_abc" });
+        await expect(pending).rejects.toThrow(/sk_/);
     });
 });
 
@@ -63,7 +68,6 @@ describe("connectRealtime", () => {
             apiKey: "sk_test",
             model: "openai/gpt-realtime-2.1-mini",
             session: { type: "realtime", instructions: "Be brief." },
-            WebSocket,
         });
         const socket = FakeSocket.last;
         expect(new URL(socket.url).searchParams.get("model")).toBe(
@@ -104,7 +108,7 @@ describe("connectRealtime", () => {
     });
 
     it("rejects when the socket closes before opening", async () => {
-        const pending = connectRealtime({ apiKey: "sk_test", WebSocket });
+        const pending = connectRealtime({ apiKey: "sk_test" });
         FakeSocket.last.close(1006);
         const error = await pending.catch((e) => e);
         expect(error).toBeInstanceOf(PollinationsError);
@@ -117,7 +121,6 @@ describe("connectRealtime", () => {
         const pending = connectRealtime({
             apiKey: "sk_test",
             signal: early.signal,
-            WebSocket,
         });
         const first = FakeSocket.last;
         early.abort();
@@ -128,7 +131,6 @@ describe("connectRealtime", () => {
         const opening = connectRealtime({
             apiKey: "sk_test",
             signal: late.signal,
-            WebSocket,
         });
         FakeSocket.last.open();
         const session = await opening;

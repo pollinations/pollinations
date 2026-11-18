@@ -709,24 +709,36 @@ session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(micSample
 
 - Audio is PCM16 at 24 kHz, base64-encoded. `pcm16ToBase64` and
   `base64ToPcm16` convert from and to the `Float32Array` samples Web Audio uses.
-- Live transcription: pass a transcription model such as
-  `openai/gpt-live-transcribe`, send audio the same way, and read
-  `conversation.item.input_audio_transcription.delta` and `.completed`.
-  Voice models refuse input transcription and close the session.
+- Live transcription: pass `model: 'openai/gpt-live-transcribe'`, send audio the
+  same way, and read `conversation.item.input_audio_transcription.delta` and
+  `.completed`. `microsoft/mai-transcribe-2-streaming` and the ElevenLabs Scribe
+  models also need a `session` of `type: 'transcription'` with their audio format,
+  and commit audio with `input_audio_buffer.commit`. Voice models refuse input
+  transcription and close the session with the reason.
 - `session.on('*', fn)` receives every event; `on()` returns an unsubscribe function.
 - `session.closed` resolves with the close `code` and `reason`; `session.close()` or
   aborting `signal` closes it. Usage is billed when the session closes.
 - A key, balance or model error rejects `connectRealtime()` with a
   `PollinationsError`: browsers close the socket before it opens without the
   HTTP status, so the message names what to check.
-- Node before 22 has no global `WebSocket`: pass `WebSocket` from the `ws` package.
+- It uses the global `WebSocket` of browsers and Node 22+.
 
 In React, `useRealtime(options)` runs a session on the signed-in user's key.
-It returns `{ status, session, error, connect, close }`, connects only when you
-call `connect()`, and closes on logout, key change and unmount.
+It connects only when you call `connect()`, closes on logout, key change and
+unmount, and puts a server's close reason in `error`.
+
+```tsx
+const { status, error, connect, close } = useRealtime({ model: 'openai/gpt-live-transcribe' });
+
+async function start() {
+  const session = await connect(); // add listeners here, before any event is missed
+  session?.on('conversation.item.input_audio_transcription.completed', (e) => addLine(e.transcript));
+}
+```
 
 [`examples/realtime-voice.html`](examples/realtime-voice.html) is a complete
-voice chat page: sign-in, microphone, playback and a transcript of the replies.
+voice chat page: sign-in, microphone, playback that stops when you talk over
+it, and a transcript of the replies. Serve it over http(s).
 It plays the model through an `<audio>` element so the browser's echo
 cancellation does not feed the model its own voice.
 

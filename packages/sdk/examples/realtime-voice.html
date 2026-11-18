@@ -11,7 +11,8 @@
 </head>
 <body>
 <h1>Talk with gpt-realtime-2.1</h1>
-<p>Sign in with Pollinations, press Talk, and speak. Server voice detection ends your turn. Usage is billed when the session closes.</p>
+<p>Sign in with Pollinations, press Talk, and speak. Server voice detection ends your turn, and talking over a reply stops it. Usage is billed when the session closes.</p>
+<p><small>Serve this file over http(s), for example <code>npx serve</code>: sign-in redirects back to the page, and browsers allow the microphone only there.</small></p>
 <button id="signin">Sign in</button>
 <button id="talk" disabled>Talk</button>
 <button id="stop" disabled>Stop</button>
@@ -25,7 +26,9 @@
 const P = window.Pollinations;
 const MODEL = "openai/gpt-realtime-2.1";
 const $ = (id) => document.getElementById(id);
-const apiKey = new URLSearchParams(location.hash.slice(1)).get("api_key");
+const back = new URLSearchParams(location.hash.slice(1));
+const apiKey = back.get("api_key");
+if (back.get("error")) $("status").textContent = `Sign-in failed: ${back.get("error")}`;
 history.replaceState(null, "", location.pathname + location.search);
 $("talk").disabled = !apiKey;
 $("signin").onclick = () => {
@@ -46,10 +49,12 @@ $("talk").onclick = async () => {
   ctx = new AudioContext({ sampleRate: 24000 }); // PCM16 at 24 kHz both ways
   const out = ctx.createMediaStreamDestination();
   $("speaker").srcObject = out.stream;
+  const playing = new Set();
   let playAt = 0;
-  let reply;
+  let reply, source;
   try {
     mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    source = ctx.createMediaStreamSource(mic); // before connecting, so a failure here costs nothing
     session = await P.connectRealtime({
       apiKey,
       model: MODEL,
@@ -59,35 +64,40 @@ $("talk").onclick = async () => {
       },
     });
   } catch (err) {
-    $("status").textContent = err.message;
-    $("talk").disabled = false;
-    return;
+    return stop(err.message);
   }
+  const current = session;
   $("status").textContent = "Listening. Say something.";
   $("stop").disabled = false;
 
-  session.on("response.created", () => { reply = line(); });
-  session.on("response.output_audio_transcript.delta", (e) => { reply.textContent += e.delta; });
-  session.on("response.output_audio.delta", (e) => {
+  current.on("response.created", () => { reply = line(); });
+  current.on("response.output_audio_transcript.delta", (e) => { reply.textContent += e.delta; });
+  // The reply arrives faster than it plays; when the user starts talking, drop what is queued.
+  current.on("input_audio_buffer.speech_started", () => {
+    playing.forEach((node) => node.stop());
+    playing.clear();
+    playAt = 0;
+  });
+  current.on("response.output_audio.delta", (e) => {
     const samples = P.base64ToPcm16(e.delta);
     const buffer = ctx.createBuffer(1, samples.length, 24000);
     buffer.copyToChannel(samples, 0);
     const node = ctx.createBufferSource();
     node.buffer = buffer;
     node.connect(out);
+    node.onended = () => playing.delete(node);
+    playing.add(node);
     playAt = Math.max(playAt, ctx.currentTime);
     node.start(playAt);
     playAt += buffer.duration;
   });
-  session.on("error", (e) => { $("status").textContent = e.error?.message ?? "Error"; });
-  const current = session;
+  current.on("error", (e) => { $("status").textContent = e.error?.message ?? "Error"; });
   current.closed.then(({ reason }) => { if (session === current) stop(reason || "Session closed."); });
 
   // shortcut: ScriptProcessorNode is deprecated but needs no worklet file; use an AudioWorklet in an app.
-  const source = ctx.createMediaStreamSource(mic);
   const tap = ctx.createScriptProcessor(4096, 1, 1);
   tap.onaudioprocess = (e) => {
-    session.send({ type: "input_audio_buffer.append", audio: P.pcm16ToBase64(e.inputBuffer.getChannelData(0)) });
+    if (current.socket.readyState === WebSocket.OPEN) current.send({ type: "input_audio_buffer.append", audio: P.pcm16ToBase64(e.inputBuffer.getChannelData(0)) });
   };
   source.connect(tap);
   tap.connect(ctx.destination); // outputs silence; keeps the processor running

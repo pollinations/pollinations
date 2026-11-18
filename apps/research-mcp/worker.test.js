@@ -361,6 +361,7 @@ for (const modern of [false, true]) {
                 "arxiv_search",
                 "arxiv_paper",
                 "get_indicator_data",
+                "inaturalist_taxon",
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
@@ -644,4 +645,96 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("iNaturalist taxon lookup mixes ranks and reports the catalog total", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches++;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.inaturalist.org");
+        assert.equal(target.pathname, "/v1/taxa");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (target.searchParams.get("q") === "zzzzqqqxxyy")
+            return Response.json({ total_results: 0, results: [] });
+        assert.equal(target.searchParams.get("q"), "Panthera leo");
+        assert.equal(target.searchParams.get("per_page"), "2");
+        return Response.json({
+            total_results: 9,
+            results: [
+                {
+                    id: 41962,
+                    name: "Panthera",
+                    rank: "genus",
+                    rank_level: 20,
+                    iconic_taxon_id: 40151,
+                    extinct: false,
+                    default_photo: {
+                        medium_url:
+                            "https://inaturalist-open-data.s3.amazonaws.com/photos/43633891/medium.jpg",
+                    },
+                },
+                {
+                    id: 41964,
+                    name: "Panthera leo",
+                    rank: "species",
+                    rank_level: 10,
+                    iconic_taxon_id: 40151,
+                    extinct: false,
+                    default_photo: null,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "inaturalist_taxon", {
+        query: "Panthera leo",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Panthera leo",
+        total: 9,
+        taxa: [
+            {
+                id: 41962,
+                name: "Panthera",
+                rank: "genus",
+                iconic_taxon_id: 40151,
+                extinct: false,
+                photo_url:
+                    "https://inaturalist-open-data.s3.amazonaws.com/photos/43633891/medium.jpg",
+            },
+            {
+                id: 41964,
+                name: "Panthera leo",
+                rank: "species",
+                iconic_taxon_id: 40151,
+                extinct: false,
+                photo_url: null,
+            },
+        ],
+    });
+    const empty = await call(c, "inaturalist_taxon", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        taxa: [],
+    });
+    const before = fetches;
+    const bad = await call(c, "inaturalist_taxon", {
+        query: "Panthera leo",
+        limit: 99,
+    });
+    assert.equal(bad.isError, true);
+    assert.equal(fetches, before);
 });

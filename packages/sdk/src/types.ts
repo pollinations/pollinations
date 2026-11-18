@@ -1245,7 +1245,8 @@ export interface ModelStatusRow {
     served: number;
     fallback_rescues: number;
     retried_503s: number;
-    last_error_at: string;
+    /** Latest 5xx in the window; `null` when there was none. */
+    last_error_at: string | null;
     latency_p50_ms: number | null;
     latency_p95_ms: number | null;
     avg_latency_ms: number | null;

@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "peertube_search",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -437,5 +438,108 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.equal(missing.isError, true);
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
+    await c.close();
+});
+
+test("peertube_search projects SepiaSearch videos and rejects bad input before fetch", async (t) => {
+    const calls = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "sepiasearch.org");
+        assert.equal(url.pathname, "/api/v1/search/videos");
+        assert.equal(
+            init.headers["User-Agent"].includes("hello@pollinations.ai"),
+            true,
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        calls.push(url.searchParams.get("search"));
+        if (url.searchParams.get("search") === "zzzzqqqxxyy")
+            return Response.json({ total: 0, data: [] });
+        assert.equal(url.searchParams.get("count"), "2");
+        return Response.json({
+            total: 2071,
+            data: [
+                {
+                    name: "Python – ‘Hello World’ and Adding Two Numbers",
+                    description:
+                        "A quick introduction into Python coding, showing how to print ‘Hello World’ and add numbers.",
+                    duration: 153,
+                    views: 71,
+                    likes: 4,
+                    publishedAt: "2025-03-24T12:32:19.999Z",
+                    url: "https://peertube.wtf/videos/watch/d33096a5-8f2c-4fb0-97be-e04541374ff6",
+                    channel: {
+                        name: "python.programming",
+                        displayName: "Python Programming",
+                        host: "peertube.wtf",
+                    },
+                },
+                {
+                    name: "ev3dev with Python and the Mindstorm robot",
+                    description: null,
+                    duration: 43,
+                    views: 27,
+                    likes: 1,
+                    publishedAt: "2023-12-09T01:18:39.751Z",
+                    url: "https://spectra.video/videos/watch/a15f8cb7-5937-4fe0-b874-0c5f5a3d41a0",
+                    channel: {
+                        name: "python",
+                        displayName: "Python",
+                        host: "spectra.video",
+                    },
+                },
+            ],
+        });
+    });
+    const c = await client();
+    const result = await c.callTool({
+        name: "peertube_search",
+        arguments: { query: "python", limit: 2 },
+    });
+    assert.equal(result.isError, undefined);
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        query: "python",
+        total: 2071,
+        videos: [
+            {
+                title: "Python – ‘Hello World’ and Adding Two Numbers",
+                channel: "Python Programming",
+                instance: "peertube.wtf",
+                duration: 153,
+                views: 71,
+                published: "2025-03-24T12:32:19.999Z",
+                url: "https://peertube.wtf/videos/watch/d33096a5-8f2c-4fb0-97be-e04541374ff6",
+            },
+            {
+                title: "ev3dev with Python and the Mindstorm robot",
+                channel: "Python",
+                instance: "spectra.video",
+                duration: 43,
+                views: 27,
+                published: "2023-12-09T01:18:39.751Z",
+                url: "https://spectra.video/videos/watch/a15f8cb7-5937-4fe0-b874-0c5f5a3d41a0",
+            },
+        ],
+    });
+    const empty = await c.callTool({
+        name: "peertube_search",
+        arguments: { query: "zzzzqqqxxyy" },
+    });
+    assert.equal(empty.isError, undefined);
+    assert.deepEqual(JSON.parse(empty.content[0].text), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        videos: [],
+    });
+    assert.equal(calls.length, 2);
+    for (const args of [{ query: " " }, { query: "python", limit: 99 }]) {
+        const bad = await c.callTool({
+            name: "peertube_search",
+            arguments: args,
+        });
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(calls.length, 2);
     await c.close();
 });

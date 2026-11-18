@@ -1,302 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-17T06:10:05.861614+00:00",
+  "generated_at": "2026-11-18T06:15:32.041539+00:00",
   "models": [
-    {
-      "id": "2026-10-18:deepseek/deepseek-v4.1-flash-1017",
-      "model_id": "deepseek/deepseek-v4.1-flash-1017",
-      "title": "DeepSeek V4.1 Flash 1017",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1048576
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000015",
-            "promptCachedTokens": "0.000000003",
-            "completionTextTokens": "0.0000006"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:black-forest-labs/flux-3-image-klein",
-      "model_id": "black-forest-labs/flux-3-image-klein",
-      "title": "FLUX.3 Image Klein",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "image",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": {
-          "completionImageTokens": {
-            "unit": "megapixel",
-            "quantity": 1000000
-          }
-        }
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 10
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.000000009"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:x-ai/grok-4.20",
-      "model_id": "x-ai/grok-4.20",
-      "title": "Grok 4.20",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000015",
-            "promptCachedTokens": "0.00000015",
-            "promptImageTokens": "0.0000015",
-            "completionTextTokens": "0.0000045"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000009375",
-            "promptCachedTokens": "0.00000015",
-            "promptImageTokens": "0.0000009375",
-            "completionTextTokens": "0.000001875"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:kwaivgi/kling-v3.0-std",
-      "model_id": "kwaivgi/kling-v3.0-std",
-      "title": "Kling 3.0 Standard",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "video",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 2
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "video",
-            "audio"
-          ]
-        },
-        "paid_only": {
-          "before": null,
-          "after": true
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionVideoSeconds": "0.084",
-            "completionAudioSeconds": "0.042"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:liquid/d1",
-      "model_id": "liquid/d1",
-      "title": "Liquid D1",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000000422"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000000211",
-            "promptCachedTokens": "0.0000000211"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:xiaomi/mimo-v2.6-flash",
-      "model_id": "xiaomi/mimo-v2.6-flash",
-      "title": "MiMo V2.6 Flash",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000001477",
-            "promptCachedTokens": "0.000000002954",
-            "completionTextTokens": "0.0000002954"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000014",
-            "promptCachedTokens": "0.0000000028",
-            "promptImageTokens": "0.00000014",
-            "completionTextTokens": "0.00000028"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:xiaomi/mimo-v2.6-pro",
-      "model_id": "xiaomi/mimo-v2.6-pro",
-      "title": "MiMo V2.6 Pro",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "text",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000458925",
-            "promptCachedTokens": "0.000000003798",
-            "completionTextTokens": "0.00000091785"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000000435",
-            "promptCachedTokens": "0.0000000036",
-            "promptImageTokens": "0.000000435",
-            "completionTextTokens": "0.00000087"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-18:nvidia/asset-harvester",
-      "model_id": "nvidia/asset-harvester",
-      "title": "NVIDIA Asset Harvester",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "3d",
-      "date": "2026-10-18",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "completionImageTokens": "0.07"
-          },
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.25"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-20:openai/gpt-6-luna",
       "model_id": "openai/gpt-6-luna",
@@ -3096,6 +2801,548 @@
           "after": true
         }
       }
+    },
+    {
+      "id": "2026-11-17:deepseek/deepseek-v4.1-flash-1017",
+      "model_id": "deepseek/deepseek-v4.1-flash-1017",
+      "title": "DeepSeek V4.1 Flash 1017",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 60
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000003",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000003",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:black-forest-labs/flux.2-flex",
+      "model_id": "black-forest-labs/flux.2-flex",
+      "title": "FLUX.2 Flex",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": {
+          "promptImageTokens": {
+            "unit": "megapixel"
+          },
+          "completionImageTokens": {
+            "unit": "megapixel"
+          }
+        },
+        "after": {
+          "promptImageTokens": {
+            "unit": "megapixel"
+          },
+          "completionImageTokens": {
+            "unit": "megapixel"
+          }
+        }
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:openai/gpt-6.2-astra",
+      "model_id": "openai/gpt-6.2-astra",
+      "title": "GPT-6.2 Astra",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000006",
+            "promptCachedTokens": "0.0000003",
+            "promptCacheWriteTokens": "0.0000075",
+            "completionTextTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:openai/gpt-6.2-sol",
+      "model_id": "openai/gpt-6.2-sol",
+      "title": "GPT-6.2 Sol",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 50
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.000001875",
+            "promptImageTokens": "0.0000015",
+            "completionTextTokens": "0.0000075"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:tencent/hy4-flash",
+      "model_id": "tencent/hy4-flash",
+      "title": "Hy4 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1024000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000035",
+            "promptCachedTokens": "0.0000000015",
+            "completionTextTokens": "0.0000001405"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:microsoft/mai-image-2.7",
+      "model_id": "microsoft/mai-image-2.7",
+      "title": "MAI Image 2.7",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 5
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000255"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:microsoft/mai-image-2.7-flash",
+      "model_id": "microsoft/mai-image-2.7-flash",
+      "title": "MAI Image 2.7 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 5
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000013125",
+            "promptImageTokens": "0.000001875",
+            "completionImageTokens": "0.0000075"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:microsoft/microsoft-decision-1.1",
+      "model_id": "microsoft/microsoft-decision-1.1",
+      "title": "Microsoft-Decision-1.1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "decision",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 32768
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000315"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:qwen/qwen4-max",
+      "model_id": "qwen/qwen4-max",
+      "title": "Qwen 4 Max",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.0000015",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.000001875",
+            "completionTextTokens": "0.0000045"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:zyphra/zonos3-mini",
+      "model_id": "zyphra/zonos3-mini",
+      "title": "ZONOS3-Mini",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": {
+          "completionAudioTokens": {
+            "unit": "byte"
+          }
+        }
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000005"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy"
+          ]
+        }
+      }
+    },
+    {
+      "id": "2026-11-17:liquid/d1.2",
+      "model_id": "liquid/d1.2",
+      "title": "d1.2",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "decision",
+      "date": "2026-11-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 65536
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000002"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -3890,6 +4137,136 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-17",
+      "emoji": "🤖",
+      "title": "Hy4 Flash joins text",
+      "text": "Use `tencent/hy4-flash` for text and image input, reasoning, and tools. It is paid-only and has a listed context length of 1,024,000 tokens. [View the model](https://enter.pollinations.ai/models?q=tencent/hy4-flash).",
+      "prs": [
+        19890
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🤖",
+      "title": "DeepSeek Flash gains Quest access",
+      "text": "DeepSeek V4.1 Flash 1017 now accepts Quest balance as well as paid balance, with a 60 requests-per-minute per-user limit. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19892
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🤖",
+      "title": "GPT-6.2 Astra arrives",
+      "text": "Use paid-only `openai/gpt-6.2-astra` with text or image input, tools, and reasoning. It accepts up to 10 reference images and has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.2-astra).",
+      "prs": [
+        19981
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🤖",
+      "title": "GPT-6.2 Sol arrives",
+      "text": "Use paid-only `openai/gpt-6.2-sol` with text or image input, tools, and reasoning. It has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.2-sol).",
+      "prs": [
+        19981
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎨",
+      "title": "MAI Image Flash arrives",
+      "text": "Generate or edit images with `microsoft/mai-image-2.7-flash`, using up to five reference images for edits. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7-flash).",
+      "prs": [
+        19985
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎨",
+      "title": "MAI Image 2.7 arrives",
+      "text": "Generate images from text or edit them with up to five reference images using `microsoft/mai-image-2.7`. It accepts Quest or paid balance. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7).",
+      "prs": [
+        19986
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎯",
+      "title": "Microsoft decision model arrives",
+      "text": "Use `microsoft/microsoft-decision-1.1` to get typed choices and a probability for each fixed option through `/alpha/decisions` or `/v1/chat/completions`. It accepts Quest or paid balance and text-only requests. [View the model](https://enter.pollinations.ai/models?q=microsoft/microsoft-decision-1.1).",
+      "prs": [
+        19988
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎯",
+      "title": "Liquid d1.2 joins decisions",
+      "text": "Send text or JSON state to `liquid/d1.2` and get structured choices, scores, and probabilities through `/alpha/decisions` or `/v1/chat/completions`. It uses paid balance. [View the model](https://enter.pollinations.ai/models?q=liquid/d1.2).",
+      "prs": [
+        19989
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎵",
+      "title": "ZONOS3-Mini speech arrives",
+      "text": "Turn text into MP3 or PCM speech with paid-only `zyphra/zonos3-mini` using the `alloy` voice. Requests accept up to 10,000 text characters and a 64 KiB payload. [View the model](https://enter.pollinations.ai/models?q=zyphra/zonos3-mini).",
+      "prs": [
+        20003
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎵",
+      "title": "Give Sonilo a video",
+      "text": "Upload a reference video in Play and use `sonilo/sonilo-1.1-sfx` to add sound effects. Play shows the `reference_video` field in its API example. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        19973
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🔗",
+      "title": "Reference video in the SDK",
+      "text": "Pass `referenceVideo` to the SDK's `audioSpeech()` call for video-based sound effects. The SDK sends it as `reference_video`. [Browse the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        19973
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "✨",
+      "title": "Play remembers your run",
+      "text": "Leave Play and return during the same visit without losing your inputs, result, or in-flight run. Video controls now follow each model's supported options, and Cmd/Ctrl+Enter starts a run. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        19974
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-17",
+      "emoji": "🎯",
+      "title": "Repeat Quest rewards stack",
+      "text": "Repeat rewards now appear on one card per activity, with earned amounts and links to each result. Claim waiting rewards together for one balance, then keep the card for the next reward. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        19983
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-16",
       "emoji": "🤖",
@@ -4932,46 +5309,6 @@
         17978
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-10-18",
-      "emoji": "🎨",
-      "title": "Kling 3.0 Standard video",
-      "text": "Make 720p clips from a prompt or start frame, with an optional end frame and audio. Choose a duration from 3 to 15 seconds. [View the model](https://enter.pollinations.ai/models?q=kwaivgi%2Fkling-v3.0-std).",
-      "prs": [
-        15176
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-18",
-      "emoji": "🎨",
-      "title": "FLUX.3 Image Klein",
-      "text": "Generate images or edit with up to 10 reference images and explicit dimensions up to 4096 pixels per side. [View the model](https://enter.pollinations.ai/models?q=FLUX.3%20Image%20Klein).",
-      "prs": [
-        17633
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-18",
-      "emoji": "🤖",
-      "title": "DeepSeek V4.1 Flash 1017",
-      "text": "Use `deepseek/deepseek-v4.1-flash-1017` for text and image input, tools, and reasoning, with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=deepseek%2Fdeepseek-v4.1-flash-1017).",
-      "prs": [
-        17859
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-18",
-      "emoji": "🔗",
-      "title": "Custom account menu links",
-      "text": "Apps using `<polli-connect>` can add links to the account menu and optionally hide Buy Pollen while keeping the balance and account actions. [Explore React UI](https://github.com/pollinations/pollinations/tree/main/packages/ui).",
-      "prs": [
-        17863
-      ],
-      "kind": "product"
     }
   ]
 }

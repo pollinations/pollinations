@@ -2,6 +2,16 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.32] - 2026-11-18
+
+### Added
+- `connectRealtime()`, `realtimeUrl()` and the React hook `useRealtime()` open
+  realtime voice and live transcription sessions on `/v1/realtime` and pass
+  OpenAI Realtime events through.
+- `pcm16ToBase64()` and `base64ToPcm16()` convert audio for those sessions.
+- `examples/realtime-voice.html`, a voice chat page with
+  `openai/gpt-realtime-2.1`.
+
 ## [5.1.0-alpha.31] - 2026-11-17
 
 ### Changed

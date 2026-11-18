@@ -687,6 +687,49 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice and live transcription
+
+`connectRealtime()` opens `wss://gen.pollinations.ai/v1/realtime` and passes
+[OpenAI Realtime](https://developers.openai.com/api/docs/guides/realtime-conversations)
+events through as plain objects. It resolves once the socket is open and your
+`session` has been sent as `session.update`.
+
+```javascript
+import { connectRealtime, pcm16ToBase64, base64ToPcm16 } from '@pollinations/sdk';
+
+const session = await connectRealtime({
+  apiKey,                              // the user's sk_ key; it goes in ?key=
+  model: 'openai/gpt-realtime-2.1',    // the default
+  session: { type: 'realtime', instructions: 'Keep replies short.' },
+});
+session.on('response.output_audio.delta', (e) => play(base64ToPcm16(e.delta)));
+session.on('error', (e) => console.error(e.error));
+session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(micSamples) });
+```
+
+- Audio is PCM16 at 24 kHz, base64-encoded. `pcm16ToBase64` and
+  `base64ToPcm16` convert from and to the `Float32Array` samples Web Audio uses.
+- Live transcription: pass a transcription model such as
+  `openai/gpt-live-transcribe`, send audio the same way, and read
+  `conversation.item.input_audio_transcription.delta` and `.completed`.
+  Voice models refuse input transcription and close the session.
+- `session.on('*', fn)` receives every event; `on()` returns an unsubscribe function.
+- `session.closed` resolves with the close `code` and `reason`; `session.close()` or
+  aborting `signal` closes it. Usage is billed when the session closes.
+- A key, balance or model error rejects `connectRealtime()` with a
+  `PollinationsError`: browsers close the socket before it opens without the
+  HTTP status, so the message names what to check.
+- Node before 22 has no global `WebSocket`: pass `WebSocket` from the `ws` package.
+
+In React, `useRealtime(options)` runs a session on the signed-in user's key.
+It returns `{ status, session, error, connect, close }`, connects only when you
+call `connect()`, and closes on logout, key change and unmount.
+
+[`examples/realtime-voice.html`](examples/realtime-voice.html) is a complete
+voice chat page: sign-in, microphone, playback and a transcript of the replies.
+It plays the model through an `<audio>` element so the browser's echo
+cancellation does not feed the model its own voice.
+
 ## Vision (Image Input)
 
 ```javascript

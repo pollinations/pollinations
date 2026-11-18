@@ -12,6 +12,11 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeOptions,
+    type RealtimeSession,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +497,80 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export interface UseRealtimeValue {
+    status: "idle" | "connecting" | "open" | "closed";
+    /** The open session, or null. Listen with `session.on()`, send with `session.send()`. */
+    session: RealtimeSession | null;
+    error: Error | null;
+    /** Opens a session on the signed-in user's key, closing any previous one. */
+    connect: () => Promise<RealtimeSession | null>;
+    close: () => void;
+}
+
+/**
+ * A realtime voice or transcription session on the signed-in user's key.
+ * Nothing connects until `connect()`, so a session starts on a user action.
+ * Logout, a key change and unmount close it.
+ */
+export function useRealtime(
+    options: Omit<RealtimeOptions, "apiKey" | "signal"> = {},
+): UseRealtimeValue {
+    const { apiKey } = useRequiredAuth();
+    const [status, setStatus] = useState<UseRealtimeValue["status"]>("idle");
+    const [session, setSession] = useState<RealtimeSession | null>(null);
+    const [error, setError] = useState<Error | null>(null);
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+    const controllerRef = useRef<AbortController | null>(null);
+
+    const close = useCallback(() => {
+        if (!controllerRef.current) return;
+        controllerRef.current.abort();
+        controllerRef.current = null;
+        setSession(null);
+        setStatus("closed");
+    }, []);
+
+    const connect = useCallback(async () => {
+        close();
+        if (!apiKey) {
+            setError(new Error("Log in to Pollinations to start a session"));
+            return null;
+        }
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        setStatus("connecting");
+        setError(null);
+        try {
+            const next = await connectRealtime({
+                ...optionsRef.current,
+                apiKey,
+                signal: controller.signal,
+            });
+            setSession(next);
+            setStatus("open");
+            next.closed.then(() => {
+                if (controllerRef.current !== controller) return;
+                controllerRef.current = null;
+                setSession(null);
+                setStatus("closed");
+            });
+            return next;
+        } catch (err) {
+            if (controller.signal.aborted) return null;
+            controllerRef.current = null;
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setStatus("closed");
+            return null;
+        }
+    }, [apiKey, close]);
+
+    useEffect(() => close, [close, apiKey]);
+
+    return useMemo(
+        () => ({ status, session, error, connect, close }),
+        [status, session, error, connect, close],
+    );
 }

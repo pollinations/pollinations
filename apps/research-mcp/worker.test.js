@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { dinosaurTools } from "./tools/dinosaur.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dinosaur_fact",
             ].sort(),
         );
     });
@@ -644,4 +646,92 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("dinosaur_fact returns random facts with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveFacts = [
+        {
+            Name: "Hadrosaurus",
+            Description: "The official state dinosaur of New Jersey.",
+        },
+        {
+            Name: "Savannasaurus",
+            Description:
+                "This titanosaur was recently discovered in Australia.",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "dinosaur-facts-api.shultzlab.com");
+        assert.equal(target.pathname, "/dinosaurs/random");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(liveFacts[(fetchCalls - 1) % liveFacts.length]);
+    });
+    const c = await client(t);
+    const result = await call(c, "dinosaur_fact", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        facts: [
+            {
+                name: "Hadrosaurus",
+                description: "The official state dinosaur of New Jersey.",
+            },
+            {
+                name: "Savannasaurus",
+                description:
+                    "This titanosaur was recently discovered in Australia.",
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "dinosaur_fact", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "dinosaur_fact", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = dinosaurTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return {
+            Name: "Microceratops",
+            Description: "Probably the smallest ceratopsian that ever lived.",
+        };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        facts: [
+            {
+                name: "Microceratops",
+                description:
+                    "Probably the smallest ceratopsian that ever lived.",
+            },
+        ],
+    });
+    assert.equal(stubCalls, 1);
+
+    // A fact without text is a clean error.
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({})),
+        /without text/,
+    );
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({ Name: "Hadrosaurus" })),
+        /without text/,
+    );
 });

@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { geoTools } from "./tools/geo.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "geo_datasets",
             ].sort(),
         );
     });
@@ -644,4 +646,196 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("GEO search fetches IDs then summaries and projects accession, title, organism, type, samples and date", async (t) => {
+    let fetches = 0;
+    let searches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname.endsWith("/esearch.fcgi")) {
+            searches += 1;
+            assert.equal(url.searchParams.get("db"), "gds");
+            assert.equal(url.searchParams.get("term"), "breast cancer");
+            // First search asks for 2, the default-limit search asks for 5.
+            assert.equal(
+                url.searchParams.get("retmax"),
+                searches === 1 ? "2" : "5",
+            );
+            assert.equal(url.searchParams.get("tool"), "pollinations-research");
+            assert.equal(
+                url.searchParams.get("email"),
+                "hello@pollinations.ai",
+            );
+            return Response.json({
+                esearchresult: {
+                    count: "208304",
+                    idlist: ["200333271", "200319568"],
+                },
+            });
+        }
+        if (url.pathname.endsWith("/esummary.fcgi")) {
+            assert.equal(url.searchParams.get("db"), "gds");
+            assert.equal(url.searchParams.get("id"), "200333271,200319568");
+            return Response.json({
+                result: {
+                    uids: ["200333271", "200319568"],
+                    200333271: {
+                        uid: "200333271",
+                        accession: "GSE333271",
+                        title: "Transcriptomic profiles of wild-type and ANT2-Q39A-mutant iBMDMs under basal conditions or upon stimulation with E0771-conditioned medium.",
+                        taxon: "Mus musculus",
+                        entrytype: "GSE",
+                        gdstype:
+                            "Expression profiling by high throughput sequencing",
+                        n_samples: 9,
+                        pdat: "2026/11/16",
+                    },
+                    200319568: {
+                        uid: "200319568",
+                        accession: "GSE319568",
+                        title: "Cyclophosphamide drives dynamic waves of pro- and anti-tumoral myeloid cells in Triple-Negative Breast Cancer",
+                        taxon: "Mus musculus",
+                        entrytype: "GSE",
+                        gdstype:
+                            "Expression profiling by high throughput sequencing",
+                        n_samples: 8,
+                        pdat: "2026/11/14",
+                    },
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "geo_datasets", {
+        term: "breast cancer",
+        limit: 2,
+    });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.equal(fetches, 2);
+    assert.deepEqual(value(res), {
+        term: "breast cancer",
+        total: 208304,
+        datasets: [
+            {
+                accession: "GSE333271",
+                title: "Transcriptomic profiles of wild-type and ANT2-Q39A-mutant iBMDMs under basal conditions or upon stimulation with E0771-conditioned medium.",
+                taxon: "Mus musculus",
+                entrytype: "GSE",
+                dataset_type:
+                    "Expression profiling by high throughput sequencing",
+                samples: 9,
+                published: "2026/11/16",
+            },
+            {
+                accession: "GSE319568",
+                title: "Cyclophosphamide drives dynamic waves of pro- and anti-tumoral myeloid cells in Triple-Negative Breast Cancer",
+                taxon: "Mus musculus",
+                entrytype: "GSE",
+                dataset_type:
+                    "Expression profiling by high throughput sequencing",
+                samples: 8,
+                published: "2026/11/14",
+            },
+        ],
+    });
+
+    // A no-args limit defaults to 5 (retmax=5 on the search fetch).
+    const def = await call(c, "geo_datasets", { term: "breast cancer" });
+    assert.notEqual(def.isError, true, JSON.stringify(def));
+    assert.equal(fetches, 4);
+
+    // Out-of-range limit is rejected by the schema with zero more fetches.
+    const rejected = await call(c, "geo_datasets", {
+        term: "breast cancer",
+        limit: 99,
+    });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetches, 4);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = geoTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async (url) => {
+        stubCalls += 1;
+        if (String(url).includes("/esearch.fcgi")) {
+            assert.match(String(url), /retmax=5/);
+            return {
+                esearchresult: { count: "1", idlist: ["200333271"] },
+            };
+        }
+        return {
+            result: {
+                uids: ["200333271"],
+                200333271: {
+                    uid: "200333271",
+                    accession: "GSE333271",
+                    title: "Transcriptomic profiles of wild-type and ANT2-Q39A-mutant iBMDMs under basal conditions or upon stimulation with E0771-conditioned medium.",
+                    taxon: "Mus musculus",
+                    entrytype: "GSE",
+                    gdstype:
+                        "Expression profiling by high throughput sequencing",
+                    n_samples: 9,
+                    pdat: "2026/11/16",
+                },
+            },
+        };
+    };
+    assert.deepEqual(
+        await run({ term: "breast cancer", limit: 99 }, stubFetch),
+        {
+            term: "breast cancer",
+            total: 1,
+            datasets: [
+                {
+                    accession: "GSE333271",
+                    title: "Transcriptomic profiles of wild-type and ANT2-Q39A-mutant iBMDMs under basal conditions or upon stimulation with E0771-conditioned medium.",
+                    taxon: "Mus musculus",
+                    entrytype: "GSE",
+                    dataset_type:
+                        "Expression profiling by high throughput sequencing",
+                    samples: 9,
+                    published: "2026/11/16",
+                },
+            ],
+        },
+    );
+    assert.equal(stubCalls, 2);
+});
+
+test("GEO returns an empty list for no match and rejects a blank term before any fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(url.searchParams.get("term"), "zzzqqqxxyy");
+        return Response.json({
+            esearchresult: { count: "0", idlist: [] },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "geo_datasets", { term: "zzzqqqxxyy" });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.deepEqual(value(res), {
+        term: "zzzqqqxxyy",
+        total: 0,
+        datasets: [],
+    });
+    assert.equal(fetches, 1);
+
+    const blank = await call(c, "geo_datasets", { term: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 1);
 });

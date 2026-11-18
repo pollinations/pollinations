@@ -348,6 +348,7 @@ for (const modern of [false, true]) {
         assert.deepEqual(
             (await c.listTools()).tools.map((t) => t.name).sort(),
             [
+                "wikibooks_search",
                 "wikipedia_page",
                 "wikipedia_search",
                 "wiktionary_define",
@@ -644,4 +645,225 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+const WIKIBOOKS_SCOUTING_EXTRACT = `
+== Requirement 1 ==
+Do the following: 
+
+A. Explain to your counselor the most likely hazards you may encounter while participating in cooking activities and what you should do to anticipate, help prevent, mitigate and respond to these hazards.
+B. Review with your counselor the injuries that might arise from cooking, including burns and scalds, and the proper treatment.
+C. Describe how meat, fish, chicken, eggs, dairy products, and fresh vegetables should be stored, transported, and properly prepared for cooking.
+Explain how to prevent cross-contamination
+
+D. Describe the following food-related illnesses and tell what you can do to help prevent each from happening: Salmonella enteritis, Staphylococcal enteritis, E. coli (Escherichia coli) enteritis, Botulism, Trichinosis, Hepatitis.
+Discuss with your counselor food allergies, food intolerance, and food related diseases.
+
+
+== Requirement `;
+const WIKIBOOKS_UGANDA_EXTRACT = `Most of the Ugandan cuisines are not time-consuming, therefore preparing for them and enjoying cooking them is a joyful experience.
+The most prominent utensils that you might need for cooking your Ugandan cuisine are perhaps, a skillet or a hot outdoor as well as in indoor grill to grill your Ugandan meat dishes, a non-stick saucepan, a large Dutch oven or even a similar cooking pot would be useful. Make sure that you use the right amount of desired ingredients especially spices and salts in while preparing your Ugandan cuisine. Most of the dishes in the Ugandan cuisine require steaming, so pressure pots and steamers are very handy. Moist heat cooking methods use water or oil as a medium. Heat is applied to the medium to cook the food. In dry cooking methods, the food is cooked by applying heat e.g. baking, grilling, and roasting. If you intend to serve your Ugandan meal in the true Ugan`;
+const WIKIBOOKS_BREAD_EXTRACT = `Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients  
+Bread is a type of cooked preparation made from a dough of flour and water, often with additional ingredients.
+
+
+== Varieties ==
+There are many types of bread across the world, each with its own history, style, and taste. Typically, these can be described according to a couple characteristics.
+
+
+=== Leavened vs unleavened ===
+Leavened breads include a component to lighten and expand the crumb, while unleavened breads do not. As a result, unleavened bread is usually denser. Beyond the simple presence/absence of leavener, breads can also be classified as yeasted breads, which use yeast as `;
+
+test("Wikibooks search returns textbook pages with opening text", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        requests.push(request.url);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "en.wikibooks.org");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.searchParams.get("list") === "search") {
+            assert.equal(target.searchParams.get("srsearch"), "cooking");
+            assert.equal(target.searchParams.get("srlimit"), "2");
+            return Response.json({
+                query: {
+                    searchinfo: { totalhits: 999 },
+                    search: [
+                        {
+                            ns: 0,
+                            title: "Scouting/BSA/Cooking Merit Badge",
+                            pageid: 372759,
+                            snippet:
+                                'counselor the most likely hazards you may encounter while participating in <span class="searchmatch">cooking</span> activities and what you should do to anticipate, help prevent, mitigate',
+                        },
+                        {
+                            ns: 0,
+                            title: "Mujje Tulye from Uganda/Cooking methods in Uganda",
+                            pageid: 310382,
+                            snippet:
+                                'preparing for them and enjoying <span class="searchmatch">cooking</span> them is a joyful experience. The most prominent utensils that you might need for <span class="searchmatch">cooking</span> your Ugandan cuisine are perhaps',
+                        },
+                    ],
+                },
+            });
+        }
+        assert.equal(target.searchParams.get("prop"), "extracts");
+        const title = target.searchParams.get("titles");
+        const extract =
+            title === "Scouting/BSA/Cooking Merit Badge"
+                ? WIKIBOOKS_SCOUTING_EXTRACT
+                : WIKIBOOKS_UGANDA_EXTRACT;
+        return Response.json({
+            query: { pages: { 1: { pageid: 1, title, extract } } },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikibooks_search", {
+        query: "cooking",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.query, "cooking");
+    assert.equal(val.total, 999);
+    assert.equal(val.results.length, 2);
+    assert.deepEqual(val.results[0], {
+        title: "Scouting/BSA/Cooking Merit Badge",
+        pageid: 372759,
+        snippet:
+            "counselor the most likely hazards you may encounter while participating in cooking activities and what you should do to anticipate, help prevent, mitigate",
+        text: "Do the following:\n\nA. Explain to your counselor the most likely hazards you may encounter while participating in cooking activities and what you should do to anticipate, help prevent, mitigate and respond to these hazards. B. Review with your counselor the injuries that might arise from cooking, including burns and scalds, and the proper treatment. C. Describe how meat, fish, chicken, eggs, dairy products, and fresh vegetables should be stored, transported, and properly prepared for cooking. Explain how to prevent cross-contamination\n\nD. Describe the following food-related illnesses and tell what you can do to help prevent each from happening: Salmonella enteritis, Staphylococcal enteritis, E. coli (Escherichia coli) enteritis, Botulism, Trichinosis, Hepatitis. Discuss with your counselor food allergies, food intolerance, and food related diseases.",
+        truncated: false,
+        url: "https://en.wikibooks.org/wiki/Scouting%2FBSA%2FCooking%20Merit%20Badge",
+    });
+    assert.deepEqual(val.results[1], {
+        title: "Mujje Tulye from Uganda/Cooking methods in Uganda",
+        pageid: 310382,
+        snippet:
+            "preparing for them and enjoying cooking them is a joyful experience. The most prominent utensils that you might need for cooking your Ugandan cuisine are perhaps",
+        text: "Most of the Ugandan cuisines are not time-consuming, therefore preparing for them and enjoying cooking them is a joyful experience. The most prominent utensils that you might need for cooking your Ugandan cuisine are perhaps, a skillet or a hot outdoor as well as in indoor grill to grill your Ugandan meat dishes, a non-stick saucepan, a large Dutch oven or even a similar cooking pot would be useful. Make sure that you use the right amount of desired ingredients especially spices and salts in while preparing your Ugandan cuisine. Most of the dishes in the Ugandan cuisine require steaming, so pressure pots and steamers are very handy. Moist heat cooking methods use water or oil as a medium. Heat is applied to the medium to cook the food. In dry cooking methods, the food is cooked by applying heat e.g. baking, grilling, and roasting. If you intend to serve your Ugandan meal in the true Ugan",
+        truncated: false,
+        url: "https://en.wikibooks.org/wiki/Mujje%20Tulye%20from%20Uganda%2FCooking%20methods%20in%20Uganda",
+    });
+    // One search fetch plus one extracts fetch per hit.
+    assert.equal(requests.length, 3);
+});
+
+test("Wikibooks search returns an empty list for no match and rejects blank queries and out-of-range limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({
+            query: { searchinfo: { totalhits: 0 }, search: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikibooks_search", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(count, 1);
+    for (const args of [{ query: " " }, { query: "x", limit: 99 }]) {
+        const bad = await call(c, "wikibooks_search", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, 1);
+});
+
+test("Wikibooks search keeps a result whose page cannot be read, drops cookbook navigation lines, and caps long text at 2000 characters", async (t) => {
+    const searchBody = (title) => ({
+        query: {
+            searchinfo: { totalhits: 1 },
+            search: [{ title, pageid: 1, snippet: title }],
+        },
+    });
+    const c = await client(t);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(
+                searchBody("Scouting/BSA/Cooking Merit Badge"),
+            );
+        return Response.json({
+            error: {
+                code: "missingtitle",
+                info: "The page you specified doesn't exist.",
+            },
+        });
+    });
+    let result = await call(c, "wikibooks_search", {
+        query: "cooking",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text, null);
+    assert.equal(value(result).results[0].truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody("Cookbook:Bread"));
+        return Response.json({
+            query: {
+                pages: {
+                    1: {
+                        pageid: 1,
+                        title: "Cookbook:Bread",
+                        extract: WIKIBOOKS_BREAD_EXTRACT,
+                    },
+                },
+            },
+        });
+    });
+    result = await call(c, "wikibooks_search", {
+        query: "bread",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const bread = value(result).results[0];
+    assert.match(
+        bread.text,
+        /^Bread is a type of cooked preparation made from a dough of flour and water/,
+    );
+    assert.equal(bread.text.includes("Cookbook | Recipes"), false);
+    assert.equal(bread.truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(
+                searchBody("Scouting/BSA/Cooking Merit Badge"),
+            );
+        return Response.json({
+            query: {
+                pages: {
+                    1: {
+                        pageid: 1,
+                        title: "Scouting/BSA/Cooking Merit Badge",
+                        extract: WIKIBOOKS_SCOUTING_EXTRACT.repeat(6),
+                    },
+                },
+            },
+        });
+    });
+    result = await call(c, "wikibooks_search", {
+        query: "cooking",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text.length, 2000);
+    assert.equal(value(result).results[0].truncated, true);
+    assert.match(value(result).results[0].text, /^Do the following:/);
 });

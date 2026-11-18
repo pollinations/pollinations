@@ -342,6 +342,222 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("NHL player lookup projects bio, latest NHL season and career stats for skaters and goalies", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api-web.nhle.com");
+        const request = new Request(input, init);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(request.redirect, "follow");
+        if (url.pathname === "/v1/player/8478402/landing")
+            return Response.json({
+                playerId: 8478402,
+                isActive: true,
+                currentTeamAbbrev: "EDM",
+                fullTeamName: { default: "Edmonton Oilers" },
+                firstName: { default: "Connor" },
+                lastName: { default: "McDavid" },
+                sweaterNumber: 97,
+                position: "C",
+                heightInCentimeters: 188,
+                weightInKilograms: 86,
+                birthDate: "1997-01-13",
+                birthCity: { default: "Richmond Hill" },
+                birthStateProvince: { default: "Ontario" },
+                birthCountry: "CAN",
+                shootsCatches: "L",
+                draftDetails: {
+                    year: 2015,
+                    teamAbbrev: "EDM",
+                    round: 1,
+                    pickInRound: 1,
+                    overallPick: 1,
+                },
+                seasonTotals: [
+                    {
+                        season: 20082009,
+                        leagueAbbrev: "QC Int PW",
+                        gameTypeId: 2,
+                        gamesPlayed: 7,
+                        goals: 7,
+                        assists: 7,
+                        points: 14,
+                    },
+                    {
+                        season: 20252026,
+                        leagueAbbrev: "NHL",
+                        gameTypeId: 2,
+                        teamName: { default: "Edmonton Oilers" },
+                        gamesPlayed: 82,
+                        goals: 48,
+                        assists: 90,
+                        points: 138,
+                        plusMinus: 17,
+                        pim: 44,
+                        shots: 306,
+                    },
+                    {
+                        season: 20262027,
+                        leagueAbbrev: "NHL",
+                        gameTypeId: 2,
+                        teamName: { default: "Edmonton Oilers" },
+                        gamesPlayed: 23,
+                        goals: 13,
+                        assists: 42,
+                        points: 55,
+                        plusMinus: 29,
+                        pim: 6,
+                        shots: 64,
+                    },
+                ],
+                careerTotals: {
+                    regularSeason: {
+                        gamesPlayed: 817,
+                        goals: 422,
+                        assists: 853,
+                        points: 1275,
+                        plusMinus: 215,
+                        pim: 336,
+                        shots: 2777,
+                    },
+                },
+            });
+        if (url.pathname === "/v1/player/8476945/landing")
+            return Response.json({
+                playerId: 8476945,
+                isActive: true,
+                currentTeamAbbrev: "NJD",
+                fullTeamName: { default: "New Jersey Devils" },
+                firstName: { default: "Connor" },
+                lastName: { default: "Hellebuyck" },
+                sweaterNumber: 37,
+                position: "G",
+                heightInCentimeters: 193,
+                weightInKilograms: 94,
+                birthDate: "1993-05-19",
+                birthCity: { default: "Commerce" },
+                birthStateProvince: { default: "Michigan" },
+                birthCountry: "USA",
+                shootsCatches: "L",
+                draftDetails: {
+                    year: 2012,
+                    teamAbbrev: "WPG",
+                    round: 5,
+                    pickInRound: 9,
+                    overallPick: 130,
+                },
+                seasonTotals: [
+                    {
+                        season: 20262027,
+                        leagueAbbrev: "NHL",
+                        gameTypeId: 2,
+                        teamName: { default: "New Jersey Devils" },
+                        gamesPlayed: 7,
+                        wins: 7,
+                        losses: 0,
+                        otLosses: 0,
+                        savePctg: 0.915344,
+                        goalsAgainstAvg: 2.253786,
+                        shutouts: 1,
+                    },
+                ],
+                careerTotals: {
+                    regularSeason: {
+                        gamesPlayed: 632,
+                        wins: 352,
+                        losses: 208,
+                        otLosses: 55,
+                        savePctg: 0.915754,
+                        goalsAgainstAvg: 2.580786,
+                        shutouts: 46,
+                        pim: 12,
+                    },
+                },
+            });
+        return new Response("<html><title>Error 404 Not Found</title></html>", {
+            status: 404,
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "nhl_player", { player_id: 8478402 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        player_id: 8478402,
+        name: "Connor McDavid",
+        position: "C",
+        team: "Edmonton Oilers",
+        team_abbrev: "EDM",
+        sweater_number: 97,
+        shoots_catches: "L",
+        height_cm: 188,
+        weight_kg: 86,
+        birth_date: "1997-01-13",
+        birth_place: "Richmond Hill, Ontario, CAN",
+        draft: { year: 2015, team: "EDM", round: 1, overall_pick: 1 },
+        active: true,
+        current_season: {
+            season: 20262027,
+            team: "Edmonton Oilers",
+            games_played: 23,
+            goals: 13,
+            assists: 42,
+            points: 55,
+            plus_minus: 29,
+            pim: 6,
+            shots: 64,
+            wins: null,
+            losses: null,
+            ot_losses: null,
+            save_pct: null,
+            goals_against_avg: null,
+            shutouts: null,
+        },
+        career_regular_season: {
+            games_played: 817,
+            goals: 422,
+            assists: 853,
+            points: 1275,
+            plus_minus: 215,
+            pim: 336,
+            shots: 2777,
+            wins: null,
+            losses: null,
+            ot_losses: null,
+            save_pct: null,
+            goals_against_avg: null,
+            shutouts: null,
+        },
+    });
+    result = await call(c, "nhl_player", { player_id: 8476945 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const goalie = value(result);
+    assert.equal(goalie.name, "Connor Hellebuyck");
+    assert.equal(goalie.position, "G");
+    assert.equal(goalie.team_abbrev, "NJD");
+    assert.equal(goalie.sweater_number, 37);
+    assert.equal(goalie.current_season.wins, 7);
+    assert.equal(goalie.current_season.save_pct, 0.915344);
+    assert.equal(goalie.current_season.goals, null);
+    assert.equal(goalie.career_regular_season.wins, 352);
+    assert.equal(goalie.career_regular_season.shutouts, 46);
+    result = await call(c, "nhl_player", { player_id: 1 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Player not found: 1/);
+    assert.doesNotMatch(result.content[0].text, /Error 404/);
+    result = await call(c, "nhl_player", { player_id: 0 }).catch(() => ({
+        isError: true,
+    }));
+    assert.equal(result.isError, true);
+    assert.equal(count, 3);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +580,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "nhl_player",
             ].sort(),
         );
     });

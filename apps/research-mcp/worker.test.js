@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { typefitTools } from "./tools/typefit.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "inspirational_quote",
             ].sort(),
         );
     });
@@ -644,4 +646,97 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("inspirational_quote returns the fixed set of five with no credentials and slices on limit", async (t) => {
+    const liveQuotes = [
+        {
+            text: "Genius is one percent inspiration and ninety-nine percent perspiration.",
+            author: "Thomas Edison",
+        },
+        {
+            text: "You can observe a lot just by watching.",
+            author: "Yogi Berra",
+        },
+        {
+            text: "A house divided against itself cannot stand.",
+            author: "Abraham Lincoln",
+        },
+        {
+            text: "Difficulties increase the nearer we get to the goal.",
+            author: "Johann Wolfgang von Goethe",
+        },
+        {
+            text: "Fate is in your hands and no one elses",
+            author: "Byron Pulsifer",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "type.fit");
+        assert.equal(url.pathname, "/api/quotes");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(liveQuotes);
+    });
+    const c = await client(t);
+    const result = await call(c, "inspirational_quote", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        total: 5,
+        quotes: [
+            {
+                text: "Genius is one percent inspiration and ninety-nine percent perspiration.",
+                author: "Thomas Edison",
+            },
+            {
+                text: "You can observe a lot just by watching.",
+                author: "Yogi Berra",
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 1);
+
+    const defaultResult = await call(c, "inspirational_quote", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 5);
+    assert.equal(value(defaultResult).quotes.length, 5);
+    assert.equal(fetchCalls, 2);
+
+    const rejected = await call(c, "inspirational_quote", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 2);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = typefitTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return liveQuotes;
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 5,
+        total: 5,
+        quotes: liveQuotes,
+    });
+    assert.equal(stubCalls, 1);
+
+    // A quote without text is a clean error.
+    await assert.rejects(
+        run({ limit: 1 }, async () => [{ author: "Nobody" }]),
+        /without text/,
+    );
+
+    // An empty list is a clean error, not an empty result.
+    await assert.rejects(
+        run({ limit: 1 }, async () => []),
+        /no quotes/,
+    );
 });

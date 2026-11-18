@@ -1315,11 +1315,18 @@ export function Playground() {
         stats.find((stat) => stat.model === currentModel?.id),
     );
 
+    const canUseAudioInput = isHydrated && isLoggedIn;
+    const audioInputHint = needsSignIn
+        ? "Connect your Pollinations account to import or record audio."
+        : undefined;
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
                 orientation={
                     uploadMedia.includes("audio") ? "stacked" : "inline"
+                }
+                helper={
+                    uploadMedia.includes("audio") ? audioInputHint : undefined
                 }
                 className="min-w-0"
                 label={
@@ -1338,11 +1345,11 @@ export function Playground() {
                     )}
                 {uploadMedia.includes("audio") ? (
                     <AudioInput
-                        key={currentModel.id}
+                        key={`${currentModel.id}-${canUseAudioInput}`}
                         value={audioFiles}
                         onChange={setAudioFiles}
                         onBusyChange={setRecording}
-                        disabled={isGenerating}
+                        disabled={!canUseAudioInput || isGenerating}
                         importLabel={`Import ${mediaUploadLabel}`}
                         {...uploadProps(uploadMedia, "Use one media file.")}
                     />
@@ -1568,6 +1575,11 @@ export function Playground() {
                                 return (
                                     <FieldStack
                                         key={media}
+                                        helper={
+                                            media === "audio"
+                                                ? audioInputHint
+                                                : undefined
+                                        }
                                         label={`Reference ${MEDIA_PLURAL[media]}`}
                                         orientation={
                                             media === "audio"
@@ -1578,7 +1590,7 @@ export function Playground() {
                                     >
                                         {media === "audio" ? (
                                             <AudioInput
-                                                key={currentModel?.id}
+                                                key={`${currentModel?.id}-${canUseAudioInput}`}
                                                 value={videoReferences.audio}
                                                 onChange={(audio) =>
                                                     setVideoReferences(
@@ -1589,7 +1601,10 @@ export function Playground() {
                                                     )
                                                 }
                                                 onBusyChange={setRecording}
-                                                disabled={isGenerating}
+                                                disabled={
+                                                    !canUseAudioInput ||
+                                                    isGenerating
+                                                }
                                                 maxFiles={
                                                     videoConfig.maxReferenceAudios
                                                 }

@@ -1,18 +1,28 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { audioTime } from "../lib/audio-time.ts";
-import { IconButton } from "../primitives/IconButton.tsx";
-import { PauseIcon, PlayIcon } from "../primitives/icons/index.tsx";
-import { Slider } from "../primitives/Slider.tsx";
-import { Text } from "../primitives/Typography.tsx";
+import { cn } from "../lib/cn.ts";
+import { mediaActionTileClass } from "../lib/media-action-tile.ts";
+import { PlayIcon } from "../primitives/icons/index.tsx";
 
-export function AudioPlayer({ src, label }: { src: string; label: string }) {
+export function AudioPlayer({
+    src,
+    label,
+    disabled = false,
+}: {
+    src: string;
+    label: string;
+    disabled?: boolean;
+}) {
     const audio = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
     const [position, setPosition] = useState(0);
     const [duration, setDuration] = useState(0);
     const [error, setError] = useState(false);
+    useEffect(() => {
+        if (disabled) audio.current?.pause();
+    }, [disabled]);
     return (
-        <div className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+        <>
             {/* biome-ignore lint/a11y/useMediaCaption: This local audio preview has no timed captions. */}
             <audio
                 ref={audio}
@@ -34,65 +44,62 @@ export function AudioPlayer({ src, label }: { src: string; label: string }) {
                 }
                 onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
                 onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
+                onPause={(e) => {
+                    setPlaying(false);
+                    if (!e.currentTarget.ended) e.currentTarget.currentTime = 0;
+                }}
                 onEnded={() => setPlaying(false)}
                 onError={() => setError(true)}
             />
-            {error ? (
-                <Text role="status" size="xs" tone="muted">
-                    Preview unavailable in this browser.
-                </Text>
-            ) : (
-                <>
-                    <IconButton
-                        size="md"
-                        title={`${playing ? "Pause" : "Play"} ${label}`}
-                        onClick={() => {
-                            const element = audio.current;
-                            if (!element) return;
-                            if (element.paused)
-                                void element.play().catch((cause: unknown) => {
-                                    if (
-                                        !(
-                                            cause instanceof DOMException &&
-                                            cause.name === "AbortError"
-                                        )
-                                    )
-                                        setError(true);
-                                });
-                            else element.pause();
-                        }}
-                    >
+            <button
+                type="button"
+                className={cn(
+                    mediaActionTileClass(disabled || error),
+                    "polli:border-solid",
+                )}
+                title={label}
+                aria-label={
+                    error
+                        ? `Preview unavailable for ${label}`
+                        : `${playing ? "Stop" : "Play"} ${label}`
+                }
+                disabled={disabled || error}
+                onClick={() => {
+                    const element = audio.current;
+                    if (!element) return;
+                    if (element.paused) {
+                        void element.play().catch((cause: unknown) => {
+                            if (
+                                !(
+                                    cause instanceof DOMException &&
+                                    cause.name === "AbortError"
+                                )
+                            )
+                                setError(true);
+                        });
+                    } else {
+                        element.pause();
+                    }
+                }}
+            >
+                {error ? (
+                    "Preview unavailable"
+                ) : (
+                    <>
                         {playing ? (
-                            <PauseIcon className="polli:size-4" />
+                            <span
+                                aria-hidden="true"
+                                className="polli:m-1 polli:size-4 polli:rounded-sm polli:bg-current"
+                            />
                         ) : (
-                            <PlayIcon className="polli:size-4" />
+                            <PlayIcon />
                         )}
-                    </IconButton>
-                    <Slider
-                        aria-label={`Seek ${label}`}
-                        aria-valuetext={`${audioTime(position)} of ${audioTime(duration)}`}
-                        min={0}
-                        max={duration || 1}
-                        step="any"
-                        value={position}
-                        disabled={!duration}
-                        className="polli:min-w-0 polli:flex-1"
-                        onChange={(e) => {
-                            if (audio.current)
-                                audio.current.currentTime =
-                                    e.currentTarget.valueAsNumber;
-                        }}
-                    />
-                    <Text
-                        size="xs"
-                        tone="muted"
-                        className="polli:shrink-0 polli:tabular-nums"
-                    >
-                        {audioTime(position)} / {audioTime(duration)}
-                    </Text>
-                </>
-            )}
-        </div>
+                        <span className="polli:tabular-nums">
+                            {audioTime(playing ? position : duration)}
+                        </span>
+                    </>
+                )}
+            </button>
+        </>
     );
 }

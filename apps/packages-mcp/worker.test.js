@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
 import { imageTags } from "./tools/docker.js";
+import { publishedSources } from "./tools/launchpad.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
 
@@ -85,6 +86,7 @@ for (const modern of [false, true])
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
+                "launchpad_source",
                 "osv_query",
                 "osv_vulnerability",
                 "package_downloads",
@@ -770,4 +772,134 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+test("Launchpad published sources, series filter and no-match", async (t) => {
+    const urls = [];
+    const firefox = {
+        start: 0,
+        total_size: 2471,
+        entries: [
+            {
+                self_link:
+                    "https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18838167",
+                component_name: "main",
+                section_name: "web",
+                status: "Published",
+                distro_series_link:
+                    "https://api.launchpad.net/1.0/ubuntu/tenacious",
+                date_published: "2026-10-15T14:40:17.721693+00:00",
+                pocket: "Release",
+                source_package_name: "firefox",
+                source_package_version: "1:1snap1-0ubuntu11",
+            },
+            {
+                self_link:
+                    "https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18838168",
+                component_name: "main",
+                section_name: "web",
+                status: "Published",
+                distro_series_link:
+                    "https://api.launchpad.net/1.0/ubuntu/stonking",
+                date_published: "2026-10-02T07:14:22.346894+00:00",
+                pocket: "Release",
+                source_package_name: "firefox",
+                source_package_version: "1:1snap1-0ubuntu11",
+            },
+        ],
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.includes("source_name=zzzqqqxxyy"))
+            return Response.json({ start: 0, total_size: 0, entries: [] });
+        if (url.includes("distro_series="))
+            return Response.json({
+                start: 0,
+                total_size: 1,
+                entries: [firefox.entries[0]],
+            });
+        return Response.json(firefox);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "launchpad_source", {
+        source: "firefox",
+        limit: 2,
+    });
+    const filtered = await call(client, "launchpad_source", {
+        source: "firefox",
+        series: "tenacious",
+    });
+    const empty = await call(client, "launchpad_source", {
+        source: "zzzqqqxxyy",
+    });
+    assert.deepEqual(urls, [
+        "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=firefox&exact_match=true&ws.size=2",
+        "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=firefox&exact_match=true&ws.size=5&distro_series=https%3A%2F%2Fapi.launchpad.net%2F1.0%2Fubuntu%2Ftenacious",
+        "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=zzzqqqxxyy&exact_match=true&ws.size=5",
+    ]);
+    assert.deepEqual(data, {
+        source: "firefox",
+        series: null,
+        pocket: null,
+        total: 2471,
+        sources: [
+            {
+                name: "firefox",
+                version: "1:1snap1-0ubuntu11",
+                series: "tenacious",
+                pocket: "Release",
+                published: "2026-10-15T14:40:17.721693+00:00",
+                status: "Published",
+            },
+            {
+                name: "firefox",
+                version: "1:1snap1-0ubuntu11",
+                series: "stonking",
+                pocket: "Release",
+                published: "2026-10-02T07:14:22.346894+00:00",
+                status: "Published",
+            },
+        ],
+    });
+    assert.equal(filtered.total, 1);
+    assert.equal(filtered.sources.length, 1);
+    assert.equal(filtered.sources[0].series, "tenacious");
+    assert.deepEqual(empty, {
+        source: "zzzqqqxxyy",
+        series: null,
+        pocket: null,
+        total: 0,
+        sources: [],
+    });
+});
+test("Launchpad rejects bad input before any fetch and maps a bad release", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        if (url.includes("zzzqqq"))
+            return new Response(
+                'distro_series: No such object "https://api.launchpad.net/1.0/ubuntu/zzzqqq".',
+                { status: 400 },
+            );
+        return Response.json({ start: 0, total_size: 0, entries: [] });
+    });
+    await assert.rejects(
+        publishedSources({ source: "firefox", series: "zzzqqq" }),
+        /No Ubuntu release named zzzqqq/,
+    );
+    for (const args of [
+        { source: "fire fox" },
+        { source: " " },
+        { source: "firefox", pocket: "Bogus" },
+        { source: "firefox", series: "Tenacious!" },
+    ])
+        await assert.rejects(publishedSources(args), /name|pocket|release/i);
+    assert.equal(urls.length, 1);
+    const data = await publishedSources({ source: "Firefox", limit: 99 });
+    assert.equal(data.source, "firefox");
+    assert.match(urls[1], /ws\.size=5/);
 });

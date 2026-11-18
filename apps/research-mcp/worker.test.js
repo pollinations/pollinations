@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "quran_ayah",
             ].sort(),
         );
     });
@@ -644,4 +645,230 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Quran ayah returns Arabic plus translation and rejects bad references and editions before fetch", async (t) => {
+    let count = 0;
+    const urls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        urls.push(url.toString());
+        assert.equal(url.hostname, "api.alquran.cloud");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname === "/v1/ayah/1:1/editions/quran-uthmani,en.sahih")
+            return Response.json({
+                code: 200,
+                status: "OK",
+                data: [
+                    {
+                        number: 1,
+                        text: "\uFEFFبِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+                        edition: {
+                            identifier: "quran-uthmani",
+                            englishName: "Uthmani",
+                        },
+                        surah: {
+                            number: 1,
+                            name: "سُورَةُ ٱلْفَاتِحَةِ",
+                            englishName: "Al-Faatiha",
+                            englishNameTranslation: "The Opening",
+                            numberOfAyahs: 7,
+                            revelationType: "Meccan",
+                        },
+                        numberInSurah: 1,
+                        juz: 1,
+                        page: 1,
+                    },
+                    {
+                        number: 1,
+                        text: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+                        edition: {
+                            identifier: "en.sahih",
+                            englishName: "Saheeh International",
+                        },
+                        surah: {
+                            number: 1,
+                            name: "سُورَةُ ٱلْفَاتِحَةِ",
+                            englishName: "Al-Faatiha",
+                            englishNameTranslation: "The Opening",
+                            numberOfAyahs: 7,
+                            revelationType: "Meccan",
+                        },
+                        numberInSurah: 1,
+                        juz: 1,
+                        page: 1,
+                    },
+                ],
+            });
+        if (url.pathname === "/v1/ayah/2:255/editions/quran-uthmani,en.sahih")
+            return Response.json({
+                code: 200,
+                status: "OK",
+                data: [
+                    {
+                        number: 262,
+                        text: "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌۭ وَلَا نَوْمٌۭ ۚ لَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍۢ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ",
+                        edition: {
+                            identifier: "quran-uthmani",
+                            englishName: "Uthmani",
+                        },
+                        surah: {
+                            number: 2,
+                            name: "سُورَةُ البَقَرَةِ",
+                            englishName: "Al-Baqara",
+                            englishNameTranslation: "The Cow",
+                            numberOfAyahs: 286,
+                            revelationType: "Medinan",
+                        },
+                        numberInSurah: 255,
+                        juz: 3,
+                        page: 42,
+                    },
+                    {
+                        number: 262,
+                        text: "Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
+                        edition: {
+                            identifier: "en.sahih",
+                            englishName: "Saheeh International",
+                        },
+                        surah: {
+                            number: 2,
+                            name: "سُورَةُ البَقَرَةِ",
+                            englishName: "Al-Baqara",
+                            englishNameTranslation: "The Cow",
+                            numberOfAyahs: 286,
+                            revelationType: "Medinan",
+                        },
+                        numberInSurah: 255,
+                        juz: 3,
+                        page: 42,
+                    },
+                ],
+            });
+        if (
+            url.pathname ===
+            "/v1/ayah/2:255/editions/quran-uthmani,en.nonexistent"
+        )
+            return Response.json({
+                code: 200,
+                status: "OK",
+                data: [
+                    {
+                        number: 262,
+                        text: "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌۭ وَلَا نَوْمٌۭ ۚ لَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍۢ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ",
+                        edition: {
+                            identifier: "quran-uthmani",
+                            englishName: "Uthmani",
+                        },
+                        surah: {
+                            number: 2,
+                            name: "سُورَةُ البَقَرَةِ",
+                            englishName: "Al-Baqara",
+                            englishNameTranslation: "The Cow",
+                            numberOfAyahs: 286,
+                            revelationType: "Medinan",
+                        },
+                        numberInSurah: 255,
+                        juz: 3,
+                        page: 42,
+                    },
+                    {
+                        number: 262,
+                        text: "ٱللَّهُ لَاۤ إِلَـٰهَ إِلَّا هُوَ ٱلۡحَیُّ ٱلۡقَیُّومُۚ لَا تَأۡخُذُهُۥ سِنَةࣱ وَلَا نَوۡمࣱۚ لَّهُۥ مَا فِی ٱلسَّمَـٰوَ ٰ⁠تِ وَمَا فِی ٱلۡأَرۡضِۗ مَن ذَا ٱلَّذِی یَشۡفَعُ عِندَهُۥۤ إِلَّا بِإِذۡنِهِۦۚ یَعۡلَمُ مَا بَیۡنَ أَیۡدِیهِمۡ وَمَا خَلۡفَهُمۡۖ وَلَا یُحِیطُونَ بِشَیۡءࣲ مِّنۡ عِلۡمِهِۦۤ إِلَّا بِمَا شَاۤءَۚ وَسِعَ كُرۡسِیُّهُ ٱلسَّمَـٰوَ ٰ⁠تِ وَٱلۡأَرۡضَۖ وَلَا یَـُٔودُهُۥ حِفۡظُهُمَاۚ وَهُوَ ٱلۡعَلِیُّ ٱلۡعَظِیمُ\n",
+                        edition: {
+                            identifier: "quran-uthmani-quran-academy",
+                            englishName:
+                                "Modified Quran Uthmani Text from the Quran Academy to work with the Kitab font",
+                        },
+                        surah: {
+                            number: 2,
+                            name: "سُورَةُ البَقَرَةِ",
+                            englishName: "Al-Baqara",
+                            englishNameTranslation: "The Cow",
+                            numberOfAyahs: 286,
+                            revelationType: "Medinan",
+                        },
+                        numberInSurah: 255,
+                        juz: 3,
+                        page: 42,
+                    },
+                ],
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const one = await call(c, "quran_ayah", { reference: "1:1" });
+    assert.notEqual(one.isError, true, JSON.stringify(one));
+    assert.deepEqual(value(one), {
+        reference: "1:1",
+        surah: {
+            number: 1,
+            name: "سُورَةُ ٱلْفَاتِحَةِ",
+            englishName: "Al-Faatiha",
+            englishNameTranslation: "The Opening",
+            numberOfAyahs: 7,
+            revelationType: "Meccan",
+        },
+        ayah: 1,
+        number: 1,
+        juz: 1,
+        page: 1,
+        arabicText: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        translation:
+            "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+        translationEdition: {
+            identifier: "en.sahih",
+            englishName: "Saheeh International",
+        },
+    });
+    assert.deepEqual(urls, [
+        "https://api.alquran.cloud/v1/ayah/1:1/editions/quran-uthmani,en.sahih",
+    ]);
+
+    const kursi = await call(c, "quran_ayah", { reference: "2:255" });
+    assert.notEqual(kursi.isError, true, JSON.stringify(kursi));
+    const kursiValue = value(kursi);
+    assert.equal(kursiValue.reference, "2:255");
+    assert.equal(kursiValue.surah.englishName, "Al-Baqara");
+    assert.equal(kursiValue.ayah, 255);
+    assert.match(kursiValue.translation, /^Allah - there is no deity/);
+    assert.equal(kursiValue.arabicText.slice(0, 3), "\u0671\u0644\u0644");
+    assert.equal(kursiValue.translationEdition.identifier, "en.sahih");
+
+    const badEdition = await call(c, "quran_ayah", {
+        reference: "2:255",
+        edition: "en.nonexistent",
+    });
+    assert.equal(badEdition.isError, true);
+    assert.match(
+        badEdition.content[0].text,
+        /Unknown Quran translation edition/,
+    );
+
+    const missing = await call(c, "quran_ayah", { reference: "2:999" });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /404/);
+
+    const before = count;
+    for (const args of [
+        { reference: "2" },
+        { reference: "2:255:1" },
+        { reference: "abc" },
+        { reference: "0:1" },
+        { reference: "115:1" },
+        { reference: " " },
+        { reference: "2:255", edition: "not-an-edition" },
+    ]) {
+        const result = await call(c, "quran_ayah", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, before);
 });

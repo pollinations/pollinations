@@ -25,19 +25,13 @@
       "merge_sha": "6824ff7b77c45608f228725d755634cfde0dbfa5",
       "merged_at": "2026-11-18T13:09:38Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/kpi",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "20055": {
       "merge_sha": "a21005d39769c904f46d5f1e58762e60fb5bee31",
       "merged_at": "2026-11-18T11:52:48Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]

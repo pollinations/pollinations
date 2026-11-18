@@ -217,10 +217,25 @@ describe("processParameters", () => {
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
-        "removes sampling without changing reasoning or reintroducing defaults for %s",
+        "removes sampling, keeps accepted reasoning levels and adds no defaults for %s",
         async (model) => {
             const transform = findModelByName(model)?.transform;
             if (!transform) throw new Error("expected catalog transform");
+            // Only the levels the provider rejects are remapped.
+            const remapped: Record<string, string> =
+                (
+                    {
+                        "openai/gpt-5-nano": { max: "xhigh" },
+                        "openai/gpt-5.4": { max: "xhigh" },
+                        "openai/gpt-5.5": { minimal: "low" },
+                        "openai/gpt-5.6-sol": { minimal: "low" },
+                        "openai/gpt-5.6-terra": { minimal: "low" },
+                        "openai/gpt-5.6-luna": { minimal: "low" },
+                        "openai/gpt-6-astra": { minimal: "low" },
+                        "pollinations/midijourney": { max: "xhigh" },
+                        "pollinations/midijourney-large": { minimal: "low" },
+                    } as Record<string, Record<string, string>>
+                )[model] ?? {};
             for (const reasoning_effort of [
                 undefined,
                 "none",
@@ -268,7 +283,8 @@ describe("processParameters", () => {
                         expect(result.options).not.toHaveProperty(key);
                     }
                     expect(result.options.reasoning_effort).toBe(
-                        reasoning_effort,
+                        (reasoning_effort && remapped[reasoning_effort]) ??
+                            reasoning_effort,
                     );
                     expect(result.options).toMatchObject({
                         stream,

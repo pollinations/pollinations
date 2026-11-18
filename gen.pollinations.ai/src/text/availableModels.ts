@@ -25,6 +25,24 @@ import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
+// OpenAI's newer families reject `minimal`; the GPT-5 routes reject `max`.
+// Map only the levels a provider 400s on and leave the rest untouched.
+function remapEffort(map: Record<string, string>): TransformFn {
+    return (messages, options) => {
+        const effort =
+            typeof options.reasoning_effort === "string"
+                ? options.reasoning_effort.toLowerCase()
+                : undefined;
+        if (!effort || !Object.hasOwn(map, effort))
+            return { messages, options };
+        return {
+            messages,
+            options: { ...options, reasoning_effort: map[effort] },
+        };
+    };
+}
+const effortMinimalToLow = remapEffort({ minimal: "low" });
+const effortMaxToXhigh = remapEffort({ max: "xhigh" });
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Fireworks caches matching prefixes automatically and rejects Anthropic markers.
@@ -219,7 +237,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5-nano:openai",
@@ -237,7 +255,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -249,6 +267,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
+        transform: effortMinimalToLow,
     },
     {
         name: "openai/gpt-5.4:aws",
@@ -262,7 +281,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5.4-mini:openai",
@@ -278,7 +297,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
     },
     {
         name: "openai/gpt-5.5:aws",
@@ -295,7 +314,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -307,7 +326,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-terra",
         config: portkeyConfig["gpt-6.1-terra"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -319,7 +338,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -331,7 +350,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -343,13 +362,13 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-sol",
         config: portkeyConfig["gpt-6-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -361,7 +380,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -397,7 +416,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMinimalToLow),
         useResponsesApi: true,
     },
     {
@@ -1139,6 +1158,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
+            effortMaxToXhigh,
         ),
     },
     {
@@ -1147,6 +1167,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
+            effortMinimalToLow,
         ),
     },
     {

@@ -342,6 +342,142 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Airport Gap lookup projects one airport down and turns an unknown IATA code into a clean error", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "airportgap.com");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(new Request(input, init).redirect, "follow");
+        if (url.pathname.endsWith("/LAX")) {
+            return Response.json({
+                data: {
+                    id: "LAX",
+                    type: "airport",
+                    attributes: {
+                        name: "Los Angeles International Airport",
+                        city: "Los Angeles",
+                        country: "United States",
+                        iata: "LAX",
+                        icao: "KLAX",
+                        latitude: "33.942501",
+                        longitude: "-118.407997",
+                        altitude: 125,
+                        timezone: "America/Los_Angeles",
+                    },
+                },
+            });
+        }
+        if (url.pathname.endsWith("/ZZZ")) {
+            return Response.json(
+                {
+                    errors: [
+                        {
+                            status: "404",
+                            title: "Not Found",
+                            detail: "The page you requested could not be found",
+                        },
+                    ],
+                },
+                { status: 404 },
+            );
+        }
+        return Response.json({
+            data: {
+                id: "ORD",
+                type: "airport",
+                attributes: {
+                    name: "Chicago O'Hare International Airport",
+                    city: "Chicago",
+                    country: "United States",
+                    iata: "ORD",
+                    icao: "KORD",
+                    latitude: "41.9786",
+                    longitude: "-87.9048",
+                    altitude: 672,
+                    timezone: "America/Chicago",
+                },
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "airport_lookup", { iata: "ORD" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].pathname, "/api/airports/ORD");
+    assert.deepEqual(value(result), {
+        iata: "ORD",
+        name: "Chicago O'Hare International Airport",
+        city: "Chicago",
+        country: "United States",
+        icao: "KORD",
+        latitude: 41.9786,
+        longitude: -87.9048,
+        altitude_ft: 672,
+        timezone: "America/Chicago",
+    });
+
+    // A lowercase code is uppercased before fetching.
+    result = await call(c, "airport_lookup", { iata: "lax" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[1].pathname, "/api/airports/LAX");
+    assert.equal(value(result).icao, "KLAX");
+    assert.equal(value(result).altitude_ft, 125);
+
+    // An unknown code is a clean error, not an empty list.
+    result = await call(c, "airport_lookup", { iata: "ZZZ" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(JSON.stringify(result), /No airport found for IATA code ZZZ/);
+
+    // Bad codes are rejected with no fetch.
+    const before = requests.length;
+    for (const args of [{ iata: "OR" }, { iata: "ORD1" }, { iata: "" }]) {
+        const bad = await call(c, "airport_lookup", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true, JSON.stringify(args));
+    }
+    assert.equal(requests.length, before);
+
+    // The handler itself uppercases a direct call and throws pre-fetch
+    // on a bad code.
+    const { airportGapTools } = await import("./tools/airportgap.js");
+    const seen = [];
+    const out = await airportGapTools[0][3]({ iata: "ord" }, async (url) => {
+        seen.push(url);
+        return {
+            data: {
+                id: "ORD",
+                type: "airport",
+                attributes: {
+                    name: "Chicago O'Hare International Airport",
+                    city: "Chicago",
+                    country: "United States",
+                    iata: "ORD",
+                    icao: "KORD",
+                    latitude: "41.9786",
+                    longitude: "-87.9048",
+                    altitude: 672,
+                    timezone: "America/Chicago",
+                },
+            },
+        };
+    });
+    assert.equal(out.iata, "ORD");
+    assert.match(seen[0], /\/api\/airports\/ORD$/);
+    await assert.rejects(
+        airportGapTools[0][3]({ iata: "OR" }, async () => {
+            throw new Error("must not fetch");
+        }),
+        /Invalid IATA code/,
+    );
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +500,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "airport_lookup",
             ].sort(),
         );
     });

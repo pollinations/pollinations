@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "mbta_vehicles",
             ].sort(),
         );
     });
@@ -644,4 +645,240 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("MBTA vehicles filter by route and surface the 429 throttle", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, options) => {
+        fetches += 1;
+        const request = new Request(input, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api-v3.mbta.com");
+        assert.equal(target.pathname, "/vehicles");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const route = target.searchParams.get("filter[route]");
+        if (route === "Orange") {
+            return new Response("{}", { status: 429 });
+        }
+        if (route === "Zzzqqq") {
+            return Response.json({ data: [], jsonapi: { version: "1.0" } });
+        }
+        assert.equal(route, "Red");
+        assert.equal(target.searchParams.get("page[limit]"), "2");
+        // Trimmed live fixture: the two Red Line vehicles verbatim.
+        return Response.json({
+            data: [
+                {
+                    id: "R-548CBA48",
+                    type: "vehicle",
+                    attributes: {
+                        bearing: 170,
+                        carriages: [
+                            {
+                                label: "1746",
+                                occupancy_status: "NO_DATA_AVAILABLE",
+                                occupancy_percentage: null,
+                            },
+                            {
+                                label: "1747",
+                                occupancy_status: "NO_DATA_AVAILABLE",
+                                occupancy_percentage: null,
+                            },
+                            {
+                                label: "1753",
+                                occupancy_status: "NO_DATA_AVAILABLE",
+                                occupancy_percentage: null,
+                            },
+                            {
+                                label: "1752",
+                                occupancy_status: "NO_DATA_AVAILABLE",
+                                occupancy_percentage: null,
+                            },
+                        ],
+                        current_status: "IN_TRANSIT_TO",
+                        current_stop_sequence: 220,
+                        direction_id: 0,
+                        label: "1746",
+                        latitude: 42.23014,
+                        longitude: -71.00684,
+                        occupancy_status: null,
+                        revenue: "REVENUE",
+                        speed: null,
+                        updated_at: "2026-11-18T13:42:12-05:00",
+                    },
+                    relationships: {
+                        route: { data: { id: "Red", type: "route" } },
+                    },
+                },
+                {
+                    id: "R-548CBA32",
+                    type: "vehicle",
+                    attributes: {
+                        bearing: 0,
+                        carriages: [
+                            {
+                                label: "1948",
+                                occupancy_status: "MANY_SEATS_AVAILABLE",
+                                occupancy_percentage: 3,
+                            },
+                            {
+                                label: "1949",
+                                occupancy_status: "FEW_SEATS_AVAILABLE",
+                                occupancy_percentage: 10,
+                            },
+                            {
+                                label: "1925",
+                                occupancy_status: "MANY_SEATS_AVAILABLE",
+                                occupancy_percentage: 3,
+                            },
+                            {
+                                label: "1924",
+                                occupancy_status: "FEW_SEATS_AVAILABLE",
+                                occupancy_percentage: 9,
+                            },
+                            {
+                                label: "1953",
+                                occupancy_status: "MANY_SEATS_AVAILABLE",
+                                occupancy_percentage: 4,
+                            },
+                            {
+                                label: "1952",
+                                occupancy_status: "FEW_SEATS_AVAILABLE",
+                                occupancy_percentage: 9,
+                            },
+                        ],
+                        current_status: "INCOMING_AT",
+                        current_stop_sequence: 200,
+                        direction_id: 1,
+                        label: "1948",
+                        latitude: 42.38416,
+                        longitude: -71.11936,
+                        occupancy_status: null,
+                        revenue: "REVENUE",
+                        speed: null,
+                        updated_at: "2026-11-18T13:42:10-05:00",
+                    },
+                    relationships: {
+                        route: { data: { id: "Red", type: "route" } },
+                    },
+                },
+            ],
+            jsonapi: { version: "1.0" },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "mbta_vehicles", {
+        route: "Red",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        route: "Red",
+        total: 2,
+        vehicles: [
+            {
+                vehicle_id: "R-548CBA48",
+                label: "1746",
+                route: "Red",
+                current_status: "IN_TRANSIT_TO",
+                direction_id: 0,
+                bearing: 170,
+                latitude: 42.23014,
+                longitude: -71.00684,
+                speed: null,
+                occupancy_status: null,
+                carriages: [
+                    {
+                        label: "1746",
+                        occupancy_status: "NO_DATA_AVAILABLE",
+                        occupancy_percentage: null,
+                    },
+                    {
+                        label: "1747",
+                        occupancy_status: "NO_DATA_AVAILABLE",
+                        occupancy_percentage: null,
+                    },
+                    {
+                        label: "1753",
+                        occupancy_status: "NO_DATA_AVAILABLE",
+                        occupancy_percentage: null,
+                    },
+                    {
+                        label: "1752",
+                        occupancy_status: "NO_DATA_AVAILABLE",
+                        occupancy_percentage: null,
+                    },
+                ],
+            },
+            {
+                vehicle_id: "R-548CBA32",
+                label: "1948",
+                route: "Red",
+                current_status: "INCOMING_AT",
+                direction_id: 1,
+                bearing: 0,
+                latitude: 42.38416,
+                longitude: -71.11936,
+                speed: null,
+                occupancy_status: null,
+                carriages: [
+                    {
+                        label: "1948",
+                        occupancy_status: "MANY_SEATS_AVAILABLE",
+                        occupancy_percentage: 3,
+                    },
+                    {
+                        label: "1949",
+                        occupancy_status: "FEW_SEATS_AVAILABLE",
+                        occupancy_percentage: 10,
+                    },
+                    {
+                        label: "1925",
+                        occupancy_status: "MANY_SEATS_AVAILABLE",
+                        occupancy_percentage: 3,
+                    },
+                    {
+                        label: "1924",
+                        occupancy_status: "FEW_SEATS_AVAILABLE",
+                        occupancy_percentage: 9,
+                    },
+                    {
+                        label: "1953",
+                        occupancy_status: "MANY_SEATS_AVAILABLE",
+                        occupancy_percentage: 4,
+                    },
+                    {
+                        label: "1952",
+                        occupancy_status: "FEW_SEATS_AVAILABLE",
+                        occupancy_percentage: 9,
+                    },
+                ],
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    const empty = await call(c, "mbta_vehicles", { route: "Zzzqqq" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), { route: "Zzzqqq", total: 0, vehicles: [] });
+    assert.equal(fetches, 2);
+
+    const throttled = await call(c, "mbta_vehicles", { route: "Orange" });
+    assert.equal(throttled.isError, true);
+    assert.match(throttled.content[0].text, /rate limited, retry later/);
+    assert.equal(fetches, 3);
+
+    const bad = await call(c, "mbta_vehicles", { route: "Bad Route!" });
+    assert.equal(bad.isError, true);
+    const tooMany = await call(c, "mbta_vehicles", {
+        route: "Red",
+        limit: 99,
+    });
+    assert.equal(tooMany.isError, true);
+    assert.equal(fetches, 3);
 });

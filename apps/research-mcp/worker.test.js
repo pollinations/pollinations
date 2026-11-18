@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { ronswansonTools } from "./tools/ronswanson.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ronswanson_quote",
             ].sort(),
         );
     });
@@ -644,4 +646,71 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ronswanson_quote returns random quotes with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveQuotes = [
+        "Well, I am not usually one for speeches. So, goodbye.",
+        "An hour ago a giant fireball consumed my entire face and it was far preferable to spending another second with you.",
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "ron-swanson-quotes.herokuapp.com");
+        assert.equal(target.pathname, "/v2/quotes");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json([
+            liveQuotes[(fetchCalls - 1) % liveQuotes.length],
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "ronswanson_quote", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        quotes: [
+            "Well, I am not usually one for speeches. So, goodbye.",
+            "An hour ago a giant fireball consumed my entire face and it was far preferable to spending another second with you.",
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "ronswanson_quote", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "ronswanson_quote", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = ronswansonTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return ["I call this turf war. And it ends tonight."];
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        quotes: ["I call this turf war. And it ends tonight."],
+    });
+    assert.equal(stubCalls, 1);
+
+    // A quote without text is a clean error.
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({})),
+        /without text/,
+    );
+    await assert.rejects(
+        run({ limit: 1 }, async () => [""]),
+        /without text/,
+    );
 });

@@ -160,6 +160,29 @@ test("get_token_largest_accounts returns token accounts, not unique wallet holde
     assert.match(data.note, /not a unique-holder count/);
 });
 
+test("get_token_activity returns mint signatures and matching Pump.fun trades", async (t) => {
+    const encoded = tradeEventFixture();
+    mockRpc(t, async ({ method, params }) => {
+        if (method === "getSignaturesForAddress") {
+            assert.equal(params[0], MINT);
+            return [{ signature: "mint-activity-signature", err: null, slot: 18, blockTime: 1800000000 }];
+        }
+        if (method === "getTransaction")
+            return { slot: 18, blockTime: 1800000000, meta: { err: null, logMessages: [
+                \`Program \${PUMP_FUN_PROGRAM_ID} invoke [1]\`, \`Program data: \${encoded}\`,
+                \`Program \${PUMP_FUN_PROGRAM_ID} success\`,
+            ] } };
+        assert.fail(\`unexpected RPC method \${method}\`);
+    });
+    const client = await clientFor(t);
+    const result = await client.callTool({ name: "get_token_activity", arguments: { mint: MINT, limit: 5 } });
+    const data = JSON.parse(result.content[0].text);
+    assert.equal(data.signaturesReturned, 1);
+    assert.equal(data.pumpfunTrades.length, 1);
+    assert.equal(data.pumpfunTrades[0].mint, MINT);
+    assert.equal(data.pumpfunTrades[0].signature, "mint-activity-signature");
+});
+
 test("get_recent_pumpfun_launches scans the official program and decodes CreateEvent", async (t) => {
     const encoded = createEventFixture();
     mockRpc(t, async ({ method, params }) => {

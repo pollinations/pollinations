@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { mojangTools } from "./tools/mojang.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "minecraft_player",
             ].sort(),
         );
     });
@@ -644,4 +646,113 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("minecraft_player returns the canonical name and dashed UUID, and reports unknown players and rate limits cleanly", async (t) => {
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.mojang.com");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (target.pathname === "/users/profiles/minecraft/Zzzqqqxxyy")
+            return new Response(
+                JSON.stringify({
+                    path: "/users/profiles/minecraft/Zzzqqqxxyy",
+                    errorMessage:
+                        "Couldn't find any profile with name Zzzqqqxxyy",
+                }),
+                {
+                    status: 404,
+                    headers: { "content-type": "application/json" },
+                },
+            );
+        if (target.pathname === "/users/profiles/minecraft/Dinnerbone")
+            return new Response("Rate limit exceeded", { status: 429 });
+        assert.ok(
+            target.pathname === "/users/profiles/minecraft/Notch" ||
+                target.pathname === "/users/profiles/minecraft/notch",
+            target.pathname,
+        );
+        return Response.json({
+            id: "069a79f444e94726a5befca90e38aaf5",
+            name: "Notch",
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "minecraft_player", { username: "Notch" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        username: "Notch",
+        uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+    });
+    assert.equal(fetchCalls, 1);
+
+    // The lookup is case-insensitive upstream; the canonical name comes back.
+    const lower = await call(c, "minecraft_player", { username: "notch" });
+    assert.notEqual(lower.isError, true, JSON.stringify(lower));
+    assert.deepEqual(value(lower), {
+        username: "Notch",
+        uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+    });
+    assert.equal(fetchCalls, 2);
+
+    const missing = await call(c, "minecraft_player", {
+        username: "Zzzqqqxxyy",
+    });
+    assert.equal(missing.isError, true, JSON.stringify(missing));
+    assert.match(
+        missing.content[0].text,
+        /No Minecraft player found with username Zzzqqqxxyy/,
+    );
+    assert.equal(fetchCalls, 3);
+
+    const throttled = await call(c, "minecraft_player", {
+        username: "Dinnerbone",
+    });
+    assert.equal(throttled.isError, true, JSON.stringify(throttled));
+    assert.match(throttled.content[0].text, /429/);
+    assert.match(throttled.content[0].text, /rate limited, retry later/);
+    assert.equal(fetchCalls, 4);
+
+    // Invalid usernames are rejected before any fetch.
+    const bad = await call(c, "minecraft_player", {
+        username: "not a name!",
+    });
+    assert.equal(bad.isError, true, JSON.stringify(bad));
+    const empty = await call(c, "minecraft_player", { username: "" });
+    assert.equal(empty.isError, true, JSON.stringify(empty));
+    assert.equal(fetchCalls, 4);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = mojangTools[0][3];
+    assert.deepEqual(
+        await run({ username: "Notch" }, async () => ({
+            id: "069a79f444e94726a5befca90e38aaf5",
+            name: "Notch",
+        })),
+        {
+            username: "Notch",
+            uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+        },
+    );
+    await assert.rejects(
+        run({ username: "Zzzqqqxxyy" }, async () => {
+            throw new Error("api.mojang.com returned HTTP 404.");
+        }),
+        /No Minecraft player found with username Zzzqqqxxyy/,
+    );
+    await assert.rejects(
+        run({ username: "Notch" }, async () => ({
+            id: "short",
+            name: "Notch",
+        })),
+        /Unexpected response from Mojang/,
+    );
 });

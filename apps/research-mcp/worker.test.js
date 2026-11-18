@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "got_character",
             ].sort(),
         );
     });
@@ -644,4 +645,142 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("got_character resolves houses and books by name", async (t) => {
+    let fetches = 0;
+    const jonSnow = {
+        url: "https://anapioficeandfire.com/api/characters/583",
+        name: "Jon Snow",
+        gender: "Male",
+        culture: "Northmen",
+        born: "In 283 AC",
+        died: "",
+        titles: ["Lord Commander of the Night's Watch"],
+        aliases: [
+            "Lord Snow",
+            "Ned Stark's Bastard",
+            "The Snow of Winterfell",
+            "The Crow-Come-Over",
+            "The 998th Lord Commander of the Night's Watch",
+            "The Bastard of Winterfell",
+            "The Black Bastard of the Wall",
+            "Lord Crow",
+        ],
+        father: "",
+        mother: "",
+        spouse: "",
+        allegiances: ["https://anapioficeandfire.com/api/houses/362"],
+        books: ["https://anapioficeandfire.com/api/books/5"],
+        povBooks: [
+            "https://anapioficeandfire.com/api/books/1",
+            "https://anapioficeandfire.com/api/books/2",
+            "https://anapioficeandfire.com/api/books/3",
+            "https://anapioficeandfire.com/api/books/8",
+        ],
+        tvSeries: [
+            "Season 1",
+            "Season 2",
+            "Season 3",
+            "Season 4",
+            "Season 5",
+            "Season 6",
+        ],
+        playedBy: ["Kit Harington"],
+    };
+    const bookNames = {
+        1: "A Game of Thrones",
+        2: "A Clash of Kings",
+        3: "A Storm of Swords",
+        5: "A Feast for Crows",
+        8: "A Dance with Dragons",
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "anapioficeandfire.com");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.pathname === "/api/characters") {
+            if (url.searchParams.get("name") === "Jon Snow")
+                return Response.json([jonSnow]);
+            return Response.json([]);
+        }
+        if (url.pathname === "/api/characters/583")
+            return Response.json(jonSnow);
+        if (url.pathname === "/api/characters/999999")
+            return new Response("Not found", { status: 404 });
+        if (url.pathname === "/api/houses/362")
+            return Response.json({ name: "House Stark of Winterfell" });
+        const bookMatch = url.pathname.match(/^\/api\/books\/(\d+)$/);
+        if (bookMatch) return Response.json({ name: bookNames[bookMatch[1]] });
+        return new Response("Not found", { status: 404 });
+    });
+    const c = await client(t);
+
+    let result = await call(c, "got_character", { id: 583 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).character, {
+        id: 583,
+        name: "Jon Snow",
+        gender: "Male",
+        culture: "Northmen",
+        born: "In 283 AC",
+        died: null,
+        titles: ["Lord Commander of the Night's Watch"],
+        title_count: 1,
+        aliases: jonSnow.aliases,
+        alias_count: 8,
+        allegiances: ["House Stark of Winterfell"],
+        books: ["A Feast for Crows"],
+        pov_books: [
+            "A Game of Thrones",
+            "A Clash of Kings",
+            "A Storm of Swords",
+            "A Dance with Dragons",
+        ],
+        tv_series: jonSnow.tvSeries,
+        played_by: ["Kit Harington"],
+        url: "https://anapioficeandfire.com/api/characters/583",
+    });
+
+    result = await call(c, "got_character", {
+        name: "Jon Snow",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 1);
+    assert.equal(value(result).characters.length, 1);
+    assert.equal(value(result).characters[0].name, "Jon Snow");
+    assert.deepEqual(value(result).characters[0].allegiances, [
+        "House Stark of Winterfell",
+    ]);
+
+    result = await call(c, "got_character", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznonexistentqqq",
+        total: 0,
+        characters: [],
+    });
+
+    result = await call(c, "got_character", { id: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 404/);
+
+    const before = fetches;
+    result = await call(c, "got_character", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Provide a character name or id/);
+    result = await call(c, "got_character", { name: "Jon Snow", id: 583 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /only one of name or id/);
+    result = await call(c, "got_character", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /non-empty character name/);
+    assert.equal(fetches, before);
 });

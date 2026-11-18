@@ -1,57 +1,52 @@
-import { Button, MicIcon, Text } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-
-import { RECORDING_SAMPLE_RATE, recordedWav } from "./recorded-wav";
-
-export function AudioPreview({ file }: { file: File }) {
-    const [url, setUrl] = useState("");
-    useEffect(() => {
-        const preview = URL.createObjectURL(file);
-        setUrl(preview);
-        return () => URL.revokeObjectURL(preview);
-    }, [file]);
-    return url ? (
-        // biome-ignore lint/a11y/useMediaCaption: The local input preview has no timed captions.
-        <audio
-            controls
-            src={url}
-            aria-label="Preview audio input"
-            className="max-w-full"
-        />
-    ) : null;
-}
+import { RECORDING_SAMPLE_RATE, recordedWav } from "../lib/recorded-wav.ts";
+import { Button } from "../primitives/Button.tsx";
+import { MicIcon } from "../primitives/icons/index.tsx";
+import { Text } from "../primitives/Typography.tsx";
 
 export function AudioRecorder({
     onRecord,
     onBusyChange,
     maxBytes,
-    disabled,
+    disabled = false,
+    label = "Record audio",
 }: {
-    onRecord: (files: File[]) => void;
-    onBusyChange: (busy: boolean) => void;
+    onRecord: (file: File) => void;
+    onBusyChange?: (busy: boolean) => void;
     maxBytes: number;
-    disabled: boolean;
+    disabled?: boolean;
+    label?: string;
 }) {
     const recorder = useRef<MediaRecorder | null>(null);
     const mounted = useRef(false);
+    const busyCallback = useRef(onBusyChange);
+    useEffect(() => {
+        busyCallback.current = onBusyChange;
+    }, [onBusyChange]);
     const [state, setState] = useState<
         "idle" | "requesting" | "recording" | "preparing"
     >("idle");
+    const [available, setAvailable] = useState(false);
     const [error, setError] = useState("");
     useEffect(() => {
         mounted.current = true;
+        setAvailable(
+            typeof MediaRecorder !== "undefined" &&
+                typeof OfflineAudioContext !== "undefined" &&
+                !!navigator.mediaDevices?.getUserMedia,
+        );
         return () => {
             mounted.current = false;
             for (const track of recorder.current?.stream.getTracks() ?? [])
                 track.stop();
-            onBusyChange(false);
+            busyCallback.current?.(false);
         };
-    }, [onBusyChange]);
+    }, []);
 
     async function record() {
         setError("");
         setState("requesting");
-        onBusyChange(true);
+        busyCallback.current?.(true);
         let stream: MediaStream | undefined;
         try {
             stream = await navigator.mediaDevices.getUserMedia({
@@ -100,7 +95,7 @@ export function AudioRecorder({
                         new Blob(chunks, { type: active.mimeType }),
                         maxBytes,
                     );
-                    if (mounted.current) onRecord([file]);
+                    if (mounted.current) onRecord(file);
                 } catch (cause) {
                     if (mounted.current)
                         setError(
@@ -111,7 +106,7 @@ export function AudioRecorder({
                 } finally {
                     if (mounted.current) {
                         setState("idle");
-                        onBusyChange(false);
+                        busyCallback.current?.(false);
                     }
                 }
             };
@@ -122,7 +117,7 @@ export function AudioRecorder({
             recorder.current = null;
             if (!mounted.current) return;
             setState("idle");
-            onBusyChange(false);
+            busyCallback.current?.(false);
             setError(
                 cause instanceof DOMException &&
                     cause.name === "NotAllowedError"
@@ -133,18 +128,13 @@ export function AudioRecorder({
             );
         }
     }
-    if (
-        typeof MediaRecorder === "undefined" ||
-        typeof OfflineAudioContext === "undefined" ||
-        !navigator.mediaDevices?.getUserMedia
-    )
-        return null;
+    if (!available) return null;
     return (
-        <div className="flex flex-col items-start gap-2">
+        <div className="polli:flex polli:flex-col polli:items-start polli:gap-2">
             <Button
                 type="button"
                 size="sm"
-                intent="neutral"
+                intent={state === "recording" ? "danger" : "neutral"}
                 icon={<MicIcon />}
                 disabled={
                     disabled || state === "requesting" || state === "preparing"
@@ -162,7 +152,7 @@ export function AudioRecorder({
                       ? "Preparing preview…"
                       : state === "requesting"
                         ? "Waiting for microphone…"
-                        : "Record audio"}
+                        : label}
             </Button>
             {error && (
                 <Text role="alert" size="sm">

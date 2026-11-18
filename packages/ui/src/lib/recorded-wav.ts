@@ -1,4 +1,4 @@
-import { pcmToWav } from "../../../../shared/pcm-to-wav";
+import { pcmToWav } from "../../../../shared/pcm-to-wav.ts";
 
 // Browsers record in different containers. Audio endpoints share PCM WAV.
 export const RECORDING_SAMPLE_RATE = 44100;

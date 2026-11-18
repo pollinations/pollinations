@@ -11,6 +11,7 @@ import {
 import {
     Alert,
     AudioIcon,
+    AudioInput,
     BrandMark,
     Button,
     ButtonGroup,
@@ -58,7 +59,6 @@ import {
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
-import { AudioPreview, AudioRecorder } from "./AudioRecorder";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -1318,7 +1318,9 @@ export function Playground() {
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
-                orientation="inline"
+                orientation={
+                    uploadMedia.includes("audio") ? "stacked" : "inline"
+                }
                 className="min-w-0"
                 label={
                     requiresMediaUpload
@@ -1334,27 +1336,27 @@ export function Playground() {
                             line.
                         </Text>
                     )}
-                <FileUpload
-                    value={audioFiles}
-                    disabled={recording || isGenerating}
-                    onChange={setAudioFiles}
-                    maxFiles={1}
-                    {...uploadProps(uploadMedia, "Use one media file.")}
-                    icon={<MediaUploadIcon className="h-6 w-6 shrink-0" />}
-                    previewIcon={<MediaUploadIcon className="h-5 w-5" />}
-                    label={`Add ${mediaUploadLabel}`}
-                />
-                {uploadMedia.includes("audio") && audioFiles.length === 0 && (
-                    <AudioRecorder
+                {uploadMedia.includes("audio") ? (
+                    <AudioInput
                         key={currentModel.id}
-                        maxBytes={UPLOAD_MAX_MB.audio * 1024 * 1024}
-                        disabled={isGenerating}
-                        onRecord={setAudioFiles}
+                        value={audioFiles}
+                        onChange={setAudioFiles}
                         onBusyChange={setRecording}
+                        disabled={isGenerating}
+                        importLabel={`Import ${mediaUploadLabel}`}
+                        {...uploadProps(uploadMedia, "Use one media file.")}
                     />
-                )}
-                {audioFiles[0] && !isVideo(audioFiles[0]) && (
-                    <AudioPreview file={audioFiles[0]} />
+                ) : (
+                    <FileUpload
+                        value={audioFiles}
+                        onChange={setAudioFiles}
+                        disabled={isGenerating}
+                        maxFiles={1}
+                        {...uploadProps(uploadMedia, "Use one media file.")}
+                        icon={<MediaUploadIcon className="h-6 w-6 shrink-0" />}
+                        previewIcon={<MediaUploadIcon className="h-5 w-5" />}
+                        label={`Add ${mediaUploadLabel}`}
+                    />
                 )}
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
@@ -1567,38 +1569,64 @@ export function Playground() {
                                     <FieldStack
                                         key={media}
                                         label={`Reference ${MEDIA_PLURAL[media]}`}
-                                        orientation="inline"
+                                        orientation={
+                                            media === "audio"
+                                                ? "stacked"
+                                                : "inline"
+                                        }
                                         className="min-w-0"
                                     >
-                                        <FileUpload
-                                            value={videoReferences[media]}
-                                            onChange={(files) =>
-                                                setVideoReferences(
-                                                    (previous) => ({
-                                                        ...previous,
-                                                        [media]: files,
-                                                    }),
-                                                )
-                                            }
-                                            maxFiles={maxVideos ?? Infinity}
-                                            {...uploadProps(
-                                                [media],
-                                                maxVideos
-                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
-                                                    : "Too many files.",
-                                            )}
-                                            label={`Add ${MEDIA_PLURAL[media]}`}
-                                            icon={
-                                                <Icon className="h-6 w-6 shrink-0" />
-                                            }
-                                            // Images preview as thumbnails.
-                                            previewIcon={
-                                                media ===
-                                                "image" ? undefined : (
-                                                    <Icon className="h-6 w-6" />
-                                                )
-                                            }
-                                        />
+                                        {media === "audio" ? (
+                                            <AudioInput
+                                                key={currentModel?.id}
+                                                value={videoReferences.audio}
+                                                onChange={(audio) =>
+                                                    setVideoReferences(
+                                                        (previous) => ({
+                                                            ...previous,
+                                                            audio,
+                                                        }),
+                                                    )
+                                                }
+                                                onBusyChange={setRecording}
+                                                disabled={isGenerating}
+                                                maxFiles={Infinity}
+                                                {...uploadProps(
+                                                    ["audio"],
+                                                    "Too many audio clips.",
+                                                )}
+                                            />
+                                        ) : (
+                                            <FileUpload
+                                                value={videoReferences[media]}
+                                                onChange={(files) =>
+                                                    setVideoReferences(
+                                                        (previous) => ({
+                                                            ...previous,
+                                                            [media]: files,
+                                                        }),
+                                                    )
+                                                }
+                                                maxFiles={maxVideos ?? Infinity}
+                                                {...uploadProps(
+                                                    [media],
+                                                    maxVideos
+                                                        ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                                                        : "Too many files.",
+                                                )}
+                                                label={`Add ${MEDIA_PLURAL[media]}`}
+                                                icon={
+                                                    <Icon className="h-6 w-6 shrink-0" />
+                                                }
+                                                // Images preview as thumbnails.
+                                                previewIcon={
+                                                    media ===
+                                                    "image" ? undefined : (
+                                                        <Icon className="h-6 w-6" />
+                                                    )
+                                                }
+                                            />
+                                        )}
                                     </FieldStack>
                                 );
                             })}

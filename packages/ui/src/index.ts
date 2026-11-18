@@ -11,6 +11,12 @@ export {
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
+export {
+    AudioInput,
+    type AudioInputProps,
+} from "./compositions/AudioInput.tsx";
+export { AudioPlayer } from "./compositions/AudioPlayer.tsx";
+export { AudioRecorder } from "./compositions/AudioRecorder.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
     ChatConversation,

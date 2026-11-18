@@ -1,12 +1,9 @@
 import { useRef, useState } from "react";
+import { audioTime } from "../lib/audio-time.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { PauseIcon, PlayIcon } from "../primitives/icons/index.tsx";
 import { Slider } from "../primitives/Slider.tsx";
 import { Text } from "../primitives/Typography.tsx";
-
-function clock(seconds: number) {
-    return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
-}
 
 export function AudioPlayer({ src, label }: { src: string; label: string }) {
     const audio = useRef<HTMLAudioElement>(null);
@@ -74,7 +71,7 @@ export function AudioPlayer({ src, label }: { src: string; label: string }) {
                     </IconButton>
                     <Slider
                         aria-label={`Seek ${label}`}
-                        aria-valuetext={`${clock(position)} of ${clock(duration)}`}
+                        aria-valuetext={`${audioTime(position)} of ${audioTime(duration)}`}
                         min={0}
                         max={duration || 1}
                         step="any"
@@ -92,7 +89,7 @@ export function AudioPlayer({ src, label }: { src: string; label: string }) {
                         tone="muted"
                         className="polli:shrink-0 polli:tabular-nums"
                     >
-                        {clock(position)} / {clock(duration)}
+                        {audioTime(position)} / {audioTime(duration)}
                     </Text>
                 </>
             )}

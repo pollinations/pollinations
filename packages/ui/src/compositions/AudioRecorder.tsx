@@ -1,8 +1,71 @@
 import { useEffect, useRef, useState } from "react";
+import { audioTime } from "../lib/audio-time.ts";
 import { mediaActionTileClass } from "../lib/media-action-tile.ts";
 import { RECORDING_SAMPLE_RATE, recordedWav } from "../lib/recorded-wav.ts";
 import { MicIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
+
+type Capture = { stream: MediaStream; started: number };
+
+function RecordingIndicator({ stream, started }: Capture) {
+    const meter = useRef<HTMLSpanElement>(null);
+    const [seconds, setSeconds] = useState(0);
+    useEffect(() => {
+        let context: AudioContext | undefined;
+        let sample: (() => void) | undefined;
+        try {
+            if (
+                !window.matchMedia("(prefers-reduced-motion: reduce)")
+                    .matches &&
+                typeof AudioContext !== "undefined"
+            ) {
+                context = new AudioContext();
+                const analyser = context.createAnalyser();
+                analyser.fftSize = 512;
+                context.createMediaStreamSource(stream).connect(analyser);
+                void context.resume().catch(() => {});
+                const samples = new Float32Array(analyser.fftSize);
+                sample = () => {
+                    analyser.getFloatTimeDomainData(samples);
+                    let sum = 0;
+                    for (const value of samples) sum += value * value;
+                    const rms = Math.sqrt(sum / samples.length);
+                    meter.current?.style.setProperty(
+                        "--mic-level",
+                        String(Math.min(1, rms * 8)),
+                    );
+                };
+            }
+        } catch {
+            // The clock and capture also work without a live meter.
+        }
+        const timer = window.setInterval(
+            () => {
+                sample?.();
+                setSeconds(Math.floor((performance.now() - started) / 1000));
+            },
+            sample ? 100 : 250,
+        );
+        return () => {
+            window.clearInterval(timer);
+            if (context) void context.close().catch(() => {});
+        };
+    }, [stream, started]);
+    return (
+        <>
+            <span ref={meter} className="polli-mic-meter" aria-hidden="true">
+                <i />
+                <i />
+                <MicIcon className="polli:size-6" />
+                <i />
+                <i />
+            </span>
+            <span className="polli:whitespace-nowrap polli:tabular-nums">
+                Stop {audioTime(seconds)}
+            </span>
+        </>
+    );
+}
 
 export function AudioRecorder({
     onRecord,
@@ -24,7 +87,7 @@ export function AudioRecorder({
         busyCallback.current = onBusyChange;
     }, [onBusyChange]);
     const [state, setState] = useState<
-        "idle" | "requesting" | "recording" | "preparing"
+        "idle" | "requesting" | Capture | "preparing"
     >("idle");
     const [available, setAvailable] = useState(false);
     const [error, setError] = useState("");
@@ -111,7 +174,7 @@ export function AudioRecorder({
                 }
             };
             active.start(1000);
-            setState("recording");
+            setState({ stream, started });
         } catch (cause) {
             for (const track of stream?.getTracks() ?? []) track.stop();
             recorder.current = null;
@@ -136,26 +199,33 @@ export function AudioRecorder({
                 type="button"
                 className={mediaActionTileClass(
                     disabled || waiting,
-                    state === "recording",
+                    typeof state === "object",
                 )}
+                aria-label={
+                    typeof state === "object" ? "Stop recording" : undefined
+                }
                 disabled={disabled || waiting}
                 onClick={() => {
-                    if (state === "recording") {
+                    if (typeof state === "object") {
                         if (recorder.current?.state === "recording")
                             recorder.current.stop();
                     } else void record();
                 }}
             >
-                <MicIcon />
-                <span>
-                    {state === "recording"
-                        ? "Stop recording"
-                        : state === "preparing"
-                          ? "Preparing…"
-                          : state === "requesting"
-                            ? "Waiting…"
-                            : label}
-                </span>
+                {typeof state === "object" ? (
+                    <RecordingIndicator {...state} />
+                ) : (
+                    <>
+                        <MicIcon />
+                        <span>
+                            {state === "preparing"
+                                ? "Preparing…"
+                                : state === "requesting"
+                                  ? "Waiting…"
+                                  : label}
+                        </span>
+                    </>
+                )}
             </button>
             {error && (
                 <Text role="alert" size="sm">

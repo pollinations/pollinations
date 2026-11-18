@@ -20,6 +20,32 @@
     display: none !important;
 }
 
+.polli-mic-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.polli-mic-meter > i {
+    width: 3px;
+    height: 18px;
+    border-radius: 999px;
+    background: currentColor;
+    transform: scaleY(calc(0.16 + 0.84 * var(--mic-level, 0)));
+    transition: transform 100ms ease-out;
+}
+
+.polli-mic-meter > i:first-child,
+.polli-mic-meter > i:last-child {
+    height: 11px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .polli-mic-meter > i {
+        display: none;
+    }
+}
+
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;

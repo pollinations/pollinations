@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { hdxTools } from "./tools/hdx.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "hdx_datasets",
             ].sort(),
         );
     });
@@ -374,6 +376,169 @@ test("non-root routes stay private", async () => {
         (await worker.fetch(new Request("https://private.test/no"))).status,
         404,
     );
+});
+
+const hdxFixture = {
+    success: true,
+    result: {
+        count: 2744,
+        results: [
+            {
+                title: "Climate Change Opinion Survey",
+                name: "climate-change-opinion-survey",
+                organization: { title: "AI for Good at Meta" },
+                dataset_date: "[2021-02-17T00:00:00 TO 2023-09-03T23:59:59]",
+                metadata_modified: "2026-05-26T01:00:10.502583",
+                num_resources: 6,
+                license_title: "Public Domain / No restrictions (CC0)",
+                notes: "In partnership with Yale, Meta launched a climate change opinion survey that explores public climate change knowledge, attitudes, policy preferences, and behaviors. 2023 aggregated survey responses now available.\r\n\r\n The 2022 survey includes respondents from nearly 200 countries and territories. We are sharing country level data from this survey, providing policymakers, research institutions, and nonprofits with an international view of public climate change opinion.\r\n\r\nFor more information please see  https://ai.meta.com/ai-for-good/datasets/climate-change-opinion-survey/\r\n\r\nIf you're interested in becoming a research partner and accessing record level data, please email aiforgood@meta.com.",
+                resources: [
+                    {
+                        name: "meta_2023_behaviors_aggregate.csv",
+                        format: "CSV",
+                        url: "https://data.humdata.org/dataset/dc9f2ca4-8b62-4747-89b1-db426ce617a0/resource/1/download/x.csv",
+                    },
+                    {
+                        name: "Climate_Change_Opinion_Survey_2023_aggregated.xlsx.csv",
+                        format: "csv",
+                        url: "https://example.org/x.csv",
+                    },
+                    {
+                        name: "Climate_Change_Opinion_Survey_Complete_Codebooks_2021to2023.xlsx",
+                        format: "XLSX",
+                        url: "https://example.org/x.xlsx",
+                    },
+                ],
+                caveats: "Some caveat text the tool never returns.",
+                groups: [{ title: "Climate" }],
+                solr_additions: { bulk: true },
+            },
+            {
+                title: "Nigeria - Climate Change",
+                name: "world-bank-climate-change-indicators-for-nigeria",
+                organization: { title: "World Bank Group" },
+                dataset_date: "[1960-01-01T00:00:00 TO 2025-12-31T23:59:59]",
+                metadata_modified: "2026-10-27T20:50:55.769071",
+                num_resources: 1,
+                license_title:
+                    "Creative Commons Attribution International (CC BY)",
+                notes: "Contains data from the World Bank's [data portal](http://data.worldbank.org/). There is also a [consolidated country dataset](https://data.humdata.org/dataset/world-bank-combined-indicators-for-nigeria) on HDX.\n\nClimate change is expected to hit developing countries the hardest. Its effects—higher temperatures, changes in precipitation patterns, rising sea levels, and more frequent weather-related disasters—pose risks for agriculture, food, and water supplies. At stake are recent gains in the fight against poverty, hunger and disease, and the lives and livelihoods of billions of people in developing countries. Addressing climate change requires unprecedented global cooperation across borders. The World Bank Group is helping support developing countries and contributing to a global solution, while tailoring our approach to the differing needs of developing country partners.  Data here cover climate systems, exposure to climate impacts, resilience, greenhouse gas emissions, and energy use.  Other indicators relevant to climate change are found under other data pages, particularly Environment, Agriculture & Rural Development, Energy & Mining, Health, Infrastructure, Poverty, and Urban Development.",
+                resources: [
+                    {
+                        name: "Climate Change Indicators for Nigeria",
+                        format: "CSV",
+                        url: "https://example.org/nigeria.csv",
+                    },
+                ],
+            },
+        ],
+    },
+};
+
+test("HDX datasets search projects the CKAN records and caps summaries", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "data.humdata.org");
+        assert.equal(url.searchParams.get("q"), "climate");
+        assert.equal(url.searchParams.get("rows"), "2");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json(hdxFixture);
+    });
+    const c = await client(t);
+    const result = await call(c, "hdx_datasets", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    const body = value(result);
+    assert.equal(body.query, "climate");
+    assert.equal(body.total, 2744);
+    assert.equal(body.datasets.length, 2);
+    assert.equal(body.datasets[0].title, "Climate Change Opinion Survey");
+    assert.equal(body.datasets[0].name, "climate-change-opinion-survey");
+    assert.equal(body.datasets[0].organization, "AI for Good at Meta");
+    assert.equal(
+        body.datasets[0].dataset_date,
+        "[2021-02-17T00:00:00 TO 2023-09-03T23:59:59]",
+    );
+    assert.equal(body.datasets[0].updated, "2026-05-26");
+    assert.equal(body.datasets[0].resources, 6);
+    assert.deepEqual(body.datasets[0].formats, ["CSV", "XLSX"]);
+    assert.equal(
+        body.datasets[0].license,
+        "Public Domain / No restrictions (CC0)",
+    );
+    assert.equal(body.datasets[0].summary.length, 500);
+    assert.equal(body.datasets[0].truncated, true);
+    assert.match(
+        body.datasets[0].summary,
+        /^In partnership with Yale, Meta launched/,
+    );
+    assert.equal(
+        body.datasets[0].url,
+        "https://data.humdata.org/dataset/climate-change-opinion-survey",
+    );
+    assert.equal(body.datasets[1].title, "Nigeria - Climate Change");
+    assert.equal(body.datasets[1].organization, "World Bank Group");
+    assert.equal(body.datasets[1].updated, "2026-10-27");
+    assert.deepEqual(body.datasets[1].formats, ["CSV"]);
+    assert.equal(body.datasets[1].summary.length, 500);
+    assert.equal(body.datasets[1].truncated, true);
+    assert.match(
+        body.datasets[1].summary,
+        /Contains data from the World Bank's data portal\./,
+    );
+    assert.doesNotMatch(body.datasets[1].summary, /\]\(http/);
+    assert.equal(
+        body.datasets[1].url,
+        "https://data.humdata.org/dataset/world-bank-climate-change-indicators-for-nigeria",
+    );
+});
+
+test("HDX datasets search returns an empty list on no match and rejects bad input", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches++;
+        return Response.json({
+            success: true,
+            result: { count: 0, results: [] },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "hdx_datasets", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        datasets: [],
+    });
+    result = await call(c, "hdx_datasets", { query: " " });
+    assert.equal(result.isError, true);
+    result = await call(c, "hdx_datasets", { query: "climate", limit: 99 });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 1);
+
+    // The handler itself falls back to 5 rows for an out-of-range limit.
+    let seenRows = null;
+    const stub = async (url) => {
+        seenRows = new URL(url).searchParams.get("rows");
+        return { success: true, result: { count: 0, results: [] } };
+    };
+    const out = await hdxTools[0][3]({ query: "climate", limit: 99 }, stub);
+    assert.equal(seenRows, "5");
+    assert.deepEqual(out, { query: "climate", total: 0, datasets: [] });
+    await assert.rejects(
+        hdxTools[0][3]({ query: " ", limit: 5 }, stub),
+        /must not be blank/,
+    );
+    assert.equal(seenRows, "5");
 });
 
 test("search uses fixed Wikipedia edition, bounded query and no credentials", async (t) => {

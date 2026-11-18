@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "solar_estimate",
             ].sort(),
         );
     });
@@ -644,4 +645,149 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("PVGIS estimates solar yield, passes tilt params through and rejects bad inputs before fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "re.jrc.ec.europa.eu");
+        assert.equal(url.pathname, "/api/v5_2/PVcalc");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(url.searchParams.get("outputformat"), "json");
+        const tilt = url.searchParams.get("angle") === "35";
+        return Response.json({
+            inputs: {
+                location: { latitude: 52.52, longitude: 13.4, elevation: 42 },
+                meteo_data: {
+                    radiation_db: "PVGIS-SARAH2",
+                    meteo_db: "ERA5",
+                    year_min: 2005,
+                    year_max: 2020,
+                },
+                mounting_system: {
+                    fixed: {
+                        slope: { value: tilt ? 35 : 0, optimal: false },
+                        azimuth: { value: 0, optimal: false },
+                        type: "free-standing",
+                    },
+                },
+                pv_module: { peak_power: 1, system_loss: 14 },
+            },
+            outputs: {
+                monthly: {
+                    fixed: tilt
+                        ? [
+                              {
+                                  month: 1,
+                                  E_d: 1.09,
+                                  E_m: 33.64,
+                                  "H(i)_d": 1.26,
+                                  "H(i)_m": 39.03,
+                                  SD_m: 7.04,
+                              },
+                              {
+                                  month: 7,
+                                  E_d: 4.18,
+                                  E_m: 129.66,
+                                  "H(i)_d": 5.48,
+                                  "H(i)_m": 169.73,
+                                  SD_m: 17,
+                              },
+                          ]
+                        : [
+                              {
+                                  month: 1,
+                                  E_d: 0.5,
+                                  E_m: 15.59,
+                                  "H(i)_d": 0.69,
+                                  "H(i)_m": 21.43,
+                                  SD_m: 2.15,
+                              },
+                              {
+                                  month: 7,
+                                  E_d: 4.16,
+                                  E_m: 128.95,
+                                  "H(i)_d": 5.4,
+                                  "H(i)_m": 167.37,
+                                  SD_m: 15.53,
+                              },
+                          ],
+                },
+                totals: {
+                    fixed: tilt
+                        ? { E_y: 1057.92, "H(i)_y": 1321.55 }
+                        : { E_y: 874.51, "H(i)_y": 1114.83 },
+                },
+            },
+        });
+    });
+
+    const c = await client(t);
+    const flat = await call(c, "solar_estimate", {
+        latitude: 52.52,
+        longitude: 13.4,
+    });
+    assert.notEqual(flat.isError, true, JSON.stringify(flat));
+    assert.deepEqual(value(flat), {
+        latitude: 52.52,
+        longitude: 13.4,
+        elevation: 42,
+        peakpower_kwp: 1,
+        loss_percent: 14,
+        slope_deg: 0,
+        azimuth_deg: 0,
+        radiation_db: "PVGIS-SARAH2",
+        meteo_db: "ERA5",
+        data_years: "2005-2020",
+        yearly_energy_kwh: 874.51,
+        yearly_irradiation_kwh_m2: 1114.83,
+        monthly: [
+            {
+                month: 1,
+                energy_kwh: 15.59,
+                irradiation_kwh_m2: 21.43,
+                std_dev_kwh: 2.15,
+            },
+            {
+                month: 7,
+                energy_kwh: 128.95,
+                irradiation_kwh_m2: 167.37,
+                std_dev_kwh: 15.53,
+            },
+        ],
+    });
+
+    const tilted = await call(c, "solar_estimate", {
+        latitude: 52.52,
+        longitude: 13.4,
+        slope: 35,
+        azimuth: 0,
+    });
+    assert.notEqual(tilted.isError, true, JSON.stringify(tilted));
+    assert.equal(value(tilted).slope_deg, 35);
+    assert.equal(value(tilted).yearly_energy_kwh, 1057.92);
+
+    const before = fetches;
+    for (const args of [
+        { latitude: 91, longitude: 13.4 },
+        { latitude: 52.52, longitude: 181 },
+        { latitude: 52.52, longitude: 13.4, peakpower: 0 },
+        { latitude: 52.52, longitude: 13.4, loss: 101 },
+        { latitude: 52.52, longitude: 13.4, slope: 91 },
+        { latitude: 52.52, longitude: 13.4, azimuth: 181 },
+        { latitude: "52.52", longitude: 13.4 },
+    ]) {
+        const bad = await call(c, "solar_estimate", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
 });

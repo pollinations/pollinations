@@ -342,6 +342,149 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("NHTSA decodes a VIN, surfaces decoder errors and returns recalls", async (t) => {
+    let fetches = 0;
+    const vinRows = (errorCode, errorText) => [
+        { Variable: "Suggested VIN", Value: "" },
+        { Variable: "Error Code", Value: errorCode },
+        { Variable: "Error Text", Value: errorText },
+        { Variable: "Make", Value: "HONDA" },
+        {
+            Variable: "Manufacturer Name",
+            Value: "AMERICAN HONDA MOTOR CO., INC.",
+        },
+        { Variable: "Model", Value: "Accord" },
+        { Variable: "Model Year", Value: "2003" },
+        { Variable: "Vehicle Type", Value: "PASSENGER CAR" },
+        { Variable: "Engine Model", Value: "J30A4" },
+        { Variable: "Fuel Type - Primary", Value: "Gasoline" },
+        { Variable: "Body Class", Value: "Coupe" },
+        { Variable: "Drive Type", Value: null },
+        { Variable: "Destination Market", Value: null },
+    ];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.hostname === "vpic.nhtsa.dot.gov") {
+            if (!url.pathname.includes("1HGCM82633A004352"))
+                return Response.json({
+                    Count: 141,
+                    Message: "Results returned successfully.",
+                    Results: vinRows(
+                        "6,7,11,400",
+                        "6 - Incomplete VIN; 7 - Manufacturer is not registered with NHTSA; 11 - Incorrect Model Year; 400 - Invalid Characters Present",
+                    ),
+                });
+            assert.equal(
+                url.pathname,
+                "/api/vehicles/DecodeVin/1HGCM82633A004352",
+            );
+            assert.equal(url.searchParams.get("format"), "json");
+            return Response.json({
+                Count: 141,
+                Message: "Results returned successfully.",
+                Results: vinRows(
+                    "0",
+                    "0 - VIN decoded clean. Check Digit (9th position) is correct",
+                ),
+            });
+        }
+        assert.equal(url.hostname, "api.nhtsa.gov");
+        assert.equal(url.pathname, "/recalls/recallsByVehicle");
+        if (url.searchParams.get("make") === "zzz")
+            return new Response(
+                JSON.stringify({
+                    Count: 0,
+                    Message: "Results returned successfully",
+                    results: [],
+                }),
+                { status: 400 },
+            );
+        assert.equal(url.searchParams.get("make"), "toyota");
+        assert.equal(url.searchParams.get("model"), "camry");
+        assert.equal(url.searchParams.get("modelYear"), "2020");
+        return Response.json({
+            Count: 3,
+            Message: "Results returned successfully",
+            results: [
+                {
+                    Manufacturer: "Toyota Motor Engineering & Manufacturing",
+                    NHTSACampaignNumber: "20V682000",
+                    ReportReceivedDate: "04/11/2020",
+                    Component: "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+                    Summary:
+                        "Toyota is recalling certain 2018-2019 4Runner vehicles for a fuel pump issue.",
+                    Consequence: "The engine can stall while driving.",
+                    ModelYear: "2020",
+                    Make: "TOYOTA",
+                    Model: "CAMRY",
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "vin_decode", { vin: "1hgcm82633a004352" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        vin: "1HGCM82633A004352",
+        make: "HONDA",
+        model: "Accord",
+        model_year: "2003",
+        body_class: "Coupe",
+        fuel_type: "Gasoline",
+        engine_model: "J30A4",
+        drive_type: null,
+        manufacturer: "AMERICAN HONDA MOTOR CO., INC.",
+        vehicle_type: "PASSENGER CAR",
+    });
+    result = await call(c, "vin_decode", { vin: "ZZZZZZZZZZZZZZZZZ" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /could not decode VIN/);
+    const before = fetches;
+    result = await call(c, "vin_decode", { vin: "1HGCM82633A00435I" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /17-character VIN/);
+    assert.equal(fetches, before, "bad VIN must not fetch");
+    result = await call(c, "vehicle_recalls", {
+        make: "toyota",
+        model: "camry",
+        modelYear: 2020,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        make: "toyota",
+        model: "camry",
+        model_year: 2020,
+        total: 1,
+        recalls: [
+            {
+                campaign_number: "20V682000",
+                component: "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+                summary:
+                    "Toyota is recalling certain 2018-2019 4Runner vehicles for a fuel pump issue.",
+                report_received_date: "04/11/2020",
+            },
+        ],
+    });
+    result = await call(c, "vehicle_recalls", {
+        make: "zzz",
+        model: "zzz",
+        modelYear: 2020,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        make: "zzz",
+        model: "zzz",
+        model_year: 2020,
+        total: 0,
+        recalls: [],
+    });
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +507,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "vin_decode",
+                "vehicle_recalls",
             ].sort(),
         );
     });

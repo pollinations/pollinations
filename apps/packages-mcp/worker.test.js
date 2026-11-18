@@ -81,6 +81,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "bundle_size",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -770,4 +771,90 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("Bundlephobia reports minified size and gzip, pins versions and encodes scoped names", async (t) => {
+    const react = {
+        name: "react",
+        version: "19.3.1",
+        size: 7994,
+        gzip: 3053,
+        dependencyCount: 0,
+        description:
+            "React is a JavaScript library for building user interfaces.",
+        assets: [{ gzip: 3053, name: "main", size: 7994, type: "js" }],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(String(url));
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        if (String(url).includes("does-not-exist"))
+            return new Response("error", { status: 404 });
+        if (String(url).includes("18.2.0"))
+            return Response.json({
+                ...react,
+                version: "18.2.0",
+                size: 6618,
+                gzip: 2608,
+                dependencyCount: 1,
+            });
+        if (String(url).includes("%40babel"))
+            return Response.json({
+                name: "@babel/core",
+                version: "8.1.2",
+                size: 966190,
+                gzip: 249393,
+                dependencyCount: 16,
+                description: "Babel compiler core.",
+            });
+        return Response.json(react);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "bundle_size", { package: "react" }), {
+        name: "react",
+        version: "19.3.1",
+        size: 7994,
+        sizeKb: "7.8 KB",
+        gzip: 3053,
+        gzipKb: "3.0 KB",
+        dependencyCount: 0,
+        description:
+            "React is a JavaScript library for building user interfaces.",
+    });
+    assert.equal(
+        (
+            await call(client, "bundle_size", {
+                package: "react",
+                version: "18.2.0",
+            })
+        ).version,
+        "18.2.0",
+    );
+    assert.equal(
+        (await call(client, "bundle_size", { package: "@babel/core" })).gzipKb,
+        "243.5 KB",
+    );
+    assert.deepEqual(urls, [
+        "https://bundlephobia.com/api/size?package=react",
+        "https://bundlephobia.com/api/size?package=react%4018.2.0",
+        "https://bundlephobia.com/api/size?package=%40babel%2Fcore",
+    ]);
+    const missing = await client.callTool({
+        name: "bundle_size",
+        arguments: { package: "does-not-exist-xyz123" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /No bundle found/);
+    const bad = await client.callTool({
+        name: "bundle_size",
+        arguments: { package: "not a package!" },
+    });
+    assert.equal(bad.isError, true);
+    const badVersion = await client.callTool({
+        name: "bundle_size",
+        arguments: { package: "react", version: "../latest" },
+    });
+    assert.equal(badVersion.isError, true);
 });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "agify",
             ].sort(),
         );
     });
@@ -644,4 +645,42 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("agify estimates an age from name statistics and reports unknown names as null", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.agify.io");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        const name = url.searchParams.get("name");
+        if (name === "michael")
+            return Response.json({ count: 311558, name: "michael", age: 57 });
+        if (name === "emma")
+            return Response.json({ count: 61900, name: "emma", age: 42 });
+        return Response.json({ count: 0, name, age: null });
+    });
+    const c = await client(t);
+    let result = await call(c, "agify", { name: "michael" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "michael",
+        predicted_age: 57,
+        sample_count: 311558,
+        is_prediction: true,
+    });
+    result = await call(c, "agify", { name: "emma" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).predicted_age, 42);
+    assert.equal(value(result).sample_count, 61900);
+    result = await call(c, "agify", { name: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).predicted_age, null);
+    assert.equal(value(result).sample_count, 0);
+    assert.equal(count, 3);
+    result = await call(c, "agify", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.equal(count, 3);
 });

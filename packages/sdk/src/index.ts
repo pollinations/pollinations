@@ -72,6 +72,15 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
+export {
+    base64ToPcm16,
+    connectRealtime,
+    pcm16ToBase64,
+    type RealtimeEvent,
+    type RealtimeOptions,
+    type RealtimeSession,
+    realtimeUrl,
+} from "./realtime.js";
 // Export all types
 export type {
     AccountBalance,

@@ -687,6 +687,61 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice and live transcription
+
+`connectRealtime()` opens `wss://gen.pollinations.ai/v1/realtime` and passes
+[OpenAI Realtime](https://developers.openai.com/api/docs/guides/realtime-conversations)
+events through as plain objects. It resolves once the socket is open and your
+`session` has been sent as `session.update`.
+
+```javascript
+import { connectRealtime, pcm16ToBase64, base64ToPcm16 } from '@pollinations/sdk';
+
+const session = await connectRealtime({
+  apiKey,                              // the user's sk_ key; it goes in ?key=
+  model: 'openai/gpt-realtime-2.1',    // the default
+  session: { type: 'realtime', instructions: 'Keep replies short.' },
+});
+session.on('response.output_audio.delta', (e) => play(base64ToPcm16(e.delta)));
+session.on('error', (e) => console.error(e.error));
+session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(micSamples) });
+```
+
+- Audio is PCM16 at 24 kHz, base64-encoded. `pcm16ToBase64` and
+  `base64ToPcm16` convert from and to the `Float32Array` samples Web Audio uses.
+- Live transcription: pass `model: 'openai/gpt-live-transcribe'`, send audio the
+  same way, and read `conversation.item.input_audio_transcription.delta` and
+  `.completed`. `microsoft/mai-transcribe-2-streaming` and the ElevenLabs Scribe
+  models also need a `session` of `type: 'transcription'` with their audio format,
+  and commit audio with `input_audio_buffer.commit`. Voice models refuse input
+  transcription and close the session with the reason.
+- `session.on('*', fn)` receives every event; `on()` returns an unsubscribe function.
+- `session.closed` resolves with the close `code` and `reason`; `session.close()` or
+  aborting `signal` closes it. Usage is billed when the session closes.
+- A key, balance or model error rejects `connectRealtime()` with a
+  `PollinationsError`: browsers close the socket before it opens without the
+  HTTP status, so the message names what to check.
+- It uses the global `WebSocket` of browsers and Node 22+.
+
+In React, `useRealtime(options)` runs a session on the signed-in user's key.
+It connects only when you call `connect()`, closes on logout, key change and
+unmount, and puts a server's close reason in `error`.
+
+```tsx
+const { status, error, connect, close } = useRealtime({ model: 'openai/gpt-live-transcribe' });
+
+async function start() {
+  const session = await connect(); // add listeners here, before any event is missed
+  session?.on('conversation.item.input_audio_transcription.completed', (e) => addLine(e.transcript));
+}
+```
+
+[`examples/realtime-voice.html`](examples/realtime-voice.html) is a complete
+voice chat page: sign-in, microphone, playback that stops when you talk over
+it, and a transcript of the replies. Serve it over http(s).
+It plays the model through an `<audio>` element so the browser's echo
+cancellation does not feed the model its own voice.
+
 ## Vision (Image Input)
 
 ```javascript

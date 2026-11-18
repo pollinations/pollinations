@@ -1,5 +1,5 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isOutageError } from "../error-response.js";
 import type { PollinationsError } from "../types.js";
 import {
@@ -12,6 +12,7 @@ import {
     useAccountKey,
     useAccountKeyUsage,
     useAuthState,
+    useRealtime,
     useTextGeneration,
 } from "./hooks.js";
 
@@ -511,5 +512,116 @@ describe("generation hooks", () => {
 
         expect(logout).toHaveBeenCalledTimes(1);
         expect(gen().data).toBeNull();
+    });
+});
+
+/** Minimal browser WebSocket the test opens and closes by hand. */
+class FakeSocket extends EventTarget {
+    static all: FakeSocket[] = [];
+    readyState = 0;
+    constructor(public url: string) {
+        super();
+        FakeSocket.all.push(this);
+    }
+    send() {}
+    open() {
+        this.readyState = 1;
+        this.dispatchEvent(new Event("open"));
+    }
+    close(code = 1000, reason = "") {
+        this.readyState = 3;
+        this.dispatchEvent(Object.assign(new Event("close"), { code, reason }));
+    }
+}
+
+describe("useRealtime", () => {
+    beforeEach(() => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+    });
+
+    async function mount(value: AuthContextValue) {
+        const probe: { rt?: ReturnType<typeof useRealtime> } = {};
+        function Probe() {
+            probe.rt = useRealtime();
+            return null;
+        }
+        const element = (v: AuthContextValue) => (
+            <AuthContext.Provider value={v}>
+                <Probe />
+            </AuthContext.Provider>
+        );
+        let renderer: ReactTestRenderer | undefined;
+        await act(async () => {
+            renderer = create(element(value));
+        });
+        return {
+            probe,
+            update: (v: AuthContextValue) =>
+                act(async () => renderer?.update(element(v))),
+            unmount: () => act(async () => renderer?.unmount()),
+        };
+    }
+
+    it("connects on demand with the user's key and tracks the socket", async () => {
+        FakeSocket.all = [];
+        const { probe } = await mount(authValue());
+        expect(probe.rt?.status).toBe("idle");
+        expect(FakeSocket.all).toHaveLength(0);
+
+        let pending: Promise<unknown> | undefined;
+        await act(async () => {
+            pending = probe.rt?.connect();
+        });
+        expect(probe.rt?.status).toBe("connecting");
+        const socket = FakeSocket.all[0];
+        expect(new URL(socket.url).searchParams.get("key")).toBe("sk_test");
+
+        await act(async () => {
+            socket.open();
+            await pending;
+        });
+        expect(probe.rt?.status).toBe("open");
+        expect(probe.rt?.session?.socket).toBe(socket);
+
+        await act(async () => {
+            socket.close(1008, "Insufficient balance");
+        });
+        await waitFor(() => probe.rt?.status === "closed");
+        expect(probe.rt?.session).toBeNull();
+        expect(probe.rt?.error?.message).toBe("Insufficient balance");
+    });
+
+    it("reports a session that never opens", async () => {
+        FakeSocket.all = [];
+        const { probe } = await mount(authValue());
+        await act(async () => {
+            const pending = probe.rt?.connect();
+            FakeSocket.all[0].close(1006);
+            await pending;
+        });
+        expect(probe.rt?.status).toBe("closed");
+        expect(probe.rt?.error?.message).toMatch(/before opening/);
+    });
+
+    it("closes the session on logout and on unmount", async () => {
+        FakeSocket.all = [];
+        const { probe, update, unmount } = await mount(authValue());
+        await act(async () => {
+            const pending = probe.rt?.connect();
+            FakeSocket.all[0].open();
+            await pending;
+        });
+        await update(authValue({ apiKey: null, isLoggedIn: false }));
+        expect(FakeSocket.all[0].readyState).toBe(3);
+        expect(probe.rt?.status).toBe("closed");
+
+        await update(authValue());
+        await act(async () => {
+            const pending = probe.rt?.connect();
+            FakeSocket.all[1].open();
+            await pending;
+        });
+        await unmount();
+        expect(FakeSocket.all[1].readyState).toBe(3);
     });
 });

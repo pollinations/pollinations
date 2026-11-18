@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "swiss_connections",
             ].sort(),
         );
     });
@@ -644,4 +645,229 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Swiss connections project times, platforms and legs, and reject unknown stations before returning empty results", async (t) => {
+    const direct = {
+        from: {
+            station: { name: "Zürich HB" },
+            departure: "2026-11-18T16:32:00+0100",
+            arrival: null,
+            platform: "32",
+            delay: null,
+        },
+        to: {
+            station: { name: "Bern" },
+            departure: null,
+            arrival: "2026-11-18T17:28:00+0100",
+            platform: "6",
+            delay: null,
+        },
+        duration: "00d00:56:00",
+        transfers: 0,
+        products: ["IC 1"],
+        sections: [
+            {
+                journey: {
+                    category: "IC",
+                    number: "1",
+                    operator: "SBB",
+                    to: "Genève-Aéroport",
+                },
+                departure: {
+                    station: { name: "Zürich HB" },
+                    departure: "2026-11-18T16:32:00+0100",
+                    platform: "32",
+                },
+                arrival: {
+                    station: { name: "Bern" },
+                    arrival: "2026-11-18T17:28:00+0100",
+                    platform: "6",
+                },
+            },
+        ],
+    };
+    const viaOlten = {
+        from: {
+            station: { name: "Zürich HB" },
+            departure: "2026-11-18T16:38:00+0100",
+            arrival: null,
+            platform: "15",
+            delay: null,
+        },
+        to: {
+            station: { name: "Bern" },
+            departure: null,
+            arrival: "2026-11-18T17:56:00+0100",
+            platform: "8",
+            delay: null,
+        },
+        duration: "00d01:18:00",
+        transfers: 2,
+        products: ["RE37", "RE12", "ICE"],
+        sections: [
+            {
+                journey: {
+                    category: "RE",
+                    number: "37",
+                    operator: "SBB",
+                    to: "Aarau",
+                },
+                departure: {
+                    station: { name: "Zürich HB" },
+                    departure: "2026-11-18T16:38:00+0100",
+                    platform: "15",
+                },
+                arrival: {
+                    station: { name: "Aarau" },
+                    arrival: "2026-11-18T17:05:00+0100",
+                    platform: "4",
+                },
+            },
+            {
+                journey: {
+                    category: "RE",
+                    number: "12",
+                    operator: "SBB",
+                    to: "Olten",
+                },
+                departure: {
+                    station: { name: "Aarau" },
+                    departure: "2026-11-18T17:13:00+0100",
+                    platform: "5",
+                },
+                arrival: {
+                    station: { name: "Olten" },
+                    arrival: "2026-11-18T17:24:00+0100",
+                    platform: "3AB",
+                },
+            },
+            {
+                journey: {
+                    category: "ICE",
+                    number: "000107",
+                    operator: "SBB",
+                    to: "Interlaken West",
+                },
+                departure: {
+                    station: { name: "Olten" },
+                    departure: "2026-11-18T17:29:00+0100",
+                    platform: "11",
+                },
+                arrival: {
+                    station: { name: "Bern" },
+                    arrival: "2026-11-18T17:56:00+0100",
+                    platform: "8",
+                },
+            },
+        ],
+    };
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "transport.opendata.ch");
+        assert.equal(url.pathname, "/v1/connections");
+        assert.equal(init?.headers?.Authorization, undefined);
+        assert.equal(init?.headers?.Cookie, undefined);
+        assert.match(
+            init?.headers?.["User-Agent"] ?? "",
+            /hello@pollinations\.ai/,
+        );
+        if (url.searchParams.get("from") === "ZzzzzNotAStation")
+            return Response.json({
+                connections: [],
+                from: null,
+                to: null,
+                stations: { from: [], to: [] },
+            });
+        const connections =
+            url.searchParams.get("limit") === "3"
+                ? [direct, viaOlten, direct]
+                : [direct];
+        return Response.json({
+            connections,
+            from: { id: "8503000", name: "Zürich HB" },
+            to: { id: "8507000", name: "Bern" },
+            stations: { from: [], to: [] },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "swiss_connections", {
+        from: "Zurich",
+        to: "Bern",
+    });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.deepEqual(val, {
+        from: "Zürich HB",
+        to: "Bern",
+        total: 1,
+        connections: [
+            {
+                from: {
+                    name: "Zürich HB",
+                    departure: "2026-11-18T16:32:00+0100",
+                    arrival: null,
+                    platform: "32",
+                    delay: null,
+                },
+                to: {
+                    name: "Bern",
+                    departure: null,
+                    arrival: "2026-11-18T17:28:00+0100",
+                    platform: "6",
+                    delay: null,
+                },
+                duration: "00d00:56:00",
+                transfers: 0,
+                products: ["IC 1"],
+                sections: [
+                    {
+                        line: "IC 1",
+                        operator: "SBB",
+                        to: "Genève-Aéroport",
+                        from: "Zürich HB",
+                        departure: "2026-11-18T16:32:00+0100",
+                        departurePlatform: "32",
+                        arrival: "2026-11-18T17:28:00+0100",
+                        arrivalPlatform: "6",
+                    },
+                ],
+            },
+        ],
+    });
+
+    const three = await call(c, "swiss_connections", {
+        from: "Zurich",
+        to: "Bern",
+        limit: 3,
+    });
+    assert.notEqual(three.isError, true, JSON.stringify(three));
+    assert.equal(value(three).total, 3);
+    assert.equal(value(three).connections[1].transfers, 2);
+    assert.equal(value(three).connections[1].sections[2].line, "ICE 107");
+
+    const unknown = await call(c, "swiss_connections", {
+        from: "ZzzzzNotAStation",
+        to: "Bern",
+    });
+    assert.equal(unknown.isError, true, JSON.stringify(unknown));
+    assert.match(
+        unknown.content[0].text,
+        /No connections found from "ZzzzzNotAStation" to "Bern"/,
+    );
+
+    const before = fetches;
+    for (const args of [
+        { from: "   ", to: "Bern" },
+        { from: "Zurich", to: "" },
+        { from: "Zurich", to: "Bern", limit: 0 },
+        { from: "Zurich", to: "Bern", limit: 6 },
+    ]) {
+        const bad = await call(c, "swiss_connections", args);
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
 });

@@ -362,6 +362,7 @@ for (const modern of [false, true]) {
                 "arxiv_paper",
                 "get_indicator_data",
                 "list_countries",
+                "nonprofit_search",
                 "crossref_search",
                 "crossref_work",
             ].sort(),
@@ -644,4 +645,146 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("nonprofit_search returns EIN, city/state and NTEE code, and treats the no-match 404 as an empty list", async (t) => {
+    const { nonprofitTools } = await import("./tools/nonprofit.js");
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        const request = new Request(input, init);
+        assert.equal(url.hostname, "projects.propublica.org");
+        assert.equal(url.pathname, "/nonprofits/api/v2/search.json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const q = url.searchParams.get("q");
+        if (q === "zzzqqqxxyy") {
+            // Live behaviour: a query with no matches answers HTTP 404
+            // carrying the normal empty-result body.
+            return new Response(
+                JSON.stringify({ total_results: 0, organizations: [] }),
+                {
+                    status: 404,
+                    headers: { "content-type": "application/json" },
+                },
+            );
+        }
+        assert.equal(q, "red cross");
+        return Response.json({
+            total_results: 190,
+            num_pages: 8,
+            cur_page: 0,
+            per_page: 25,
+            organizations: [
+                {
+                    ein: 581771391,
+                    strein: "58-1771391",
+                    name: "Red Cross Civitans",
+                    sub_name: "Red Cross Civitans Red Cross Inc Nc",
+                    city: "Climax",
+                    state: "NC",
+                    ntee_code: "T30",
+                    raw_ntee_code: "T30",
+                    subseccd: 4,
+                    has_subseccd: true,
+                    have_filings: null,
+                    have_extracts: null,
+                    have_pdfs: null,
+                    score: 94.368385,
+                },
+                {
+                    ein: 530196605,
+                    strein: "53-0196605",
+                    name: "American National Red Cross",
+                    sub_name:
+                        "American National Red Cross Shared Services Center",
+                    city: "Washington",
+                    state: "DC",
+                    ntee_code: "P210",
+                    raw_ntee_code: "P210",
+                    subseccd: 3,
+                    has_subseccd: true,
+                    have_filings: null,
+                    have_extracts: null,
+                    have_pdfs: null,
+                    score: 78.53422,
+                },
+                {
+                    ein: 262622865,
+                    strein: "26-2622865",
+                    name: "Red Cross Of Constantine",
+                    sub_name: "Red Cross Of Constantine 15005 Crispus Conclave",
+                    city: "Joplin",
+                    state: "MO",
+                    ntee_code: null,
+                    raw_ntee_code: null,
+                    subseccd: 8,
+                    has_subseccd: true,
+                    have_filings: null,
+                    have_extracts: null,
+                    have_pdfs: null,
+                    score: 78.53422,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "nonprofit_search", {
+        query: "red cross",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "red cross",
+        total: 190,
+        organizations: [
+            {
+                ein: "58-1771391",
+                name: "Red Cross Civitans",
+                sub_name: "Red Cross Civitans Red Cross Inc Nc",
+                city: "Climax",
+                state: "NC",
+                ntee_code: "T30",
+                score: 94.368385,
+            },
+            {
+                ein: "53-0196605",
+                name: "American National Red Cross",
+                sub_name: "American National Red Cross Shared Services Center",
+                city: "Washington",
+                state: "DC",
+                ntee_code: "P210",
+                score: 78.53422,
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+    result = await call(c, "nonprofit_search", { query: "zzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        organizations: [],
+    });
+    assert.equal(fetches, 2);
+    result = await call(c, "nonprofit_search", { query: " " });
+    assert.equal(result.isError, true);
+    result = await call(c, "nonprofit_search", {
+        query: "red cross",
+        limit: 99,
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 2);
+    // The handler itself falls back to limit 5 when called directly.
+    const direct = await nonprofitTools[0][3]({
+        query: "red cross",
+        limit: 99,
+    });
+    assert.equal(direct.organizations.length, 3);
+    assert.equal(fetches, 3);
 });

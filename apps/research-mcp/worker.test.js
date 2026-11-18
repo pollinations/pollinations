@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "scryfall_card",
             ].sort(),
         );
     });
@@ -644,4 +645,132 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Scryfall card lookup returns prices and legalities, joins double-faced oracle text", async (t) => {
+    let fetchCount = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCount += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.scryfall.com");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const fuzzy = url.searchParams.get("fuzzy");
+        if (fuzzy === "lightning bolt") {
+            return Response.json({
+                object: "card",
+                name: "Lightning Bolt",
+                mana_cost: "{R}",
+                cmc: 1,
+                type_line: "Instant",
+                oracle_text: "Lightning Bolt deals 3 damage to any target.",
+                colors: ["R"],
+                rarity: "uncommon",
+                set: "msc",
+                set_name: "Marvel Super Heroes Commander",
+                artist: "Milivoj Ćeran",
+                prices: { usd: "0.98", usd_foil: "2.90", eur: "2.05" },
+                legalities: {
+                    standard: "not_legal",
+                    modern: "legal",
+                    commander: "legal",
+                    pauper: "legal",
+                },
+                image_uris: {
+                    normal: "https://cards.scryfall.io/normal/front/7/6/7673784e.jpg",
+                },
+                scryfall_uri:
+                    "https://scryfall.com/card/msc/806/lightning-bolt?utm_source=api",
+            });
+        }
+        if (fuzzy === "emeritus of conflict") {
+            return Response.json({
+                object: "card",
+                name: "Emeritus of Conflict // Lightning Bolt",
+                mana_cost: "{1}{R} // {R}",
+                cmc: 2,
+                type_line: "Creature — Human Wizard // Instant",
+                oracle_text: null,
+                power: "2",
+                toughness: "2",
+                colors: ["R"],
+                rarity: "mythic",
+                set: "sos",
+                set_name: "Secrets of Strixhaven",
+                artist: "Alix Branwyn",
+                prices: { usd: "2.78", usd_foil: "2.10", eur: "1.75" },
+                legalities: { standard: "legal", pauper: "not_legal" },
+                card_faces: [
+                    {
+                        name: "Emeritus of Conflict",
+                        mana_cost: "{1}{R}",
+                        type_line: "Creature — Human Wizard",
+                        oracle_text:
+                            "First strike\nWhenever you cast your third spell each turn, this creature becomes prepared.",
+                        power: "2",
+                        toughness: "2",
+                    },
+                    {
+                        name: "Lightning Bolt",
+                        mana_cost: "{R}",
+                        type_line: "Instant",
+                        oracle_text:
+                            "Lightning Bolt deals 3 damage to any target.",
+                    },
+                ],
+                scryfall_uri:
+                    "https://scryfall.com/card/sos/113/emeritus-of-conflict-lightning-bolt?utm_source=api",
+            });
+        }
+        return new Response(
+            JSON.stringify({
+                object: "error",
+                code: "not_found",
+                details: "No cards found",
+            }),
+            { status: 404, headers: { "content-type": "application/json" } },
+        );
+    });
+
+    const c = await client(t);
+    let result = await call(c, "scryfall_card", { name: "lightning bolt" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    let card = value(result).card;
+    assert.equal(card.name, "Lightning Bolt");
+    assert.equal(card.mana_cost, "{R}");
+    assert.equal(card.cmc, 1);
+    assert.equal(card.type_line, "Instant");
+    assert.equal(
+        card.oracle_text,
+        "Lightning Bolt deals 3 damage to any target.",
+    );
+    assert.deepEqual(card.colors, ["R"]);
+    assert.equal(card.prices.usd, "0.98");
+    assert.deepEqual(card.legal_in, ["modern", "commander", "pauper"]);
+    assert.match(card.image, /cards\.scryfall\.io/);
+
+    result = await call(c, "scryfall_card", { name: "emeritus of conflict" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    card = value(result).card;
+    assert.equal(card.name, "Emeritus of Conflict // Lightning Bolt");
+    assert.equal(card.power, "2");
+    assert.match(card.oracle_text, /First strike/);
+    assert.match(card.oracle_text, /Lightning Bolt deals 3 damage/);
+    assert.deepEqual(card.legal_in, ["standard"]);
+
+    result = await call(c, "scryfall_card", {
+        name: "zzzznonexistentcardxyz123",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 404/);
+
+    const before = fetchCount;
+    result = await call(c, "scryfall_card", { name: "" });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCount, before);
 });

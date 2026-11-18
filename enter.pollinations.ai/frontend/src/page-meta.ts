@@ -13,7 +13,7 @@ export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/keys": "Keys",
     "/my-apps": "My listings",
     "/my-models": "My listings",
-    "/pollen": "Pollen",
+    "/pollen": "Credits",
     "/sandboxes": "Sandboxes",
     "/sign-in": "Sign in",
     "/app/sign-in": "Sign in",
@@ -40,11 +40,11 @@ export function pageTitle(path: keyof FileRoutesByFullPath) {
 
 const DESCRIPTIONS: Partial<Record<keyof FileRoutesByFullPath, string>> = {
     "/news":
-        "Pollinations updates and answers to common questions about API access, models, Pollen, and building apps.",
+        "Pollinations updates and answers to common questions about API access, models, pricing, and building apps.",
     "/models":
         "Browse Pollinations models, capabilities, and pricing for image, text, video, and audio generation.",
     "/quests":
-        "Explore Pollinations community quests and earn Pollen by contributing apps, tools, and improvements.",
+        "Explore Pollinations community quests and earn credits by contributing apps, tools, and improvements.",
 };
 
 export function pageMeta(pathname: string) {
@@ -55,7 +55,7 @@ export function pageMeta(pathname: string) {
         title: pageTitle(page),
         description:
             DESCRIPTIONS[page] ??
-            "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
+            "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor your balance, and connect apps across image, text, video, and audio.",
         canonical: `https://enter.pollinations.ai${page === "/" ? "" : page}`,
     };
 }

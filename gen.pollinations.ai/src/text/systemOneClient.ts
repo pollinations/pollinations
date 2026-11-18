@@ -49,6 +49,14 @@ type SystemOneRequest = {
     questions: Record<string, unknown>;
 };
 
+function hasImagePart(value: unknown): boolean {
+    if (Array.isArray(value)) return value.some(hasImagePart);
+    return (
+        isPlainObject(value) &&
+        (value.type === "image_url" || Object.values(value).some(hasImagePart))
+    );
+}
+
 function decisionText(value: unknown): string {
     return typeof value === "string" ? value : JSON.stringify(value);
 }
@@ -276,6 +284,13 @@ export async function requestDecision(
     options: TransformOptions,
 ): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
     const { state, questions } = request;
+    if (
+        options.requestedModel?.split(":")[0] ===
+            "microsoft/microsoft-decision-1.1" &&
+        hasImagePart(request)
+    ) {
+        throw serviceError("Microsoft-Decision-1.1 supports text only.", 400);
+    }
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
     const model = options.modelConfig?.model;

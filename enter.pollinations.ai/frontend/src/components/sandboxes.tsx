@@ -110,9 +110,9 @@ type Pending =
     | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
-// Gen takes the Pollen 10 minutes at a time and refuses a step the wallet
+// Gen takes the balance 10 minutes at a time and refuses a step the wallet
 // can't pay with 402.
-const NO_POLLEN = "Not enough Pollen to pay for the next 10 minutes.";
+const NO_POLLEN = "Your balance is too low for the next 10 minutes.";
 
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
@@ -132,7 +132,7 @@ const perSecond = (pricing: Pricing, template: string, size: Size) => {
     return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
 };
 
-const pollen = (amount: number) => `${Number(amount.toPrecision(2))} pollen`;
+const pollen = (amount: number) => `$${Number(amount.toPrecision(2))}`;
 
 // What a template gives you, as its title: "2 vCPU · 2 GB memory · 26 GB
 // disk". The size comes from the registry, or from the sandbox or pricing for
@@ -639,7 +639,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
             {actionError === NO_POLLEN && (
                 <>
                     {" "}
-                    <InlineLink href="/pollen">Go to Pollen</InlineLink>
+                    <InlineLink href="/pollen">Top up</InlineLink>
                 </>
             )}
         </Alert>

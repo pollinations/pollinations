@@ -203,7 +203,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 <span>
                                     <span className="font-semibold text-theme-text-strong">
                                         {formatUsd(displayTierBalance)} Quest
-                                        pollen locked.
+                                        balance locked.
                                     </span>{" "}
                                     Verification needed:{" "}
                                     <InlineLink
@@ -305,7 +305,7 @@ export const SidebarBalance: FC<{
             <>
                 {formatUsd(normalizeDisplayBalance(balance))}
                 <span className="sr-only">
-                    {kind === "paid" ? " paid" : " Quest"} pollen
+                    {kind === "paid" ? " paid" : " Quest"} balance
                 </span>
             </>
         )}
@@ -314,7 +314,7 @@ export const SidebarBalance: FC<{
             <LockIcon
                 aria-hidden={false}
                 role="img"
-                aria-label="Quest pollen needs verification"
+                aria-label="Quest balance needs verification"
                 className="h-3 w-3 shrink-0 text-theme-text-muted"
             />
         )}

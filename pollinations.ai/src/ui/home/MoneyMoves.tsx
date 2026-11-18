@@ -1,6 +1,5 @@
 import {
     CardIcon,
-    Chip,
     ContentHeader,
     EarningsIcon,
     formatCount,
@@ -16,7 +15,7 @@ import type { ReactNode } from "react";
 import { useArt } from "../../art";
 import { useQuestLeaderboard } from "../../data/community";
 
-/** What Pollen is: pay as you go, free Quest credits, and earnings. */
+/** How billing works: pay as you go, free Quest credits, and earnings. */
 export function MoneyMoves() {
     const scene = useArt("home", "quests");
     const { data: quests } = useQuestLeaderboard();
@@ -34,24 +33,12 @@ export function MoneyMoves() {
                 <ul className="flex flex-col gap-6">
                     {/* Paid gold and Quest green, as on the wallet; earnings
                         land in both, so that row takes the info blue. */}
-                    <Item
-                        icon={CardIcon}
-                        tone="paid"
-                        title="Pay as you go"
-                        badge={
-                            <Chip
-                                size="lg"
-                                className="bg-theme-fill font-semibold text-theme-on-fill"
-                            >
-                                1 pollen = $1
-                            </Chip>
-                        }
-                    >
+                    <Item icon={CardIcon} tone="paid" title="Pay as you go">
                         Top up any time and pay only for what you use.
                     </Item>
                     <Item icon={SproutIcon} tone="tier" title="Free credits">
-                        Get free Quest pollen for solving GitHub Quests, trying
-                        models, or building an app or agent.{" "}
+                        Complete Quests to add to your balance: solve GitHub
+                        issues, try models, or build an app or agent.{" "}
                         {quests ? (
                             <>
                                 {formatCount(quests.totals.contributors)} people
@@ -100,25 +87,20 @@ function Item({
     icon,
     tone,
     title,
-    badge,
     children,
 }: {
     icon: IconTileProps["icon"];
     tone?: IconTileProps["tone"];
     title: string;
-    badge?: ReactNode;
     children: ReactNode;
 }) {
     return (
         <li className="flex gap-4">
             <IconTile icon={icon} tone={tone} />
             <div className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <Heading as="h3" size="card">
-                        {title}
-                    </Heading>
-                    {badge}
-                </div>
+                <Heading as="h3" size="card">
+                    {title}
+                </Heading>
                 <Text size="sm">{children}</Text>
             </div>
         </li>

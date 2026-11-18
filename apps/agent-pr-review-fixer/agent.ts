@@ -649,7 +649,7 @@ export async function review(
         );
     lines.push(
         "",
-        `Model \`${model}\`, ${usage.input_tokens ?? "?"} in / ${usage.output_tokens ?? "?"} out tokens${cost === null ? "" : `, about ${cost.toFixed(4)} Pollen`}.`,
+        `Model \`${model}\`, ${usage.input_tokens ?? "?"} in / ${usage.output_tokens ?? "?"} out tokens${cost === null ? "" : `, about $${cost.toFixed(4)}`}.`,
     );
     return { report: lines.join("\n"), usage };
 }

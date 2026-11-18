@@ -45,7 +45,7 @@ body:
     id: app-description
     attributes:
       label: App Description
-      description: One or two sentences on what the app does and how it uses Pollinations, 200 characters max. It appears on your app's card.
+      description: One or two sentences on what the app does and how it uses Pollinations, 200 characters max. It appears on your app's card. Use balance or dollar amounts when describing billing.
       placeholder: Creates collaborative images using the Pollinations image API.
     validations:
       required: true
@@ -142,7 +142,7 @@ body:
     id: quest
     attributes:
       label: Quest
-      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
+      description: If you built this app for a community quest, enter the quest number. After the catalog PR merges, you can claim what you earned.
       placeholder: "#15600"
 
   - type: markdown

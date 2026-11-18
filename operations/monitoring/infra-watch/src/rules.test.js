@@ -349,6 +349,7 @@ test("early errors fail on any minute of 25+ failed requests in the window", () 
         bursts: 2,
         failures: 318,
         d1: 314,
+        r2: 0,
         firstAt: Date.UTC(2026, 10, 8, 15, 21),
         lastAt: Date.UTC(2026, 10, 8, 15, 32),
     });
@@ -391,13 +392,35 @@ test("a payments card lists at most three payments", () => {
     assert.ok(text.includes("+2 more payments"));
 });
 
-test("early errors not mostly from the database are named as such", () => {
-    const r = step({}, earlyErrors([minute("15:21", 40, 10, "/api/x")]), 1);
+test("the generation route alone does not establish why a request failed", () => {
+    const r = step(
+        {},
+        earlyErrors([minute("15:21", 40, 10, "/internal/generation/:id")]),
+        1,
+    );
     const text = plain(
         renderCard("early", r.state.open.early, { now: 1 }).text,
     );
-    assert.ok(text.includes("FAILING: requests before any model"));
+    assert.ok(text.includes("FAILING: requests without a model label"));
     assert.ok(text.includes("10 database, 30 other"));
+    assert.doesNotMatch(text, /R2|sign-in|billing/);
+});
+
+test("confirmed R2 writes name the generation result failure and preserve mixed counts", () => {
+    const rows = [
+        { ...minute("11:26", 66, 3), r2_failures: 60 },
+        {
+            ...minute("11:27", 147, 0, "/internal/generation/:id"),
+            r2_failures: 147,
+        },
+    ];
+    const r = step({}, earlyErrors(rows), 1);
+    const text = plain(
+        renderCard("early", r.state.open.early, { now: 1 }).text,
+    );
+    assert.ok(text.includes("FAILING: R2 failed to save generation results"));
+    assert.ok(text.includes("207 R2, 3 database, 3 other"));
+    assert.doesNotMatch(text, /API keys|sign-in|billing/);
 });
 
 test("an early-errors burst pings again only once it doubles the worst one pinged", () => {

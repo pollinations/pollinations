@@ -71,7 +71,7 @@ Don't:
 - Write hooks designed to bait clicks ("The hardest part of X isn't Y...")
 - Frame changes as business impact. Describe what people can use now instead
 - Use engagement farming questions ("What will YOU build?")
-- Discuss pricing, Pollen balance or Quest/Paid eligibility changes: Discord and Enter's model news cover them
+- Discuss pricing, balance or Quest/paid eligibility changes: Discord and Enter's model news cover them
 - Use more than 1-2 emojis (and only if they serve a purpose)
 - Sound like a press release, a VC update, or a corporate comms team
 

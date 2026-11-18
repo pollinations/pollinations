@@ -1107,6 +1107,25 @@ const AUDIO_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 380,
     },
+    "zyphra/zonos3-mini": {
+        aliases: [],
+        provider: "vast",
+        publisher: "Zyphra",
+        category: "audio",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 31.25,
+        // Loaded cost measured on a Vast RTX 3060.
+        cost: { completionAudioTokens: 0.16 / 1_000_000 },
+        priceUnits: { completionAudioTokens: { unit: "byte" } },
+        title: "ZONOS3-Mini",
+        description:
+            "Speech in the Alloy voice or a voice cloned from a reference recording.",
+        inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+        voices: ["alloy"],
+        supportedEndpoints: ["/v1/audio/speech"],
+    },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],
         provider: "openrouter",

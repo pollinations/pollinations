@@ -16,7 +16,13 @@ export type NextQuest = { title: string; reward: number; href?: string };
 
 /** The quest's name, linked to where it is done when the quest says where. */
 function questName({ title, href }: NextQuest): ReactNode {
-    return href ? <InlineLink href={href}>{title}</InlineLink> : `“${title}”`;
+    return href ? (
+        <InlineLink href={href} tone="quiet">
+            {title}
+        </InlineLink>
+    ) : (
+        `“${title}”`
+    );
 }
 
 /** A Quest reward: the sprout and a dollar amount, in Quest green. */

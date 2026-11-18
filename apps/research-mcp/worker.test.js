@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "joke",
             ].sort(),
         );
     });
@@ -644,4 +645,87 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("joke returns a random JokeAPI joke with safe mode always on and rejects unknown categories before fetch", async (t) => {
+    const urls = [];
+    const safeFlags = {
+        nsfw: false,
+        religious: false,
+        political: false,
+        racist: false,
+        sexist: false,
+        explicit: false,
+    };
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        urls.push(request.url);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "v2.jokeapi.dev");
+        // Safe mode is not optional: every call must carry it.
+        assert.equal(target.searchParams.has("safe-mode"), true);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (target.pathname === "/joke/Programming")
+            return Response.json({
+                error: false,
+                category: "Programming",
+                type: "single",
+                joke: "Programming is 10% science, 20% ingenuity, and 70% getting the ingenuity to work with the science.",
+                flags: safeFlags,
+                id: 37,
+                lang: "en",
+            });
+        return Response.json({
+            error: false,
+            category: "Pun",
+            type: "twopart",
+            setup: "I stayed up all night wondering where the sun went.",
+            delivery: "Then it dawned on me.",
+            flags: safeFlags,
+            id: 286,
+            lang: "en",
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "joke", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        category: "Pun",
+        type: "twopart",
+        joke: "I stayed up all night wondering where the sun went. Then it dawned on me.",
+        setup: "I stayed up all night wondering where the sun went.",
+        delivery: "Then it dawned on me.",
+        flags: safeFlags,
+        id: 286,
+    });
+    const single = await call(c, "joke", { category: "Programming" });
+    assert.notEqual(single.isError, true, JSON.stringify(single));
+    assert.equal(value(single).type, "single");
+    assert.equal(value(single).setup, null);
+    assert.deepEqual(urls, [
+        "https://v2.jokeapi.dev/joke/Any?safe-mode",
+        "https://v2.jokeapi.dev/joke/Programming?safe-mode",
+    ]);
+
+    const before = urls.length;
+    const bad = await call(c, "joke", { category: "Bogus" });
+    assert.equal(bad.isError, true);
+    // The MCP layer's zod enum rejects it before the handler runs.
+    assert.match(bad.content[0].text, /Invalid option/);
+    assert.equal(urls.length, before);
+});
+
+test("joke rejects a malformed upstream response", async (t) => {
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ error: false }),
+    );
+    const c = await client(t);
+    const result = await call(c, "joke", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Invalid JokeAPI response/);
 });

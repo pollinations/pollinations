@@ -26,7 +26,7 @@ You build and host the application. Pollinations provides model access, account 
 
 ## 🆓 Can I try Pollinations without a credit card?
 
-Yes. Create an account, complete eligible Quests, and claim what you earn to add it to your Quest balance. Available Quests and their amounts are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
+Yes. Create an account, complete eligible Quests, and claim what you earn to add it to your 🌱 Quest balance. Available Quests and their amounts are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
 
 ## 🎯 How do Quests work?
 
@@ -43,12 +43,12 @@ Quest availability and amounts can change, so the dashboard and the linked issue
 
 Your wallet has two balances:
 
-- **Quest balance**: earned from Quests and eligible developer earnings.
-- **Paid balance**: purchased through Stripe and eligible developer earnings.
+- 🌱 **Quest balance**: earned from Quests and eligible developer earnings.
+- 💳 **Paid balance**: purchased through Stripe and eligible developer earnings.
 
 Every request is charged to one balance, never split across both:
 
-- A regular model uses the Quest balance when it can cover the estimated charge; otherwise it uses the paid balance.
+- A regular model uses the 🌱 Quest balance when it can cover the estimated charge; otherwise it uses the paid balance.
 - A paid-only model requires the paid balance.
 - The final cost can exceed the estimate and make the selected balance negative.
 

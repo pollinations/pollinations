@@ -170,6 +170,10 @@ export async function connectRealtime(
             resolve(session);
         });
         void closed.then(({ code, reason }) => {
+            if (options.signal?.aborted) {
+                reject(options.signal.reason);
+                return;
+            }
             // A refused upgrade never opens: the key, the balance or the model
             // is wrong, and the browser hides the HTTP response.
             reject(

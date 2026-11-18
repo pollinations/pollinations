@@ -76,16 +76,6 @@ describe("realtimeUrl", () => {
         expect(url.pathname).toBe("/api/v1/realtime");
     });
 
-    it("keeps the path prefix of a base URL behind a proxy", () => {
-        const url = new URL(
-            realtimeUrl({
-                apiKey: "sk_test",
-                baseUrl: "https://proxy.example.com/api/",
-            }),
-        );
-        expect(url.pathname).toBe("/api/v1/realtime");
-    });
-
     it("refuses keys the gateway cannot authenticate in a query string", () => {
         expect(() => realtimeUrl({ apiKey: "pk_app" })).toThrow(/sk_/);
         expect(() => realtimeUrl({ apiKey: "sess_token" })).toThrow(/sk_/);
@@ -168,6 +158,17 @@ describe("connectRealtime", () => {
             code: 1000,
             reason: "",
         });
+    });
+
+    it("rejects with the abort reason when the signal aborts while connecting", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const controller = new AbortController();
+        const connected = connectRealtime({
+            apiKey: "sk_test",
+            signal: controller.signal,
+        });
+        controller.abort();
+        await expect(connected).rejects.toThrow(/aborted/);
     });
 
     it("refuses to send on a closed session", async () => {

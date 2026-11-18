@@ -364,10 +364,98 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "radio_stations",
             ].sort(),
         );
     });
 }
+
+test("radio_stations searches the DNS host, trims names and returns an empty list for no match", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "de1.api.radio-browser.info");
+        assert.equal(target.pathname, "/json/stations/search");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(
+            new Headers(init.headers).get("user-agent"),
+            "Pollinations-Research/0.1 (hello@pollinations.ai)",
+        );
+        if (target.searchParams.get("name") === "zzzzqqqxxyy")
+            return Response.json([]);
+        assert.equal(target.searchParams.get("name"), "jazz");
+        assert.equal(target.searchParams.get("limit"), "2");
+        return Response.json([
+            {
+                name: "  SOFT JAZZ: Sax, piano, guitarra y voz: cool jazz",
+                country: "Mexico",
+                tags: "acir,acir online,américa,cdmx,ciudad de méxico,cool jazz,entretenimiento,español,estación,grupo acir,guitar jazz,iheart,iheart radio,jazz,latinoamérica,mexico city,moi merino,music,méxico,música,norteamérica,online,online only,piano,piano jazz,radio,radio online,sax,saxophone,smooth jazz,soft jazz,valle de méxico",
+                bitrate: 48,
+                votes: 17,
+                url: "https://playerservices.streamtheworld.com/api/livestream-redirect/ACIR22_s01AAC.aac",
+                url_resolved:
+                    "https://playerservices.streamtheworld.com/api/livestream-redirect/ACIR22_s01AAC.aac",
+            },
+            {
+                name: " SmoothJazz.com 64k aac+",
+                country: "The United States Of America",
+                tags: "monterey,smooth jazz",
+                bitrate: 64,
+                votes: 444,
+                url: "https://smoothjazz.cdnstream1.com/2585_64.aac",
+                url_resolved: "https://smoothjazz.cdnstream1.com/2585_64.aac",
+            },
+        ]);
+    });
+    const c = await client(t);
+    let result = await call(c, "radio_stations", { name: "jazz", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "jazz",
+        total: 2,
+        stations: [
+            {
+                name: "SOFT JAZZ: Sax, piano, guitarra y voz: cool jazz",
+                country: "Mexico",
+                tags: [
+                    "acir",
+                    "acir online",
+                    "américa",
+                    "cdmx",
+                    "ciudad de méxico",
+                    "cool jazz",
+                    "entretenimiento",
+                    "español",
+                    "estación",
+                    "grupo acir",
+                ],
+                tagsTruncated: true,
+                bitrate: 48,
+                votes: 17,
+                stream_url:
+                    "https://playerservices.streamtheworld.com/api/livestream-redirect/ACIR22_s01AAC.aac",
+            },
+            {
+                name: "SmoothJazz.com 64k aac+",
+                country: "The United States Of America",
+                tags: ["monterey", "smooth jazz"],
+                tagsTruncated: false,
+                bitrate: 64,
+                votes: 444,
+                stream_url: "https://smoothjazz.cdnstream1.com/2585_64.aac",
+            },
+        ],
+    });
+    result = await call(c, "radio_stations", { name: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzzqqqxxyy",
+        total: 0,
+        stations: [],
+    });
+    result = await call(c, "radio_stations", { name: "   " });
+    assert.equal(result.isError, true);
+});
 
 test("non-root routes stay private", async () => {
     assert.equal(

@@ -375,14 +375,13 @@ const CARD_STATE: Record<QuestCardStatus, ProgressState> = {
     claimable: "ready",
     open: "open",
 };
-type Pollen = Record<RewardIconKind, number>;
-type ProgressPart = { count: number; pollen: Pollen };
+type ProgressPart = { count: number; pollen: number };
 
 function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     const parts: Record<ProgressState, ProgressPart> = {
-        claimed: { count: 0, pollen: { tier: 0, paid: 0 } },
-        ready: { count: 0, pollen: { tier: 0, paid: 0 } },
-        open: { count: 0, pollen: { tier: 0, paid: 0 } },
+        claimed: { count: 0, pollen: 0 },
+        ready: { count: 0, pollen: 0 },
+        open: { count: 0, pollen: 0 },
     };
     for (const card of cards) {
         // A repeatable quest counts each reward it earned, and itself while
@@ -390,13 +389,12 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
         for (const repeat of card.repeats ?? []) {
             const part = parts[repeat.claimedAt ? "claimed" : "ready"];
             part.count += 1;
-            part.pollen[rewardIconKind(repeat.balanceBucket)] +=
-                repeat.pollenAmount;
+            part.pollen += repeat.pollenAmount;
         }
         if (card.repeats && card.status !== "open") continue;
         const part = parts[CARD_STATE[card.status]];
         part.count += 1;
-        part.pollen[rewardIconKind(card.balanceBucket)] +=
+        part.pollen +=
             (card.status === "open" ? null : card.earnedAmount) ??
             card.reward ??
             0;
@@ -406,8 +404,8 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
 
 /** An amount: the sprout and a dollar amount, all in the Quest green.
  *  Rewards still waiting to be claimed have a plus. */
-function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
-    const waiting = ready && pollen.tier + pollen.paid > 0;
+function ProgressPollen({ pollen, ready }: { pollen: number; ready: boolean }) {
+    const waiting = ready && pollen > 0;
     return (
         <span className="polli-wallet-text-tier inline-flex items-center gap-1">
             <SproutIcon
@@ -415,7 +413,7 @@ function ProgressPollen({ pollen, ready }: { pollen: Pollen; ready: boolean }) {
                 className="polli-wallet-text-tier h-3.5 w-3.5 shrink-0"
             />
             {waiting ? "+" : ""}
-            {formatRewardAmount(pollen.tier + pollen.paid)}
+            {formatRewardAmount(pollen)}
             <span className="sr-only"> in Quest rewards</span>
         </span>
     );
@@ -448,19 +446,6 @@ export function QuestProgress({
             }),
         ),
     );
-    const rows = states.map((state) => ({
-        key: state,
-        ...PROGRESS_STATES[state],
-        count: parts[state].count,
-        // A quest still to do has no pollen yet, so no amount.
-        pollen:
-            state === "open" ? null : (
-                <ProgressPollen
-                    pollen={parts[state].pollen}
-                    ready={state === "ready"}
-                />
-            ),
-    }));
     return (
         // The comb is a block beside the numbers on wide screens, above them
         // on a phone.
@@ -479,28 +464,37 @@ export function QuestProgress({
             {/* One line per state, like a legend for the comb: label, count,
                 pollen, with the numbers lined up in columns. */}
             <dl className="grid min-w-0 flex-1 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
-                {rows.map(({ key, label, tone, info, count, pollen }) => (
-                    <div key={key} className="contents">
-                        <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
-                            <span
-                                aria-hidden="true"
-                                className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
-                            />
-                            {label}
-                            <InfoTip
-                                text={info}
-                                label={`${label} information`}
-                            />
-                        </dt>
-                        <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
-                            {/* Just the number: the label names it. */}
-                            {count}
-                        </dd>
-                        <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
-                            {pollen}
-                        </dd>
-                    </div>
-                ))}
+                {states.map((state) => {
+                    const { label, tone, info } = PROGRESS_STATES[state];
+                    return (
+                        <div key={state} className="contents">
+                            <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
+                                <span
+                                    aria-hidden="true"
+                                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+                                />
+                                {label}
+                                <InfoTip
+                                    text={info}
+                                    label={`${label} information`}
+                                />
+                            </dt>
+                            <dd className="text-right text-xl font-bold leading-none tracking-tight tabular-nums text-theme-text-strong">
+                                {/* Just the number: the label names it. */}
+                                {parts[state].count}
+                            </dd>
+                            <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
+                                {/* A quest still to do has no pollen yet. */}
+                                {state !== "open" && (
+                                    <ProgressPollen
+                                        pollen={parts[state].pollen}
+                                        ready={state === "ready"}
+                                    />
+                                )}
+                            </dd>
+                        </div>
+                    );
+                })}
             </dl>
         </Surface>
     );

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "edgar_company",
             ].sort(),
         );
     });
@@ -644,4 +645,112 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("EDGAR pads the CIK, projects company and recent filings, and names unknown CIKs", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "data.sec.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname === "/submissions/CIK0000320193.json")
+            return Response.json({
+                cik: "0000320193",
+                name: "Apple Inc.",
+                tickers: ["AAPL"],
+                exchanges: ["Nasdaq"],
+                ein: "942404110",
+                sic: 3571,
+                sicDescription: "Electronic Computers",
+                stateOfIncorporation: "CA",
+                website: "https://www.apple.com",
+                filings: {
+                    recent: {
+                        accessionNumber: [
+                            "0001921094-26-001188",
+                            "0001140361-26-043484",
+                            "0001354457-26-001062",
+                        ],
+                        filingDate: ["2026-11-16", "2026-11-12", "2026-11-09"],
+                        reportDate: ["2026-11-16", "2026-11-12", "2026-11-09"],
+                        form: ["144", "4", "25-NSE"],
+                        primaryDocument: [
+                            "xsl144X01/primary_doc.xml",
+                            "xslF345X06/form4.xml",
+                            "xslF25X02/primary_doc.xml",
+                        ],
+                    },
+                },
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "edgar_company", { cik: "320193" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        cik: "0000320193",
+        name: "Apple Inc.",
+        tickers: ["AAPL"],
+        exchanges: ["Nasdaq"],
+        sic: 3571,
+        sic_description: "Electronic Computers",
+        state_of_incorporation: "CA",
+        ein: "942404110",
+        website: "https://www.apple.com",
+        total_recent_filings: 3,
+        recent_filings: [
+            {
+                form: "144",
+                filing_date: "2026-11-16",
+                report_date: "2026-11-16",
+                accession_number: "0001921094-26-001188",
+                primary_document: "xsl144X01/primary_doc.xml",
+            },
+            {
+                form: "4",
+                filing_date: "2026-11-12",
+                report_date: "2026-11-12",
+                accession_number: "0001140361-26-043484",
+                primary_document: "xslF345X06/form4.xml",
+            },
+            {
+                form: "25-NSE",
+                filing_date: "2026-11-09",
+                report_date: "2026-11-09",
+                accession_number: "0001354457-26-001062",
+                primary_document: "xslF25X02/primary_doc.xml",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    result = await call(c, "edgar_company", { cik: "320193", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).recent_filings.length, 2);
+    assert.equal(fetches, 2);
+
+    result = await call(c, "edgar_company", { cik: "0000000000" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(
+        result.content[0].text,
+        /No SEC EDGAR company found for CIK 0000000000/,
+    );
+    assert.equal(fetches, 3);
+
+    const before = fetches;
+    result = await call(c, "edgar_company", { cik: "apple" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    result = await call(c, "edgar_company", { cik: "" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    result = await call(c, "edgar_company", { cik: "320193", limit: 0 });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    result = await call(c, "edgar_company", { cik: "320193", limit: 11 });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, before);
 });

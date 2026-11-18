@@ -362,6 +362,7 @@ for (const modern of [false, true]) {
                 "arxiv_paper",
                 "get_indicator_data",
                 "list_countries",
+                "mygene_gene",
                 "crossref_search",
                 "crossref_work",
             ].sort(),
@@ -644,4 +645,77 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("MyGene.info returns symbol, name, Entrez id and taxid, and empty results for unknown genes", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "mygene.info");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("q") === "zzzzqqqxxyy")
+            return Response.json({ took: 1, total: 0, hits: [] });
+        assert.equal(url.searchParams.get("q"), "TP53");
+        assert.equal(url.searchParams.get("size"), "2");
+        return Response.json({
+            took: 11,
+            total: 11016,
+            max_score: 148.79999,
+            hits: [
+                {
+                    _id: "7157",
+                    _score: 148.79999,
+                    entrezgene: "7157",
+                    name: "tumor protein p53",
+                    symbol: "TP53",
+                    taxid: 9606,
+                },
+                {
+                    _id: "24842",
+                    _score: 115.200005,
+                    entrezgene: "24842",
+                    name: "tumor protein p53",
+                    symbol: "Tp53",
+                    taxid: 10116,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "mygene_gene", { query: "TP53", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "TP53",
+        total: 11016,
+        genes: [
+            {
+                symbol: "TP53",
+                name: "tumor protein p53",
+                entrez_id: "7157",
+                taxid: 9606,
+            },
+            {
+                symbol: "Tp53",
+                name: "tumor protein p53",
+                entrez_id: "24842",
+                taxid: 10116,
+            },
+        ],
+    });
+    result = await call(c, "mygene_gene", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        genes: [],
+    });
+    result = await call(c, "mygene_gene", { query: " " });
+    assert.equal(result.isError, true);
+    assert.equal(count, 2);
 });

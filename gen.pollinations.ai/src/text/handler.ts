@@ -44,6 +44,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    withoutAudioParams,
 } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -140,9 +141,14 @@ export async function generateChatAttempt(
     const buffered =
         requestData.stream === true &&
         candidate.definition?.supportsStreaming === false;
-    const attemptData = buffered
+    let attemptData = buffered
         ? { ...requestData, stream: false }
         : requestData;
+    // models that cannot speak reject `modalities`/`audio` even when the
+    // caller only asks for the default text modality.
+    if (!candidate.definition?.outputModalities?.includes("audio")) {
+        attemptData = withoutAudioParams(attemptData);
+    }
     const result = await generateTextPortkey(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),

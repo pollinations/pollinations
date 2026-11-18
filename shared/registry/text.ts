@@ -1453,7 +1453,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
-        // Azure accepts this full set (probed 2026-10-15).
+        // Azure accepts none, high and max for reasoning_effort.
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
         provider: "azure",
@@ -1484,7 +1484,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        // Azure accepts this set on V4.1 Flash (probed 2026-10-15).
+        // Azure accepts none, high and max for reasoning_effort.
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
         provider: "azure",

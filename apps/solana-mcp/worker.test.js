@@ -69,7 +69,7 @@ async function clientFor(t, modern = false) {
 function mockRpc(t, handler) {
     clearRpcCache();
     return t.mock.method(globalThis, "fetch", async (input, init) => {
-        assert.equal(new URL(input).href, RPC_URL);
+        assert.equal(new URL(input).href, new URL(RPC_URL).href);
         assert.equal(init.method, "POST");
         assert.equal(init.redirect, "error");
         const headers = new Headers(init.headers);

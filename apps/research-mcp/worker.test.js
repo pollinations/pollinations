@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "sefaria_text",
             ].sort(),
         );
     });
@@ -644,4 +645,118 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("sefaria_text returns chapter verses as plain text and slices verse refs client-side", async (t) => {
+    let fetches = 0;
+    const verses = [
+        'When God began to create<sup class="footnote-marker">a</sup><i class="footnote"><b>When God began to create </b>In contrast to others “In the beginning God created.”</i> heaven and earth— ',
+        'the earth being unformed and void, with darkness over the surface of the deep and a wind from<sup class="footnote-marker">b</sup><i class="footnote"><b>a wind from </b>In contrast to others “the spirit of.”</i> God sweeping over the water— ',
+        "God said, “Let there be light”; and there was light. ",
+    ];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.sefaria.org");
+        assert.equal(target.searchParams.get("commentary"), "0");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const ref = decodeURIComponent(
+            target.pathname.replace("/api/texts/", ""),
+        );
+        const parts = ref.split(".").slice(1).map(Number);
+        const display =
+            parts.length >= 2
+                ? `Genesis ${parts[0]}:${parts[1]}`
+                : `Genesis ${parts[0]}`;
+        return Response.json({
+            ref: display,
+            book: "Genesis",
+            type: "Tanakh",
+            categories: ["Tanakh", "Torah"],
+            sections: parts,
+            toSections: parts,
+            textDepth: 2,
+            text: verses,
+            versionTitle: "THE JPS TANAKH: Gender-Sensitive Edition",
+            license: "CC-BY-NC",
+        });
+    });
+    const c = await client(t);
+    const chapter = await call(c, "sefaria_text", {
+        ref: "Genesis.1",
+        limit: 2,
+    });
+    assert.notEqual(chapter.isError, true, JSON.stringify(chapter));
+    assert.deepEqual(value(chapter), {
+        ref: "Genesis 1",
+        book: "Genesis",
+        type: "Tanakh",
+        categories: ["Tanakh", "Torah"],
+        total: 3,
+        verses: [
+            {
+                verse: 1,
+                text: "When God began to create heaven and earth—",
+            },
+            {
+                verse: 2,
+                text: "the earth being unformed and void, with darkness over the surface of the deep and a wind from God sweeping over the water—",
+            },
+        ],
+        truncated: true,
+        version: "THE JPS TANAKH: Gender-Sensitive Edition",
+        license: "CC-BY-NC",
+        url: "https://www.sefaria.org/Genesis.1",
+    });
+    const single = await call(c, "sefaria_text", { ref: "Genesis.1.1" });
+    assert.notEqual(single.isError, true, JSON.stringify(single));
+    assert.deepEqual(value(single).verses, [
+        {
+            verse: 1,
+            text: "When God began to create heaven and earth—",
+        },
+    ]);
+    assert.equal(value(single).truncated, false);
+    const mid = await call(c, "sefaria_text", { ref: "Genesis.1.3" });
+    assert.notEqual(mid.isError, true, JSON.stringify(mid));
+    assert.deepEqual(value(mid).verses, [
+        {
+            verse: 3,
+            text: "God said, “Let there be light”; and there was light.",
+        },
+    ]);
+    assert.equal(fetches, 3);
+});
+
+test("sefaria_text rejects blank refs and unknown titles before or without a useful fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({
+            error: "Could not find title in reference: Zzzqqqxxyy.1",
+        });
+    });
+    const c = await client(t);
+    const blank = await call(c, "sefaria_text", { ref: " " });
+    assert.equal(blank.isError, true);
+    assert.match(blank.content[0].text, /ref must not be blank/);
+    const badLimit = await call(c, "sefaria_text", {
+        ref: "Genesis.1",
+        limit: 99,
+    });
+    assert.equal(badLimit.isError, true);
+    assert.equal(fetches, 0);
+    const unknown = await call(c, "sefaria_text", { ref: "Zzzqqqxxyy.1" });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /Sefaria: Could not find title in reference/,
+    );
+    assert.equal(fetches, 1);
 });

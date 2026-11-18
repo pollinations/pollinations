@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "socrata_search",
             ].sort(),
         );
     });
@@ -644,4 +645,102 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Socrata search projects dataset metadata, strips HTML descriptions, and caps results client-side", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.us.socrata.com");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("q") === "zzzzqqqxxyy") {
+            return Response.json({ results: [], resultSetSize: 0 });
+        }
+        assert.equal(url.searchParams.get("q"), "police");
+        return Response.json({
+            results: [
+                {
+                    resource: {
+                        name: "Dallas Police Active Calls",
+                        id: "9fxf-t2tr",
+                        description:
+                            "<b><p>Due to technical issues the Active Calls dataset may experience intermittent delays in automated data refreshing.</b></p>\n<b>Staff is actively monitoring the situation.</b>\n\n<p>The calls listed here are only those where the element assigned to the call has arrived and is currently working the call.   It does not include any calls for service, whether currently being worked or not, that are not releasable due to privacy laws. </p>",
+                        type: "dataset",
+                    },
+                    classification: {
+                        domain_category: "Public Safety",
+                    },
+                    metadata: {
+                        domain: "www.dallasopendata.com",
+                        license: "Open Data Commons Attribution License",
+                    },
+                    permalink: "https://www.dallasopendata.com/d/9fxf-t2tr",
+                    link: "https://www.dallasopendata.com/Public-Safety/Dallas-Police-Active-Calls/9fxf-t2tr",
+                },
+                {
+                    resource: {
+                        name: "Police Incidents",
+                        id: "qv6i-rri7",
+                        description:
+                            "<b>This dataset is published by the City of Dallas for research purposes only. The authoritative source for crime data is the Crime Analytics Dashboard. This dataset represents the Dallas Police Public Data - RMS Incidents beginning June 1, 2014 to current-date. The Dallas Police Department strives to collect and disseminate police report information in a timely, accurate manner. This information is updated daily and is based on data as reported by the Dallas Police Department.</b>",
+                        type: "dataset",
+                    },
+                    metadata: { domain: "www.dallasopendata.com" },
+                    link: "https://www.dallasopendata.com/Public-Safety/Police-Incidents/qv6i-rri7",
+                },
+            ],
+            resultSetSize: 3046,
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "socrata_search", {
+        query: "police",
+        limit: 1,
+    });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(val.query, "police");
+    assert.equal(val.total, 3046);
+    assert.equal(val.datasets.length, 1);
+    assert.deepEqual(val.datasets[0], {
+        id: "9fxf-t2tr",
+        name: "Dallas Police Active Calls",
+        domain: "www.dallasopendata.com",
+        description:
+            "Due to technical issues the Active Calls dataset may experience intermittent delays in automated data refreshing. Staff is actively monitoring the situation. The calls listed here are only those where the element assigned to the call has arrived and is currently working the call. It does not include any calls for service, whether currently being worked or not, that are not releasable due to pri...",
+        type: "dataset",
+        link: "https://www.dallasopendata.com/Public-Safety/Dallas-Police-Active-Calls/9fxf-t2tr",
+    });
+    assert.equal(fetches, 1);
+
+    const both = await call(c, "socrata_search", {
+        query: "police",
+        limit: 2,
+    });
+    assert.equal(value(both).datasets.length, 2);
+    assert.match(
+        value(both).datasets[1].description,
+        /Crime Analytics Dashboard/,
+    );
+    assert.doesNotMatch(value(both).datasets[1].description, /</);
+
+    const none = await call(c, "socrata_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(none.isError, true, JSON.stringify(none));
+    assert.deepEqual(value(none), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        datasets: [],
+    });
+
+    const blank = await call(c, "socrata_search", { query: "   " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 3);
 });

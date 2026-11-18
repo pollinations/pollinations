@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "steamspy_stats",
             ].sort(),
         );
     });
@@ -644,4 +645,108 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("steamspy_stats returns projected stats and rejects unknown or invalid app ids", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "steamspy.com");
+        assert.equal(url.searchParams.get("request"), "appdetails");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("appid") === "440")
+            return Response.json({
+                appid: 440,
+                name: "Team Fortress 2",
+                developer: "Valve",
+                publisher: "Valve",
+                score_rank: 95,
+                positive: 1145681,
+                negative: 112430,
+                userscore: 91,
+                owners: "100,000,000 .. 200,000,000",
+                average_forever: 22923,
+                average_2weeks: 648,
+                median_forever: 3695,
+                median_2weeks: 104,
+                price: "0",
+                initialprice: "0",
+                discount: "0",
+                ccu: 99704,
+                languages: "English, Danish, Dutch",
+                genre: "Action, Free To Play",
+                tags: { "Free to Play": 63425 },
+            });
+        return Response.json({
+            appid: 999999999,
+            name: null,
+            developer: "",
+            publisher: "",
+            score_rank: "",
+            positive: 0,
+            negative: 0,
+            userscore: 0,
+            owners: "0 .. 20,000",
+            average_forever: 0,
+            average_2weeks: 0,
+            median_forever: 0,
+            median_2weeks: 0,
+            price: null,
+            initialprice: null,
+            discount: null,
+            ccu: 0,
+            languages: null,
+            genre: null,
+            tags: [],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "steamspy_stats", { appid: 440 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        appid: 440,
+        name: "Team Fortress 2",
+        developer: "Valve",
+        publisher: "Valve",
+        scoreRank: 95,
+        positive: 1145681,
+        negative: 112430,
+        userscore: 91,
+        owners: "100,000,000 .. 200,000,000",
+        averageForeverMinutes: 22923,
+        average2WeeksMinutes: 648,
+        medianForeverMinutes: 3695,
+        median2WeeksMinutes: 104,
+        currentPlayers: 99704,
+        genre: "Action, Free To Play",
+        url: "https://store.steampowered.com/app/440",
+    });
+    assert.equal(fetches, 1);
+    const unknown = await call(c, "steamspy_stats", { appid: 999999999 });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /No SteamSpy data found for app 999999999/,
+    );
+    assert.equal(fetches, 2);
+});
+
+test("steamspy_stats rejects appid 0 and negative ids before any fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({});
+    });
+    const c = await client(t);
+    const zero = await call(c, "steamspy_stats", { appid: 0 });
+    assert.equal(zero.isError, true);
+    const negative = await call(c, "steamspy_stats", { appid: -7 });
+    assert.equal(negative.isError, true);
+    assert.equal(fetches, 0);
 });

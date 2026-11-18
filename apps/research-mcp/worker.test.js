@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "gitlab_project",
             ].sort(),
         );
     });
@@ -644,4 +645,96 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("GitLab project search projects name, namespace, description, stars and URL and explains the no-match 500", async (t) => {
+    let count = 0;
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        requests.push(url.searchParams);
+        assert.equal(url.hostname, "gitlab.com");
+        assert.equal(url.pathname, "/api/v4/projects");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("search") === "zzzqqqxxyy")
+            return new Response('{"message":"500 Internal Server Error"}', {
+                status: 500,
+            });
+        if (url.searchParams.get("search") === "slowday") {
+            const error = new Error("This operation was aborted");
+            error.name = "AbortError";
+            throw error;
+        }
+        return Response.json([
+            {
+                name: "demo-app-gitops",
+                name_with_namespace: "Thanh Vu / demo-app-gitops",
+                description:
+                    "Kubernetes Helm Chart and ArgoCD Applications for GitOps Demo",
+                default_branch: "main",
+                topics: ["kubernetes", "gitops"],
+                star_count: 0,
+                web_url: "https://gitlab.com/thanhvu/demo-app-gitops",
+            },
+            {
+                name: "long-desc",
+                name_with_namespace: "Nobody / long-desc",
+                description: "x".repeat(600),
+                default_branch: null,
+                topics: [],
+                star_count: 3,
+                web_url: "https://gitlab.com/nobody/long-desc",
+            },
+        ]);
+    });
+    const c = await client(t);
+    let result = await call(c, "gitlab_project", {
+        query: "kubernetes",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].get("search"), "kubernetes");
+    assert.equal(requests[0].get("per_page"), "1");
+    assert.deepEqual(value(result), {
+        query: "kubernetes",
+        total: 2,
+        projects: [
+            {
+                name: "demo-app-gitops",
+                namespace: "Thanh Vu / demo-app-gitops",
+                description:
+                    "Kubernetes Helm Chart and ArgoCD Applications for GitOps Demo",
+                default_branch: "main",
+                topics: ["kubernetes", "gitops"],
+                stars: 0,
+                url: "https://gitlab.com/thanhvu/demo-app-gitops",
+            },
+        ],
+    });
+    result = await call(c, "gitlab_project", {
+        query: "kubernetes",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const [second] = value(result).projects.slice(1);
+    assert.equal(second.description.length, 503);
+    assert.equal(second.description.endsWith("..."), true);
+    assert.equal(second.default_branch, null);
+    assert.equal(second.stars, 3);
+    result = await call(c, "gitlab_project", { query: "zzzqqqxxyy" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 500/);
+    assert.match(result.content[0].text, /broader term/);
+    result = await call(c, "gitlab_project", { query: " " });
+    assert.equal(result.isError, true);
+    result = await call(c, "gitlab_project", { query: "slowday" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /timed out after 10 s/);
+    assert.equal(count, 4);
 });

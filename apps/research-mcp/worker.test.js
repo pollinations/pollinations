@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "plos_search",
             ].sort(),
         );
     });
@@ -644,4 +645,193 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("plos_search returns PLOS articles with capped abstracts and no credentials", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.plos.org");
+        assert.equal(target.pathname, "/search");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const q = target.searchParams.get("q");
+        if (q === "zzzqqqxxyy") {
+            assert.equal(target.searchParams.get("rows"), "5");
+            return Response.json({
+                response: { numFound: 0, docs: [] },
+            });
+        }
+        assert.equal(q, "ocean acidification");
+        assert.equal(target.searchParams.get("rows"), "2");
+        return Response.json({
+            response: {
+                numFound: 1626,
+                docs: [
+                    {
+                        id: "10.1371/journal.pone.0231589",
+                        title_display:
+                            "Ocean warming and acidification may drag down the commercial Arctic cod fishery by 2100",
+                        journal: "PLOS ONE",
+                        publication_date: "2020-04-22T00:00:00Z",
+                        article_type: "Research Article",
+                        author_display: [
+                            "Martin C. Hänsel",
+                            "Jörn O. Schmidt",
+                            "Martina H. Stiasny",
+                            "Max T. Stöven",
+                            "Rudi Voss",
+                            "Martin F. Quaas",
+                        ],
+                        abstract: [
+                            "\nThe Arctic Ocean is an early warning system for indicators and effects of climate change. We use a novel combination of experimental and time-series data on effects of ocean warming and acidification on the commercially important Northeast Arctic cod (Gadus morhua) to incorporate these physiological processes into the recruitment model of the fish population. By running an ecological-economic optimization model, we investigate how the interaction of ocean warming, acidification and fishing pressure affects the sustainability of the fishery in terms of ecological, economic, social and consumer-related indicators, ranging from present day conditions up to future climate change scenarios. We find that near-term climate change will benefit the fishery, but under likely future warming and acidification this large fishery is at risk of collapse by the end of the century, even with the best adaptation effort in terms of reduced fishing pressure.\n",
+                        ],
+                    },
+                    {
+                        id: "10.1371/journal.pone.0203536",
+                        title_display:
+                            "Projected impacts of future climate change, ocean acidification, and management on the US Atlantic sea scallop (<i>Placopecten magellanicus</i>) fishery",
+                        journal: "PLOS ONE",
+                        publication_date: "2018-09-21T00:00:00Z",
+                        article_type: "Research Article",
+                        author_display: [
+                            "Jennie E. Rheuban",
+                            "Scott C. Doney",
+                            "Sarah R. Cooley",
+                            "Deborah R. Hart",
+                        ],
+                        abstract: [
+                            "\nOcean acidification has the potential to significantly impact both aquaculture and wild-caught mollusk fisheries around the world. In this work, we build upon a previously published integrated assessment model of the US Atlantic Sea Scallop (Placopecten magellanicus) fishery to determine the possible future of the fishery under a suite of climate, economic, biological, and management scenarios. We developed a 4x4x4x4 hypercube scenario framework that resulted in 256 possible combinations of future scenarios. The study highlights the potential impacts of ocean acidification and management for a subset of future climate scenarios, with a high CO2 emissions case (RCP8.5) and lower CO2 emissions and climate mitigation case (RCP4.5). Under RCP4.5 and the highest impact and management scenario, ocean acidification has the potential to reduce sea scallop biomass by approximately 13% by the end of century; however, the lesser impact scenarios cause very little change. Under RCP8.5, sea scallop biomass may decline by more than 50% by the end of century, leading to subsequent declines in industry landings and revenue. Management-set catch limits improve the outcomes of the fishery under both climate scenarios, and the addition of a 10% area closure increases future biomass by more than 25% under the highest ocean acidification impacts. However, increased management still does not stop the projected long-term decline of the fishery under ocean acidification scenarios. Given our incomplete understanding of acidification impacts on P. magellanicus, these declines, along with the high value of the industry, suggest population-level effects of acidification should be a clear research priority. Projections described in this manuscript illustrate both the potential impacts of ocean acidification under a business-as-usual and a moderately strong climate-policy scenario. We also illustrate the importance of fisheries management targets in improving the long-term outcome of the P. magellanicus fishery under potential global change.\n",
+                        ],
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "plos_search", {
+        query: "ocean acidification",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 1626,
+        query: "ocean acidification",
+        articles: [
+            {
+                doi: "10.1371/journal.pone.0231589",
+                title: "Ocean warming and acidification may drag down the commercial Arctic cod fishery by 2100",
+                journal: "PLOS ONE",
+                publication_date: "2020-04-22",
+                article_type: "Research Article",
+                authors: [
+                    "Martin C. Hänsel",
+                    "Jörn O. Schmidt",
+                    "Martina H. Stiasny",
+                    "Max T. Stöven",
+                    "Rudi Voss",
+                    "Martin F. Quaas",
+                ],
+                abstract:
+                    "The Arctic Ocean is an early warning system for indicators and effects of climate change. We use a novel combination of experimental and time-series data on effects of ocean warming and acidification on the commercially important Northeast Arctic cod (Gadus morhua) to incorporate these physiological processes into the recruitment model of the fish population. By running an ecological-economic optimization model, we investigate how the interaction of ocean warming, acidification and fishing pr...",
+            },
+            {
+                doi: "10.1371/journal.pone.0203536",
+                title: "Projected impacts of future climate change, ocean acidification, and management on the US Atlantic sea scallop (Placopecten magellanicus) fishery",
+                journal: "PLOS ONE",
+                publication_date: "2018-09-21",
+                article_type: "Research Article",
+                authors: [
+                    "Jennie E. Rheuban",
+                    "Scott C. Doney",
+                    "Sarah R. Cooley",
+                    "Deborah R. Hart",
+                ],
+                abstract:
+                    "Ocean acidification has the potential to significantly impact both aquaculture and wild-caught mollusk fisheries around the world. In this work, we build upon a previously published integrated assessment model of the US Atlantic Sea Scallop (Placopecten magellanicus) fishery to determine the possible future of the fishery under a suite of climate, economic, biological, and management scenarios. We developed a 4x4x4x4 hypercube scenario framework that resulted in 256 possible combinations of f...",
+            },
+        ],
+    });
+
+    const empty = await call(c, "plos_search", { query: "zzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        total: 0,
+        query: "zzzqqqxxyy",
+        articles: [],
+    });
+
+    const before = fetches;
+    const bad = await call(c, "plos_search", { query: "" });
+    assert.equal(bad.isError, true);
+    assert.equal(fetches, before);
+    const tooMany = await call(c, "plos_search", {
+        query: "ocean acidification",
+        limit: 99,
+    });
+    assert.equal(tooMany.isError, true);
+    assert.equal(fetches, before);
+});
+
+test("plos_search maps an empty abstract to null and leaves short abstracts whole", async (t) => {
+    mock.method(globalThis, "fetch", async () => {
+        return Response.json({
+            response: {
+                numFound: 2,
+                docs: [
+                    {
+                        id: "10.1371/journal.pclm.0000447",
+                        title_display:
+                            "Climate data democracy is essential for climate action",
+                        journal: "PLOS Climate",
+                        publication_date: "2024-07-09T00:00:00Z",
+                        article_type: "Opinion",
+                        author_display: [
+                            "Harini Nagendra",
+                            "Santonu Goswami",
+                            "Seema Mundoli",
+                        ],
+                        abstract: [""],
+                    },
+                    {
+                        id: "10.1371/journal.pone.0231589",
+                        title_display:
+                            "Ocean warming and acidification may drag down the commercial Arctic cod fishery",
+                        journal: "PLOS ONE",
+                        publication_date: "2020-04-22T00:00:00Z",
+                        article_type: "Research Article",
+                        author_display: ["Martin C. Hänsel"],
+                        abstract: [
+                            "\nThe Arctic Ocean is an early warning system for indicators and effects of climate change. We use a novel combination of",
+                        ],
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "plos_search", {
+        query: "climate data democracy",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const articles = value(result).articles;
+    assert.equal(articles[0].abstract, null);
+    assert.equal(articles[0].article_type, "Opinion");
+    assert.equal(
+        articles[1].abstract,
+        "The Arctic Ocean is an early warning system for indicators and effects of climate change. We use a novel combination of",
+    );
+    assert.match(
+        articles[1].abstract,
+        /Arctic Ocean is an early warning system/,
+    );
 });

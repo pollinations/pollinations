@@ -76,3 +76,41 @@ describe("quests claim state", () => {
         });
     });
 });
+
+describe("quests human output", () => {
+    it("shows rewards as dollars with the balance icon", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("human");
+        const printed: string[] = [];
+        const capture = (value: unknown) => {
+            printed.push(String(value));
+            return true;
+        };
+        vi.spyOn(process.stdout, "write").mockImplementation(capture);
+        vi.spyOn(process.stderr, "write").mockImplementation(capture);
+        const claimable = (id: string) => ({
+            ...base,
+            id,
+            title: id,
+            state: "available",
+            reward: {
+                id: `r_${id}`,
+                questId: id,
+                title: "reward",
+                pollenAmount: 0.1,
+                balanceBucket: "tier",
+                earnedAt: "2026-10-01T00:00:00.000Z",
+                claimedAt: null,
+            },
+        });
+        const quests = [claimable("a"), claimable("b"), claimable("c")];
+        vi.stubGlobal("fetch", async () => Response.json({ quests }));
+
+        await questsCommand.parseAsync([], { from: "user" });
+
+        const out = printed.join("");
+        expect(out).toContain("3 reward(s) ready to claim (🌱 $0.3)");
+        expect(out).toContain("🌱 $0.1");
+        expect(out).not.toContain("tier");
+    });
+});

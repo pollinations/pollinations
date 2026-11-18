@@ -19,7 +19,7 @@ complexity. Do not reward being first, large, or already up to date with `main`.
 4. Verify changing external contracts against current primary documentation.
 5. Apply the gates below, then test the strongest candidates in proportion to
    risk. Prefer focused tests of real code and a practical smoke test when one is
-   feasible.
+   feasible. Run candidate code only in a sandbox without secrets.
 
 ### Correctness gate
 

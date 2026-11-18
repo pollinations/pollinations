@@ -375,7 +375,7 @@ def write_reward_comment():
         reward, rule = 5, "The PR author can claim this once it is merged into main. A reward label on this PR, or else on the POLLEN-QUEST issue it closes, sets the amount instead."
     else:
         reward, rule = 2, "The issue author can claim this once a merged PR closes this issue, also when they wrote the fix."
-    body = f"Reward: {reward} pollen\n\n{rule} Claim at https://enter.pollinations.ai/quests."
+    body = f"Reward: ${reward} in Quest balance\n\n{rule} Claim at https://enter.pollinations.ai/quests."
     try:
         r = requests.post(f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/comments",
                           headers=GITHUB_HEADERS, json={"body": body}, timeout=10)

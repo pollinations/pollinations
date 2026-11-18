@@ -122,7 +122,7 @@ test("getBalance preserves the paid balance needed to assess paid-only models", 
     assert.equal(balance.accountBalance.paid, 0);
     assert.equal(
         balance.note,
-        "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
+        "Balance in US dollars for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
     );
 });
 

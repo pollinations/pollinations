@@ -371,6 +371,30 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.2-astra",
+        config: portkeyConfig["gpt-6.2-astra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-astra:aws",
+        config: portkeyConfig["gpt-6.2-astra-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol",
+        config: portkeyConfig["gpt-6.2-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol:aws",
+        config: portkeyConfig["gpt-6.2-sol-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
@@ -582,15 +606,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig["DeepSeek-V4.1-Flash-1017"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:fireworks",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4p1-flash-1017"
         ],
         transform: fireworksThinkingWithoutCacheControl,
-    },
-    {
-        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
-        transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -1052,6 +1076,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1.2",
+        config: portkeyConfig["liquid/d1.2"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1:openrouter",
         config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,
@@ -1072,6 +1101,21 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna-decisions:openrouter",
         config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1",
+        config: portkeyConfig["microsoft-decision-1.1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:openrouter"],
         useSystemOneApi: true,
     },
     {
@@ -1159,6 +1203,14 @@ const models: ModelDefinition[] = [
         name: "meituan/longcat-2.0",
         config: portkeyConfig["meituan/longcat-2.0"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "tencent/hy4-flash",
+        config: portkeyConfig["tencent/hy4-flash"],
+    },
+    {
+        name: "tencent/hy4-flash:openrouter",
+        config: portkeyConfig["tencent/hy4-flash:openrouter"],
     },
     {
         name: "tencent/hy4-preview",
@@ -1441,18 +1493,9 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:mistral",
-        config: portkeyConfig["mistral-large-direct"],
-        transform: pipe(stripReasoning, (messages, options) => {
-            const { seed, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(seed === undefined ? {} : { random_seed: seed }),
-                },
-            };
-        }),
+        name: "mistralai/mistral-large-3:aws",
+        config: portkeyConfig["mistral-large-3-bedrock"],
+        transform: stripReasoning,
     },
     {
         name: "qwen/qwen3guard-gen-8b",

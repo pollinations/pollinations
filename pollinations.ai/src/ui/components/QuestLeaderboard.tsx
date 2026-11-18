@@ -6,6 +6,7 @@ import {
     Heading,
     LinkCard,
     Skeleton,
+    SproutIcon,
     StatCard,
     Surface,
     Text,
@@ -119,17 +120,25 @@ export function QuestLeaderboard() {
                                                         ? "Quest"
                                                         : "Quests"}
                                                 </Text>
-                                                {/* Quest pollen, in the wallet's Quest green. */}
+                                                {/* Quest rewards, in the wallet's Quest green, as on the dashboard. */}
                                                 <Text
                                                     as="strong"
                                                     size="xs"
                                                     weight="bold"
-                                                    className="polli-wallet-text-tier whitespace-nowrap tabular-nums"
+                                                    className="polli-wallet-text-tier inline-flex items-baseline gap-0.5 whitespace-nowrap tabular-nums"
                                                 >
+                                                    <SproutIcon
+                                                        aria-hidden="true"
+                                                        className="size-3.5 self-center"
+                                                    />
+                                                    $
                                                     {formatNumber(
                                                         entry.totalPollen,
-                                                    )}{" "}
-                                                    pollen
+                                                    )}
+                                                    <span className="sr-only">
+                                                        {" "}
+                                                        in Quest rewards
+                                                    </span>
                                                 </Text>
                                             </span>
                                         </span>

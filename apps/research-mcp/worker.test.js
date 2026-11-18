@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "opensky_flights",
             ].sort(),
         );
     });
@@ -644,4 +645,126 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OpenSky returns live state vectors for a bounding box and treats states null as empty", async (t) => {
+    let fetches = 0;
+    const requests = [];
+    const vectors = [
+        [
+            "4b1809",
+            "SWR316T ",
+            "Switzerland",
+            1795025795,
+            1795025795,
+            0.1019,
+            51.3764,
+            2186.94,
+            false,
+            137.63,
+            321.37,
+            -4.23,
+            null,
+            2019.3,
+            "5741",
+            false,
+            0,
+        ],
+        [
+            "3c5ee9",
+            "EWG8A   ",
+            "Germany",
+            1795025794,
+            1795025794,
+            -0.4091,
+            51.465,
+            342.9,
+            false,
+            61.74,
+            269.05,
+            -3.58,
+            null,
+            182.88,
+            "1375",
+            false,
+            0,
+        ],
+    ];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        requests.push(url.searchParams);
+        assert.equal(url.hostname, "opensky-network.org");
+        assert.equal(url.pathname, "/api/states/all");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.searchParams.get("lamin") === "60")
+            return Response.json({ time: 1795025809, states: null });
+        return Response.json({ time: 1795025795, states: vectors });
+    });
+    const c = await client(t);
+    let result = await call(c, "opensky_flights", {
+        lamin: 51,
+        lomin: -0.5,
+        lamax: 51.8,
+        lomax: 0.5,
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        bbox: { lamin: 51, lomin: -0.5, lamax: 51.8, lomax: 0.5 },
+        total: 2,
+        flights: [
+            {
+                icao24: "4b1809",
+                callsign: "SWR316T",
+                origin_country: "Switzerland",
+                latitude: 51.3764,
+                longitude: 0.1019,
+                altitude: 2186.94,
+                velocity: 137.63,
+                heading: 321.37,
+            },
+            {
+                icao24: "3c5ee9",
+                callsign: "EWG8A",
+                origin_country: "Germany",
+                latitude: 51.465,
+                longitude: -0.4091,
+                altitude: 342.9,
+                velocity: 61.74,
+                heading: 269.05,
+            },
+        ],
+    });
+
+    result = await call(c, "opensky_flights", {
+        lamin: 60,
+        lomin: 10,
+        lamax: 60.5,
+        lomax: 10.5,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).flights, []);
+    assert.equal(value(result).total, 0);
+
+    result = await call(c, "opensky_flights", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[2].get("lamin"), "51");
+    assert.equal(requests[2].get("lomin"), "-0.5");
+    assert.equal(requests[2].get("lamax"), "51.8");
+    assert.equal(requests[2].get("lomax"), "0.5");
+    assert.equal(value(result).total, 2);
+
+    result = await call(c, "opensky_flights", { limit: 99 });
+    assert.equal(result.isError, true);
+    result = await call(c, "opensky_flights", {
+        lamin: 52,
+        lamax: 51,
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /minimum must be smaller/);
+    assert.equal(fetches, 3);
 });

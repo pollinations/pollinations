@@ -421,6 +421,12 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "openvsx", name: "ms-python" }],
+        ["package_lookup", { ecosystem: "openvsx", name: "MS-Python/python" }],
+        [
+            "package_lookup",
+            { ecosystem: "openvsx", name: "ms-python/python/extra" },
+        ],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -655,6 +661,169 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("Open VSX lookup resolves latest and pinned versions with downloads and rating", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("zzzzqqq"))
+            return Response.json(
+                { error: "Extension not found: zzzzqqq.nonexistent" },
+                { status: 404 },
+            );
+        if (String(url).includes("redhat/java"))
+            // Synthetic long description, to pin the 500-char cap.
+            return Response.json({
+                name: "java",
+                namespace: "redhat",
+                namespaceDisplayName: "redhat",
+                displayName: "Language Support for Java(TM) by Red Hat",
+                description: "Java language support for VS Code. ".repeat(20),
+                version: "1.50.0",
+                license: "MIT",
+                downloadCount: 1000000,
+                averageRating: 4.0,
+                reviewCount: 10,
+                publishedBy: { loginName: "redhat" },
+                categories: ["Programming Languages"],
+                verified: true,
+                timestamp: "2026-01-01T00:00:00.000Z",
+                allVersions: {
+                    latest: "https://open-vsx.org/api/redhat/java/latest",
+                    "1.50.0": "https://open-vsx.org/api/redhat/java/1.50.0",
+                },
+            });
+        if (String(url).endsWith("/2024.0.0"))
+            return Response.json({
+                name: "python",
+                namespace: "ms-python",
+                namespaceDisplayName: "ms-python",
+                displayName: "Python",
+                description:
+                    "IntelliSense (Pylance), Linting, Debugging (Python Debugger), code formatting, refactoring, unit tests, and more.",
+                version: "2024.0.0",
+                license: "MIT",
+                downloadCount: 62886650,
+                averageRating: 3.875,
+                reviewCount: 16,
+                publishedBy: { loginName: "open-vsx" },
+                categories: ["Programming Languages", "Debuggers"],
+                verified: true,
+                timestamp: "2024-02-02T03:34:16.119047Z",
+                allVersions: {
+                    latest: "https://open-vsx.org/api/ms-python/python/latest",
+                    "2026.4.0":
+                        "https://open-vsx.org/api/ms-python/python/2026.4.0",
+                    "2026.2.0":
+                        "https://open-vsx.org/api/ms-python/python/2026.2.0",
+                    "2026.0.0":
+                        "https://open-vsx.org/api/ms-python/python/2026.0.0",
+                    "2024.0.0":
+                        "https://open-vsx.org/api/ms-python/python/2024.0.0",
+                },
+            });
+        // Trimmed real fixture: GET https://open-vsx.org/api/ms-python/python
+        // (200, 8,888 B, 0.92 s) — only the fields the tool reads are kept.
+        return Response.json({
+            name: "python",
+            namespace: "ms-python",
+            namespaceDisplayName: "ms-python",
+            displayName: "Python",
+            description:
+                "Python language support with extension access points for IntelliSense (Pylance), Debugging (Python Debugger), linting, formatting, refactoring, unit tests, and more.",
+            version: "2026.4.0",
+            license: "MIT",
+            downloadCount: 62883465,
+            averageRating: 3.875,
+            reviewCount: 16,
+            publishedBy: { loginName: "open-vsx" },
+            categories: ["Programming Languages", "Debuggers"],
+            verified: true,
+            timestamp: "2026-03-13T04:21:53.228120Z",
+            allVersions: {
+                latest: "https://open-vsx.org/api/ms-python/python/latest",
+                "2026.4.0":
+                    "https://open-vsx.org/api/ms-python/python/2026.4.0",
+                "2026.2.0":
+                    "https://open-vsx.org/api/ms-python/python/2026.2.0",
+                "2026.0.0":
+                    "https://open-vsx.org/api/ms-python/python/2026.0.0",
+                "2024.0.0":
+                    "https://open-vsx.org/api/ms-python/python/2024.0.0",
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "openvsx",
+        name: "ms-python/python",
+    });
+    assert.equal(latest.name, "ms-python/python");
+    assert.equal(latest.displayName, "Python");
+    assert.equal(latest.version, "2026.4.0");
+    assert.equal(latest.latest, "2026.4.0");
+    assert.equal(latest.versionCount, 4);
+    assert.equal(latest.license, "MIT");
+    assert.equal(latest.downloads, 62883465);
+    assert.equal(latest.averageRating, 3.875);
+    assert.equal(latest.reviewCount, 16);
+    assert.equal(latest.publisher, "open-vsx");
+    assert.deepEqual(latest.categories, ["Programming Languages", "Debuggers"]);
+    assert.equal(latest.verified, true);
+    assert.equal(latest.publishedAt, "2026-03-13T04:21:53.228120Z");
+    assert.equal(
+        latest.registryUrl,
+        "https://open-vsx.org/extension/ms-python/python",
+    );
+    // The real 165-char description passes through untruncated.
+    assert.equal(latest.description.length, 165);
+
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "openvsx",
+        name: "ms-python/python",
+        version: "2024.0.0",
+    });
+    assert.equal(pinned.version, "2024.0.0");
+    assert.equal(pinned.latest, "2026.4.0");
+    assert.equal(pinned.publishedAt, "2024-02-02T03:34:16.119047Z");
+    assert.equal(
+        pinned.registryUrl,
+        "https://open-vsx.org/extension/ms-python/python",
+    );
+
+    // An unknown version is rejected from the version map before a second fetch.
+    await assert.rejects(
+        lookup({
+            ecosystem: "openvsx",
+            name: "ms-python/python",
+            version: "9.9.9",
+        }),
+        /Open VSX version 9\.9\.9 not found for ms-python\/python/,
+    );
+
+    // Long descriptions are capped at 500 chars, the cut marked with ….
+    const capped = await call(client, "package_lookup", {
+        ecosystem: "openvsx",
+        name: "redhat/java",
+    });
+    assert.equal(capped.description.length, 501);
+    assert.equal(capped.description.endsWith("…"), true);
+
+    const missing = await client.callTool({
+        name: "package_lookup",
+        arguments: { ecosystem: "openvsx", name: "zzzzqqq/nonexistent" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /open-vsx\.org returned HTTP 404/);
+    assert.deepEqual(urls, [
+        "https://open-vsx.org/api/ms-python/python",
+        "https://open-vsx.org/api/ms-python/python",
+        "https://open-vsx.org/api/ms-python/python/2024.0.0",
+        "https://open-vsx.org/api/ms-python/python",
+        "https://open-vsx.org/api/redhat/java",
+        "https://open-vsx.org/api/zzzzqqq/nonexistent",
     ]);
 });
 

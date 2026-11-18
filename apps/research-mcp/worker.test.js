@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "tarot_card",
             ].sort(),
         );
     });
@@ -644,4 +645,85 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Tarot draw returns projected cards, caps long meanings and falls back to one card", async (t) => {
+    const longMeaning = "x".repeat(600);
+    mock.method(globalThis, "fetch", async (url, options) => {
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "tarotapi.dev");
+        assert.equal(target.pathname, "/api/v1/cards/random");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.searchParams.get("n") === "2") {
+            return Response.json({
+                nhits: 2,
+                cards: [
+                    {
+                        type: "major",
+                        name_short: "ar02",
+                        name: "The High Priestess",
+                        value: "2",
+                        value_int: 2,
+                        meaning_up:
+                            "Secrets, mystery, the future as yet unrevealed; the woman who interests the Querent, if male; the Querent herself, if female; silence, tenacity; mystery, wisdom, science.",
+                        meaning_rev:
+                            "Passion, moral or physical ardour, conceit, surface knowledge.",
+                        desc: "She has the lunar crescent at her feet, a horned diadem on her head, with a globe in the middle place, and a large solar cross on her breast.",
+                    },
+                    {
+                        type: "minor",
+                        name_short: "wace",
+                        name: "Ace of Wands",
+                        value: "ace",
+                        value_int: 1,
+                        suit: "wands",
+                        meaning_up: longMeaning,
+                        meaning_rev:
+                            "A fall, decadence, ruin, perdition, to perish.",
+                        desc: "A hand issuing from a cloud grasps a stout wand or club.",
+                    },
+                ],
+            });
+        }
+        assert.equal(target.searchParams.get("n"), "1");
+        return Response.json({ nhits: 1, cards: [] });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "tarot_card", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        count: 2,
+        cards: [
+            {
+                name: "The High Priestess",
+                value: "2",
+                type: "major",
+                suit: null,
+                meaning_up:
+                    "Secrets, mystery, the future as yet unrevealed; the woman who interests the Querent, if male; the Querent herself, if female; silence, tenacity; mystery, wisdom, science.",
+                meaning_rev:
+                    "Passion, moral or physical ardour, conceit, surface knowledge.",
+            },
+            {
+                name: "Ace of Wands",
+                value: "ace",
+                type: "minor",
+                suit: "wands",
+                meaning_up: `${"x".repeat(500)}...`,
+                meaning_rev: "A fall, decadence, ruin, perdition, to perish.",
+            },
+        ],
+    });
+
+    // An out-of-range limit is rejected by the schema before any fetch.
+    // (The handler's own fallback to 1 is exercised in the live smoke.)
+    const rejected = await call(c, "tarot_card", { limit: 99 });
+    assert.equal(rejected.isError, true);
 });

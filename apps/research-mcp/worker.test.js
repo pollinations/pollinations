@@ -355,6 +355,7 @@ for (const modern of [false, true]) {
                 "rfc_metadata",
                 "rfc_section",
                 "search_entities",
+                "star_trek_character",
                 "get_entity",
                 "search_articles",
                 "get_article",
@@ -644,4 +645,135 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("STAPI character search posts form-encoded name and projects base fields", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "stapi.co");
+        assert.equal(url.pathname, "/api/v1/rest/character/search");
+        assert.equal(request.method, "POST");
+        assert.equal(url.searchParams.get("pageNumber"), "0");
+        assert.equal(url.searchParams.get("pageSize"), "5");
+        assert.equal(
+            request.headers.get("content-type"),
+            "application/x-www-form-urlencoded",
+        );
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(await request.text(), "name=Theta");
+        // Fixture trimmed from a live GET pagination probe of the same
+        // endpoint (same CharacterBaseResponse envelope the POST returns):
+        // 0413 Theta, uid CHMA0000215045, mirror universe, no birth year.
+        return Response.json({
+            page: {
+                pageNumber: 0,
+                pageSize: 5,
+                numberOfElements: 1,
+                totalElements: 1,
+                totalPages: 1,
+                firstPage: true,
+                lastPage: true,
+            },
+            sort: { clauses: [] },
+            characters: [
+                {
+                    uid: "CHMA0000215045",
+                    name: "0413 Theta",
+                    gender: null,
+                    yearOfBirth: null,
+                    monthOfBirth: null,
+                    dayOfBirth: null,
+                    placeOfBirth: null,
+                    yearOfDeath: null,
+                    monthOfDeath: null,
+                    dayOfDeath: null,
+                    placeOfDeath: null,
+                    height: null,
+                    weight: null,
+                    deceased: null,
+                    bloodType: null,
+                    maritalStatus: null,
+                    serialNumber: null,
+                    hologramActivationDate: null,
+                    hologramStatus: null,
+                    hologramDateStatus: null,
+                    hologram: false,
+                    fictionalCharacter: false,
+                    mirror: true,
+                    alternateReality: false,
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "star_trek_character", { name: "Theta" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "Theta",
+        total: 1,
+        characters: [
+            {
+                uid: "CHMA0000215045",
+                name: "0413 Theta",
+                gender: null,
+                yearOfBirth: null,
+                yearOfDeath: null,
+                deceased: null,
+                mirror: true,
+                alternateReality: false,
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    // Unknown names and bad inputs must not fetch again.
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({
+            page: { totalElements: 0 },
+            characters: [],
+        });
+    });
+    const empty = await call(c, "star_trek_character", {
+        name: "zzzznotreal",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        name: "zzzznotreal",
+        total: 0,
+        characters: [],
+    });
+
+    const blank = await call(c, "star_trek_character", { name: "   " });
+    assert.equal(blank.isError, true);
+    const badLimit = await call(c, "star_trek_character", {
+        name: "Theta",
+        limit: 0,
+    });
+    assert.equal(badLimit.isError, true);
+    const bigLimit = await call(c, "star_trek_character", {
+        name: "Theta",
+        limit: 26,
+    });
+    assert.equal(bigLimit.isError, true);
+    assert.equal(fetches, 2);
+
+    // A response without a characters array is a clean tool error.
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ page: { totalElements: 1 } }),
+    );
+    const malformed = await call(c, "star_trek_character", {
+        name: "Theta",
+    });
+    assert.equal(malformed.isError, true);
 });

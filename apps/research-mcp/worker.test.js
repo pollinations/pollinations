@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "openfoodfacts_product",
             ].sort(),
         );
     });
@@ -644,4 +645,118 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Open Food Facts looks up a product by barcode and rejects unknown or malformed barcodes", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "world.openfoodfacts.org");
+        assert.equal(
+            url.searchParams.get("fields"),
+            "product_name,brands,nutriscore_grade,nova_group,ecoscore_grade,ingredients_text",
+        );
+        const barcode = url.pathname.split("/")[4].replace(".json", "");
+        if (barcode === "3017620422003")
+            return Response.json({
+                code: "3017620422003",
+                product: {
+                    brands: "Ferrero, Nutella",
+                    ecoscore_grade: "f",
+                    ingredients_text: "sugar, palm oil",
+                    nova_group: 3,
+                    nutriscore_grade: "e",
+                    product_name: "Nutella",
+                },
+                status: 1,
+                status_verbose: "product found",
+            });
+        if (barcode === "5449000000996")
+            return Response.json({
+                code: "5449000000996",
+                product: {
+                    brands: "COCA-COLA SERVICES SA/NV",
+                    ecoscore_grade: "not-applicable",
+                    ingredients_text:
+                        "Agua carbonatada, azúcar, colorante (E-150d), acidulante (ácido fosfórico), aromas naturales (contiene cafeína).",
+                    nova_group: 4,
+                    nutriscore_grade: "e",
+                    product_name: "Coca-Cola Original",
+                },
+                status: 1,
+                status_verbose: "product found",
+            });
+        if (barcode === "1234567890128")
+            return Response.json({
+                code: "1234567890128",
+                product: {
+                    brands: "Test Brand",
+                    ecoscore_grade: "a",
+                    ingredients_text: "x".repeat(600),
+                    nova_group: 1,
+                    nutriscore_grade: "a",
+                    product_name: "Long Ingredients",
+                },
+                status: 1,
+                status_verbose: "product found",
+            });
+        return Response.json({
+            code: "00000000",
+            status: 0,
+            status_verbose: "no code or invalid code",
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "openfoodfacts_product", {
+        barcode: "3017620422003",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    let product = value(result).product;
+    assert.equal(product.product_name, "Nutella");
+    assert.equal(product.brands, "Ferrero, Nutella");
+    assert.equal(product.nutriscore_grade, "e");
+    assert.equal(product.nova_group, 3);
+    assert.equal(product.ecoscore_grade, "f");
+    assert.equal(product.ingredients, "sugar, palm oil");
+    assert.equal(
+        product.url,
+        "https://world.openfoodfacts.org/product/3017620422003",
+    );
+
+    result = await call(c, "openfoodfacts_product", {
+        barcode: "5449000000996",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    product = value(result).product;
+    assert.equal(product.product_name, "Coca-Cola Original");
+    assert.equal(product.nova_group, 4);
+    assert.equal(product.ecoscore_grade, "not-applicable");
+
+    result = await call(c, "openfoodfacts_product", {
+        barcode: "3017-620422003",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).product.product_name, "Nutella");
+
+    result = await call(c, "openfoodfacts_product", {
+        barcode: "1234567890128",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).product.ingredients.length, 500);
+
+    const before = count;
+    result = await call(c, "openfoodfacts_product", {
+        barcode: "0000000000000",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /not found/);
+
+    for (const bad of ["abc", "30176 2042x", "1234567", "123456789012345"]) {
+        result = await call(c, "openfoodfacts_product", {
+            barcode: bad,
+        }).catch(() => ({ isError: true }));
+        assert.equal(result.isError, true);
+    }
+    assert.equal(count, before + 1);
 });

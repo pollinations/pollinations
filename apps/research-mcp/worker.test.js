@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "osti_search",
             ].sort(),
         );
     });
@@ -644,4 +645,121 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OSTI search projects records, caps descriptions and strips author affiliations", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.osti.gov");
+        assert.equal(url.searchParams.get("q"), "climate");
+        assert.equal(url.searchParams.get("rows"), "2");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(
+            new Headers(init.headers).get("accept"),
+            "application/json",
+        );
+        return Response.json([
+            {
+                osti_id: "1236496",
+                title: "Field Campaign Guidelines",
+                doi: "10.2172/1236496",
+                publication_date: "2026-10-20T00:00:00Z",
+                description:
+                    "This document establishes a common set of guidelines for the Atmospheric Radiation Measurement (ARM) Climate Research Facility for planning, executing, and closing out field campaigns. The steps that guide individual field campaigns are described in the Field Campaign Tracking System and are specifically tailored to meet the scope of each field campaign.",
+                authors: [
+                    "Hickmon, N. [Argonne National Lab. (ANL), Argonne, IL (United States)]",
+                ],
+            },
+            {
+                osti_id: "17428828",
+                title: "Influence of microstructural heterogeneity on water diffusion in porous clay media: A case study of illite",
+                doi: "10.1016/j.clay.2026.108414",
+                publication_date: "2027-01-01T00:00:00Z",
+                // Real opening 450 chars of the 1,849-char description.
+                description:
+                    "Understanding the diffusion of water and solutes in clay-rich materials is critical for several applications, notably radioactive waste disposal. Most of the available experimental data on tracer diffusion in clay porous media are interpreted using only bulk porosity and, to a lesser extent, on particle orientation, implicitly assuming their homogeneity in the sample. Nevertheless, these parameters can be heterogeneously distributed in both natur",
+                authors: ["Aghlmand, Reza", "Dazas, Baptiste"],
+            },
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "osti_search", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "climate",
+        total: 2,
+        records: [
+            {
+                osti_id: "1236496",
+                title: "Field Campaign Guidelines",
+                doi: "10.2172/1236496",
+                publication_date: "2026-10-20T00:00:00Z",
+                description:
+                    "This document establishes a common set of guidelines for the Atmospheric Radiation Measurement (ARM) Climate Research Facility for planning, executing, and closing out field campaigns. The steps that guide individual field campaigns are described in the Field Campaign Tracking System and are specifically tailored to meet the scope of each field campaign.",
+                authors: ["Hickmon, N."],
+            },
+            {
+                osti_id: "17428828",
+                title: "Influence of microstructural heterogeneity on water diffusion in porous clay media: A case study of illite",
+                doi: "10.1016/j.clay.2026.108414",
+                publication_date: "2027-01-01T00:00:00Z",
+                description:
+                    "Understanding the diffusion of water and solutes in clay-rich materials is critical for several applications, notably radioactive waste disposal. Most of the available experimental data on tracer diffusion in clay porous media are interpreted using only bulk porosity and, to a lesser extent, on particle orientation, implicitly assuming their homogeneity in the sample. Nevertheless, these parameter…",
+                authors: ["Aghlmand, Reza", "Dazas, Baptiste"],
+            },
+        ],
+    });
+
+    mock.method(globalThis, "fetch", async () => Response.json([]));
+    const empty = await call(c, "osti_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        records: [],
+    });
+
+    // The rows param asks upstream for 1, but the handler still slices
+    // client-side if upstream ever returns more than asked.
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        assert.equal(url.searchParams.get("rows"), "1");
+        return Response.json([
+            {
+                osti_id: "1236496",
+                title: "Field Campaign Guidelines",
+                doi: "10.2172/1236496",
+                publication_date: "2026-10-20T00:00:00Z",
+                description: "Short description.",
+                authors: ["Hickmon, N."],
+            },
+            {
+                osti_id: "17428828",
+                title: "Second record",
+                doi: null,
+                publication_date: null,
+                description: null,
+                authors: [],
+            },
+        ]);
+    });
+    const limited = await call(c, "osti_search", {
+        query: "climate",
+        limit: 1,
+    });
+    assert.notEqual(limited.isError, true, JSON.stringify(limited));
+    assert.equal(value(limited).total, 2);
+    assert.equal(value(limited).records.length, 1);
+    assert.equal(value(limited).records[0].osti_id, "1236496");
+
+    const blank = await call(c, "osti_search", { query: " " });
+    assert.equal(blank.isError, true);
 });

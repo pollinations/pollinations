@@ -78,6 +78,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "crypto_coin",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -949,4 +950,208 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("crypto_coin returns CoinPaprika metadata for the top search match", async (t) => {
+    const requests = [];
+    const searchFixture = {
+        currencies: [
+            {
+                id: "btc-bitcoin",
+                name: "Bitcoin",
+                symbol: "BTC",
+                rank: 1,
+                is_new: false,
+                is_active: true,
+                type: "coin",
+            },
+            {
+                id: "wbtc-wrapped-bitcoin",
+                name: "Wrapped Bitcoin",
+                symbol: "WBTC",
+                rank: 17,
+                is_new: false,
+                is_active: true,
+                type: "token",
+            },
+        ],
+        exchanges: [],
+        icos: [],
+        people: [],
+        tags: [],
+    };
+    const detailFixture = {
+        id: "btc-bitcoin",
+        name: "Bitcoin",
+        symbol: "BTC",
+        rank: 1,
+        is_new: false,
+        is_active: true,
+        type: "coin",
+        logo: "https://static.coinpaprika.com/coin/btc-bitcoin/logo.png",
+        tags: [
+            { id: "segwit", name: "Segwit", coin_counter: 12, ico_counter: 0 },
+        ],
+        team: [
+            {
+                id: "satoshi-nakamoto",
+                name: "Satoshi Nakamoto",
+                position: "Founder",
+            },
+            {
+                id: "wladimir-j-van-der-laan",
+                name: "Wladimir J. van der Laan",
+                position: "Blockchain Developer",
+            },
+            {
+                id: "jonas-schnelli",
+                name: "Jonas Schnelli",
+                position: "Blockchain Developer",
+            },
+            {
+                id: "marco-falke",
+                name: "Marco Falke",
+                position: "Blockchain Developer",
+            },
+        ],
+        description:
+            "Bitcoin (BTC) is a decentralized digital currency that enables peer-to-peer transactions without intermediaries, using blockchain technology to ensure security and transparency. It was created in 2009 by an anonymous entity known as Satoshi Nakamoto. Source: CoinPaprika.com",
+        message: "",
+        open_source: true,
+        started_at: "2009-01-03T00:00:00Z",
+        development_status: "Working product",
+        hardware_wallet: true,
+        proof_type: "Proof of Work",
+        org_structure: "Decentralized",
+        hash_algorithm: "SHA256",
+        links: {
+            explorer: [
+                "https://blockchair.com/bitcoin/?from=coinpaprika",
+                "https://blockchain.com/explorer",
+                "https://blockstream.info/",
+                "https://live.blockcypher.com/btc/",
+                "https://btc.cryptoid.info/btc/",
+            ],
+            facebook: ["https://www.facebook.com/bitcoins/"],
+            reddit: ["https://www.reddit.com/r/Bitcoin/"],
+            source_code: ["https://github.com/bitcoin/bitcoin"],
+            website: ["https://bitcoin.org/"],
+            youtube: [],
+        },
+    };
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.coinpaprika.com");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        if (target.pathname === "/v1/search")
+            return Response.json(
+                target.searchParams.get("q") === "zzznotacoin123"
+                    ? {
+                          currencies: [],
+                          exchanges: [],
+                          icos: [],
+                          people: [],
+                          tags: [],
+                      }
+                    : searchFixture,
+            );
+        return Response.json(detailFixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "crypto_coin", { query: "bitcoin" }), {
+        id: "btc-bitcoin",
+        name: "Bitcoin",
+        symbol: "BTC",
+        rank: 1,
+        type: "coin",
+        description:
+            "Bitcoin (BTC) is a decentralized digital currency that enables peer-to-peer transactions without intermediaries, using blockchain technology to ensure security and transparency. It was created in 2009 by an anonymous entity known as Satoshi Nakamoto. Source: CoinPaprika.com",
+        links: {
+            website: ["https://bitcoin.org/"],
+            explorer: [
+                "https://blockchair.com/bitcoin/?from=coinpaprika",
+                "https://blockchain.com/explorer",
+                "https://blockstream.info/",
+            ],
+            source_code: ["https://github.com/bitcoin/bitcoin"],
+        },
+        team: [
+            { name: "Satoshi Nakamoto", position: "Founder" },
+            {
+                name: "Wladimir J. van der Laan",
+                position: "Blockchain Developer",
+            },
+            { name: "Jonas Schnelli", position: "Blockchain Developer" },
+            { name: "Marco Falke", position: "Blockchain Developer" },
+        ],
+    });
+    // Search then detail: two sequential fetches, in that order.
+    assert.deepEqual(
+        requests.map((r) => r.pathname),
+        ["/v1/search", "/v1/coins/btc-bitcoin"],
+    );
+    assert.equal(requests[0].searchParams.get("q"), "bitcoin");
+    // An unknown term is a named error, not an empty result.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "crypto_coin",
+                arguments: { query: "zzznotacoin123" },
+            })
+        ).isError,
+        true,
+    );
+    // A blank query is rejected before any fetch.
+    const before = requests.length;
+    assert.equal(
+        (
+            await client.callTool({
+                name: "crypto_coin",
+                arguments: { query: "   " },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests.length, before);
+});
+
+test("crypto_coin caps long descriptions at 500 characters", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const target = new URL(url);
+        if (target.pathname === "/v1/search")
+            return Response.json({
+                currencies: [
+                    {
+                        id: "x-coin",
+                        name: "X",
+                        symbol: "X",
+                        rank: 9,
+                        type: "coin",
+                    },
+                ],
+            });
+        return Response.json({
+            id: "x-coin",
+            name: "X",
+            symbol: "X",
+            rank: 9,
+            type: "coin",
+            description: "d".repeat(600),
+            links: {},
+            team: [],
+        });
+    });
+    const client = await clientFor(t);
+    const result = await call(client, "crypto_coin", { query: "x" });
+    assert.equal(result.description.length, 501);
+    assert.equal(result.description, `${"d".repeat(500)}…`);
+    assert.deepEqual(result.links, {
+        website: [],
+        explorer: [],
+        source_code: [],
+    });
+    assert.deepEqual(result.team, []);
 });

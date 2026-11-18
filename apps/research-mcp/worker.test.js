@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "tzkt_blocks",
             ].sort(),
         );
     });
@@ -644,4 +645,149 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("TzKT returns the newest Tezos blocks with proposer, fees and validations", async (t) => {
+    const blocks = [
+        {
+            cycle: 1417,
+            level: 15873172,
+            hash: "BMU2geca8h71uCKmVPKgPcfQM1cQBBDrTgsNppARoZwi8ur4bP5",
+            timestamp: "2026-11-18T20:37:01Z",
+            proto: 25,
+            payloadRound: 0,
+            blockRound: 0,
+            attestationPower: 6944,
+            attestationCommittee: 7000,
+            deposit: 0,
+            rewardDelegated: 138495,
+            rewardStakedOwn: 238789,
+            rewardStakedEdge: 0,
+            rewardStakedShared: 974414,
+            bonusDelegated: 135081,
+            bonusStakedOwn: 232904,
+            bonusStakedEdge: 0,
+            bonusStakedShared: 950398,
+            fees: 26126,
+            nonceRevealed: false,
+            proposer: {
+                alias: "Spice",
+                address: "tz1dRKU4FQ9QRRQPdaH4zCR6gmCmXfcvcgtB",
+            },
+            producer: {
+                alias: "Spice",
+                address: "tz1dRKU4FQ9QRRQPdaH4zCR6gmCmXfcvcgtB",
+            },
+            software: { version: "v25.3", date: "2026-10-15T07:10:29Z" },
+            lbToggle: false,
+            lbToggleEma: 1467614457,
+            validations: 6944,
+            aiToggleEma: 0,
+            doublePreendorsing: [],
+        },
+        {
+            cycle: 1417,
+            level: 15873171,
+            hash: "BM84xXaBFioQ6PDSEK3TeWDRGs3Nm1CC84fQyxiQ7vUWqtmX9RS",
+            timestamp: "2026-11-18T20:36:55Z",
+            proto: 25,
+            payloadRound: 0,
+            blockRound: 0,
+            attestationPower: 6944,
+            attestationCommittee: 7000,
+            deposit: 0,
+            rewardDelegated: 54,
+            rewardStakedOwn: 366110,
+            rewardStakedEdge: 985534,
+            rewardStakedShared: 0,
+            bonusDelegated: 53,
+            bonusStakedOwn: 357087,
+            bonusStakedEdge: 961243,
+            bonusStakedShared: 0,
+            fees: 38755,
+            nonceRevealed: false,
+            proposer: { address: "tz1WCHXtELv4C7NvUTf59bEgmRSBRkiVGLeJ" },
+            producer: { address: "tz1WCHXtELv4C7NvUTf59bEgmRSBRkiVGLeJ" },
+            software: { version: "v25.3", date: "2026-10-15T07:10:29Z" },
+            lbToggle: false,
+            lbToggleEma: 1467348132,
+            validations: 6944,
+            aiToggleEma: 0,
+            doublePreendorsing: [],
+        },
+    ];
+    let fetches = 0;
+    const limits = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.tzkt.io");
+        assert.equal(url.pathname, "/v1/blocks");
+        limits.push(url.searchParams.get("limit"));
+        assert.equal(url.searchParams.get("sort.desc"), "level");
+        assert.equal(init?.headers?.Authorization, undefined);
+        assert.equal(init?.headers?.Cookie, undefined);
+        assert.match(init?.headers?.["User-Agent"], /hello@pollinations\.ai/);
+        return Response.json(blocks);
+    });
+
+    const c = await client(t);
+    const result = await call(c, "tzkt_blocks", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(limits, ["2"]);
+    assert.deepEqual(value(result), {
+        total: 2,
+        blocks: [
+            {
+                level: 15873172,
+                hash: "BMU2geca8h71uCKmVPKgPcfQM1cQBBDrTgsNppARoZwi8ur4bP5",
+                timestamp: "2026-11-18T20:37:01Z",
+                proto: 25,
+                cycle: 1417,
+                attestationPower: 6944,
+                proposer: {
+                    alias: "Spice",
+                    address: "tz1dRKU4FQ9QRRQPdaH4zCR6gmCmXfcvcgtB",
+                },
+                fees: 26126,
+                validations: 6944,
+            },
+            {
+                level: 15873171,
+                hash: "BM84xXaBFioQ6PDSEK3TeWDRGs3Nm1CC84fQyxiQ7vUWqtmX9RS",
+                timestamp: "2026-11-18T20:36:55Z",
+                proto: 25,
+                cycle: 1417,
+                attestationPower: 6944,
+                proposer: {
+                    alias: null,
+                    address: "tz1WCHXtELv4C7NvUTf59bEgmRSBRkiVGLeJ",
+                },
+                fees: 38755,
+                validations: 6944,
+            },
+        ],
+    });
+
+    const empty = await call(c, "tzkt_blocks", { limit: 1 });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+});
+
+test("TzKT falls back to 5 for an out-of-range limit and rejects a non-array response", async () => {
+    const { tzktTools } = await import("./tools/tzkt.js");
+    const run = tzktTools[0][3];
+    let seenUrl = "";
+    let mode = "empty";
+    mock.method(globalThis, "fetch", async (input) => {
+        seenUrl = String(input);
+        return mode === "empty"
+            ? Response.json([])
+            : Response.json({ level: 1 });
+    });
+    assert.deepEqual(await run({ limit: 99 }), { total: 0, blocks: [] });
+    assert.match(seenUrl, /limit=5/);
+
+    mode = "object";
+    await assert.rejects(run({ limit: 2 }), /unexpected response/);
 });

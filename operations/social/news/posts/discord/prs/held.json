@@ -20,26 +20,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
-    },
-    "20071": {
-      "merge_sha": "4c38e0a6bc3035419200ddd314cc5d97363ab60f",
-      "merged_at": "2026-11-18T13:32:33Z",
-      "required": []
-    },
-    "20080": {
-      "merge_sha": "477b6abb395c4653a3c14b5fcb3f9b71cdb0f1b6",
-      "merged_at": "2026-11-18T14:27:13Z",
-      "required": []
-    },
-    "20095": {
-      "merge_sha": "02321c71837998e69c237f5737adbc211b8ad49b",
-      "merged_at": "2026-11-18T15:30:46Z",
-      "required": []
-    },
-    "20097": {
-      "merge_sha": "0a8d7f1fcbbfc3b312633d76c6234e37c19cbe94",
-      "merged_at": "2026-11-18T15:19:19Z",
-      "required": []
     }
   },
   "production": "59953a2f9f5f6cc8ccc57b61fe42668cc05ecc08",

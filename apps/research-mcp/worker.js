@@ -1,6 +1,7 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { fetchJson } from "./fetch.js";
+import { affirmationTools } from "./tools/affirmations.js";
 import { arxivTools } from "./tools/arxiv.js";
 import { crossRefTools } from "./tools/crossref.js";
 import { europePmcTools } from "./tools/europe-pmc.js";
@@ -26,6 +27,7 @@ const handler = () =>
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,
+                ...affirmationTools,
             ]) {
                 server.registerTool(
                     name,

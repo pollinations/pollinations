@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "affirmation",
             ].sort(),
         );
     });
@@ -644,4 +645,45 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Affirmation returns projected sentences, one fetch each, and falls back to one", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.affirmations.dev");
+        assert.equal(target.pathname, "/");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        fetches += 1;
+        return Response.json({
+            affirmation:
+                fetches === 1
+                    ? "All you need is the plan, the roadmap, and the courage to press on to your destination"
+                    : "People with goals succeed because they know where they’re going",
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "affirmation", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 2);
+    assert.deepEqual(value(result), {
+        count: 2,
+        affirmations: [
+            "All you need is the plan, the roadmap, and the courage to press on to your destination",
+            "People with goals succeed because they know where they’re going",
+        ],
+    });
+
+    // An out-of-range limit is rejected by the schema before any fetch.
+    // (The handler's own fallback to 1 is exercised in the live smoke.)
+    const rejected = await call(c, "affirmation", { limit: 99 });
+    assert.equal(rejected.isError, true);
+    assert.equal(fetches, 2);
 });

@@ -342,6 +342,132 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("TVMaze searches shows, strips HTML summaries and fetches show detail", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        requests.push(url.pathname);
+        assert.equal(url.hostname, "api.tvmaze.com");
+        if (url.pathname === "/search/shows") {
+            if (url.searchParams.get("q") === "zzzzqqqxxyy")
+                return Response.json([]);
+            return Response.json([
+                {
+                    score: 0.8913748,
+                    show: {
+                        id: 139,
+                        url: "https://www.tvmaze.com/shows/139/girls",
+                        name: "Girls",
+                        type: "Scripted",
+                        language: "English",
+                        genres: ["Drama", "Romance"],
+                        status: "Running",
+                        runtime: 30,
+                        premiered: "2012-04-15",
+                        summary:
+                            "<p>This Emmy winning series is a comic look at the assorted humiliations and rare triumphs of a group of girls in their 20s.</p>",
+                    },
+                },
+                {
+                    score: 0.830883,
+                    show: {
+                        id: 41734,
+                        url: "https://www.tvmaze.com/shows/41734/girls",
+                        name: "GIRLS",
+                        type: "Scripted",
+                        language: "Mongolian",
+                        genres: ["Comedy"],
+                        status: "Ended",
+                        runtime: 41,
+                        premiered: "2018-06-15",
+                        summary: null,
+                    },
+                },
+                {
+                    score: 0.684268,
+                    show: {
+                        id: 525,
+                        url: "https://www.tvmaze.com/shows/525/gilmore-girls",
+                        name: "Gilmore Girls",
+                        type: "Scripted",
+                        language: "English",
+                        genres: ["Drama", "Comedy", "Romance"],
+                        status: "Ended",
+                        runtime: 60,
+                        premiered: "2000-10-05",
+                        summary:
+                            "<p><b>Gilmore Girls</b> is a drama centering around the relationship between a thirtysomething single mother and her teen daughter living in Stars Hollow, Connecticut.</p>",
+                    },
+                },
+            ]);
+        }
+        if (url.pathname === "/shows/139")
+            return Response.json({
+                id: 139,
+                url: "https://www.tvmaze.com/shows/139/girls",
+                name: "Girls",
+                type: "Scripted",
+                language: "English",
+                genres: ["Drama", "Romance"],
+                status: "Running",
+                runtime: 30,
+                premiered: "2012-04-15",
+                summary:
+                    "<p>This Emmy winning series is a comic look at the assorted humiliations and rare triumphs of a group of girls in their 20s.</p>",
+            });
+        if (url.pathname === "/shows/999999999")
+            return new Response(
+                '{"name":"Not Found","message":"","code":0,"status":404}',
+                { status: 404 },
+            );
+        throw new Error(`unexpected TVMaze path ${url.pathname}`);
+    });
+    const c = await client(t);
+    let result = await call(c, "tvmaze_search", { query: "girls", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 3);
+    assert.equal(value(result).shows.length, 2);
+    const [first, second] = value(result).shows;
+    assert.equal(first.id, 139);
+    assert.equal(first.name, "Girls");
+    assert.equal(first.score, 0.8913748);
+    assert.equal(
+        first.summary,
+        "This Emmy winning series is a comic look at the assorted humiliations and rare triumphs of a group of girls in their 20s.",
+    );
+    assert.doesNotMatch(first.summary, /</);
+    assert.equal(second.summary, null);
+    result = await call(c, "tvmaze_search", { query: "girls" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).shows.length, 3);
+    assert.equal(
+        value(result).shows[2].summary,
+        "Gilmore Girls is a drama centering around the relationship between a thirtysomething single mother and her teen daughter living in Stars Hollow, Connecticut.",
+    );
+    result = await call(c, "tvmaze_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        shows: [],
+    });
+    result = await call(c, "tvmaze_show", { id: 139 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).name, "Girls");
+    assert.deepEqual(value(result).genres, ["Drama", "Romance"]);
+    assert.equal(value(result).status, "Running");
+    assert.equal(value(result).runtime, 30);
+    assert.equal(value(result).premiered, "2012-04-15");
+    assert.equal(value(result).url, "https://www.tvmaze.com/shows/139/girls");
+    result = await call(c, "tvmaze_show", { id: 999999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /404/);
+    const fetched = requests.length;
+    result = await call(c, "tvmaze_show", { id: 0 });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, fetched);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +490,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "tvmaze_search",
+                "tvmaze_show",
             ].sort(),
         );
     });

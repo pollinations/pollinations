@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "fema_disaster",
             ].sort(),
         );
     });
@@ -644,4 +645,108 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("FEMA disaster declarations filter by state and incident type", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, options) => {
+        fetches += 1;
+        const request = new Request(input, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.fema.gov");
+        assert.equal(
+            target.pathname,
+            "/api/open/v2/DisasterDeclarationsSummaries",
+        );
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const filter = target.searchParams.get("$filter");
+        if (filter === "state eq 'XX'") {
+            return Response.json({
+                metadata: { count: 0 },
+                DisasterDeclarationsSummaries: [],
+            });
+        }
+        assert.match(filter, /^state eq 'CA'/);
+        assert.equal(target.searchParams.get("$top"), "2");
+        assert.equal(
+            target.searchParams.get("$select"),
+            "disasterNumber,declarationTitle,incidentType,state,declarationDate,incidentBeginDate",
+        );
+        return Response.json({
+            metadata: { count: 0 },
+            DisasterDeclarationsSummaries: [
+                {
+                    disasterNumber: 5679,
+                    declarationTitle: "NORTE FIRE",
+                    incidentType: "Fire",
+                    state: "CA",
+                    declarationDate: "2026-10-16T00:00:00.000Z",
+                    incidentBeginDate: "2026-10-16T00:00:00.000Z",
+                },
+                {
+                    disasterNumber: 5662,
+                    declarationTitle: "GANN FIRE",
+                    incidentType: "Fire",
+                    state: "CA",
+                    declarationDate: "2026-08-04T00:00:00.000Z",
+                    incidentBeginDate: "2026-08-04T00:00:00.000Z",
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "fema_disaster", {
+        state: "ca",
+        incidentType: "Fire",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        state: "CA",
+        incident_type: "Fire",
+        total: 2,
+        disasters: [
+            {
+                disaster_number: 5679,
+                state: "CA",
+                declaration_title: "NORTE FIRE",
+                incident_type: "Fire",
+                declaration_date: "2026-10-16",
+                incident_begin_date: "2026-10-16",
+            },
+            {
+                disaster_number: 5662,
+                state: "CA",
+                declaration_title: "GANN FIRE",
+                incident_type: "Fire",
+                declaration_date: "2026-08-04",
+                incident_begin_date: "2026-08-04",
+            },
+        ],
+    });
+
+    const empty = await call(c, "fema_disaster", { state: "XX" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        state: "XX",
+        incident_type: null,
+        total: 0,
+        disasters: [],
+    });
+
+    const before = fetches;
+    const bad = await call(c, "fema_disaster", { state: "California" });
+    assert.equal(bad.isError, true);
+    assert.equal(fetches, before);
+    const tooMany = await call(c, "fema_disaster", {
+        state: "CA",
+        limit: 99,
+    });
+    assert.equal(tooMany.isError, true);
+    assert.equal(fetches, before);
 });

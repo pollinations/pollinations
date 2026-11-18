@@ -85,6 +85,7 @@ for (const modern of [false, true])
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
+                "jetbrains_plugins",
                 "osv_query",
                 "osv_vulnerability",
                 "package_downloads",
@@ -424,6 +425,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["jetbrains_plugins", { query: "python", limit: 26 }],
+        ["jetbrains_plugins", { query: "   " }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(
@@ -770,4 +773,146 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+test("JetBrains Marketplace search projects plugins, slices to limit and rejects bad input", async (t) => {
+    const urls = [];
+    const python = {
+        total: 689,
+        correctedQuery: "",
+        plugins: [
+            {
+                id: 631,
+                xmlId: "Pythonid",
+                name: "Python",
+                preview:
+                    "The Python plug-in provides smart editing for Python scripts. The feature set of the plugin corresponds to PyCharm IDE with a Pro subscription. PyCharm blog Discussion...",
+                downloads: 13030242,
+                pricingModel: "FREE",
+                rating: 3.37,
+                tags: ["Programming Language"],
+                vendor: { name: "JetBrains s.r.o.", isVerified: true },
+                link: "/plugin/631-python",
+            },
+            {
+                id: 7322,
+                xmlId: "PythonCore",
+                name: "Python Community Edition",
+                preview:
+                    "The Python plug-in provides smart editing for Python scripts. The feature set of the plugin corresponds to PyCharm IDE Community Edition. PyCharm blog Discussion forum...",
+                downloads: 14150807,
+                pricingModel: "FREE",
+                rating: 3.59,
+                tags: ["Programming Language"],
+                vendor: { name: "JetBrains s.r.o.", isVerified: true },
+                link: "/plugin/7322-python-community-edition",
+            },
+            {
+                id: 19059,
+                xmlId: "fleet.python",
+                name: "Python",
+                preview:
+                    "Provides support for the Python language. The plugin enables the following features in Smart Mode: - Code completion - Error detection - Documentation - Navigation to...",
+                downloads: 29698,
+                pricingModel: "FREE",
+                tags: ["bundled"],
+                vendor: { name: "JetBrains s.r.o.", isVerified: true },
+                link: "/plugin/19059-python",
+            },
+            {
+                id: 99999,
+                xmlId: "long.preview",
+                name: "Long Preview",
+                preview: "Long ".repeat(120),
+                downloads: 1,
+                pricingModel: "FREE",
+                rating: 5,
+                tags: ["A", "B", "C", "D", "E", "F"],
+                vendor: { name: "Nobody", isVerified: false },
+                link: "/plugin/99999-long-preview",
+            },
+        ],
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(String(url));
+        assert.equal(new URL(url).hostname, "plugins.jetbrains.com");
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        const search = new URL(url).searchParams.get("search");
+        if (search === "nothing-here")
+            return Response.json({ total: 0, plugins: [] });
+        if (search === "bad-shape") return Response.json({ nope: true });
+        return Response.json(python);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "jetbrains_plugins", {
+            query: "python",
+            limit: 2,
+        }),
+        {
+            total: 689,
+            plugins: [
+                {
+                    id: 631,
+                    xmlId: "Pythonid",
+                    name: "Python",
+                    description:
+                        "The Python plug-in provides smart editing for Python scripts. The feature set of the plugin corresponds to PyCharm IDE with a Pro subscription. PyCharm blog Discussion...",
+                    vendor: "JetBrains s.r.o.",
+                    vendorVerified: true,
+                    rating: 3.37,
+                    downloads: 13030242,
+                    pricingModel: "FREE",
+                    tags: ["Programming Language"],
+                    url: "https://plugins.jetbrains.com/plugin/631-python",
+                },
+                {
+                    id: 7322,
+                    xmlId: "PythonCore",
+                    name: "Python Community Edition",
+                    description:
+                        "The Python plug-in provides smart editing for Python scripts. The feature set of the plugin corresponds to PyCharm IDE Community Edition. PyCharm blog Discussion forum...",
+                    vendor: "JetBrains s.r.o.",
+                    vendorVerified: true,
+                    rating: 3.59,
+                    downloads: 14150807,
+                    pricingModel: "FREE",
+                    tags: ["Programming Language"],
+                    url: "https://plugins.jetbrains.com/plugin/7322-python-community-edition",
+                },
+            ],
+        },
+    );
+    const all = await call(client, "jetbrains_plugins", {
+        query: "python",
+    });
+    assert.equal(all.total, 689);
+    assert.equal(all.plugins.length, 4);
+    assert.equal(all.plugins[2].rating, null);
+    assert.equal(all.plugins[2].name, "Python");
+    assert.equal(all.plugins[3].description.length, 501);
+    assert.ok(all.plugins[3].description.endsWith("…"));
+    assert.deepEqual(all.plugins[3].tags, ["A", "B", "C", "D", "E"]);
+    assert.deepEqual(
+        await call(client, "jetbrains_plugins", {
+            query: "nothing-here",
+        }),
+        { total: 0, plugins: [] },
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "jetbrains_plugins",
+                arguments: { query: "bad-shape" },
+            })
+        ).isError,
+        true,
+    );
+    assert.deepEqual(urls, [
+        "https://plugins.jetbrains.com/api/searchPlugins?search=python",
+        "https://plugins.jetbrains.com/api/searchPlugins?search=python",
+        "https://plugins.jetbrains.com/api/searchPlugins?search=nothing-here",
+        "https://plugins.jetbrains.com/api/searchPlugins?search=bad-shape",
+    ]);
 });

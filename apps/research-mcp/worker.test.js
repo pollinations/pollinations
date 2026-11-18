@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "asteroid_lookup",
             ].sort(),
         );
     });
@@ -644,4 +645,96 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("asteroid_lookup projects JPL orbit elements and names missing bodies", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "ssd-api.jpl.nasa.gov");
+        assert.equal(
+            init.headers["User-Agent"].includes("hello@pollinations.ai"),
+            true,
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        if (url.searchParams.get("sstr") === "notarealbody12345")
+            return Response.json({
+                code: "200",
+                message: "specified object was not found",
+                moreInfo: "https://ssd-api.jpl.nasa.gov/doc/sbdb.html",
+            });
+        // Trimmed real fixture for 433 Eros (live: 1,970 B, 0.48 s).
+        return Response.json({
+            signature: {
+                version: "1.3",
+                source: "NASA/JPL Small-Body Database (SBDB) API",
+            },
+            object: {
+                des: "433",
+                fullname: "433 Eros (A898 PA)",
+                kind: "an",
+                neo: true,
+                pha: false,
+                orbit_class: { code: "AMO", name: "Amor" },
+            },
+            orbit: {
+                orbit_id: "659",
+                condition_code: "0",
+                moid: "0.149",
+                n_obs_used: 9130,
+                first_obs: "1893-10-29",
+                last_obs: "2021-05-13",
+                elements: [
+                    { name: "e", value: "0.223", title: "eccentricity" },
+                    {
+                        name: "a",
+                        value: "1.46",
+                        units: "au",
+                        title: "semi-major axis",
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "asteroid_lookup", { designation: "433" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].searchParams.get("sstr"), "433");
+    assert.deepEqual(value(result), {
+        designation: "433",
+        full_name: "433 Eros (A898 PA)",
+        orbit_class: "Amor",
+        orbit_class_code: "AMO",
+        near_earth_object: true,
+        potentially_hazardous: false,
+        eccentricity: 0.223,
+        semi_major_axis_au: 1.46,
+        moid_au: 0.149,
+        condition_code: 0,
+        observations_used: 9130,
+        first_observation: "1893-10-29",
+        last_observation: "2021-05-13",
+    });
+
+    const provisional = await call(c, "asteroid_lookup", {
+        designation: "2023 FW13",
+    });
+    assert.notEqual(provisional.isError, true, JSON.stringify(provisional));
+    assert.equal(requests[1].searchParams.get("sstr"), "2023 FW13");
+
+    const missing = await call(c, "asteroid_lookup", {
+        designation: "notarealbody12345",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(
+        missing.content[0].text,
+        /No small body found for notarealbody12345/,
+    );
+
+    const callsBefore = requests.length;
+    const blank = await call(c, "asteroid_lookup", { designation: "   " });
+    assert.equal(blank.isError, true);
+    assert.equal(requests.length, callsBefore);
 });

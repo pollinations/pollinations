@@ -15,7 +15,7 @@
  * ```
  */
 
-import { DEFAULT_BASE_URL } from "./client.js";
+import { DEFAULT_BASE_URL, getEnvVar } from "./client.js";
 import { PollinationsError } from "./types.js";
 
 /** The realtime model the gateway uses when none is given. */
@@ -30,9 +30,10 @@ export interface RealtimeEvent {
 export interface RealtimeOptions {
     /**
      * Secret key (`sk_`). The key travels in the query string, because a
-     * browser cannot set headers on a WebSocket handshake.
+     * browser cannot set headers on a WebSocket handshake. Defaults to
+     * `POLLINATIONS_API_KEY` from the environment.
      */
-    apiKey: string;
+    apiKey?: string;
     /** Realtime model. Defaults to "openai/gpt-realtime-2.1". */
     model?: string;
     /** API base URL. Defaults to https://gen.pollinations.ai. */
@@ -62,7 +63,7 @@ const CONNECTING = 0;
 const OPEN = 1;
 /** The session URL, with the key in the query string for browser clients. */
 export function realtimeUrl(options: RealtimeOptions): string {
-    const { apiKey } = options;
+    const apiKey = options.apiKey ?? getEnvVar("POLLINATIONS_API_KEY");
     if (!apiKey) {
         throw new PollinationsError(
             "API key is required. Get one for free at https://enter.pollinations.ai/keys",

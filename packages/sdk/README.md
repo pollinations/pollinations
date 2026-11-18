@@ -725,7 +725,8 @@ const { status, session, error, connect, close } = useRealtime({
 ```
 
 A browser cannot set headers on a WebSocket handshake, so the key travels in
-the query string: use a secret key (`sk_`), not an App Key (`pk_`).
+the query string: use a secret key (`sk_`), not an App Key (`pk_`). Without an
+`apiKey`, the key comes from `POLLINATIONS_API_KEY` in the environment.
 `examples/realtime-voice.html` streams the microphone and plays the reply.
 
 Live transcription runs over the same helper with a transcription model:

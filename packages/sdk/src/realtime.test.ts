@@ -70,6 +70,17 @@ describe("realtimeUrl", () => {
         expect(() => realtimeUrl({ apiKey: "pk_app" })).toThrow(/sk_/);
         expect(() => realtimeUrl({ apiKey: "sess_token" })).toThrow(/sk_/);
     });
+
+    it("falls back to the key in the environment", () => {
+        process.env.POLLINATIONS_API_KEY = "sk_env";
+        try {
+            expect(new URL(realtimeUrl({})).searchParams.get("key")).toBe(
+                "sk_env",
+            );
+        } finally {
+            delete process.env.POLLINATIONS_API_KEY;
+        }
+    });
 });
 
 describe("connectRealtime", () => {

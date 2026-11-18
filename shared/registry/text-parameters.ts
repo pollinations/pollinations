@@ -382,6 +382,26 @@ export const CHAT_PARAMETERS = {
     ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
+    // Vercel AI Gateway Hy4 Flash parameters (2026-11-16).
+    vercelHy4Flash: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
+    // Vercel AI Gateway Qwen 4 Max parameters (2026-11-16).
+    vercelQwen4Max: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     vercelMistralLarge4: [
         ...TOOL_CHAT,
         "temperature",

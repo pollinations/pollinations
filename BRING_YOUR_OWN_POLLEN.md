@@ -1,6 +1,6 @@
 # Pollinations Pay
 
-Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -45,7 +45,7 @@ Add the page URL, without query or fragment, as a Redirect URI on your App Key. 
 | Attribute | What it does |
 |-----------|-------------|
 | `app-key` | Your App Key (required) |
-| `budget` | Pollen cap, as `budget` below |
+| `budget` | Spending cap in dollars, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage` |
@@ -71,12 +71,12 @@ The key stays in `sessionStorage`, so it lasts until the tab closes.
 Developer earnings are opt-in per App Key. When enabled, users pay 25% over base rates. The markup credits to your balance.
 
 ```text
-Base request cost: 1.00 pollen
-User pays:         1.25 pollen
-You receive:       0.25 pollen
+Base request cost: $1.00
+User pays:         $1.25
+You receive:       $0.25
 ```
 
-Credits land in the same balance type the user paid from: Quest Pollen when the request used Quest Pollen, Paid Pollen when it used Paid Pollen.
+Credits land in the same balance type the user paid from: the Quest balance when the request used the Quest balance, the paid balance when it used the paid balance.
 
 Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
@@ -87,7 +87,7 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
 
-New users who sign up through your app count as your referrals. You earn 2 Quest Pollen for each one who buys more than 2 Pollen. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
+New users who sign up through your app count as your referrals. You earn $2 in Quest balance for each one who tops up more than $2. This works whether or not earnings are enabled. Claim the reward from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
@@ -129,7 +129,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
 | `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
-| `budget` | Numeric Pollen cap. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
+| `budget` | Spending cap in dollars. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
@@ -224,7 +224,7 @@ window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 // Grab key from URL after redirect
 const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 
-// Use their pollen
+// Spend from their balance
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

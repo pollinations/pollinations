@@ -29,6 +29,7 @@ import {
 
 const QUEST_LABEL = "POLLEN-QUEST";
 const PR_REWARD = 5;
+const ISSUE_REPORT_REWARD = 2;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
 // date as REWARDS_START in operations/infrastructure/project-manager/project_manager.py.
 const REWARDS_START = "2026-11-05T00:00:00Z";
@@ -100,9 +101,11 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Earn ${PR_REWARD} Quest Pollen for each pull request merged into the main branch of the Pollinations [repository](https://github.com/${REPO}). A PR that closes a POLLEN-QUEST issue earns that quest's bounty instead, and a maintainer can set another amount with a reward label.`,
+    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A reward label on the PR, or on the quest it closes, sets another amount. [Connect GitHub](/account) so we can match your pull requests.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
+    // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
+    repeatable: true,
     rewardAmount: PR_REWARD,
     balanceBucket: "tier",
 };
@@ -110,10 +113,12 @@ const mergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Each issue of yours closed by a merged PR earns $${ISSUE_REPORT_REWARD}, even if you fix it yourself. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 2,
+    // Each fixed issue is its own reward (github:reported_issue:N).
+    repeatable: true,
+    rewardAmount: ISSUE_REPORT_REWARD,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -136,7 +141,7 @@ const beeCensusQuest: QuestDefinition = {
 const honeyCensusQuest: QuestDefinition = {
     id: "honey_census",
     title: "Take the Honey Census",
-    description: `For anyone who has bought more than ${MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    description: `For anyone who has topped up more than $${MIN_POLLEN_BOUGHT} in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 5,
@@ -538,12 +543,15 @@ async function cachedQuestIssues(
     return issues;
 }
 
+// The "[QUEST]" tag GitHub issue titles carry; the card doesn't repeat it.
+const QUEST_TAG = /\[(?:POLLEN-)?QUEST\]:?\s*/i;
+
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
         // Keep the issue-derived id stable; per-user reward keys add the
         // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
-        title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
+        title: issue.title.replace(QUEST_TAG, "").trim(),
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",

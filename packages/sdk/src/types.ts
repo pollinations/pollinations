@@ -525,6 +525,8 @@ export interface AudioGenerateOptions extends RequestOptions {
 export interface AudioSpeechOptions extends AudioGenerateOptions {
     /** Public audio URL for models that support reference audio */
     referenceAudio?: string;
+    /** Public video URL to add sound effects to (`sonilo/sonilo-1.1-sfx`) */
+    referenceVideo?: string;
 }
 
 export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
@@ -853,7 +855,7 @@ export interface AuthorizeOptions {
     authBaseUrl?: string;
     /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
-    /** Numeric pollen cap. Omit for the default cap. */
+    /** Spending cap in US dollars. Omit for the default cap. */
     budget?: number;
     /** Key lifetime in days (default: 30) */
     expiry?: number;
@@ -878,7 +880,7 @@ export interface AccountProfile {
 /** Account balance */
 export interface AccountBalance {
     /**
-     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * Balance remaining for this caller, in US dollars. Budgeted API keys see the key budget
      * here, not the account total.
      */
     balance: number;
@@ -1087,7 +1089,7 @@ export interface CreateKeyOptions {
     expiresIn?: number;
     /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
-    /** Pollen budget cap */
+    /** Budget cap in US dollars */
     pollenBudget?: number;
     /**
      * Account permissions to grant (e.g. `["profile", "usage"]`).
@@ -1096,7 +1098,7 @@ export interface CreateKeyOptions {
      * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
-    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    /** Never spend the paid balance; requests stop when the Quest balance runs out */
     questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
@@ -1276,6 +1278,8 @@ export interface ModelInfo {
     base_model?: string;
     input_modalities?: ModelInputModality[];
     output_modalities?: ModelOutputModality[];
+    /** Safety checks the gateway always applies to text input; callers cannot disable them. */
+    required_safety?: string[];
     video_capabilities?: VideoCapability[];
     resolutions?: string[];
     min_duration?: number;
@@ -1297,7 +1301,7 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    /** True when only the paid balance can be spent on this model; false when the Quest balance also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }

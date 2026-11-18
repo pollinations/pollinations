@@ -182,6 +182,7 @@ test("Azure models use the approved public-price multipliers", () => {
         ["openai/gpt-image-1.5", 1],
         ["openai/gpt-image-2", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
+        ["deepseek/deepseek-v4.1-flash-1017", 0.5],
     ]);
 
     for (const model of getModels()) {

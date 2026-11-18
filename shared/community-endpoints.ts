@@ -566,7 +566,7 @@ export function staticFallbackRejection(
         return "counts usage in units this model's prices do not cover";
     }
     if (!isCommunityFallbackBalanceAllowed(primary, target)) {
-        return "accepts only Paid Pollen, which this model does not require";
+        return "accepts only the paid balance, which this model does not require";
     }
     const quoted = communityPriceDefinition(
         primary.prices,

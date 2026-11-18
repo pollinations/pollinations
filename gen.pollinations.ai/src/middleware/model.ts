@@ -54,7 +54,9 @@ export type ModelVariables = {
 
 /** Required checks for every provider this request may reach. */
 export function getRequiredSafetyFeatures(
-    model: ModelVariables["model"] | undefined,
+    model:
+        | Pick<ModelVariables["model"], "definition" | "fallbackEntries">
+        | undefined,
 ): SafetyFeature[] {
     const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
     for (const fallback of model?.fallbackEntries ?? []) {
@@ -258,7 +260,9 @@ export function resolveModel(
         // Extract model from request
         let rawModel: string | null = null;
 
-        if (c.req.method === "GET") {
+        // Hono dispatches HEAD to the GET handler, so the query carries the
+        // model for both; reading GET alone made HEAD generate the default.
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";

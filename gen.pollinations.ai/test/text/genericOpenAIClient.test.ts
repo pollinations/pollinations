@@ -1528,3 +1528,45 @@ describe("Chat Completions stream usage", () => {
         ).toThrow(/omitted terminal usage/);
     });
 });
+
+it.each(["length", "stop", null, undefined])(
+    "preserves provider truncation while normalizing completed tool calls (%s)",
+    async (finishReason) => {
+        const toolCalls = [
+            {
+                id: "cut",
+                type: "function",
+                function: { name: "Write", arguments: '{"path":' },
+            },
+        ];
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "write" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    Response.json({
+                        choices: [
+                            {
+                                finish_reason: finishReason,
+                                message: {
+                                    role: "assistant",
+                                    content: null,
+                                    tool_calls: toolCalls,
+                                },
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 2,
+                            total_tokens: 3,
+                        },
+                    }),
+            },
+        );
+        expect(completion.choices?.[0]?.finish_reason).toBe(
+            finishReason === "length" ? "length" : "tool_calls",
+        );
+        expect(completion.choices?.[0]?.message?.tool_calls).toEqual(toolCalls);
+    },
+);

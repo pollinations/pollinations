@@ -104,7 +104,7 @@ Model prices and eligibility reach users through the weekly model post and Enter
 
 Examples — vague vs. specific:
 - ❌ "Added a new image model" → ✅ "Added Llama 4 Maverick via Fireworks, exposed at /v1/chat/completions"
-- ❌ "Updated pack pricing" → ✅ "Pollen pack bonuses removed — $10 now credits 10 Pollen (was 13), $100 credits 100 (was 160)"
+- ❌ "Updated pack pricing" → ✅ "Top-up bonuses removed: $10 now adds $10 (was $13), $100 adds $100 (was $160)"
 - ❌ "Improved checkout flow" → ✅ "Checkout metadata slimmed to packKey + packAmountUsd; webhook credits the amount paid"
 - ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for publishable keys"
 
@@ -121,7 +121,7 @@ A short (1-2 sentence) pixel art scene description for the PR image. Identify th
 
 The note is a factual record, not a social post. Record pricing increases, removals, limits and other changes plainly; never conceal them or invent a benefit. Use `publish_tier` to control social selection, without changing the facts in `summary`.
 
-Price, Pollen balance and Quest/Paid eligibility changes reach users through the weekly model post and Enter's model news; X, LinkedIn and Instagram skip them. Do not include internal financial motivations, speculation, or unconfirmed claims.
+Price, balance and Quest/paid eligibility changes reach users through the weekly model post and Enter's model news; X, LinkedIn and Instagram skip them. Do not include internal financial motivations, speculation, or unconfirmed claims.
 
 ## Hard Rules
 
@@ -130,7 +130,7 @@ These override your judgment:
 1. If labels include `deps` or `chore` AND `user_facing` is false → set `publish_tier` to `"discord_only"`
 2. If labels include `feature` → set `publish_tier` to at least `"daily"`
 3. If the PR only touches test files → set `publish_tier` to `"none"`
-4. If the PR only changes prices, Pollen balance or Quest/Paid eligibility → set `publish_tier` to `"none"`
+4. If the PR only changes prices, balances or Quest/paid eligibility → set `publish_tier` to `"none"`
 
 ## Output Format
 

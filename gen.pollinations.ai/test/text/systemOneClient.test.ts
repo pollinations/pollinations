@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { findModelByName } from "../../src/text/availableModels.js";
 import { requireChatStreamUsage } from "../../src/text/chat/usage.js";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
-import { callSystemOne } from "../../src/text/systemOneClient.js";
+import {
+    callSystemOne,
+    requestDecision,
+} from "../../src/text/systemOneClient.js";
 
 const modelConfig = {
     authKey: "test-key",
@@ -69,6 +72,30 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("rejects nested image parts before calling Microsoft Decision 1.1", async () => {
+        await expect(
+            requestDecision(
+                {
+                    state: {
+                        listing: [
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "data:image/png;base64,AA==",
+                                },
+                            },
+                        ],
+                    },
+                    questions: nativeQuestions,
+                },
+                { requestedModel: "microsoft/microsoft-decision-1.1:vercel" },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "Microsoft-Decision-1.1 supports text only.",
+        });
+    });
+
     it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
         const config = findModelByName("respan/span-01-lite")?.config();
         const fetchSpy = vi
@@ -399,6 +426,46 @@ describe("System One adapter", () => {
             },
             vi.fn(),
         );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("routes Liquid d1.2 through Vercel SystemOne", async () => {
+        const config = findModelByName("liquid/d1.2")?.config();
+        expect(config).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1.2",
+        });
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(
+                    "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+                );
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer test-key",
+                );
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "liquid/d1.2",
+                    providerOptions: { gateway: { only: ["liquid"] } },
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "liquid/d1.2",
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 0 },
+                });
+            });
+        const result = await callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig: { ...config, authKey: "test-key" } },
+        );
+        expect(result.usage).toMatchObject({
+            prompt_tokens: 95,
+            completion_tokens: 0,
+        });
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 

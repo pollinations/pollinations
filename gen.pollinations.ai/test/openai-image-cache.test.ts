@@ -36,6 +36,29 @@ const testLog = {
     error() {},
 } as unknown as Logger;
 
+function generationIdentityApp() {
+    return new Hono<Env>()
+        .use("*", async (c, next) => {
+            c.set("model", {
+                requested: "flux",
+                resolved: "flux",
+                definition: {} as Env["Variables"]["model"]["definition"],
+            });
+            await next();
+        })
+        .post(
+            "/v1/images/generations",
+            validator("json", CreateImageRequestSchema),
+            prepareOpenAIImageGeneration,
+            (c) =>
+                c.json({
+                    body: c.var.generationRequestBody,
+                    identity: c.var.generationCacheBody,
+                    input: c.req.valid("json" as never),
+                }),
+        );
+}
+
 describe("OpenAI image cache", () => {
     it("preserves provider-only billing when wrapping a fallback image in JSON", async () => {
         const model = "openai/gpt-image-2.6-flare";
@@ -205,6 +228,61 @@ describe("OpenAI image cache", () => {
             width: 1024,
             height: 768,
         });
+    });
+
+    it("keeps a seed-less generation identity stable and out of the cache body", async () => {
+        const app = generationIdentityApp();
+        const results: {
+            body: string;
+            identity: string;
+            input: Record<string, unknown>;
+        }[] = [];
+        for (let i = 0; i < 2; i++) {
+            const response = await app.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/images/generations",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            prompt: "a sunflower",
+                            response_format: "url",
+                        }),
+                    },
+                ),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(200);
+            results.push(await response.json());
+        }
+        // The same seed-less request must join the first generation instead of
+        // hashing a fresh random seed into every cache identity.
+        expect(results[0].identity).toBe(results[1].identity);
+        expect(JSON.parse(results[0].body)).not.toHaveProperty("seed");
+        expect(JSON.parse(results[0].identity)).not.toHaveProperty("seed");
+        expect(results[0].input).not.toHaveProperty("seed");
+    });
+
+    it("keeps an explicit seed in the generation identity", async () => {
+        const response = await generationIdentityApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "a sunflower",
+                    response_format: "url",
+                    seed: 123,
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(response.status).toBe(200);
+        const result = await response.json<{
+            body: string;
+            identity: string;
+        }>();
+        expect(JSON.parse(result.body).seed).toBe(123);
+        expect(JSON.parse(result.identity).seed).toBe(123);
     });
 
     it.each(["json", "multipart"])(

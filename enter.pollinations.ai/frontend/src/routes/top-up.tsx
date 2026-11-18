@@ -125,7 +125,7 @@ function TopUpPage() {
                 description={
                     search.session_id
                         ? undefined
-                        : "Your Pollen will appear when Stripe confirms the payment."
+                        : "Your top-up will appear when Stripe confirms the payment."
                 }
                 balance={wallet}
                 topUpHref={null}

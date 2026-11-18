@@ -32,8 +32,10 @@ const TRIGGER_BASE =
 const ROW_BASE =
     "polli-control polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
 
+// Selection shows by fill, never a border: an empty box is a quiet tint, a
+// ticked box on its honey row a darker tint with the tick.
 const CHECK_BASE =
-    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-border polli:text-xs";
+    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:bg-theme-text-strong/10 polli:text-xs";
 
 export const MultiSelect: FC<MultiSelectProps> = ({
     options,
@@ -100,15 +102,15 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
-                            "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
+                            "polli:cursor-not-allowed polli:bg-theme-fill polli:text-theme-on-fill polli:opacity-50",
                         )}
                     >
-                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
+                        <span className="polli:flex-1 polli:truncate polli:text-left">
                             {displayText}
                         </span>
                         <ChevronIcon
                             expanded={false}
-                            className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
+                            className="polli:h-3 polli:w-3"
                         />
                     </button>
                 </Tooltip>
@@ -135,28 +137,16 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
                             open
-                                ? "polli:bg-theme-bg-hover"
-                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
+                                ? "polli:bg-theme-fill-hover polli:text-theme-on-fill"
+                                : "polli:bg-theme-fill polli:text-theme-on-fill polli:hover:bg-theme-fill-hover",
                         )}
                     >
-                        <span
-                            className={cn(
-                                "polli:flex-1 polli:truncate polli:text-left",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-base",
-                            )}
-                        >
+                        <span className="polli:flex-1 polli:truncate polli:text-left">
                             {displayText}
                         </span>
                         <ChevronIcon
                             expanded={open}
-                            className={cn(
-                                "polli:h-3 polli:w-3 polli:transition-transform",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-soft",
-                            )}
+                            className="polli:h-3 polli:w-3 polli:transition-transform"
                         />
                     </button>
                 )}
@@ -169,8 +159,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             ROW_BASE,
                             isAllSelected
-                                ? "polli:bg-theme-bg-active polli:font-medium polli:text-theme-text-strong"
-                                : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
+                                ? "polli:bg-theme-fill polli:font-medium polli:text-theme-on-fill"
+                                : "polli:text-theme-text-base polli:hover:bg-theme-fill-wash",
                         )}
                     >
                         <span
@@ -178,7 +168,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
-                                    "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                    "polli:bg-theme-on-fill/15 polli:text-theme-on-fill",
                             )}
                         >
                             {isAllSelected && "✓"}
@@ -196,8 +186,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 className={cn(
                                     ROW_BASE,
                                     isChecked
-                                        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-                                        : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
+                                        ? "polli:bg-theme-fill polli:text-theme-on-fill"
+                                        : "polli:text-theme-text-base polli:hover:bg-theme-fill-wash",
                                 )}
                             >
                                 <span
@@ -205,7 +195,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
-                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                            "polli:bg-theme-on-fill/15 polli:text-theme-on-fill",
                                     )}
                                 >
                                     {isChecked && "✓"}

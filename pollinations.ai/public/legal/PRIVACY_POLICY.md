@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-11-01**
+**Last updated: 2026-11-17**
 
 ## 1) Scope & Roles
 
@@ -11,9 +11,9 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 ## 2) Data We Process
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs (the GitHub or Google account you sign in with).
-* **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
-* **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
+* **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
+* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, top-ups, Quest balance, paid balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
+* **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/credit usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
 * **Free API Classic usage (no account):** timestamps, endpoints, request status, IP address and country, and the referring site or app name a request carries. We use the IP address to apply the free limit and prevent abuse. Usage records keep a keyed hash and the network prefix of the IP address instead of the full address; the hash counts distinct callers.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
@@ -30,7 +30,7 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. We also email you about your own account through Cloudflare: when your paid Pollen balance is running low (once per pack you buy) and when we switch auto top-up off because your saved payment details can't be used. These emails contain no tracking pixels, and each has an unsubscribe link; once you use it we send you no more emails, including these balance warnings. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We send no marketing email.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. We also email you about your own account through Cloudflare: when your paid balance is running low (once per top-up you buy) and when we switch auto top-up off because your saved payment details can't be used. These emails contain no tracking pixels, and each has an unsubscribe link; once you use it we send you no more emails, including these balance warnings. Purchase invoices for top-ups are sent by email through our payment provider (Stripe). We send no marketing email.
 
 ## 4) Authorized Apps
 
@@ -81,7 +81,7 @@ Community providers may process data in other countries. Before sending personal
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub or Google user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
-* **Sign-up checks:** when an account is created with a private email domain (not a public provider such as Gmail), we record that domain with the sign-up in our product analytics, kept as long as other product events, to detect bulk account creation. Domains associated with bulk sign-ups or disposable email may cause their accounts' Quest Pollen spending to be restricted, including existing accounts. Quests can still earn rewards, balances are preserved, and Paid Pollen remains usable. A first purchase or a team member's approval clears the restriction. Contact **hello@pollinations.ai** if you believe a restriction is a mistake. Domain detection and account restriction records are kept while Quest rewards are offered. Earlier in-app review requests are no longer processed by an AI model; their records, including previous approvals, follow that retention period.
+* **Sign-up checks:** when an account is created with a private email domain (not a public provider such as Gmail), we record that domain with the sign-up in our product analytics, kept as long as other product events, to detect bulk account creation. Domains associated with bulk sign-ups or disposable email may cause their accounts' Quest balance spending to be restricted, including existing accounts. Quests can still earn rewards, balances are preserved, and the paid balance remains usable. A first purchase or a team member's approval clears the restriction. Contact **hello@pollinations.ai** if you believe a restriction is a mistake. Domain detection and account restriction records are kept while Quest rewards are offered. Earlier in-app review requests are no longer processed by an AI model; their records, including previous approvals, follow that retention period.
 * **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Website and dashboard usage measurement (§7):** 24 months.

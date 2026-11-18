@@ -17,7 +17,7 @@ All errors return JSON with a consistent shape:
 |--------|---------|
 | `400` | Invalid parameters, malformed request, or an explicit output-token limit exhausted without an answer (`output_token_limit_exceeded`) |
 | `401` | Missing or invalid API key |
-| `402` | Insufficient pollen balance, key budget exhausted, or model needs paid Pollen (`INSUFFICIENT_BALANCE`, `KEY_BUDGET_EXHAUSTED`, `QUEST_POLLEN_ONLY`) |
+| `402` | Balance too low, key budget exhausted, or model needs the paid balance (`INSUFFICIENT_BALANCE`, `KEY_BUDGET_EXHAUSTED`, `QUEST_POLLEN_ONLY`) |
 | `403` | API key lacks required permission |
 | `404` | Unknown path or resource, such as a file or sandbox (an unknown model returns `400`) |
 | `422` | Content policy violation |

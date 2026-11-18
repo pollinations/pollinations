@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "scorecard",
             ].sort(),
         );
     });
@@ -644,4 +645,112 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OpenSSF Scorecard returns aggregate and per-check scores and maps a bare 404", async (t) => {
+    let count = 0;
+    const longReason =
+        "internal error: error during branchesHandler.setup: internal error: some github tokens can't read classic branch protection rules: https://github.com/ossf/scorecard-action/blob/main/docs/authentication/fine-grained-auth-token.md";
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.securityscorecards.dev");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.pathname.includes("pollinations/pollinations"))
+            return new Response("", { status: 404 });
+        assert.equal(
+            target.pathname,
+            "/projects/github.com/kubernetes/kubernetes",
+        );
+        return Response.json({
+            date: "2026-11-16",
+            repo: {
+                name: "github.com/kubernetes/kubernetes",
+                commit: "404606c6790a976f71eed197fa54450b5fcb6242",
+            },
+            score: 7.6,
+            checks: [
+                {
+                    name: "Code-Review",
+                    score: 10,
+                    reason: "all changesets reviewed",
+                },
+                {
+                    name: "Packaging",
+                    score: -1,
+                    reason: "packaging workflow not detected",
+                },
+                {
+                    name: "SAST",
+                    score: 0,
+                    reason: "SAST tool is not run on all commits -- score normalized to 0",
+                },
+                { name: "Branch-Protection", score: -1, reason: longReason },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "scorecard", {
+        repo: "kubernetes/kubernetes",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        repo: "github.com/kubernetes/kubernetes",
+        date: "2026-11-16",
+        commit: "404606c6790a976f71eed197fa54450b5fcb6242",
+        score: 7.6,
+        checks: [
+            {
+                name: "Code-Review",
+                score: 10,
+                reason: "all changesets reviewed",
+            },
+            {
+                name: "Packaging",
+                score: -1,
+                reason: "packaging workflow not detected",
+            },
+            {
+                name: "SAST",
+                score: 0,
+                reason: "SAST tool is not run on all commits -- score normalized to 0",
+            },
+            {
+                name: "Branch-Protection",
+                score: -1,
+                reason: longReason.slice(0, 200),
+            },
+        ],
+    });
+    assert.equal(value(result).checks[3].reason.length, 200);
+    assert.doesNotMatch(
+        value(result).checks[3].reason,
+        /fine-grained-auth-token/,
+    );
+
+    const urlForm = await call(c, "scorecard", {
+        repo: "https://github.com/kubernetes/kubernetes",
+    });
+    assert.notEqual(urlForm.isError, true, JSON.stringify(urlForm));
+    assert.equal(value(urlForm).score, 7.6);
+
+    const missing = await call(c, "scorecard", {
+        repo: "pollinations/pollinations",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(
+        missing.content[0].text,
+        /not in the OpenSSF Scorecard database/,
+    );
+
+    const before = count;
+    for (const bad of ["not-a-repo", " ", "owner/name/extra"]) {
+        const rejected = await call(c, "scorecard", { repo: bad });
+        assert.equal(rejected.isError, true);
+    }
+    assert.equal(count, before);
 });

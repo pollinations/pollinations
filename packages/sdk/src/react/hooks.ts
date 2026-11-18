@@ -12,6 +12,13 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionUpdate,
+    type RealtimeStatus,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +499,107 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export interface UseRealtimeOptions {
+    /** Realtime model. Defaults to `openai/gpt-realtime-2.1`. */
+    model?: string;
+    /** Session config sent as `session.update` once the socket opens. */
+    session?: RealtimeSessionUpdate;
+    /** Connect while true. Defaults to true. */
+    enabled?: boolean;
+    /** Overrides the key from `useAuth()`. */
+    apiKey?: string;
+    onEvent?: (event: RealtimeEvent) => void;
+    /** Recent events kept in `events`. Defaults to 100. */
+    maxEvents?: number;
+}
+
+export interface UseRealtimeValue {
+    status: RealtimeStatus;
+    error: Error | null;
+    events: RealtimeEvent[];
+    send: (event: RealtimeEvent) => void;
+    updateSession: (session: RealtimeSessionUpdate) => void;
+    close: () => void;
+}
+
+/** Live voice or transcription session over the realtime WebSocket. */
+export function useRealtime(
+    options: UseRealtimeOptions = {},
+): UseRealtimeValue {
+    const { apiKey } = useRequiredAuth();
+    const {
+        model,
+        session,
+        enabled = true,
+        apiKey: apiKeyOverride,
+        onEvent,
+        maxEvents = 100,
+    } = options;
+    const [status, setStatus] = useState<RealtimeStatus>("connecting");
+    const [error, setError] = useState<Error | null>(null);
+    const [events, setEvents] = useState<RealtimeEvent[]>([]);
+
+    const sessionRef = useRef<RealtimeSession | null>(null);
+    const onEventRef = useRef(onEvent);
+    const maxEventsRef = useRef(maxEvents);
+    onEventRef.current = onEvent;
+    maxEventsRef.current = maxEvents;
+
+    const key = apiKeyOverride ?? apiKey ?? null;
+    // A new object identity would reconnect on every render.
+    const sessionConfig = JSON.stringify(session ?? null);
+
+    useEffect(() => {
+        if (!enabled || !key) {
+            setStatus("closed");
+            return;
+        }
+
+        let live: RealtimeSession;
+        try {
+            live = connectRealtime({
+                apiKey: key,
+                model,
+                session: JSON.parse(sessionConfig) ?? undefined,
+                onEvent: (event) => {
+                    onEventRef.current?.(event);
+                    setEvents((previous) => {
+                        const next = [...previous, event];
+                        return next.length > maxEventsRef.current
+                            ? next.slice(-maxEventsRef.current)
+                            : next;
+                    });
+                },
+                onStatus: (next, nextError) => {
+                    setStatus(next);
+                    setError(nextError ?? null);
+                },
+            });
+        } catch (cause) {
+            setStatus("error");
+            setError(cause instanceof Error ? cause : new Error(String(cause)));
+            return;
+        }
+
+        sessionRef.current = live;
+        return () => {
+            live.close();
+            sessionRef.current = null;
+        };
+    }, [enabled, key, model, sessionConfig]);
+
+    const send = useCallback(
+        (event: RealtimeEvent) => sessionRef.current?.send(event),
+        [],
+    );
+    const updateSession = useCallback(
+        (update: RealtimeSessionUpdate) =>
+            sessionRef.current?.updateSession(update),
+        [],
+    );
+    const close = useCallback(() => sessionRef.current?.close(), []);
+
+    return { status, error, events, send, updateSession, close };
 }

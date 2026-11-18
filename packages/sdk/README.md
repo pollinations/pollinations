@@ -330,6 +330,37 @@ function Transcribe() {
 }
 ```
 
+### Realtime voice sessions
+
+`connectRealtime()` opens the OpenAI Realtime WebSocket and passes its events
+through, so a voice or transcription app needs no socket plumbing. Events sent
+before the socket opens are queued in order.
+
+```ts
+import { connectRealtime } from "@pollinations/sdk";
+
+const session = connectRealtime({
+    apiKey: "sk_...", // in a browser: a user-authorized key
+    model: "openai/gpt-realtime-2.1",
+    session: { instructions: "Answer in one short sentence." },
+    onEvent: (event) => console.log(event.type),
+});
+
+session.send({ type: "input_audio_buffer.append", audio: base64Pcm16 });
+```
+
+In React, `useRealtime()` connects while the component is mounted and exposes
+`status`, `events`, `send`, `updateSession` and `close`:
+
+```tsx
+const { status, events, send } = useRealtime({
+    session: { instructions: "You are a friendly tutor." },
+});
+```
+
+`examples/realtime-voice.html` is a small page that records the mic, sends
+PCM16 audio and plays the reply. Open it in a browser and paste a key.
+
 ### React chat transport (`useChat`)
 
 `usePollinationsChatTransport` returns a transport for the Vercel AI SDK

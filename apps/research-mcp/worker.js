@@ -5,6 +5,7 @@ import { arxivTools } from "./tools/arxiv.js";
 import { crossRefTools } from "./tools/crossref.js";
 import { europePmcTools } from "./tools/europe-pmc.js";
 import { rfcTools } from "./tools/rfc.js";
+import { steamTools } from "./tools/steam.js";
 import { wikidataTools } from "./tools/wikidata.js";
 import { wikipediaTools } from "./tools/wikipedia.js";
 import { wiktionaryTools } from "./tools/wiktionary.js";
@@ -26,6 +27,7 @@ const handler = () =>
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,
+                ...steamTools,
             ]) {
                 server.registerTool(
                     name,

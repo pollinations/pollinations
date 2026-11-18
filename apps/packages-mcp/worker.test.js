@@ -421,6 +421,7 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["package_lookup", { ecosystem: "wordpress", name: "Akismet" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -655,6 +656,135 @@ test("Go lookup uses @latest without a version and escapes capitals in path and 
         "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
         "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("WordPress plugin lookup projects fields, pins versions and rejects unknown slugs", async (t) => {
+    const fixture = {
+        name: "Akismet Anti-spam: Spam Protection",
+        slug: "akismet",
+        version: "5.7.2",
+        author: '<a href="https://profiles.wordpress.org/automattic/">Automattic</a>',
+        author_profile: "https://profiles.wordpress.org/automattic/",
+        homepage: "https://akismet.com/",
+        requires: "5.8",
+        tested: "7.1.4",
+        requires_php: "7.2",
+        rating: 94,
+        num_ratings: 1186,
+        ratings: { 5: 1034, 4: 67, 3: 16, 2: 12, 1: 57 },
+        active_installs: 5000000,
+        last_updated: "2026-08-18 11:42pm GMT",
+        added: "2005-10-20",
+        tags: {
+            "anti-spam": "anti-spam",
+            antispam: "antispam",
+            comments: "comments",
+            "contact-form": "contact form",
+            spam: "spam",
+        },
+        download_link:
+            "https://downloads.wordpress.org/plugin/akismet.5.7.2.zip",
+        sections: {
+            description:
+                "<p>The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.</p>\n<p>Akismet checks your comments and contact form submissions against our global database of spam to prevent your site from publishing malicious content. You can review the comment spam it catches on your blog&#8217;s &#8220;Comments&#8221; admin screen.</p>\n<p>Major features in Akismet include:</p>\n<ul>\n<li>Automatically checks all comments and filters out the ones that look like spam.</li>\n<li>Each comment has a status history, so you can easily see which comments were caught or cleared by Akismet.</li>",
+            installation: "<p>Install it from the plugin screen.</p>",
+            changelog: "<p>5.7.2 fixes a bug.</p>",
+        },
+        versions: {
+            "5.7": "https://downloads.wordpress.org/plugin/akismet.5.7.zip",
+            "5.7.1":
+                "https://downloads.wordpress.org/plugin/akismet.5.7.1.zip",
+            "5.7.2":
+                "https://downloads.wordpress.org/plugin/akismet.5.7.2.zip",
+            trunk: "https://downloads.wordpress.org/plugin/akismet.zip",
+        },
+        screenshots: [{ src: "https://example.com/shot.png" }],
+        banners: { low: "https://example.com/banner.png" },
+        contributors: { matt: { profile: "https://example.com/matt" } },
+        business_model: "commercial",
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        if (String(url).includes("thisplugindoesnotexist"))
+            return new Response('{"error":"Plugin not found."}', {
+                status: 404,
+            });
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "package_lookup", {
+        ecosystem: "wordpress",
+        name: "akismet",
+    });
+    assert.equal(data.name, "Akismet Anti-spam: Spam Protection");
+    assert.equal(data.version, "5.7.2");
+    assert.equal(data.author, "Automattic");
+    assert.equal(data.authorProfile, "https://profiles.wordpress.org/automattic/");
+    assert.equal(data.homepage, "https://akismet.com/");
+    assert.equal(data.requires, "5.8");
+    assert.equal(data.tested, "7.1.4");
+    assert.equal(data.rating, 94);
+    assert.equal(data.numRatings, 1186);
+    assert.equal(data.activeInstalls, 5000000);
+    assert.equal(data.lastUpdated, "2026-08-18 11:42pm GMT");
+    assert.deepEqual(data.tags, [
+        "anti-spam",
+        "antispam",
+        "comments",
+        "contact form",
+        "spam",
+    ]);
+    assert.equal(
+        data.downloadLink,
+        "https://downloads.wordpress.org/plugin/akismet.5.7.2.zip",
+    );
+    assert.deepEqual(data.versions, ["5.7", "5.7.1", "5.7.2"]);
+    assert.equal(data.registryUrl, "https://wordpress.org/plugins/akismet/");
+    assert.equal(data.sections, undefined);
+    assert.equal(data.screenshots, undefined);
+    assert.equal(data.banners, undefined);
+    assert.equal(data.contributors, undefined);
+    assert.match(data.description, /^The best anti-spam protection/);
+    assert.equal(data.description.length, 500);
+    assert.equal(data.description.includes("<"), false);
+
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "wordpress",
+        name: "akismet",
+        version: "5.7.1",
+    });
+    assert.equal(pinned.version, "5.7.1");
+    for (const version of ["9.9.9", "trunk"])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "package_lookup",
+                    arguments: {
+                        ecosystem: "wordpress",
+                        name: "akismet",
+                        version,
+                    },
+                })
+            ).isError,
+            true,
+        );
+    const missing = await client.callTool({
+        name: "package_lookup",
+        arguments: {
+            ecosystem: "wordpress",
+            name: "thisplugindoesnotexist",
+        },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /HTTP 404/);
+    assert.deepEqual(urls, [
+        "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=akismet",
+        "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=akismet",
+        "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=akismet",
+        "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=akismet",
+        "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=thisplugindoesnotexist",
     ]);
 });
 

@@ -73,6 +73,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "jwt_decode",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -949,4 +950,85 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("jwt_decode decodes header and payload and flags the result unverified", async (t) => {
+    const client = await clientFor(t);
+    // The jwt.io example token: HS256, sub 1234567890, iat 2018-01-18T01:30:22Z.
+    assert.deepEqual(
+        await call(client, "jwt_decode", {
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        }),
+        {
+            header: { alg: "HS256", typ: "JWT" },
+            payload: {
+                sub: "1234567890",
+                name: "John Doe",
+                iat: 1516239022,
+            },
+            verified: false,
+            note: "Decoding only — the signature was not verified.",
+            signature_present: true,
+            expires_at: null,
+            not_before_at: null,
+            issued_at: "2018-01-18T01:30:22.000Z",
+        },
+    );
+    // exp/nbf surface as ISO dates; an unsigned token has no signature part.
+    assert.deepEqual(
+        await call(client, "jwt_decode", {
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ4IiwiZXhwIjoxODkzNDU2MDAwLCJuYmYiOjE3MDQwNjcyMDB9.c2ln",
+        }),
+        {
+            header: { alg: "HS256", typ: "JWT" },
+            payload: { sub: "x", exp: 1893456000, nbf: 1704067200 },
+            verified: false,
+            note: "Decoding only — the signature was not verified.",
+            signature_present: true,
+            expires_at: "2030-01-01T00:00:00.000Z",
+            not_before_at: "2024-01-01T00:00:00.000Z",
+            issued_at: null,
+        },
+    );
+    assert.equal(
+        (
+            await call(client, "jwt_decode", {
+                token: "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0.",
+            })
+        ).signature_present,
+        false,
+    );
+});
+
+test("jwt_decode rejects malformed tokens before decoding", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        {},
+        { token: "" },
+        { token: "   " },
+        // Two parts, and four parts.
+        { token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0" },
+        {
+            token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln.ZXh0cmE",
+        },
+        // Payload is not JSON.
+        {
+            token: "eyJhbGciOiJIUzI1NiJ9.bm90IGpzb24.c2ln",
+        },
+        // Header is a JSON array, not an object.
+        { token: "WzEsMl0.eyJzdWIiOiJ4In0.c2ln" },
+        // Empty header part, and a part with characters outside base64url.
+        { token: ".eyJzdWIiOiJ4In0.c2ln" },
+        { token: "eyJhbG!iOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln" },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "jwt_decode",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
 });

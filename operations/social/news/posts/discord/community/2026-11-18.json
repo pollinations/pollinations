@@ -1,0 +1,72 @@
+{
+  "platform": "discord",
+  "scope": "community_weekly",
+  "date": "2026-11-18",
+  "previous_date": "2026-11-11",
+  "generated_at": "2026-11-18T14:03:25.958313+00:00",
+  "messages": [
+    {
+      "content": "## Community model updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**👤 Bakhshi7889 · 66.7% success**\n- **Stepfun ai step 5 preview** · text · reasoning, tool calling · 🌱 Quest\n\n**👤 Brybod123 · 98.1% success**\n- **DeepSeek R1 8B** · text · reasoning · 🌱 Quest\n- **Granite 4.2 8B** · text · tool calling · 🌱 Quest\n- **Qwen3 Coder 30B** · text · tool calling · 🌱 Quest\n- **Qwen3.5 0.8B** · text · 🌱 Quest\n- **Qwen3.5 2B** · text · 🌱 Quest\n\n**👤 Catniti · 91.6% success**\n- **Gemini 4 Carbon** · text · reasoning, tool calling · 💳 Paid\n- **Gemini 4 Hydrogen** · text · reasoning, tool calling · 🌱 Quest\n- **GPT-OSS 120B** · text · reasoning, tool calling · 🌱 Quest\n- **Qwen3.8 27B** · text · reasoning, tool calling · 🌱 Quest\n- **Whisper Large V3** · audio · 🌱 Quest\n\n**👤 chigwell · 100.0% success**\n- **minimax-m3** · text · reasoning, tool calling · 💳 Paid\n\n**👤 Davizigjojo · 98.3% success**\n- **DeepSeek V4.1 1017 UNCENSORED** · text · reasoning, tool calling · 🌱 Quest\n\n**👤 JustScriptzz · 71.4% success**\n- **Agnes 3.0 Flash** · text · reasoning, tool calling · 🌱 Quest\n- **Kimi K3** · text · reasoning · 🌱 Quest\n- **Muse Spark Open** · text · reasoning, tool calling · 🌱 Quest\n\n**👤 scriptsnsenses-sys · 78.3% success**\n- **GPT 6 Luna \\(FREE\\)** · text · reasoning, tool calling · 🌱 Quest\n- **Lucid Origin \\(FREE ; CONTRIBUTOR\\)** · image · 🌱 Quest\n\n**👤 sharktide · 46.5% success**\n- **GPT 5.4 Nano 25% off Served by Azure** · text · reasoning, tool calling · 🌱 Quest\n- **Mistral Large 4 \\(25% off\\)** · text · reasoning, tool calling · 💳 Paid\n- **NVIDIA Nemotron 3 Ultra Azure Data Zone** · text · reasoning, tool calling · 🌱 Quest",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**👤 MarcosFRG · 88.5% success**\n- **Gemma 4 31B \\(Paid\\)** 🔴 Reasoning 150% more expensive; Text output 150% more expensive; Image input 78.6% more expensive; Text input 78.6% more expensive\n- **GLM 5.3 \\(Paid\\)** 🔴 Reasoning 250.1% more expensive; Text output 250% more expensive; Cached input 250% more expensive; Text input 250% more expensive\n- **Leonardo Lucid Origin** 🔴 20% more expensive · 🔵 Requests/min: 5 → unspecified\n- **Leonardo Lucid Origin \\(Paid\\)** 🔴 150% more expensive\n\n**👤 rekty · 98.7% success**\n- **Rekty Dev 3** 🔴 270.4% more expensive\n- **Rekty Dev 4** 🔴 60% more expensive\n- **Rekty Dev V2** 🔴 270.4% more expensive\n- **Rekty Schnell** 🔴 270.4% more expensive",
+          "color": 5793266
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🗑️ Removed",
+      "embeds": [
+        {
+          "description": "**👤 Catniti · 91.6% success**\nGemini 3.8 Flash, Minimax M3.1 Flash\n\n**👤 JustScriptzz · 71.4% success**\nClaude Opus 4.6, Gemini 4 Argon, GPT 5.6 Terra, Grok 4.7, Mistral Large 4\n\n**👤 MarcosFRG · 88.5% success**\nGemma 4 31B, Qwen3.8 Flash \\(Paid\\)",
+          "color": 14981968
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "## Community agent updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**👤 mhmdrizki803-boop · 100.0% success**\nBase: deepseek/deepseek-v4-flash · reasoning, tool calling · 🌱 Quest\n- **Aurora Copy Studio agent**\n- **Byte Foundry agent**\n- **Echo Support Desk agent**\n- **Hexa Research Lab agent**\n- **Ledger Owls Bookkeeping agent**\n- **Nova Outreach Desk agent**\n- **Pixel Bloom Studio agent**\n- **Signal Reports Desk agent**\n\n**👤 rekty · 98.7% success**\nBase: openai/gpt-5.4-nano · reasoning, tool calling · 🌱 Quest\n- **Atlas Freight**\n- **Foundry Legal**\n- **Helios Grid**\n- **Kite Fulfilment**\n- **Lumen Health**\n- **Neon Games Studio**\n- **Orbit Education**\n- **Prism Media**\n- **Quill & Co.**\n- **Sky Brew Labs**\n- **Verdant Analytics**",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**👤 Catniti · 91.6% success**\n- **Catniti AI Agent** 🔵 Base model: openai/gpt-5.6-sol → openai/gpt-6.1-sol\n\n**👤 smplstuff · 98.6% success**\n- **Title Generator** 🔵 Base model: openai/gpt-5-nano → openai/gpt-5.4-nano\n\n[Explore community models](https://enter.pollinations.ai/models?q=source%3Acommunity)",
+          "color": 5793266,
+          "footer": {
+            "text": "Publisher success over the last 7 days"
+          }
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-11-18",
+  "previous_date": "2026-11-11",
+  "generated_at": "2026-11-18T14:03:20.099356+00:00",
+  "messages": [
+    {
+      "content": "## Official model updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Google - Gemini 4 Carbon** · text, image, audio, video → text · tool calling, web search · 💳 Paid\n- **OpenAI - GPT-6.2 Astra** · text, image → text · reasoning, tool calling · 💳 Paid\n- **OpenAI - GPT-6.2 Sol** · text, image → text · reasoning, tool calling · 💳 Paid\n- **Qwen - Qwen 4 Max** · text, image → text · reasoning, tool calling · 💳 Paid\n- **Tencent - Hy4 Flash** · text, image → text · reasoning, tool calling · 💳 Paid\n\n**🧭 Decision**\n- **Liquid AI - d1.2** · text → text · 💳 Paid\n- **Microsoft - Microsoft-Decision-1.1** · text → text · 🌱 Quest\n\n**🎨 Image**\n- **Microsoft - MAI Image 2.7** · text, image → image · 🌱 Quest\n- **Microsoft - MAI Image 2.7 Flash** · text, image → image · 🌱 Quest\n\n**🔊 Audio**\n- **Zyphra - ZONOS3-Mini** · text → audio · 💳 Paid",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **DeepSeek - DeepSeek V4.1 Flash 1017** 🔵 Image input price added; Parameters removed: logit\\_bias, parallel\\_tool\\_calls, prediction; Requests/min: unspecified → 60; Now 🌱 Quest\n- **MiniMax - MiniMax M3** 🔵 Parameters removed: n\n- **MiniMax - MiniMax M3.1 Flash** 🔵 Parameters removed: n\n- **NVIDIA - Nemotron 3 Ultra** 🔵 Parameters removed: n\n- **NVIDIA - Nemotron 3.5 Lightning** 🔵 Parameters removed: n\n- **Qwen - Qwen3.8 2.4T A95B** 🔵 Input removed: image; Parameters added: repetition\\_penalty; Parameters removed: frequency\\_penalty, logit\\_bias, logprobs, n, prediction, top\\_logprobs; Now 💳 Paid\n- **Thinking Machines - Inkling** 🔵 Parameters removed: n\n- **Z.ai - GLM-5.3** 🔵 Parameters removed: n\n- **Z.ai - GLM-5.3-Flash** 🔵 Parameters removed: n\n\n**🎨 Image**\n- **Black Forest Labs - FLUX.2 Flex** 🔵 Now 🌱 Quest\n\n[Browse models](https://enter.pollinations.ai/models) · [API docs](https://gen.pollinations.ai/docs)",
+          "color": 5793266
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    }
+  ]
+}

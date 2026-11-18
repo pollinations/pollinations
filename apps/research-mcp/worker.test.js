@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "canada_bill",
             ].sort(),
         );
     });
@@ -644,4 +645,77 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Canada bill lookup returns the bill record and names unknown bills plainly", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url.toString());
+        assert.equal(url.hostname, "api.openparliament.ca");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname === "/bills/45-1/C-999/")
+            return new Response("Page Not Found", { status: 404 });
+        return Response.json({
+            session: "44-1",
+            legisinfo_id: 12345678,
+            introduced: "2022-04-05",
+            name: {
+                en: "An Act respecting online communications platforms that make news content available to persons in Canada",
+                fr: "Loi concernant les plateformes de communication en ligne rendant disponible du contenu de nouvelles aux personnes se trouvant au Canada",
+            },
+            number: "C-18",
+            short_title: { en: "", fr: "" },
+            home_chamber: "House",
+            law: null,
+            status_code: "Law",
+            status: { en: "Law (royal assent given)" },
+            url: "/bills/44-1/C-18/",
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "canada_bill", {
+        session: "44-1",
+        number: "c-18",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        requests[0],
+        "https://api.openparliament.ca/bills/44-1/C-18/?format=json",
+    );
+    assert.deepEqual(value(result), {
+        session: "44-1",
+        number: "C-18",
+        introduced: "2022-04-05",
+        name_en:
+            "An Act respecting online communications platforms that make news content available to persons in Canada",
+        name_fr:
+            "Loi concernant les plateformes de communication en ligne rendant disponible du contenu de nouvelles aux personnes se trouvant au Canada",
+        status: "Law (royal assent given)",
+        url: "https://openparliament.ca/bills/44-1/C-18/",
+    });
+    result = await call(c, "canada_bill", {
+        session: "45-1",
+        number: "C-999",
+    });
+    assert.equal(result.isError, true);
+    assert.match(
+        result.content[0].text,
+        /No Canadian Parliament bill found for session 45-1 number C-999/,
+    );
+    result = await call(c, "canada_bill", {
+        session: "45",
+        number: "C-1",
+    });
+    assert.equal(result.isError, true);
+    result = await call(c, "canada_bill", {
+        session: "45-1",
+        number: "X-1",
+    });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, 2);
 });

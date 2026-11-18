@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "disney_character",
             ].sort(),
         );
     });
@@ -644,4 +645,165 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Disney character lookup searches by name, resolves ids and caps long lists", async (t) => {
+    let fetches = 0;
+    const mickey = {
+        _id: 4703,
+        films: [
+            "Fantasia",
+            "Fun and Fancy Free",
+            "Disney's Sing-Along Songs: The Twelve Days of Christmas",
+            "Mickey's Once Upon a Christmas",
+            "Fantasia 2000",
+            "Mickey's Magical Christmas: Snowed in at the House of Mouse",
+            "Mickey's House of Villains",
+            "Mickey, Donald, Goofy: The Three Musketeers",
+            "Mickey's Twice Upon a Christmas",
+            "Saving Mr. Banks",
+            "Mickey: The Story of a Mouse",
+        ],
+        shortFilms: [],
+        tvShows: [
+            "Walt Disney anthology series",
+            "The Mickey Mouse Club",
+            "The Mouse Factory",
+        ],
+        videoGames: [
+            "Mickey Mousecapade",
+            "Adventures in the Magic Kingdom",
+            "Illusion (series)",
+            "The Magical Quest starring Mickey Mouse",
+            "Mickey Mania: The Timeless Adventures of Mickey Mouse",
+            "Mickey's Speedway USA",
+            "Mickey's Racing Adventure",
+            "Disney's Party",
+            "Disney's Magical Mirror Starring Mickey Mouse",
+            "Disney's Hide and Sneak",
+            "Kingdom Hearts (series)",
+            "Epic Mickey (series)",
+        ],
+        parkAttractions: ["Mickey and Minnie's Runaway Railway", "Fantasmic!"],
+        allies: [],
+        enemies: [],
+        name: "Mickey Mouse",
+        imageUrl:
+            "https://static.wikia.nocookie.net/disney/images/2/2e/Disney_Mickey_Mouse.png",
+        url: "https://api.disneyapi.dev/characters/4703",
+    };
+    const lion = {
+        _id: 3942,
+        films: [],
+        shortFilms: [],
+        tvShows: ["Mickey Mouse Works"],
+        videoGames: [],
+        parkAttractions: [],
+        allies: [],
+        enemies: [],
+        name: "Lion (Mickey Mouse Works)",
+        imageUrl:
+            "https://static.wikia.nocookie.net/disney/images/b/bf/Char_79257.jpg",
+        url: "https://api.disneyapi.dev/characters/3942",
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.disneyapi.dev");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.pathname === "/character") {
+            const name = url.searchParams.get("name");
+            if (name === "Mickey Mouse")
+                return Response.json({
+                    info: { count: 2, totalPages: 1 },
+                    data: [lion, mickey],
+                });
+            return Response.json({
+                info: { count: 0, totalPages: 0 },
+                data: [],
+            });
+        }
+        if (url.pathname === "/characters/4703")
+            return Response.json({ info: {}, data: mickey });
+        if (url.pathname === "/characters/999999")
+            // Unknown ids answer HTTP 200 with an empty data array upstream.
+            return Response.json({
+                info: { count: 0, totalPages: 0 },
+                data: [],
+            });
+        return new Response("Not found", { status: 404 });
+    });
+    const c = await client(t);
+
+    let result = await call(c, "disney_character", {
+        name: "Mickey Mouse",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 2);
+    assert.equal(value(result).characters.length, 1);
+    assert.equal(value(result).characters[0].name, "Lion (Mickey Mouse Works)");
+
+    result = await call(c, "disney_character", { name: "Mickey Mouse" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).characters.length, 2);
+    const mouse = value(result).characters[1];
+    assert.equal(mouse.films.length, 10);
+    assert.equal(mouse.film_count, 11);
+    assert.equal(mouse.video_games.length, 10);
+    assert.equal(mouse.video_game_count, 12);
+    assert.equal(mouse.tv_show_count, 3);
+    assert.equal(mouse.park_attraction_count, 2);
+
+    result = await call(c, "disney_character", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznonexistentqqq",
+        total: 0,
+        characters: [],
+    });
+
+    result = await call(c, "disney_character", { id: 4703 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).character, {
+        id: 4703,
+        name: "Mickey Mouse",
+        films: mickey.films.slice(0, 10),
+        film_count: 11,
+        short_films: [],
+        short_film_count: 0,
+        tv_shows: mickey.tvShows,
+        tv_show_count: 3,
+        video_games: mickey.videoGames.slice(0, 10),
+        video_game_count: 12,
+        park_attractions: mickey.parkAttractions,
+        park_attraction_count: 2,
+        image_url:
+            "https://static.wikia.nocookie.net/disney/images/2/2e/Disney_Mickey_Mouse.png",
+        url: "https://api.disneyapi.dev/characters/4703",
+    });
+
+    result = await call(c, "disney_character", { id: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /No Disney character found/);
+
+    const before = fetches;
+    result = await call(c, "disney_character", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Provide a character name or id/);
+    result = await call(c, "disney_character", {
+        name: "Mickey Mouse",
+        id: 4703,
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /only one of name or id/);
+    result = await call(c, "disney_character", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /non-empty character name/);
+    assert.equal(fetches, before);
 });

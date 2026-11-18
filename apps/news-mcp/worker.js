@@ -1,4 +1,5 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
+import { carbonTools } from "./tools/carbon.js";
 import { earthquakeTools } from "./tools/earthquakes.js";
 import { feeds } from "./tools/feeds.js";
 import { hackernews } from "./tools/hackernews.js";
@@ -17,6 +18,7 @@ const handler = createMcpHandler(
             ...wayback,
             ...earthquakeTools,
             ...onThisDayTools,
+            ...carbonTools,
         ]) {
             server.registerTool(
                 name,

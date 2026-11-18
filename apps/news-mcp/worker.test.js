@@ -25,9 +25,10 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
+        "carbon_intensity",
         "earthquake_event",
         "earthquake_search",
         "feed_read",
@@ -59,8 +60,45 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
+});
+
+test("carbon intensity returns the current half-hour reading and no credentials", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.carbonintensity.org.uk");
+        assert.equal(url.pathname, "/intensity");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        return Response.json({
+            data: [
+                {
+                    from: "2026-11-18T16:30Z",
+                    to: "2026-11-18T17:00Z",
+                    intensity: { forecast: 210, actual: 205, index: "high" },
+                },
+            ],
+        });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "carbon_intensity",
+        arguments: {},
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        from: "2026-11-18T16:30Z",
+        to: "2026-11-18T17:00Z",
+        forecast: 210,
+        actual: 205,
+        index: "high",
+    });
 });
 
 test("earthquakes use inclusive UTC dates, GeoJSON coordinates, fixed USGS egress and no credentials", async (t) => {

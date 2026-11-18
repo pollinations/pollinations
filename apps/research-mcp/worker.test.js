@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { evilinsultTools } from "./tools/evilinsult.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "evil_insult",
             ].sort(),
         );
     });
@@ -644,4 +646,114 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("evil_insult returns random insults with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveInsults = [
+        {
+            number: "2192",
+            language: "en",
+            insult: "You ass, abecedarian, and bacchanal.",
+            created: "2026-11-18 08:53:00",
+            shown: "316020",
+            createdby: "Martin Luther",
+            active: "1",
+            comment: "https://github.com/steckstudio/insult-service/",
+        },
+        {
+            number: "2139",
+            language: "en",
+            insult: "You have set out to rub your scabby, scurvy head against honor.",
+            created: "2026-11-18 19:09:36",
+            shown: "315569",
+            createdby: "Martin Luther",
+            active: "1",
+            comment: "https://github.com/steckstudio/insult-service",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "evilinsult.com");
+        assert.equal(target.pathname, "/generate_insult.php");
+        assert.equal(target.searchParams.get("lang"), "en");
+        assert.equal(target.searchParams.get("type"), "json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(
+            liveInsults[(fetchCalls - 1) % liveInsults.length],
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "evil_insult", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        insults: [
+            {
+                insult: "You ass, abecedarian, and bacchanal.",
+                source: "Martin Luther",
+                number: "2192",
+                shown: "316020",
+            },
+            {
+                insult: "You have set out to rub your scabby, scurvy head against honor.",
+                source: "Martin Luther",
+                number: "2139",
+                shown: "315569",
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "evil_insult", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "evil_insult", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = evilinsultTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return {
+            number: "628",
+            language: "en",
+            insult: "You are a test insult.",
+            created: "2026-11-18 11:30:48",
+            shown: "315237",
+            createdby: "9GAG",
+            active: "1",
+            comment: "",
+        };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        insults: [
+            {
+                insult: "You are a test insult.",
+                source: "9GAG",
+                number: "628",
+                shown: "315237",
+            },
+        ],
+    });
+    assert.equal(stubCalls, 1);
+
+    // Same handler errors cleanly when the API returns no insult text.
+    mock.restoreAll();
+    mock.method(globalThis, "fetch", async () => Response.json({}));
+    const emptyResult = await call(c, "evil_insult", { limit: 1 });
+    assert.equal(emptyResult.isError, true, JSON.stringify(emptyResult));
+    assert.match(emptyResult.content[0].text, /without text/);
 });

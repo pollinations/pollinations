@@ -7,9 +7,28 @@ import { fetchText } from "../fetch.js";
 
 const API = "https://www.ebi.ac.uk/interpro/api/entry/interpro";
 
+// Strip HTML tags one character at a time. A single regex pass can leave a
+// tag behind when tags nest (e.g. `<<script>` survives `<[^>]*>` as
+// `<script>`), so drop everything between `<` and the next `>` instead. A
+// `<` with no closing `>` swallows the rest of the string, which is the safe
+// direction — no markup survives. A lone `>` outside a tag is kept, as text.
+const stripTags = (text) => {
+    let out = "";
+    let inTag = false;
+    for (const ch of String(text ?? "")) {
+        if (inTag) {
+            if (ch === ">") inTag = false;
+        } else if (ch === "<") {
+            inTag = true;
+        } else {
+            out += ch;
+        }
+    }
+    return out;
+};
+
 const cleanDescription = (text) => {
-    const plain = String(text ?? "")
-        .replace(/<[^>]*>/g, "")
+    const plain = stripTags(text)
         .replace(/\[\[cite:.*?\]\]/g, "")
         .replace(/\s+/g, " ")
         .replace(/ \./g, ".")

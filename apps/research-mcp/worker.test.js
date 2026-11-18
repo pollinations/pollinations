@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "opendota_hero",
             ].sort(),
         );
     });
@@ -644,4 +645,82 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OpenDota hero lookup filters the full list client-side and projects the record", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.opendota.com");
+        assert.equal(target.pathname, "/api/heroes");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json([
+            {
+                id: 1,
+                name: "npc_dota_hero_antimage",
+                localized_name: "Anti-Mage",
+                primary_attr: "agi",
+                attack_type: "Melee",
+                roles: ["Carry", "Escape", "Nuker"],
+                legs: 2,
+            },
+            {
+                id: 2,
+                name: "npc_dota_hero_axe",
+                localized_name: "Axe",
+                primary_attr: "str",
+                attack_type: "Melee",
+                roles: ["Initiator", "Durable", "Disabler"],
+                legs: 2,
+            },
+            {
+                id: 11,
+                name: "npc_dota_hero_nevermore",
+                localized_name: "Shadow Fiend",
+                primary_attr: "agi",
+                attack_type: "Ranged",
+                roles: ["Carry", "Nuker"],
+                legs: 2,
+            },
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "opendota_hero", {
+        name: "mage",
+        limit: 5,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "mage",
+        total: 1,
+        heroes: [
+            {
+                name: "Anti-Mage",
+                internal_name: "npc_dota_hero_antimage",
+                primary_attr: "agi",
+                attack_type: "Melee",
+                roles: ["Carry", "Escape", "Nuker"],
+            },
+        ],
+    });
+
+    const empty = await call(c, "opendota_hero", {
+        name: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        heroes: [],
+    });
+
+    const blank = await call(c, "opendota_hero", { name: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 2);
 });

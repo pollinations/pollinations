@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "fdic_bank",
             ].sort(),
         );
     });
@@ -644,4 +645,125 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("FDIC bank lookup unwraps records and returns prefix matches", async (t) => {
+    const fetchMock = mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.fdic.gov");
+        assert.equal(url.pathname, "/banks/institutions");
+        assert.equal(url.searchParams.get("fields"), "NAME,CERT,ACTIVE,STNAME");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.searchParams.get("filters") === "NAME:Zzzqqqxxyy*") {
+            return Response.json({
+                meta: { total: 0 },
+                data: [],
+                totals: { count: 0 },
+            });
+        }
+        if (url.searchParams.get("filters") === "NAME:Wells*") {
+            return Response.json({
+                meta: { total: 38 },
+                data: [
+                    {
+                        data: {
+                            ACTIVE: 0,
+                            STNAME: "California",
+                            CERT: 1230,
+                            NAME: "Wells Fargo Bank, National Association",
+                            ID: "1230",
+                        },
+                        score: 0,
+                    },
+                ],
+                totals: { count: 38 },
+            });
+        }
+        assert.equal(url.searchParams.get("filters"), "NAME:JPMorgan*");
+        assert.equal(url.searchParams.get("limit"), "2");
+        return Response.json({
+            meta: { total: 3 },
+            data: [
+                {
+                    data: {
+                        ACTIVE: 1,
+                        STNAME: "Ohio",
+                        CERT: 628,
+                        NAME: "JPMorgan Chase Bank, National Association",
+                        ID: "628",
+                    },
+                    score: 0,
+                },
+                {
+                    data: {
+                        ACTIVE: 0,
+                        STNAME: "California",
+                        CERT: 58729,
+                        NAME: "JPMorgan Bank and Trust Company, National Association",
+                        ID: "58729",
+                    },
+                    score: 0,
+                },
+            ],
+            totals: { count: 3 },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "fdic_bank", { name: "JPMorgan", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.deepEqual(value(res), {
+        query: "JPMorgan",
+        prefix: "JPMorgan",
+        total: 3,
+        banks: [
+            {
+                name: "JPMorgan Chase Bank, National Association",
+                cert: 628,
+                active: true,
+                state: "Ohio",
+            },
+            {
+                name: "JPMorgan Bank and Trust Company, National Association",
+                cert: 58729,
+                active: false,
+                state: "California",
+            },
+        ],
+    });
+
+    const emptyRes = await call(c, "fdic_bank", { name: "Zzzqqqxxyy" });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        query: "Zzzqqqxxyy",
+        prefix: "Zzzqqqxxyy",
+        total: 0,
+        banks: [],
+    });
+
+    const multiRes = await call(c, "fdic_bank", {
+        name: "Wells Fargo",
+        limit: 1,
+    });
+    assert.notEqual(multiRes.isError, true, JSON.stringify(multiRes));
+    assert.deepEqual(value(multiRes), {
+        query: "Wells Fargo",
+        prefix: "Wells",
+        total: 38,
+        banks: [
+            {
+                name: "Wells Fargo Bank, National Association",
+                cert: 1230,
+                active: false,
+                state: "California",
+            },
+        ],
+    });
+
+    const blankRes = await call(c, "fdic_bank", { name: " " });
+    assert.equal(blankRes.isError, true);
+    assert.equal(fetchMock.mock.calls.length, 3);
 });

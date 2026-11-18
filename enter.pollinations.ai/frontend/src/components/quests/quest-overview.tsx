@@ -457,7 +457,13 @@ export function QuestProgress({
                 <div className="contents text-xs font-semibold text-theme-text-muted">
                     <dt />
                     <dd className="text-right">Quests</dd>
-                    <dd className="text-right">Quest balance</dd>
+                    <dd className="flex items-center justify-end gap-1.5">
+                        Quest balance
+                        <InfoTip
+                            text="Earned from quests and your apps. Regular models use it before your paid balance."
+                            label="About Quest balance"
+                        />
+                    </dd>
                 </div>
                 {states.map((state) => {
                     const { label, tone, info } = PROGRESS_STATES[state];

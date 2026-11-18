@@ -14,5 +14,4 @@ description: Create or update Pollinations GitHub issues when asked to track wor
 | Person | GitHub | Area |
 | --- | --- | --- |
 | Thomas | `voodoohop` | General, models, infrastructure |
-| Joshua | `eulervoid` | Pollen, backend, auth |
 | Elliot | `elliotetag` | Community, newsletter, UI |

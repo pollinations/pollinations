@@ -1,12 +1,12 @@
 ---
 name: quest-contributor
-description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Quest rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
+description: Contribute to Pollinations community quests in pollinations/pollinations and earn Quest rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled QUEST or POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, claim.
 ---
 
 # Quest Contributor
 
 Pollinations pays Quest rewards for merged PRs that solve community quests -
-issues labeled `POLLEN-QUEST` in
+issues labeled `QUEST` or `POLLEN-QUEST` in
 [pollinations/pollinations](https://github.com/pollinations/pollinations).
 This skill teaches an agent the whole loop.
 
@@ -24,7 +24,7 @@ criteria. Read them first; they override anything here. In particular:
 ## 1. Discover
 
 Open quests:
-[label:POLLEN-QUEST state:open](https://github.com/pollinations/pollinations/issues?q=is%3Aissue+state%3Aopen+label%3APOLLEN-QUEST).
+[Open community quests](https://github.com/pollinations/pollinations/issues?q=is%3Aissue+state%3Aopen+label%3AQUEST%2CPOLLEN-QUEST).
 With a key, `polli quests` lists your quest states (open / claimable /
 claimed). New quests appear without warning - re-check before starting.
 
@@ -81,7 +81,7 @@ maintainer a one-line command to run it - do not fake a transcript.
 - One focused PR per quest; do not bundle fixes.
 - Answer review comments fast - stalls get overtaken by competing PRs.
 
-## 7. Get paid
+## 7. Claim the reward
 
 After merge, open [enter.pollinations.ai/quests](https://enter.pollinations.ai/quests),
 check quests, and claim the pending reward. Rewards are keyed to your GitHub

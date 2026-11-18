@@ -39,6 +39,14 @@ const gptOssEffort = remapReasoningEffort({
 });
 const grok46Effort = remapReasoningEffort({ none: "low", max: "xhigh" });
 const kimiK26Effort = remapReasoningEffort({ xhigh: "max" });
+// Azure DeepSeek V4 accepts only none, high and max.
+const azureDeepSeekEffort = remapReasoningEffort({
+    none: "none", // Preserve case-insensitive requests to disable reasoning.
+    minimal: "none",
+    low: "high",
+    medium: "high",
+    xhigh: "max",
+});
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Fireworks caches matching prefixes automatically and rejects Anthropic markers.
@@ -94,6 +102,26 @@ const omitOpenAISampling = omitParameters(
     "seed",
 );
 const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
+
+const glyphReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    return {
+        messages,
+        options: {
+            ...rest,
+            ...(reasoning_effort === undefined
+                ? {}
+                : {
+                      reasoning: {
+                          ...(rest.reasoning as
+                              | Record<string, unknown>
+                              | undefined),
+                          effort: reasoning_effort,
+                      },
+                  }),
+        },
+    };
+};
 
 interface ModelDefinition {
     name: string;
@@ -616,12 +644,12 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4-flash",
         config: portkeyConfig["DeepSeek-V4-Flash-0731"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekEffort,
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
         config: portkeyConfig["DeepSeek-V4.1-Flash"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekEffort,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:fireworks",
@@ -631,7 +659,7 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4.1-flash-1017",
         config: portkeyConfig["DeepSeek-V4.1-Flash-1017"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekEffort,
     },
     {
         name: "deepseek/deepseek-v4.1-flash-1017:fireworks",
@@ -1076,25 +1104,12 @@ const models: ModelDefinition[] = [
     {
         name: "stealth/glyph-cluster",
         config: portkeyConfig["stealth/glyph-cluster"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(reasoning_effort === undefined
-                        ? {}
-                        : {
-                              reasoning: {
-                                  ...(rest.reasoning as
-                                      | Record<string, unknown>
-                                      | undefined),
-                                  effort: reasoning_effort,
-                              },
-                          }),
-                },
-            };
-        },
+        transform: glyphReasoning,
+    },
+    {
+        name: "stealth/glyph-cluster:kilo",
+        config: portkeyConfig["stealth/glyph-cluster:kilo"],
+        transform: glyphReasoning,
     },
     {
         name: "liquid/d1",

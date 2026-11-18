@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Changed
+- `PolliProvider`'s `appKey` is optional. Without an App Key, sign-in still
+  works: the consent screen names the app by its hostname. Dev warnings now
+  appear only for an `appKey` that isn't a `pk_` key.
+
 ## [5.1.0-alpha.32] - 2026-11-18
 
 ### Changed

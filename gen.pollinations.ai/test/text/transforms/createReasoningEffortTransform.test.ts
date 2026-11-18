@@ -222,6 +222,11 @@ describe("reasoning_effort levels providers reject (#19784)", () => {
         ["x-ai/grok-4.3", "max", "xhigh"],
         ["x-ai/grok-4.20", "max", "xhigh"],
         ["moonshotai/kimi-k2.6", "xhigh", "max"],
+        ["deepseek/deepseek-v4-flash", "low", "high"],
+        ["deepseek/deepseek-v4.1-flash", "medium", "high"],
+        ["deepseek/deepseek-v4.1-flash-1017", "xhigh", "max"],
+        ["deepseek/deepseek-v4.1-flash-1017", "minimal", "none"],
+        ["deepseek/deepseek-v4.1-flash-1017", "NONE", "none"],
     ])("%s sends %s as %s", async (modelName, sent, expected) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

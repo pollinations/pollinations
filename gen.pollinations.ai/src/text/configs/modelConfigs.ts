@@ -95,6 +95,12 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["stealth"] } },
             },
         }),
+    "stealth/glyph-cluster:kilo": () => ({
+        provider: "openai",
+        authKey: textEnvironmentValue("KILO_API_KEY"),
+        model: "stealth/glyph-cluster",
+        directEndpoint: "https://ai-gateway.kilo.ai/api/v1/chat/completions",
+    }),
     "span-01-lite": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",

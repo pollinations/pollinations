@@ -170,6 +170,8 @@ export type ModelDefinition = {
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
+    /** Upstream statuses required before trying this fallback route. */
+    fallbackOnStatuses?: number[];
     /** Input safety features callers cannot disable for this model. */
     requiredSafetyFeatures?: SafetyFeature[];
     /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */

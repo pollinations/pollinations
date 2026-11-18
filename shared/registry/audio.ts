@@ -858,7 +858,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-09-29").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        cost: { completionAudioTokens: 30 / 1_000_000 },
+        cost: { completionAudioTokens: 36.3 / 1_000_000 },
         title: "TTS-1 HD",
         description:
             "Higher-quality speech synthesis with six voices and six output formats",
@@ -1119,8 +1119,9 @@ const AUDIO_BASE_SERVICES = {
         cost: { completionAudioTokens: 0.16 / 1_000_000 },
         priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "ZONOS3-Mini",
-        description: "Text-to-speech with a preset voice and MP3 or PCM output",
-        inputModalities: ["text"],
+        description:
+            "Speech in the Alloy voice or a voice cloned from a reference recording.",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         voices: ["alloy"],
         supportedEndpoints: ["/v1/audio/speech"],

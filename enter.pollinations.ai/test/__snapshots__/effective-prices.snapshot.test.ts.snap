@@ -4036,10 +4036,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "openai/tts-1-hd": {
     "cost": {
-      "completionAudioTokens": 0.00003,
+      "completionAudioTokens": 0.0000363,
     },
     "price": {
-      "completionAudioTokens": 0.00003,
+      "completionAudioTokens": 0.0000363,
     },
   },
   "openai/whisper-large-v3": {
@@ -4792,6 +4792,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "stealth/glyph-cluster": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
+  "stealth/glyph-cluster:kilo": {
     "cost": {
       "completionTextTokens": 0,
       "promptCachedTokens": 0,

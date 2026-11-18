@@ -3588,7 +3588,7 @@ curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-4466
 
 #### `GET` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3599,6 +3599,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -3610,7 +3612,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 
 #### `HEAD` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3621,6 +3623,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -5178,6 +5182,8 @@ Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An 
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — Generated image, video, audio or 3D file
+
+📤 **Response** · `206` — The requested byte range of the file, so video and audio players can seek
 
 💻 **Example**
 

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ipni_name",
             ].sort(),
         );
     });
@@ -644,4 +645,136 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ipni_name keeps only citation records and projects plant names", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.ipni.org");
+        assert.equal(target.pathname, "/api/1/search");
+        assert.equal(target.searchParams.get("q"), "Rosa canina");
+        assert.equal(target.searchParams.get("perPage"), "10");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            totalResults: 767,
+            page: 1,
+            totalPages: 384,
+            perPage: 10,
+            results: [
+                {
+                    name: "Rosa × arvensi-canina",
+                    authors: "Gremli ex Christ",
+                    authorTeam: [{ name: "Gremli", id: "12519-1" }],
+                    rank: "spec.",
+                    url: "/n/731657-1",
+                    family: "Rosaceae",
+                    genus: "Rosa",
+                    species: "arvensi-canina",
+                    hybrid: true,
+                    publication: "Ros. Schweiz",
+                    publicationYear: 1873,
+                    recordType: "citation",
+                    wfoId: "wfo-0001009063",
+                    id: "731657-1",
+                    version: "1.1.2.1.1.4",
+                },
+                {
+                    abbreviation: "Rosa Rev. Orient.",
+                    date: "Jan-Jun 1887",
+                    id: "20067046-1",
+                    recordType: "publication",
+                    title: "Genre Rosa. Revision du groupe des orientales",
+                    tl2Author: "Burnat",
+                    url: "/p/20067046-1",
+                },
+                {
+                    id: "12519-1",
+                    recordType: "author",
+                    name: "Gremli",
+                    url: "/a/12519-1",
+                },
+                {
+                    name: "Rosa canina",
+                    authors: "Sol. ex Bab.",
+                    rank: "spec.",
+                    url: "/n/731953-1",
+                    family: "Rosaceae",
+                    genus: "Rosa",
+                    species: "canina",
+                    publication: "J. Linn. Soc., Bot.",
+                    publicationYear: 1870,
+                    recordType: "citation",
+                    id: "731953-1",
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "ipni_name", {
+        query: "Rosa canina",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Rosa canina",
+        total: 2,
+        names: [
+            {
+                id: "731657-1",
+                name: "Rosa × arvensi-canina",
+                authors: "Gremli ex Christ",
+                family: "Rosaceae",
+                genus: "Rosa",
+                species: "arvensi-canina",
+                rank: "spec.",
+                publication: "Ros. Schweiz",
+                publication_year: 1873,
+                url: "https://www.ipni.org/n/731657-1",
+            },
+            {
+                id: "731953-1",
+                name: "Rosa canina",
+                authors: "Sol. ex Bab.",
+                family: "Rosaceae",
+                genus: "Rosa",
+                species: "canina",
+                rank: "spec.",
+                publication: "J. Linn. Soc., Bot.",
+                publication_year: 1870,
+                url: "https://www.ipni.org/n/731953-1",
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async () =>
+        // A real no-match answer carries no `results` key at all.
+        Response.json({
+            totalResults: 0,
+            page: 1,
+            totalPages: 0,
+            perPage: 25,
+            maxReturnedRecords: 10000,
+            atEndOfMaxReturnedRecords: false,
+        }),
+    );
+    const empty = await call(c, "ipni_name", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        names: [],
+    });
+
+    const before = fetches;
+    const blank = await call(c, "ipni_name", { query: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
 });

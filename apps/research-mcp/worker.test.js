@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { stoicTools } from "./tools/stoic.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "stoic_quote",
             ].sort(),
         );
     });
@@ -644,4 +646,91 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("stoic_quote returns random quotes with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveQuotes = [
+        {
+            data: {
+                author: "Nassim Nicholas Taleb",
+                quote: "Stoicism is about the domestication of emotions, not their elimination.",
+            },
+        },
+        {
+            data: {
+                author: "Cleanthes",
+                quote: "The willing are led by fate, the reluctant dragged.",
+            },
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "stoic.tekloon.net");
+        assert.equal(target.pathname, "/stoic-quote");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(liveQuotes[(fetchCalls - 1) % liveQuotes.length]);
+    });
+    const c = await client(t);
+    const result = await call(c, "stoic_quote", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        quotes: [
+            {
+                quote: "Stoicism is about the domestication of emotions, not their elimination.",
+                author: "Nassim Nicholas Taleb",
+            },
+            {
+                quote: "The willing are led by fate, the reluctant dragged.",
+                author: "Cleanthes",
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "stoic_quote", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "stoic_quote", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = stoicTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return {
+            data: {
+                author: "Seneca",
+                quote: "Whatever seems lofty is dangerous…",
+            },
+        };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        quotes: [
+            {
+                quote: "Whatever seems lofty is dangerous…",
+                author: "Seneca",
+            },
+        ],
+    });
+    assert.equal(stubCalls, 1);
+
+    // A quote without text is a clean error.
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({ data: {} })),
+        /without text/,
+    );
 });

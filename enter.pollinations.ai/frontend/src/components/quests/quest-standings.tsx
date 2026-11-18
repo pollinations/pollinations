@@ -34,7 +34,6 @@ function Amount({ value }: { value: number }) {
                 className="h-3.5 w-3.5 self-center"
             />
             ${formatPollen(value)}
-            <span className="sr-only"> in Quest balance</span>
         </span>
     );
 }
@@ -83,7 +82,8 @@ function nudge(
     // A tie still needs the smallest quest reward to pass, not 0.
     const target = (
         <>
-            <Amount value={Math.max(gap, 0.25)} /> to pass @{above.githubLogin}
+            <Amount value={Math.max(gap, 0.25)} /> more to pass @
+            {above.githubLogin}
         </>
     );
     return pass ? (
@@ -183,7 +183,10 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             )}
             <span className="ml-auto flex shrink-0 items-center gap-2">
                 <Movement movement={row.movement} isYou={isYou} />
-                <Amount value={row.totalPollen} />
+                <span>
+                    <Amount value={row.totalPollen} />
+                    <span className="sr-only"> earned</span>
+                </span>
             </span>
         </li>
     );

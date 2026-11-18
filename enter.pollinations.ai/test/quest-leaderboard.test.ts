@@ -431,7 +431,7 @@ test("rendered standings point the viewer at the quest that passes the next row"
     // A gap of 1 needs a reward above 1, so the quest worth 5 is next. Amounts
     // are the sprout and the number, so compare the text between tags.
     expect(html.split(/<[^>]+>/).join("")).toContain(
-        "$1 in Quest balance to pass @bob. “Contribute a pull request” earns $5 in Quest balance.",
+        "$1 more to pass @bob. “Contribute a pull request” earns $5.",
     );
 });
 
@@ -467,7 +467,7 @@ test("rendered standings show the minimum increment for a tied row", () => {
     );
 
     expect(html.split(/<[^>]+>/).join("")).toContain(
-        "$0.25 in Quest balance to pass @alice. “Use a text model” earns $0.25 in Quest balance.",
+        "$0.25 more to pass @alice. “Use a text model” earns $0.25.",
     );
 });
 

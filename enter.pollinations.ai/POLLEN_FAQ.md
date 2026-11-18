@@ -35,7 +35,7 @@ Quests pay for eligible account activity and community contributions.
 - Browse the dashboard for current requirements, progress, and amounts.
 - Claim what you earned from the dashboard; past qualifying activity may count.
 - Contribution quests are labeled GitHub issues with a stated amount. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim it afterward.
-- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and the submitter can claim it once the app is approved.
+- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and you can claim what you earned after the catalog PR merges.
 
 Quest availability and amounts can change, so the dashboard and the linked issue are the source of truth.
 

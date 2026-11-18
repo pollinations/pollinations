@@ -195,7 +195,7 @@ describe("large chat route", () => {
         }
     });
 
-    it("forwards over 32 MiB of base64 and data-URL audio as URLs to Fireworks Inkling", async () => {
+    it("rejects over 32 MiB of inline audio before any provider call", async () => {
         const { key, userId } = await createTestApiKey({
             user: { packBalance: 100 },
         });
@@ -207,35 +207,15 @@ describe("large chat route", () => {
             messages: [
                 {
                     role: "user",
-                    content: Array.from({ length: 2 }, (_, index) => ({
+                    content: Array.from({ length: 2 }, () => ({
                         type: "input_audio",
-                        input_audio: {
-                            data: index
-                                ? `data:audio/opus;base64,${base64}`
-                                : base64,
-                            format: "opus",
-                        },
+                        input_audio: { data: base64, format: "opus" },
                     })),
                 },
             ],
         });
         expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
-        let forwarded: unknown;
-        const fetch = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (url, init) => {
-                if (String(url).includes("/v1/chat/completions")) {
-                    forwarded = JSON.parse(String(init?.body));
-                    return Response.json(
-                        { error: { message: "provider test stop" } },
-                        { status: 400 },
-                    );
-                }
-                const host = new URL(String(url)).hostname;
-                if (host === "localhost" || host.endsWith(".tinybird.co"))
-                    return Response.json({});
-                throw new Error("Unexpected outbound fetch");
-            });
+        const fetch = vi.spyOn(globalThis, "fetch");
         try {
             const response = await SELF.fetch(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -247,43 +227,23 @@ describe("large chat route", () => {
                     body,
                 }),
             );
-            expect(response.status).toBeGreaterThanOrEqual(400);
+            expect(response.status).toBe(413);
             await response.arrayBuffer();
+            expect(
+                fetch.mock.calls.some(([url]) =>
+                    String(url).includes("/chat/completions"),
+                ),
+            ).toBe(false);
         } finally {
             fetch.mockRestore();
         }
-        // Bare base64 is wrapped with the ogg mime type, while an already
-        // encoded data: URL is offloaded as-is with its own mime type.
-        const bareId = createHmac("sha256", env.BETTER_AUTH_SECRET)
+        const id = createHmac("sha256", env.BETTER_AUTH_SECRET)
             .update("chat-input\0")
             .update(userId)
             .update("\0audio/ogg\0")
             .update(bytes)
             .digest("hex");
-        const dataUrlId = createHmac("sha256", env.BETTER_AUTH_SECRET)
-            .update("chat-input\0")
-            .update(userId)
-            .update("\0audio/opus\0")
-            .update(bytes)
-            .digest("hex");
-        expect(await env.MEDIA.has(bareId)).toBe(true);
-        expect(await env.MEDIA.has(dataUrlId)).toBe(true);
-        const parts = (
-            forwarded as {
-                messages: {
-                    content: { type: string; audio_url: { url: string } }[];
-                }[];
-            }
-        ).messages[0].content;
-        expect(parts).toHaveLength(2);
-        expect(parts[0]).toEqual({
-            type: "audio_url",
-            audio_url: { url: `https://media.pollinations.ai/${bareId}` },
-        });
-        expect(parts[1]).toEqual({
-            type: "audio_url",
-            audio_url: { url: `https://media.pollinations.ai/${dataUrlId}` },
-        });
+        expect(await env.MEDIA.has(id)).toBe(false);
     });
 
     it("accepts a 48 MiB mixed-media request through the real media service", async () => {

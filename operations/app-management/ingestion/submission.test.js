@@ -363,12 +363,12 @@ if (args[0] === "issue" && args[1] === "view") {
                 },
             },
         );
-    const legacy = validate("OPEN", "POLLEN-QUEST");
+    const draft = validate("OPEN", "DRAFT-QUEST");
     const open = validate("OPEN", "QUEST");
     const closed = validate("CLOSED", "QUEST");
     fs.rmSync(fakeBin, { recursive: true, force: true });
 
-    assert.equal(legacy.status, 0, legacy.stderr || legacy.stdout);
+    assert.equal(draft.status, 2, draft.stderr || draft.stdout);
     assert.equal(open.status, 0, open.stderr || open.stdout);
     assert.equal(JSON.parse(open.stdout).submission.quest, "15600");
     assert.equal(closed.status, 2, closed.stderr || closed.stdout);

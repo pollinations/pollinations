@@ -76,6 +76,7 @@ for (const modern of [false, true])
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
+                "stock_quote",
                 "time_convert",
                 "time_math",
             ].sort(),
@@ -949,4 +950,117 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("stock_quote returns a projected Yahoo Finance quote and rejects bad symbols", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "query1.finance.yahoo.com");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.match(
+            new Headers(options.headers).get("user-agent"),
+            /calculators-mcp/,
+        );
+        assert.ok(options.signal instanceof AbortSignal);
+        // Unknown symbols answer HTTP 404 with an error object, not an empty result.
+        if (target.pathname.endsWith("/ZZZZQQQ"))
+            return Response.json(
+                {
+                    chart: {
+                        result: null,
+                        error: {
+                            code: "Not Found",
+                            description:
+                                "No data found, symbol may be delisted",
+                        },
+                    },
+                },
+                { status: 404 },
+            );
+        // AAPL, trimmed real fixture from the live probe (2026-11-19).
+        return Response.json({
+            chart: {
+                result: [
+                    {
+                        meta: {
+                            currency: "USD",
+                            symbol: "AAPL",
+                            exchangeName: "NMS",
+                            regularMarketPrice: 352.995,
+                            regularMarketChangePercent: 0.308,
+                            fiftyTwoWeekHigh: 360.83,
+                            fiftyTwoWeekLow: 243.42,
+                            regularMarketDayHigh: 356.42,
+                            regularMarketDayLow: 351.87,
+                            regularMarketVolume: 11558409,
+                            longName: "Apple Inc.",
+                            // The timestamps array and chart series are
+                            // heavy and useless for a quote — never returned.
+                            chartPreviousClose: 351.91,
+                        },
+                        timestamp: [1795019049],
+                        indicators: {
+                            quote: [
+                                {
+                                    volume: [11558409],
+                                    low: [351.8699951171875],
+                                    high: [356.4200134277344],
+                                    open: [351.8699951171875],
+                                    close: [352.9949951171875],
+                                },
+                            ],
+                        },
+                    },
+                ],
+                error: null,
+            },
+        });
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "stock_quote", { symbol: "AAPL" }), {
+        symbol: "AAPL",
+        name: "Apple Inc.",
+        price: 352.995,
+        change_percent: 0.308,
+        day_high: 356.42,
+        day_low: 351.87,
+        fifty_two_week_high: 360.83,
+        fifty_two_week_low: 243.42,
+        volume: 11558409,
+        currency: "USD",
+        exchange: "NMS",
+    });
+    assert.equal(requests[0].searchParams.get("range"), "1d");
+    assert.equal(requests[0].searchParams.get("interval"), "1d");
+    // A lowercase symbol is upper-cased before the fetch.
+    await call(client, "stock_quote", { symbol: "aapl" });
+    assert.equal(requests[1].pathname.endsWith("/AAPL"), true);
+    // An unknown symbol is a named error, not an empty quote.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "stock_quote",
+                arguments: { symbol: "ZZZZQQQ" },
+            })
+        ).isError,
+        true,
+    );
+    // Bad symbols are rejected before any fetch.
+    const before = requests.length;
+    for (const args of [
+        { symbol: "" },
+        { symbol: "AAPL!" },
+        { symbol: "TOOLONGSYMBOL123" },
+        { symbol: "  " },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "stock_quote", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    assert.equal(requests.length, before);
 });

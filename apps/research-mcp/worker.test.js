@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "speedrun_game",
             ].sort(),
         );
     });
@@ -644,4 +645,126 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("speedrun.com game search projects hard and returns an empty list on no match", async (t) => {
+    mock.method(globalThis, "fetch", async (input, options) => {
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(input, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.speedrun.com");
+        assert.ok(
+            ["celeste", "zzzzqqqxxyy"].includes(
+                target.searchParams.get("name"),
+            ),
+        );
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.searchParams.get("name") === "zzzzqqqxxyy") {
+            return Response.json({
+                data: [],
+                pagination: { offset: 0, max: 5, size: 0, links: [] },
+            });
+        }
+        return Response.json({
+            data: [
+                {
+                    id: "o1y9j9v6",
+                    names: {
+                        international: "Celeste",
+                        japanese: null,
+                        twitch: "Celeste",
+                    },
+                    abbreviation: "celeste",
+                    weblink: "https://www.speedrun.com/celeste",
+                    discord: "https://discord.gg/XYBb8ja",
+                    released: 2018,
+                    "release-date": "2018-01-25",
+                    ruleset: {
+                        "show-milliseconds": true,
+                        "require-verification": true,
+                    },
+                    platforms: [
+                        "nzelkr6q",
+                        "o7e2mx6w",
+                        "8gej2n93",
+                        "7m6ylw9p",
+                        "4p9z0r6r",
+                        "o064j163",
+                        "o064z1e3",
+                        "4p9zjrer",
+                        "nzelyv9q",
+                        "o7e2xj9w",
+                        "w89rqoel",
+                        "3167lw9q",
+                    ],
+                    moderators: { "48grepxp": "super-moderator" },
+                },
+                {
+                    id: "3dxy05v6",
+                    names: {
+                        international: "Celeste 64",
+                        japanese: null,
+                        twitch: "Celeste 64: Fragments of the Mountain",
+                    },
+                    abbreviation: "celeste64",
+                    weblink: "https://www.speedrun.com/celeste64",
+                    discord: "https://discord.gg/9Dm3NCS",
+                    released: 2024,
+                    "release-date": "2024-01-29",
+                    ruleset: { "show-milliseconds": true },
+                    platforms: ["8gej2n93", "5neg7key"],
+                    moderators: { "48grepxp": "super-moderator" },
+                },
+            ],
+            pagination: { offset: 0, max: 2, size: 2, links: [] },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "speedrun_game", {
+        name: "celeste",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "celeste",
+        total: 2,
+        games: [
+            {
+                id: "o1y9j9v6",
+                name: "Celeste",
+                abbreviation: "celeste",
+                released: 2018,
+                releaseDate: "2018-01-25",
+                weblink: "https://www.speedrun.com/celeste",
+                platforms: 12,
+            },
+            {
+                id: "3dxy05v6",
+                name: "Celeste 64",
+                abbreviation: "celeste64",
+                released: 2024,
+                releaseDate: "2024-01-29",
+                weblink: "https://www.speedrun.com/celeste64",
+                platforms: 2,
+            },
+        ],
+    });
+
+    const empty = await call(c, "speedrun_game", {
+        name: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        games: [],
+    });
+
+    const blank = await call(c, "speedrun_game", { name: " " });
+    assert.equal(blank.isError, true);
 });

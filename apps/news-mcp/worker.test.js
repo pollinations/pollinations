@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "nasa_events",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,160 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("EONET returns the latest geometry point per event, not the full track", async (t) => {
+    const events = [
+        {
+            id: "EONET_26494",
+            title: "Tropical Cyclone Akvan",
+            description: null,
+            closed: null,
+            categories: [{ id: "severeStorms", title: "Severe Storms" }],
+            geometry: [
+                {
+                    magnitudeValue: 35,
+                    magnitudeUnit: "kts",
+                    date: "2026-11-16T18:00:00Z",
+                    type: "Point",
+                    coordinates: [86.8, 11.4],
+                },
+                {
+                    magnitudeValue: 40,
+                    magnitudeUnit: "kts",
+                    date: "2026-11-18T06:00:00Z",
+                    type: "Point",
+                    coordinates: [86.9, 13.1],
+                },
+            ],
+        },
+        {
+            id: "EONET_26465",
+            title: "Wildfire Range 47, Forrest, Mississippi",
+            description: "16 Miles SE from Hattiesburg, MS",
+            closed: null,
+            categories: [{ id: "wildfires", title: "Wildfires" }],
+            geometry: [
+                {
+                    magnitudeValue: 2378.77,
+                    magnitudeUnit: "acres",
+                    date: "2026-11-13T15:18:00Z",
+                    type: "Point",
+                    coordinates: [-89.159329, 31.099822],
+                },
+            ],
+        },
+        {
+            id: "EONET_99999",
+            title: "Test Polygon Event",
+            description: null,
+            closed: null,
+            categories: [{ id: "wildfires", title: "Wildfires" }],
+            geometry: [
+                {
+                    date: "2026-11-17T00:00:00Z",
+                    type: "Polygon",
+                    coordinates: [
+                        [
+                            [0, 0],
+                            [1, 0],
+                            [1, 1],
+                            [0, 0],
+                        ],
+                    ],
+                },
+            ],
+        },
+    ];
+    const mock = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "eonet.gsfc.nasa.gov");
+        assert.equal(url.pathname, "/api/v3/events");
+        assert.equal(url.searchParams.get("limit"), "3");
+        assert.equal(url.searchParams.get("status"), "open");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        return Response.json({ title: "EONET Events", events });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "nasa_events",
+        arguments: { limit: 3, status: "open" },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        status: "open",
+        total: 3,
+        events: [
+            {
+                id: "EONET_26494",
+                title: "Tropical Cyclone Akvan",
+                categories: ["Severe Storms"],
+                description: null,
+                closed: null,
+                latest: {
+                    date: "2026-11-18T06:00:00Z",
+                    type: "Point",
+                    longitude: 86.9,
+                    latitude: 13.1,
+                    magnitude: 40,
+                    magnitude_unit: "kts",
+                },
+            },
+            {
+                id: "EONET_26465",
+                title: "Wildfire Range 47, Forrest, Mississippi",
+                categories: ["Wildfires"],
+                description: "16 Miles SE from Hattiesburg, MS",
+                closed: null,
+                latest: {
+                    date: "2026-11-13T15:18:00Z",
+                    type: "Point",
+                    longitude: -89.159329,
+                    latitude: 31.099822,
+                    magnitude: 2378.77,
+                    magnitude_unit: "acres",
+                },
+            },
+            {
+                id: "EONET_99999",
+                title: "Test Polygon Event",
+                categories: ["Wildfires"],
+                description: null,
+                closed: null,
+                latest: {
+                    date: "2026-11-17T00:00:00Z",
+                    type: "Polygon",
+                    longitude: null,
+                    latitude: null,
+                    magnitude: null,
+                    magnitude_unit: null,
+                },
+            },
+        ],
+    });
+    mock.mock.mockImplementation(async () =>
+        Response.json({ title: "EONET Events", events: [] }),
+    );
+    const empty = await c.callTool({
+        name: "nasa_events",
+        arguments: { limit: 1, status: "closed" },
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(JSON.parse(empty.content[0].text), {
+        status: "closed",
+        total: 0,
+        events: [],
+    });
+    const bad = await c.callTool({
+        name: "nasa_events",
+        arguments: { limit: 11 },
+    });
+    assert.equal(bad.isError, true);
+    assert.equal(mock.mock.callCount(), 2);
 });

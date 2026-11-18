@@ -16,6 +16,7 @@ const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
 const u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v); return b; };
 const u64 = (v) => { const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(v)); return b; };
 const i64 = (v) => { const b = Buffer.alloc(8); b.writeBigInt64LE(BigInt(v)); return b; };
+const i128 = (v) => { const b = Buffer.alloc(16); b.writeBigInt64LE(BigInt(v), 0); return b; };
 const str = (v) => { const b = Buffer.from(v); return Buffer.concat([u32(b.length), b]); };
 const bool = (v) => u8(v ? 1 : 0);
 const encode = (...parts) => Buffer.concat(parts).toString("base64");
@@ -42,6 +43,15 @@ function pumpSwapCreatePoolFixture(extra = Buffer.alloc(0)) {
         u64(1000), u64(2000), u64(3000), u64(4000), u64(5), u64(6), u64(7),
         u8(1), key(0), key(7), key(8), key(9), key(10), bool(false), u64(100),
         bool(false), bool(false), extra);
+}
+function pumpSwapBuyFixture(extra = Buffer.alloc(0)) {
+    return encode(Buffer.from([103,244,82,31,44,245,119,119]),
+        i64(1800000000), u64(1000), u64(2000), u64(3000), u64(4000), u64(5000), u64(6000),
+        u64(7000), u64(100), u64(10), u64(200), u64(20), u64(7010), u64(7000),
+        key(6), key(2), key(7), key(8), key(9), key(10), key(11),
+        u64(50), u64(5), bool(true), u64(10), u64(20), u64(30), i64(1799999999),
+        u64(900), str("buy"), u64(0), u64(0), u64(0), u64(0), i128(123456),
+        bool(true), u64(100000), u64(0), u64(0), u64(0), extra);
 }
 function mintAccountFixture() {
     const data = Buffer.alloc(82);
@@ -223,6 +233,35 @@ test("get_recent_pumpfun_trades decodes recent buy events", async (t) => {
     const data = JSON.parse(result.content[0].text);
     assert.equal(data.events[0].kind, "trade_buy");
     assert.equal(data.events[0].event.mint, MINT);
+});
+
+test("PumpSwap BuyEvent decodes documented amounts and keeps unknown suffix opaque", () => {
+    const decoded = decodePumpSwapEvent(pumpSwapBuyFixture(Buffer.from("0102030405060708", "hex")));
+    assert.equal(decoded.kind, "trade_buy");
+    assert.equal(decoded.event.baseAmountOut, "1000");
+    assert.equal(decoded.event.quoteAmountIn, "7000");
+    assert.equal(decoded.event.unparsedTrailingBytesLength, 8);
+});
+
+test("get_recent_pumpswap_events decodes a recent buy event", async (t) => {
+    const encoded = pumpSwapBuyFixture();
+    mockRpc(t, async ({ method, params }) => {
+        if (method === "getSignaturesForAddress") {
+            assert.equal(params[0], PUMP_SWAP_PROGRAM_ID);
+            return [{ signature: "swap-buy-signature", err: null }];
+        }
+        if (method === "getTransaction")
+            return { slot: 13, blockTime: 1800000000, meta: { err: null, logMessages: [
+                `Program ${PUMP_SWAP_PROGRAM_ID} invoke [1]`, `Program data: ${encoded}`,
+                `Program ${PUMP_SWAP_PROGRAM_ID} success`,
+            ] } };
+        assert.fail(`unexpected RPC method ${method}`);
+    });
+    const client = await clientFor(t);
+    const result = await client.callTool({ name: "get_recent_pumpswap_events", arguments: { limit: 5 } });
+    const data = JSON.parse(result.content[0].text);
+    assert.equal(data.events[0].kind, "trade_buy");
+    assert.equal(data.events[0].event.baseAmountOut, "1000");
 });
 
 test("get_recent_pumpswap_events decodes pool creation and mint pair", async (t) => {

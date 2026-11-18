@@ -17,59 +17,37 @@
     "19888": {
       "merge_sha": "fdecb4b9fdad27f3a2822560d81c7ef509a3fff3",
       "merged_at": "2026-11-18T00:35:55Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-gen"
-      ]
+      "required": []
     },
     "19889": {
       "merge_sha": "68717eba2bbd1a2fda522e31b74fbf42f7505541",
       "merged_at": "2026-11-18T00:26:33Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     },
     "19890": {
       "merge_sha": "51c23dc95e929d1a88e69bef9d4748c69455828c",
       "merged_at": "2026-11-17T23:52:52Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     },
     "19929": {
       "merge_sha": "cdde268c1538f1b42faa704ad6be2203add0a189",
       "merged_at": "2026-11-17T23:54:04Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-gen"
-      ]
+      "required": []
     },
     "19952": {
       "merge_sha": "a38014db9da0e6bd18e0c214ca2cb98d2fcad392",
       "merged_at": "2026-11-18T01:41:00Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     },
     "19964": {
       "merge_sha": "9b62de052f71ef75723f8c8567ddbf33b6d943d8",
       "merged_at": "2026-11-18T01:04:16Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     },
     "20019": {
       "merge_sha": "9f7535b5675e5c35d91161faf8e8e0fc41a3865d",
       "merged_at": "2026-11-18T01:30:24Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "321014b99b5ed15315a93583a234ac361ef82d13",

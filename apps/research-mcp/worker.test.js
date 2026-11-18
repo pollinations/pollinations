@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { horoscopeTools } from "./tools/horoscope.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "horoscope",
             ].sort(),
         );
     });
@@ -644,4 +646,106 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("horoscope returns a daily horoscope and rejects bad signs and days before fetching", async (t) => {
+    const liveAries = {
+        data: {
+            date: "2026-11-18",
+            period: "daily",
+            sign: "Aries",
+            horoscope:
+                "Today is a good day to focus on your work and responsibilities, as you're likely to be more productive and efficient than usual. You may need to deal with some routine tasks or chores, but getting them out of the way will free up time and energy for more interesting things. Your communication skills are also strong, so it's a good time to talk to someone you need to reach or negotiate with. Just be careful not to come on too strong, as you may unintentionally overwhelm or intimidate others. Overall, it's a solid day to get things done and make progress on your goals.",
+        },
+    };
+    const liveLeo = {
+        data: {
+            date: "2026-11-18",
+            period: "daily",
+            sign: "Leo",
+            horoscope:
+                "Leos may find themselves in a social situation today where they need to balance their own desires with the needs of others. This could be a challenge, but it's also an opportunity to show that they can be flexible and considerate. At work or in their personal projects, Leos are likely to be focused and driven, making progress on their goals. They may need to take a break and recharge at some point, but overall they should be able to stay motivated and productive. By being adaptable and open to feedback, Leos can achieve a lot and build stronger relationships.",
+        },
+    };
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "horoscope-app-api.vercel.app");
+        assert.equal(target.pathname, "/api/v1/get-horoscope/daily");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(
+            target.searchParams.get("sign") === "leo" ? liveLeo : liveAries,
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "horoscope", {
+        sign: "aries",
+        day: "today",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        sign: "Aries",
+        day: "today",
+        date: "2026-11-18",
+        period: "daily",
+        horoscope:
+            "Today is a good day to focus on your work and responsibilities, as you're likely to be more productive and efficient than usual. You may need to deal with some routine tasks or chores, but getting them out of the way will free up time and energy for more interesting things. Your communication skills are also strong, so it's a good time to talk to someone you need to reach or negotiate with. Just be careful not to come on too strong, as you may unintentionally overwhelm or intimidate others. Overall, it's a solid day to get things done and make progress on your goals.",
+    });
+    assert.equal(fetchCalls, 1);
+
+    const defaultResult = await call(c, "horoscope", { sign: "leo" });
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).sign, "Leo");
+    assert.equal(value(defaultResult).day, "today");
+    assert.equal(fetchCalls, 2);
+
+    const badSign = await call(c, "horoscope", { sign: "notasign" });
+    assert.equal(badSign.isError, true, JSON.stringify(badSign));
+    assert.equal(fetchCalls, 2);
+
+    const badDay = await call(c, "horoscope", {
+        sign: "aries",
+        day: "nextweek",
+    });
+    assert.equal(badDay.isError, true, JSON.stringify(badDay));
+    assert.equal(fetchCalls, 2);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = horoscopeTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async (url) => {
+        stubCalls += 1;
+        assert.match(url, /sign=leo&day=tomorrow/);
+        return liveLeo;
+    };
+    assert.deepEqual(await run({ sign: "LEO", day: "TOMORROW" }, stubFetch), {
+        sign: "Leo",
+        day: "tomorrow",
+        date: "2026-11-18",
+        period: "daily",
+        horoscope:
+            "Leos may find themselves in a social situation today where they need to balance their own desires with the needs of others. This could be a challenge, but it's also an opportunity to show that they can be flexible and considerate. At work or in their personal projects, Leos are likely to be focused and driven, making progress on their goals. They may need to take a break and recharge at some point, but overall they should be able to stay motivated and productive. By being adaptable and open to feedback, Leos can achieve a lot and build stronger relationships.",
+    });
+    assert.equal(stubCalls, 1);
+
+    // A bad day is rejected before any fetch, and a textless horoscope
+    // is a clean error.
+    await assert.rejects(
+        run({ sign: "aries", day: "nextweek" }, stubFetch),
+        /Unknown day/,
+    );
+    assert.equal(stubCalls, 1);
+    await assert.rejects(
+        run({ sign: "aries" }, async () => ({
+            data: { sign: "Aries", date: "2026-11-18", horoscope: "" },
+        })),
+        /without text/,
+    );
 });

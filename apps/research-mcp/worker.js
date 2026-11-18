@@ -4,6 +4,7 @@ import { fetchJson } from "./fetch.js";
 import { arxivTools } from "./tools/arxiv.js";
 import { crossRefTools } from "./tools/crossref.js";
 import { europePmcTools } from "./tools/europe-pmc.js";
+import { olsTools } from "./tools/ols.js";
 import { rfcTools } from "./tools/rfc.js";
 import { wikidataTools } from "./tools/wikidata.js";
 import { wikipediaTools } from "./tools/wikipedia.js";
@@ -23,6 +24,7 @@ const handler = () =>
                 ...rfcTools,
                 ...wikidataTools,
                 ...europePmcTools,
+                ...olsTools,
                 ...arxivTools,
                 ...worldBankTools,
                 ...crossRefTools,

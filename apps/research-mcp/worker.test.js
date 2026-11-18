@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "string_network",
             ].sort(),
         );
     });
@@ -644,4 +645,111 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("string_network returns the strongest edges first and names unknown proteins", async (t) => {
+    // Trimmed live fixture: the first three TP53 edges, verbatim, in the
+    // unsorted order STRING returns them (0.409, 0.466, 0.5).
+    const fixture = [
+        {
+            stringId_A: "9606.ENSP00000212015",
+            stringId_B: "9606.ENSP00000215832",
+            preferredName_A: "SIRT1",
+            preferredName_B: "MAPK1",
+            ncbiTaxonId: "9606",
+            score: 0.409,
+            nscore: 0,
+            fscore: 0,
+            pscore: 0,
+            ascore: 0.066,
+            escore: 0,
+            dscore: 0,
+            tscore: 0.394,
+        },
+        {
+            stringId_A: "9606.ENSP00000212015",
+            stringId_B: "9606.ENSP00000229795",
+            preferredName_A: "SIRT1",
+            preferredName_B: "MAPK14",
+            ncbiTaxonId: "9606",
+            score: 0.466,
+            nscore: 0,
+            fscore: 0,
+            pscore: 0,
+            ascore: 0.075,
+            escore: 0,
+            dscore: 0,
+            tscore: 0.447,
+        },
+        {
+            stringId_A: "9606.ENSP00000212015",
+            stringId_B: "9606.ENSP00000254719",
+            preferredName_A: "SIRT1",
+            preferredName_B: "RPA1",
+            ncbiTaxonId: "9606",
+            score: 0.5,
+            nscore: 0,
+            fscore: 0,
+            pscore: 0,
+            ascore: 0.06,
+            escore: 0.461,
+            dscore: 0,
+            tscore: 0.093,
+        },
+    ];
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "string-db.org");
+        assert.equal(url.pathname, "/api/json/network");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.searchParams.get("identifiers") === "ZZZZQQQXXYY")
+            return new Response("not found", { status: 404 });
+        assert.equal(url.searchParams.get("identifiers"), "TP53");
+        assert.equal(url.searchParams.get("species"), "9606");
+        return Response.json(fixture);
+    });
+    const c = await client(t);
+    const result = await call(c, "string_network", {
+        protein: "TP53",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        protein: "TP53",
+        species: 9606,
+        total: 3,
+        edges: [
+            {
+                protein_a: "SIRT1",
+                string_id_a: "9606.ENSP00000212015",
+                protein_b: "RPA1",
+                string_id_b: "9606.ENSP00000254719",
+                score: 0.5,
+            },
+            {
+                protein_a: "SIRT1",
+                string_id_a: "9606.ENSP00000212015",
+                protein_b: "MAPK14",
+                string_id_b: "9606.ENSP00000229795",
+                score: 0.466,
+            },
+        ],
+    });
+    const defaults = await call(c, "string_network", { protein: "TP53" });
+    assert.notEqual(defaults.isError, true, JSON.stringify(defaults));
+    assert.equal(value(defaults).edges.length, 3);
+    const missing = await call(c, "string_network", {
+        protein: "ZZZZQQQXXYY",
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /Protein not found: ZZZZQQQXXYY/);
+    const before = fetches;
+    const blank = await call(c, "string_network", { protein: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
 });

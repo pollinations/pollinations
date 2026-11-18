@@ -63,6 +63,7 @@ for (const modern of [false, true])
             "inspect_cidr",
             "inspect_mac",
             "ip_whois",
+            "uk_postcode",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
         assert.deepEqual(
@@ -76,6 +77,7 @@ for (const modern of [false, true])
                 "domain_whois",
                 "http_probe",
                 "ip_whois",
+                "uk_postcode",
             ],
         );
         const response = await client.callTool({
@@ -437,4 +439,104 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("uk_postcode looks up a UK postcode and rejects bad postcodes", async (t) => {
+    let calls = 0;
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        calls++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.postcodes.io");
+        assert.equal(init.headers.Accept, "application/json");
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (
+            url.pathname === "/postcodes/SW1A%201AA" ||
+            url.pathname === "/postcodes/SW1A1AA"
+        )
+            return new Response(
+                JSON.stringify({
+                    status: 200,
+                    result: {
+                        postcode: "SW1A 1AA",
+                        quality: 1,
+                        eastings: 529090,
+                        northings: 179645,
+                        country: "England",
+                        nhs_ha: "London",
+                        longitude: -0.141563,
+                        latitude: 51.50101,
+                        region: "London",
+                        lsoa: "Westminster 018C",
+                        msoa: "Westminster 018",
+                        incode: "1AA",
+                        outcode: "SW1A",
+                        parliamentary_constituency:
+                            "Cities of London and Westminster",
+                        admin_district: "Westminster",
+                        parish: "Westminster, unparished area",
+                        admin_ward: "St James's",
+                        date_of_introduction: "198001",
+                        codes: { admin_district: "E09000033" },
+                    },
+                }),
+            );
+        if (url.pathname === "/postcodes/ZZ99ZZ")
+            return new Response(
+                JSON.stringify({
+                    status: 404,
+                    error: "Postcode not found",
+                }),
+                { status: 404 },
+            );
+        throw new Error(`unexpected fetch ${url}`);
+    });
+    const client = await clientFor(t);
+    const read = async (name, args) => {
+        const result = await client.callTool({ name, arguments: args });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    assert.deepEqual(await read("uk_postcode", { postcode: "SW1A 1AA" }), {
+        postcode: "SW1A 1AA",
+        country: "England",
+        region: "London",
+        latitude: 51.50101,
+        longitude: -0.141563,
+        admin_district: "Westminster",
+        parish: "Westminster, unparished area",
+        parliamentary_constituency: "Cities of London and Westminster",
+        lsoa: "Westminster 018C",
+        msoa: "Westminster 018",
+        nhs_ha: "London",
+        outcode: "SW1A",
+        incode: "1AA",
+        date_of_introduction: "198001",
+    });
+    assert.equal(calls, 1);
+    assert.deepEqual(
+        (await read("uk_postcode", { postcode: "sw1a1aa" })).postcode,
+        "SW1A 1AA",
+    );
+    assert.equal(calls, 2);
+    const unknown = await client.callTool({
+        name: "uk_postcode",
+        arguments: { postcode: "ZZ99ZZ" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /No UK postcode found for "ZZ99ZZ" \(postcodes\.io returned HTTP 404\)/,
+    );
+    assert.equal(calls, 3);
+    const bad = await client.callTool({
+        name: "uk_postcode",
+        arguments: { postcode: "not-a-postcode" },
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /Invalid UK postcode/);
+    assert.equal(calls, 3);
 });

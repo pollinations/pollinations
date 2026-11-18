@@ -523,8 +523,9 @@ export function QuestProgress({
                     <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
                         <SparkleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Every merged pull request and every issue it fixes
-                            adds a cell. The comb has no limit.
+                            Every merged pull request adds a cell, and so does
+                            every bug you report that someone else fixes. The
+                            comb has no limit.
                         </span>
                     </p>
                     <ExternalLinkButton

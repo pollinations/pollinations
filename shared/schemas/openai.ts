@@ -448,6 +448,13 @@ export const CreateChatCompletionRequestSchema = z
                     'tool_choice "required" requires at least one tool in tools.',
             });
         }
+        if (value.stream_options && !value.stream) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["stream_options"],
+                message: "`stream_options` requires `stream` to be true",
+            });
+        }
     });
 
 export type CreateChatCompletionRequest = z.infer<

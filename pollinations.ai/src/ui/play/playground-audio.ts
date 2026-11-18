@@ -79,12 +79,14 @@ export async function generatePlaygroundAudio(
     {
         prompt,
         file,
+        referenceUrls,
         voice,
         duration,
         language,
     }: {
         prompt: string;
         file?: File;
+        referenceUrls?: WeakMap<File, Promise<string>>;
         voice?: string;
         duration?: number;
         language?: string;
@@ -116,15 +118,23 @@ export async function generatePlaygroundAudio(
         });
         return { type: "audio", ...result };
     }
-    const upload = file
-        ? await client.upload(file, { name: file.name })
-        : undefined;
+    let referenceUrl = file && referenceUrls?.get(file);
+    if (file && !referenceUrl) {
+        referenceUrl = client.upload(file, { name: file.name }).then(
+            (upload) => upload.url,
+            (error: unknown) => {
+                referenceUrls?.delete(file);
+                throw error;
+            },
+        );
+        referenceUrls?.set(file, referenceUrl);
+    }
     const options = {
         model: model.id,
         voice,
         duration,
         [file && isVideo(file) ? "referenceVideo" : "referenceAudio"]:
-            upload?.url,
+            await referenceUrl,
     };
     const result =
         endpoint === "/audio/{text}"

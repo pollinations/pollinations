@@ -92,6 +92,41 @@ describe("catalog-driven audio requests", () => {
         expect(result.type).toBe("audio");
     });
 
+    it("retries a failed upload and shares one reference URL across prompts", async () => {
+        const fetchRequest = vi
+            .fn()
+            .mockResolvedValueOnce(new Response("Retry", { status: 503 }))
+            .mockResolvedValueOnce(
+                Response.json({
+                    url: "https://media.pollinations.ai/reference",
+                }),
+            )
+            .mockImplementation(async () => new Response("speech"));
+        vi.stubGlobal("fetch", fetchRequest);
+        const referenceUrls = new WeakMap<File, Promise<string>>();
+        const speak = (prompt: string) =>
+            generatePlaygroundAudio(
+                client,
+                model("/v1/audio/speech", ["text", "audio"]),
+                { prompt, file, referenceUrls },
+            );
+        await expect(speak("First")).rejects.toThrow();
+        await Promise.all([speak("First"), speak("Second")]);
+        expect(
+            fetchRequest.mock.calls.map(([url]) => new URL(url).pathname),
+        ).toEqual([
+            "/upload",
+            "/upload",
+            "/v1/audio/speech",
+            "/v1/audio/speech",
+        ]);
+        for (const [, request] of fetchRequest.mock.calls.slice(2)) {
+            expect(JSON.parse(request.body).reference_audio).toBe(
+                "https://media.pollinations.ai/reference",
+            );
+        }
+    });
+
     it("uploads a video and sends it as the reference video", async () => {
         const fetchRequest = vi
             .fn()

@@ -58,6 +58,7 @@ import {
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
+import { AudioPreview, AudioRecorder } from "./AudioRecorder";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -692,6 +693,19 @@ export function Playground() {
     const dimensionsLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
+    const session = useMemo(
+        () =>
+            apiKey
+                ? {
+                      client: new Pollinations({
+                          apiKey,
+                          baseUrl: API_BASE_URL,
+                      }),
+                      referenceUrls: new WeakMap<File, Promise<string>>(),
+                  }
+                : null,
+        [apiKey],
+    );
     const catalog = useModelCatalog({
         baseUrl: API_BASE_URL,
         enabled: isHydrated,
@@ -728,6 +742,7 @@ export function Playground() {
         search.guidance === "references" ? "references" : "frames",
     );
     const [sound, setSound] = useState(search.sound ?? "");
+    const [recording, setRecording] = useState(false);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
     const [voice, setVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
@@ -1134,15 +1149,12 @@ export function Playground() {
     async function generate() {
         const trimmedPrompt = prompt.trim();
 
-        if (isGenerating || !apiKey || !currentModel || blockedReason) return;
+        if (isGenerating || !session || !currentModel || blockedReason) return;
 
         runStore.set({ running: activeCategory, error: null, result: null });
 
         try {
-            const client = new Pollinations({
-                apiKey,
-                baseUrl: API_BASE_URL,
-            });
+            const { client } = session;
             const requestSeed = fixedSeed ?? randomGenerationSeed();
             const referenceUrls =
                 supportsReferenceImages && !usesReferences
@@ -1201,6 +1213,7 @@ export function Playground() {
                     {
                         prompt: trimmedPrompt,
                         file: audioFiles[0],
+                        referenceUrls: session.referenceUrls,
                         voice: selectedVoice || undefined,
                         duration: audioDuration,
                         language: isAudioTranscription
@@ -1276,23 +1289,25 @@ export function Playground() {
         : !prompt.trim();
 
     /** Why the button cannot fire, or null when it can. Shown beside the button. */
-    const blockedReason = needsSignIn
-        ? null
-        : audioError
-          ? audioError
-          : missingInput
-            ? requiresMediaUpload
-                ? `Upload ${mediaUploadLabel} first`
-                : `Add ${promptLabel.toLowerCase()} first`
-            : !selectedModelAllowed
-              ? isLoading
-                  ? "Models are loading"
-                  : catalogError
-                    ? "Models failed to load"
-                    : !currentModel
-                      ? "Choose an available model"
-                      : "This key cannot use the selected model"
-              : null;
+    const blockedReason = recording
+        ? "Finish recording first"
+        : needsSignIn
+          ? null
+          : audioError
+            ? audioError
+            : missingInput
+              ? requiresMediaUpload
+                  ? `Upload ${mediaUploadLabel} first`
+                  : `Add ${promptLabel.toLowerCase()} first`
+              : !selectedModelAllowed
+                ? isLoading
+                    ? "Models are loading"
+                    : catalogError
+                      ? "Models failed to load"
+                      : !currentModel
+                        ? "Choose an available model"
+                        : "This key cannot use the selected model"
+                : null;
 
     // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
     const run = needsSignIn ? () => login() : generate;
@@ -1311,8 +1326,17 @@ export function Playground() {
                         : `Reference ${mediaUploadLabel}${currentModel.inputModalities.includes("audio") ? " (optional)" : ""}`
                 }
             >
+                {audioTask === "speech-generation" &&
+                    uploadMedia.includes("audio") && (
+                        <Text size="sm" tone="muted">
+                            Use a short clip of one person speaking clearly.
+                            Keep it selected to use the same voice for another
+                            line.
+                        </Text>
+                    )}
                 <FileUpload
                     value={audioFiles}
+                    disabled={recording || isGenerating}
                     onChange={setAudioFiles}
                     maxFiles={1}
                     {...uploadProps(uploadMedia, "Use one media file.")}
@@ -1320,6 +1344,18 @@ export function Playground() {
                     previewIcon={<MediaUploadIcon className="h-5 w-5" />}
                     label={`Add ${mediaUploadLabel}`}
                 />
+                {uploadMedia.includes("audio") && audioFiles.length === 0 && (
+                    <AudioRecorder
+                        key={currentModel.id}
+                        maxBytes={UPLOAD_MAX_MB.audio * 1024 * 1024}
+                        disabled={isGenerating}
+                        onRecord={setAudioFiles}
+                        onBusyChange={setRecording}
+                    />
+                )}
+                {audioFiles[0] && !isVideo(audioFiles[0]) && (
+                    <AudioPreview file={audioFiles[0]} />
+                )}
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
                 )}

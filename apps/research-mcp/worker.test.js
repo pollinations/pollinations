@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { usaspendingTools } from "./tools/usaspending.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "agency_overview",
             ].sort(),
         );
     });
@@ -644,4 +646,153 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("agency_overview resolves names to toptier codes, honours fiscal_year, and reports unknown codes cleanly", async (t) => {
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.usaspending.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (target.pathname === "/api/v2/agency/999/")
+            return new Response(
+                JSON.stringify({
+                    detail: "Agency with a toptier code of '999' does not exist",
+                }),
+                {
+                    status: 404,
+                    headers: { "content-type": "application/json" },
+                },
+            );
+        if (target.pathname === "/api/v2/agency/080/") {
+            assert.equal(target.searchParams.get("fiscal_year"), "2026");
+            return Response.json({
+                fiscal_year: 2026,
+                toptier_code: "080",
+                name: "National Aeronautics and Space Administration",
+                abbreviation: "NASA",
+                agency_id: 862,
+                icon_filename: "NASA.jpg",
+                mission:
+                    "Drive advances in science, technology, aeronautics, and space exploration to enhance knowledge, education, innovation, economic vitality, and stewardship of Earth.",
+                website: "https://www.nasa.gov/",
+                congressional_justification_url: "https://www.nasa.gov/cj",
+                about_agency_data: null,
+                subtier_agency_count: 2,
+                def_codes: [{ code: "AAB" }],
+                messages: [],
+            });
+        }
+        assert.equal(target.pathname, "/api/v2/agency/073/");
+        assert.equal(target.searchParams.get("fiscal_year"), null);
+        return Response.json({
+            fiscal_year: 2027,
+            toptier_code: "073",
+            name: "Small Business Administration",
+            abbreviation: "SBA",
+            agency_id: 803,
+            icon_filename: "SBA.jpg",
+            mission:
+                "To maintain and strengthen the nation's economy by enabling the establishment and vitality of small businesses and to assist in the economic recovery of communities after disasters.",
+            website: "https://www.sba.gov/",
+            congressional_justification_url: "https://www.sba.gov/cj",
+            about_agency_data: null,
+            subtier_agency_count: 1,
+            def_codes: [],
+            messages: [],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "agency_overview", { agency: "073" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        fiscal_year: 2027,
+        toptier_code: "073",
+        name: "Small Business Administration",
+        abbreviation: "SBA",
+        mission:
+            "To maintain and strengthen the nation's economy by enabling the establishment and vitality of small businesses and to assist in the economic recovery of communities after disasters.",
+        website: "https://www.sba.gov/",
+        subtier_agency_count: 1,
+    });
+    assert.equal(fetchCalls, 1);
+
+    // A name resolves to its toptier code, and fiscal_year is passed through.
+    const nasa = await call(c, "agency_overview", {
+        agency: "NASA",
+        fiscal_year: 2026,
+    });
+    assert.notEqual(nasa.isError, true, JSON.stringify(nasa));
+    assert.deepEqual(value(nasa), {
+        fiscal_year: 2026,
+        toptier_code: "080",
+        name: "National Aeronautics and Space Administration",
+        abbreviation: "NASA",
+        mission:
+            "Drive advances in science, technology, aeronautics, and space exploration to enhance knowledge, education, innovation, economic vitality, and stewardship of Earth.",
+        website: "https://www.nasa.gov/",
+        subtier_agency_count: 2,
+    });
+    assert.equal(fetchCalls, 2);
+
+    const missing = await call(c, "agency_overview", { agency: "999" });
+    assert.equal(missing.isError, true, JSON.stringify(missing));
+    assert.match(
+        missing.content[0].text,
+        /No agency found with toptier code 999/,
+    );
+    assert.equal(fetchCalls, 3);
+
+    // Unknown names and out-of-range years are rejected before any fetch.
+    const bad = await call(c, "agency_overview", { agency: "zzz" });
+    assert.equal(bad.isError, true, JSON.stringify(bad));
+    const badYear = await call(c, "agency_overview", {
+        agency: "073",
+        fiscal_year: 1999,
+    });
+    assert.equal(badYear.isError, true, JSON.stringify(badYear));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = usaspendingTools[0][3];
+    assert.deepEqual(
+        await run({ agency: "sba" }, async (url) => {
+            assert.match(url, /\/api\/v2\/agency\/073\/$/);
+            return {
+                fiscal_year: 2027,
+                toptier_code: "073",
+                name: "Small Business Administration",
+                abbreviation: "SBA",
+                mission: "To maintain and strengthen the nation's economy.",
+                website: "https://www.sba.gov/",
+                subtier_agency_count: 1,
+            };
+        }),
+        {
+            fiscal_year: 2027,
+            toptier_code: "073",
+            name: "Small Business Administration",
+            abbreviation: "SBA",
+            mission: "To maintain and strengthen the nation's economy.",
+            website: "https://www.sba.gov/",
+            subtier_agency_count: 1,
+        },
+    );
+    await assert.rejects(
+        run({ agency: "12" }, async () => ({})),
+        /Unknown agency 12/,
+    );
+    await assert.rejects(
+        run({ agency: "073", fiscal_year: 1999 }, async () => ({
+            fiscal_year: 1999,
+        })),
+        /fiscal_year must be a year between 2000 and 2030/,
+    );
 });

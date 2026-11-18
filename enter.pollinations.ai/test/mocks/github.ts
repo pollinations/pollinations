@@ -215,14 +215,15 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
-            const labels = search.match(/\blabel:([^\s]+)/)?.[1]?.split(",");
+            const labelName = body.query?.match(
+                /\blabel\(name:"([^"]+)"\)/,
+            )?.[1];
+            const label = labelName ?? search.match(/\blabel:([^\s]+)/)?.[1];
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
-                    (!labels ||
-                        issue.labels?.some(({ name }) =>
-                            labels.includes(name),
-                        )),
+                    (!label ||
+                        issue.labels?.some(({ name }) => name === label)),
             );
             const start = Number(body.variables?.after ?? 0);
             const nodes = issues.slice(start, start + 100).map((issue) => ({
@@ -255,17 +256,17 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
             }));
             const next = start + nodes.length;
-            return c.json({
-                data: {
-                    search: {
-                        nodes,
-                        pageInfo: {
-                            hasNextPage: next < issues.length,
-                            endCursor:
-                                next < issues.length ? String(next) : null,
-                        },
-                    },
+            const page = {
+                nodes,
+                pageInfo: {
+                    hasNextPage: next < issues.length,
+                    endCursor: next < issues.length ? String(next) : null,
                 },
+            };
+            return c.json({
+                data: labelName
+                    ? { repository: { label: { issues: page } } }
+                    : { search: page },
             });
         })
         .get("/user/emails", (c) => {

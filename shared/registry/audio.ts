@@ -1119,8 +1119,9 @@ const AUDIO_BASE_SERVICES = {
         cost: { completionAudioTokens: 0.16 / 1_000_000 },
         priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "ZONOS3-Mini",
-        description: "Text-to-speech with a preset voice and MP3 or PCM output",
-        inputModalities: ["text"],
+        description:
+            "Speech in the Alloy voice or a voice cloned from a reference recording.",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         voices: ["alloy"],
         supportedEndpoints: ["/v1/audio/speech"],

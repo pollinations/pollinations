@@ -45,7 +45,7 @@ curl https://gen.pollinations.ai/v1/models \
 - [🚀 Getting Started](#-getting-started)
 - [Guides](#guides)
 - [🔐 Authentication](#-authentication)
-- [🔓 Pollinations Connect (OAuth 2.1)](#-pollinations-connect-oauth-21)
+- [🔓 Pollinations Pay (OAuth 2.1)](#-pollinations-pay-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [▲ Vercel AI SDK](#-vercel-ai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
@@ -104,7 +104,9 @@ The header is preferred for everything except browser flows that can't set custo
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted. See [Error Responses](#-error-responses).
 
-## 🔓 Pollinations Connect (OAuth 2.1)
+<a name="-pollinations-connect-oauth-21"></a>
+
+## 🔓 Pollinations Pay (OAuth 2.1)
 
 Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
@@ -3586,7 +3588,7 @@ curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-4466
 
 #### `GET` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3597,6 +3599,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -3608,7 +3612,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 
 #### `HEAD` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3619,6 +3623,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -5176,6 +5182,8 @@ Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An 
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — Generated image, video, audio or 3D file
+
+📤 **Response** · `206` — The requested byte range of the file, so video and audio players can seek
 
 💻 **Example**
 

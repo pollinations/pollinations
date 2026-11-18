@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "econbiz_search",
             ].sort(),
         );
     });
@@ -644,4 +645,129 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("EconBiz search projects titles, authors, dates and links, and caps results client-side", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.econbiz.de");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("q") === "zzzzqqqxxyy") {
+            return Response.json({
+                hits: { hits: [], max_score: 0, total: 0 },
+                status: 200,
+            });
+        }
+        assert.equal(url.searchParams.get("q"), "climate");
+        return Response.json({
+            hits: {
+                hits: [
+                    {
+                        _score: 9.69955,
+                        contributor: ["Tabellini, Marco", "Taylor, Charles A."],
+                        creator: ["Obolensky, Marguerite"],
+                        date: ["January 2026"],
+                        id: "10015652381",
+                        identifier_url: [
+                            "https://www.rfberlin.com/wp-content/uploads/2026/01/26031.pdf",
+                            "https://econpapers.repec.org/paper/crmwpaper/26031.htm",
+                        ],
+                        person: [
+                            "Obolensky, Marguerite",
+                            "Tabellini, Marco",
+                            "Taylor, Charles A.",
+                        ],
+                        publisher: [
+                            "Berlin : RFBerlin, Rockwool Foundation Berlin - Institute for the Economy and the Future of Work",
+                        ],
+                        series: [
+                            "Discussion paper series / Rockwool Foundation Berlin ; 26, 031",
+                        ],
+                        subject: ["Migration", "climate"],
+                        title: "Migration, climate similarity, and the consequences of climate mismatch",
+                        type: "book",
+                    },
+                    {
+                        _score: 8.966295,
+                        date: ["May 2026"],
+                        id: "10015667163",
+                        identifier_url: [
+                            "https://www.rfberlin.com/wp-content/uploads/2026/05/26144.pdf",
+                        ],
+                        person: [
+                            "Huybers, Peter",
+                            "Tabellini, Marco",
+                            "Taylor, Charles A.",
+                            "Toti, Francesco",
+                        ],
+                        publisher: [
+                            "Berlin : RFBerlin, Rockwool Foundation Berlin - Institute for the Economy and the Future of Work",
+                        ],
+                        title: "Climate and prehistoric migration",
+                        type: "book",
+                    },
+                    {
+                        id: "10015650000",
+                        person: ["No Date, Author"],
+                        title: "A paper with no date",
+                    },
+                ],
+                max_score: 9.69955,
+                total: 147124,
+            },
+            status: 200,
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "econbiz_search", { query: "climate", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(val.query, "climate");
+    assert.equal(val.total, 147124);
+    assert.equal(val.records.length, 2);
+    assert.deepEqual(val.records[0], {
+        id: "10015652381",
+        title: "Migration, climate similarity, and the consequences of climate mismatch",
+        authors: [
+            "Obolensky, Marguerite",
+            "Tabellini, Marco",
+            "Taylor, Charles A.",
+        ],
+        date: "January 2026",
+        publisher:
+            "Berlin : RFBerlin, Rockwool Foundation Berlin - Institute for the Economy and the Future of Work",
+        identifier_url:
+            "https://www.rfberlin.com/wp-content/uploads/2026/01/26031.pdf",
+    });
+    assert.equal(val.records[1].date, "May 2026");
+    assert.equal(fetches, 1);
+
+    const noDate = await call(c, "econbiz_search", {
+        query: "climate",
+        limit: 3,
+    });
+    assert.equal(value(noDate).records[2].date, null);
+    assert.equal(value(noDate).records[2].publisher, null);
+    assert.equal(value(noDate).records[2].identifier_url, null);
+
+    const none = await call(c, "econbiz_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(none.isError, true, JSON.stringify(none));
+    assert.deepEqual(value(none), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        records: [],
+    });
+
+    const blank = await call(c, "econbiz_search", { query: "   " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 3);
 });

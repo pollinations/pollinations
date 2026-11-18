@@ -7,7 +7,7 @@ import {
     GEMINI_SIGNATURE_PREFIX,
     messagesUsage,
     stopReason,
-    toolUseInput,
+    toolUseBlocks,
 } from "./translate.ts";
 
 // Claude Code aborts a stream after 300 seconds without bytes.
@@ -15,6 +15,7 @@ export const PING_INTERVAL_MS = 15_000;
 
 type ChatDelta = {
     content?: string | null;
+    refusal?: string | null;
     reasoning_content?: string | null;
     reasoning?: string | null;
     content_blocks?: { delta?: { thinking?: string; signature?: string } }[];
@@ -127,7 +128,11 @@ export function chatToMessagesStream(
                     });
                     closeBlock();
                 }
-                for (const call of toolCalls.values()) {
+                const toolUses = toolUseBlocks(
+                    [...toolCalls.values()],
+                    finishReason === "length",
+                );
+                for (const call of toolUses) {
                     startBlock({
                         type: "tool_use",
                         id: call.id,
@@ -138,9 +143,7 @@ export function chatToMessagesStream(
                         index: blockIndex,
                         delta: {
                             type: "input_json_delta",
-                            partial_json: JSON.stringify(
-                                toolUseInput(call.arguments),
-                            ),
+                            partial_json: JSON.stringify(call.input),
                         },
                     });
                     send("content_block_stop", { index: blockIndex });
@@ -149,7 +152,7 @@ export function chatToMessagesStream(
                     delta: {
                         stop_reason: stopReason(
                             finishReason,
-                            toolCalls.size > 0,
+                            toolUses.length > 0,
                         ),
                         stop_sequence: null,
                     },
@@ -189,14 +192,15 @@ export function chatToMessagesStream(
                         });
                     }
                 }
-                if (delta.content) {
+                for (const text of [delta.content, delta.refusal]) {
+                    if (!text) continue;
                     if (openBlock !== "text") {
                         startBlock({ type: "text", text: "" });
                         openBlock = "text";
                     }
                     send("content_block_delta", {
                         index: blockIndex,
-                        delta: { type: "text_delta", text: delta.content },
+                        delta: { type: "text_delta", text },
                     });
                 }
                 for (const call of delta.tool_calls ?? []) {

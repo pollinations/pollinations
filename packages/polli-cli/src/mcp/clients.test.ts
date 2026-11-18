@@ -97,10 +97,15 @@ describe("json config clients", () => {
         ["1.0.0", 1, false],
     ])("Pi MCP preflight checks %s (exit %s)", (version, exit, supported) => {
         const ctx = freshCtx();
-        const bin = join(ctx.home, "pi");
+        // npm installs Pi as a .cmd shim on Windows; Node cannot spawn that
+        // directly, so the fixture has to be a shim there too.
+        const windows = process.platform === "win32";
+        const bin = join(ctx.home, windows ? "pi.cmd" : "pi");
         writeFileSync(
             bin,
-            `#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(version)}); process.exit(${exit});\n`,
+            windows
+                ? `@echo off\r\n"${process.execPath}" -e "process.stdout.write('${version}');process.exit(${exit})"\r\n`
+                : `#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(version)}); process.exit(${exit});\n`,
             { mode: 0o700 },
         );
         ctx.env.PATH = [ctx.home, dirname(process.execPath)].join(delimiter);

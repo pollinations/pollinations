@@ -5,31 +5,17 @@
  * median). Returns "—" when no data is available—no theoretical estimates.
  */
 
+import { formatCount } from "@pollinations/ui";
 import type { ModelPrice } from "./types.ts";
 
-/** Abbreviate a value >= 1000 as K/M/B with one decimal (locale-stable, "1.5K"). */
-function compact(num: number): string {
-    for (const [divisor, suffix] of [
-        [1e9, "B"],
-        [1e6, "M"],
-        [1e3, "K"],
-    ] as const) {
-        if (num >= divisor) {
-            const value = Math.round((num / divisor) * 10) / 10;
-            return `${value}${suffix}`;
-        }
-    }
-    return num.toString();
-}
-
 /** Format a rolling median-derived estimate as a coarse count. */
-function formatCount(num: number): string {
+function formatEstimate(num: number): string {
     if (num < 1) return "<1";
     if (num < 10) return Math.round(num).toString();
     if (num < 100) return (Math.round(num / 5) * 5).toString();
     const rounded = Math.round(num / 50) * 50;
     if (rounded < 1000) return rounded.toString();
-    return compact(Math.round(num / 100) * 100);
+    return formatCount(Math.round(num / 100) * 100);
 }
 
 // Measured cost wins over the declared price. An agent lists as free because it
@@ -39,7 +25,7 @@ function formatCount(num: number): string {
 // reads "∞".
 export function calculatePerPollen(model: ModelPrice): string {
     if (model.realAvgCost !== undefined && model.realAvgCost > 0) {
-        return formatCount(1 / model.realAvgCost);
+        return formatEstimate(1 / model.realAvgCost);
     }
     if (model.free) return "∞";
     return "—";

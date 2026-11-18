@@ -1,23 +1,24 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 
 :root {
-    /* Opaque, slightly lightened from the old 60%-transparent mix so the
-       wells read as crisp gold/bronze chips on the pale-amber panel. */
-    --polli-color-paid-pale: oklch(0.955 0.062 92);
-    --polli-color-paid-soft: oklch(0.82 0.165 92);
-    --polli-color-paid-deep: oklch(0.43 0.105 82);
+    /* Paid pollen is the honey orange everywhere: soft is honey itself, pale
+       and deep are its chip background and its readable text. */
+    --polli-color-paid-pale: oklch(0.95 0.055 calc(var(--polli-hue) - 12));
+    --polli-color-paid-soft: var(--polli-color-honey);
+    --polli-color-paid-deep: oklch(0.5 0.14 calc(var(--polli-hue) - 20));
     --polli-color-tier-pale: oklch(0.95 0.05 152);
     --polli-color-tier-soft: oklch(0.74 0.135 152);
-    --polli-color-tier-deep: oklch(0.42 0.11 152);
+    /* Grass green, not forest: alive on the pale mint, 5.5:1 on cream and
+       4.7:1 on the grey dashboard rail, its darkest light surface. */
+    --polli-color-tier-deep: oklch(0.47 0.15 150);
 }
 
-/* Dark twin: deep gold/bronze chip, light gold/bronze text — keeps the
-   paid/Quest identity while staying legible (the :root values are tuned for
-   light surfaces only). */
+/* Dark twin: deep chip, light text — keeps the paid/Quest identity while
+   staying legible (the :root values are tuned for light surfaces only). */
 .dark {
-    --polli-color-paid-pale: oklch(0.33 0.055 92);
-    --polli-color-paid-soft: oklch(0.82 0.135 92);
-    --polli-color-paid-deep: oklch(0.88 0.085 92);
+    --polli-color-paid-pale: oklch(0.33 0.06 calc(var(--polli-hue) - 14));
+    --polli-color-paid-soft: var(--polli-color-honey);
+    --polli-color-paid-deep: oklch(0.84 0.13 calc(var(--polli-hue) - 12));
     --polli-color-tier-pale: oklch(0.31 0.045 152);
     --polli-color-tier-soft: oklch(0.75 0.13 152);
     --polli-color-tier-deep: oklch(0.87 0.10 152);

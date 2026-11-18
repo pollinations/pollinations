@@ -19,7 +19,7 @@ import {
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
@@ -44,6 +44,8 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    withoutAudioParams,
+    withoutCallerMetadata,
 } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -74,21 +76,28 @@ async function gatewayContext(
     const candidateRequest = candidate.entry
         ? { ...requestData, model: candidate.id }
         : requestData;
+    // Agent metadata is part of the agent contract; static and proxy providers
+    // reject the field.
+    const providerRequest =
+        communityEndpoint && communityEndpoint.type !== "proxy"
+            ? candidateRequest
+            : withoutCallerMetadata(candidateRequest);
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, candidateRequest);
+        return withGatewayContext(c, providerRequest);
     }
     const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
-        requestData: candidateRequest,
+        requestData: providerRequest,
         secret: c.env.BETTER_AUTH_SECRET,
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -118,6 +127,15 @@ async function gatewayContext(
     };
 }
 
+/**
+ * Whether the request asked the provider to stop on a sequence. A completion
+ * truncated by one of these is valid even when no text survives.
+ */
+function hasStopSequences(stop: unknown): boolean {
+    if (typeof stop === "string") return stop.length > 0;
+    return Array.isArray(stop) && stop.length > 0;
+}
+
 /** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
 export async function generateChatAttempt(
     c: TextContext,
@@ -130,15 +148,76 @@ export async function generateChatAttempt(
     const buffered =
         requestData.stream === true &&
         candidate.definition?.supportsStreaming === false;
-    const attemptData = buffered
+    let attemptData = buffered
         ? { ...requestData, stream: false }
         : requestData;
+    // models that cannot speak reject `modalities`/`audio` even when the
+    // caller only asks for the default text modality.
+    if (!candidate.definition?.outputModalities?.includes("audio")) {
+        attemptData = withoutAudioParams(attemptData);
+    }
     const result = await generateTextPortkey(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    if (!attemptData.stream) {
+        requireChatCompletionUsage(result);
+        // A stop sequence can truncate the answer to nothing. That is the
+        // completion the caller asked for, not a provider failure, so it must
+        // not be reported as an empty response.
+        const stopsOnRequest = hasStopSequences(attemptData.stop);
+        // Reasoning is not an answer. Tool calls, refusals and media can be
+        // valid without text, but a blank completion must never become a cache hit.
+        const emptyChoices = (result.choices ?? []).filter(
+            ({ message, finish_reason }) =>
+                finish_reason !== "content_filter" &&
+                !(stopsOnRequest && message && finish_reason === "stop") &&
+                (!message ||
+                    !(
+                        (typeof message.content === "string"
+                            ? message.content.trim()
+                            : message.content?.length) ||
+                        message.tool_calls?.length ||
+                        message.function_call ||
+                        message.audio ||
+                        (typeof message.refusal === "string" &&
+                            message.refusal.trim())
+                    )),
+        );
+        if (
+            !result.choices?.length ||
+            emptyChoices.length === result.choices.length
+        ) {
+            const tokenLimitReached =
+                (requestData.max_tokens != null ||
+                    requestData.max_completion_tokens != null) &&
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ finish_reason }) => finish_reason === "length",
+                );
+            const { status, ...details } = tokenLimitReached
+                ? {
+                      status: 400 as const,
+                      message:
+                          "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
+                      errorCode: "output_token_limit_exceeded" as const,
+                  }
+                : {
+                      status: 502 as const,
+                      message:
+                          "Chat Completions provider returned an empty response",
+                      errorCode: "empty_response" as const,
+                  };
+            throw new UpstreamError(status, {
+                ...details,
+                requestUrl: result.upstreamRequestUrl,
+                billedUsage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
+                ),
+            });
+        }
+    }
     return buffered ? completionToChatStream(result) : result;
 }
 
@@ -187,24 +266,13 @@ function usageHeaders(
     return headers;
 }
 
-function publicChatCompletion(
-    completion: ChatCompletion,
-    isVercel: boolean,
-): ChatCompletion {
-    const usage = publicUsage(completion.usage);
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     // InferencePort also attaches its `payg_*` ledger to the top level of
     // non-streaming responses; the stream path strips it in public.ts.
-    const hasPaygTopLevel = Object.keys(completion).some((key) =>
-        key.startsWith("payg_"),
-    );
-    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
-        return completion;
     const publicCompletion = withoutPayg({
         ...completion,
-        usage,
-        choices: isVercel
-            ? publicChatChoices(completion.choices)
-            : completion.choices,
+        usage: publicUsage(completion.usage),
+        choices: publicChatChoices(completion.choices),
     });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -368,7 +436,7 @@ async function generateTextResponse(
             candidates,
             (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -380,7 +448,6 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -399,7 +466,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion, isVercel);
+        const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(

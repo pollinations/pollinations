@@ -1,4 +1,5 @@
 import { ModelCapabilitySchema } from "@shared/registry/model-info.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { z } from "zod";
 
 export const splitList = (value: string) =>
@@ -23,6 +24,9 @@ export const ModelListQueryParamsSchema = z.object({
     query: z.string().optional().meta({
         description:
             "Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match.",
+    }),
+    category: z.enum(MODEL_CATEGORIES).optional().meta({
+        description: "Filter by model category.",
     }),
     capabilities: z
         .string()

@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check account balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -15,7 +15,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User asks to **generate an image / text / audio / video** via pollinations
 - User mentions **polli, pollinations, pollen, pollinations.ai**
 - User wants to **transcribe speech** or run TTS
-- User asks about their **pollen balance, usage, or API keys**
+- User asks about their **balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
@@ -45,7 +45,9 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding) |
+| Search models | `polli models <query>` (`--source official\|community`, `--reliability all`) |
+| Discover voices | `polli models --type audio --voices` (one line per model) |
+| Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding, realtime) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`) |
@@ -53,7 +55,8 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Use Pollinations agents in Zed or JetBrains (ACP) | `polli acp [agent]` as the editor's agent server command; editor MCP servers become agent tools |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt\|vibe> on` (available adapters: `polli harness --help`) |
 | Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
 | ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli`. Port forwarding (`ssh -L 3000:localhost:3000 <sandbox-id>.polli`) and VS Code Remote-SSH work. An open connection keeps the sandbox running and paid; it pauses 15–20 minutes after the last one closes (5–10 on Windows) |
 | Publish a static site | `polli sites deploy ./dist --name my-app` (prints `https://my-app.pollinations.app`; then `list`, `delete <name>`) |
@@ -64,8 +67,8 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
-Override the stored key for a single command with `--key <key>`.
-Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once.
+Override the stored key for a single command with `--key <key>`, or set `POLLINATIONS_API_KEY` in the environment.
+Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once. An exported `POLLINATIONS_API_KEY` wins over both logins.
 
 ## Recipes
 
@@ -112,7 +115,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Without `--voice`, the API uses the model's default voice. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. Voices differ per model: `polli models --type audio --voices` lists each model's voices, so pass the matching `--model` with `--voice`. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
 ### Generate music (elevenlabs/music-v2)
 ```bash
@@ -136,7 +139,7 @@ Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2
 polli gen image "a fox" --model flux --estimate
 polli gen video "a spacecraft landing on mars" --model veo --duration 8 --audio --estimate
 ```
-`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
+`--estimate` reads the public model list (`/image/models`), prints the estimated cost in dollars for that request and exits without generating. Per-image, per-megapixel and per-second rates, plus fixed per-generation fees, give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen`, in dollars (null when unknown), and the per-rate `lines`.
 
 ### Generate video
 ```bash
@@ -153,7 +156,7 @@ Cheapest path: `--model alibaba/wan-2.2-fast` at ~$0.01/sec, **fixed 5-second ou
 polli gen 3d "a red fox" --output fox.glb
 polli gen 3d --image https://media.pollinations.ai/abc --resolution high
 ```
-`--model` defaults to `hyper3d/rodin-2.5` for a text-only prompt and `microsoft/trellis-2` once `--image <url>` is given (public http(s), upload local files first with `polli upload`) — `trellis-2` is **image-to-3D only** and rejects a bare prompt. `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen.
+`--model` defaults to `hyper3d/rodin-2.5` for a text-only prompt and `microsoft/trellis-2` once `--image <url>` is given (public http(s), upload local files first with `polli upload`) — `trellis-2` is **image-to-3D only** and rejects a bare prompt. `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require the paid balance.
 
 ### Generate embeddings
 ```bash
@@ -184,7 +187,11 @@ Models: `openai/whisper-large-v3` (default), `elevenlabs/scribe-v2`, `assemblyai
 ### Discover models
 ```bash
 polli models --type text              # text models only
-polli models --type image --verbose   # with context length / pricing
+polli models flux                     # search name, aliases, title, description, publisher
+polli models --source community       # official or community only
+polli models --reliability all        # also community models failing health checks
+polli models --type audio --voices    # voices per model
+polli models --type image --verbose   # with publisher, context length, pricing
 polli models --stats                  # health + avg latency + err% (60m default)
 polli models --stats --window 5       # last 5 minutes only
 ```
@@ -194,7 +201,7 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 
 ### Check usage and balance
 ```bash
-polli usage              # current pollen balance
+polli usage              # current balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
@@ -203,7 +210,7 @@ polli earnings --days 7  # rolling window
 polli quests             # your quests + claim state (open/claimable/claimed/closed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number | "unknown">, "key_budget"?: <number>}` — the account balance in dollars (`"unknown"` when the key lacks `account:usage`) and, for a budgeted key, its remaining budget in dollars; `polli auth status --json` returns the same two fields. Human output prints them as `balance: $2.50` and `key_budget: $4.47`; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
 
 ### Manage my-models
 ```bash
@@ -212,7 +219,7 @@ polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UP
 polli my-models create --name my-model --title "My Model" --api chat_completions --url https://api.example.com/v1/chat/completions --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini --required-safety privacy,secrets,sexual,violence,shield
 polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
-polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
+polli my-models update <id> --paid-only            # only accept the paid balance; --no-paid-only reverts
 polli my-models update <id> --required-safety privacy,secrets,sexual,violence,shield
 polli my-models delete <id>
 ```
@@ -249,11 +256,13 @@ Creating an agent also creates its callable model listing. Managed agents are te
 ### Publish a static site
 ```bash
 npm run build
-polli sites deploy ./dist --name my-app   # → https://my-app.pollinations.app
+polli sites deploy ./dist --name my-app --verify   # → https://my-app.pollinations.app
 polli sites list
 polli sites delete my-app
 ```
-Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, let visitors sign in with their own Pollen (see [Connect User Wallets](https://gen.pollinations.ai/docs/llm.txt?section=byop)). Share the URL the command prints rather than composing one from the name.
+Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, use [Pollinations Pay](https://gen.pollinations.ai/docs/llm.txt?section=byop) so visitors can connect their accounts and spend from their own balances. Share the URL the command prints rather than composing one from the name.
+
+`--verify` reads every published file without credentials and compares its bytes to the build, following redirects and retrying failures. The published URL (or site object with `--json`) is printed before verification. A failed check reports that the site is published, exits non-zero and does not roll back.
 
 ### Manage API keys
 ```bash
@@ -290,8 +299,13 @@ polli harness openclaw on           # login if needed, mint key "polli-harness-o
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
 polli harness tgpt on               # use tgpt's Pollinations provider with a dedicated key
 polli harness tgpt off              # restore tgpt's previous configuration
+polli harness vibe on               # Mistral Vibe provider, live models, dedicated key, and Polli skill
+polli harness vibe on --model deepseek/deepseek-v4-flash
+polli harness vibe off              # restore Vibe's previous user configuration
 ```
-Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, tgpt, and Mistral Vibe require their installed commands.
+
+Mistral Vibe writes `$VIBE_HOME/config.toml`, `.env`, and `skills/polli/` (default `~/.vibe`), using the native OpenAI-compatible provider. Session titles and smart approval use the selected Pollinations model too. Restart Vibe afterward; project, agent, admin, and environment overrides still take precedence. Setup reformats TOML; `off` restores untouched files or strips only the Pollinations setup after edits. Install with `uv tool install mistral-vibe`.
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode adds a `pollinations` provider (read by both 1.x and 2.x) and stores its dedicated key in the provider's options. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 

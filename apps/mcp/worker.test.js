@@ -8,6 +8,7 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
+    "changeVoice",
     "createEmbeddings",
     "createKey",
     "deleteSite",
@@ -21,7 +22,9 @@ const EXPECTED_TOOLS = [
     "getEarnings",
     "getModelStatus",
     "getUsage",
+    "isolateSpeech",
     "listKeys",
+    "listMcpServers",
     "listModels",
     "listQuests",
     "listSites",
@@ -76,6 +79,35 @@ test("serves health and requires bearer auth", async () => {
         new Request("https://mcp.pollinations.ai/mcp"),
     );
     assert.equal(oldEndpoint.status, 404);
+});
+
+test("caps each client IP before the bearer check", async () => {
+    // Counts per key like the Cloudflare binding, with a limit of 2.
+    const counts = new Map();
+    const env = {
+        IP_RATE_LIMITER: {
+            async limit({ key }) {
+                counts.set(key, (counts.get(key) ?? 0) + 1);
+                return { success: counts.get(key) <= 2 };
+            },
+        },
+    };
+    const send = (ip) =>
+        worker.fetch(
+            new Request("https://mcp.pollinations.ai", {
+                method: "POST",
+                headers: { "CF-Connecting-IP": ip },
+                body: "{}",
+            }),
+            env,
+        );
+    const statuses = [];
+    for (let i = 0; i < 3; i++) {
+        statuses.push((await send("203.0.113.7")).status);
+    }
+    assert.deepEqual(statuses, [401, 401, 429]);
+    assert.equal((await send("203.0.113.7")).headers.get("retry-after"), "10");
+    assert.equal((await send("198.51.100.1")).status, 401);
 });
 
 test("serves current and 2025 Streamable HTTP without sessions", async () => {
@@ -207,6 +239,38 @@ test("generateText uses the non-streaming chat completion contract", async (t) =
         model: "openai",
     });
     await client.close();
+});
+
+test("generateText exposes HTTP 200 completion errors as MCP tool errors", async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "openai" }])
+            : Response.json({
+                  choices: [
+                      {
+                          message: { content: "partial answer" },
+                          finish_reason: "error",
+                      },
+                  ],
+              });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "generateText",
+        arguments: {
+            model: "openai",
+            messages: [{ role: "user", content: "hi" }],
+        },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Chat completion failed/);
+    assert.doesNotMatch(result.content[0].text, /partial answer/);
 });
 
 test("returns the image API's resource link without downloading or uploading", async (t) => {

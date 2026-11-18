@@ -38,11 +38,11 @@ afterEach(() => {
 describe("Seedance 2.0 family via Replicate", () => {
     it.each([
         ["bytedance/seedance-2.0", undefined, "720p", 15, 15],
-        ["bytedance/seedance-2.0-mini", undefined, "720p", 15, 10],
+        ["bytedance/seedance-2.0-mini", undefined, "720p", 10, 10],
         ["bytedance/seedance-2.0-mini", "480p", "480p", 4, 4],
-        ["bytedance/seedance-2.0-fast", undefined, "480p", 15, 5],
+        ["bytedance/seedance-2.0-fast", undefined, "480p", 5, 5],
     ] as const)(
-        "routes %s resolution %s as %s and caps duration %s at %s",
+        "routes %s resolution %s as %s and sends duration %s as %s",
         async (model, resolution, expectedResolution, duration, expectedDuration) => {
             syncImageEnv(
                 {
@@ -165,5 +165,66 @@ describe("Seedance 2.0 family via Replicate", () => {
         });
 
         expect(inputs[0]).toMatchObject(REFERENCE_MEDIA);
+    });
+
+    it("takes the aspect ratio from an explicit width and height", async () => {
+        syncImageEnv(
+            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            inputs.push(
+                (
+                    JSON.parse(init?.body as string) as {
+                        input: Record<string, unknown>;
+                    }
+                ).input,
+            );
+            return new Response(
+                JSON.stringify({
+                    id: "pred",
+                    status: "succeeded",
+                    output: VIDEO_URL,
+                }),
+                { status: 201 },
+            );
+        });
+        const params: ImageParams = {
+            ...baseParams,
+            model: "bytedance/seedance-2.0",
+            image: [],
+            aspectRatio: undefined,
+            width: 720,
+            height: 1280,
+        };
+
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            dimensionsExplicit: true,
+        });
+        await callSeedanceV2API("a skyscraper", params);
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            dimensionsExplicit: true,
+            aspectRatio: "4:3",
+        });
+
+        expect(inputs.map((input) => input.aspect_ratio)).toEqual([
+            "9:16",
+            "16:9",
+            "16:9",
+            "4:3",
+        ]);
     });
 });

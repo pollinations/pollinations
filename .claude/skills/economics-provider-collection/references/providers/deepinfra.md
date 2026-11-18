@@ -18,7 +18,7 @@ Primary evidence sources:
 - Dashboard/usage: DeepInfra billing or usage screenshots/exports when API access is unavailable.
 - Transaction context: `economics_bank_ledger` only for top-ups or payments, not pure usage exports.
 
-The `Myceli-AI` team and the separate runtime account are distinct registry
+The `Myceli-AI` team and the separate runtime account are distinct journal
 accounts. In the signed-in dashboard, verify the team name and member email
 under `Account` → `Team`; `Usage` lists calendar months and `Billing` shows
 the team's prepaid balance and invoice history. A no-usage team month does

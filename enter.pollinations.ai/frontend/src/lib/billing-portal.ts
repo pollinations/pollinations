@@ -19,12 +19,15 @@ export function useResetWhenShownAgain(reset: () => void): void {
     }, []);
 }
 
-/** "card": straight to adding a card (made the default), then back here. */
-export type BillingPortalFlow = "card";
+/**
+ * Straight to one task, then back here: "card" adds a card (made the
+ * default), "details" edits name, company, address and VAT ID.
+ */
+export type BillingPortalFlow = "card" | "details";
 
 /**
  * Open Stripe's Billing Portal, where the buyer edits cards, name, company,
- * VAT ID and address; with `flow`, straight to adding a card. Navigates away
+ * VAT ID and address; with `flow`, straight to one of them. Navigates away
  * on success; returns the error message otherwise.
  */
 export async function openBillingPortal(

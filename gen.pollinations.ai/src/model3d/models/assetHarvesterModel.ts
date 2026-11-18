@@ -24,6 +24,12 @@ export async function callAssetHarvester(
         return {
             buffer: base64ToBuffer(result.plyBase64),
             contentType: "model/ply",
+            trackingData: {
+                usage: { completionImageTokens: 1 },
+                ...(result.cost !== undefined
+                    ? { providerBilling: { units: result.cost, unitCost: 1 } }
+                    : {}),
+            },
         };
     } catch (err) {
         throw toUpstreamError(err);

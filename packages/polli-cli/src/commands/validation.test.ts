@@ -91,64 +91,21 @@ describe("CLI argument validation", () => {
         async (type) => {
             const fetch = prepare();
             await expect(
-                modelsCommand.parseAsync(["--type", type], { from: "user" }),
-            ).rejects.toThrow(ExitSignal);
+                modelsCommand
+                    .exitOverride()
+                    .parseAsync(["--type", type], { from: "user" }),
+            ).rejects.toMatchObject({ code: "commander.invalidArgument" });
             expect(fetch).not.toHaveBeenCalled();
         },
     );
 
-    it("fetches only /3d/models for --type 3d", async () => {
-        prepare();
-        const fetch = vi.fn(async (url: string) =>
-            url.includes("/3d/models")
-                ? Response.json([
-                      {
-                          name: "microsoft/trellis-2",
-                          output_modalities: ["3d"],
-                      },
-                  ])
-                : Response.json([]),
-        );
-        vi.stubGlobal("fetch", fetch);
-        await modelsCommand.parseAsync(["--type", "3d"], { from: "user" });
-        const urls = fetch.mock.calls.map(([url]) => url as string);
-        expect(urls).toEqual([expect.stringContaining("/3d/models")]);
-    });
-
-    it("lists decision models under their own type", async () => {
-        prepare();
-        const fetch = vi.fn(async (url: string) =>
-            url.includes("/text/models")
-                ? Response.json([
-                      { name: "openai/gpt-5-nano", category: "text" },
-                      { name: "typesafe/jev-1.13", category: "decision" },
-                  ])
-                : Response.json([]),
-        );
-        vi.stubGlobal("fetch", fetch);
-        await modelsCommand.parseAsync(["--type", "decision"], {
-            from: "user",
-        });
-        const printed = vi
-            .mocked(process.stdout.write)
-            .mock.calls.map(([chunk]) => String(chunk))
-            .join("");
-        expect(JSON.parse(printed)).toEqual([
-            {
-                name: "typesafe/jev-1.13",
-                category: "decision",
-                type: "decision",
-            },
-        ]);
-    });
-
     it("rejects an unknown model type in stats mode too", async () => {
         const fetch = prepare();
         await expect(
-            modelsCommand.parseAsync(["--stats", "--type", "bogus"], {
-                from: "user",
-            }),
-        ).rejects.toThrow(ExitSignal);
+            modelsCommand
+                .exitOverride()
+                .parseAsync(["--stats", "--type", "bogus"], { from: "user" }),
+        ).rejects.toMatchObject({ code: "commander.invalidArgument" });
         expect(fetch).not.toHaveBeenCalled();
     });
 

@@ -1,8 +1,8 @@
 # Publish a Model
 
-Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
-Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
+Model publishing and [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend from their own balance. An app can use either or both.
 
 ## Supported Models
 
@@ -63,19 +63,19 @@ Publishing a model or changing its public prices takes effect after 3 hours.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
-- Text models use the token categories reported by the upstream endpoint.
+- Text models use the token categories reported by the upstream endpoint. A call that reports more than 2,000,000 prompt tokens or 200,000 completion tokens is not billed.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
 
-Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen earnings remain in their respective wallet buckets. Cash payouts are not currently available.
+Owners receive 75% of what is spent on their models. Earnings from paid and Quest balance go to the matching balance. Cash payouts are not currently available.
 
 ## Register in the Dashboard
 
-1. Open [My Models](https://enter.pollinations.ai/my-models).
-2. Under **Models**, choose **Create**.
+1. Open [My listings](https://enter.pollinations.ai/my-models?tab=models).
+2. On the **Models** tab, choose **Create**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
 5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
@@ -118,19 +118,19 @@ Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle
 
 Text models use `--api responses --url https://api.example.com/v1/responses` or `--api chat_completions --url https://api.example.com/v1/chat/completions` instead of `--base-url`. Supply both flags when changing an existing text target. The selected URL is used exactly, including query parameters. The text endpoint test checks JSON and streaming responses for valid usage. An endpoint that answers `stream: false` but has no SSE still passes: if it returns JSON to the streaming request, or rejects it with a 400 or 422, the test reports `streaming: false`. Register it with `--no-streaming` (the dashboard does this for you after the test). An endpoint that does send SSE must still report terminal usage.
 
-Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
+Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges $1 per 1M input tokens.
 
 ## Publishing Controls
 
 Public models support these owner controls in the dashboard or Account API:
 
-- `paidOnly` restricts calls to Paid Pollen.
+- `paidOnly` restricts calls to the paid balance.
 - `perUserRpm` limits each Pollinations user; `null` removes the limit.
 - Text models can declare `advertised.contextLength` and the `tool_calling` or `reasoning` capabilities. `advertised.streaming: false` marks an endpoint without SSE; the dashboard sets it from the endpoint test.
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can make a model private without deleting it. Its prices and fallbacks are saved for later publication.
 
-Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
+Token prices cannot exceed $50 per 1M tokens. Fixed image prices cannot exceed $0.25 per image, video prices cannot exceed $0.50 per generated second, and transcription prices cannot exceed $0.012 per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 
@@ -160,9 +160,9 @@ Gen calls an endpoint agent with a short-lived `ag_` run token (up to 30 minutes
 
 ## Fallbacks and Health
 
-Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
+Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require the paid balance unless the primary model does too.
 
-Public model lists show community proxies with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. There is no minimum sample size, and models without recent data remain listed. Private models remain visible to their owners.
+Public model lists show community proxies with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. A text answer that reports prompt tokens but no output tokens counts as a failure. There is no minimum sample size, and models without recent data remain listed. Private models remain visible to their owners.
 
 Models filtered for reliability still work by exact ID and can serve as fallbacks. Use `?reliability=all` on a model-list endpoint to include them. Private models remain owner-only; this option does not bypass access controls.
 

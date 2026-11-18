@@ -28,7 +28,7 @@ import { config } from "../../config.ts";
 import { CheckoutConfirmation } from "./checkout-confirmation.tsx";
 import { formatCard } from "./payment-method-format.ts";
 
-/** A Checkout Session shown in the pay modal (`ui_mode: custom`). */
+/** A Checkout Session shown in the pay modal (`ui_mode: elements`). */
 type WalletCheckout = {
     clientSecret: string;
     sessionId: string;
@@ -147,7 +147,7 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={`Buy ${formatPollenPackValue(pack.amountUsd)} Pollen`}
+            title={`Top up $${formatPollenPackValue(pack.amountUsd)}`}
         >
             {open && (
                 <CheckoutBody

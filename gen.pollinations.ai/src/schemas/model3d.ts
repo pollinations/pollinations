@@ -31,7 +31,11 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         .string()
         .transform((value: string) => {
             if (!value) return undefined;
-            return value.includes("|") ? value.split("|") : value.split(",");
+            // Keep commas inside URLs, matching the image and video schemas.
+            const urls = value.includes("|")
+                ? value.split("|")
+                : value.split(/,(?=\s*https?:\/\/)/);
+            return urls.map((url) => url.trim()).filter(Boolean);
         })
         .optional()
         .refine(

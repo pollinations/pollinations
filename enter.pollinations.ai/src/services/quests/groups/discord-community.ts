@@ -17,6 +17,7 @@ const joinDiscordQuest: QuestDefinition = {
     id: "join_discord",
     title: "Join the Pollinations Discord",
     description: `[Connect Discord](/account), then [join the Pollinations community server](${DISCORD_INVITE_URL}).`,
+    // A social quest, with the other Discord and invite quests.
     category: "community",
     scope: "perUser",
     rewardAmount: 1,
@@ -56,13 +57,30 @@ const levelQuests = [
     } satisfies QuestDefinition,
 }));
 
+// Discord gives every booster this managed role and removes it when the boost
+// ends, so it means "boosting right now".
+const SERVER_BOOSTER_ROLE = "1110978276433866842";
+
+const boostQuest: QuestDefinition = {
+    id: "discord_boost",
+    title: "Boost the Pollinations Discord",
+    description: `[Connect Discord](/account), then boost the [Pollinations server](${DISCORD_INVITE_URL}).`,
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 20,
+    balanceBucket: "tier",
+    url: DISCORD_INVITE_URL,
+};
+
 export async function listQuestCards({
     env,
 }: QuestEvaluationContext): Promise<QuestCard[]> {
     if (!discordConfigFromEnv(env)) return [];
-    return [joinDiscordQuest, ...levelQuests.map(({ quest }) => quest)].map(
-        questToCard,
-    );
+    return [
+        joinDiscordQuest,
+        ...levelQuests.map(({ quest }) => quest),
+        boostQuest,
+    ].map(questToCard);
 }
 
 export async function evaluateUser(
@@ -82,6 +100,7 @@ export async function evaluateUser(
             ...levelQuests
                 .filter((milestone) => milestone.level <= level)
                 .map(({ quest }) => quest),
+            ...(member.roles.includes(SERVER_BOOSTER_ROLE) ? [boostQuest] : []),
         ].map((quest) => ({
             quest,
             userId: user.id,

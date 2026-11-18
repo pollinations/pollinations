@@ -35,6 +35,7 @@ const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
 const InputModalitiesSchema = z
     .array(InputModalitySchema)
     .min(1)
+    .max(MODEL_INPUT_MODALITIES.length)
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
@@ -58,7 +59,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
+        'Price in US dollars. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -83,7 +84,7 @@ const VisibilitySchema = z
 const PaidOnlySchema = z
     .boolean()
     .describe(
-        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
+        "Restrict callers to the paid balance on this model. Use it when the upstream bills per use, so the Quest balance cannot cover the price and leave you paying the inference cost.",
     );
 const PerUserRpmSchema = z
     .number()
@@ -119,18 +120,20 @@ const EndpointFieldsSchema = {
         .optional(),
     baseUrl: z
         .string()
+        .max(2048)
         .url()
         .describe(
             "Media API base URL or full endpoint URL. For video, the exact generation URL.",
         ),
     url: z
         .string()
+        .max(2048)
         .url()
         .describe(
             "Exact upstream endpoint URL for the selected text API, including its path and query parameters.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
-    bearerToken: z.string().min(1),
+    bearerToken: z.string().min(1).max(4096),
 } as const;
 
 function validateEndpointUpdate(
@@ -519,6 +522,42 @@ export const CommunityEndpointHealthResponseSchema = z.object({
             }),
         )
         .describe("Up to 10 failure groups, newest first."),
+    runs: z
+        .array(
+            z.object({
+                id: z.string().describe("Request ID of the call."),
+                startedAt: z.string().describe("ISO 8601."),
+                status: z.number().describe("HTTP status returned to you."),
+                durationMs: z.number(),
+                keyName: z
+                    .string()
+                    .describe(
+                        "Name of the API key used, or empty for the dashboard.",
+                    ),
+                cost: z
+                    .number()
+                    .describe(
+                        "Amount charged, in US dollars, for the call and everything it ran.",
+                    ),
+                modelCalls: z
+                    .number()
+                    .describe("Text and media generations the agent made."),
+                toolCalls: z
+                    .number()
+                    .describe("MCP tool calls the agent made."),
+                failedCalls: z
+                    .number()
+                    .describe("Generations and tool calls that failed."),
+                error: z
+                    .string()
+                    .describe(
+                        "The call's error, or else the latest failed step's, up to 300 characters.",
+                    ),
+            }),
+        )
+        .describe(
+            "Agents only, empty for models: your own calls in the last seven days, newest first, up to 50. Other callers' runs are left out.",
+        ),
 });
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),

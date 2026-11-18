@@ -36,10 +36,7 @@ export function SiteFooter() {
         <footer className="site-shell hidden min-[880px]:block">
             <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
-                    <BrandMark
-                        variant="lockup"
-                        className="h-6.5 w-52.75 text-theme-text-strong"
-                    />
+                    <BrandMark className="size-11 text-theme-text-strong" />
                     <p className="text-sm text-theme-text-muted">
                         <span className="block">
                             Open infrastructure for AI builders

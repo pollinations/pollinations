@@ -38,6 +38,17 @@ export class ReplicateError extends Error {
     }
 }
 
+// Seedance rejects small reference videos with an opaque provider message.
+const VIDEO_PIXEL_FLOOR =
+    /video pixel count .* greater than or equal to (\d+)/i;
+
+function explainReplicateError(message: string): string {
+    const floor = message.match(VIDEO_PIXEL_FLOOR)?.[1];
+    return floor
+        ? `Reference video is too small: each frame needs at least ${floor} pixels (854x480 or larger). Upscale the clip and try again.`
+        : message;
+}
+
 /** Preserve non-Replicate failures; map classified provider failures once. */
 export function toReplicateUpstreamError(
     error: unknown,
@@ -45,7 +56,7 @@ export function toReplicateUpstreamError(
 ): unknown {
     return error instanceof ReplicateError
         ? UpstreamError.fromProvider(error.status ?? 500, {
-              message: `${messagePrefix}: ${error.message}`,
+              message: `${messagePrefix}: ${explainReplicateError(error.message)}`,
               responseBody: error.responseBody,
               requestUrl: error.url ? new URL(error.url) : undefined,
           })
@@ -67,6 +78,8 @@ interface ReplicatePrediction<TOutput> {
     metrics?: {
         predict_time?: number;
         video_output_duration_seconds?: number;
+        image_input_megapixel_count?: number;
+        image_output_megapixel_count?: number;
     };
 }
 
@@ -82,6 +95,8 @@ interface RunResult<TOutput> {
     id: string;
     predictTimeSeconds: number;
     videoOutputDurationSeconds?: number;
+    imageInputMegapixels?: number;
+    imageOutputMegapixels?: number;
 }
 
 export async function runReplicatePrediction<TInput, TOutput>(
@@ -165,6 +180,8 @@ export async function runReplicatePrediction<TInput, TOutput>(
         predictTimeSeconds: prediction.metrics?.predict_time ?? 0,
         videoOutputDurationSeconds:
             prediction.metrics?.video_output_duration_seconds,
+        imageInputMegapixels: prediction.metrics?.image_input_megapixel_count,
+        imageOutputMegapixels: prediction.metrics?.image_output_megapixel_count,
     };
 }
 

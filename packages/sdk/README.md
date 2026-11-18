@@ -365,7 +365,7 @@ function Chat() {
 
 ### Managing API keys
 
-Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+Programmatically create, list, and revoke keys for your account. Useful for Pollinations Pay (BYOP) flows, multi-tenant apps, and automation:
 
 ```javascript
 import { listKeys, createKey, revokeKey } from '@pollinations/sdk';
@@ -426,7 +426,7 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Just get the URL (no download)
+// Stored media URL to share, e.g. in <img src>
 const url = await imageUrl('a sunset');
 ```
 
@@ -592,7 +592,7 @@ include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
 `safe`, and `signal`. The result contains `buffer`, `contentType` and a URL
 without an API key. The server's MIME type is preserved for GLB and PLY files.
 3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
-Check each model's `paid_only` flag before using it with Quest Pollen.
+Check each model's `paid_only` flag before using it with the Quest balance.
 
 ## Async media jobs
 
@@ -889,10 +889,6 @@ const client = new Pollinations({
   videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
-
-### Rate Limiting
-
-Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
 
 ### Network Errors
 

@@ -41,9 +41,8 @@ authorization, and disconnect/rejoin behavior that could execute or bill a
 generation more than once. Provider responses must not become trusted billing
 or privileged instructions without the checks required by their protocol.
 
-Publishable keys are intentionally usable by browser clients. Their mere
-presence in frontend code is not a leak; demonstrate a violation of their
-intended restrictions. Arbitrary model output is not itself a vulnerability:
+Publishable keys (`pk_`) are public App Key identifiers and never authenticate
+requests. Their presence in frontend code is not a leak. Arbitrary model output is not itself a vulnerability:
 show a concrete security boundary crossed in Pollinations-owned code.
 
 ## Build and offline reproduction

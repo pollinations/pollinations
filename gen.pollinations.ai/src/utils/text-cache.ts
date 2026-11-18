@@ -16,8 +16,11 @@ import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { parseBooleanLike } from "@/util.ts";
 
-// Parameters to exclude from cache key (auth + cache control)
-const EXCLUDED_PARAMS = ["key", "no-cache"];
+// Parameters to exclude from cache key (auth + cache control). "stream" is
+// excluded because the streaming distinction is already captured by
+// STREAM_CACHE_VERSION below: an explicit "stream": false (or null, or a
+// ?stream=false query) must not fork the entry and bill a second generation.
+const EXCLUDED_PARAMS = ["key", "no-cache", "stream"];
 const CACHED_HEADER_NAMES = new Set([
     "x-fallback-target",
     "x-model-used",
@@ -26,23 +29,29 @@ const CACHED_HEADER_NAMES = new Set([
 ]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
-// Streams stopped caching empty output (#14994). The version retires stream
-// entries written before that, which reads would otherwise keep alive.
+// Part of every stream key since #16911; changing it orphans all cached streams.
 const STREAM_CACHE_VERSION = "stream-output-v1";
 
-function sseData(text: string): string[] {
-    return text
-        .split(/\r?\n/)
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice("data:".length).trim());
-}
+/**
+ * Streams are not coordinated, so skipping their write only drops the cache
+ * entry. Non-streaming results must still be written: the generation
+ * coordinator delivers them by reading this entry back.
+ */
+function isStreamingErrorResponse(
+    response: Response,
+    body: Uint8Array,
+): boolean {
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        return false;
+    }
 
-function isStreamingErrorResponse(text: string): boolean {
+    const text = new TextDecoder().decode(body);
     if (/(?:^|\r?\n)event:\s*error(?:\r?\n|$)/m.test(text)) return true;
 
-    return sseData(text).some((data) => {
+    return text.split(/\r?\n/).some((line) => {
+        if (!line.startsWith("data:")) return false;
         try {
-            const event = JSON.parse(data);
+            const event = JSON.parse(line.slice("data:".length).trim());
             return Boolean(
                 event && typeof event === "object" && "error" in event,
             );
@@ -50,58 +59,6 @@ function isStreamingErrorResponse(text: string): boolean {
             return false;
         }
     });
-}
-
-// Fields of a Chat Completions stream delta that carry output. Reasoning is
-// not output: `reasoning_content` and Claude's `content_blocks` (thinking and
-// signature deltas only) are left out on purpose.
-const CHAT_OUTPUT_FIELDS = [
-    "content",
-    "refusal",
-    "tool_calls",
-    "function_call",
-    "audio",
-];
-
-/**
- * A Chat Completions stream whose choices carry no output, e.g. a reasoning
- * model that spent max_tokens on reasoning. Cached, it would be replayed to
- * every identical request without reaching a model (#14994).
- */
-function isEmptyChatStream(text: string): boolean {
-    let sawChoice = false;
-    for (const data of sseData(text)) {
-        if (data === "[DONE]") continue;
-        let event: { choices?: unknown };
-        try {
-            event = JSON.parse(data);
-        } catch {
-            return false;
-        }
-        if (!Array.isArray(event?.choices)) return false;
-        for (const choice of event.choices) {
-            sawChoice = true;
-            const hasOutput = CHAT_OUTPUT_FIELDS.some((field) => {
-                const value = choice?.delta?.[field];
-                return Array.isArray(value) ? value.length > 0 : Boolean(value);
-            });
-            if (hasOutput) return false;
-        }
-    }
-    return sawChoice;
-}
-
-/**
- * Streams are not coordinated, so skipping their write only drops the cache
- * entry. Non-streaming results must still be written: the generation
- * coordinator delivers them by reading this entry back.
- */
-function isUncacheableStream(response: Response, body: Uint8Array): boolean {
-    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
-        return false;
-    }
-    const text = new TextDecoder().decode(body);
-    return isStreamingErrorResponse(text) || isEmptyChatStream(text);
 }
 
 function hasActiveSafety(value: unknown): boolean {
@@ -156,7 +113,8 @@ export async function generateCacheKey(
             const bodyObj = JSON.parse(bodyText);
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
-            streams ||= parseBooleanLike(bodyObj.stream) === true;
+            // JSON requests select response format from the body, not the query.
+            streams = parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
@@ -342,7 +300,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         offset += chunk.byteLength;
                     }
 
-                    if (isUncacheableStream(response, completeResponse)) {
+                    if (isStreamingErrorResponse(response, completeResponse)) {
                         resolveWrite();
                         return;
                     }

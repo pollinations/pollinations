@@ -4,6 +4,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 
+import { requestsAudioOutput } from "./requestUtils.ts";
 import { isGoogleSearchTool } from "./transforms/createGeminiToolsTransform.ts";
 
 function forcesToolChoice(toolChoice: unknown): boolean {
@@ -86,6 +87,11 @@ export function textCapabilityError(
 ): string | undefined {
     if (!definition) return;
     if (
+        requestsAudioOutput(request) &&
+        !definition.outputModalities?.includes("audio")
+    )
+        return "This model does not support audio output";
+    if (
         definition.search === false &&
         Array.isArray(request.tools) &&
         request.tools.some(isGoogleSearchTool)
@@ -146,5 +152,14 @@ export function supportsTextFallbackRequest(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
 ): boolean {
+    // Azure chat audio has voices that the direct OpenAI fallback cannot serve.
+    const audio = request.audio as { voice?: string } | undefined;
+    const voice = audio?.voice ?? request.voice;
+    if (
+        typeof voice === "string" &&
+        definition?.voices &&
+        !definition.voices.includes(voice)
+    )
+        return false;
     return textCapabilityError(definition, request) === undefined;
 }

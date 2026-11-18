@@ -138,7 +138,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
  * `size: "1792x1024"` shape this is the only signal of intent) — without that
  * derivation, 1792×1024 / 1920×1080 would silently default to "1:1".
  */
-function resolveAspectRatio(
+export function resolveSeedreamAspectRatio(
     safeParams: ImageParams,
     hasImage: boolean,
 ): string {
@@ -168,7 +168,10 @@ function buildPresetInput(
     return {
         prompt,
         size: variant.resolveSize(longerSide),
-        aspect_ratio: resolveAspectRatio(safeParams, imageInput.length > 0),
+        aspect_ratio: resolveSeedreamAspectRatio(
+            safeParams,
+            imageInput.length > 0,
+        ),
         image_input: imageInput,
         // Only seedream5 variants carry output_format.
         ...(variant.outputFormat
@@ -299,9 +302,15 @@ export function callSeedream5API(
 }
 
 /** Seedream 5.0 Pro via Replicate (bytedance/seedream-5-pro). */
-export function callSeedream5ProAPI(
+export async function callSeedream5ProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI("seedream5-pro", prompt, safeParams);
+    const result = await callSeedreamReplicateAPI(
+        "seedream5-pro",
+        prompt,
+        safeParams,
+    );
+    result.trackingData.actualModel = safeParams.model;
+    return result;
 }

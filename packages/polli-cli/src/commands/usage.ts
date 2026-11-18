@@ -6,6 +6,7 @@ import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
     fail,
+    formatDollars,
     getOutputMode,
     printError,
     printResult,
@@ -98,7 +99,7 @@ export function resolveKeyIds(
     });
 }
 
-export function tokensIn(r: UsageRecord): number {
+export function tokensIn(r: Partial<UsageRecord>): number {
     return (
         (r.input_text_tokens ?? 0) +
         (r.input_cached_tokens ?? 0) +
@@ -124,7 +125,7 @@ export function filterDailyRows(
     return out;
 }
 
-export function tokensOut(r: UsageRecord): number {
+export function tokensOut(r: Partial<UsageRecord>): number {
     return (
         (r.output_text_tokens ?? 0) +
         (r.output_reasoning_tokens ?? 0) +
@@ -183,9 +184,7 @@ export function splitKeyArgs(argv: string[], command = "usage"): UsageKeyArgs {
 }
 
 export const usageCommand = new Command("usage")
-    .description(
-        "Show pollen balance (default), usage history, or daily summary",
-    )
+    .description("Show balance (default), usage history, or daily summary")
     .option("--limit <n>", "Number of records", "20")
     .option("--history", "Show individual request history")
     .option("--daily", "Show daily summary instead of individual requests")
@@ -263,10 +262,10 @@ export const usageCommand = new Command("usage")
                     let color = chalk.green;
                     if (bal <= 0) color = chalk.red;
                     else if (bal < 1) color = chalk.yellow;
-                    return color(String(bal));
+                    return color(formatDollars(bal));
                 };
                 printResult({
-                    pollen: colorize(wallet) ?? "unknown",
+                    balance: colorize(wallet) ?? "unknown",
                     key_budget: colorize(keyBudget),
                 });
                 return;

@@ -166,6 +166,31 @@ test("preserves multiline textarea content", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
+test("rejects a description longer than the catalog shows", () => {
+    const long = "x".repeat(253);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${long}\n`,
+        ),
+    );
+    assert.equal(submission.description.length, 253);
+    assert.deepEqual(validateSubmission(submission), [
+        "App Description is 253 characters; the catalog shows 200. Shorten it.",
+    ]);
+});
+
+test("accepts a description that fits the catalog", () => {
+    const exact = "y".repeat(200);
+    const submission = parseSubmission(
+        BODY.replace(
+            /### App Description\n.*\n/,
+            `### App Description\n${exact}\n`,
+        ),
+    );
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
 test("parses the optional quest reference", () => {
     const withQuest = (value) =>
         parseSubmission(`${BODY}\n\n### Quest\n${value}`);
@@ -175,6 +200,36 @@ test("parses the optional quest reference", () => {
     assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
         "Quest must be a quest issue number such as #15600.",
     ]);
+});
+
+test("parses quest before the trailing credit footer", () => {
+    const submission = parseSubmission(
+        `${BODY}\n\n### Quest\n\n#17246\n\n---\n\n**Made with pollinations.ai**`,
+    );
+    assert.equal(submission.quest, "17246");
+    assert.deepEqual(validateSubmission(submission), []);
+});
+
+test("reads single-line fields before a trailing note", () => {
+    const expected = parseSubmission(BODY);
+    for (const [label, key] of [
+        ["App Name", "name"],
+        ["App URL", "appUrl"],
+        ["GitHub Repository URL", "repoUrl"],
+        ["App Category", "category"],
+        ["Platform", "platform"],
+        ["App Language", "language"],
+        ["Discord Username", "discord"],
+    ]) {
+        const submission = parseSubmission(
+            BODY.replace(
+                new RegExp(`(### ${label}\\n.*)`),
+                "$1\n\n---\nHosted on Pollinations Sites.",
+            ),
+        );
+        assert.equal(submission[key], expected[key], label);
+        assert.deepEqual(validateSubmission(submission), [], label);
+    }
 });
 
 test("builds the canonical catalog app", () => {
@@ -267,14 +322,14 @@ if (args[0] === "issue" && args[1] === "list") {
     });
 });
 
-test("a named quest must be an open POLLEN-QUEST issue", () => {
+test("a named quest must be open and carry a quest label", () => {
     const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "app-validator-"));
     fs.writeFileSync(
         path.join(fakeBin, "gh"),
         `#!/usr/bin/env node
 const args = process.argv.slice(2);
 if (args[0] === "issue" && args[1] === "view") {
-    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: "POLLEN-QUEST" }] }));
+    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: process.env.QUEST_LABEL }] }));
 } else if (args[0] === "issue" && args[1] === "list") {
     console.log("[]");
 } else if (args[0] === "api") {
@@ -285,7 +340,7 @@ if (args[0] === "issue" && args[1] === "view") {
 `,
         { mode: 0o755 },
     );
-    const validate = (questState) =>
+    const validate = (questState, questLabel) =>
         spawnSync(
             process.execPath,
             [
@@ -298,6 +353,7 @@ if (args[0] === "issue" && args[1] === "view") {
                     ...process.env,
                     PATH: `${fakeBin}:${process.env.PATH}`,
                     QUEST_STATE: questState,
+                    QUEST_LABEL: questLabel,
                     ISSUE_NUMBER: "1",
                     ISSUE_AUTHOR: "example",
                     ISSUE_BODY: `${BODY}\n\n### Quest\n#15600`,
@@ -307,14 +363,16 @@ if (args[0] === "issue" && args[1] === "view") {
                 },
             },
         );
-    const open = validate("OPEN");
-    const closed = validate("CLOSED");
+    const draft = validate("OPEN", "DRAFT-QUEST");
+    const open = validate("OPEN", "QUEST");
+    const closed = validate("CLOSED", "QUEST");
     fs.rmSync(fakeBin, { recursive: true, force: true });
 
+    assert.equal(draft.status, 2, draft.stderr || draft.stdout);
     assert.equal(open.status, 0, open.stderr || open.stdout);
     assert.equal(JSON.parse(open.stdout).submission.quest, "15600");
     assert.equal(closed.status, 2, closed.stderr || closed.stdout);
     assert.deepEqual(JSON.parse(closed.stdout).errors, [
-        "Quest #15600 is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.",
+        "Quest #15600 is not an open community quest. Enter an open quest or leave the Quest field empty.",
     ]);
 });

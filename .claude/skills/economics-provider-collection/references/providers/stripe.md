@@ -58,22 +58,44 @@ Collection steps:
    `fee` → standalone fees. Include embedded `fee` once (also on reversals and
    FX), including Ko-fi application fees. Exclude payouts and FX principal.
    Reconcile net to included source transactions in integer minor units.
-   Stop on an unreviewed category; never silently omit it. Fee-category credits
-   reduce fees and may make an account-month-currency fee total negative;
-   preserve that sign and reconcile the result to source net.
+   Preserve `balance_type`: `payments` fees consume cash, while `fee_credits`
+   fees consume promotional credit. `fee_credit_funding` funds that credit
+   balance and is neither sales nor cash. Fee refunds retain their sign within
+   their original balance type. Stop on an unreviewed category/balance pair;
+   reconcile each funding type separately. Read the account's actual
+   `default_currency` rather than assuming EUR.
 
 Dashboard fallback for calendar-month activity:
 
 - Reports → Balance summary → set the exact date range and UTC timezone.
 - Export Balance change from activity as Itemized CSV, all reporting categories.
 - Include balance transaction ID, Created (UTC), Currency, Gross, Fee, Net,
-  Reporting category and Source ID. Application fee can verify it is already
+  Reporting category, Balance type and Source ID. Application fee can verify it is already
   inside Fee; never add it again. Customer names, emails and addresses are not
   needed for the monthly ledger.
 - Verify the loaded summary totals against the original export and preserve
   the verified account and period in a sidecar manifest. Archive the original
   CSV outside Invoices. An EUR-filtered report alone cannot prove other
   settlement currencies have zero activity.
+- Fee-credit details are under Settings → Plans and fees → Fee credits.
+  Record a new grant's start, expiry and eligible fees once; download its
+  original activity CSV to reconcile consumption and current balance. Keep
+  the grant out of cash runway and sales.
+
+Monthly fee invoices:
+
+- Settings → Plans and fees → Invoice history exposes each account's original
+  tax PDF. Verify the account, printed invoice date and service month; file by
+  the printed date, which can differ from the Dashboard's Created date.
+- In Fees, select Invoice and the exact invoice month for its itemized bridge.
+  The invoice selector can lag the issued PDF. Record the latest available
+  month and a dated recheck rather than substituting a different invoice.
+- Preserve the UTC balance-transaction basis in Economics. Tax invoices use an
+  accounting-period basis; keep cash fees, promotional fees and external
+  passthrough/application fees separate. Reconcile explicit source components,
+  retain any residual, and never post the invoice as a second expense.
+- [Stripe's Fees report documentation](https://docs.stripe.com/reports/all-fees)
+  explains the Invoice and Balance transaction date views.
 
 Known traps:
 
@@ -99,7 +121,7 @@ Economics use:
 - Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
 - Staging financial facts belong in `economics_stripe_transactions`, keyed by
-  account and balance-transaction ID. Use `operations/economics/ingest/stripe-sync.mjs`
+  account and balance-transaction ID. Use `operations/dashboards/economics/ingest/stripe-sync.mjs`
   to refresh complete UTC ranges idempotently. Do not append monthly sales summaries.
   Enter `stripe_event` supplies charge identity, not a second revenue amount.
   Production still uses the legacy summaries until separately migrated.

@@ -8,6 +8,7 @@ import {
     cn,
     EmptyState,
     ExternalLinkButton,
+    formatCount,
     Heading,
     InlineLink,
     LinkCard,
@@ -28,11 +29,7 @@ import {
     usePullRequestCount,
     useVotingIssues,
 } from "../data/community";
-import {
-    compact,
-    useAppDirectory,
-    usePlatformStats,
-} from "../data/publicStats";
+import { useAppDirectory, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import { BottomScene } from "../ui/site/BottomScene";
@@ -72,7 +69,7 @@ const WAYS_IN = [
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
             label: "Find a GitHub Quest",
-            href: `${SOCIAL_LINKS.github.url}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+            href: "https://enter.pollinations.ai/quests",
         },
     },
     {
@@ -131,12 +128,12 @@ function CommunityParticipation() {
     const ways = [
         liveMetric("listed apps", { ...apps, data: apps.data.length }, String),
         liveMetric("community models and agents", platform, (stats) =>
-            compact(stats.community + stats.agents),
+            formatCount(stats.community + stats.agents),
         ),
-        liveMetric("PRs merged", pullRequests, compact),
+        liveMetric("PRs merged", pullRequests, formatCount),
         // The widget only exposes who is online now; a member total needs
         // a bot token, so this is the one live number the card can show.
-        liveMetric(LIVE_METRIC, online, compact),
+        liveMetric(LIVE_METRIC, online, formatCount),
     ].map((metric, index) => ({ ...WAYS_IN[index], metric }));
 
     return (
@@ -354,7 +351,7 @@ function Contributors() {
                                 )}
                             </span>
                             <span className="text-xs text-theme-text-muted tabular-nums">
-                                {person.prs.toLocaleString()} merged PRs
+                                {formatCount(person.prs)} merged PRs
                             </span>
                         </span>
                     </LinkCard>

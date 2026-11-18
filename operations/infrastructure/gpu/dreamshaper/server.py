@@ -100,15 +100,11 @@ async def send_heartbeat():
     service_type = os.getenv("SERVICE_TYPE", "sana")
     token = os.getenv("PLN_GPU_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(register_url, json={"url": url, "type": service_type}, headers=headers) as resp:
-                if resp.status == 200:
-                    logger.info("Heartbeat sent: %s", url)
-                else:
-                    logger.error("Heartbeat failed: %s", resp.status)
-    except Exception as e:
-        logger.error("Heartbeat error: %s", e)
+    # Gen drops a worker after 180s. A hung heartbeat must not consume that lease.
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+        async with session.post(register_url, json={"url": url, "type": service_type}, headers=headers) as resp:
+            resp.raise_for_status()
+            logger.info("Heartbeat sent: %s", url)
 
 
 async def periodic_heartbeat():
@@ -151,14 +147,10 @@ async def lifespan(app: FastAPI):
     logger.info("Loaded in %.1fs (scheduler=%s, vae=%s)", time.time() - t0,
                 pipe.scheduler.__class__.__name__, pipe.vae.__class__.__name__)
 
-    heartbeat_task = None
-    try:
-        await send_heartbeat()
-        heartbeat_task = asyncio.create_task(periodic_heartbeat())
-        app.state.heartbeat_task = heartbeat_task
-        logger.info("Heartbeat started")
-    except Exception as e:
-        logger.error("Heartbeat init error: %s", e)
+    # The loop owns the first attempt too, so a startup network failure retries.
+    heartbeat_task = asyncio.create_task(periodic_heartbeat())
+    app.state.heartbeat_task = heartbeat_task
+    logger.info("Heartbeat started")
 
     try:
         yield

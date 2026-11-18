@@ -1,4 +1,4 @@
-import { CheckIcon, ClipboardIcon, CopyButton, Text } from "@pollinations/ui";
+import { CopyButton, CopyStateIcon, Eyebrow, Heading } from "@pollinations/ui";
 import { Fragment } from "react";
 
 function shellQuote(value: string): string {
@@ -59,13 +59,18 @@ export function ApiUrlCard({
     const example = apiExample(url, fields);
 
     return (
-        <section aria-label="API quickstart" className="min-w-0 space-y-2">
-            <Text size="sm" weight="bold">
-                API quickstart
-            </Text>
+        <section
+            aria-label="API quickstart"
+            className="mt-6 min-w-0 space-y-3 border-theme-text-strong/10 border-t pt-8"
+        >
+            <div className="flex flex-col gap-1">
+                <Eyebrow>For developers</Eyebrow>
+                <Heading as="h2" size="card">
+                    Use it from the API
+                </Heading>
+            </div>
             <CopyButton
                 value={example}
-                tooltip={null}
                 aria-label="Copy API example"
                 className="polli-surface-card relative block w-full min-w-0 select-none rounded-card bg-surface-opaque min-h-16 p-3.5 pr-16 text-left transition-colors hover:bg-surface-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-text-soft sm:p-4 sm:pr-16"
             >
@@ -76,17 +81,13 @@ export function ApiUrlCard({
                         </code>
                         <span
                             aria-hidden="true"
-                            className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg-active text-theme-text-strong"
+                            className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
                         >
-                            {copied ? (
-                                <CheckIcon className="h-4 w-4 text-intent-success-text" />
-                            ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                            )}
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-4 w-4"
+                            />
                         </span>
-                        <output className="sr-only">
-                            {copied ? "Copied" : ""}
-                        </output>
                     </>
                 )}
             </CopyButton>

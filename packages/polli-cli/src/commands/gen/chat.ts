@@ -8,7 +8,7 @@ import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
-import { streamSSE } from "../../lib/stream.js";
+import { streamSSE, throwIfFailed } from "../../lib/stream.js";
 
 interface Message {
     role: "system" | "user" | "assistant";
@@ -16,7 +16,10 @@ interface Message {
 }
 
 interface ChatResponse {
-    choices: Array<{ message: { content: string } }>;
+    choices: Array<{
+        message: { content: string | null; refusal?: string | null };
+        finish_reason?: string | null;
+    }>;
     model: string;
     usage?: { total_tokens: number };
 }
@@ -111,7 +114,10 @@ export function createChatCommand() {
 
                     if (isJson) {
                         const data = (await res.json()) as ChatResponse;
-                        const content = data.choices[0]?.message?.content ?? "";
+                        throwIfFailed(data);
+                        const message = data.choices[0]?.message;
+                        const content =
+                            message?.content || message?.refusal || "";
                         messages.push({ role: "assistant", content });
                         if (data.usage) totalTokens += data.usage.total_tokens;
                         printResult({
@@ -135,6 +141,7 @@ export function createChatCommand() {
                     process.stderr.write("\n\n");
                     messages.push({ role: "assistant", content });
                 } catch (err) {
+                    process.exitCode = 1;
                     messages.pop();
                     printError(
                         err instanceof Error ? err.message : "Request failed",

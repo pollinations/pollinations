@@ -56,9 +56,9 @@ only sent as a bearer header to Pollinations. API response bodies are not
 displayed in error dialogs.
 
 Expired authorization prompts reconnection; denied model access prompts a
-permission check; insufficient Pollen prompts a balance/budget check. After a
-network interruption, check account activity before retrying, as the request may
-have completed remotely. Network work stays off the GTK thread.
+permission check. A billing error prompts you to check your balance and key
+budget. After a network interruption, check account activity before retrying
+because the request may have completed remotely. Network work stays off the GTK thread.
 
 ## Verification
 
@@ -66,9 +66,8 @@ have completed remotely. Network work stays off the GTK thread.
 python -m unittest -v test_pollinations
 ```
 
-These tests use real localhost HTTP requests, no external credentials or
-Pollen: catalog filtering, generation/edit JSON, device polling/backoff,
-denial/cancellation/expiry, error redaction, and persistent token storage.
+These tests use localhost HTTP requests to check catalog filtering, generation and edit
+payloads, device authorization, error redaction, and persistent token storage.
 
 Run the native GIMP smoke script with the Python batch interpreter (set
 `__file__` to the absolute path):

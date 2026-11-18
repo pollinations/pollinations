@@ -42,7 +42,7 @@ const MONTH_LABELS = [
 ];
 
 const NAV_BUTTON =
-    "polli-control polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-subtle";
+    "polli-control polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-fill-wash";
 
 function addUtcMonths(date: Date, months: number): Date {
     return new Date(
@@ -226,10 +226,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             aria-label={`Select period, current ${summaryLabel}`}
                             className={cn(
                                 "polli-control polli:inline-flex polli:w-[320px] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
-                                "polli:bg-theme-bg-active polli:text-theme-text-base",
-                                "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
-                                isOpen &&
-                                    "polli:bg-theme-bg-hover polli:text-theme-text-strong",
+                                "polli:bg-theme-fill polli:text-theme-on-fill",
+                                "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-fill-hover",
+                                isOpen && "polli:bg-theme-fill-hover",
                             )}
                         >
                             <span className="polli:truncate">
@@ -309,8 +308,8 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     className={cn(
                                         "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                         selected
-                                            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-                                            : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
+                                            ? "polli:bg-theme-fill polli:text-theme-on-fill"
+                                            : "polli:text-ink-700 polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
                                         !selectable &&
                                             "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                     )}
@@ -367,11 +366,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             "polli-control polli:aspect-square polli:rounded-lg polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
                                                 "polli:text-theme-text-muted",
+                                            // Today is marked by a bold
+                                            // underline; rings are for
+                                            // keyboard focus only.
                                             sameUtcDay(date, today) &&
-                                                "polli:ring-1 polli:ring-theme-border",
+                                                "polli:font-bold polli:underline polli:decoration-2 polli:underline-offset-4",
                                             selected
-                                                ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-                                                : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
+                                                ? "polli:bg-theme-fill polli:text-theme-on-fill"
+                                                : "polli:text-ink-700 polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong",
                                             !selectable &&
                                                 "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                         )}

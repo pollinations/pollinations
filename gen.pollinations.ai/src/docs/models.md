@@ -31,6 +31,7 @@ To search or narrow a list instead of fetching the whole catalog, add any of:
 | Parameter | Effect |
 |-----------|--------|
 | `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `category` | Model category (`text`, `image`, `audio`, `video`, `3d`, `embedding`, `realtime`, `decision`) |
 | `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
 | `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
 | `limit` | At most this many models (1-500), in catalog order |
@@ -60,7 +61,8 @@ Lists default to `reliability=reliable`: public community proxy models need more
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
-monitor probes count. Each entry includes `health` with `status`,
+monitor probes count. A text answer that reports prompt tokens but no output
+tokens counts as a failure. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50 for
 community proxies). Other models keep their 24-hour health window. Health
 refreshes roughly every 60 seconds; unavailable analytics fails open.
@@ -69,7 +71,7 @@ Use `?reliability=all` or `Pollinations-Model-Reliability: all` to see all
 otherwise accessible models. The query takes precedence over the header.
 This only affects discovery: exact-ID calls, retrieval and fallback routing
 remain available. Authentication, key permissions, paid access and manual
-hiding still apply. Owners can manage all their models in My Models.
+hiding still apply. Owners can manage all their models in My listings.
 
 Time-windowed traffic, latency and fallback breakdowns are served separately by
 `/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).

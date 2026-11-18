@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
-import { createReasoningEffortTransform } from "../../../src/text/transforms/createReasoningEffortTransform.js";
+import {
+    createReasoningEffortTransform,
+    remapReasoningEffort,
+} from "../../../src/text/transforms/createReasoningEffortTransform.js";
 
 describe("createReasoningEffortTransform — toggle", () => {
     const toggle = createReasoningEffortTransform("toggle");
@@ -88,7 +91,6 @@ describe("reasoning_effort model wiring", () => {
         "qwen3.7-flash",
         "qwen/qwen3.8-flash",
         "qwen3.8-27b",
-        "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
         "nemotron-3.5-lightning",
@@ -118,8 +120,12 @@ describe("reasoning_effort model wiring", () => {
         "step-3.5-flash",
         "step-flash",
         "qwen-vision-pro",
+        "qwen3.8-2.4t-a95b",
+        "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
         "thinkingmachines/inkling",
         "kimi-code",
+        "meta/muse-spark-open",
+        "meta/muse-spark-open:vercel:baseten",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -180,5 +186,53 @@ describe("direct Novita Ling reasoning controls", () => {
         });
         const untouched = await transform?.([], {});
         expect(untouched?.options.enable_thinking).toBeUndefined();
+    });
+});
+
+describe("remapReasoningEffort", () => {
+    const remap = remapReasoningEffort({ max: "xhigh" });
+
+    it("rewrites a rejected value, case-insensitively", async () => {
+        const { options } = await remap([], { reasoning_effort: "MAX" });
+        expect(options.reasoning_effort).toBe("xhigh");
+    });
+
+    it("leaves other values and an omitted field alone", async () => {
+        const high = await remap([], { reasoning_effort: "high" });
+        expect(high.options.reasoning_effort).toBe("high");
+        const omitted = await remap([], { temperature: 0.5 });
+        expect(omitted.options).toEqual({ temperature: 0.5 });
+    });
+});
+
+describe("reasoning_effort levels providers reject (#19784)", () => {
+    it.each([
+        ["openai/gpt-5.4-nano", "max", "xhigh"],
+        ["openai/gpt-5.4-mini", "max", "xhigh"],
+        ["openai/gpt-5.3-codex", "max", "xhigh"],
+        ["openai/gpt-5.5", "max", "xhigh"],
+        ["pollinations/midijourney-large", "max", "xhigh"],
+        ["openai/gpt-6.1-sol", "none", "low"],
+        ["openai/gpt-6-astra", "none", "low"],
+        ["openai/gpt-oss-20b", "none", "low"],
+        ["openai/gpt-oss-20b", "xhigh", "high"],
+        ["openai/gpt-oss-20b", "max", "high"],
+        ["x-ai/grok-4.6", "none", "low"],
+        ["x-ai/grok-4.6", "max", "xhigh"],
+        ["x-ai/grok-4.3", "max", "xhigh"],
+        ["x-ai/grok-4.20", "max", "xhigh"],
+        ["moonshotai/kimi-k2.6", "xhigh", "max"],
+        ["deepseek/deepseek-v4-flash", "low", "high"],
+        ["deepseek/deepseek-v4.1-flash", "medium", "high"],
+        ["deepseek/deepseek-v4.1-flash-1017", "xhigh", "max"],
+        ["deepseek/deepseek-v4.1-flash-1017", "minimal", "none"],
+        ["deepseek/deepseek-v4.1-flash-1017", "NONE", "none"],
+    ])("%s sends %s as %s", async (modelName, sent, expected) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: sent,
+        });
+        expect(options.reasoning_effort).toBe(expected);
     });
 });

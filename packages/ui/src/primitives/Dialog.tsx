@@ -229,6 +229,9 @@ export const DialogFooter: FC<DialogFooterProps> = ({
                 // the row in a narrow dialog (below 36rem, phones included), and
                 // spanning it when there is only one.
                 "polli:[&>.polli-control]:min-h-12 polli:[&>.polli-control]:text-base polli:@max-xl:[&>.polli-control]:flex-auto polli:[&>.polli-control:only-child]:flex-auto",
+                // A tooltip around an action (a disabled action and its reason)
+                // takes the action's place in the row, and the action fills it.
+                "polli:[&>*_.polli-control]:min-h-12 polli:[&>*_.polli-control]:w-full polli:[&>*_.polli-control]:text-base polli:[&>:has(.polli-control)>*]:flex-auto polli:@max-xl:[&>:has(.polli-control)]:flex-auto polli:[&>:has(.polli-control):only-child]:flex-auto",
                 className,
             )}
             {...props}

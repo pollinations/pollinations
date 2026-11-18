@@ -34,19 +34,18 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
+1. **🌐 App Key** (starts with `pk_`)
    - Always visible in dashboard
-   - For client-side apps (React, Vue, etc.)
-   - IP rate-limited: 1 pollen per IP per hour
-   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
+   - The OAuth `client_id` for Connect User Wallets (BYOP)
+   - Never authenticates requests: a `pk_` sent as a key gets `401`
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
    - No rate limits
-   - **Consumes Pollen from your balance**
+   - **Spends from your balance**
 
-**For testing, use Secret Keys** for better rate limits and pollen spending.
+**For testing, use Secret Keys** to authenticate generation requests.
 
 ```bash
 # Get your API key from: https://enter.pollinations.ai/keys
@@ -60,7 +59,7 @@ export BASE_URL="https://enter.pollinations.ai/api"
 
 ## 🖼️ Image Generation
 
-> **All models require authentication.** Image models have NO tier requirements - only pollen balance matters.
+> **All models require authentication.** Check the live model catalog’s `paid_only` field before choosing a model for an account with Quest balance.
 
 **Flux** (Default Model)
 
@@ -447,12 +446,12 @@ BASE_URL="https://enter.pollinations.ai/api"
 echo "🧪 Testing Enter Service"
 echo "========================"
 
-# Test included model (no additional pollen)
+# Check authorization requirements
 echo "1. Testing INCLUDED model (flux)..."
 curl -s "$BASE_URL/generate/image/test_included?model=flux&width=256&height=256" \
   -w "   HTTP: %{http_code}\n" -o /dev/null
 
-# Test paid model (requires pollen)
+# Test image generation with an authenticated key
 echo "2. Testing PAID model (gptimage)..."
 curl -s "$BASE_URL/generate/image/test_paid?model=gptimage&width=256&height=256" \
   -H "Authorization: Bearer $TOKEN" \
@@ -476,18 +475,14 @@ echo "✅ Done!"
 ### 401 Unauthorized
 
 - **All models require authentication** - no anonymous access
-- Check your token is correct (starts with `pk_` or `sk_`)
+- Check your token is correct (starts with `sk_`; `pk_` App Keys always get `401`)
 - Verify token exists in database
 - Ensure you're using `Authorization: Bearer $TOKEN` header
-- For paid models, ensure you're using a **Secret Key** (`sk_`), not Publishable Key
 
-### 403 Forbidden
+### 402 Payment Required
 
-- **Insufficient pollen balance** - paid models require pollen
-  - Check your pollen balance at https://enter.pollinations.ai/pollen
-  - Add pollen to your account to use paid models
-- **Text models may have tier requirements** - check the error message
-- Note: Image models have NO tier requirements, only pollen balance
+- Check the error code, key budget, and [available balance](https://enter.pollinations.ai/pollen).
+- Check `paid_only` in the live model catalog. A paid-only model spends from the paid balance.
 
 ### 500 Internal Server Error
 
@@ -541,10 +536,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 **Important Notes:**
 
 - ⚠️ **Only test models that appear in the discovery endpoint**
-- **Image models**: NO tier requirements, only pollen balance matters for paid models
-- **Text models**: May have tier requirements, check model details
-- Default image model: `flux` (0.002 Pollen per image, 1024x1024)
-- Default text model: `openai` (GPT-4o)
+- Check `paid_only` and current pricing in the live model catalog before running paid tests.
 - **Seedream**: Requires minimum 960x960 pixels (921600 total pixels)
 
 ---
@@ -559,8 +551,8 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ### Authentication
 
-- **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (1 pollen per IP per hour)
+- **Use Secret Keys (`sk_`) for testing**: Authenticate generation and account requests
+- **App Keys (`pk_`)**: OAuth client IDs only; they never authenticate requests
 
 ### Performance
 
@@ -595,14 +587,14 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
 | `code_challenge_method` | Must be `S256` for code flow | `S256` |
 | `models` | Comma-separated model categories and model IDs; a model ID allows only that model | `text,image` |
-| `budget` | Pollen budget limit | `10` |
+| `budget` | Spending cap in US dollars | `10` |
 | `expiry` | Expiry in days (default: 7) | `7` |
 | `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
 
 ### Account Permissions
 
 - `profile`: Read user's name, email, GitHub username
-- `usage`: Read usage history and pollen balance
+- `usage`: Read usage history and balance
 
 ### App Registration
 
@@ -635,7 +627,7 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ## 🎫 Wallet & Balance Lookups
 
-Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. Old account-level upgrade/downgrade paths are removed.
+Users earn Quest credit by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest balance**. The `pack_balance` column holds the **paid balance**. Old account-level upgrade/downgrade paths are removed.
 
 ### Lookups (read-only)
 

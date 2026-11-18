@@ -49,4 +49,4 @@ jobs:
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
           SINCE_HOURS: ${{ inputs.since_hours }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
-        run: python operations/github/express_priority.py
+        run: python operations/infrastructure/project-manager/express_priority.py

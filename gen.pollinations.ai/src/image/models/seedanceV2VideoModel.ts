@@ -11,6 +11,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
@@ -20,22 +21,6 @@ import {
 
 const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
-
-const MODELS = {
-    "bytedance/seedance-2.0": {
-        upstream: "bytedance/seedance-2.0",
-        maxDuration: 15,
-    },
-    "bytedance/seedance-2.0-mini": {
-        upstream: "bytedance/seedance-2.0-mini",
-        maxDuration: 10,
-    },
-    "bytedance/seedance-2.0-fast": {
-        upstream: "bytedance/seedance-2.0-fast",
-        maxDuration: 5,
-    },
-} as const;
-type SeedanceV2ModelName = keyof typeof MODELS;
 
 interface SeedanceV2Input {
     prompt: string;
@@ -55,19 +40,13 @@ export async function callSeedanceV2API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const modelName = safeParams.model as SeedanceV2ModelName;
-    const config = MODELS[modelName];
+    const modelName = safeParams.model;
     const definition = IMAGE_SERVICES[modelName] as ModelDefinition;
     const resolution = (safeParams.resolution ??
         definition.resolutions?.[0] ??
         "720p") as SeedanceV2Input["resolution"];
 
-    // Replicate accepts 4–15 seconds. Pollinations caps Mini and Fast at their
-    // empirically verified synchronous latency limits.
-    const duration = Math.max(
-        4,
-        Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
-    );
+    const duration = safeParams.duration ?? 5;
 
     const images = safeParams.image ?? [];
 
@@ -75,7 +54,18 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        aspect_ratio:
+            safeParams.aspectRatio ??
+            (safeParams.dimensionsExplicit
+                ? closestRatioLogSpace(safeParams.width, safeParams.height, [
+                      "16:9",
+                      "4:3",
+                      "1:1",
+                      "3:4",
+                      "9:16",
+                      "21:9",
+                  ])
+                : "16:9"),
         generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {
@@ -111,7 +101,7 @@ export async function callSeedanceV2API(
     let actualDurationSeconds: number | undefined;
     try {
         const result = await runReplicatePrediction<SeedanceV2Input, string>({
-            model: config.upstream,
+            model: modelName,
             input,
         });
         videoUrl = result.output;

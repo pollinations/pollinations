@@ -4,7 +4,9 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import {
     type FallbackCandidate,
     fallbackCandidates,
@@ -13,7 +15,7 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -67,11 +69,10 @@ const EDIT_DIMENSION_STEP = 16;
 const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
+    "AI_GATEWAY_API_KEY",
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
-    "AZURE_CONTENT_SAFETY_API_KEY",
-    "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
@@ -96,6 +97,7 @@ const IMAGE_ENV_KEYS = [
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
+    "AI_GATEWAY_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -130,21 +132,20 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
+    model = c.var.model,
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
-    const resolvedModel = c.var.model.resolved;
+    const resolvedModel = model.resolved;
     const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
-        model: c.var.model.communityEndpoint
-            ? DEFAULT_IMAGE_MODEL
-            : resolvedModel,
+        model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
     delete mergedParams.prompt;
     delete mergedParams.key;
 
     const communityReferences =
-        c.var.model.communityEndpoint?.modality === "video"
+        model.communityEndpoint?.modality === "video"
             ? CommunityReferenceParamsSchema.safeParse(mergedParams)
             : null;
     if (communityReferences && !communityReferences.success) {
@@ -175,8 +176,8 @@ function parseImageParams(
     // endpoints get the image and decide for themselves.
     if (
         parseResult.data.image.length > 0 &&
-        !c.var.model.communityEndpoint &&
-        !c.var.model.definition.inputModalities?.includes("image")
+        !model.communityEndpoint &&
+        !model.definition.inputModalities?.includes("image")
     ) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
@@ -185,8 +186,8 @@ function parseImageParams(
     // Community endpoints receive the flag and decide for themselves.
     if (
         parseResult.data.transparent &&
-        !c.var.model.communityEndpoint &&
-        !c.var.model.definition.supportsTransparency
+        !model.communityEndpoint &&
+        !model.definition.supportsTransparency
     ) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
@@ -246,6 +247,8 @@ function mediaHeaders(
 }
 
 export function throwImageError(error: unknown): never {
+    if (error instanceof HTTPException && !(error instanceof UpstreamError))
+        throw error;
     const upstream =
         error instanceof UpstreamError
             ? error
@@ -304,6 +307,7 @@ async function generateMediaWithFallback(
     c: ImageContext,
     prompt: string,
     safeParams: RuntimeImageParams,
+    body: Record<string, unknown>,
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
@@ -327,7 +331,28 @@ async function generateMediaWithFallback(
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
-            const params = { ...safeParams, model: attempt.id };
+            let params = { ...safeParams, model: attempt.id };
+            if (c.var.model.requested.includes(",") && attempt.entry) {
+                const parsed = parseImageParams(c, body, {
+                    ...c.var.model,
+                    resolved: attempt.id,
+                    definition: attempt.entry.definition,
+                    communityEndpoint: attempt.communityEndpoint,
+                });
+                params =
+                    attempt.entry.definition.category === "image" &&
+                    attempt.entry.definition.inputModalities?.includes("image")
+                        ? await resolveEditDimensionsForImage(parsed)
+                        : parsed;
+            }
+            c.var.track.setPricingInput({
+                resolution: params.resolution,
+                quality: params.quality,
+                hasImage: (params.image?.length ?? 0) > 0,
+                hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+                maxImageDimension: Math.max(params.width, params.height),
+                megapixels: (params.width * params.height) / 1_000_000,
+            });
             if (attempt.communityEndpoint) {
                 const isVideo = attempt.communityEndpoint.modality === "video";
                 const generated = isVideo
@@ -361,7 +386,7 @@ async function generateMediaWithFallback(
             return { result: generated, params };
         },
         c.var.track?.attempts,
-        (attempt) => enforceModelRateLimit(c, attempt),
+        (attempt) => requireModelAttemptAccess(c, attempt),
         shouldFallback,
     );
     return {
@@ -430,30 +455,33 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    c.var.track.setPricingInput({
-        resolution: safeParams.resolution,
-        quality: safeParams.quality,
-        hasImage: (safeParams.image?.length ?? 0) > 0,
-        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(safeParams.width, safeParams.height),
-        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
-    });
 
     try {
         const { result, params, servedIndex } = await generateMediaWithFallback(
             c,
             originalPrompt,
             safeParams,
+            body,
         );
         if (result.trackingData.pricingInput) {
             c.var.track.setPricingInput(result.trackingData.pricingInput);
         }
+        const contentType = result.mimeType || detectMimeType(result.buffer);
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
-            result.mimeType || detectMimeType(result.buffer),
+            contentType,
         );
+        if (c.var.model.resolved === "black-forest-labs/flux.1-schnell") {
+            const size = readImageDimensions(result.buffer, contentType);
+            if (size) {
+                headers.set(
+                    IMAGE_DIMENSIONS_HEADER,
+                    `${size.width}x${size.height}`,
+                );
+            }
+        }
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(
@@ -491,7 +519,7 @@ function extractRegisterToken(
     return null;
 }
 
-async function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterRequest(
     c: ImageContext,
     body: Record<string, unknown>,
 ): Promise<boolean> {
@@ -505,6 +533,10 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
     syncImageEnvironment(c.env);
 
     if (c.req.method === "GET") {
+        // The list exposes worker hostnames, so reads need the token too.
+        if (!(await isAuthorizedRegisterRequest(c, {}))) {
+            return c.json({ success: false, message: "Unauthorized" }, 401);
+        }
         const params = new URL(c.req.url).searchParams;
         const directUrl = params.get("url");
         const ip = params.get("ip");
@@ -517,9 +549,6 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!(await isAuthorizedRegisterWrite(c, {}))) {
-            return c.json({ success: false, message: "Unauthorized" }, 401);
-        }
         if (!isValidType(typeParam)) {
             return c.json(
                 { success: false, message: `Invalid type "${typeParam}"` },
@@ -541,7 +570,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!(await isAuthorizedRegisterWrite(c, body))) {
+    if (!(await isAuthorizedRegisterRequest(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

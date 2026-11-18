@@ -545,8 +545,11 @@ test("pays Discord quests once per Discord account", async ({
     await mocks.enable("discord");
     const discordId = mocks.discord.state.userId;
     const firstUserId = await seedDiscordAccount(discordId);
-    // Arcane's "Level 20+" role.
-    mocks.discord.state.memberRoles = ["1365603135858409482"];
+    // Arcane's "Level 20+" role and Discord's Server Booster role.
+    mocks.discord.state.memberRoles = [
+        "1365603135858409482",
+        "1110978276433866842",
+    ];
 
     await checkQuestsForUser(env, firstUserId);
 
@@ -588,6 +591,7 @@ test("pays Discord quests once per Discord account", async ({
             )
             .orderBy(rewardsTable.questId);
     expect(await discordRewards(firstUserId)).toEqual([
+        { questId: "discord_boost", pollenAmount: 20 },
         { questId: "discord_level_10", pollenAmount: 2 },
         { questId: "discord_level_20", pollenAmount: 5 },
         { questId: "join_discord", pollenAmount: 1 },

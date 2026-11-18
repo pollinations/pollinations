@@ -16,11 +16,11 @@ import {
 } from "../../lib/output.js";
 import { prepareOutputPath } from "../../lib/output-file.js";
 import { readStdin } from "../../lib/stdin.js";
-import { streamSSE } from "../../lib/stream.js";
+import { streamSSE, throwIfFailed } from "../../lib/stream.js";
 
 interface ChatResponse {
     choices: Array<{
-        message: { content: string };
+        message: { content: string | null; refusal?: string | null };
         finish_reason?: string | null;
     }>;
     model: string;
@@ -217,7 +217,9 @@ export function createTextCommand() {
                 }
 
                 const data = (await res.json()) as ChatResponse;
-                const content = data.choices[0]?.message?.content ?? "";
+                throwIfFailed(data);
+                const message = data.choices[0]?.message;
+                const content = message?.content || message?.refusal || "";
                 warnIfTruncated(data.choices[0]?.finish_reason);
 
                 if (opts.output) {

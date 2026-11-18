@@ -181,7 +181,8 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
         envdAccessToken: string;
         domain: string;
     }>();
-    expect(sandbox.domain).toBe("eastus.adcproxy.io");
+    // E2B's SDKs reach it through gen, like E2B's sandboxes.
+    expect(sandbox.domain).toBe("pollinations.app");
     const [box] = azure.boxes;
     expect(box).toMatchObject({
         id: sandbox.sandboxID,
@@ -213,11 +214,12 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
         userId: owner.userId,
         modelProviderUsed: "azure",
     });
-    expect(azure.leases()[0].totalCost).toBeCloseTo(seconds * COST_SECOND, 8);
-    expect(azure.leases()[0].totalPrice).toBeCloseTo(seconds * PRICE_SECOND, 8);
+    // Charges round to the 1e-8 ledger unit, so allow one rounding step.
+    expect(azure.leases()[0].totalCost).toBeCloseTo(seconds * COST_SECOND, 7);
+    expect(azure.leases()[0].totalPrice).toBeCloseTo(seconds * PRICE_SECOND, 7);
     expect(
         (await getUserBalance(drizzle(env.DB), owner.userId)).tierBalance,
-    ).toBeCloseTo(10 - seconds * PRICE_SECOND, 8);
+    ).toBeCloseTo(10 - seconds * PRICE_SECOND, 7);
     // The template's listed rates are the ones it was charged.
     const pricing = await (await fetchGen("", "/pricing")).json<{
         templates: Record<string, { vcpuSecond: number; gibSecond: number }>;
@@ -225,7 +227,7 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
     const rates = pricing.templates["pollinations-azure"];
     expect(azure.leases()[0].totalPrice).toBeCloseTo(
         seconds * (2 * rates.vcpuSecond + 2 * rates.gibSecond),
-        8,
+        7,
     );
 
     // It comes logged in, through envd at Azure's port URL.
@@ -330,7 +332,11 @@ test("pause stops the box, connect resumes it, and the cron stops boxes whose le
     );
 
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), azureEnv, ctx);
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        azureEnv,
+        ctx,
+    );
     await waitOnExecutionContext(ctx);
 
     expect(azure.boxes.map((box) => box.state)).toEqual([
@@ -347,6 +353,44 @@ test("pause stops the box, connect resumes it, and the cron stops boxes whose le
         .where(eq(azureSandbox.sandboxId, kept))
         .get();
     expect(row?.endAt.getTime()).toBeGreaterThan(Date.now() + 590_000);
+    expect(Number(await env.KV.get("heartbeat:sandbox-keeper"))).toBeCloseTo(
+        Date.now(),
+        -4,
+    );
+});
+
+test("a failing keeper still stops expired boxes and skips the heartbeat", async () => {
+    const azure = stubAzure();
+    await env.KV.delete("heartbeat:sandbox-keeper");
+    azure.boxes.push({
+        id: crypto.randomUUID(),
+        state: "Running",
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        labels: { pollinations_user: "owner" },
+    });
+    // D1 refuses the keeper's first statement only.
+    const DB = {
+        prepare: (sql: string) => {
+            if (sql.startsWith('delete from "sandbox_keep"')) {
+                throw new Error("D1_ERROR: overloaded");
+            }
+            return env.DB.prepare(sql);
+        },
+        batch: env.DB.batch.bind(env.DB),
+    } as unknown as CloudflareBindings["DB"];
+
+    const ctx = createExecutionContext();
+    await expect(
+        worker.scheduled(
+            createScheduledController({ cron: "*/5 * * * *" }),
+            { ...azureEnv, DB },
+            ctx,
+        ),
+    ).rejects.toThrow("overloaded");
+    await waitOnExecutionContext(ctx);
+
+    expect(azure.boxes.map((box) => box.state)).toEqual(["Stopped"]);
+    expect(await env.KV.get("heartbeat:sandbox-keeper")).toBeNull();
 });
 
 test("Azure templates refuse to start until Azure is configured", async () => {
@@ -379,7 +423,7 @@ test("Azure templates refuse to start until Azure is configured", async () => {
     expect(envdCall.status).toBe(404);
 });
 
-test("E2B's SDKs reach envd in either provider's sandboxes through gen", async () => {
+test("E2B's SDKs reach envd and ports in either provider's sandboxes through gen", async () => {
     const azure = stubAzure();
     const id = crypto.randomUUID();
     const envdCall = (sandbox: string, port: string) =>
@@ -409,4 +453,115 @@ test("E2B's SDKs reach envd in either provider's sandboxes through gen", async (
     // Only envd's port.
     expect((await envdCall(id, "8022")).status).toBe(400);
     expect((await envdCall("../x", "49983")).status).toBe(404);
+
+    // At the hosts the returned domain names, envd and ports alike, for
+    // gen's sandboxes only.
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 300,
+        metadata: {},
+    });
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const visit = async (host: string) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://${host}/files?path=/x`),
+            azureEnv,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+    for (const port of [49983, 8022]) {
+        await visit(`${port}-${sandboxID}.pollinations.app`);
+        expect(azure.envd.at(-1)?.url).toBe(
+            `https://${sandboxID}--${port}.eastus.adcproxy.io/files?path=/x`,
+        );
+    }
+    expect((await visit(`8022-${id}.pollinations.app`)).status).toBe(404);
+});
+
+test("staging public IDs reach Azure control and both providers' envd without changing stored IDs", async () => {
+    const azure = stubAzure();
+    const email = "azure-staging-owner@test.local";
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines", "keys"],
+        user: { tierBalance: 10, email },
+    });
+    const staging = {
+        ...azureEnv,
+        ENVIRONMENT: "staging" as const,
+        STAGING_ALLOWED_EMAILS: email,
+    };
+    const created = await fetchGen(
+        owner.key,
+        "/v2/sandboxes",
+        {
+            method: "POST",
+            body: JSON.stringify({
+                templateID: "pollinations-azure",
+                timeout: 300,
+            }),
+        },
+        staging,
+    );
+    expect(created.status).toBe(201);
+    const { sandboxID, domain } = await created.json<{
+        sandboxID: string;
+        domain: string;
+    }>();
+    const rawID = azure.boxes[0].id;
+    expect(sandboxID).toBe(`${rawID}--staging`);
+    expect(domain).toBe("pollinations.app");
+    expect(await rows()).toMatchObject([{ sandboxId: rawID }]);
+    expect(
+        await (
+            await fetchGen(owner.key, `/sandboxes/${sandboxID}`, {}, staging)
+        ).json(),
+    ).toMatchObject({ sandboxID });
+
+    for (const id of [sandboxID, "abc123--staging"]) {
+        const response = await fetchGen(
+            "",
+            "/sandbox/files?path=/x",
+            {
+                headers: {
+                    "e2b-sandbox-id": id,
+                    "e2b-sandbox-port": "49983",
+                    "x-access-token": "token",
+                },
+            },
+            staging,
+        );
+        expect(response.status).toBe(200);
+        expect(azure.envd.at(-1)?.headers.get("e2b-sandbox-id")).toBe(
+            id.slice(0, -"--staging".length),
+        );
+    }
+    const ctx = createExecutionContext();
+    const port = await worker.fetch(
+        new Request(`https://49983-${sandboxID}.${domain}/files?path=/x`, {
+            headers: { "e2b-sandbox-id": sandboxID, "x-access-token": "token" },
+        }),
+        staging,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(port.status).toBe(200);
+    expect(azure.envd.at(-1)?.url).toBe(
+        `https://${rawID}--49983.eastus.adcproxy.io/files?path=/x`,
+    );
+    expect(azure.envd.at(-1)?.headers.get("e2b-sandbox-id")).toBe(rawID);
+    expect(
+        (
+            await fetchGen(
+                owner.key,
+                `/sandboxes/${sandboxID}`,
+                { method: "DELETE" },
+                staging,
+            )
+        ).status,
+    ).toBe(204);
+    expect(await rows()).toEqual([]);
 });

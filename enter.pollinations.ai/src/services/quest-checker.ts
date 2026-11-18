@@ -102,7 +102,10 @@ export async function checkQuestsForUser(
                 ),
             );
         for (const reward of pending) {
-            await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
+            await claimReward(ctx.db, {
+                rewardId: reward.id,
+                userId: user.id,
+            });
         }
     }
 
@@ -123,13 +126,14 @@ export async function checkQuestsForUser(
 async function loadQuestUser(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
-): Promise<QuestUser | null> {
+): Promise<(QuestUser & { email: string }) | null> {
     const rows = await db
         .select({
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
             googleId: schema.account.accountId,
+            email: schema.user.email,
         })
         .from(schema.user)
         .leftJoin(

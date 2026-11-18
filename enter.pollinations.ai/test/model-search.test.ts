@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
+import {
+    validateCatalogSearch,
+    validateModelSearch,
+} from "../frontend/src/components/models/model-search.ts";
 
 describe("model search", () => {
     it("accepts categories independently of the model query", () => {
         expect(validateModelSearch({})).toEqual({
             category: undefined,
             q: undefined,
-            agentQ: undefined,
-            mcpQ: undefined,
             sort: undefined,
         });
         for (const category of [
@@ -23,32 +24,20 @@ describe("model search", () => {
         expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
             q: undefined,
-            agentQ: undefined,
-            mcpQ: undefined,
             sort: undefined,
         });
         expect(
-            validateModelSearch({
+            validateCatalogSearch({
                 category: "agent",
-                q: "source:community",
-                agentQ: "capability:tool-calling",
-                mcpQ: "github",
+                q: "capability:tool-calling",
             }),
-        ).toEqual({
-            category: "agent",
-            q: "source:community",
-            agentQ: "capability:tool-calling",
-            mcpQ: "github",
-            sort: undefined,
-        });
+        ).toEqual({ q: "capability:tool-calling", sort: undefined });
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
         expect(validateModelSearch({ sort: "publisher" })).toEqual({
             category: undefined,
             q: undefined,
-            agentQ: undefined,
-            mcpQ: undefined,
             sort: "publisher",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
@@ -64,15 +53,11 @@ describe("model search", () => {
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             category: undefined,
             q: undefined,
-            agentQ: undefined,
-            mcpQ: undefined,
             sort: undefined,
         });
         expect(validateModelSearch({ sort: "newest" })).toEqual({
             category: undefined,
             q: undefined,
-            agentQ: undefined,
-            mcpQ: undefined,
             sort: "newest",
         });
     });
@@ -83,8 +68,8 @@ describe("model search", () => {
         expect(validateModelSearch({ q: " source:community " }).q).toBe(
             "source:community",
         );
-        expect(
-            validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
-        ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
+        expect(validateCatalogSearch({ q: " capability:agent " }).q).toBe(
+            "capability:agent",
+        );
     });
 });

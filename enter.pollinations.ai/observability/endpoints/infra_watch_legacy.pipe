@@ -1,0 +1,40 @@
+TOKEN infra_watch_read READ
+
+DESCRIPTION >
+    infra-watch monitor: the legacy text and image APIs each call gen with
+    one bridge key. One row per bridge: its last full UTC hour against the
+    same hour on each of the previous 7 days, and whether either requests or
+    success fell below half their median (with a median of at least 10
+    requests). Success counts every final row, so balance and key failures
+    lower it. The query of the EC2 community monitor's duty 2e, unchanged.
+
+NODE infra_watch_legacy_node
+SQL >
+    SELECT
+        bridge,
+        countResample(0, 8, 1)(days_ago) AS requests,
+        sumResample(0, 8, 1)(ok, days_ago) AS successes,
+        requests[1] AS last_hour_requests,
+        round(100 * successes[1] / requests[1], 1) AS last_hour_success,
+        arrayReduce('medianExact', arraySlice(requests, 2)) AS median_requests,
+        round(100 * arrayReduce('medianExact', arrayFilter(x -> isFinite(x), arrayMap((s, r) -> s / r, arraySlice(successes, 2), arraySlice(requests, 2)))), 1) AS median_success,
+        topKIf(1)(response_status, days_ago = 0 AND NOT ok) AS last_hour_top_error,
+        median_requests >= 10 AND (last_hour_requests < median_requests / 2 OR last_hour_success < median_success / 2) AS degraded
+    FROM (
+        SELECT
+            if(api_key_id = '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps', 'text', 'image') AS bridge,
+            dateDiff('day', toStartOfHour(start_time), toStartOfHour(now()) - INTERVAL 1 HOUR) AS days_ago,
+            response_status,
+            response_status BETWEEN 200 AND 299 AS ok
+        FROM generation_event_v2
+        WHERE environment = 'production'
+            AND is_final
+            AND api_key_id IN ('89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps', 'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz')
+            AND start_time >= toStartOfHour(now()) - INTERVAL 7 DAY - INTERVAL 1 HOUR
+            AND start_time < toStartOfHour(now())
+            AND toHour(start_time) = toHour(toStartOfHour(now()) - INTERVAL 1 HOUR)
+    )
+    GROUP BY bridge
+    ORDER BY bridge
+
+TYPE endpoint

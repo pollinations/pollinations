@@ -4,8 +4,8 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
-import economicsRegistry from "../../operations/economics/provider-registry.json";
-import type { CanonicalModelTarget } from "../../operations/economics/web/src/lib/providerRegistry";
+import economicsRegistry from "../../operations/dashboards/economics/provider-registry.json";
+import type { CanonicalModelTarget } from "../../operations/dashboards/economics/web/src/lib/providerRegistry";
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
 
 const modelMappings = [

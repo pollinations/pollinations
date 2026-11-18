@@ -63,6 +63,11 @@ function contentPart(block: MessagesContentBlock): ChatPart {
     }
     if (block.type === "image") return imagePart(block);
     if (block.type === "document") return documentPart(block);
+    // Chat lists deferred tools from the start (see tools()), so the model
+    // only needs to know which ones tool search loaded.
+    if (block.type === "tool_reference") {
+        return { type: "text", text: `Tool loaded: ${block.tool_name}` };
+    }
     throw new MessagesRequestError(
         `A ${block.type} block is not allowed in this message`,
     );
@@ -175,12 +180,19 @@ function chatMessages(
     if (message.role === "assistant")
         return [assistantMessage(message.content)];
     if (message.role === "system") {
-        return [
-            {
-                role: "system",
-                content: message.content.map(contentPart),
-            } as ChatMessage,
-        ];
+        // Tool changes reach Chat through `tools` (see tools()).
+        const content = message.content.filter(
+            (block) =>
+                block.type !== "tool_addition" && block.type !== "tool_removal",
+        );
+        return content.length
+            ? [
+                  {
+                      role: "system",
+                      content: content.map(contentPart),
+                  } as ChatMessage,
+              ]
+            : [];
     }
     return userMessages(message.content);
 }
@@ -230,8 +242,7 @@ function toolChoice(choice: CreateMessageRequest["tool_choice"]) {
 }
 
 function tools(request: CreateMessageRequest) {
-    if (!request.tools?.length) return {};
-    for (const tool of request.tools) {
+    for (const tool of request.tools ?? []) {
         if (tool.type && tool.type !== "custom") {
             // Claude Code drops a server tool when the rejection names its tag.
             throw new MessagesRequestError(
@@ -239,8 +250,27 @@ function tools(request: CreateMessageRequest) {
             );
         }
     }
+    // Chat has one tool list per request. Deferred tools are on it from the
+    // start, a tool added mid-conversation by definition joins it (replacing
+    // one of that name), and a removed tool stays, so earlier calls to it
+    // stay valid; Claude Code answers a call to it with an error.
+    const listed = new Map(
+        (request.tools ?? []).map((tool) => [tool.name, tool]),
+    );
+    for (const message of request.messages) {
+        if (typeof message.content === "string") continue;
+        for (const block of message.content) {
+            if (
+                block.type === "tool_addition" &&
+                block.tool.type === "tool_definition"
+            ) {
+                listed.set(block.tool.definition.name, block.tool.definition);
+            }
+        }
+    }
+    if (!listed.size) return {};
     return {
-        tools: request.tools.map((tool) => ({
+        tools: [...listed.values()].map((tool) => ({
             type: "function" as const,
             function: {
                 name: tool.name,
@@ -357,14 +387,44 @@ export function stopReason(
     finishReason: string | null | undefined,
     hasToolUse: boolean,
 ): string {
-    if (hasToolUse) return "tool_use";
     if (finishReason === "length") return "max_tokens";
+    if (hasToolUse) return "tool_use";
     if (finishReason === "content_filter") return "refusal";
     return "end_turn";
 }
 
 export function toolUseInput(argumentsJson: string): unknown {
     return JSON.parse(argumentsJson || "{}");
+}
+
+/**
+ * Anthropic tool_use blocks from provider tool calls.
+ *
+ * Unlike native Anthropic partial-input objects, this adapter omits invalid or
+ * empty arguments cut off by the token limit. The caller sees max_tokens and
+ * can retry with a higher budget; we do not retry or invent executable input.
+ * Complete content is preserved. Malformed arguments at other stops still fail.
+ */
+export function toolUseBlocks(
+    calls: { id: string; name: string; arguments: string }[],
+    truncated: boolean,
+): CreateMessageResponse["content"] {
+    return calls.flatMap((call) => {
+        if (truncated && !call.arguments) return [];
+        try {
+            return [
+                {
+                    type: "tool_use" as const,
+                    id: call.id,
+                    name: call.name,
+                    input: toolUseInput(call.arguments),
+                },
+            ];
+        } catch (error) {
+            if (truncated) return [];
+            throw error;
+        }
+    });
 }
 
 /** Translate a Chat Completions response into a Messages response. */
@@ -389,6 +449,7 @@ export function chatToMessagesResponse(
         });
     }
     if (message?.content) content.push({ type: "text", text: message.content });
+    if (message?.refusal) content.push({ type: "text", text: message.refusal });
     const thoughtSignature = message?.tool_calls?.find(
         (call) => call.function.thought_signature,
     )?.function.thought_signature;
@@ -399,15 +460,16 @@ export function chatToMessagesResponse(
             signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
         });
     }
-    for (const call of message?.tool_calls ?? []) {
-        content.push({
-            type: "tool_use",
+    const toolUses = toolUseBlocks(
+        (message?.tool_calls ?? []).map((call) => ({
             id: call.id,
             name: call.function.name,
-            input: toolUseInput(call.function.arguments),
-        });
-    }
-    const hasToolUse = Boolean(message?.tool_calls?.length);
+            arguments: call.function.arguments,
+        })),
+        choice?.finish_reason === "length",
+    );
+    content.push(...toolUses);
+    const hasToolUse = toolUses.length > 0;
     return {
         id: completion.id,
         type: "message",

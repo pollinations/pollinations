@@ -116,6 +116,41 @@ describe("estimateMediaCost", () => {
         expect(estimateMediaCost(model, video(8, true)).total).toBeCloseTo(0.8);
     });
 
+    it("adds per-generation fees and leaves other fees unpriced", () => {
+        const model: MediaModel = {
+            name: "black-forest-labs/flux.2-max",
+            pricing: {
+                currency: "pollen",
+                promptImageTokens: "0.03",
+                completionImageTokens: "0.03",
+            },
+            pricing_units: {
+                promptImageTokens: { unit: "megapixel" },
+                completionImageTokens: { unit: "megapixel" },
+            },
+            pricing_adjustments: [
+                {
+                    name: "replicate.flux_2_max.run.v1",
+                    price: "0.04",
+                    quantity: 1,
+                    unit: "generation",
+                },
+            ],
+        };
+        expect(estimateMediaCost(model, image()).total).toBeCloseTo(0.07145728);
+        const providerUnits = estimateMediaCost(
+            {
+                ...model,
+                pricing_adjustments: [
+                    { name: "fal.units", price: "1", quantity: 1, unit: "USD" },
+                ],
+            },
+            image(),
+        );
+        expect(providerUnits.total).toBeNull();
+        expect(providerUnits.unpriced).toEqual(["fal.units"]);
+    });
+
     it("has no total when the model lists no price", () => {
         const out = estimateMediaCost(
             { name: "minimax-h3-max", pricing: { currency: "pollen" } },
@@ -129,6 +164,7 @@ describe("--estimate", () => {
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
         setOutputMode("human");
     });
 
@@ -150,13 +186,20 @@ describe("--estimate", () => {
     const run = async (
         command: ReturnType<typeof createImageCommand>,
         args: string[],
+        privateModels: MediaModel[] = [],
     ) => {
         const urls: string[] = [];
+        const headers: Headers[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (url: string) => {
+            vi.fn(async (url: string, init?: RequestInit) => {
                 urls.push(String(url));
-                return new Response(JSON.stringify(models), { status: 200 });
+                const requestHeaders = new Headers(init?.headers);
+                headers.push(requestHeaders);
+                const catalog = requestHeaders.has("authorization")
+                    ? [...models, ...privateModels]
+                    : models;
+                return Response.json(catalog);
             }),
         );
         const out: string[] = [];
@@ -166,7 +209,7 @@ describe("--estimate", () => {
         });
         setOutputMode("json");
         await command.parseAsync(args, { from: "user" });
-        return { urls, result: JSON.parse(out.join("")) };
+        return { urls, headers, result: JSON.parse(out.join("")) };
     };
 
     it("only reads the model list for gen image", async () => {
@@ -189,5 +232,36 @@ describe("--estimate", () => {
         expect(urls.map((u) => new URL(u).pathname)).toEqual(["/image/models"]);
         expect(result.model).toBe("google/veo-3.1-fast");
         expect(result.pollen).toBeCloseTo(0.48);
+    });
+
+    it("reads public pricing even when a key is configured", async () => {
+        vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+        const { headers, result } = await run(createVideoCommand(), [
+            "--model",
+            "google/veo-3.1-fast",
+            "--estimate",
+            "a waterfall",
+        ]);
+        expect(headers.map((h) => h.get("authorization"))).toEqual([null]);
+        expect(result.model).toBe("google/veo-3.1-fast");
+    });
+
+    it("estimates an owner's private model using the authenticated catalog", async () => {
+        vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+        const name = "community/lab/private-video";
+        const { urls, headers, result } = await run(
+            createVideoCommand(),
+            ["--model", name, "--duration", "3", "--estimate", "a waterfall"],
+            [{ name, pricing: { completionVideoSeconds: "0.08" } }],
+        );
+        expect(urls.map((u) => new URL(u).pathname)).toEqual([
+            "/image/models",
+            "/image/models",
+        ]);
+        expect(headers.map((h) => h.get("authorization"))).toEqual([
+            null,
+            "Bearer sk_test",
+        ]);
+        expect(result).toMatchObject({ model: name, pollen: 0.24 });
     });
 });

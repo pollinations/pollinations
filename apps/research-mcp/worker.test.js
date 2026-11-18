@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "orcid_search",
             ].sort(),
         );
     });
@@ -644,4 +645,105 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ORCID search finds researchers, caps affiliations, hides emails, counts works", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "pub.orcid.org");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname.endsWith("/expanded-search/")) {
+            assert.equal(url.searchParams.get("rows"), "5");
+            if (url.searchParams.get("q") === "Einstein")
+                return Response.json({
+                    "expanded-result": [
+                        {
+                            "orcid-id": "0009-0001-9341-7870",
+                            "given-names": "Einstein",
+                            "family-names": "Almeida Ferreira Paniago",
+                            "credit-name": null,
+                            "institution-name": [
+                                "Associação Brasileira de Educação a Distância",
+                                "Associação Brasileira de Pesquisadores em História Econômica",
+                                "Associação Brasileira de educação a Distância",
+                                "Universidade Federal de Goiás",
+                                "Universidade de São Paulo",
+                            ],
+                            email: ["einstein.paniago@gmail.com"],
+                        },
+                        {
+                            "orcid-id": "0009-0009-8453-8468",
+                            "given-names": "Ídris",
+                            "family-names": "Jardim",
+                            "credit-name": null,
+                            "institution-name": [
+                                "Governo do Estado de São Paulo",
+                                "Hospital Israelita Albert Einstein",
+                                "Universidade de São Paulo",
+                            ],
+                            email: [],
+                        },
+                    ],
+                    "num-found": 30267,
+                });
+            return Response.json({ "expanded-result": null, "num-found": 0 });
+        }
+        if (url.pathname.endsWith("/works")) {
+            if (url.pathname.includes("0009-0001-9341-7870"))
+                return Response.json({ group: [{}, {}, {}] });
+            return new Response("error", { status: 500 });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "orcid_search", { query: "Einstein" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    let val = value(result);
+    assert.equal(val.totalResults, 30267);
+    assert.equal(val.query, "Einstein");
+    assert.equal(val.researchers.length, 2);
+    assert.equal(val.researchers[0].name, "Einstein Almeida Ferreira Paniago");
+    assert.equal(val.researchers[0].orcid, "0009-0001-9341-7870");
+    assert.equal(
+        val.researchers[0].url,
+        "https://orcid.org/0009-0001-9341-7870",
+    );
+    assert.equal(val.researchers[0].affiliations.length, 3);
+    assert.equal(val.researchers[1].name, "Ídris Jardim");
+    assert.doesNotMatch(JSON.stringify(val), /gmail|email/);
+
+    result = await call(c, "orcid_search", {
+        query: "Einstein",
+        include_works_count: true,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    val = value(result);
+    assert.equal(val.researchers[0].worksCount, 3);
+    assert.equal(val.researchers[1].worksCount, null);
+
+    result = await call(c, "orcid_search", { query: "zzzqqqxxyyww" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    val = value(result);
+    assert.equal(val.totalResults, 0);
+    assert.deepEqual(val.researchers, []);
+
+    const before = fetches;
+    for (const args of [
+        { query: "   " },
+        { query: "Einstein", limit: 0 },
+        { query: "Einstein", limit: 11 },
+    ]) {
+        result = await call(c, "orcid_search", args);
+        assert.equal(result.isError, true, JSON.stringify(args));
+    }
+    assert.equal(fetches, before);
 });

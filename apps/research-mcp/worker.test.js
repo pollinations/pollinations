@@ -350,6 +350,7 @@ for (const modern of [false, true]) {
             [
                 "wikipedia_page",
                 "wikipedia_search",
+                "wikiquote_search",
                 "wiktionary_define",
                 "rfc_search",
                 "rfc_metadata",
@@ -644,4 +645,226 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+const WIKIQUOTE_EINSTEIN_EXTRACT = `Albert Einstein (14 March 1879 – 18 April 1955) was a Jewish German theoretical physicist, widely acknowledged to be one of the greatest physicists of all time. Einstein is known for developing the theory of relativity, but he also made important contributions to the development of the theory of quantum mechanics and to Atomic Theory. Together, relativity and quantum mechanics are the two pillars of modern physics. He won the 1921 Nobel Prize in Physics for his explanation of the photoelectric effect.
+
+See also:
+Albert Einstein and politics
+Annus Mirabilis papers
+EPR paradox
+The Meaning of Relativity
+On the Method of Theoretical Physics
+Bohr–Einstein debates
+The World as I See It
+
+
+== Quotes ==
+Everything should be made as simple as possible, but not simpler.
+Repeated throughout his life (with variants); see: Quote Investigator
+
+
+=== 1890s ===
+
+Un homme heureux est trop content du présent pour trop se soucier de l'avenir.
+A happy man is too satisfied with the present to dwell too much on the future.
+From "Mes Projets d'Avenir", a French essay written at age 18 for a school exam (18 September 1896). The Collected Papers of Albert Einstein Vol. 1 (1987) Doc. 22.
+
+
+=== 1900s ===
+
+Autoritätsdusel ist der größte Feind der Wahrheit.
+Blind obedience to authority is the greatest enemy of truth.
+Another translation: Authority gone to one's head is the greatest enemy of truth. (Collected Papers, Volume 1, 1987)
+Letter to Jost Winteler (July 8th, 1901), quoted in The Private Lives of Albert Einstein by Roger Highfields and Paul Carter (1993), p. 79. Einstein had been annoyed that Paul`;
+
+const WIKIQUOTE_POLITICS_EXTRACT = `Quotes exploring the political views of Albert Einstein.
+
+
+== 1900s ==
+Autoritätsdusel ist der größte Feind der Wahrheit.
+Unthinking respect for authority is the greatest enemy of truth.
+Letter to Jost Winteler (1901), quoted in The Private Lives of Albert Einstein by Roger Highfield and Paul Carter (1993), p. 79. Einstein had been annoyed that Paul Drude, editor of Annalen der Physik, had dismissed out of hand some criticisms Einstein made of Drude's electron theory of metals.
+
+
+== 1910s ==
+Man begreift schwer beim Erleben dieser "großen Zeit", daß man dieser verrückten, verkommenen Spezies angehört, die sich Willensfreiheit zuschreibt. Wenn es doch irgendwo eine Insel der Wohlwollenden und Besonnenen gäbe! Da wollte ich auch glühender Patriot sein.
+In living through this "great epoch," it is difficult to reconcile oneself to the fact that one belongs to that mad, degenerate species tha`;
+
+test("Wikiquote search returns titles, snippets and the opening quotes", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "en.wikiquote.org");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (
+            url.searchParams.get("action") === "query" &&
+            url.searchParams.get("list") === "search"
+        ) {
+            assert.equal(url.searchParams.get("srsearch"), "Albert Einstein");
+            assert.equal(url.searchParams.get("srlimit"), "2");
+            return Response.json({
+                query: {
+                    searchinfo: { totalhits: 582 },
+                    search: [
+                        {
+                            ns: 0,
+                            title: "Albert Einstein",
+                            pageid: 2,
+                            size: 423613,
+                            wordcount: 60997,
+                            snippet:
+                                '<span class="searchmatch">Albert</span> <span class="searchmatch">Einstein</span> (14 March 1879 – 18 April 1955) was a Jewish German theoretical physicist, widely acknowledged to be one of the greatest physicists of',
+                            timestamp: "2026-10-23T13:56:18Z",
+                        },
+                        {
+                            ns: 0,
+                            title: "Albert Einstein and politics",
+                            pageid: 179551,
+                            size: 82882,
+                            wordcount: 11876,
+                            snippet:
+                                'Quotes exploring the political views of <span class="searchmatch">Albert</span> <span class="searchmatch">Einstein</span>. Autoritätsdusel ist der größte Feind der Wahrheit. Unthinking respect for authority is the greatest',
+                            timestamp: "2026-01-18T05:30:10Z",
+                        },
+                    ],
+                },
+            });
+        }
+        assert.equal(url.searchParams.get("prop"), "extracts");
+        const title = url.searchParams.get("titles");
+        const extract =
+            title === "Albert Einstein"
+                ? WIKIQUOTE_EINSTEIN_EXTRACT
+                : WIKIQUOTE_POLITICS_EXTRACT;
+        return Response.json({
+            query: { pages: { 1: { pageid: 1, title, extract } } },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikiquote_search", {
+        query: "Albert Einstein",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.query, "Albert Einstein");
+    assert.equal(val.total, 582);
+    assert.equal(val.results.length, 2);
+    assert.deepEqual(val.results[0], {
+        title: "Albert Einstein",
+        pageid: 2,
+        snippet:
+            "Albert Einstein (14 March 1879 – 18 April 1955) was a Jewish German theoretical physicist, widely acknowledged to be one of the greatest physicists of",
+        text: "Everything should be made as simple as possible, but not simpler. Repeated throughout his life (with variants); see: Quote Investigator\n\nUn homme heureux est trop content du présent pour trop se soucier de l'avenir. A happy man is too satisfied with the present to dwell too much on the future. From \"Mes Projets d'Avenir\", a French essay written at age 18 for a school exam (18 September 1896). The Collected Papers of Albert Einstein Vol. 1 (1987) Doc. 22.\n\nAutoritätsdusel ist der größte Feind der Wahrheit. Blind obedience to authority is the greatest enemy of truth. Another translation: Authority gone to one's head is the greatest enemy of truth. (Collected Papers, Volume 1, 1987) Letter to Jost Winteler (July 8th, 1901), quoted in The Private Lives of Albert Einstein by Roger Highfields and Paul Carter (1993), p. 79. Einstein had been annoyed that Paul",
+        truncated: false,
+        url: "https://en.wikiquote.org/wiki/Albert%20Einstein",
+    });
+    assert.deepEqual(val.results[1], {
+        title: "Albert Einstein and politics",
+        pageid: 179551,
+        snippet:
+            "Quotes exploring the political views of Albert Einstein. Autoritätsdusel ist der größte Feind der Wahrheit. Unthinking respect for authority is the greatest",
+        text: "Autoritätsdusel ist der größte Feind der Wahrheit. Unthinking respect for authority is the greatest enemy of truth. Letter to Jost Winteler (1901), quoted in The Private Lives of Albert Einstein by Roger Highfield and Paul Carter (1993), p. 79. Einstein had been annoyed that Paul Drude, editor of Annalen der Physik, had dismissed out of hand some criticisms Einstein made of Drude's electron theory of metals.",
+        truncated: false,
+        url: "https://en.wikiquote.org/wiki/Albert%20Einstein%20and%20politics",
+    });
+    // One search fetch plus one extracts fetch per hit.
+    assert.equal(requests.length, 3);
+});
+
+test("Wikiquote search returns an empty list for no match and rejects blank queries and out-of-range limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({
+            query: { searchinfo: { totalhits: 0 }, search: [] },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "wikiquote_search", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(count, 1);
+    for (const args of [{ query: " " }, { query: "x", limit: 99 }]) {
+        const bad = await call(c, "wikiquote_search", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, 1);
+});
+
+test("Wikiquote search keeps a result whose page cannot be read and caps long text at 2000 characters", async (t) => {
+    const searchBody = {
+        query: {
+            searchinfo: { totalhits: 1 },
+            search: [
+                {
+                    title: "Albert Einstein",
+                    pageid: 2,
+                    snippet: "Albert Einstein",
+                },
+            ],
+        },
+    };
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody);
+        return Response.json({
+            error: {
+                code: "missingtitle",
+                info: "The page you specified doesn't exist.",
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "wikiquote_search", {
+        query: "Albert Einstein",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text, null);
+    assert.equal(value(result).results[0].truncated, false);
+
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.searchParams.get("list") === "search")
+            return Response.json(searchBody);
+        return Response.json({
+            query: {
+                pages: {
+                    1: {
+                        pageid: 1,
+                        title: "Albert Einstein",
+                        extract: WIKIQUOTE_EINSTEIN_EXTRACT.repeat(6),
+                    },
+                },
+            },
+        });
+    });
+    result = await call(c, "wikiquote_search", {
+        query: "Albert Einstein",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).results[0].text.length, 2000);
+    assert.equal(value(result).results[0].truncated, true);
+    assert.match(
+        value(result).results[0].text,
+        /^Everything should be made as simple as possible/,
+    );
 });

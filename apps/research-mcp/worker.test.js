@@ -342,6 +342,82 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("poem returns the full public-domain text and a clean not-found error", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "poetrydb.org");
+        assert.equal(target.pathname, "/title/Ozymandias");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json([
+            {
+                title: "Ozymandias",
+                author: "Percy Bysshe Shelley",
+                lines: [
+                    "I met a traveller from an antique land",
+                    "Who said: Two vast and trunkless legs of stone",
+                    "Stand in the desert...Near them, on the sand,",
+                    "Half sunk, a shattered visage lies, whose frown,",
+                    "And wrinkled lip, and sneer of cold command,",
+                    "Tell that its sculptor well those passions read",
+                    "Which yet survive, stamped on these lifeless things,",
+                    "The hand that mocked them, and the heart that fed:",
+                    "And on the pedestal these words appear:",
+                    "'My name is Ozymandias, king of kings:",
+                    "Look on my works, ye Mighty, and despair!'",
+                    "Nothing beside remains. Round the decay",
+                    "Of that colossal wreck, boundless and bare",
+                    "The lone and level sands stretch far away.",
+                ],
+                linecount: "14",
+            },
+        ]);
+    });
+    const c = await client(t);
+    const result = await call(c, "poem", { title: "Ozymandias" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        title: "Ozymandias",
+        author: "Percy Bysshe Shelley",
+        linecount: "14",
+        lines: [
+            "I met a traveller from an antique land",
+            "Who said: Two vast and trunkless legs of stone",
+            "Stand in the desert...Near them, on the sand,",
+            "Half sunk, a shattered visage lies, whose frown,",
+            "And wrinkled lip, and sneer of cold command,",
+            "Tell that its sculptor well those passions read",
+            "Which yet survive, stamped on these lifeless things,",
+            "The hand that mocked them, and the heart that fed:",
+            "And on the pedestal these words appear:",
+            "'My name is Ozymandias, king of kings:",
+            "Look on my works, ye Mighty, and despair!'",
+            "Nothing beside remains. Round the decay",
+            "Of that colossal wreck, boundless and bare",
+            "The lone and level sands stretch far away.",
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ status: 404, reason: "Not found" }),
+    );
+    const missing = await call(c, "poem", { title: "zzzzqqqxxyy" });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /Poem not found: zzzzqqqxxyy/);
+
+    fetches = 0;
+    const blank = await call(c, "poem", { title: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 0);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +440,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "poem",
             ].sort(),
         );
     });

@@ -342,6 +342,77 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("dailymed_drug merges brand and generic rows for the same name", async (t) => {
+    let fetches = 0;
+    let lastUrl = "";
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        lastUrl = url.href;
+        assert.equal(url.hostname, "dailymed.nlm.nih.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.searchParams.get("drug_name") === "zzzznotrealxyz")
+            return Response.json({
+                data: [],
+                metadata: { total_elements: 0 },
+            });
+        return Response.json({
+            data: [
+                {
+                    name_type: "G",
+                    drug_name: "ACETAMINOPHEN , ASPIRIN AND CAFFEINE",
+                },
+                {
+                    name_type: "B",
+                    drug_name: "ACETAMINOPHEN , ASPIRIN AND CAFFEINE",
+                },
+                { name_type: "B", drug_name: "ASPIRIN" },
+            ],
+            metadata: { total_elements: 347 },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "dailymed_drug", { name: "aspirin", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        lastUrl,
+        "https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=aspirin&pagesize=2",
+    );
+    assert.deepEqual(value(result), {
+        name: "aspirin",
+        total: 347,
+        drugs: [
+            {
+                name: "ACETAMINOPHEN , ASPIRIN AND CAFFEINE",
+                types: ["generic", "brand"],
+            },
+            { name: "ASPIRIN", types: ["brand"] },
+        ],
+    });
+    result = await call(c, "dailymed_drug", { name: "zzzznotrealxyz" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(lastUrl.includes("pagesize=5"), true);
+    assert.deepEqual(value(result), {
+        name: "zzzznotrealxyz",
+        total: 0,
+        drugs: [],
+    });
+    assert.equal(fetches, 2);
+    for (const args of [
+        { name: "   " },
+        { name: "aspirin", limit: 0 },
+        { name: "aspirin", limit: 26 },
+    ]) {
+        result = await call(c, "dailymed_drug", args);
+        assert.equal(result.isError, true, JSON.stringify(result));
+    }
+    assert.equal(fetches, 2);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +435,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dailymed_drug",
             ].sort(),
         );
     });

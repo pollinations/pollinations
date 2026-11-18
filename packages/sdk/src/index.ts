@@ -17,6 +17,17 @@
 
 // Main client class
 export { Pollinations } from "./client.js";
+export {
+    buildRealtimeUrl,
+    createRealtimeSession,
+    REALTIME_DEFAULT_BASE_URL,
+    REALTIME_DEFAULT_MODEL,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+    type RealtimeWebSocket,
+    type RealtimeWebSocketConstructor,
+} from "./realtime.js";
 export { isOutageError } from "./error-response.js";
 // Extra utilities
 export {

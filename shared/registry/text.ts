@@ -3925,6 +3925,7 @@ const TEXT_BASE_SERVICES = {
             // Alibaba Model Studio pay-as-you-go list rates, 0-1M tier (CNY 10 in,
             // CNY 0.5 cached, CNY 12.5 5-minute write, CNY 30 out per 1M tokens),
             // converted at the rate Vercel's listing implies (6.67 CNY per USD).
+            promptImageTokens: perMillion(1.5),
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.075),
             promptCacheWriteTokens: perMillion(1.875),

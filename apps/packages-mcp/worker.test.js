@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
+import { clojarsTools } from "./tools/clojars.js";
 import { imageTags } from "./tools/docker.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
@@ -81,6 +82,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "clojars_search",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -413,6 +415,140 @@ test("HF search forwards task and limit; info exposes license and Space stage", 
         assert.equal(data.tagsTruncated, true);
     }
 });
+test("Clojars search returns group, jar, version and description; empty and bad shapes handled", async (t) => {
+    const fixture = {
+        count: 24,
+        "total-hits": 8282,
+        "results-per-page": 24,
+        offset: 0,
+        results: [
+            {
+                created: "1750963042965",
+                description:
+                    "A Clojure HTTP library wrapping the Apache HttpComponents client.",
+                group_name: "clj-http",
+                jar_name: "clj-http",
+                version: "3.13.1",
+            },
+            {
+                created: "1790939339335",
+                description: "nREPL is a Clojure *n*etwork REPL.",
+                group_name: "nrepl",
+                jar_name: "nrepl",
+                version: "1.8.0",
+            },
+            {
+                created: "1753564562770",
+                // Synthetic long description to pin the 300-char cap.
+                description: "x".repeat(350),
+                group_name: "fipp",
+                jar_name: "fipp",
+                version: "0.6.29",
+            },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        urls.push(url.href);
+        assert.equal(url.origin, "https://clojars.org");
+        assert.equal(url.pathname, "/search");
+        assert.equal(url.searchParams.get("format"), "json");
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        if (url.searchParams.get("q") === "nothing-here")
+            return Response.json({
+                count: 0,
+                "total-hits": 0,
+                "results-per-page": 24,
+                offset: 0,
+                results: [],
+            });
+        if (url.searchParams.get("q") === "bad-shape") return Response.json({});
+        assert.equal(url.searchParams.get("q"), "clojure");
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "clojars_search", { query: "clojure", limit: 2 }),
+        {
+            total: 8282,
+            packages: [
+                {
+                    group: "clj-http",
+                    jar: "clj-http",
+                    version: "3.13.1",
+                    description:
+                        "A Clojure HTTP library wrapping the Apache HttpComponents client.",
+                    descriptionTruncated: false,
+                },
+                {
+                    group: "nrepl",
+                    jar: "nrepl",
+                    version: "1.8.0",
+                    description: "nREPL is a Clojure *n*etwork REPL.",
+                    descriptionTruncated: false,
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "clojars_search", { query: "clojure", limit: 3 }),
+        {
+            total: 8282,
+            packages: [
+                {
+                    group: "clj-http",
+                    jar: "clj-http",
+                    version: "3.13.1",
+                    description:
+                        "A Clojure HTTP library wrapping the Apache HttpComponents client.",
+                    descriptionTruncated: false,
+                },
+                {
+                    group: "nrepl",
+                    jar: "nrepl",
+                    version: "1.8.0",
+                    description: "nREPL is a Clojure *n*etwork REPL.",
+                    descriptionTruncated: false,
+                },
+                {
+                    group: "fipp",
+                    jar: "fipp",
+                    version: "0.6.29",
+                    description: "x".repeat(300),
+                    descriptionTruncated: true,
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "clojars_search", { query: "nothing-here" }),
+        { total: 0, packages: [] },
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "clojars_search",
+                arguments: { query: "bad-shape" },
+            })
+        ).isError,
+        true,
+    );
+    assert.deepEqual(urls, [
+        "https://clojars.org/search?q=clojure&format=json",
+        "https://clojars.org/search?q=clojure&format=json",
+        "https://clojars.org/search?q=nothing-here&format=json",
+        "https://clojars.org/search?q=bad-shape&format=json",
+    ]);
+    // The handler validates its own limit too: zod only applies via the
+    // MCP server, so a direct handler call with limit 25 must still fail.
+    await assert.rejects(
+        () => clojarsTools[0][3]({ query: "clojure", limit: 25 }),
+        /between 1 and 24/,
+    );
+});
 test("invalid input cannot escape provider paths and makes no upstream request", async (t) => {
     t.mock.method(globalThis, "fetch", () => {
         assert.fail("Unexpected upstream call");
@@ -424,6 +560,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["clojars_search", { query: "clojure", limit: 25 }],
+        ["clojars_search", { query: "   " }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(

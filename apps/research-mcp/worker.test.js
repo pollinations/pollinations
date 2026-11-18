@@ -284,6 +284,87 @@ test("arXiv error entries pass on arXiv's message", async (t) => {
     assert.match(result.content[0].text, /arXiv: incorrect id format for x/);
 });
 
+test("chemical_structure converts names to InChI, SMILES and formula as plain text and maps the resolver's 500 to a clean not-found error", async (t) => {
+    const calls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        calls.push(target.pathname);
+        assert.equal(target.hostname, "cactus.nci.nih.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(request.headers.get("accept"), "text/plain");
+        if (target.pathname.endsWith("/aspirin/inchi"))
+            return new Response(
+                "InChI=1/C9H8O4/c1-6(10)13-8-5-3-2-4-7(8)9(11)12/h2-5H,1H3,(H,11,12)/f/h11H",
+                { headers: { "content-type": "text/plain" } },
+            );
+        if (target.pathname.endsWith("/aspirin/smiles"))
+            return new Response("CC(=O)Oc1ccccc1C(O)=O", {
+                headers: { "content-type": "text/plain" },
+            });
+        if (target.pathname.endsWith("/caffeine/formula"))
+            return new Response("C8H10N4O2", {
+                headers: { "content-type": "text/plain" },
+            });
+        return new Response("<h1>Page not found (404)</h1>", {
+            status: 500,
+            headers: { "content-type": "text/html" },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "chemical_structure", { name: "aspirin" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "aspirin",
+        format: "inchi",
+        structure:
+            "InChI=1/C9H8O4/c1-6(10)13-8-5-3-2-4-7(8)9(11)12/h2-5H,1H3,(H,11,12)/f/h11H",
+        url: "https://cactus.nci.nih.gov/chemical/structure/aspirin/inchi",
+    });
+    result = await call(c, "chemical_structure", {
+        name: "aspirin",
+        format: "smiles",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).structure, "CC(=O)Oc1ccccc1C(O)=O");
+    result = await call(c, "chemical_structure", {
+        name: "caffeine",
+        format: "formula",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).structure, "C8H10N4O2");
+    result = await call(c, "chemical_structure", { name: "zzzqqqxxyy" });
+    assert.equal(result.isError, true);
+    assert.match(
+        result.content[0].text,
+        /No chemical structure found for "zzzqqqxxyy"/,
+    );
+    assert.equal(calls.length, 4);
+});
+
+test("chemical_structure rejects a blank name and an unknown format before fetching", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return new Response("x");
+    });
+    const c = await client(t);
+    let result = await call(c, "chemical_structure", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /must not be blank/);
+    result = await call(c, "chemical_structure", {
+        name: "aspirin",
+        format: "bogus",
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 0);
+});
+
 test("World Bank uses arbitrary official codes, source metadata, descending years, missing-value filtering and country lookup", async (t) => {
     mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
@@ -364,6 +445,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "chemical_structure",
             ].sort(),
         );
     });

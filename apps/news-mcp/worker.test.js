@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "launches_upcoming",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -383,6 +384,107 @@ test("Atom xml:base applies through feed, entry and link", () => {
         result.entries[0].link,
         "https://example.net/base/posts/2026/hello",
     );
+});
+
+test("launches_upcoming lists upcoming launches; throttling stays a tool error", async (t) => {
+    const fixture = {
+        count: 473,
+        next: "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&offset=1",
+        previous: null,
+        results: [
+            {
+                id: "e0a11eb1-0bda-4872-b36b-140247fd5c60",
+                url: "https://ll.thespacedevs.com/2.2.0/launch/e0a11eb1-0bda-4872-b36b-140247fd5c60/",
+                name: "Long March 2D | Unknown Payload",
+                status: { id: 1, name: "Go for Launch", abbrev: "Go" },
+                net: "2026-11-18T22:50:00Z",
+                probability: null,
+                hashtag: null,
+                webcast_live: false,
+                image: "https://thespacedevs-prod.nyc3.digitaloceanspaces.com/media/images/long2520march25202d_image_20190222031211.jpeg",
+                rocket: {
+                    configuration: {
+                        name: "Long March 2D",
+                        family: "Long March",
+                    },
+                },
+                mission: {
+                    name: "Unknown Payload",
+                    type: "Unknown",
+                    orbit: { name: "Unknown" },
+                },
+                pad: {
+                    name: "Launch Complex 9",
+                    location: {
+                        name: "Taiyuan Satellite Launch Center, People's Republic of China",
+                    },
+                },
+            },
+        ],
+    };
+    const fetch = t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "ll.thespacedevs.com");
+        assert.equal(url.pathname, "/2.2.0/launch/upcoming/");
+        assert.equal(url.searchParams.get("limit"), "2");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        return Response.json(fixture);
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "launches_upcoming",
+        arguments: { limit: 2 },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        total: 473,
+        launches: [
+            {
+                id: "e0a11eb1-0bda-4872-b36b-140247fd5c60",
+                name: "Long March 2D | Unknown Payload",
+                net: "2026-11-18T22:50:00Z",
+                status: "Go for Launch",
+                rocket: "Long March 2D",
+                rocket_family: "Long March",
+                mission: "Unknown Payload",
+                mission_type: "Unknown",
+                orbit: "Unknown",
+                pad: "Launch Complex 9",
+                location:
+                    "Taiyuan Satellite Launch Center, People's Republic of China",
+                url: "https://ll.thespacedevs.com/2.2.0/launch/e0a11eb1-0bda-4872-b36b-140247fd5c60/",
+            },
+        ],
+    });
+    fetch.mock.mockImplementation(async () =>
+        Response.json({ count: 0, results: [] }),
+    );
+    const empty = await c.callTool({
+        name: "launches_upcoming",
+        arguments: { limit: 1 },
+    });
+    assert.deepEqual(JSON.parse(empty.content[0].text), {
+        total: 0,
+        launches: [],
+    });
+    fetch.mock.mockImplementation(
+        async () => new Response("slow down", { status: 429 }),
+    );
+    const throttled = await c.callTool({
+        name: "launches_upcoming",
+        arguments: { limit: 1 },
+    });
+    assert.equal(throttled.isError, true);
+    assert.match(throttled.content[0].text, /429/);
+    fetch.mock.mockImplementation(() => assert.fail("must not fetch"));
+    const invalid = await c.callTool({
+        name: "launches_upcoming",
+        arguments: { limit: 21 },
+    });
+    assert.equal(invalid.isError, true);
+    assert.equal(fetch.mock.callCount(), 3);
 });
 
 test("history_on_this_day reads each offered type under its own key", async (t) => {

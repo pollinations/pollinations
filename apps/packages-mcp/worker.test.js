@@ -89,6 +89,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "terraform_module_search",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -424,6 +425,7 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["terraform_module_search", { query: "aws", limit: 26 }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(
@@ -693,6 +695,117 @@ test("package_downloads passes through daily counts and validates names", async 
     assert.equal(badRange.isError, true);
 });
 
+test("Terraform module search projects registry fields and handles empty results", async (t) => {
+    const fixture = {
+        meta: {
+            limit: 2,
+            current_offset: 0,
+            next_offset: 2,
+            next_url:
+                "https://registry.terraform.io/v1/modules/search?limit=2&offset=2&q=aws",
+        },
+        modules: [
+            {
+                id: "terraform-aws-modules/s3-bucket/aws/5.18.0",
+                owner: "",
+                namespace: "terraform-aws-modules",
+                name: "s3-bucket",
+                version: "5.18.0",
+                provider: "aws",
+                provider_logo_url: "/images/providers/aws.png",
+                description: "Terraform module to create AWS S3 resources",
+                source: "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket",
+                tag: "v5.18.0",
+                published_at: "2026-11-17T13:46:58.863754Z",
+                downloads: 252864964,
+                verified: false,
+            },
+            {
+                id: "terraform-aws-modules/iam/aws/6.11.1",
+                owner: "",
+                namespace: "terraform-aws-modules",
+                name: "iam",
+                version: "6.11.1",
+                provider: "aws",
+                provider_logo_url: "/images/providers/aws.png",
+                description: "Terraform module to create AWS IAM resources",
+                source: "https://github.com/terraform-aws-modules/terraform-aws-iam",
+                tag: "v6.11.1",
+                published_at: "2026-11-17T13:20:38.432851Z",
+                downloads: 445224909,
+                verified: false,
+            },
+        ],
+    };
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        urls.push(url.href);
+        assert.equal(url.origin, "https://registry.terraform.io");
+        assert.equal(url.pathname, "/v1/modules/search");
+        if (url.searchParams.get("q") === "nothing-here")
+            return Response.json({ meta: { limit: 10 }, modules: [] });
+        if (url.searchParams.get("q") === "bad-shape") return Response.json({});
+        assert.equal(url.searchParams.get("q"), "aws");
+        assert.equal(url.searchParams.get("limit"), "2");
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "terraform_module_search", {
+            query: "aws",
+            limit: 2,
+        }),
+        {
+            modules: [
+                {
+                    id: "terraform-aws-modules/s3-bucket/aws/5.18.0",
+                    namespace: "terraform-aws-modules",
+                    name: "s3-bucket",
+                    provider: "aws",
+                    version: "5.18.0",
+                    description: "Terraform module to create AWS S3 resources",
+                    downloads: 252864964,
+                    verified: false,
+                    source: "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket",
+                    publishedAt: "2026-11-17T13:46:58.863754Z",
+                },
+                {
+                    id: "terraform-aws-modules/iam/aws/6.11.1",
+                    namespace: "terraform-aws-modules",
+                    name: "iam",
+                    provider: "aws",
+                    version: "6.11.1",
+                    description: "Terraform module to create AWS IAM resources",
+                    downloads: 445224909,
+                    verified: false,
+                    source: "https://github.com/terraform-aws-modules/terraform-aws-iam",
+                    publishedAt: "2026-11-17T13:20:38.432851Z",
+                },
+            ],
+        },
+    );
+    assert.deepEqual(
+        await call(client, "terraform_module_search", {
+            query: "nothing-here",
+        }),
+        { modules: [] },
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "terraform_module_search",
+                arguments: { query: "bad-shape" },
+            })
+        ).isError,
+        true,
+    );
+    assert.deepEqual(urls, [
+        "https://registry.terraform.io/v1/modules/search?q=aws&limit=2",
+        "https://registry.terraform.io/v1/modules/search?q=nothing-here&limit=10",
+        "https://registry.terraform.io/v1/modules/search?q=bad-shape&limit=10",
+    ]);
+});
 test("Docker Hub tags resolve official images under library and drop build attestations", async (t) => {
     const urls = [];
     t.mock.method(globalThis, "fetch", async (url, init) => {

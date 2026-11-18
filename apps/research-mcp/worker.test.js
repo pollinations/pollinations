@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "osf_preprint",
             ].sort(),
         );
     });
@@ -644,4 +645,150 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OSF preprint search unwraps the JSON:API envelope, caps descriptions and returns the real match count", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent") ?? "",
+            /hello@pollinations\.ai/,
+        );
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.osf.io");
+        assert.equal(url.pathname, "/v2/preprints/");
+        assert.equal(
+            url.searchParams.get("filter[title]"),
+            fetches === 1 ? "climate" : "zzzzqqqxxyy",
+        );
+        assert.equal(url.searchParams.get("page[size]"), "2");
+        return Response.json(
+            fetches === 1
+                ? {
+                      data: [
+                          {
+                              id: "52u8e_v8",
+                              type: "preprints",
+                              attributes: {
+                                  title: "Asset Specificity in Climate Politics: How Polluting Firms Become Climate Policy Supporters",
+                                  description:
+                                      "When do polluting firms support ambitious climate policy? Political economy scholarship largely assumes that emissions-intensive incumbents oppose the green transition. I argue that asset specificity, alongside emissions intensity, shapes how firms respond to the threat of asset stranding. Low asset specificity allows firms to repurpose emissions-intensive assets, and the extent of repurposing shapes their politics: divestors, who exit emissions-",
+                                  date_published: "2026-11-17T10:48:09.452869",
+                                  doi: null,
+                                  subjects: [
+                                      [
+                                          {
+                                              id: "584240da54be81056cecac48",
+                                              text: "Social and Behavioral Sciences",
+                                          },
+                                          {
+                                              id: "584240da54be81056cecac1a",
+                                              text: "Political Science",
+                                          },
+                                          {
+                                              id: "584240d954be81056ceca8cc",
+                                              text: "Comparative Politics",
+                                          },
+                                      ],
+                                  ],
+                              },
+                          },
+                          {
+                              id: "uxdtn_v1",
+                              type: "preprints",
+                              attributes: {
+                                  title: "Building climate resilience in Australian homes and households",
+                                  description:
+                                      "This project defines climate-resilient housing in Australia, develops climate-ready housing guidelines (CRHG) outlining adaptation measures for a range of environmental threats, and establishes a fram",
+                                  date_published: "2026-11-12T18:20:02.884616",
+                                  doi: "10.18408/ahuri5235101",
+                                  subjects: [
+                                      [
+                                          {
+                                              id: "5a8c80f7c698300375c76d84",
+                                              text: "Social and Behavioral Sciences",
+                                          },
+                                          {
+                                              id: "5a8c80f7c698300375c76d97",
+                                              text: "Urban Studies and Planning",
+                                          },
+                                      ],
+                                  ],
+                              },
+                          },
+                      ],
+                      links: { meta: { total: 1440, per_page: 2 } },
+                      meta: { version: "2.0" },
+                  }
+                : {
+                      data: [],
+                      links: {
+                          first: null,
+                          last: null,
+                          prev: null,
+                          next: null,
+                          meta: { total: 0, per_page: 2 },
+                      },
+                      meta: { version: "2.0" },
+                  },
+        );
+    });
+
+    const c = await client(t);
+    const result = await call(c, "osf_preprint", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "climate",
+        total: 1440,
+        preprints: [
+            {
+                id: "52u8e_v8",
+                title: "Asset Specificity in Climate Politics: How Polluting Firms Become Climate Policy Supporters",
+                description:
+                    "When do polluting firms support ambitious climate policy? Political economy scholarship largely assumes that emissions-intensive incumbents oppose the green transition. I argue that asset specificity, alongside emissions intensity, shapes how firms respond to the threat of asset stranding. Low asset specificity allows firms to repurpose emissions-intensive assets, and the extent of repurposing sha...",
+                date_published: "2026-11-17T10:48:09.452869",
+                doi: null,
+                subjects: [
+                    "Social and Behavioral Sciences",
+                    "Political Science",
+                    "Comparative Politics",
+                ],
+            },
+            {
+                id: "uxdtn_v1",
+                title: "Building climate resilience in Australian homes and households",
+                description:
+                    "This project defines climate-resilient housing in Australia, develops climate-ready housing guidelines (CRHG) outlining adaptation measures for a range of environmental threats, and establishes a fram",
+                date_published: "2026-11-12T18:20:02.884616",
+                doi: "10.18408/ahuri5235101",
+                subjects: [
+                    "Social and Behavioral Sciences",
+                    "Urban Studies and Planning",
+                ],
+            },
+        ],
+    });
+
+    const empty = await call(c, "osf_preprint", {
+        query: "zzzzqqqxxyy",
+        limit: 2,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        preprints: [],
+    });
+
+    const before = fetches;
+    const blank = await call(c, "osf_preprint", { query: " ", limit: 2 });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, before);
 });

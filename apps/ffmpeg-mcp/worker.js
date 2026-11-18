@@ -245,7 +245,7 @@ function buildServer(env, dependencies, reportUsage) {
     server.registerTool(
         "runFfmpeg",
         {
-            description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Reference those exact names, include each needed -i argument, and omit ffmpeg, source URLs, and the output path. Example: ["-i", "input0", "-vf", "scale=1280:-2"]. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
+            description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Reference those exact names, include each needed -i argument, and omit ffmpeg, source URLs, and the output path. Example: ["-i", "input0", "-vf", "scale=1280:-2"]. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at $${FFMPEG_COST_PER_SECOND.toFixed(8)} per active second.`,
             inputSchema: z.object({
                 sources: z
                     .array(sourceUrl)
@@ -276,7 +276,7 @@ function buildServer(env, dependencies, reportUsage) {
     server.registerTool(
         "probeMedia",
         {
-            description: `Inspect public HTTPS media with ffprobe and return its format and stream metadata (duration, codec, resolution, bitrate, frame rate) as JSON. Use before runFfmpeg to confirm duration or dimensions instead of guessing them. Maximum input size is 100 MB. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
+            description: `Inspect public HTTPS media with ffprobe and return its format and stream metadata (duration, codec, resolution, bitrate, frame rate) as JSON. Use before runFfmpeg to confirm duration or dimensions instead of guessing them. Maximum input size is 100 MB. Billed at $${FFMPEG_COST_PER_SECOND.toFixed(8)} per active second.`,
             inputSchema: z.object({
                 source: sourceUrl.describe(
                     "Public HTTPS URL of the media to inspect.",

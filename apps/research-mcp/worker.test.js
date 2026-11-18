@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "color_name",
             ].sort(),
         );
     });
@@ -644,4 +645,85 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("color_name names a hex color and rejects non-hex input before fetching", async (t) => {
+    // Verbatim live fixture for 0047AB (image/_links/_embedded dropped;
+    // the tool never reads them).
+    const cobalt = {
+        hex: { value: "#0047AB", clean: "0047AB" },
+        rgb: {
+            fraction: {
+                r: 0,
+                g: 0.2784313725490196,
+                b: 0.6705882352941176,
+            },
+            r: 0,
+            g: 71,
+            b: 171,
+            value: "rgb(0, 71, 171)",
+        },
+        hsl: {
+            fraction: {
+                h: 0.5974658869395711,
+                s: 1,
+                l: 0.3352941176470588,
+            },
+            h: 215,
+            s: 100,
+            l: 34,
+            value: "hsl(215, 100%, 34%)",
+        },
+        name: {
+            value: "Cobalt",
+            closest_named_hex: "#0047AB",
+            exact_match_name: true,
+            distance: 0,
+        },
+        contrast: { value: "#ffffff" },
+    };
+    let fetches = 0;
+    let lastHex = null;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "www.thecolorapi.com");
+        lastHex = url.searchParams.get("hex");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(cobalt);
+    });
+    const c = await client(t);
+    const result = await call(c, "color_name", { hex: "#0047ab" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(lastHex, "0047AB");
+    assert.deepEqual(value(result), {
+        hex: "#0047AB",
+        name: "Cobalt",
+        exact_match: true,
+        closest_named_hex: "#0047AB",
+        distance: 0,
+        rgb: "rgb(0, 71, 171)",
+        hsl: "hsl(215, 100%, 34%)",
+        contrast: "#ffffff",
+    });
+    assert.equal(fetches, 1);
+    const short = await call(c, "color_name", { hex: "abc" });
+    assert.notEqual(short.isError, true, JSON.stringify(short));
+    assert.equal(lastHex, "AABBCC");
+    assert.equal(fetches, 2);
+    const invalid = await call(c, "color_name", { hex: "not-a-color" });
+    assert.equal(invalid.isError, true);
+    assert.equal(fetches, 2);
+    const notHex = await call(c, "color_name", { hex: "ZZZZZZ" });
+    assert.equal(notHex.isError, true);
+    assert.equal(fetches, 2);
+    const blank = await call(c, "color_name", { hex: "" });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 2);
 });

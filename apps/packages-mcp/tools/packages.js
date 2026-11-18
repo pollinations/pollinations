@@ -13,6 +13,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // Open VSX extensions are namespaced: namespace/extension, lowercase only.
+        openvsx: /^[a-z0-9][a-z0-9_-]*\/[a-z0-9][a-z0-9._-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +168,52 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "openvsx") {
+        // The base endpoint answers the latest version; a pinned version is a
+        // second fetch. The version map lists every version, so an unknown
+        // pinned version is rejected from the map before that second fetch.
+        const [namespace, extension] = name.split("/");
+        const base = `https://open-vsx.org/api/${encodeURIComponent(namespace)}/${encodeURIComponent(extension)}`;
+        const data = await fetchJson(base);
+        const versions = Object.keys(data.allVersions ?? {}).filter(
+            (v) => v !== "latest",
+        );
+        const latest = data.version;
+        const resolved = version ?? latest;
+        if (version && versions.length > 0 && !versions.includes(version))
+            throw new Error(
+                `Open VSX version ${version} not found for ${name}`,
+            );
+        const detail =
+            resolved === latest
+                ? data
+                : await fetchJson(`${base}/${encodeURIComponent(resolved)}`);
+        const description = detail.description ?? null;
+        return {
+            ecosystem,
+            name: `${detail.namespace}/${detail.name}`,
+            displayName: detail.displayName ?? null,
+            version: detail.version,
+            latest,
+            versionCount: versions.length,
+            description:
+                description && description.length > 500
+                    ? `${description.slice(0, 500)}…`
+                    : description,
+            license: detail.license ?? null,
+            downloads: detail.downloadCount ?? null,
+            averageRating: detail.averageRating ?? null,
+            reviewCount: detail.reviewCount ?? null,
+            publisher:
+                detail.publishedBy?.loginName ??
+                detail.namespaceDisplayName ??
+                namespace,
+            categories: detail.categories ?? [],
+            verified: detail.verified ?? false,
+            publishedAt: detail.timestamp ?? null,
+            registryUrl: `https://open-vsx.org/extension/${encodeURIComponent(detail.namespace)}/${encodeURIComponent(detail.name)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +251,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or Open VSX (VS Code extensions) latest/version, downloads and rating. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, Open VSX latest. Open VSX download counts are registry totals, not per-version counts. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +261,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "openvsx",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

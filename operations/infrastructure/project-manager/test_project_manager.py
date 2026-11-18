@@ -13,6 +13,16 @@ classification_answer = manager.classification_answer
 
 
 class ClassificationTest(unittest.TestCase):
+    def test_both_quest_labels_classify_issues_and_linked_prs(self):
+        for label in ("QUEST", "POLLEN-QUEST"):
+            with self.subTest(label=label), patch.object(manager, "IS_PULL_REQUEST", False):
+                self.assertEqual(manager.item_source({label}), "Quests")
+            linked = [{"labels": {"nodes": [{"name": label}]}}]
+            with self.subTest(linked_label=label), \
+                 patch.object(manager, "IS_PULL_REQUEST", True), \
+                 patch.object(manager, "closing_issues", return_value=linked):
+                self.assertEqual(manager.item_source(set()), "Quests")
+
     def test_pr_type_has_no_issue_priority(self):
         for work_type in ("Bug", "Feature", "Task"):
             self.assertEqual(classification_answer({"area": "Models", "type": work_type, "priority": "High"}, ["Models"], True),

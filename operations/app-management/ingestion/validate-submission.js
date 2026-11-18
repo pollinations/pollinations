@@ -35,7 +35,9 @@ function isOpenQuest(number) {
     }
     return (
         issue.state === "OPEN" &&
-        issue.labels.some((label) => label.name === "POLLEN-QUEST")
+        issue.labels.some((label) =>
+            ["QUEST", "POLLEN-QUEST"].includes(label.name),
+        )
     );
 }
 
@@ -133,7 +135,7 @@ async function main() {
 
     if (/^\d+$/.test(submission.quest) && !isOpenQuest(submission.quest)) {
         errors.push(
-            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
+            `Quest #${submission.quest} is not an open community quest. Enter an open quest or leave the Quest field empty.`,
         );
     }
 

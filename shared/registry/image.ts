@@ -2257,7 +2257,8 @@ const IMAGE_BASE_SERVICES = {
         },
         resolutions: ["1k", "2k", "4k"],
         title: "MiniMax H3 Image Highspeed",
-        description: "MiniMax H3 high-speed text-to-image generation and editing with up to 16 image references; actual costs follow the OpenRouter receipt",
+        description:
+            "MiniMax H3 high-speed text-to-image generation and editing with up to 16 image references; actual costs follow the OpenRouter receipt",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,

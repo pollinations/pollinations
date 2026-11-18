@@ -696,8 +696,18 @@ export async function callOpenRouterMiniMaxH3ImageHighspeedAPI(
         requestBody.aspect_ratio =
             safeParams.aspectRatio ??
             closestRatioLogSpace(safeParams.width, safeParams.height, [
-                "1:1", "1:2", "1:3", "2:1", "2:3", "3:1",
-                "3:2", "4:3", "3:4", "16:9", "9:16", "21:9",
+                "1:1",
+                "1:2",
+                "1:3",
+                "2:1",
+                "2:3",
+                "3:1",
+                "3:2",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16",
+                "21:9",
             ]);
     }
     if (references.length > 0) {
@@ -726,12 +736,18 @@ export async function callOpenRouterMiniMaxH3ImageHighspeedAPI(
     const completionImage = data.usage?.completion_tokens_details?.image_tokens;
     const completionTotal = data.usage?.completion_tokens;
     const usage: Usage = {
-        ...(isTokenCount(promptTotal) ? {
-            promptTextTokens: Math.max(
-                0, promptTotal - (isTokenCount(promptImage) ? promptImage : 0),
-            ),
-        } : {}),
-        ...(isTokenCount(promptImage) ? { promptImageTokens: promptImage } : {}),
+        ...(isTokenCount(promptTotal)
+            ? {
+                  promptTextTokens: Math.max(
+                      0,
+                      promptTotal -
+                          (isTokenCount(promptImage) ? promptImage : 0),
+                  ),
+              }
+            : {}),
+        ...(isTokenCount(promptImage)
+            ? { promptImageTokens: promptImage }
+            : {}),
         ...(isTokenCount(completionImage)
             ? { completionImageTokens: completionImage }
             : isTokenCount(completionTotal)

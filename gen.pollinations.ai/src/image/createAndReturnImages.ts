@@ -1183,7 +1183,10 @@ const generateImage = async (
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "minimax/minimax-h3-image-highspeed":
-            return await callOpenRouterMiniMaxH3ImageHighspeedAPI(prompt, safeParams);
+            return await callOpenRouterMiniMaxH3ImageHighspeedAPI(
+                prompt,
+                safeParams,
+            );
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);

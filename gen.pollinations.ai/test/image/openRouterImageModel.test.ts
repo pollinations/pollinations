@@ -507,13 +507,16 @@ describe("OpenRouter MiniMax H3 Image Highspeed", () => {
                 },
             });
         });
-        const result = await callOpenRouterMiniMaxH3ImageHighspeedAPI("edit this image", {
-            ...baseParams,
-            model: "minimax/minimax-h3-image-highspeed",
-            resolution: "4k",
-            aspectRatio: "9:16",
-            image: [REFERENCE_IMAGE_URL],
-        });
+        const result = await callOpenRouterMiniMaxH3ImageHighspeedAPI(
+            "edit this image",
+            {
+                ...baseParams,
+                model: "minimax/minimax-h3-image-highspeed",
+                resolution: "4k",
+                aspectRatio: "9:16",
+                image: [REFERENCE_IMAGE_URL],
+            },
+        );
         expect(requests[0]).toEqual({
             model: "minimax/minimax-h3-image-highspeed",
             prompt: "edit this image",

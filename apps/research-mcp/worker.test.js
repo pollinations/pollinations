@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "elevation_lookup",
             ].sort(),
         );
     });
@@ -644,4 +645,120 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OpenTopoData returns elevation, null over water for SRTM and a value for ETOPO1, and rejects bad inputs before fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.opentopodata.org");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname === "/v1/srtm90m") {
+            if (url.searchParams.get("locations") === "0,-150")
+                return Response.json({
+                    results: [
+                        {
+                            dataset: "srtm90m",
+                            elevation: null,
+                            location: { lat: 0, lng: -150 },
+                        },
+                    ],
+                    status: "OK",
+                });
+            return Response.json({
+                results: [
+                    {
+                        dataset: "srtm90m",
+                        elevation: 17.0,
+                        location: { lat: 56.16, lng: 10.2 },
+                    },
+                ],
+                status: "OK",
+            });
+        }
+        assert.equal(url.pathname, "/v1/etopo1");
+        return Response.json({
+            results: [
+                {
+                    dataset: "etopo1",
+                    elevation: -4305.0,
+                    location: { lat: 0, lng: -150 },
+                },
+            ],
+            status: "OK",
+        });
+    });
+
+    const c = await client(t);
+    const land = await call(c, "elevation_lookup", {
+        latitude: 56.16,
+        longitude: 10.2,
+    });
+    assert.notEqual(land.isError, true, JSON.stringify(land));
+    assert.deepEqual(value(land), {
+        dataset: "srtm90m",
+        elevation: 17.0,
+        latitude: 56.16,
+        longitude: 10.2,
+    });
+
+    const ocean = await call(c, "elevation_lookup", {
+        latitude: 0,
+        longitude: -150,
+    });
+    assert.notEqual(ocean.isError, true, JSON.stringify(ocean));
+    assert.deepEqual(value(ocean), {
+        dataset: "srtm90m",
+        elevation: null,
+        latitude: 0,
+        longitude: -150,
+    });
+
+    const etopo = await call(c, "elevation_lookup", {
+        latitude: 0,
+        longitude: -150,
+        dataset: "etopo1",
+    });
+    assert.notEqual(etopo.isError, true, JSON.stringify(etopo));
+    assert.deepEqual(value(etopo), {
+        dataset: "etopo1",
+        elevation: -4305.0,
+        latitude: 0,
+        longitude: -150,
+    });
+
+    const before = fetches;
+    for (const args of [
+        { latitude: 91, longitude: 10.2 },
+        { latitude: 56.16, longitude: 181 },
+        { latitude: 56.16, longitude: 10.2, dataset: "bogusds" },
+        { latitude: "56.16", longitude: 10.2 },
+    ]) {
+        const bad = await call(c, "elevation_lookup", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(fetches, before);
+});
+
+test("elevation_lookup surfaces an upstream 429 as a rate-limit error", async (t) => {
+    mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("slow down", { status: 429 }),
+    );
+    const result = await call(await client(t), "elevation_lookup", {
+        latitude: 56.16,
+        longitude: 10.2,
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 429; rate limited/);
+    assert.doesNotMatch(result.content[0].text, /slow down/);
 });

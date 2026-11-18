@@ -304,6 +304,8 @@ export type QuestCard = {
     balanceBucket?: string | null;
     status: QuestCardStatus;
     earnedAmount?: number | null;
+    /** When its reward became ready to claim. */
+    earnedAt?: string;
     progress?: QuestProgress;
     /** A repeatable quest's rewards: its card keeps them all. */
     repeats?: QuestReward[];
@@ -440,53 +442,65 @@ const CARD_STATE: Record<QuestCardStatus, ProgressState> = {
     claimable: "ready",
     open: "open",
 };
-// Counts and amounts per balance: an admin grant can pay into the paid
-// balance.
-type ProgressPart = {
-    count: number;
-    cells: Record<RewardIconKind, number>;
-    pollen: Record<RewardIconKind, number>;
+// Amounts per balance: an admin grant can pay into the paid balance.
+type ProgressPart = { count: number; pollen: Record<RewardIconKind, number> };
+// One comb cell: a reward, or an open quest (no date yet).
+type CombCell = {
+    state: ProgressState;
+    kind: RewardIconKind;
+    earnedAt: string | null;
 };
 
-function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
+function progressOf(cards: QuestCard[]): {
+    parts: Record<ProgressState, ProgressPart>;
+    cells: CombCell[];
+} {
     const parts: Record<ProgressState, ProgressPart> = {
-        claimed: {
-            count: 0,
-            cells: { tier: 0, paid: 0 },
-            pollen: { tier: 0, paid: 0 },
-        },
-        ready: {
-            count: 0,
-            cells: { tier: 0, paid: 0 },
-            pollen: { tier: 0, paid: 0 },
-        },
-        open: {
-            count: 0,
-            cells: { tier: 0, paid: 0 },
-            pollen: { tier: 0, paid: 0 },
-        },
+        claimed: { count: 0, pollen: { tier: 0, paid: 0 } },
+        ready: { count: 0, pollen: { tier: 0, paid: 0 } },
+        open: { count: 0, pollen: { tier: 0, paid: 0 } },
+    };
+    const cells: CombCell[] = [];
+    const add = (
+        state: ProgressState,
+        bucket: string | null | undefined,
+        amount: number,
+        earnedAt: string | null,
+    ) => {
+        const kind = rewardIconKind(bucket);
+        parts[state].count += 1;
+        parts[state].pollen[kind] += amount;
+        cells.push({ state, kind, earnedAt });
     };
     for (const card of cards) {
         // A repeatable quest counts each reward it earned, and itself while
         // it is open to earn again.
         for (const repeat of card.repeats ?? []) {
-            const part = parts[repeat.claimedAt ? "claimed" : "ready"];
-            const kind = rewardIconKind(repeat.balanceBucket);
-            part.count += 1;
-            part.cells[kind] += 1;
-            part.pollen[kind] += repeat.pollenAmount;
+            add(
+                repeat.claimedAt ? "claimed" : "ready",
+                repeat.balanceBucket,
+                repeat.pollenAmount,
+                repeat.earnedAt,
+            );
         }
         if (card.repeats && card.status !== "open") continue;
-        const part = parts[CARD_STATE[card.status]];
-        const kind = rewardIconKind(card.balanceBucket);
-        part.count += 1;
-        part.cells[kind] += 1;
-        part.pollen[kind] +=
+        add(
+            CARD_STATE[card.status],
+            card.balanceBucket,
             (card.status === "open" ? null : card.earnedAmount) ??
-            card.reward ??
-            0;
+                card.reward ??
+                0,
+            card.status === "open" ? null : (card.earnedAt ?? null),
+        );
     }
-    return parts;
+    // Rewards in the order they became ready to claim, so a claim changes a
+    // cell's colour but never its place; open quests follow.
+    cells.sort(
+        (a, b) =>
+            (a.earnedAt ? Date.parse(a.earnedAt) : Number.POSITIVE_INFINITY) -
+            (b.earnedAt ? Date.parse(b.earnedAt) : Number.POSITIVE_INFINITY),
+    );
+    return { parts, cells };
 }
 
 /** A state's amounts, one per balance it pays into ("🌱 $5"); a state with
@@ -511,33 +525,25 @@ function ProgressAmounts({
     );
 }
 
-function Comb({ parts }: { parts: Record<ProgressState, ProgressPart> }) {
-    const states = Object.keys(PROGRESS_STATES) as ProgressState[];
-    const total = states.reduce((sum, state) => sum + parts[state].count, 0);
+function Comb({ cells }: { cells: CombCell[] }) {
     // Faint cells up to the end of the row; a phone row is half as long, so
     // it needs only the first of them.
-    const grow = (COMB_ROW - (total % COMB_ROW)) % COMB_ROW;
+    const grow = (COMB_ROW - (cells.length % COMB_ROW)) % COMB_ROW;
     const phoneGrow =
-        (PHONE_COMB_ROW - (total % PHONE_COMB_ROW)) % PHONE_COMB_ROW;
+        (PHONE_COMB_ROW - (cells.length % PHONE_COMB_ROW)) % PHONE_COMB_ROW;
     const cell = `aspect-[22/25] ${HEX}`;
     return (
         <span
             aria-hidden="true"
             className="grid grid-cols-20 gap-0.5 sm:grid-cols-40"
         >
-            {states.flatMap((state) =>
-                (["tier", "paid"] as const).flatMap((kind) =>
-                    Array.from(
-                        { length: parts[state].cells[kind] },
-                        (_, index) => (
-                            <span
-                                key={`${state}-${kind}-${index}`}
-                                className={`${cell} ${PROGRESS_STATES[state].tone[kind]}`}
-                            />
-                        ),
-                    ),
-                ),
-            )}
+            {cells.map(({ state, kind }, index) => (
+                <span
+                    // Cells never reorder, so the place is a stable key.
+                    key={index}
+                    className={`${cell} ${PROGRESS_STATES[state].tone[kind]}`}
+                />
+            ))}
             {Array.from({ length: grow }, (_, index) => (
                 <span
                     key={`grow-${index}`}
@@ -558,7 +564,7 @@ export function QuestProgress({
      *  ones. */
     cards: QuestCard[];
 }) {
-    const parts = progressOf(cards);
+    const { parts, cells } = progressOf(cards);
     const states = Object.keys(PROGRESS_STATES) as ProgressState[];
     // Count rewards, not cards: a repeatable quest's card holds many rewards.
     const total = states.reduce((sum, state) => sum + parts[state].count, 0);
@@ -570,7 +576,7 @@ export function QuestProgress({
                 variant="card"
                 className="flex flex-col gap-5 !p-5 sm:!p-6"
             >
-                <Comb parts={parts} />
+                <Comb cells={cells} />
                 {/* The states under the comb, like its legend: label, count and
                 reward. Side by side on a wide screen, one line each on a
                 phone. */}
@@ -1372,6 +1378,7 @@ function QuestOverviewContent({
                           0,
                       )
                     : reward?.pollenAmount,
+                earnedAt: reward?.earnedAt,
                 progress:
                     reward && quest.goal
                         ? {
@@ -1409,6 +1416,7 @@ function QuestOverviewContent({
                 balanceBucket: reward.balanceBucket,
                 status: reward.claimedAt ? "claimed" : "claimable",
                 earnedAmount: reward.pollenAmount,
+                earnedAt: reward.earnedAt,
             });
         }
 

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "emoji_lookup",
             ].sort(),
         );
     });
@@ -644,4 +645,89 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("EmojiHub lookup searches the catalog by name and draws random emoji", async (t) => {
+    const catalog = [
+        {
+            name: "grinning face",
+            category: "smileys and people",
+            group: "face positive",
+            htmlCode: ["&#128512;"],
+            unicode: ["U+1F600"],
+        },
+        {
+            name: "grinning face with smiling eyes",
+            category: "smileys and people",
+            group: "face positive",
+            htmlCode: ["&#128513;"],
+            unicode: ["U+1F601"],
+        },
+        {
+            name: "man in tuxedo, type-1-2",
+            category: "smileys and people",
+            group: "person role",
+            htmlCode: ["&#129333;", "&#127995;"],
+            unicode: ["U+1F935", "U+1F3FB"],
+        },
+    ];
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "emojihub.yurace.pro");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations\.ai/);
+        if (url.pathname === "/api/all") return Response.json(catalog);
+        if (url.pathname === "/api/random") return Response.json(catalog[2]);
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const searchRes = await call(c, "emoji_lookup", {
+        name: "GRINNING",
+        limit: 1,
+    });
+    assert.notEqual(searchRes.isError, true, JSON.stringify(searchRes));
+    assert.deepEqual(value(searchRes), {
+        query: "GRINNING",
+        total: 2,
+        emojis: [
+            {
+                name: "grinning face",
+                category: "smileys and people",
+                group: "face positive",
+                unicode: ["U+1F600"],
+                html_code: ["&#128512;"],
+            },
+        ],
+    });
+    assert.equal(fetches, 1);
+
+    const randomRes = await call(c, "emoji_lookup", { limit: 2 });
+    assert.notEqual(randomRes.isError, true, JSON.stringify(randomRes));
+    const randomVal = value(randomRes);
+    assert.equal(randomVal.query, null);
+    assert.equal(randomVal.total, 2);
+    assert.equal(randomVal.emojis.length, 2);
+    assert.equal(randomVal.emojis[0].name, "man in tuxedo, type-1-2");
+    assert.deepEqual(randomVal.emojis[0].unicode, ["U+1F935", "U+1F3FB"]);
+    assert.equal(fetches, 3);
+
+    const noMatchRes = await call(c, "emoji_lookup", {
+        name: "zzzzqqqxxyy",
+    });
+    assert.notEqual(noMatchRes.isError, true, JSON.stringify(noMatchRes));
+    assert.deepEqual(value(noMatchRes), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        emojis: [],
+    });
+
+    const before = fetches;
+    const blankRes = await call(c, "emoji_lookup", { name: " " });
+    assert.equal(blankRes.isError, true);
+    assert.equal(fetches, before);
 });

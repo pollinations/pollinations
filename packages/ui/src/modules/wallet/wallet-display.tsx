@@ -42,6 +42,55 @@ export const WalletKindIcon: FC<WalletKindIconProps> = ({
     );
 };
 
+const walletKindNames: Record<WalletBalanceKind, string> = {
+    paid: "Paid",
+    tier: "Quest",
+};
+
+export type WalletAmountProps = {
+    kind: WalletBalanceKind;
+    /** The formatted amount, e.g. "$5". */
+    children: ReactNode;
+    /** Grey name and icon, for amounts already claimed. */
+    muted?: boolean;
+    className?: string;
+};
+
+/** An amount with the balance it belongs to: "$5 🌱 Quest" or "$5 💳 Paid".
+ *  Both balances are dollars, so the name tells them apart. */
+export const WalletAmount: FC<WalletAmountProps> = ({
+    kind,
+    children,
+    muted = false,
+    className,
+}) => {
+    const Icon = walletKindIcons[kind];
+    return (
+        <span
+            className={cn(
+                "polli:inline-flex polli:items-center polli:gap-1.5 polli:tabular-nums",
+                className,
+            )}
+        >
+            {children}
+            <span
+                className={cn(
+                    "polli:inline-flex polli:items-center polli:gap-0.5 polli:text-xs polli:font-semibold",
+                    muted
+                        ? "polli:text-theme-text-muted"
+                        : walletTextClasses[kind],
+                )}
+            >
+                <Icon
+                    aria-hidden="true"
+                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                />
+                {walletKindNames[kind]}
+            </span>
+        </span>
+    );
+};
+
 export type WalletBalanceCardProps = {
     tone?: "balance" | "neutral";
     kind: WalletBalanceKind;

@@ -2,7 +2,6 @@ import {
     Alert,
     BeakerIcon,
     Button,
-    CardIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -29,8 +28,8 @@ import {
 import { Markdown } from "@pollinations/ui/markdown";
 import {
     formatPollen,
+    WalletAmount,
     WalletBalanceCard,
-    WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
@@ -223,7 +222,7 @@ function cardSortRank(card: QuestCard): number {
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
-// Rewards are dollars; the sprout or card beside them names the balance.
+// Rewards are dollars; WalletAmount beside them names the balance.
 function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
     const formatted = formatPollen(value);
@@ -681,11 +680,12 @@ function RewardLine({ reward }: { reward: QuestReward }) {
                         : "font-semibold text-theme-text-strong"
                 }`}
             >
-                <WalletKindIcon
+                <WalletAmount
                     kind={rewardIconKind(reward.balanceBucket)}
-                    className="h-3.5 w-3.5"
-                />
-                {formatRewardAmount(reward.pollenAmount)}
+                    muted={Boolean(reward.claimedAt)}
+                >
+                    {formatRewardAmount(reward.pollenAmount)}
+                </WalletAmount>
                 <span className="sr-only">
                     {reward.claimedAt ? " claimed" : " ready to claim"}
                 </span>
@@ -746,7 +746,7 @@ export function QuestRow({
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
     const rewardIcon = rewardIconKind(card.balanceBucket);
-    // The icon beside the amount names the balance it lands in.
+    // WalletAmount names the balance it lands in.
     // formatRewardAmount renders null as "TBD".
     const rewardLabel = formatRewardAmount(rewardAmount);
 
@@ -795,8 +795,7 @@ export function QuestRow({
             ? card.description
             : null;
     // One plain reward in every state, so it holds the same spot on the right;
-    // only the bucket icon carries colour, and a claimed reward goes muted grey
-    // (raw glyph, so it inherits the muted text colour).
+    // only the balance name carries colour, and a claimed reward goes muted grey.
     // A done stacked card shows what it paid into each balance.
     const amounts =
         claimed && card.repeats
@@ -841,18 +840,9 @@ export function QuestRow({
             }`}
         >
             {amounts.map(({ kind, label }) => (
-                <span key={kind} className="flex items-center gap-1">
-                    {claimed ? (
-                        kind === "paid" ? (
-                            <CardIcon className="h-4 w-4 shrink-0" />
-                        ) : (
-                            <SproutIcon className="h-4 w-4 shrink-0" />
-                        )
-                    ) : (
-                        <WalletKindIcon kind={kind} className="h-4 w-4" />
-                    )}
+                <WalletAmount key={kind} kind={kind} muted={claimed}>
                     {label}
-                </span>
+                </WalletAmount>
             ))}
         </span>
     );

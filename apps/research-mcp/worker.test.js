@@ -342,6 +342,157 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("NASA CMR granules project the ~5 KB entries down and treat a wrong version as empty, not an error", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "cmr.earthdata.nasa.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("version") === "006") {
+            return Response.json({
+                feed: {
+                    updated: "2026-11-18T18:43:10.570Z",
+                    id: "https://cmr.earthdata.nasa.gov/search/granules.json",
+                    title: "ECHO granule metadata",
+                    entry: [],
+                },
+            });
+        }
+        return Response.json({
+            feed: {
+                updated: "2020-03-12T11:23:26.116Z",
+                id: "https://cmr.earthdata.nasa.gov/search/granules.json",
+                title: "ECHO granule metadata",
+                entry: [
+                    {
+                        producer_granule_id:
+                            "MOD09GA.A2000055.h25v08.061.2020037171358",
+                        id: "G2206982663-LPCLOUD",
+                        time_start: "2000-02-24T00:00:00.000Z",
+                        time_end: "2000-02-24T23:59:59.000Z",
+                        cloud_cover: "0.0",
+                        dataset_id:
+                            "MODIS/Terra Surface Reflectance Daily L2G Global 1km and 500m SIN Grid V061",
+                        updated: "2020-03-12T11:23:26.116Z",
+                        orbit_calculated_spatial_domains: [
+                            {
+                                equator_crossing_longitude: "79.2332616985144",
+                                orbit_number: "988",
+                            },
+                        ],
+                        links: [
+                            {
+                                rel: "http://esipfed.org/ns/fedsearch/1.1/data#",
+                                href: "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD09GA.061/MOD09GA.A2000055.h25v08.061.2020037171358/MOD09GA.A2000055.h25v08.061.2020037171358.hdf",
+                            },
+                        ],
+                    },
+                    {
+                        producer_granule_id:
+                            "MOD09GA.A2000055.h09v07.061.2020037170217",
+                        id: "G2206982679-LPCLOUD",
+                        time_start: "2000-02-24T00:00:00.000Z",
+                        time_end: "2000-02-24T23:59:59.000Z",
+                        cloud_cover: "0.0",
+                        dataset_id:
+                            "MODIS/Terra Surface Reflectance Daily L2G Global 1km and 500m SIN Grid V061",
+                        updated: "2020-03-12T11:23:38.747Z",
+                        orbit_calculated_spatial_domains: [
+                            {
+                                equator_crossing_longitude: "-93.8082345793327",
+                                orbit_number: "995",
+                            },
+                        ],
+                        links: [],
+                    },
+                ],
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "cmr_granule", {
+        short_name: "MOD09GA",
+        version: "061",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].searchParams.get("short_name"), "MOD09GA");
+    assert.equal(requests[0].searchParams.get("version"), "061");
+    assert.equal(requests[0].searchParams.get("page_size"), "2");
+    assert.deepEqual(value(result), {
+        short_name: "MOD09GA",
+        version: "061",
+        total: 2,
+        granules: [
+            {
+                granule_id: "MOD09GA.A2000055.h25v08.061.2020037171358",
+                time_start: "2000-02-24T00:00:00.000Z",
+                time_end: "2000-02-24T23:59:59.000Z",
+                cloud_cover: "0.0",
+                dataset:
+                    "MODIS/Terra Surface Reflectance Daily L2G Global 1km and 500m SIN Grid V061",
+            },
+            {
+                granule_id: "MOD09GA.A2000055.h09v07.061.2020037170217",
+                time_start: "2000-02-24T00:00:00.000Z",
+                time_end: "2000-02-24T23:59:59.000Z",
+                cloud_cover: "0.0",
+                dataset:
+                    "MODIS/Terra Surface Reflectance Daily L2G Global 1km and 500m SIN Grid V061",
+            },
+        ],
+    });
+
+    // A version that matches no collection answers with an empty list.
+    result = await call(c, "cmr_granule", {
+        short_name: "MOD09GA",
+        version: "006",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        short_name: "MOD09GA",
+        version: "006",
+        total: 0,
+        granules: [],
+    });
+    // No limit given defaults to page_size=5.
+    assert.equal(requests[1].searchParams.get("page_size"), "5");
+
+    // Malformed names and out-of-range limits are rejected with no fetch.
+    const before = requests.length;
+    for (const args of [
+        { short_name: "MOD 09", version: "061" },
+        { short_name: "MOD09GA", version: "06 1" },
+        { short_name: "MOD09GA", version: "061", limit: 99 },
+        { short_name: "", version: "061" },
+    ]) {
+        const bad = await call(c, "cmr_granule", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true, JSON.stringify(args));
+    }
+    assert.equal(requests.length, before);
+
+    // The handler itself falls back to 5 on an out-of-range direct call.
+    const { cmrTools } = await import("./tools/cmr.js");
+    const seen = [];
+    const out = await cmrTools[0][3](
+        { short_name: "MOD09GA", version: "061", limit: 99 },
+        async (url) => {
+            seen.push(url);
+            return { feed: { entry: [] } };
+        },
+    );
+    assert.equal(out.total, 0);
+    assert.match(seen[0], /page_size=5/);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +515,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "cmr_granule",
             ].sort(),
         );
     });

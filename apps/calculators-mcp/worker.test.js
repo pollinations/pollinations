@@ -78,6 +78,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "tides",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -949,4 +950,82 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("tides returns high/low predictions for a station and a date", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "api.tidesandcurrents.noaa.gov");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        // New York (The Battery), 2026-11-18: 4 events, trimmed real fixture.
+        if (target.searchParams.get("station") === "9999999")
+            return Response.json({
+                error: {
+                    message:
+                        "No Predictions data was found. Please make sure the Datum input is valid.",
+                },
+            });
+        return Response.json({
+            predictions: [
+                { t: "2026-11-18 02:23", v: "3.918", type: "H" },
+                { t: "2026-11-18 08:44", v: "1.414", type: "L" },
+                { t: "2026-11-18 14:25", v: "4.196", type: "H" },
+                { t: "2026-11-18 21:14", v: "0.735", type: "L" },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "tides", {
+            station: "8518750",
+            date: "2026-11-18",
+        }),
+        {
+            station: "8518750",
+            date: "2026-11-18",
+            datum: "MLLW",
+            units: "feet",
+            predictions: [
+                { time: "2026-11-18 02:23", height_ft: 3.918, type: "high" },
+                // biome-ignore lint/suspicious/noApproximativeNumericConstant: real tide height from the NOAA fixture, not an approximation of sqrt(2).
+                { time: "2026-11-18 08:44", height_ft: 1.414, type: "low" },
+                { time: "2026-11-18 14:25", height_ft: 4.196, type: "high" },
+                { time: "2026-11-18 21:14", height_ft: 0.735, type: "low" },
+            ],
+        },
+    );
+    assert.equal(requests[0].searchParams.get("product"), "predictions");
+    assert.equal(requests[0].searchParams.get("begin_date"), "20261118");
+    assert.equal(requests[0].searchParams.get("end_date"), "20261118");
+    assert.equal(requests[0].searchParams.get("datum"), "MLLW");
+    assert.equal(requests[0].searchParams.get("interval"), "hilo");
+    assert.equal(requests[0].searchParams.get("units"), "english");
+    // An unknown station answers HTTP 200 with an error field, not a 4xx.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "tides",
+                arguments: { station: "9999999", date: "2026-11-18" },
+            })
+        ).isError,
+        true,
+    );
+    // Bad station ids and dates are rejected before any fetch.
+    const before = requests.length;
+    for (const args of [
+        { station: "New York", date: "2026-11-18" },
+        { station: "851875", date: "2026-11-18" },
+        { station: "8518750", date: "2026-02-30" },
+        { station: "8518750", date: "18-11-2026" },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "tides", arguments: args })).isError,
+            true,
+            JSON.stringify(args),
+        );
+    assert.equal(requests.length, before);
 });

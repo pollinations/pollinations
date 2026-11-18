@@ -57,6 +57,7 @@ for (const modern of [false, true])
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
             "asn_whois",
+            "cve_lookup",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -72,6 +73,7 @@ for (const modern of [false, true])
                 .sort(),
             [
                 "asn_whois",
+                "cve_lookup",
                 "dns_lookup",
                 "domain_whois",
                 "http_probe",
@@ -373,6 +375,218 @@ test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits wi
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /429.*60/);
     assert.equal(stub.mock.callCount(), 1);
+});
+test("CVE lookup returns a projected record, handles missing CVSS and unknown ids", async (t) => {
+    let requests = 0;
+    // Trimmed real CIRCL fixtures (CVE 5.1 JSON): Log4Shell carries no
+    // numeric CVSS, only an "other" severity label; the xz record has a
+    // cvssV3_1 metric with baseScore 10.
+    const log4shell = {
+        dataType: "CVE_RECORD",
+        dataVersion: "5.1",
+        cveMetadata: {
+            state: "PUBLISHED",
+            cveId: "CVE-2021-44228",
+            dateUpdated: "2025-10-21T23:25:23.121Z",
+            datePublished: "2021-12-10T00:00:00.000Z",
+        },
+        containers: {
+            cna: {
+                title: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints",
+                descriptions: [
+                    {
+                        lang: "en",
+                        value: "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects.",
+                    },
+                ],
+                affected: [
+                    {
+                        vendor: "Apache Software Foundation",
+                        product: "Apache Log4j2",
+                    },
+                ],
+                references: [
+                    {
+                        url: "https://logging.apache.org/log4j/2.x/security.html",
+                    },
+                    {
+                        url: "http://www.openwall.com/lists/oss-security/2021/12/10/1",
+                    },
+                    {
+                        url: "http://www.openwall.com/lists/oss-security/2021/12/10/2",
+                    },
+                    { url: "https://example.org/ref-4" },
+                ],
+                metrics: [
+                    {
+                        other: {
+                            type: "unknown",
+                            content: { other: "critical" },
+                        },
+                    },
+                ],
+                problemTypes: [
+                    {
+                        descriptions: [
+                            {
+                                type: "CWE",
+                                lang: "en",
+                                description:
+                                    "CWE-502 Deserialization of Untrusted Data",
+                                cweId: "CWE-502",
+                            },
+                        ],
+                    },
+                    {
+                        descriptions: [
+                            {
+                                type: "CWE",
+                                lang: "en",
+                                description:
+                                    "CWE-400 Uncontrolled Resource Consumption",
+                                cweId: "CWE-400",
+                            },
+                        ],
+                    },
+                    {
+                        descriptions: [
+                            {
+                                type: "CWE",
+                                lang: "en",
+                                description: "CWE-20 Improper Input Validation",
+                                cweId: "CWE-20",
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    };
+    const xz = {
+        dataType: "CVE_RECORD",
+        dataVersion: "5.1",
+        cveMetadata: {
+            state: "PUBLISHED",
+            cveId: "CVE-2024-3094",
+            dateUpdated: "2024-04-02T04:00:23.138684Z",
+            datePublished: "2024-03-29T16:51:12.588Z",
+        },
+        containers: {
+            cna: {
+                title: "Xz: malicious code in distributed source",
+                descriptions: [
+                    {
+                        lang: "en",
+                        value: "Malicious code was discovered in the upstream tarballs of xz, starting with version 5.6.0.",
+                    },
+                ],
+                affected: [{ vendor: "tukaani", product: "xz" }],
+                references: [{ url: "https://example.org/xz-1" }],
+                metrics: [
+                    {
+                        cvssV3_1: {
+                            baseScore: 10,
+                            baseSeverity: "CRITICAL",
+                            vectorString:
+                                "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+                        },
+                    },
+                ],
+                problemTypes: [
+                    {
+                        descriptions: [
+                            {
+                                type: "CWE",
+                                lang: "en",
+                                description: "CWE-506 Embedded Malicious Code",
+                                cweId: "CWE-506",
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    };
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        requests++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "cve.circl.lu");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.pathname.endsWith("/CVE-2021-44228"))
+            return Response.json(log4shell);
+        if (url.pathname.endsWith("/CVE-2024-3094")) return Response.json(xz);
+        return Response.json({});
+    });
+    const c = await clientFor(t);
+    const read = async (args) => {
+        const result = await c.callTool({
+            name: "cve_lookup",
+            arguments: args,
+        });
+        assert.notEqual(result.isError, true, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+    };
+    // Lowercase input is normalized; the record has no numeric CVSS, so the
+    // CNA's "critical" label is the severity.
+    const log4j = await read({ cve_id: "cve-2021-44228" });
+    assert.deepEqual(log4j, {
+        cve_id: "CVE-2021-44228",
+        state: "PUBLISHED",
+        title: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints",
+        description:
+            "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects.",
+        description_truncated: false,
+        published: "2021-12-10T00:00:00.000Z",
+        updated: "2025-10-21T23:25:23.121Z",
+        cvss: null,
+        severity: "critical",
+        cwes: ["CWE-502", "CWE-400", "CWE-20"],
+        affected: [
+            { vendor: "Apache Software Foundation", product: "Apache Log4j2" },
+        ],
+        references_count: 4,
+        references: [
+            "https://logging.apache.org/log4j/2.x/security.html",
+            "http://www.openwall.com/lists/oss-security/2021/12/10/1",
+            "http://www.openwall.com/lists/oss-security/2021/12/10/2",
+        ],
+    });
+    const xzResult = await read({ cve_id: "CVE-2024-3094" });
+    assert.deepEqual(xzResult.cvss, {
+        version: "3.1",
+        score: 10,
+        severity: "CRITICAL",
+        vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+    });
+    assert.equal(xzResult.severity, "critical");
+    assert.deepEqual(xzResult.cwes, ["CWE-506"]);
+    assert.deepEqual(xzResult.affected, [{ vendor: "tukaani", product: "xz" }]);
+    assert.equal(xzResult.references_count, 1);
+    // Unknown ids answer HTTP 200 with an empty object upstream; the tool
+    // turns that into a clean error instead of an empty result.
+    const unknown = await c.callTool({
+        name: "cve_lookup",
+        arguments: { cve_id: "CVE-2020-99999" },
+    });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /No CVE record found for CVE-2020-99999/,
+    );
+    for (const bad of ["foo", "CVE-21-44228", "CVE-2021-123"]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "cve_lookup",
+                    arguments: { cve_id: bad },
+                })
+            ).isError,
+            true,
+        );
+    }
+    assert.equal(requests, 3);
 });
 test("HTTP stops redirect loops and never reads HEAD or binary bodies", async (t) => {
     const stub = t.mock.method(globalThis, "fetch", async (url) =>

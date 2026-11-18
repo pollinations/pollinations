@@ -342,6 +342,109 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Federal Register search projects documents, caps abstracts and rejects bad limits before fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        count++;
+        assert.equal(url.hostname, "www.federalregister.gov");
+        assert.equal(url.searchParams.get("conditions[term]"), "climate");
+        return Response.json({
+            description: "Documents matching 'climate'",
+            count: 10000,
+            total_pages: 5000,
+            next_page_url:
+                "https://www.federalregister.gov/api/v1/documents?page=2",
+            results: [
+                {
+                    title: "Rescission of Climate-Related Disclosure Rules",
+                    type: "Proposed Rule",
+                    abstract:
+                        'The Securities and Exchange Commission ("Commission") proposes to rescind amendments to its rules under the Securities Act of 1933 ("Securities Act") and Securities Exchange Act of 1934 ("Exchange Act") that require registrants to provide certain climate- related information in their registration statements and annual reports.',
+                    document_number: "2026-11091",
+                    publication_date: "2026-06-03",
+                    agencies: [
+                        {
+                            raw_name: "SECURITIES AND EXCHANGE COMMISSION",
+                            name: "Securities and Exchange Commission",
+                            id: 466,
+                        },
+                    ],
+                },
+                {
+                    title: "Request for Information on Climate-Related Financial Risk; Withdrawal",
+                    type: "Notice",
+                    abstract:
+                        'The Commodity Futures Trading Commission ("Commission" or "CFTC") is formally withdrawing a request for information published on June 8, 2022, titled "Request for Information on Climate-Related Financial Risk".',
+                    document_number: "2026-05314",
+                    publication_date: "2026-03-18",
+                    agencies: [
+                        {
+                            raw_name: "COMMODITY FUTURES TRADING COMMISSION",
+                            name: "Commodity Futures Trading Commission",
+                            id: 107,
+                        },
+                    ],
+                },
+                {
+                    title: "Long Abstract Notice",
+                    type: "Notice",
+                    abstract: "x".repeat(500),
+                    document_number: "2026-00001",
+                    publication_date: "2026-01-01",
+                    agencies: [],
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "federal_register", {
+        term: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        total: 10000,
+        term: "climate",
+        documents: [
+            {
+                title: "Rescission of Climate-Related Disclosure Rules",
+                type: "Proposed Rule",
+                publication_date: "2026-06-03",
+                document_number: "2026-11091",
+                agencies: ["Securities and Exchange Commission"],
+                abstract:
+                    'The Securities and Exchange Commission ("Commission") proposes to rescind amendments to its rules under the Securities Act of 1933 ("Securities Act") and Securities Exchange Act of 1934 ("Exchange Act") that require registrants to provide certain climate- related information in their registration statements and annual reports.',
+            },
+            {
+                title: "Request for Information on Climate-Related Financial Risk; Withdrawal",
+                type: "Notice",
+                publication_date: "2026-03-18",
+                document_number: "2026-05314",
+                agencies: ["Commodity Futures Trading Commission"],
+                abstract:
+                    'The Commodity Futures Trading Commission ("Commission" or "CFTC") is formally withdrawing a request for information published on June 8, 2022, titled "Request for Information on Climate-Related Financial Risk".',
+            },
+        ],
+    });
+    result = await call(c, "federal_register", { term: "climate", limit: 3 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).documents[2].abstract.length, 400);
+    assert.equal(value(result).documents[2].agencies.length, 0);
+    const before = count;
+    for (const args of [
+        { term: "climate", limit: 0 },
+        { term: "climate", limit: 11 },
+        { term: " " },
+    ]) {
+        const bad = await call(c, "federal_register", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +467,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "federal_register",
             ].sort(),
         );
     });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "fueleconomy_mpg",
             ].sort(),
         );
     });
@@ -644,4 +645,177 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("FuelEconomy resolves year/make/model through the menu chain and returns EPA MPG figures", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.fueleconomy.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.equal(
+            new Headers(init.headers).get("accept"),
+            "application/json",
+        );
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname.endsWith("/menu/model"))
+            return Response.json({
+                menuItem: [
+                    { text: "ILX", value: "ILX" },
+                    { text: "MDX AWD", value: "MDX AWD" },
+                    { text: "TLX AWD", value: "TLX AWD" },
+                ],
+            });
+        if (url.pathname.endsWith("/menu/options"))
+            // Live shape: a single option comes back as one object, not an array.
+            return Response.json({
+                menuItem: {
+                    text: "Auto (AM-S8), 4 cyl, 2.4 L",
+                    value: "42166",
+                },
+            });
+        if (url.pathname.endsWith("/vehicle/42166"))
+            return Response.json({
+                id: "42166",
+                year: "2020",
+                make: "Acura",
+                model: "ILX",
+                city08: "24",
+                city08U: "24.2285",
+                highway08: "34",
+                highway08U: "34.3255",
+                comb08: "28",
+                comb08U: "27.9249",
+                fuelType1: "Premium Gasoline",
+                trany: "Automatic (AM-S8)",
+                drive: "Front-Wheel Drive",
+                cylinders: "4",
+                displ: "2.4",
+                VClass: "Compact Cars",
+                fuelCost08: "2700",
+                co2: "316",
+                feScore: "6",
+                barrels08: "10.625357142857142",
+                emissionsList: { emissionsInfo: [] },
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: "Acura",
+        model: "ilx",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 3);
+    assert.deepEqual(value(result), {
+        year: 2020,
+        make: "Acura",
+        model: "ILX",
+        option: "Auto (AM-S8), 4 cyl, 2.4 L",
+        vehicle_id: "42166",
+        city_mpg: 24,
+        highway_mpg: 34,
+        combined_mpg: 28,
+        fuel_type: "Premium Gasoline",
+        transmission: "Automatic (AM-S8)",
+        drive: "Front-Wheel Drive",
+        cylinders: 4,
+        displacement_l: 2.4,
+        vehicle_class: "Compact Cars",
+        annual_fuel_cost_usd: 2700,
+        co2_g_per_mile: 316,
+        fuel_economy_score: 6,
+        url: "https://www.fueleconomy.gov/ws/rest/vehicle/42166",
+    });
+
+    // Option by vehicle id resolves the same record.
+    const byId = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: "Acura",
+        model: "ILX",
+        option: "42166",
+    });
+    assert.notEqual(byId.isError, true, JSON.stringify(byId));
+    assert.equal(value(byId).vehicle_id, "42166");
+    assert.equal(fetches, 6);
+});
+
+test("FuelEconomy rejects unknown makes, models and trims with clean errors before extra fetches", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches += 1;
+        const url = new URL(input);
+        if (url.pathname.endsWith("/menu/model")) {
+            if (url.searchParams.get("make") === "Zzzqqq")
+                return Response.json(null);
+            return Response.json({
+                menuItem: [
+                    { text: "ILX", value: "ILX" },
+                    { text: "MDX AWD", value: "MDX AWD" },
+                ],
+            });
+        }
+        if (url.pathname.endsWith("/menu/options"))
+            return Response.json({
+                menuItem: {
+                    text: "Auto (AM-S8), 4 cyl, 2.4 L",
+                    value: "42166",
+                },
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: "Zzzqqq",
+        model: "ILX",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /No models found/);
+    assert.equal(fetches, 1);
+
+    result = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: "Acura",
+        model: "NoSuchModel",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /No model/);
+    assert.equal(fetches, 2);
+
+    result = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: "Acura",
+        model: "ILX",
+        option: "V8",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /No trim/);
+    assert.equal(fetches, 4);
+
+    // A year beyond next year's data is rejected before any fetch.
+    result = await call(c, "fueleconomy_mpg", {
+        year: 2100,
+        make: "Acura",
+        model: "ILX",
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 4);
+
+    // A blank make is rejected by the schema with zero additional fetches.
+    result = await call(c, "fueleconomy_mpg", {
+        year: 2020,
+        make: " ",
+        model: "ILX",
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 4);
 });

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dbsnp_variant",
             ].sort(),
         );
     });
@@ -644,4 +645,171 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("dbSNP merges duplicate records into one variant and projects position, class, significance, genes, HGVS and allele frequencies", async (t) => {
+    let fetches = 0;
+    // Verbatim live docsum for rs699 (916 chars); the tool caps it at 500.
+    const docsum =
+        "HGVS=NC_000001.11:g.230710048A>C,NC_000001.11:g.230710048A>G,NC_000001.11:g.230710048A>T,NC_000001.10:g.230845794A>C,NC_000001.10:g.230845794A>G,NC_000001.10:g.230845794A>T,NG_008836.3:g.40535T>G,NG_008836.3:g.40535T>C,NG_008836.3:g.40535T>A,NG_008836.2:g.9543T>G,NG_008836.2:g.9543T>C,NG_008836.2:g.9543T>A,NM_000029.4:c.803T>G,NM_000029.4:c.803T>C,NM_000029.4:c.803T>A,NM_001382817.3:c.776T>G,NM_001382817.3:c.776T>C,NM_001382817.3:c.776T>A,NM_001382817.2:c.776T>G,NM_001382817.2:c.776T>C,NM_001382817.2:c.776T>A,NM_001382817.1:c.803T>G,NM_001382817.1:c.803T>C,NM_001382817.1:c.803T>A,NM_001384479.1:c.776T>G,NM_001384479.1:c.776T>C,NM_001384479.1:c.776T>A,NM_000029.3:c.803T>G,NM_000029.3:c.803T>C,NM_000029.3:c.803T>A,NP_001369746.2:p.Met259Arg,NP_001369746.2:p.Met259Thr,NP_001369746.2:p.Met259Lys,NP_001371408.1:p.Met259Arg,NP_001371408.1:p.Met259Thr,NP_001371408.1:p.Met259Lys|SEQ=[A/C/G/T]|LEN=1|GENE=AGT:183";
+    const mafs = [
+        { study: "1000Genomes", freq: "A=0.2949281/1477" },
+        { study: "1000Genomes_30X", freq: "A=0.2938788/1882" },
+        { study: "ALSPAC", freq: "G=0.3954333/1524" },
+        { study: "Estonian", freq: "G=0.4801339/2151" },
+        { study: "ExAC", freq: "A=0.4515682/54768" },
+        { study: "FINRISK", freq: "G=0.375/114" },
+        { study: "GENOME_DK", freq: "G=0.325/13" },
+    ];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname.endsWith("/esearch.fcgi")) {
+            assert.equal(url.searchParams.get("db"), "snp");
+            assert.equal(url.searchParams.get("term"), "rs699");
+            assert.equal(url.searchParams.get("retmode"), "json");
+            assert.equal(url.searchParams.get("tool"), "pollinations-research");
+            assert.equal(
+                url.searchParams.get("email"),
+                "hello@pollinations.ai",
+            );
+            return Response.json({
+                esearchresult: {
+                    count: "2",
+                    idlist: ["386606420", "699"],
+                },
+            });
+        }
+        if (url.pathname.endsWith("/esummary.fcgi")) {
+            assert.equal(url.searchParams.get("db"), "snp");
+            assert.equal(url.searchParams.get("id"), "386606420,699");
+            return Response.json({
+                result: {
+                    uids: ["386606420", "699"],
+                    386606420: {
+                        uid: "386606420",
+                        snp_id: 699,
+                        chr: "1",
+                        chrpos: "1:230710048",
+                        spdi: "NC_000001.11:230710047:A:C,NC_000001.11:230710047:A:G,NC_000001.11:230710047:A:T",
+                        snp_class: "snv",
+                        fxn_class: "coding_sequence_variant,missense_variant",
+                        clinical_significance: "risk-factor,benign",
+                        genes: [{ name: "AGT", gene_id: "183" }],
+                        validated: "by-frequency,by-alfa,by-cluster",
+                        global_mafs: mafs,
+                        docsum,
+                        text: "MergedRs=699",
+                        merged_sort: "1",
+                    },
+                    699: {
+                        uid: "699",
+                        snp_id: 699,
+                        chr: "1",
+                        chrpos: "1:230710048",
+                        spdi: "NC_000001.11:230710047:A:C,NC_000001.11:230710047:A:G,NC_000001.11:230710047:A:T",
+                        snp_class: "snv",
+                        fxn_class: "coding_sequence_variant,missense_variant",
+                        clinical_significance: "risk-factor,benign",
+                        genes: [{ name: "AGT", gene_id: "183" }],
+                        validated: "by-frequency,by-alfa,by-cluster",
+                        global_mafs: mafs,
+                        docsum,
+                        text: "",
+                        merged_sort: "0",
+                    },
+                },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "dbsnp_variant", { rsid: "rs699" });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.equal(fetches, 2);
+    assert.deepEqual(value(res), {
+        rsid: "rs699",
+        total: 1,
+        variants: [
+            {
+                rsid: "rs699",
+                uid: "699",
+                chromosome: "1",
+                position: "1:230710048",
+                spdi: "NC_000001.11:230710047:A:C,NC_000001.11:230710047:A:G,NC_000001.11:230710047:A:T",
+                snp_class: "snv",
+                functional_class: "coding_sequence_variant,missense_variant",
+                clinical_significance: "risk-factor,benign",
+                genes: [{ name: "AGT", gene_id: "183" }],
+                validated: "by-frequency,by-alfa,by-cluster",
+                hgvs: docsum.slice(0, 500),
+                hgvs_truncated: true,
+                maf_study_count: 7,
+                global_mafs: mafs.slice(0, 5),
+            },
+        ],
+    });
+});
+
+test("dbSNP returns an empty list for no match, drops un-summarizable records, and rejects a non-rs id before any fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "eutils.ncbi.nlm.nih.gov");
+        if (url.pathname.endsWith("/esearch.fcgi")) {
+            if (url.searchParams.get("term") === "rs9999999999") {
+                return Response.json({
+                    esearchresult: { count: "0", idlist: [] },
+                });
+            }
+            assert.equal(url.searchParams.get("term"), "rs8888888888");
+            return Response.json({
+                esearchresult: { count: "1", idlist: ["999999999999"] },
+            });
+        }
+        assert.equal(url.searchParams.get("id"), "999999999999");
+        return Response.json({
+            result: {
+                uids: ["999999999999"],
+                999999999999: {
+                    uid: "999999999999",
+                    error: "cannot get document summary",
+                },
+            },
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "dbsnp_variant", { rsid: "rs9999999999" });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    assert.deepEqual(value(res), {
+        rsid: "rs9999999999",
+        total: 0,
+        variants: [],
+    });
+    assert.equal(fetches, 1);
+
+    const bad = await call(c, "dbsnp_variant", { rsid: "rs8888888888" });
+    assert.notEqual(bad.isError, true, JSON.stringify(bad));
+    assert.deepEqual(value(bad), {
+        rsid: "rs8888888888",
+        total: 0,
+        variants: [],
+    });
+    assert.equal(fetches, 3);
+
+    const blank = await call(c, "dbsnp_variant", { rsid: " " });
+    assert.equal(blank.isError, true);
+    const gene = await call(c, "dbsnp_variant", { rsid: "BRCA1" });
+    assert.equal(gene.isError, true);
+    assert.equal(fetches, 3);
 });

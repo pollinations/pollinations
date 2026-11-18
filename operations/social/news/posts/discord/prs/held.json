@@ -13,8 +13,51 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20027": {
+      "merge_sha": "8dd9e0ededfcccc9f5faadb6425dde36438c88a8",
+      "merged_at": "2026-11-18T03:45:37Z",
+      "required": []
+    },
+    "20028": {
+      "merge_sha": "52fd0a6c824c630752f4ff41752f18d0f6db55ec",
+      "merged_at": "2026-11-18T04:15:14Z",
+      "required": []
+    },
+    "20032": {
+      "merge_sha": "6989f4bb646a1b4d197abeed8bddaf4f805e0742",
+      "merged_at": "2026-11-18T07:13:36Z",
+      "required": []
+    },
+    "20038": {
+      "merge_sha": "282ac54aeba4d35d14828fc98908067ead6e4407",
+      "merged_at": "2026-11-18T08:51:50Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "20039": {
+      "merge_sha": "6824ff7b77c45608f228725d755634cfde0dbfa5",
+      "merged_at": "2026-11-18T13:09:38Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/economics",
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
+        "deploy-applications.yml:Deploy operations/dashboards/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "20055": {
+      "merge_sha": "a21005d39769c904f46d5f1e58762e60fb5bee31",
+      "merged_at": "2026-11-18T11:52:48Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/monitoring/infra-watch",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-infra_watch"
+      ]
     }
   },
-  "production": "321014b99b5ed15315a93583a234ac361ef82d13",
+  "production": "c7f2f8e270613ef9f897c9411207db446ad17494",
   "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
 }

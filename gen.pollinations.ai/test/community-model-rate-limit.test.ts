@@ -15,6 +15,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "inclusionai/ling-3.1-flash",
     ...TEXT_SERVICES["inclusionai/ling-3.1-flash"].fallbacks,
     "stealth/glyph-cluster",
+    ...TEXT_SERVICES["stealth/glyph-cluster"].fallbacks,
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     ...IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].fallbacks,
@@ -26,6 +27,16 @@ const QUOTA_BOUND_MODELS = new Set([
 ]);
 
 describe("model rate limiting", () => {
+    it("caps both Glyph Cluster routes at 8 RPM", () => {
+        const definition = TEXT_SERVICES["stealth/glyph-cluster"];
+        expect(definition.perUserRpm).toBe(8);
+        expect(
+            definition.fallbacks.map(
+                (id) => getRegistryModelDefinition(id).perUserRpm,
+            ),
+        ).toEqual([8]);
+    });
+
     it("caps Ling at 8 RPM and publishes its limit", async () => {
         const definition = TEXT_SERVICES["inclusionai/ling-3.1-flash"];
         expect(definition.perUserRpm).toBe(8);

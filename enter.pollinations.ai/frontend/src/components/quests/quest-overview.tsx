@@ -344,17 +344,12 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
 }
 
 // ── Progress ────────────────────────────────────────────────────────────────
-// One card for where you stand: a honeycomb with one cell per reward or open
-// quest (claimed, ready to claim, still to do), and the same states beside it,
-// one line each, as totals. A merged PR or a fixed issue counts like any other
-// quest you completed. Colours: green is pollen you earned, honey is waiting.
-const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
-// Past this many cells the comb keeps the proportions instead of growing.
-const MAX_CELLS = 200;
-// A small comb shows room to grow: faint empty cells up to GROW_CELLS, and the
-// way to add real ones. Seasoned combs need neither.
-const SMALL_COMB = 40;
-const GROW_CELLS = 68;
+// One card for where you stand: a bar split by state (claimed, ready to
+// claim, still to do) and the same states under it, one line each, as totals.
+// A merged PR or a fixed issue counts like any other quest you completed.
+// Colours: green is Quest balance you earned, honey is waiting.
+// Below this many rewards and quests, a line points to more ways to earn.
+const FEW_REWARDS = 40;
 // Where a new contributor starts: issues, quests, docs and apps.
 const CONTRIBUTING_URL =
     "https://github.com/pollinations/pollinations/blob/main/CONTRIBUTING.md";
@@ -436,56 +431,40 @@ export function QuestProgress({
 }) {
     const parts = progressOf(cards);
     const states = Object.keys(PROGRESS_STATES) as ProgressState[];
-    // Count cells, not cards: a repeatable quest's card holds many rewards.
+    // Count rewards, not cards: a repeatable quest's card holds many rewards.
     const total = states.reduce((sum, state) => sum + parts[state].count, 0);
-    const scale = total > MAX_CELLS ? MAX_CELLS / total : 1;
-    const cells = states.flatMap((state) =>
-        Array.from(
-            // A state that has anything always shows at least one cell.
-            {
-                length:
-                    parts[state].count > 0
-                        ? Math.max(1, Math.round(parts[state].count * scale))
-                        : 0,
-            },
-            (_, index) => ({
-                key: `${state}-${index}`,
-                tone: PROGRESS_STATES[state].tone,
-            }),
-        ),
-    );
-    const small = total < SMALL_COMB;
-    const growCells = small ? GROW_CELLS - total : 0;
+    const small = total < FEW_REWARDS;
     return (
-        // The comb takes half the card on wide screens, with its line under
-        // it and the numbers beside it; on a phone they stack.
-        <Surface
-            variant="card"
-            className="grid gap-5 !p-5 sm:grid-cols-2 sm:gap-x-8 sm:!p-6"
-        >
+        <Surface variant="card" className="flex flex-col gap-5 !p-5 sm:!p-6">
             <span
                 aria-hidden="true"
-                className="flex flex-wrap content-start gap-0.5"
+                className="flex h-2.5 gap-0.5 overflow-hidden rounded-full"
             >
-                {cells.map(({ key, tone }) => (
-                    <span
-                        key={key}
-                        className={`h-5 w-[1.1rem] ${HEX} ${tone}`}
-                    />
-                ))}
-                {Array.from({ length: growCells }, (_, index) => (
-                    <span
-                        key={`grow-${index}`}
-                        className={`h-5 w-[1.1rem] ${HEX} bg-theme-text-strong/[0.07]`}
-                        style={{
-                            opacity: Math.max(0.25, 1 - index / growCells),
-                        }}
-                    />
-                ))}
+                {states.map(
+                    (state) =>
+                        parts[state].count > 0 && (
+                            <span
+                                key={state}
+                                className={`min-w-1.5 ${PROGRESS_STATES[state].tone}`}
+                                style={{ flexGrow: parts[state].count }}
+                            />
+                        ),
+                )}
             </span>
-            {/* One line per state, like a legend for the comb: label, count,
-                pollen, with the numbers lined up in columns. */}
-            <dl className="grid min-w-0 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5 sm:self-center">
+            {/* One line per state, like a legend for the bar: label, count,
+                Quest balance, with the numbers lined up in columns. */}
+            <dl className="grid min-w-0 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
+                <div className="contents text-xs font-semibold text-theme-text-muted">
+                    <dt />
+                    <dd className="text-right">Quests</dd>
+                    <dd className="flex items-center justify-end gap-1.5">
+                        Quest balance
+                        <InfoTip
+                            text="Earned from quests and your apps. Regular models use it before your paid balance."
+                            label="About Quest balance"
+                        />
+                    </dd>
+                </div>
                 {states.map((state) => {
                     const { label, tone, info } = PROGRESS_STATES[state];
                     return (
@@ -506,7 +485,7 @@ export function QuestProgress({
                                 {parts[state].count}
                             </dd>
                             <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
-                                {/* A quest still to do has no pollen yet. */}
+                                {/* A quest still to do has no reward yet. */}
                                 {state !== "open" && (
                                     <ProgressPollen
                                         pollen={parts[state].pollen}
@@ -518,9 +497,9 @@ export function QuestProgress({
                     );
                 })}
             </dl>
-            <div className="flex flex-col gap-2 sm:col-span-2">
+            <div className="flex flex-col gap-2">
                 {small && (
-                    // One line under the comb; on a phone it may wrap.
+                    // One line under the states; on a phone it may wrap.
                     <p className="flex items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
                         <SparkleIcon className="h-3.5 w-3.5 shrink-0" />
                         <span className="sm:whitespace-nowrap">

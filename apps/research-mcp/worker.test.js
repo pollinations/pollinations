@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ena_sequence",
             ].sort(),
         );
     });
@@ -644,4 +645,87 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ENA sequence search quotes the term, projects accession/description/tax_id and returns an empty list on no match", async (t) => {
+    const longDescription = `hemoglobin ${"x".repeat(1_100)}`;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.ebi.ac.uk");
+        assert.equal(url.pathname, "/ena/portal/api/search");
+        assert.equal(url.searchParams.get("result"), "sequence");
+        assert.equal(url.searchParams.get("format"), "json");
+        assert.equal(
+            url.searchParams.get("fields"),
+            "accession,description,tax_id",
+        );
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        const query = url.searchParams.get("query");
+        if (query === 'description="hemoglobin"')
+            return Response.json([
+                {
+                    accession: "AH000973",
+                    description:
+                        "Chironomus thummi hemoglobin A' precursor, hemoglobin B' precursor, hemoglobin C' precursor, hemoglobin D' precursor, and hemoglobin E' precursor, genes, complete cds.",
+                    tax_id: "7154",
+                },
+                {
+                    accession: "AH000972",
+                    description: longDescription,
+                    tax_id: "7154",
+                },
+            ]);
+        if (query === 'description="hemoglobin beta"')
+            return Response.json([
+                {
+                    accession: "J00860",
+                    description: "chicken hemoglobin beta chain mrna.",
+                    tax_id: "9031",
+                },
+            ]);
+        if (query === 'description="zzzzqqqxxyy"') return Response.json([]);
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "ena_sequence", {
+        query: "hemoglobin",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "hemoglobin",
+        total: 2,
+        sequences: [
+            {
+                accession: "AH000973",
+                description:
+                    "Chironomus thummi hemoglobin A' precursor, hemoglobin B' precursor, hemoglobin C' precursor, hemoglobin D' precursor, and hemoglobin E' precursor, genes, complete cds.",
+                tax_id: 7154,
+            },
+            {
+                accession: "AH000972",
+                description: `${"hemoglobin "}${"x".repeat(989)}...`,
+                tax_id: 7154,
+            },
+        ],
+    });
+    result = await call(c, "ena_sequence", { query: "hemoglobin beta" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).sequences[0].accession, "J00860");
+    assert.equal(value(result).sequences[0].tax_id, 9031);
+    result = await call(c, "ena_sequence", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        sequences: [],
+    });
+    result = await call(c, "ena_sequence", { query: " " });
+    assert.equal(result.isError, true);
 });

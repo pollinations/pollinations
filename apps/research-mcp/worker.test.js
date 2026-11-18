@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "go_annotations",
             ].sort(),
         );
     });
@@ -644,4 +645,156 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("QuickGO annotations normalise a bare accession and project GO fields", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "www.ebi.ac.uk");
+        assert.equal(
+            target.searchParams.get("geneProductId"),
+            "UniProtKB:P04637",
+        );
+        assert.equal(target.searchParams.get("limit"), "2");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            numberOfHits: 1043,
+            results: [
+                {
+                    id: "UniProtKB:P04637!58679183",
+                    geneProductId: "UniProtKB:P04637",
+                    qualifier: "acts_upstream_of",
+                    goId: "GO:0008285",
+                    goName: null,
+                    goEvidence: "ISS",
+                    goAspect: "biological_process",
+                    evidenceCode: "ECO:0000250",
+                    reference: "PMID:30514107",
+                    withFrom: [
+                        {
+                            connectedXrefs: [{ db: "UniProtKB", id: "P10361" }],
+                        },
+                    ],
+                    taxonId: 9606,
+                    taxonName: null,
+                    assignedBy: "ARUK-UCL",
+                    extensions: [
+                        {
+                            connectedXrefs: [
+                                {
+                                    db: "CL",
+                                    id: "0002254",
+                                    relation: "occurs_in",
+                                },
+                            ],
+                        },
+                    ],
+                    targetSets: ["BHF-UCL", "KRUK", "dbTF"],
+                    symbol: "TP53",
+                    date: "20210810",
+                    synonyms: null,
+                    name: null,
+                },
+                {
+                    id: "UniProtKB:P04637!58679184",
+                    geneProductId: "UniProtKB:P04637",
+                    qualifier: "acts_upstream_of",
+                    goId: "GO:0051726",
+                    goName: null,
+                    goEvidence: "ISS",
+                    goAspect: "biological_process",
+                    evidenceCode: "ECO:0000250",
+                    reference: "PMID:30514107",
+                    withFrom: [],
+                    taxonId: 9606,
+                    taxonName: null,
+                    assignedBy: "ARUK-UCL",
+                    extensions: [],
+                    targetSets: ["BHF-UCL"],
+                    symbol: "TP53",
+                    date: "20210810",
+                    synonyms: null,
+                    name: null,
+                },
+            ],
+            pageInfo: { resultsPerPage: 2, current: 1, total: 522 },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "go_annotations", {
+        protein: "P04637",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        protein: "UniProtKB:P04637",
+        total: 1043,
+        annotations: [
+            {
+                geneProductId: "UniProtKB:P04637",
+                symbol: "TP53",
+                qualifier: "acts_upstream_of",
+                goId: "GO:0008285",
+                goAspect: "biological_process",
+                evidenceCode: "ECO:0000250",
+                reference: "PMID:30514107",
+                assignedBy: "ARUK-UCL",
+            },
+            {
+                geneProductId: "UniProtKB:P04637",
+                symbol: "TP53",
+                qualifier: "acts_upstream_of",
+                goId: "GO:0051726",
+                goAspect: "biological_process",
+                evidenceCode: "ECO:0000250",
+                reference: "PMID:30514107",
+                assignedBy: "ARUK-UCL",
+            },
+        ],
+    });
+});
+
+test("QuickGO rejects entry names and unknown ids without extra fetches", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return new Response(
+            JSON.stringify({
+                url: "http://www.ebi.ac.uk/QuickGO/services/annotation/search",
+                messages: [
+                    "The 'Gene Product ID' parameter contains invalid values: UniProtKB:ZZZZZ9",
+                ],
+            }),
+            { status: 400, headers: { "content-type": "application/json" } },
+        );
+    });
+    const c = await client(t);
+    let result = await call(c, "go_annotations", {
+        protein: "UniProtKB:ZZZZZ9",
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /does not recognise/);
+    assert.equal(fetches, 1);
+    // An entry name is rejected in-handler before any fetch.
+    result = await call(c, "go_annotations", { protein: "P53_HUMAN" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /accession like P04637/);
+    assert.equal(fetches, 1);
+    // A blank protein and an out-of-range limit are rejected by the schema.
+    result = await call(c, "go_annotations", { protein: " " });
+    assert.equal(result.isError, true);
+    result = await call(c, "go_annotations", {
+        protein: "P04637",
+        limit: 99,
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 1);
 });

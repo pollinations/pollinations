@@ -260,3 +260,63 @@ describe("CreateChatCompletionRequestSchema", () => {
         ).toBe(true);
     });
 });
+
+describe("chat content part validation", () => {
+    const image = "https://example.com/a.png";
+    const parse = (content: unknown[]) =>
+        CreateChatCompletionRequestSchema.safeParse({
+            messages: [{ role: "user", content }],
+        });
+
+    it.each([
+        ["text without text", { type: "text" }],
+        [
+            "image detail outside the enum",
+            { type: "image_url", image_url: { url: image, detail: "ultra" } },
+        ],
+        ["image_url as a string", { type: "image_url", image_url: image }],
+        [
+            "image url not a string",
+            { type: "image_url", image_url: { url: 123 } },
+        ],
+        [
+            "audio with an unknown format",
+            {
+                type: "input_audio",
+                input_audio: { data: "AAAA", format: "bogus" },
+            },
+        ],
+        ["file without file fields", { type: "file" }],
+    ])("rejects %s", (_name, malformed) => {
+        expect(parse([{ type: "text", text: "hi" }, malformed]).success).toBe(
+            false,
+        );
+    });
+
+    it("keeps unknown provider-specific parts", () => {
+        expect(
+            parse([{ type: "provider_extension", payload: { a: 1 } }]).success,
+        ).toBe(true);
+    });
+
+    it("accepts the documented parts", () => {
+        expect(
+            parse([
+                { type: "text", text: "hi" },
+                {
+                    type: "image_url",
+                    image_url: { url: image, detail: "high" },
+                },
+                { type: "video_url", video_url: { url: image } },
+                {
+                    type: "input_audio",
+                    input_audio: { data: "AAAA", format: "wav" },
+                },
+                {
+                    type: "file",
+                    file: { file_data: "AAAA", filename: "a.pdf" },
+                },
+            ]).success,
+        ).toBe(true);
+    });
+});

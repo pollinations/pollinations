@@ -147,6 +147,17 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
     prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
+// Content types this schema defines. The catch-all below is only for
+// provider-specific extensions, so a malformed standard part cannot fall
+// through it and reach the provider with a raw upstream error.
+const STANDARD_CONTENT_PART_TYPES = new Set([
+    "text",
+    "image_url",
+    "video_url",
+    "input_audio",
+    "file",
+]);
+
 const ChatCompletionRequestMessageContentPartSchema = z
     .union([
         ChatCompletionRequestMessageContentPartTextSchema,
@@ -155,7 +166,16 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z.object({ type: z.string() }).passthrough(),
+        z
+            .object({
+                type: z
+                    .string()
+                    .refine(
+                        (type) => !STANDARD_CONTENT_PART_TYPES.has(type),
+                        "a documented content part type must use its documented fields",
+                    ),
+            })
+            .passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 

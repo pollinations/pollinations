@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "rickmorty_character",
             ].sort(),
         );
     });
@@ -644,4 +645,121 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Rick and Morty character lookup resolves names and ids and returns empty results for unknown names", async (t) => {
+    let fetches = 0;
+    const rick = {
+        id: 1,
+        name: "Rick Sanchez",
+        status: "Alive",
+        species: "Human",
+        type: "",
+        gender: "Male",
+        origin: {
+            name: "Earth (C-137)",
+            url: "https://rickandmortyapi.com/api/location/1",
+        },
+        location: {
+            name: "Citadel of Ricks",
+            url: "https://rickandmortyapi.com/api/location/3",
+        },
+        image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+        episode: Array.from(
+            { length: 51 },
+            (_, i) => `https://rickandmortyapi.com/api/episode/${i + 1}`,
+        ),
+        url: "https://rickandmortyapi.com/api/character/1",
+    };
+    const adjudicator = {
+        id: 8,
+        name: "Adjudicator Rick",
+        status: "Dead",
+        species: "Human",
+        type: "",
+        gender: "Male",
+        origin: { name: "unknown", url: "" },
+        location: {
+            name: "Citadel of Ricks",
+            url: "https://rickandmortyapi.com/api/location/3",
+        },
+        image: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+        episode: ["https://rickandmortyapi.com/api/episode/8"],
+        url: "https://rickandmortyapi.com/api/character/8",
+    };
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "rickandmortyapi.com");
+        if (url.pathname === "/api/character/1") return Response.json(rick);
+        if (url.pathname === "/api/character/999999")
+            return new Response(
+                JSON.stringify({ error: "Character not found" }),
+                { status: 404 },
+            );
+        if (url.pathname === "/api/character/") {
+            const name = url.searchParams.get("name");
+            if (name === "rick")
+                return Response.json({
+                    info: { count: 107, pages: 6 },
+                    results: [rick, adjudicator],
+                });
+            return new Response(
+                JSON.stringify({ error: "There is nothing here" }),
+                { status: 404 },
+            );
+        }
+        return new Response("Not found", { status: 404 });
+    });
+    const c = await client(t);
+    let result = await call(c, "rickmorty_character", { id: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).character, {
+        id: 1,
+        name: "Rick Sanchez",
+        status: "Alive",
+        species: "Human",
+        type: null,
+        gender: "Male",
+        origin: "Earth (C-137)",
+        location: "Citadel of Ricks",
+        episodes: 51,
+        image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+        url: "https://rickandmortyapi.com/api/character/1",
+    });
+
+    result = await call(c, "rickmorty_character", { name: "rick", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 107);
+    assert.equal(value(result).characters.length, 1);
+    assert.equal(value(result).characters[0].name, "Rick Sanchez");
+
+    result = await call(c, "rickmorty_character", { name: "rick" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).characters.length, 2);
+    assert.equal(value(result).characters[1].name, "Adjudicator Rick");
+    assert.equal(value(result).characters[1].episodes, 1);
+
+    result = await call(c, "rickmorty_character", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznonexistentqqq",
+        total: 0,
+        characters: [],
+    });
+
+    result = await call(c, "rickmorty_character", { id: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /404/);
+
+    const before = fetches;
+    result = await call(c, "rickmorty_character", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Provide a character name or id/);
+    result = await call(c, "rickmorty_character", { name: "rick", id: 1 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /only one of name or id/);
+    assert.equal(fetches, before);
 });

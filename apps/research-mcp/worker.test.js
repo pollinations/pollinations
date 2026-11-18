@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "eurostat_population",
             ].sort(),
         );
     });
@@ -644,4 +645,101 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+const eurostatFixture = {
+    version: "2.0",
+    class: "dataset",
+    label: "Population on 1 January by age and sex",
+    source: "ESTAT",
+    updated: "2026-11-15T23:00:00+0100",
+    value: { 0: 83577140, 1: 41241701, 2: 42335439 },
+    id: ["freq", "unit", "age", "sex", "geo", "time"],
+    size: [1, 1, 1, 3, 1, 1],
+    dimension: {
+        freq: {
+            label: "Time frequency",
+            category: { index: { A: 0 }, label: { A: "Annual" } },
+        },
+        unit: {
+            label: "Unit of measure",
+            category: { index: { NR: 0 }, label: { NR: "Number" } },
+        },
+        age: {
+            label: "Age class",
+            category: { index: { TOTAL: 0 }, label: { TOTAL: "Total" } },
+        },
+        sex: {
+            label: "Sex",
+            category: {
+                index: { T: 0, M: 1, F: 2 },
+                label: { T: "Total", M: "Males", F: "Females" },
+            },
+        },
+        geo: {
+            label: "Geopolitical entity (reporting)",
+            category: { index: { DE: 0 }, label: { DE: "Germany" } },
+        },
+        time: {
+            label: "Time",
+            category: { index: { 2025: 0 }, label: { 2025: "2025" } },
+        },
+    },
+};
+
+test("Eurostat decodes JSON-stat population by sex and rejects unknown geo before extra fetches", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "ec.europa.eu");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(url.searchParams.get("format"), "JSON");
+        assert.equal(url.searchParams.get("age"), "TOTAL");
+        if (url.searchParams.get("geo") === "XX")
+            return Response.json({
+                ...eurostatFixture,
+                value: {},
+                size: [1, 1, 1, 3, 0, 1],
+                dimension: {
+                    ...eurostatFixture.dimension,
+                    geo: {
+                        label: "Geopolitical entity (reporting)",
+                        category: { index: {}, label: {} },
+                    },
+                },
+            });
+        return Response.json(eurostatFixture);
+    });
+    const c = await client(t);
+    let result = await call(c, "eurostat_population", {
+        geo: "de",
+        year: 2025,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        geo: "DE",
+        year: 2025,
+        dataset: "Population on 1 January by age and sex",
+        updated: "2026-11-15T23:00:00+0100",
+        population: { total: 83577140, male: 41241701, female: 42335439 },
+    });
+    result = await call(c, "eurostat_population", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).geo, "DE");
+    assert.equal(value(result).year, 2025);
+    const before = count;
+    result = await call(c, "eurostat_population", { geo: "XX", year: 2025 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /No population data for XX in 2025/);
+    result = await call(c, "eurostat_population", { geo: "D!", year: 2025 });
+    assert.equal(result.isError, true);
+    result = await call(c, "eurostat_population", { geo: "DE", year: 1800 });
+    assert.equal(result.isError, true);
+    assert.equal(count, before + 1);
 });

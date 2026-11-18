@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "elife_search",
             ].sort(),
         );
     });
@@ -644,4 +645,148 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("eLife search strips title markup, returns DOIs and dates, and rejects bad input before fetch", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "api.elifesciences.org");
+        assert.equal(url.searchParams.get("use-date"), "published");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        assert.equal(
+            request.headers.get("accept"),
+            "application/vnd.elife.search+json; version=2",
+        );
+        if (url.searchParams.get("for") === "zzzqqqxxyy") {
+            return Response.json({
+                total: 0,
+                items: [],
+                types: {},
+                subjects: [],
+            });
+        }
+        return Response.json({
+            total: 13554,
+            items: [
+                {
+                    id: "55070",
+                    stage: "published",
+                    version: 2,
+                    type: "research-article",
+                    doi: "10.7554/eLife.55070",
+                    title: "Co-regulation and function of <i>FOXM1</i>/<i>RHNO1</i> bidirectional genes in cancer",
+                    volume: 10,
+                    elocationId: "e55070",
+                    published: "2021-04-23T00:00:00Z",
+                    authorLine: "Carter J Barger, Linda Chee ... Adam R Karpf",
+                    abstract: "A long abstract that the projection must drop.",
+                },
+                {
+                    id: "37294",
+                    stage: "published",
+                    version: 3,
+                    type: "research-article",
+                    doi: "10.7554/eLife.37294",
+                    title: "Tumor copy number alteration burden is a pan-cancer prognostic factor associated with recurrence and death",
+                    volume: 7,
+                    elocationId: "e37294",
+                    published: "2018-09-04T00:00:00Z",
+                    authorLine:
+                        "Haley Hieronymus, Rajmohan Murali ... Charles L Sawyers",
+                },
+            ],
+            types: { "research-article": 10819 },
+            subjects: [],
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "elife_search", { query: "cancer", limit: 2 });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const val = value(res);
+    assert.equal(val.query, "cancer");
+    assert.equal(val.total, 13554);
+    assert.equal(val.results.length, 2);
+    assert.equal(
+        val.results[0].title,
+        "Co-regulation and function of FOXM1/RHNO1 bidirectional genes in cancer",
+    );
+    assert.equal(val.results[0].doi, "10.7554/eLife.55070");
+    assert.equal(val.results[0].published, "2021-04-23");
+    assert.equal(val.results[0].elocation_id, "e55070");
+    assert.equal(
+        val.results[0].url,
+        "https://elifesciences.org/articles/e55070",
+    );
+    assert.match(val.results[0].authors, /Carter J Barger/);
+    assert.equal(val.results[0].abstract, undefined);
+    assert.equal(
+        val.results[1].title,
+        "Tumor copy number alteration burden is a pan-cancer prognostic factor associated with recurrence and death",
+    );
+    assert.equal(fetches, 1);
+
+    const emptyRes = await call(c, "elife_search", {
+        query: "zzzqqqxxyy",
+    });
+    assert.notEqual(emptyRes.isError, true, JSON.stringify(emptyRes));
+    assert.deepEqual(value(emptyRes), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(fetches, 2);
+
+    const before = fetches;
+    const blankRes = await call(c, "elife_search", { query: "   " });
+    assert.equal(blankRes.isError, true);
+    const overRes = await call(c, "elife_search", {
+        query: "cancer",
+        limit: 99,
+    });
+    assert.equal(overRes.isError, true);
+    assert.equal(fetches, before);
+});
+
+test("eLife handler falls back to limit 5 for out-of-range limits", async () => {
+    const { elifeTools } = await import("./tools/elife.js");
+    const handler = elifeTools[0][3];
+    let seenUrl = null;
+    mock.method(globalThis, "fetch", async (input) => {
+        seenUrl = new URL(input);
+        return Response.json({
+            total: 1,
+            items: [
+                {
+                    id: "55070",
+                    type: "research-article",
+                    doi: "10.7554/eLife.55070",
+                    title: "Co-regulation and function of <i>FOXM1</i> genes",
+                    elocationId: "e55070",
+                    published: "2021-04-23T00:00:00Z",
+                    authorLine: "Carter J Barger",
+                },
+            ],
+        });
+    });
+    const out = await handler({ query: "cancer", limit: 99 });
+    assert.equal(seenUrl.searchParams.get("per-page"), "5");
+    assert.equal(out.total, 1);
+    assert.equal(
+        out.results[0].title,
+        "Co-regulation and function of FOXM1 genes",
+    );
+    await assert.rejects(
+        handler({ query: "   ", limit: 5 }),
+        /must not be blank/,
+    );
 });

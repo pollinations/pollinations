@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "discogs_artist",
             ].sort(),
         );
     });
@@ -644,4 +645,87 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("discogs_artist returns projected artists, caps the list, and treats no match as an empty list", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.discogs.com");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        assert.equal(target.searchParams.get("type"), "artist");
+        if (target.searchParams.get("q") === "zzzzqqqxxyy")
+            return Response.json({
+                pagination: { page: 1, pages: 1, per_page: 2, items: 0 },
+                results: [],
+            });
+        return Response.json({
+            pagination: { page: 1, pages: 881, per_page: 2, items: 1761 },
+            results: [
+                {
+                    id: 82730,
+                    type: "artist",
+                    master_id: null,
+                    master_url: null,
+                    uri: "/artist/82730-The-Beatles",
+                    title: "The Beatles",
+                    thumb: "",
+                    cover_image: "",
+                    resource_url: "https://api.discogs.com/artists/82730",
+                },
+                {
+                    id: 96263,
+                    type: "artist",
+                    master_id: null,
+                    master_url: null,
+                    uri: "/artist/96263-The-Tape-Beatles",
+                    title: "The Tape-Beatles",
+                    thumb: "",
+                    cover_image: "",
+                    resource_url: "https://api.discogs.com/artists/96263",
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "discogs_artist", {
+        query: "beatles",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "beatles",
+        total: 1761,
+        artists: [
+            {
+                id: 82730,
+                title: "The Beatles",
+                type: "artist",
+                uri: "/artist/82730-The-Beatles",
+                cover_image: null,
+                resource_url: "https://api.discogs.com/artists/82730",
+            },
+        ],
+    });
+
+    const both = await call(c, "discogs_artist", { query: "beatles" });
+    assert.notEqual(both.isError, true, JSON.stringify(both));
+    assert.equal(value(both).artists[1].title, "The Tape-Beatles");
+
+    const empty = await call(c, "discogs_artist", {
+        query: "zzzzqqqxxyy",
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        artists: [],
+    });
+
+    const blank = await call(c, "discogs_artist", { query: " " });
+    assert.equal(blank.isError, true);
 });

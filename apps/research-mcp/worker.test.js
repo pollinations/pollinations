@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "imgflip_meme",
             ].sort(),
         );
     });
@@ -644,4 +645,111 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Imgflip search filters the top-100 list by name and returns the top memes without one", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        // Let workerd validate RequestInit even when the upstream is a fixture.
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.imgflip.com");
+        assert.equal(target.pathname, "/get_memes");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            success: true,
+            data: {
+                memes: [
+                    {
+                        id: "181913649",
+                        name: "Drake Hotline Bling",
+                        url: "https://i.imgflip.com/30b1gx.jpg",
+                        width: 1200,
+                        height: 1200,
+                        box_count: 2,
+                        captions: 1588250,
+                    },
+                    {
+                        id: "87743020",
+                        name: "Two Buttons",
+                        url: "https://i.imgflip.com/1g8my4.jpg",
+                        width: 600,
+                        height: 908,
+                        box_count: 3,
+                        captions: 1233250,
+                    },
+                    {
+                        id: "112126428",
+                        name: "Distracted Boyfriend",
+                        url: "https://i.imgflip.com/1ur9b0.jpg",
+                        width: 1200,
+                        height: 800,
+                        box_count: 3,
+                        captions: 1207000,
+                    },
+                ],
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "imgflip_meme", { name: "DRAKE", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "DRAKE",
+        total: 1,
+        memes: [
+            {
+                name: "Drake Hotline Bling",
+                url: "https://i.imgflip.com/30b1gx.jpg",
+                box_count: 2,
+            },
+        ],
+    });
+
+    // No name returns the top memes in list order.
+    const top = await call(c, "imgflip_meme", { limit: 2 });
+    assert.notEqual(top.isError, true, JSON.stringify(top));
+    assert.deepEqual(value(top), {
+        query: null,
+        total: 3,
+        memes: [
+            {
+                name: "Drake Hotline Bling",
+                url: "https://i.imgflip.com/30b1gx.jpg",
+                box_count: 2,
+            },
+            {
+                name: "Two Buttons",
+                url: "https://i.imgflip.com/1g8my4.jpg",
+                box_count: 3,
+            },
+        ],
+    });
+
+    // A name with no match returns an empty list, not an error.
+    const none = await call(c, "imgflip_meme", { name: "zzzzqqqxxyy" });
+    assert.notEqual(none.isError, true, JSON.stringify(none));
+    assert.deepEqual(value(none), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        memes: [],
+    });
+    assert.equal(fetches, 3);
+
+    // A blank name is a tool error with zero additional fetches.
+    const blank = await call(c, "imgflip_meme", { name: " " });
+    assert.equal(blank.isError, true);
+    assert.equal(fetches, 3);
+
+    // An out-of-range limit is rejected by the schema before any fetch.
+    // (The handler's own fallback to 5 is exercised in the live smoke.)
+    const rejected = await call(c, "imgflip_meme", { limit: 99 });
+    assert.equal(rejected.isError, true);
+    assert.equal(fetches, 3);
 });

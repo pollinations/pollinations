@@ -81,6 +81,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "ansible_galaxy_roles",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -424,6 +425,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
+        ["ansible_galaxy_roles", { search: "   " }],
+        ["ansible_galaxy_roles", { search: "nginx", limit: 26 }],
         ["osv_vulnerability", { id: "../query" }],
     ])
         assert.equal(
@@ -770,4 +773,133 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("Ansible Galaxy search projects role fields, caps descriptions and handles empty results", async (t) => {
+    const fixture = {
+        count: 832,
+        next: "https://galaxy.ansible.com/api/v1/roles/?keywords=nginx&page=2&page_size=2",
+        previous: null,
+        results: [
+            {
+                id: 73,
+                username: "1davidmichael",
+                name: "ansible-role-nginx",
+                description:
+                    "Nginx installation for Linux, FreeBSD and OpenBSD.",
+                download_count: 642,
+                github_user: "1davidmichael",
+                github_repo: "ansible-role-nginx",
+                commit: "a1c5df38855094dbd9b09e1d2f576cb4644942d3",
+                summary_fields: { tags: ["web", "nginx"] },
+                created: "2023-05-08T20:18:19.871258Z",
+            },
+            {
+                id: 190,
+                username: "aadl",
+                name: "docker-nginx-alpine",
+                description:
+                    "Ansible role to manage and run the alpine nginx docker container.",
+                download_count: 263,
+                github_user: "aadl",
+                github_repo: "ansible-role-docker-nginx",
+                created: "2023-05-08T20:18:38.357937Z",
+            },
+        ],
+    };
+    const longDescription = "x".repeat(350);
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        urls.push(url.href);
+        assert.equal(url.origin, "https://galaxy.ansible.com");
+        assert.equal(url.pathname, "/api/v1/roles/");
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        const keywords = url.searchParams.get("keywords");
+        if (keywords === "nothing-here")
+            return Response.json({ count: 0, results: [] });
+        if (keywords === "bad-shape") return Response.json({});
+        if (keywords === "long-desc")
+            return Response.json({
+                count: 1,
+                results: [
+                    {
+                        id: 1,
+                        username: "someone",
+                        name: "verbose-role",
+                        description: longDescription,
+                        download_count: 0,
+                        github_user: null,
+                        github_repo: null,
+                        created: "2023-05-08T20:18:03.967956Z",
+                    },
+                ],
+            });
+        assert.equal(keywords, "nginx");
+        assert.equal(url.searchParams.get("page_size"), "2");
+        return Response.json(fixture);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "ansible_galaxy_roles", {
+            search: "nginx",
+            limit: 2,
+        }),
+        {
+            total: 832,
+            roles: [
+                {
+                    id: 73,
+                    username: "1davidmichael",
+                    name: "ansible-role-nginx",
+                    description:
+                        "Nginx installation for Linux, FreeBSD and OpenBSD.",
+                    downloadCount: 642,
+                    githubUrl:
+                        "https://github.com/1davidmichael/ansible-role-nginx",
+                    created: "2023-05-08T20:18:19.871258Z",
+                },
+                {
+                    id: 190,
+                    username: "aadl",
+                    name: "docker-nginx-alpine",
+                    description:
+                        "Ansible role to manage and run the alpine nginx docker container.",
+                    downloadCount: 263,
+                    githubUrl:
+                        "https://github.com/aadl/ansible-role-docker-nginx",
+                    created: "2023-05-08T20:18:38.357937Z",
+                },
+            ],
+        },
+    );
+    const capped = await call(client, "ansible_galaxy_roles", {
+        search: "long-desc",
+    });
+    assert.equal(capped.total, 1);
+    assert.equal(capped.roles[0].description, `${"x".repeat(300)}…`);
+    assert.equal(capped.roles[0].githubUrl, null);
+    assert.deepEqual(
+        await call(client, "ansible_galaxy_roles", {
+            search: "nothing-here",
+        }),
+        { total: 0, roles: [] },
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "ansible_galaxy_roles",
+                arguments: { search: "bad-shape" },
+            })
+        ).isError,
+        true,
+    );
+    assert.deepEqual(urls, [
+        "https://galaxy.ansible.com/api/v1/roles/?keywords=nginx&page_size=2",
+        "https://galaxy.ansible.com/api/v1/roles/?keywords=long-desc&page_size=5",
+        "https://galaxy.ansible.com/api/v1/roles/?keywords=nothing-here&page_size=5",
+        "https://galaxy.ansible.com/api/v1/roles/?keywords=bad-shape&page_size=5",
+    ]);
 });

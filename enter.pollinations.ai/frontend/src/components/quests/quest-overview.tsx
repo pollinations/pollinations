@@ -346,7 +346,7 @@ function QuestPreview({ quests, pollen }: { quests: number; pollen: number }) {
 // One card for where you stand: a bar split by state (claimed, ready to
 // claim, still to do) and the same states under it, one line each, as totals.
 // A merged PR or a fixed issue counts like any other quest you completed.
-// Colours: green is Quest balance you earned, honey is waiting.
+// Colours: green is claimed, honey is waiting.
 // Below this many rewards and quests, a line points to more ways to earn.
 const FEW_REWARDS = 40;
 // Where a new contributor starts: issues, quests, docs and apps.
@@ -377,13 +377,14 @@ const CARD_STATE: Record<QuestCardStatus, ProgressState> = {
     claimable: "ready",
     open: "open",
 };
-type ProgressPart = { count: number; pollen: number };
+// Amounts per balance: an admin grant can pay into the paid balance.
+type ProgressPart = { count: number; pollen: Record<RewardIconKind, number> };
 
 function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     const parts: Record<ProgressState, ProgressPart> = {
-        claimed: { count: 0, pollen: 0 },
-        ready: { count: 0, pollen: 0 },
-        open: { count: 0, pollen: 0 },
+        claimed: { count: 0, pollen: { tier: 0, paid: 0 } },
+        ready: { count: 0, pollen: { tier: 0, paid: 0 } },
+        open: { count: 0, pollen: { tier: 0, paid: 0 } },
     };
     for (const card of cards) {
         // A repeatable quest counts each reward it earned, and itself while
@@ -391,12 +392,13 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
         for (const repeat of card.repeats ?? []) {
             const part = parts[repeat.claimedAt ? "claimed" : "ready"];
             part.count += 1;
-            part.pollen += repeat.pollenAmount;
+            part.pollen[rewardIconKind(repeat.balanceBucket)] +=
+                repeat.pollenAmount;
         }
         if (card.repeats && card.status !== "open") continue;
         const part = parts[CARD_STATE[card.status]];
         part.count += 1;
-        part.pollen +=
+        part.pollen[rewardIconKind(card.balanceBucket)] +=
             (card.status === "open" ? null : card.earnedAmount) ??
             card.reward ??
             0;
@@ -404,20 +406,25 @@ function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     return parts;
 }
 
-/** An amount: the sprout and a dollar amount, all in the Quest green.
- *  Rewards still waiting to be claimed have a plus. */
-function ProgressPollen({ pollen, ready }: { pollen: number; ready: boolean }) {
-    const waiting = ready && pollen > 0;
+/** A state's amounts, one per balance it pays into ("$5 🌱 Quest"); a
+ *  state with none shows $0 Quest. Rewards waiting to be claimed have a plus. */
+function ProgressAmounts({
+    pollen,
+    ready,
+}: {
+    pollen: Record<RewardIconKind, number>;
+    ready: boolean;
+}) {
+    const kinds = (["tier", "paid"] as const).filter((kind) => pollen[kind]);
     return (
-        <span className="polli-wallet-text-tier inline-flex items-center gap-1">
-            <SproutIcon
-                aria-hidden="true"
-                className="polli-wallet-text-tier h-3.5 w-3.5 shrink-0"
-            />
-            {waiting ? "+" : ""}
-            {formatRewardAmount(pollen)}
-            <span className="sr-only"> in Quest rewards</span>
-        </span>
+        <>
+            {(kinds.length ? kinds : (["tier"] as const)).map((kind) => (
+                <WalletAmount key={kind} kind={kind}>
+                    {ready && pollen[kind] > 0 ? "+" : ""}
+                    {formatRewardAmount(pollen[kind])}
+                </WalletAmount>
+            ))}
+        </>
     );
 }
 
@@ -451,18 +458,12 @@ export function QuestProgress({
                 )}
             </span>
             {/* One line per state, like a legend for the bar: label, count,
-                Quest balance, with the numbers lined up in columns. */}
+                reward, with the numbers lined up in columns. */}
             <dl className="grid min-w-0 grid-cols-[auto_auto_auto] items-baseline justify-start gap-x-8 gap-y-2.5">
                 <div className="contents text-xs font-semibold text-theme-text-muted">
                     <dt />
                     <dd className="text-right">Quests</dd>
-                    <dd className="flex items-center justify-end gap-1.5">
-                        Quest balance
-                        <InfoTip
-                            text="Earned from quests and your apps. Regular models use it before your paid balance."
-                            label="About Quest balance"
-                        />
-                    </dd>
+                    <dd className="text-right">Reward</dd>
                 </div>
                 {states.map((state) => {
                     const { label, tone, info } = PROGRESS_STATES[state];
@@ -483,10 +484,10 @@ export function QuestProgress({
                                 {/* Just the number: the label names it. */}
                                 {parts[state].count}
                             </dd>
-                            <dd className="flex justify-end text-sm font-semibold tabular-nums text-theme-text-muted">
+                            <dd className="flex flex-col items-end gap-1 text-sm font-semibold text-theme-text-strong">
                                 {/* A quest still to do has no reward yet. */}
                                 {state !== "open" && (
-                                    <ProgressPollen
+                                    <ProgressAmounts
                                         pollen={parts[state].pollen}
                                         ready={state === "ready"}
                                     />

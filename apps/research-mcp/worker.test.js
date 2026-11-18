@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "blockchain_stats",
             ].sort(),
         );
     });
@@ -644,4 +645,92 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Blockchair stats project network data and tolerate the Ethereum shape", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.blockchair.com");
+        const request = new Request(url, init);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (url.pathname === "/bitcoin/stats") {
+            return Response.json({
+                data: {
+                    blocks: 976478,
+                    transactions: 1482373001,
+                    difficulty: 134823837323272.7,
+                    hashrate_24h: "1072340688934587814282",
+                    mempool_transactions: 67359,
+                    mempool_size: 95522981,
+                    mempool_tps: 2.8666666666666667,
+                    best_block_height: 976477,
+                    best_block_hash:
+                        "00000000000000000001b4dd5c0614901b4f97bebaaaa04302d115366e847a14",
+                    best_block_time: "2026-11-18 20:04:09",
+                    market_price_usd: 62706,
+                    market_cap_usd: 1261105505581,
+                },
+                context: { code: 200 },
+            });
+        }
+        if (url.pathname === "/ethereum/stats") {
+            return Response.json({
+                data: {
+                    blocks: 26445291,
+                    transactions: 3857970825,
+                    difficulty: 0,
+                    hashrate_24h: "0",
+                    mempool_transactions: 235,
+                    mempool_tps: 3.8,
+                    best_block_height: 26444303,
+                    best_block_hash:
+                        "0x0000000000000000000000000000000000000000000000000000000000000000",
+                    best_block_time: "2026-11-18 20:04:09",
+                    market_price_usd: 1755.04,
+                },
+                context: { code: 200 },
+            });
+        }
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "blockchain_stats", { chain: "bitcoin" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        chain: "bitcoin",
+        blocks: 976478,
+        transactions: 1482373001,
+        difficulty: 134823837323272.7,
+        hashrate24h: "1072340688934587814282",
+        mempoolTransactions: 67359,
+        mempoolSizeBytes: 95522981,
+        mempoolTps: 2.8666666666666667,
+        bestBlockHeight: 976477,
+        bestBlockHash:
+            "00000000000000000001b4dd5c0614901b4f97bebaaaa04302d115366e847a14",
+        bestBlockTime: "2026-11-18 20:04:09",
+    });
+
+    result = await call(c, "blockchain_stats", { chain: "ethereum" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 2);
+    const eth = value(result);
+    assert.equal(eth.chain, "ethereum");
+    assert.equal(eth.difficulty, 0);
+    assert.equal(eth.hashrate24h, "0");
+    assert.equal(eth.mempoolSizeBytes, null);
+    assert.equal(eth.mempoolTransactions, 235);
+
+    result = await call(c, "blockchain_stats", { chain: "nonsensechain" });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, 2);
 });

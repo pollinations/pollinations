@@ -27,8 +27,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19890": {
@@ -37,8 +36,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19929": {
@@ -52,36 +50,24 @@
       "merge_sha": "a38014db9da0e6bd18e0c214ca2cb98d2fcad392",
       "merged_at": "2026-11-18T01:41:00Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/kpi",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19964": {
       "merge_sha": "9b62de052f71ef75723f8c8567ddbf33b6d943d8",
       "merged_at": "2026-11-18T01:04:16Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/kpi",
-        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "19997": {
       "merge_sha": "fe0d5e97a8b261b463b913d44185be83fb8c4756",
       "merged_at": "2026-11-18T01:04:16Z",
-      "required": [
-        "deploy-website-cloudflare.yml:deploy"
-      ]
+      "required": []
     },
     "20019": {
       "merge_sha": "9f7535b5675e5c35d91161faf8e8e0fc41a3865d",

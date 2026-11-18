@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "cat_fact",
             ].sort(),
         );
     });
@@ -644,4 +645,32 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("cat_fact returns a random fact with its length and no credentials", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "catfact.ninja");
+        assert.equal(url.pathname, "/fact");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            fact: "A cat's nose is as unique as a human's fingerprint.",
+            length: 51,
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "cat_fact", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        fact: "A cat's nose is as unique as a human's fingerprint.",
+        length: 51,
+    });
+
+    mock.restoreAll();
+    mock.method(globalThis, "fetch", async () => Response.json({ length: 0 }));
+    const bad = await call(c, "cat_fact", {});
+    assert.equal(bad.isError, true);
 });

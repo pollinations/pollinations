@@ -55,6 +55,7 @@ export type McpBindingName =
     | "COMPUTER_MCP"
     | "MACHINES_MCP"
     | "CALCULATORS_MCP"
+    | "SOLANA_MCP"
     | "NETWORK_MCP"
     | "PACKAGES_MCP"
     | "NEWS_MCP"
@@ -258,6 +259,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Local utilities and public ECB rates. Free.",
+            rates: [],
+        },
+    },
+    {
+        id: "solana",
+        alpha: true,
+        name: "Solana Launch Radar",
+        description:
+            "Search Solana tokens and inspect DEX pools, liquidity, price changes and pool-level trading activity.",
+        binding: "SOLANA_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Public DexScreener market data. No additional MCP fee.",
             rates: [],
         },
     },

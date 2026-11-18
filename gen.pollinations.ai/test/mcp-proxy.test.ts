@@ -174,6 +174,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "solana",
+                alpha: true,
+                name: "Solana Launch Radar",
+                description:
+                    "Search Solana tokens and inspect DEX pools, liquidity, price changes and pool-level trading activity.",
+                url: "https://gen.pollinations.ai/mcp/solana",
+                pricing: {
+                    description: "Public DexScreener market data. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "network",
                 alpha: true,
                 name: "Network",

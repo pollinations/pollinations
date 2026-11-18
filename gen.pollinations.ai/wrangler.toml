@@ -19,6 +19,7 @@ services = [
     { binding = "NEWS_MCP", service = "pollinations-news-mcp" },
     { binding = "PACKAGES_MCP", service = "pollinations-packages-mcp" },
     { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
+    { binding = "SOLANA_MCP", service = "pollinations-solana-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
@@ -609,16 +610,28 @@ binding = "NEWS_MCP"
 service = "pollinations-news-mcp"
 
 [[env.production.services]]
+binding = "SOLANA_MCP"
+service = "pollinations-solana-mcp"
+
+[[env.production.services]]
 binding = "RESEARCH_MCP"
 service = "pollinations-research-mcp"
 
 
 
 [[env.staging.services]]
+binding = "SOLANA_MCP"
+service = "pollinations-solana-mcp-staging"
+
+[[env.staging.services]]
 binding = "RESEARCH_MCP"
 service = "pollinations-research-mcp-staging"
 
 
+
+[[env.test.services]]
+binding = "SOLANA_MCP"
+service = "pollinations-solana-mcp"
 
 [[env.test.services]]
 binding = "RESEARCH_MCP"

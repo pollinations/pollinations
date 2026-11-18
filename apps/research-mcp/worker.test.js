@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "dog_fact",
             ].sort(),
         );
     });
@@ -644,4 +645,90 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+const dogFactFixtures = {
+    data: [
+        {
+            id: "6b223178-a327-4019-b379-7c1032b8f3c3",
+            type: "fact",
+            attributes: {
+                body: "Most dogs go in heat every 6 months and estrus lasts between 7 and 18 days.",
+            },
+        },
+        {
+            id: "2859dfcb-5402-4112-8031-4a0c4707e7d2",
+            type: "fact",
+            attributes: {
+                body: "Hyenas aren't actually dogs. They are more closely related to cats.",
+            },
+        },
+    ],
+};
+
+test("dog_fact returns projected facts with the server-side limit", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        assert.equal(url.hostname, "dogapi.dog");
+        assert.equal(url.pathname, "/api/v2/facts");
+        assert.equal(url.searchParams.get("limit"), count === 0 ? "2" : "1");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        count++;
+        return Response.json(dogFactFixtures);
+    });
+    const c = await client(t);
+    const result = await call(c, "dog_fact", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        facts: [
+            "Most dogs go in heat every 6 months and estrus lasts between 7 and 18 days.",
+            "Hyenas aren't actually dogs. They are more closely related to cats.",
+        ],
+    });
+    assert.equal(count, 1);
+    const single = await call(c, "dog_fact", {});
+    assert.notEqual(single.isError, true, JSON.stringify(single));
+    assert.equal(value(single).limit, 1);
+    assert.equal(value(single).facts.length, 2);
+    assert.equal(count, 2);
+});
+
+test("dog_fact rejects an out-of-range limit without fetching and errors on a textless fact", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({ data: [{ attributes: {} }] });
+    });
+    const c = await client(t);
+    const rejected = await call(c, "dog_fact", { limit: 99 }).catch(() => ({
+        isError: true,
+    }));
+    assert.equal(rejected.isError, true);
+    assert.equal(count, 0);
+    const malformed = await call(c, "dog_fact", {});
+    assert.equal(malformed.isError, true);
+    assert.match(malformed.content[0].text, /without text/);
+    assert.equal(count, 1);
+});
+
+test("dog_fact handler falls back to one fact for out-of-range limits", async () => {
+    const { dogFactsTools } = await import("./tools/dogfacts.js");
+    const run = dogFactsTools[0][3];
+    let stubCount = 0;
+    const stubFetch = async () => {
+        stubCount++;
+        return dogFactFixtures;
+    };
+    const fallback = await run({ limit: 99 }, stubFetch);
+    assert.equal(fallback.limit, 1);
+    assert.equal(fallback.facts.length, 2);
+    assert.equal(stubCount, 1);
 });

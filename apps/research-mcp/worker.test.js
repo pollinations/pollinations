@@ -342,6 +342,138 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("lichess_puzzle returns the daily puzzle and a puzzle by id, and rejects bad ids before any request", async (t) => {
+    const requests = [];
+    const daily = {
+        game: {
+            id: "8J8inMCr",
+            perf: { key: "blitz", name: "blitz" },
+            rated: true,
+            players: [
+                {
+                    name: "Row2610",
+                    id: "row2610",
+                    color: "white",
+                    rating: 1602,
+                },
+                {
+                    name: "jhamoss",
+                    id: "jhamoss",
+                    color: "black",
+                    rating: 1518,
+                },
+            ],
+            pgn: "d4 a6 Bf4 b6 Nf3 c6 e3 d6 Nc3 e6 Be2 f6 O-O g6 Bd3 Ne7 Qe2 h6 Nh4 g5 Bg6+ Nxg6 Nxg6 Rh7 Nxf8 Kxf8 Bg3 Re7 f4 Kg7 fxg5 fxg5 Qf3 Nd7 Ne4 d5 Nd6 Qf8 Qxf8+ Nxf8 Nxc8 Rxc8 Bd6 Rf7 Rxf7+ Kxf7 Bxf8 Rxf8 Rf1+ Ke7 Rxf8 Kxf8 Kf2 Kf7 Kg3 Kf6 Kg4 b5 c3 Kg6 b3 a5 a3 h5+ Kg3 Kf5 h4 g4 b4",
+            clock: "3+0",
+        },
+        puzzle: {
+            id: "kxyRP",
+            rating: 1895,
+            plays: 51801,
+            solution: ["a5b4", "a3b4", "f5e4", "g3f2", "e4d3"],
+            themes: ["endgame", "pawnEndgame", "crushing", "long"],
+            fen: "8/8/2p1p3/pp1p1k1p/1P1P2pP/P1P1P1K1/6P1/8 b - - 0 1",
+            lastMove: "b3b4",
+            initialPly: 68,
+        },
+    };
+    const byId = {
+        game: {
+            id: "787zsVup",
+            perf: { key: "blitz", name: "Blitz" },
+            rated: true,
+            players: [
+                {
+                    name: "nelubin",
+                    id: "nelubin",
+                    color: "white",
+                    rating: 1638,
+                },
+                {
+                    name: "aanreitaylor",
+                    id: "aanreitaylor",
+                    color: "black",
+                    rating: 1851,
+                },
+            ],
+            pgn: "e4 c6 f4 d5 exd5 cxd5 Nf3 Nc6 d3 Nf6 Be2 Qc7 O-O e5 fxe5 Nxe5 Nxe5 Qxe5 Bf4 Qxb2 Nd2 Bc5+ Kh1 O-O Nb3 Bb6 Bd6 Rd8 Be7 Rd7 Bxf6 gxf6 Rf3 Rc7 Rg3+ Kh8 Bh5 Bf5 Bxf7 Rxf7 Qh5 Be6 Re1 Re7 Qh6 Bf2 Rxe6 Bxg3",
+            clock: "3+0",
+        },
+        puzzle: {
+            id: "00008",
+            rating: 1761,
+            plays: 10537,
+            solution: ["e6e7", "b2b1", "b3c1", "b1c1", "h6c1"],
+            themes: ["middlegame", "crushing", "long", "hangingPiece"],
+            fen: "r6k/pp2r2p/4Rp1Q/3p4/8/1N1P2b1/PqP3PP/7K w - - 0 1",
+            lastMove: "f2g3",
+            initialPly: 47,
+        },
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url.pathname);
+        assert.equal(url.hostname, "lichess.org");
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.equal("Authorization" in init.headers, false);
+        assert.equal("Cookie" in init.headers, false);
+        if (url.pathname === "/api/puzzle/daily")
+            return new Response(JSON.stringify(daily));
+        if (url.pathname === "/api/puzzle/00008")
+            return new Response(JSON.stringify(byId));
+        return new Response("not found", { status: 404 });
+    });
+    const c = await client(t);
+    let result = await call(c, "lichess_puzzle", {});
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0], "/api/puzzle/daily");
+    assert.deepEqual(value(result), {
+        puzzle_id: "kxyRP",
+        rating: 1895,
+        plays: 51801,
+        solution: ["a5b4", "a3b4", "f5e4", "g3f2", "e4d3"],
+        themes: ["endgame", "pawnEndgame", "crushing", "long"],
+        fen: "8/8/2p1p3/pp1p1k1p/1P1P2pP/P1P1P1K1/6P1/8 b - - 0 1",
+        side_to_move: "black",
+        last_move: "b3b4",
+        initial_ply: 68,
+        game: {
+            id: "8J8inMCr",
+            pgn: daily.game.pgn,
+            clock: "3+0",
+            rated: true,
+            perf: "blitz",
+            white: { name: "Row2610", rating: 1602 },
+            black: { name: "jhamoss", rating: 1518 },
+        },
+        url: "https://lichess.org/training/kxyRP",
+    });
+
+    result = await call(c, "lichess_puzzle", { id: "00008" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[1], "/api/puzzle/00008");
+    assert.equal(value(result).puzzle_id, "00008");
+    assert.equal(value(result).rating, 1761);
+    assert.equal(value(result).side_to_move, "white");
+    assert.deepEqual(value(result).themes, [
+        "middlegame",
+        "crushing",
+        "long",
+        "hangingPiece",
+    ]);
+    assert.equal(value(result).url, "https://lichess.org/training/00008");
+
+    result = await call(c, "lichess_puzzle", { id: "zzzznonexistent" });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /lichess\.org returned HTTP 404/);
+
+    result = await call(c, "lichess_puzzle", { id: "not an id!" });
+    assert.equal(result.isError, true);
+    result = await call(c, "lichess_puzzle", { id: "   " });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, 3);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +496,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "lichess_puzzle",
             ].sort(),
         );
     });

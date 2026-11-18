@@ -22,7 +22,7 @@ then choose a server:
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 | Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, SHA text hashes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
-| Solana Launch Radar | `https://gen.pollinations.ai/mcp/solana` | Search Solana tokens and inspect DEX pools, liquidity, price changes and pool-level activity | [Source](https://github.com/pollinations/pollinations/tree/main/apps/solana-mcp) |
+| Solana Launch Radar | `https://gen.pollinations.ai/mcp/solana` | Inspect SPL token mint state, largest token accounts, recent token activity, Pump.fun launches/trades and PumpSwap pool events | [Source](https://github.com/pollinations/pollinations/tree/main/apps/solana-mcp) |
 | Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
 | Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
@@ -34,7 +34,7 @@ offset to select an instant. Cron previews do not schedule jobs.
 Currency tools return ECB reference rates and their publication date; weekends
 and holidays resolve to the previous working day.
 
-Solana Launch Radar lookups are free and require a Pollinations key. Data comes from DexScreener public endpoints; no external provider key is forwarded. Upstream rate limits apply and HTTP 429 responses remain explicit. Pool activity is aggregate buys/sells and volume, not wallet-level history; liquidity stays per-pool and is not presented as consolidated market depth. The server does not assess token safety or submit transactions.
+Solana Launch Radar uses the shared Solana mainnet public JSON-RPC endpoint and requires a Pollinations key at the gateway, but no external provider API key. It exposes mint account metadata, top token accounts, recent signatures and bounded Pump.fun/PumpSwap event samples using their public IDLs. The public RPC is rate-limited and not intended as production infrastructure; 429/Retry-After is surfaced. Recent scans are bounded samples, not complete historical archives. The server does not provide USD market prices or assess token safety.
 
 Network (`https://gen.pollinations.ai/mcp/network`) provides free `dns_lookup`,
 `http_probe`, `inspect_cidr`, `inspect_mac`, `domain_whois` and `ip_whois` tools. A key is still required. HTTP probes accept

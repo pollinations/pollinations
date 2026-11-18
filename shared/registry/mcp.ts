@@ -267,11 +267,11 @@ export const MCP_SERVERS = [
         alpha: true,
         name: "Solana Launch Radar",
         description:
-            "Search Solana tokens and inspect DEX pools, liquidity, price changes and pool-level trading activity.",
+            "Inspect SPL token mint state, largest token accounts, recent token activity, Pump.fun launches/trades, and PumpSwap pool events via public Solana RPC.",
         binding: "SOLANA_MCP",
         billing: "downstream",
         pricing: {
-            description: "Public DexScreener market data. No additional MCP fee.",
+            description: "Public Solana RPC data. No external provider API key or additional MCP fee.",
             rates: [],
         },
     },

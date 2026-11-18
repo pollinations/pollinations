@@ -1,31 +1,32 @@
 # Solana Launch Radar MCP
 
-A read-only MCP server for researching Solana tokens and DEX pools through the public DexScreener API.
+A read-only MCP server for inspecting Solana SPL token mints and recent Pump.fun/PumpSwap on-chain events.
 
 ## Tools
 
-- `search_solana_tokens` — search token listings by name, symbol, or mint.
-- `get_token_info` — token identity, DEX listings, and available public links.
-- `get_token_pairs` — pools and source-reported market metrics.
-- `get_liquidity_metrics` — per-pool liquidity without inventing consolidated depth.
-- `get_price_changes` — pool-level prices and percentage changes.
-- `get_token_activity` — DEX-pool aggregate buy/sell counts and volume.
+- \`get_token_mint_info\` — mint owner, decimals, supply, mint authority and freeze authority.
+- \`get_token_largest_accounts\` — current top-20 token accounts (not unique wallet holders).
+- \`get_token_activity\` — recent signatures for a mint and matching Pump.fun TradeEvents.
+- \`get_recent_pumpfun_launches\` — recent official Pump.fun CreateEvent records.
+- \`get_recent_pumpfun_trades\` — recent official Pump.fun TradeEvent records.
+- \`get_recent_pumpswap_events\` — recent PumpSwap pool creation and buy/sell events.
 
-## Data limits
+## Data integrity and limits
 
-- Source: DexScreener public API; no external provider key is required.
-- Values are source-reported; missing fields remain null.
-- Activity is DEX-pool aggregate data, not wallet-level activity or complete on-chain history.
-- Liquidity is returned per pool and is not summed into synthetic market depth.
-- This server does not assess token safety, submit transactions, or access wallets.
-- DEX endpoints have documented request limits; identical requests use a short edge cache and upstream 429 responses remain explicit.
+- Source: Solana mainnet public JSON-RPC; no external provider API key is required.
+- Program IDs and event discriminators/layouts are taken from the public Pump.fun/PumpSwap IDLs.
+- Unknown event suffixes are kept opaque; no unknown bytes are interpreted as trade fields.
+- Launch/trade scans inspect only a bounded recent signature window (default 5, max 10); they are not a complete historical archive.
+- Token largest-account results are token accounts, not a unique-holder count; pool vaults may appear.
+- This server does not provide USD prices, market cap, consolidated liquidity, or token-safety assessments.
+- Public Solana RPC is shared, rate-limited and explicitly not intended as production infrastructure. This MCP is alpha; HTTP 429/Retry-After is surfaced and repeated identical reads use a short isolate-local cache.
 
 ## Local checks
 
-```bash
+\`\`\`bash
 npm ci --workspaces=false
 npm test
 npm run check
-```
+\`\`\`
 
-Hosted endpoint: `https://gen.pollinations.ai/mcp/solana` (Pollinations API key required).
+Hosted endpoint: \`https://gen.pollinations.ai/mcp/solana\` (Pollinations API key required).

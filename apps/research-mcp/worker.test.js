@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "gender_predict",
             ].sort(),
         );
     });
@@ -644,4 +645,85 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Genderize predicts a gender from name statistics, honours country and reports unknown names", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "api.genderize.io");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const name = url.searchParams.get("name");
+        if (name === "michael")
+            return Response.json({
+                count: 2538090,
+                name: "michael",
+                gender: "male",
+                probability: 1.0,
+            });
+        if (name === "maria")
+            return Response.json({
+                count: 4097023,
+                name: "maria",
+                gender: "female",
+                country_id: "BR",
+                probability: 1.0,
+            });
+        return Response.json({
+            count: 0,
+            name,
+            gender: null,
+            probability: 0.0,
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "gender_predict", { name: "michael" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(
+        requests[0].toString(),
+        "https://api.genderize.io/?name=michael",
+    );
+    assert.deepEqual(value(result), {
+        name: "michael",
+        predicted_gender: "male",
+        probability: 1.0,
+        sample_count: 2538090,
+        is_prediction: true,
+        country_id: null,
+    });
+
+    result = await call(c, "gender_predict", {
+        name: "maria",
+        country_id: "br",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[1].searchParams.get("country_id"), "BR");
+    assert.equal(value(result).predicted_gender, "female");
+    assert.equal(value(result).sample_count, 4097023);
+    assert.equal(value(result).country_id, "BR");
+
+    result = await call(c, "gender_predict", { name: "zzzznotaname" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznotaname",
+        predicted_gender: null,
+        probability: 0.0,
+        sample_count: 0,
+        is_prediction: true,
+        country_id: null,
+    });
+
+    result = await call(c, "gender_predict", { name: "   " });
+    assert.equal(result.isError, true);
+    result = await call(c, "gender_predict", {
+        name: "michael",
+        country_id: "USA",
+    });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, 3);
 });

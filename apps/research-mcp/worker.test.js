@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "mlb_player",
             ].sort(),
         );
     });
@@ -644,4 +645,99 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("mlb_player returns projected profiles, caps the list, and treats no match as an empty list", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "statsapi.mlb.com");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (target.searchParams.get("names") === "zzzzqqqxxyy")
+            return Response.json({ people: [] });
+        return Response.json({
+            people: [
+                {
+                    id: 660271,
+                    fullName: "Shohei Ohtani",
+                    link: "/api/v1/people/660271",
+                    primaryNumber: "17",
+                    birthDate: "1994-07-05",
+                    currentAge: 32,
+                    birthCity: "Oshu",
+                    birthCountry: "Japan",
+                    height: "6' 4\"",
+                    weight: 210,
+                    active: true,
+                    primaryPosition: {
+                        code: "Y",
+                        name: "Two-Way Player",
+                        type: "Two-Way Player",
+                        abbreviation: "TWP",
+                    },
+                    mlbDebutDate: "2018-03-29",
+                    batSide: { code: "L", description: "Left" },
+                    nickName: "Showtime",
+                },
+                {
+                    id: 123456,
+                    fullName: "Test Ohtani",
+                    link: "/api/v1/people/123456",
+                    primaryNumber: "99",
+                    birthDate: "2000-01-01",
+                    currentAge: 26,
+                    birthCity: "Test City",
+                    birthCountry: "USA",
+                    height: "6' 0\"",
+                    weight: 180,
+                    active: false,
+                    primaryPosition: {
+                        code: "1",
+                        name: "Pitcher",
+                        type: "Pitcher",
+                        abbreviation: "P",
+                    },
+                    mlbDebutDate: "2022-04-01",
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "mlb_player", { name: "Ohtani", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "Ohtani",
+        total: 2,
+        players: [
+            {
+                id: 660271,
+                fullName: "Shohei Ohtani",
+                primaryNumber: "17",
+                birthDate: "1994-07-05",
+                currentAge: 32,
+                birthCity: "Oshu",
+                birthCountry: "Japan",
+                height: "6' 4\"",
+                weight: 210,
+                active: true,
+                primaryPosition: "Two-Way Player",
+                mlbDebutDate: "2018-03-29",
+            },
+        ],
+    });
+
+    const empty = await call(c, "mlb_player", { name: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        name: "zzzzqqqxxyy",
+        total: 0,
+        players: [],
+    });
+
+    const blank = await call(c, "mlb_player", { name: " " });
+    assert.equal(blank.isError, true);
 });

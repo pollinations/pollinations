@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ons_datasets",
             ].sort(),
         );
     });
@@ -644,4 +645,200 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("ONS lists catalogue datasets with title, description, contacts and catalogue total", async (t) => {
+    const payload = {
+        items: [
+            {
+                contacts: [
+                    {
+                        email: "qualityoflife@ons.gov.uk",
+                        name: "Will Shufflebottom, Owain Birrell, Pavan Bains and Geeta Kerai",
+                        telephone: "+44 300 0671543",
+                    },
+                ],
+                description:
+                    "Seasonally and non seasonally-adjusted quarterly estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety in the UK.",
+                keywords: ["well-being"],
+                id: "wellbeing-quarterly",
+                last_updated: "2023-12-13T09:40:24.204Z",
+                links: {
+                    editions: {
+                        href: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly/editions",
+                    },
+                    latest_version: {
+                        href: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly/editions/time-series/versions/9",
+                        id: "9",
+                    },
+                    self: {
+                        href: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly",
+                    },
+                    taxonomy: {
+                        href: "https://api.beta.ons.gov.uk/v1/peoplepopulationandcommunity/wellbeing",
+                    },
+                },
+                methodologies: [
+                    {
+                        href: "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/methodologies/personalwellbeingquarterlyestimatestechnicalreport",
+                        title: "Personal well-being quarterly estimates technical report",
+                    },
+                ],
+                national_statistic: false,
+                next_release: "TBC",
+                qmi: {
+                    href: "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/methodologies/personalwellbeingintheukqmi",
+                },
+                related_datasets: [
+                    {
+                        href: "https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/bulletins/measuringnationalwellbeing/april2022tomarch2023",
+                        title: "Personal well-being in the UK: April 2022 to March 2023",
+                    },
+                ],
+                release_frequency: "Quarterly",
+                state: "published",
+                title: "Quarterly personal well-being estimates",
+                unit_of_measure: "Percentage",
+            },
+            {
+                contacts: [
+                    {
+                        email: "QualityOfLife@ons.gov.uk",
+                        name: "Rachel Mullis, Joe Shepherd and Geeta Kerai",
+                        telephone: "+44 3000 671 543",
+                    },
+                ],
+                description:
+                    "Estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety at the UK, country, regional, county, local and unitary authority level.",
+                keywords: ["well-being"],
+                id: "wellbeing-local-authority",
+                last_updated: "2023-12-13T09:40:21.928Z",
+                links: {
+                    self: {
+                        href: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-local-authority",
+                    },
+                },
+                national_statistic: true,
+                next_release: "TBC",
+                release_frequency: "Annual",
+                state: "published",
+                title: "Personal well-being estimates by local authority",
+            },
+        ],
+        count: 2,
+        offset: 0,
+        limit: 2,
+        total_count: 338,
+    };
+    const fetches = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches.push([String(input), init]);
+        return Response.json(payload);
+    });
+
+    const c = await client(t);
+    const result = await call(c, "ons_datasets", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches.length, 1);
+    assert.equal(
+        fetches[0][0],
+        "https://api.beta.ons.gov.uk/v1/datasets?limit=2&offset=0",
+    );
+    const headers = new Headers(fetches[0][1]?.headers);
+    assert.equal(headers.get("Authorization"), null);
+    assert.equal(headers.get("Cookie"), null);
+    assert.match(headers.get("User-Agent"), /hello@pollinations\.ai/);
+    assert.deepEqual(value(result), {
+        total: 338,
+        datasets: [
+            {
+                id: "wellbeing-quarterly",
+                title: "Quarterly personal well-being estimates",
+                description:
+                    "Seasonally and non seasonally-adjusted quarterly estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety in the UK.",
+                description_truncated: false,
+                keywords: ["well-being"],
+                last_updated: "2023-12-13T09:40:24.204Z",
+                release_frequency: "Quarterly",
+                national_statistic: false,
+                state: "published",
+                next_release: "TBC",
+                contacts: [
+                    {
+                        name: "Will Shufflebottom, Owain Birrell, Pavan Bains and Geeta Kerai",
+                        email: "qualityoflife@ons.gov.uk",
+                        telephone: "+44 300 0671543",
+                    },
+                ],
+                url: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-quarterly",
+            },
+            {
+                id: "wellbeing-local-authority",
+                title: "Personal well-being estimates by local authority",
+                description:
+                    "Estimates of life satisfaction, feeling that the things done in life are worthwhile, happiness and anxiety at the UK, country, regional, county, local and unitary authority level.",
+                description_truncated: false,
+                keywords: ["well-being"],
+                last_updated: "2023-12-13T09:40:21.928Z",
+                release_frequency: "Annual",
+                national_statistic: true,
+                state: "published",
+                next_release: "TBC",
+                contacts: [
+                    {
+                        name: "Rachel Mullis, Joe Shepherd and Geeta Kerai",
+                        email: "QualityOfLife@ons.gov.uk",
+                        telephone: "+44 3000 671 543",
+                    },
+                ],
+                url: "https://api.beta.ons.gov.uk/v1/datasets/wellbeing-local-authority",
+            },
+        ],
+    });
+});
+
+test("ONS handler falls back to limit 5, caps long descriptions and rejects bad shapes", async (_t) => {
+    const { onsTools } = await import("./tools/ons.js");
+    const run = onsTools[0][3];
+    const fetches = [];
+    mock.method(globalThis, "fetch", async (input) => {
+        fetches.push(String(input));
+        return Response.json({
+            items: [
+                {
+                    id: "long-desc",
+                    title: "Long description dataset",
+                    description: "x".repeat(600),
+                    keywords: [],
+                    last_updated: "2026-01-01T00:00:00.000Z",
+                    release_frequency: null,
+                    national_statistic: false,
+                    state: "published",
+                    next_release: null,
+                    contacts: [],
+                    links: {},
+                },
+            ],
+            count: 1,
+            offset: 0,
+            limit: 5,
+            total_count: 338,
+        });
+    });
+    const out = await run({ limit: 99 });
+    assert.equal(fetches.length, 1);
+    assert.equal(
+        fetches[0],
+        "https://api.beta.ons.gov.uk/v1/datasets?limit=5&offset=0",
+    );
+    assert.equal(out.total, 338);
+    assert.equal(out.datasets[0].description.length, 500);
+    assert.equal(out.datasets[0].description_truncated, true);
+    assert.equal(out.datasets[0].release_frequency, null);
+    assert.equal(out.datasets[0].url, null);
+
+    mock.method(globalThis, "fetch", async () =>
+        Response.json({ items: "not-an-array", total_count: 0 }),
+    );
+    await assert.rejects(run({ limit: 2 }), /unexpected response/);
 });

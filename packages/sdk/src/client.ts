@@ -113,7 +113,7 @@ export function buildTextRequest(
 }
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
-function getEnvVar(name: string): string | undefined {
+export function getEnvVar(name: string): string | undefined {
     try {
         const g = globalThis as Record<string, unknown>;
         if (g.process && typeof g.process === "object") {

@@ -1,6 +1,7 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isOutageError } from "../error-response.js";
+import type { RealtimeEvent, RealtimeSession } from "../realtime.js";
 import type { PollinationsError } from "../types.js";
 import {
     AuthContext,
@@ -9,9 +10,11 @@ import {
 } from "./contexts.js";
 import {
     type UseAccountKeyValue,
+    type UseRealtimeValue,
     useAccountKey,
     useAccountKeyUsage,
     useAuthState,
+    useRealtime,
     useTextGeneration,
 } from "./hooks.js";
 
@@ -511,5 +514,139 @@ describe("generation hooks", () => {
 
         expect(logout).toHaveBeenCalledTimes(1);
         expect(gen().data).toBeNull();
+    });
+});
+
+/** The socket the realtime helper opens, driven by the test. */
+class FakeSocket extends EventTarget {
+    static last: FakeSocket | null = null;
+    readyState = 0;
+    closes = 0;
+    constructor(public url: string) {
+        super();
+        FakeSocket.last = this;
+    }
+    send() {}
+    close() {
+        this.closes++;
+        this.readyState = 3;
+        this.dispatchEvent(
+            Object.assign(new Event("close"), { code: 1000, reason: "" }),
+        );
+    }
+    open() {
+        this.readyState = 1;
+        this.dispatchEvent(new Event("open"));
+    }
+    receive(event: unknown) {
+        this.dispatchEvent(
+            Object.assign(new Event("message"), {
+                data: JSON.stringify(event),
+            }),
+        );
+    }
+}
+
+describe("useRealtime", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        FakeSocket.last = null;
+    });
+
+    it("opens a session on the signed-in key and passes the events on", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const events: RealtimeEvent[] = [];
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime({ onEvent: (event) => events.push(event) });
+            return null;
+        }
+
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        let connected: Promise<RealtimeSession | null>;
+        await act(async () => {
+            connected = read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            FakeSocket.last?.open();
+            await connected;
+        });
+
+        expect(read<UseRealtimeValue>(latest).status).toBe("open");
+        expect(FakeSocket.last?.url).toContain("key=sk_test");
+
+        await act(async () => {
+            FakeSocket.last?.receive({ type: "response.done" });
+        });
+        expect(events).toEqual([{ type: "response.done" }]);
+
+        await act(async () => renderer.unmount());
+    });
+
+    it("reports a session the gateway refuses", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        await act(async () => {
+            const connected = read<UseRealtimeValue>(latest).connect();
+            FakeSocket.last?.close();
+            await connected;
+        });
+
+        expect(read<UseRealtimeValue>(latest).status).toBe("closed");
+        expect(read<UseRealtimeValue>(latest).error?.message).toMatch(
+            /closed before opening/,
+        );
+    });
+
+    it("closes the session when the component unmounts", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        let connected: Promise<RealtimeSession | null>;
+        await act(async () => {
+            connected = read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            FakeSocket.last?.open();
+            await connected;
+        });
+
+        await act(async () => renderer.unmount());
+
+        expect(FakeSocket.last?.closes).toBe(1);
     });
 });

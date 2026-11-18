@@ -188,15 +188,23 @@ describe("BYOP markup", () => {
             tier: 0,
             pack: 1,
         });
+        const prices: Record<string, number | undefined> = { [model]: 0.32 };
         const vars = {
             auth: { user: { id: userId } },
             balance: {
                 getBalance: (id: string) => getUserBalance(db, id),
-                requestPrice: 0.32,
+                requestPrice: ({ resolved }: { resolved: string }) =>
+                    prices[resolved],
             },
             model: testModel(model),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
+        const refusedAt = (price: string) => ({
+            status: 402,
+            message: expect.stringContaining(
+                `This request costs about ${price}`,
+            ),
+        });
 
         // A short clip is affordable although the average request is not.
         await expect(
@@ -204,17 +212,19 @@ describe("BYOP markup", () => {
         ).resolves.toBeUndefined();
 
         // A long clip is refused although the average request is affordable.
-        vars.balance.requestPrice = 2.8;
+        prices[model] = 2.8;
         await expect(
             checkBalance(vars, fakeStatsEnv(0.3, model)),
-        ).rejects.toMatchObject({
-            status: 402,
-            message: expect.stringContaining(
-                "This request costs about $2.8000",
-            ),
-        });
+        ).rejects.toMatchObject(refusedAt("$2.8000"));
 
-        // Another model in the caller's list keeps its own average.
+        // Another model in the caller's list is checked on its own price,
+        prices[other] = 1.5;
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, other), testModel(other)),
+        ).rejects.toMatchObject(refusedAt("$1.5000"));
+
+        // and on its average when that price cannot be calculated.
+        prices[other] = undefined;
         await expect(
             checkBalance(vars, fakeStatsEnv(0.3, other), testModel(other)),
         ).resolves.toBeUndefined();

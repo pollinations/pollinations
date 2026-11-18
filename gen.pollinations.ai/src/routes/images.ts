@@ -342,28 +342,44 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
 /**
  * Balance check for image and video requests. Where the options set the price
  * (duration, resolution, sound, references), it checks against that price
- * instead of the model's average.
+ * instead of the model's average. Each model of a caller's list is priced on
+ * its own definition.
  */
 export const mediaGenerationAccess = every(
     createMiddleware<Env>(async (c, next) => {
-        try {
-            const json =
-                c.req.method === "POST"
-                    ? (c.req.valid("json" as never) as Record<string, unknown>)
-                    : undefined;
-            const quote = quoteMediaRequest(
-                c.var.model.resolved,
-                c.var.model.definition,
-                parseImageParams(
-                    c,
-                    json ? { ...json, ...resolveParams(json) } : {},
-                ),
-            );
-            if (typeof quote === "number") c.var.balance.requestPrice = quote;
-        } catch {
-            // Invalid options are the generator's to report, as before; the
-            // check then uses the model's average.
-        }
+        c.var.balance.requestPrice = ({ resolved, definition }) => {
+            try {
+                const json =
+                    c.req.method === "POST"
+                        ? (c.req.valid("json" as never) as Record<
+                              string,
+                              unknown
+                          >)
+                        : undefined;
+                const quote = quoteMediaRequest(
+                    resolved,
+                    definition,
+                    parseImageParams(
+                        c,
+                        json ? { ...json, ...resolveParams(json) } : {},
+                        {
+                            ...c.var.model,
+                            resolved,
+                            definition,
+                            communityEndpoint:
+                                resolved === c.var.model.resolved
+                                    ? c.var.model.communityEndpoint
+                                    : undefined,
+                        },
+                    ),
+                );
+                return typeof quote === "number" ? quote : undefined;
+            } catch {
+                // Invalid options are the generator's to report, as before;
+                // the check then uses the model's average.
+                return undefined;
+            }
+        };
         await next();
     }),
     generationAccess,

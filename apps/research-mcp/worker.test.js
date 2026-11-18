@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "cleveland_artwork",
             ].sort(),
         );
     });
@@ -644,4 +645,89 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Cleveland Museum artworks search projects five fields and honours limit", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "openaccess-api.clevelandart.org");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        assert.equal(
+            url.searchParams.get("fields"),
+            "id,title,creation_date,technique,department",
+        );
+        if (url.searchParams.get("q") === "zzzzqqqxxyy")
+            return Response.json({ info: { total: 0 }, data: [] });
+        return Response.json({
+            info: { total: 28 },
+            data: [
+                {
+                    id: 135382,
+                    accession_number: "1958.39",
+                    title: "The Red Kerchief",
+                    creation_date: "c. 1868–73",
+                    technique: "oil on fabric",
+                    department: "Modern European Painting and Sculpture",
+                    has_conservation_images: false,
+                },
+                {
+                    id: 136510,
+                    accession_number: "1960.81",
+                    title: "Water Lilies (Agapanthus)",
+                    creation_date: "c. 1915–26",
+                    technique: "oil on canvas",
+                    department: "Modern European Painting and Sculpture",
+                    has_conservation_images: false,
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "cleveland_artwork", {
+        query: "monet",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "monet",
+        total: 28,
+        artworks: [
+            {
+                id: 135382,
+                title: "The Red Kerchief",
+                creation_date: "c. 1868–73",
+                technique: "oil on fabric",
+                department: "Modern European Painting and Sculpture",
+            },
+            {
+                id: 136510,
+                title: "Water Lilies (Agapanthus)",
+                creation_date: "c. 1915–26",
+                technique: "oil on canvas",
+                department: "Modern European Painting and Sculpture",
+            },
+        ],
+    });
+    result = await call(c, "cleveland_artwork", { query: "monet", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 28);
+    assert.equal(value(result).artworks.length, 1);
+    result = await call(c, "cleveland_artwork", { query: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        artworks: [],
+    });
+    const before = fetches;
+    result = await call(c, "cleveland_artwork", { query: " " });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, before);
 });

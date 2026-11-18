@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check account balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -15,7 +15,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User asks to **generate an image / text / audio / video** via pollinations
 - User mentions **polli, pollinations, pollen, pollinations.ai**
 - User wants to **transcribe speech** or run TTS
-- User asks about their **pollen balance, usage, or API keys**
+- User asks about their **balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**

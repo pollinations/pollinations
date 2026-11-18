@@ -71,7 +71,7 @@ All traffic remains subject to platform abuse protection and any model-specific 
 
 ## 🔌 What is Pollinations Pay?
 
-Pollinations Pay, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend from their own wallet.
+Pollinations Pay, also called BYOP, lets users authorize an application to spend from their own wallet.
 
 For app developers:
 

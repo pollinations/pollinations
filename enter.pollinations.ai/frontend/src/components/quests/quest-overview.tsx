@@ -394,7 +394,7 @@ function QuestBalanceNote() {
 // One card for where you stand: a honeycomb with a cell per reward or open
 // quest (claimed, ready to claim, still to do), and the same states under it
 // as totals. A merged PR or a fixed issue counts like any other quest you
-// completed. Colours: green is claimed, honey is waiting.
+// completed. Colours: green is claimed, green stripes are waiting.
 const HEX = "[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]";
 // Cells per row of the comb, across the full card: on a wide screen and on a
 // phone. More quests add rows; faint cells finish the last row as room to grow.
@@ -411,17 +411,26 @@ const SECTION_PAGE_SIZE = 10;
 const PROGRESS_STATES = {
     claimed: {
         label: "Claimed",
-        tone: "bg-tier-soft",
+        // Cells take the colour of the balance they paid into.
+        tone: { tier: "bg-tier-soft", paid: "bg-paid-soft" },
         info: "Quests and contributions you claimed. They're in your balance.",
     },
     ready: {
         label: "Ready to claim",
-        tone: "bg-theme-fill",
+        // The balance colour in stripes: the same money as claimed, not in
+        // yet. Solid honey would read as paid balance already earned.
+        tone: {
+            tier: "bg-[repeating-linear-gradient(135deg,var(--color-tier-soft)_0_2px,transparent_2px_4px)]",
+            paid: "bg-[repeating-linear-gradient(135deg,var(--color-paid-soft)_0_2px,transparent_2px_4px)]",
+        },
         info: "Quests and contributions you completed. Claim them below to add them to your balance.",
     },
     open: {
         label: "To do",
-        tone: "bg-theme-text-strong/10",
+        tone: {
+            tier: "bg-theme-text-strong/10",
+            paid: "bg-theme-text-strong/10",
+        },
         info: "Quests still open on the board.",
     },
 } as const;
@@ -431,28 +440,48 @@ const CARD_STATE: Record<QuestCardStatus, ProgressState> = {
     claimable: "ready",
     open: "open",
 };
-// Amounts per balance: an admin grant can pay into the paid balance.
-type ProgressPart = { count: number; pollen: Record<RewardIconKind, number> };
+// Counts and amounts per balance: an admin grant can pay into the paid
+// balance.
+type ProgressPart = {
+    count: number;
+    cells: Record<RewardIconKind, number>;
+    pollen: Record<RewardIconKind, number>;
+};
 
 function progressOf(cards: QuestCard[]): Record<ProgressState, ProgressPart> {
     const parts: Record<ProgressState, ProgressPart> = {
-        claimed: { count: 0, pollen: { tier: 0, paid: 0 } },
-        ready: { count: 0, pollen: { tier: 0, paid: 0 } },
-        open: { count: 0, pollen: { tier: 0, paid: 0 } },
+        claimed: {
+            count: 0,
+            cells: { tier: 0, paid: 0 },
+            pollen: { tier: 0, paid: 0 },
+        },
+        ready: {
+            count: 0,
+            cells: { tier: 0, paid: 0 },
+            pollen: { tier: 0, paid: 0 },
+        },
+        open: {
+            count: 0,
+            cells: { tier: 0, paid: 0 },
+            pollen: { tier: 0, paid: 0 },
+        },
     };
     for (const card of cards) {
         // A repeatable quest counts each reward it earned, and itself while
         // it is open to earn again.
         for (const repeat of card.repeats ?? []) {
             const part = parts[repeat.claimedAt ? "claimed" : "ready"];
+            const kind = rewardIconKind(repeat.balanceBucket);
             part.count += 1;
-            part.pollen[rewardIconKind(repeat.balanceBucket)] +=
-                repeat.pollenAmount;
+            part.cells[kind] += 1;
+            part.pollen[kind] += repeat.pollenAmount;
         }
         if (card.repeats && card.status !== "open") continue;
         const part = parts[CARD_STATE[card.status]];
+        const kind = rewardIconKind(card.balanceBucket);
         part.count += 1;
-        part.pollen[rewardIconKind(card.balanceBucket)] +=
+        part.cells[kind] += 1;
+        part.pollen[kind] +=
             (card.status === "open" ? null : card.earnedAmount) ??
             card.reward ??
             0;
@@ -497,12 +526,17 @@ function Comb({ parts }: { parts: Record<ProgressState, ProgressPart> }) {
             className="grid grid-cols-20 gap-0.5 sm:grid-cols-40"
         >
             {states.flatMap((state) =>
-                Array.from({ length: parts[state].count }, (_, index) => (
-                    <span
-                        key={`${state}-${index}`}
-                        className={`${cell} ${PROGRESS_STATES[state].tone}`}
-                    />
-                )),
+                (["tier", "paid"] as const).flatMap((kind) =>
+                    Array.from(
+                        { length: parts[state].cells[kind] },
+                        (_, index) => (
+                            <span
+                                key={`${state}-${kind}-${index}`}
+                                className={`${cell} ${PROGRESS_STATES[state].tone[kind]}`}
+                            />
+                        ),
+                    ),
+                ),
             )}
             {Array.from({ length: grow }, (_, index) => (
                 <span
@@ -551,7 +585,7 @@ export function QuestProgress({
                                 <dt className="flex items-center gap-2 text-sm font-semibold text-theme-text-base">
                                     <span
                                         aria-hidden="true"
-                                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+                                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone.tier}`}
                                     />
                                     {label}
                                     <InfoTip

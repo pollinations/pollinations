@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "futurama_character",
             ].sort(),
         );
     });
@@ -644,4 +645,137 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("futurama_character looks up by id and searches the full list by name", async (t) => {
+    let fetches = 0;
+    const fry = {
+        id: 1,
+        name: { first: "Philip", middle: "Jay", last: "Fry" },
+        images: {
+            "head-shot": "",
+            main: "https://upload.wikimedia.org/wikipedia/en/2/28/Philip_Fry.png",
+        },
+        age: "25",
+        gender: "Male",
+        species: "Human",
+        homePlanet: "Earth",
+        occupation: "Intergalactic Delivery Boy",
+        sayings: [
+            "Shut up and take my money!",
+            "I'm walking on sunshine, woah oh oooh",
+            "This is how we do it. Pick your nose and chew it",
+            "wow! I never would have thought of that.",
+            "Bigfoot! He's real! I knew it! The Loch Ness Monster's book was right!",
+        ],
+    };
+    const bender = {
+        id: 3,
+        name: { first: "Bender", middle: "Bending", last: "Rodriguez" },
+        images: {
+            "head-shot": "",
+            main: "https://upload.wikimedia.org/wikipedia/en/a/a6/Bender_Rodriguez.png",
+        },
+        age: "25",
+        gender: "Male",
+        species: "Robot",
+        homePlanet: "Earth",
+        occupation: "Planet Express Worker",
+        sayings: [
+            "001100010010011110100001101101110011",
+            "Awwww, its anus looks like an asterisk!",
+            "Ah, computer dating. It's like pimping, but you rarely have to use the phrase 'upside your head'.",
+        ],
+    };
+    const leela = {
+        id: 2,
+        name: { first: "Turanga", middle: "", last: "Leela" },
+        images: {
+            "head-shot": "",
+            main: "https://upload.wikimedia.org/wikipedia/en/d/d4/Turanga_Leela.png",
+        },
+        age: "32",
+        gender: "Female",
+        species: "Mutant",
+        homePlanet: "Earth",
+        occupation: "Captain and pilot",
+        sayings: [
+            "Bender, this is Fry's decision... and he made it wrong. So it's time for us to interfere in his life.",
+            "With my Oxo Goodgrips cheese knife, I stab at thee!",
+        ],
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.sampleapis.com");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.pathname === "/futurama/characters/1")
+            return Response.json(fry);
+        if (url.pathname === "/futurama/characters/999999")
+            return new Response("{}", { status: 404 });
+        if (url.pathname === "/futurama/characters")
+            return Response.json([fry, bender, leela]);
+        return new Response("Not found", { status: 404 });
+    });
+    const c = await client(t);
+
+    let result = await call(c, "futurama_character", { id: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result).character, {
+        id: 1,
+        name: "Philip Jay Fry",
+        gender: "Male",
+        species: "Human",
+        home_planet: "Earth",
+        occupation: "Intergalactic Delivery Boy",
+        age: "25",
+        sayings: fry.sayings.slice(0, 3),
+        sayings_count: 5,
+        image: "https://upload.wikimedia.org/wikipedia/en/2/28/Philip_Fry.png",
+        head_shot: null,
+        url: "https://api.sampleapis.com/futurama/characters/1",
+    });
+
+    result = await call(c, "futurama_character", { name: "fry" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 1);
+    assert.equal(value(result).characters[0].name, "Philip Jay Fry");
+    assert.equal(value(result).characters[0].sayings_count, 5);
+
+    result = await call(c, "futurama_character", { name: "a", limit: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 2);
+    assert.equal(value(result).characters.length, 1);
+    assert.equal(value(result).characters[0].name, "Philip Jay Fry");
+
+    result = await call(c, "futurama_character", {
+        name: "zzzznonexistentqqq",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzznonexistentqqq",
+        total: 0,
+        characters: [],
+    });
+
+    result = await call(c, "futurama_character", { id: 999999 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /HTTP 404/);
+
+    const before = fetches;
+    result = await call(c, "futurama_character", {});
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Provide a character name or id/);
+    result = await call(c, "futurama_character", { name: "Fry", id: 1 });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /only one of name or id/);
+    result = await call(c, "futurama_character", { name: "   " });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /non-empty character name/);
+    result = await call(c, "futurama_character", { name: "Fry", limit: 26 });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, before);
 });

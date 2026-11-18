@@ -13,6 +13,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        // JSR packages are always scoped: @scope/name, lowercase only.
+        jsr: /^@[a-z0-9][a-z0-9_-]*\/[a-z0-9][a-z0-9._-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +168,36 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "jsr") {
+        // JSR meta carries no description and no dependencies — the version
+        // endpoint adds only license and yanked status, so that is the job.
+        const [scope, pkg] = name.slice(1).split("/");
+        const meta = await fetchJson(
+            `https://jsr.io/@${encodeURIComponent(scope)}/${encodeURIComponent(pkg)}/meta.json`,
+        );
+        const resolved = version ?? meta.latest;
+        const entry = meta.versions?.[resolved];
+        if (!entry)
+            throw new Error(
+                version
+                    ? `JSR version ${version} not found for ${name}`
+                    : `JSR package ${name} has no versions`,
+            );
+        const detail = await fetchJson(
+            `https://jsr.io/api/scopes/${encodeURIComponent(scope)}/packages/${encodeURIComponent(pkg)}/versions/${encodeURIComponent(resolved)}`,
+        );
+        return {
+            ecosystem,
+            name,
+            version: resolved,
+            latest: meta.latest,
+            versionCount: Object.keys(meta.versions ?? {}).length,
+            license: detail.license ?? null,
+            yanked: detail.yanked ?? entry.yanked ?? false,
+            publishedAt: entry.createdAt ?? null,
+            registryUrl: `https://jsr.io/@${scope}/${pkg}@${resolved}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +235,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, crates.io sparse-index versions, dependencies and runtime requirements, or JSR (Deno registry) latest/version, license and yanked status. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, JSR latest. JSR metadata carries no description or dependencies. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +245,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "jsr",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

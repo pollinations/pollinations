@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "ecfr_search",
             ].sort(),
         );
     });
@@ -644,4 +645,214 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("eCFR search returns citations, cleaned headings and excerpts with the API total", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "www.ecfr.gov");
+        assert.equal(url.searchParams.get("query"), "climate");
+        assert.equal(url.searchParams.get("page"), "1");
+        assert.equal(url.searchParams.get("per_page"), "2");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        // Verbatim live fixtures from the 2026-11-19 probe (2 results).
+        return Response.json({
+            results: [
+                {
+                    starts_on: "2022-08-01",
+                    ends_on: null,
+                    type: "Section",
+                    hierarchy: {
+                        title: "10",
+                        subtitle: null,
+                        chapter: "II",
+                        subchapter: "D",
+                        part: "460",
+                        subpart: "B",
+                        subject_group: null,
+                        section: "460.101",
+                        appendix: null,
+                    },
+                    hierarchy_headings: {
+                        title: "Title 10",
+                        subtitle: null,
+                        chapter: " Chapter II",
+                        subchapter: "Subchapter D",
+                        part: "Part 460",
+                        subpart: "Subpart B",
+                        subject_group: null,
+                        section: "§ 460.101",
+                        appendix: null,
+                    },
+                    headings: {
+                        title: "Energy",
+                        subtitle: null,
+                        chapter: "Department of Energy",
+                        subchapter: "Energy Conservation",
+                        part: "Energy Conservation Standards for Manufactured Homes",
+                        subpart: "Building Thermal Envelope",
+                        subject_group: null,
+                        section: "<strong>Climate</strong> zones.",
+                        appendix: null,
+                    },
+                    full_text_excerpt:
+                        'requirements applicable to one or more of the <strong>climate</strong> zones set forth in figure 1 to § 460.101<span class="elipsis">…</span>460.101—U.S. States and Territories per <strong>Climate</strong> Zone Zone 1 Zone 2 Zone 3 Alabama Arkansas',
+                    score: 22.944397,
+                    structure_index: 30837,
+                    reserved: false,
+                    removed: false,
+                    change_types: ["effective", "initial"],
+                },
+                {
+                    starts_on: "2025-01-17",
+                    ends_on: null,
+                    type: "Section",
+                    hierarchy: {
+                        title: "7",
+                        subtitle: "B",
+                        chapter: "XXI",
+                        subchapter: null,
+                        part: "2100",
+                        subpart: "F",
+                        subject_group: null,
+                        section: "2100.052",
+                        appendix: null,
+                    },
+                    hierarchy_headings: {
+                        title: "Title 7",
+                        subtitle: "Subtitle B",
+                        chapter: " Chapter XXI",
+                        subchapter: null,
+                        part: "Part 2100",
+                        subpart: "Subpart F",
+                        subject_group: null,
+                        section: "§ 2100.052",
+                        appendix: null,
+                    },
+                    headings: {
+                        title: "Agriculture",
+                        subtitle:
+                            "Regulations of the Department of Agriculture",
+                        chapter:
+                            "Office of Energy and Environmental Policy, Department of Agriculture",
+                        subchapter: null,
+                        part: "Technical Guidelines for <strong>Climate</strong>-Smart Agriculture Crops Used as Biofuel Feedstocks",
+                        subpart:
+                            "<strong>Climate</strong>-Smart Agriculture (CSA) Practice Standards",
+                        subject_group: null,
+                        section: "Cover crop management.",
+                        appendix: null,
+                    },
+                    full_text_excerpt:
+                        "(a) Cover crop standards. To qualify for the cover crop practice under this part, field(s) or management unit(s) must be managed according to the following standards: (1) Cover crop species selection, seedbed preparation, seeding rate(s), seeding date, seeding",
+                    score: 22.848877,
+                    structure_index: 150047,
+                    reserved: false,
+                    removed: false,
+                    change_types: ["effective", "initial"],
+                },
+            ],
+            meta: {
+                current_page: 1,
+                total_pages: 632,
+                total_count: 1264,
+                max_score: 22.944397,
+                description: "Changes to sections matching 'climate'",
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "ecfr_search", {
+        query: "climate",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(fetches, 1);
+    assert.deepEqual(value(result), {
+        query: "climate",
+        total: 1264,
+        results: [
+            {
+                citation: "10 CFR 460.101",
+                type: "Section",
+                title: "Energy",
+                part: "Energy Conservation Standards for Manufactured Homes",
+                section: "Climate zones.",
+                excerpt:
+                    "requirements applicable to one or more of the climate zones set forth in figure 1 to § 460.101…460.101—U.S. States and Territories per Climate Zone Zone 1 Zone 2 Zone 3 Alabama Arkansas",
+                effective_from: "2022-08-01",
+                url: "https://www.ecfr.gov/current/title-10/section-460.101",
+            },
+            {
+                citation: "7 CFR 2100.052",
+                type: "Section",
+                title: "Agriculture",
+                part: "Technical Guidelines for Climate-Smart Agriculture Crops Used as Biofuel Feedstocks",
+                section: "Cover crop management.",
+                excerpt:
+                    "(a) Cover crop standards. To qualify for the cover crop practice under this part, field(s) or management unit(s) must be managed according to the following standards: (1) Cover crop species selection, seedbed preparation, seeding rate(s), seeding date, seeding",
+                effective_from: "2025-01-17",
+                url: "https://www.ecfr.gov/current/title-7/section-2100.052",
+            },
+        ],
+    });
+});
+
+test("eCFR search returns an empty list for no match and rejects bad input before fetching", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async () => {
+        fetches += 1;
+        return Response.json({
+            results: [],
+            meta: {
+                current_page: 1,
+                total_pages: 0,
+                total_count: 0,
+                max_score: null,
+                description: "Changes to sections matching 'zzzqqqxxyy'",
+            },
+        });
+    });
+
+    const c = await client(t);
+    const empty = await call(c, "ecfr_search", {
+        query: "zzzqqqxxyy",
+        limit: 2,
+    });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzqqqxxyy",
+        total: 0,
+        results: [],
+    });
+    assert.equal(fetches, 1);
+
+    const blank = await call(c, "ecfr_search", { query: " " });
+    assert.equal(blank.isError, true);
+    const outOfRange = await call(c, "ecfr_search", {
+        query: "climate",
+        limit: 99,
+    });
+    assert.equal(outOfRange.isError, true);
+    assert.equal(fetches, 1);
+
+    // The handler itself falls back to 5 results when called directly with
+    // an out-of-range limit, bypassing the MCP server's schema check.
+    const { ecfrTools } = await import("./tools/ecfr.js");
+    const stub = async (url) => {
+        fetches += 1;
+        assert.match(url, /per_page=5/);
+        return { results: [], meta: { total_count: 0 } };
+    };
+    const direct = await ecfrTools[0][3]({ query: "climate", limit: 99 }, stub);
+    assert.deepEqual(direct, { query: "climate", total: 0, results: [] });
+    assert.equal(fetches, 2);
 });

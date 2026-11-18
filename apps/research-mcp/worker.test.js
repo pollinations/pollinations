@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "us_debt",
             ].sort(),
         );
     });
@@ -644,4 +645,97 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("us_debt returns the latest total and a dated record, and reports missing dates instead of an empty result", async (t) => {
+    const latest = {
+        record_date: "2026-11-16",
+        debt_held_public_amt: "32852881286592.80",
+        intragov_hold_amt: "7809536109024.63",
+        tot_pub_debt_out_amt: "40662417395617.43",
+        src_line_nbr: "1",
+        record_fiscal_year: "2027",
+        record_fiscal_quarter: "1",
+        record_calendar_year: "2026",
+        record_calendar_quarter: "4",
+        record_calendar_month: "11",
+        record_calendar_day: "16",
+    };
+    const dated = {
+        record_date: "2026-11-13",
+        debt_held_public_amt: "32825322014326.67",
+        intragov_hold_amt: "7791356812765.40",
+        tot_pub_debt_out_amt: "40616678827092.07",
+        src_line_nbr: "1",
+        record_fiscal_year: "2027",
+        record_fiscal_quarter: "1",
+        record_calendar_year: "2026",
+        record_calendar_quarter: "4",
+        record_calendar_month: "11",
+        record_calendar_day: "13",
+    };
+    const fetched = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.fiscaldata.treasury.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        fetched.push(request.url);
+        if (target.searchParams.get("sort") === "-record_date")
+            return Response.json({ data: [latest], meta: { count: 1 } });
+        const date = target.searchParams.get("filter");
+        if (date === "record_date:eq:2026-11-13")
+            return Response.json({ data: [dated], meta: { count: 1 } });
+        if (date === "record_date:eq:2026-11-17")
+            return Response.json({ data: [], meta: { count: 0 } });
+        if (date === "record_date:eq:2020-01-01")
+            return Response.json({
+                data: [{ record_date: "2020-01-01" }],
+                meta: { count: 1 },
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const latestRes = await call(c, "us_debt", {});
+    assert.notEqual(latestRes.isError, true, JSON.stringify(latestRes));
+    assert.deepEqual(value(latestRes), {
+        record_date: "2026-11-16",
+        total_debt_usd: 40662417395617.43,
+        debt_held_by_public_usd: 32852881286592.8,
+        intragovernmental_holdings_usd: 7809536109024.63,
+        fiscal_year: "2027",
+    });
+    const datedRes = await call(c, "us_debt", { date: "2026-11-13" });
+    assert.notEqual(datedRes.isError, true, JSON.stringify(datedRes));
+    assert.deepEqual(value(datedRes), {
+        record_date: "2026-11-13",
+        total_debt_usd: 40616678827092.07,
+        debt_held_by_public_usd: 32825322014326.67,
+        intragovernmental_holdings_usd: 7791356812765.4,
+        fiscal_year: "2027",
+    });
+    const missing = await call(c, "us_debt", { date: "2026-11-17" });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /No US debt record for 2026-11-17/);
+    const malformed = await call(c, "us_debt", { date: "2020-01-01" });
+    assert.equal(malformed.isError, true);
+    assert.match(malformed.content[0].text, /without a total/);
+    assert.deepEqual(fetched, [
+        "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?sort=-record_date&page[size]=1",
+        "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?filter=record_date:eq:2026-11-13&page[size]=1",
+        "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?filter=record_date:eq:2026-11-17&page[size]=1",
+        "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?filter=record_date:eq:2020-01-01&page[size]=1",
+    ]);
+
+    for (const bad of ["2026-02-30", "2026-13-01", "yesterday", "11/13/2026"]) {
+        const res = await call(c, "us_debt", { date: bad });
+        assert.equal(res.isError, true, bad);
+    }
+    assert.equal(fetched.length, 4);
 });

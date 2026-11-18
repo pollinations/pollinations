@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { geekjokesTools } from "./tools/geekjokes.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "geek_joke",
             ].sort(),
         );
     });
@@ -644,4 +646,74 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("geek_joke returns random jokes with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveJokes = [
+        {
+            joke: "The pie scene in 'American Pie' is based on a dare Chuck Norris took when he was younger. However, in Chuck Norris' case, the 'pie' was the molten crater of an active volcano.",
+        },
+        {
+            joke: "Chuck Norris doesn't step on toes. Chuck Norris steps on necks.",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "geek-jokes.sameerkumar.website");
+        assert.equal(target.pathname, "/api");
+        assert.equal(target.searchParams.get("format"), "json");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json(liveJokes[(fetchCalls - 1) % liveJokes.length]);
+    });
+    const c = await client(t);
+    const result = await call(c, "geek_joke", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        jokes: [
+            "The pie scene in 'American Pie' is based on a dare Chuck Norris took when he was younger. However, in Chuck Norris' case, the 'pie' was the molten crater of an active volcano.",
+            "Chuck Norris doesn't step on toes. Chuck Norris steps on necks.",
+        ],
+    });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "geek_joke", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "geek_joke", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = geekjokesTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return {
+            joke: "Chuck Norris roundhouse kicks don't really kill people. They wipe out their entire existence from the space-time continuum.",
+        };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        jokes: [
+            "Chuck Norris roundhouse kicks don't really kill people. They wipe out their entire existence from the space-time continuum.",
+        ],
+    });
+    assert.equal(stubCalls, 1);
+
+    // A joke without text is a clean error.
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({})),
+        /without text/,
+    );
 });

@@ -630,6 +630,31 @@ Pass an `AbortSignal` to cancel the HTTP request; this does not cancel a job
 already running in the durable coordinator. The SDK authenticates with a
 header and does not put the credential in a media URL.
 
+## Realtime Voice & Transcription
+
+Open an OpenAI Realtime WebSocket session on `wss://gen.pollinations.ai/v1/realtime` and pass events through in both directions. Billing settles when the socket closes.
+
+```javascript
+import { createRealtimeSession } from '@pollinations/sdk';
+
+const session = createRealtimeSession({
+  apiKey: 'sk_...', // browser WebSockets pass it as ?key= (documented flow)
+  model: 'openai/gpt-realtime-2.1', // or elevenlabs/scribe-v3-live for transcription
+  onEvent: (event) => console.log(event.type, event),
+});
+await session.ready;
+
+session.send({
+  type: 'session.update',
+  session: { type: 'realtime', instructions: 'Be concise.' },
+});
+session.send({ type: 'input_audio_buffer.append', audio: base64Pcm16 });
+
+session.close();
+```
+
+On Node without a global `WebSocket`, pass one in: `createRealtimeSession({ WebSocket: (await import('ws')).default, ... })`. With the client class: `new Pollinations({ apiKey }).realtime({ onEvent })` injects the key automatically. In React, `useRealtimeSession()` (under `<PolliProvider>`) manages the session lifecycle: `status`, `connect`, `disconnect`, `send`. See `examples/realtime-transcribe.html` for a microphone demo.
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript

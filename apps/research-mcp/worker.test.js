@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "urbandict",
             ].sort(),
         );
     });
@@ -644,4 +645,81 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("urbandict returns the top definition as published and rejects bad inputs before fetch", async (t) => {
+    const entries = [
+        {
+            definition:
+                "The one word that makes people sing [Adele] whenever it is mentioned (usually as a greeting), much to the [chagrin] of the [one] who originally said it.",
+            example:
+                "A: Hello!\r\n[B]: It's me! I was wondering if after all these--\r\nA: *[flips] [table]*",
+            thumbs_up: 0,
+            thumbs_down: 0,
+            author: "Mathtician",
+            written_on: "2018-04-21T00:00:00.000Z",
+        },
+        {
+            definition:
+                "The only word on this [site] that has [nothing to do] with sex or [drugs]!",
+            example:
+                "person 1: hello\r\nPerson 2: hi\r\nPerson 1: [goodbye]\r\nPerson 2: Farewell, and [may] the forces of evil become [confused] in their eternal search for you\r\n*person 1 runs away*",
+            thumbs_up: 0,
+            thumbs_down: 0,
+            author: "pirates rule!!!",
+            written_on: "2007-02-24T00:00:00.000Z",
+        },
+    ];
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.urbandictionary.com");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        if (url.searchParams.get("term") === "zzzznonexistentqqq")
+            return Response.json({ list: [] });
+        assert.equal(url.searchParams.get("term"), "hello");
+        return Response.json({
+            list: entries.map((entry) => ({
+                ...entry,
+                defid: 1,
+                word: "hello",
+                permalink: "https://www.urbandictionary.com/define.php",
+                current_vote: "",
+            })),
+        });
+    });
+    const c = await client(t);
+    const one = await call(c, "urbandict", { term: "hello" });
+    assert.notEqual(one.isError, true, JSON.stringify(one));
+    assert.deepEqual(value(one), {
+        term: "hello",
+        total: 2,
+        definitions: [entries[0]],
+    });
+    const two = await call(c, "urbandict", { term: "hello", limit: 2 });
+    assert.deepEqual(value(two).definitions, entries);
+    const missing = await call(c, "urbandict", {
+        term: "zzzznonexistentqqq",
+    });
+    assert.deepEqual(value(missing), {
+        term: "zzzznonexistentqqq",
+        total: 0,
+        definitions: [],
+    });
+    for (const args of [
+        { term: " " },
+        { term: "hello", limit: 0 },
+        { term: "hello", limit: 6 },
+        { term: "hello", limit: 1.5 },
+    ]) {
+        const result = await call(c, "urbandict", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(result.isError, true, JSON.stringify(args));
+    }
+    assert.equal(count, 3);
 });

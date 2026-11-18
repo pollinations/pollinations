@@ -81,6 +81,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "chocolatey_package",
                 "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
@@ -421,6 +422,8 @@ test("invalid input cannot escape provider paths and makes no upstream request",
     for (const [name, args] of [
         ["package_lookup", { name: "../../bad" }],
         ["package_lookup", { name: "zod", version: "../latest" }],
+        ["chocolatey_package", { id: "../bad" }],
+        ["chocolatey_package", { id: "bad id" }],
         ["hf_model_info", { id: "org/../bad" }],
         ["hf_space_info", { id: "../bad" }],
         ["hf_search_models", { query: "bert", limit: 26 }],
@@ -770,4 +773,67 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+test("Chocolatey lookup resolves the latest version case-insensitively", async (t) => {
+    const feed = (entries) =>
+        `<?xml version="1.0" encoding="utf-8" standalone="yes"?><feed xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom"><title type="text">Packages</title>${entries}</feed>`;
+    const entry = (id, version, title) =>
+        `<entry><id>https://community.chocolatey.org/api/v2/Packages(Id='${id}',Version='${version}')</id><title type="text">${id}</title><summary type="text">summary</summary><m:properties><d:Version>${version}</d:Version><d:Title>${title}</d:Title></m:properties></entry>`;
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Accept, "application/atom+xml");
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.includes("tolower(Id)%20eq%20'firefox'"))
+            return new Response(
+                feed(
+                    entry("Firefox", "141.0.0", "Mozilla Firefox") +
+                        entry("Firefox", "139.0.4", "Mozilla Firefox"),
+                ),
+            );
+        if (url.includes("tolower(Id)%20eq%20'googlechrome'"))
+            // Out of order on purpose: the four-part version must still win.
+            return new Response(
+                feed(
+                    entry("GoogleChrome", "140.0.7339.208", "Google Chrome") +
+                        entry("GoogleChrome", "141.0.7390.37", "Google Chrome"),
+                ),
+            );
+        return new Response(feed(""));
+    });
+    const client = await clientFor(t);
+    // Lowercase input resolves the canonically cased package.
+    const firefox = await call(client, "chocolatey_package", {
+        id: "firefox",
+    });
+    assert.deepEqual(firefox, {
+        id: "Firefox",
+        version: "141.0.0",
+        title: "Mozilla Firefox",
+        registryUrl:
+            "https://community.chocolatey.org/packages/Firefox/141.0.0",
+    });
+    const chrome = await call(client, "chocolatey_package", {
+        id: "googlechrome",
+    });
+    assert.equal(chrome.id, "GoogleChrome");
+    assert.equal(chrome.version, "141.0.7390.37");
+    assert.equal(chrome.title, "Google Chrome");
+    assert.deepEqual(urls, [
+        "https://community.chocolatey.org/api/v2/Packages()?$filter=tolower(Id)%20eq%20'firefox'&$select=Id,Version,Title&$top=5",
+        "https://community.chocolatey.org/api/v2/Packages()?$filter=tolower(Id)%20eq%20'googlechrome'&$select=Id,Version,Title&$top=5",
+    ]);
+    assert.equal(
+        (
+            await client.callTool({
+                name: "chocolatey_package",
+                arguments: { id: "zzzqqqxxyy" },
+            })
+        ).isError,
+        true,
+    );
 });

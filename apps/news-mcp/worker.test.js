@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "iss_now",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -438,4 +439,91 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("iss_now returns live position plus crew from open-notify", async (t) => {
+    const seen = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        seen.push(url.href);
+        assert.equal(url.protocol, "http:");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.pathname === "/iss-now.json")
+            return Response.json({
+                iss_position: { longitude: "70.0099", latitude: "41.8384" },
+                message: "success",
+                timestamp: 1795001279,
+            });
+        return Response.json({
+            people: [
+                { craft: "ISS", name: "Oleg Kononenko" },
+                { craft: "ISS", name: "Butch Wilmore" },
+                { craft: "Tiangong", name: "Li Guangsu" },
+                { craft: "Tiangong", name: "Ye Guangfu" },
+            ],
+            number: 4,
+            message: "success",
+        });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({ name: "iss_now", arguments: {} });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const parsed = JSON.parse(result.content[0].text);
+    assert.equal(parsed.latitude, 41.8384);
+    assert.equal(parsed.longitude, 70.0099);
+    assert.equal(parsed.time, "2026-11-18T11:27:59.000Z");
+    assert.equal(parsed.crew_count, 4);
+    assert.deepEqual(parsed.crew, [
+        { name: "Oleg Kononenko", craft: "ISS" },
+        { name: "Butch Wilmore", craft: "ISS" },
+        { name: "Li Guangsu", craft: "Tiangong" },
+        { name: "Ye Guangfu", craft: "Tiangong" },
+    ]);
+    assert.equal(seen.length, 2);
+    assert.deepEqual(
+        seen.sort(),
+        [
+            "http://api.open-notify.org/astros.json",
+            "http://api.open-notify.org/iss-now.json",
+        ],
+    );
+    const positionOnly = await c.callTool({
+        name: "iss_now",
+        arguments: { crew: false },
+    });
+    assert.notEqual(positionOnly.isError, true, JSON.stringify(positionOnly));
+    const only = JSON.parse(positionOnly.content[0].text);
+    assert.equal(only.latitude, 41.8384);
+    assert.equal("crew_count" in only, false);
+    assert.equal("crew" in only, false);
+    assert.equal(seen.length, 3);
+});
+
+test("iss_now fails cleanly on bad upstream payloads", async (t) => {
+    const c = await client();
+    t.after(() => c.close());
+    let mode = "failure";
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(input);
+        if (url.pathname === "/iss-now.json") {
+            if (mode === "failure")
+                return Response.json({ message: "failure" });
+            return Response.json({
+                iss_position: { longitude: "0", latitude: "91" },
+                message: "success",
+                timestamp: 1795001279,
+            });
+        }
+        return Response.json({ people: [], number: 0, message: "success" });
+    });
+    const failed = await c.callTool({ name: "iss_now", arguments: {} });
+    assert.equal(failed.isError, true);
+    assert.match(failed.content[0].text, /did not return an ISS position/);
+    mode = "bad-lat";
+    const invalid = await c.callTool({ name: "iss_now", arguments: {} });
+    assert.equal(invalid.isError, true);
+    assert.match(invalid.content[0].text, /invalid ISS position/);
 });

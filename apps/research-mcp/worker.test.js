@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "alphafold_prediction",
             ].sort(),
         );
     });
@@ -644,4 +645,65 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("alphafold_prediction returns confidence metrics without the sequence", async (t) => {
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "alphafold.ebi.ac.uk");
+        assert.equal(url.pathname, "/api/prediction/P00533");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname.endsWith("/P00533"))
+            return Response.json([
+                {
+                    modelEntityId: "AF-P00533-F1",
+                    modelCreatedDate: "2025-08-01T00:00:00Z",
+                    globalMetricValue: 75.94,
+                    fractionPlddtVeryLow: 0.228,
+                    fractionPlddtLow: 0.065,
+                    fractionPlddtConfident: 0.233,
+                    fractionPlddtVeryHigh: 0.474,
+                    latestVersion: 6,
+                    sequence:
+                        "MRPSGTAGAALLALLAALCPASRALEEKKVCQGTSNKLTQLGTFEDHFLSLQRMFNNCEVVLGNLEI",
+                    uniprotAccession: "P00533",
+                },
+            ]);
+        return new Response(
+            JSON.stringify({
+                error: "Invalid identifier format. Please use a UniProt accession or a supported AlphaFold DB ID.",
+            }),
+            { status: 400 },
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "alphafold_prediction", {
+        uniprot: "p00533",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        uniprot: "P00533",
+        model: "AF-P00533-F1",
+        mean_plddt: 75.94,
+        fraction_plddt_very_high: 0.474,
+        fraction_plddt_confident: 0.233,
+        fraction_plddt_low: 0.065,
+        fraction_plddt_very_low: 0.228,
+        latest_version: 6,
+        model_created: "2025-08-01T00:00:00Z",
+    });
+    assert.equal("sequence" in value(result), false);
+
+    const bad = await call(c, "alphafold_prediction", {
+        uniprot: "ZZZZZZ",
+    });
+    assert.equal(bad.isError, true);
+    assert.match(bad.content[0].text, /No AlphaFold prediction for ZZZZZZ/);
+
+    const short = await call(c, "alphafold_prediction", { uniprot: "P00" });
+    assert.equal(short.isError, true);
 });

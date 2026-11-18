@@ -364,6 +364,8 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "steam_search",
+                "steam_game",
             ].sort(),
         );
     });
@@ -644,4 +646,158 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("Steam search prices paid games in USD, leaves free games unpriced, and handles empty results", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "store.steampowered.com");
+        assert.equal(target.searchParams.get("cc"), "US");
+        assert.equal(target.searchParams.get("l"), "en");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (target.searchParams.get("term") === "zzzzqqqxxyy")
+            return Response.json({ total: 0, items: [] });
+        return Response.json({
+            total: 10,
+            items: [
+                {
+                    type: "app",
+                    name: "Portal 2",
+                    id: 620,
+                    price: { currency: "USD", initial: 999, final: 999 },
+                    tiny_image:
+                        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/capsule_231x87.jpg",
+                    metascore: "95",
+                },
+                {
+                    type: "app",
+                    name: "Team Fortress 2",
+                    id: 440,
+                    tiny_image:
+                        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440/capsule_231x87.jpg",
+                    metascore: "92",
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "steam_search", { query: "portal" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "portal",
+        total: 10,
+        games: [
+            {
+                id: 620,
+                name: "Portal 2",
+                type: "app",
+                price: {
+                    currency: "USD",
+                    price_usd: 9.99,
+                    discount_percent: 0,
+                },
+                metascore: 95,
+                image_url:
+                    "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/capsule_231x87.jpg",
+            },
+            {
+                id: 440,
+                name: "Team Fortress 2",
+                type: "app",
+                price: null,
+                metascore: 92,
+                image_url:
+                    "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440/capsule_231x87.jpg",
+            },
+        ],
+    });
+
+    const empty = await call(c, "steam_search", { query: "zzzzqqqxxyy" });
+    assert.notEqual(empty.isError, true, JSON.stringify(empty));
+    assert.deepEqual(value(empty), {
+        query: "zzzzqqqxxyy",
+        total: 0,
+        games: [],
+    });
+
+    const blank = await call(c, "steam_search", { query: "   " });
+    assert.equal(blank.isError, true);
+    const badLimit = await call(c, "steam_search", {
+        query: "portal",
+        limit: 0,
+    });
+    assert.equal(badLimit.isError, true);
+});
+
+test("Steam game lookup fetches full English appdetails and rejects unknown ids", async (t) => {
+    mock.method(globalThis, "fetch", async (url, options) => {
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "store.steampowered.com");
+        assert.equal(target.searchParams.get("l"), "en");
+        // Full appdetails on purpose: closed #18102 was rejected partly
+        // because its filters=basic request omitted advertised fields.
+        assert.equal(target.searchParams.get("filters"), null);
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        if (target.searchParams.get("appids") === "999999999")
+            return Response.json({ 999999999: { success: false } });
+        return Response.json({
+            440: {
+                success: true,
+                data: {
+                    name: "Team Fortress 2",
+                    type: "game",
+                    is_free: true,
+                    genres: [
+                        { id: "1", description: "Action" },
+                        { id: "37", description: "Free To Play" },
+                    ],
+                    release_date: { coming_soon: false, date: "10 Oct, 2007" },
+                    metacritic: {
+                        score: 92,
+                        url: "https://www.metacritic.com/game/pc/team-fortress-2",
+                    },
+                    short_description:
+                        "Nine distinct classes provide a broad range of tactical abilities and personalities. Constantly updated with new game modes, maps, equipment and, most importantly, hats!",
+                    header_image:
+                        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440/header.jpg",
+                },
+            },
+        });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "steam_game", { id: 440 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        id: 440,
+        name: "Team Fortress 2",
+        type: "game",
+        is_free: true,
+        price: null,
+        genres: ["Action", "Free To Play"],
+        release_date: "10 Oct, 2007",
+        metascore: 92,
+        short_description:
+            "Nine distinct classes provide a broad range of tactical abilities and personalities. Constantly updated with new game modes, maps, equipment and, most importantly, hats!",
+        short_description_truncated: false,
+        image_url:
+            "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440/header.jpg",
+        url: "https://store.steampowered.com/app/440/",
+    });
+
+    const unknown = await call(c, "steam_game", { id: 999999999 });
+    assert.equal(unknown.isError, true);
+    assert.match(
+        unknown.content[0].text,
+        /No Steam game found for app id 999999999/,
+    );
 });

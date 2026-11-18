@@ -111,7 +111,7 @@ describe("AppUserMenu", () => {
                 ]}
             />,
         );
-        expect(html).not.toContain("Buy Pollen");
+        expect(html).not.toContain("Top up");
         expect(html).toContain("App budget:");
         expect(html).toContain("Permissions");
         expect(html).toContain("Disconnect");
@@ -122,7 +122,7 @@ describe("AppUserMenu", () => {
             html.indexOf("Disconnect"),
         );
         expect(renderMenu()).not.toContain("<hr");
-        expect(renderMenu()).toContain("Buy Pollen");
+        expect(renderMenu()).toContain("Top up");
     });
 
     test("shows the wallet for an unlimited key with usage permission", () => {
@@ -135,8 +135,8 @@ describe("AppUserMenu", () => {
 
         const html = renderMenu();
 
-        expect(html).toContain("Quest pollen:");
-        expect(html).toContain("Paid pollen:");
+        expect(html).toContain("Quest balance:");
+        expect(html).toContain("Paid balance:");
         expect(html).not.toContain("Unlimited");
     });
 
@@ -153,11 +153,11 @@ describe("AppUserMenu", () => {
         expect(renderMenu()).not.toContain("Unlimited");
     });
 
-    test("shows pollen unavailable when the key or wallet hits an outage", () => {
+    test("shows balance unavailable when the key or wallet hits an outage", () => {
         const outage = new PollinationsError("Down", "UNKNOWN_ERROR", 503);
         sdk.key.data = undefined as never;
         sdk.key.error = outage;
-        expect(renderMenu()).toContain("pollen unavailable");
+        expect(renderMenu()).toContain("Balance unavailable");
 
         sdk.key.data = {
             id: "key-1",
@@ -170,10 +170,10 @@ describe("AppUserMenu", () => {
             "NETWORK_ERROR",
             0,
         );
-        expect(renderMenu()).toContain("pollen unavailable");
+        expect(renderMenu()).toContain("Balance unavailable");
 
         sdk.balance.error = new PollinationsError("No", "FORBIDDEN", 403);
-        expect(renderMenu()).not.toContain("pollen unavailable");
+        expect(renderMenu()).not.toContain("Balance unavailable");
     });
 
     test("keeps the app query and hash in outbound return links", () => {

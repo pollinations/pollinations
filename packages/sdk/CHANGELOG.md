@@ -2,6 +2,11 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.34] - 2026-11-19
+
+### Added
+- Realtime voice and transcription sessions: `createRealtimeSession()` and `client.realtime()` open an OpenAI Realtime WebSocket on `wss://gen.pollinations.ai/v1/realtime` and pass events through in both directions, plus the `useRealtimeSession()` React hook and a `examples/realtime-transcribe.html` microphone demo.
+
 ## [5.1.0-alpha.33] - 2026-11-18
 
 ### Changed

@@ -342,6 +342,75 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("UK Parliament search returns party, constituency and house and reports empty results", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        requests.push(url);
+        assert.equal(url.hostname, "members-api.parliament.uk");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.searchParams.get("Name") === "ZzzzzNotAName")
+            return Response.json({ items: [], totalResults: 0 });
+        return Response.json({
+            items: [
+                {
+                    value: {
+                        id: 4514,
+                        nameDisplayAs: "Sir Keir Starmer",
+                        latestParty: { id: 15, name: "Labour" },
+                        latestHouseMembership: {
+                            membershipFrom: "Holborn and St Pancras",
+                            house: 1,
+                        },
+                    },
+                },
+            ],
+            totalResults: 1,
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "uk_mp", { name: "Starmer", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].searchParams.get("Name"), "Starmer");
+    assert.equal(requests[0].searchParams.get("take"), "2");
+    assert.deepEqual(value(result), {
+        name: "Starmer",
+        total: 1,
+        members: [
+            {
+                id: 4514,
+                name: "Sir Keir Starmer",
+                party: "Labour",
+                constituency: "Holborn and St Pancras",
+                house: "Commons",
+            },
+        ],
+    });
+    result = await call(c, "uk_mp", { name: "ZzzzzNotAName" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "ZzzzzNotAName",
+        total: 0,
+        members: [],
+    });
+    const before = requests.length;
+    for (const args of [
+        { name: " " },
+        { name: "Starmer", limit: 0 },
+        { name: "Starmer", limit: 26 },
+    ]) {
+        const bad = await call(c, "uk_mp", args);
+        assert.equal(bad.isError, true, JSON.stringify(bad));
+    }
+    assert.equal(requests.length, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +433,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "uk_mp",
             ].sort(),
         );
     });

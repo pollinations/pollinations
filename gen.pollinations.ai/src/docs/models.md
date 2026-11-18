@@ -113,8 +113,8 @@ carries a `reason`: `token_priced` (billed per token), `provider_metered`
 7-day median charge (`basis: average`), or null until the model has one. Text,
 audio and other models are not quoted.
 
-A quote is an estimate, not the charge: billing uses the usage the provider
-reports.
+`price` is the base price, before any app markup. A quote is an estimate, not
+the charge: billing uses the usage the provider reports.
 
 ### Chat parameters
 

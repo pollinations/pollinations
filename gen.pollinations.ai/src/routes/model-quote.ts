@@ -29,7 +29,7 @@ const QuoteResponseSchema = z.object({
     model: z.string().meta({ description: "Canonical model ID." }),
     price: z.number().nullable().meta({
         description:
-            "Price of one request in US dollars. Null when it cannot be calculated and the model has no 7-day average yet.",
+            "Base price of one request in US dollars, before any app markup. Null when it cannot be calculated and the model has no 7-day average yet.",
     }),
     currency: z.literal("usd"),
     basis: z.enum(["listed", "average"]).optional().meta({

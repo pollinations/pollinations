@@ -660,6 +660,23 @@ test("interpro_entry strips HTML and cite markers, caps the description and name
         assert.equal(init.headers.Authorization, undefined);
         if (url.pathname.includes("IPR999999"))
             return new Response(null, { status: 204 });
+        if (url.pathname.includes("IPR000002"))
+            // Nested-tag fixture: a single regex pass over `<<script>` leaves
+            // `<script>` behind (the CodeQL "incomplete multi-character
+            // sanitization" hole in PR #20161) — the parser must drop it all.
+            return Response.json({
+                metadata: {
+                    accession: "IPR000002",
+                    type: "domain",
+                    member_databases: {},
+                    name: { name: "Nested", short: "Nested" },
+                    description: [
+                        {
+                            text: "<p>Safe text <<script>script>alert(1)</script> more text.</p>",
+                        },
+                    ],
+                },
+            });
         // Trimmed real fixture for IPR000001 (live: 200, 5,133 B, 2.84 s).
         return Response.json({
             metadata: {
@@ -705,6 +722,18 @@ test("interpro_entry strips HTML and cite markers, caps the description and name
     });
     assert.equal(value(result).description.length, 500);
     assert.doesNotMatch(value(result).description, /<p>|cite:/);
+
+    // Nested/malformed tags must leave no markup behind at all: the old
+    // regex strip turned `<<script>` into a live `<script>` tag.
+    const nested = await call(c, "interpro_entry", {
+        accession: "IPR000002",
+    });
+    assert.notEqual(nested.isError, true, JSON.stringify(nested));
+    assert.equal(
+        value(nested).description,
+        "Safe text script>alert(1) more text.",
+    );
+    assert.doesNotMatch(value(nested).description, /</);
 
     const missing = await call(c, "interpro_entry", {
         accession: "IPR999999",

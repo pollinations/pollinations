@@ -6,6 +6,7 @@ import {
     getSimpleTextRequestData,
     requestsAudioOutput,
     withoutAudioParams,
+    withoutCallerMetadata,
 } from "../../src/text/requestUtils.js";
 import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
 
@@ -39,6 +40,23 @@ describe("audio request params", () => {
     it("keeps objects without audio fields unchanged", () => {
         const request = { model: "openai", messages: [] };
         expect(withoutAudioParams(request)).toBe(request);
+    });
+});
+
+describe("caller metadata", () => {
+    it("strips metadata before a non-agent provider call", () => {
+        expect(
+            withoutCallerMetadata({
+                model: "openai",
+                metadata: { user_id: "probe" },
+                temperature: 0.2,
+            }),
+        ).toEqual({ model: "openai", temperature: 0.2 });
+    });
+
+    it("keeps objects without metadata unchanged", () => {
+        const request = { model: "openai" };
+        expect(withoutCallerMetadata(request)).toBe(request);
     });
 });
 

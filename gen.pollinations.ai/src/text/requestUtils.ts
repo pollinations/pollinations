@@ -32,6 +32,15 @@ export function withoutAudioParams<T extends Record<string, unknown>>(
     return rest as T;
 }
 
+/** Caller metadata is for endpoint agents; static and proxy providers reject it. */
+export function withoutCallerMetadata<T extends Record<string, unknown>>(
+    request: T,
+): T {
+    if (!("metadata" in request)) return request;
+    const { metadata: _metadata, ...rest } = request;
+    return rest as T;
+}
+
 export function getChatRequestData(
     body: CreateChatCompletionRequest & Record<string, unknown>,
 ): RequestData {

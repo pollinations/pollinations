@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "f1_results",
             ].sort(),
         );
     });
@@ -644,4 +645,421 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("f1_results returns the winner and top 3 with the finisher count and rejects bad seasons and rounds before any fetch", async (t) => {
+    // Trimmed real fixture: the 2024 Bahrain Grand Prix (20 finishers).
+    // The podium rows are kept complete to prove the projection drops
+    // FastestLap, urls, grid, laps and the rest; rows 4-20 are compact.
+    const bahrainResults = [
+        {
+            number: "1",
+            position: "1",
+            positionText: "1",
+            points: "26",
+            Driver: {
+                driverId: "max_verstappen",
+                permanentNumber: "3",
+                code: "VER",
+                url: "http://en.wikipedia.org/wiki/Max_Verstappen",
+                givenName: "Max",
+                familyName: "Verstappen",
+                dateOfBirth: "1997-09-30",
+                nationality: "Dutch",
+            },
+            Constructor: {
+                constructorId: "red_bull",
+                url: "https://en.wikipedia.org/wiki/Red_Bull_Racing",
+                name: "Red Bull",
+                nationality: "Austrian",
+            },
+            grid: "1",
+            laps: "57",
+            status: "Finished",
+            Time: { millis: "5504742", time: "1:31:44.742" },
+            FastestLap: {
+                rank: "1",
+                lap: "39",
+                Time: { time: "1:32.608" },
+                AverageSpeed: { units: "kph", speed: "210.383" },
+            },
+        },
+        {
+            number: "11",
+            position: "2",
+            positionText: "2",
+            points: "18",
+            Driver: {
+                driverId: "perez",
+                permanentNumber: "11",
+                code: "PER",
+                url: "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                givenName: "Sergio",
+                familyName: "Pérez",
+                dateOfBirth: "1990-01-26",
+                nationality: "Mexican",
+            },
+            Constructor: {
+                constructorId: "red_bull",
+                url: "https://en.wikipedia.org/wiki/Red_Bull_Racing",
+                name: "Red Bull",
+                nationality: "Austrian",
+            },
+            grid: "5",
+            laps: "57",
+            status: "Finished",
+            Time: { millis: "5527199", time: "+22.457" },
+            FastestLap: {
+                rank: "4",
+                lap: "40",
+                Time: { time: "1:34.364" },
+                AverageSpeed: { units: "kph", speed: "206.468" },
+            },
+        },
+        {
+            number: "55",
+            position: "3",
+            positionText: "3",
+            points: "15",
+            Driver: {
+                driverId: "sainz",
+                permanentNumber: "55",
+                code: "SAI",
+                url: "http://en.wikipedia.org/wiki/Carlos_Sainz_Jr.",
+                givenName: "Carlos",
+                familyName: "Sainz",
+                dateOfBirth: "1994-09-01",
+                nationality: "Spanish",
+            },
+            Constructor: {
+                constructorId: "ferrari",
+                url: "https://en.wikipedia.org/wiki/Scuderia_Ferrari",
+                name: "Ferrari",
+                nationality: "Italian",
+            },
+            grid: "4",
+            laps: "57",
+            status: "Finished",
+            Time: { millis: "5529852", time: "+25.110" },
+            FastestLap: {
+                rank: "6",
+                lap: "44",
+                Time: { time: "1:34.507" },
+                AverageSpeed: { units: "kph", speed: "206.156" },
+            },
+        },
+        ...[
+            [
+                "4",
+                "Charles",
+                "Leclerc",
+                "LEC",
+                "Ferrari",
+                "+39.669",
+                "Finished",
+                "12",
+            ],
+            [
+                "5",
+                "George",
+                "Russell",
+                "RUS",
+                "Mercedes",
+                "+46.788",
+                "Finished",
+                "10",
+            ],
+            [
+                "6",
+                "Lando",
+                "Norris",
+                "NOR",
+                "McLaren",
+                "+48.458",
+                "Finished",
+                "8",
+            ],
+            [
+                "7",
+                "Lewis",
+                "Hamilton",
+                "HAM",
+                "Mercedes",
+                "+50.324",
+                "Finished",
+                "6",
+            ],
+            [
+                "8",
+                "Oscar",
+                "Piastri",
+                "PIA",
+                "McLaren",
+                "+56.082",
+                "Finished",
+                "4",
+            ],
+            [
+                "9",
+                "Fernando",
+                "Alonso",
+                "ALO",
+                "Aston Martin",
+                "+1:14.887",
+                "Finished",
+                "2",
+            ],
+            [
+                "10",
+                "Lance",
+                "Stroll",
+                "STR",
+                "Aston Martin",
+                "+1:33.216",
+                "Finished",
+                "1",
+            ],
+            ["11", "Guanyu", "Zhou", "ZHO", "Sauber", "+6.759", "Lapped", "0"],
+            [
+                "12",
+                "Kevin",
+                "Magnussen",
+                "MAG",
+                "Haas F1 Team",
+                "+8.316",
+                "Lapped",
+                "0",
+            ],
+            [
+                "13",
+                "Daniel",
+                "Ricciardo",
+                "RIC",
+                "RB F1 Team",
+                "+8.958",
+                "Lapped",
+                "0",
+            ],
+            [
+                "14",
+                "Yuki",
+                "Tsunoda",
+                "TSU",
+                "RB F1 Team",
+                "+9.482",
+                "Lapped",
+                "0",
+            ],
+            [
+                "15",
+                "Alexander",
+                "Albon",
+                "ALB",
+                "Williams",
+                "+11.886",
+                "Lapped",
+                "0",
+            ],
+            [
+                "16",
+                "Nico",
+                "Hülkenberg",
+                "HUL",
+                "Haas F1 Team",
+                "+17.632",
+                "Lapped",
+                "0",
+            ],
+            [
+                "17",
+                "Esteban",
+                "Ocon",
+                "OCO",
+                "Alpine F1 Team",
+                "+31.450",
+                "Lapped",
+                "0",
+            ],
+            [
+                "18",
+                "Pierre",
+                "Gasly",
+                "GAS",
+                "Alpine F1 Team",
+                "+32.417",
+                "Lapped",
+                "0",
+            ],
+            [
+                "19",
+                "Valtteri",
+                "Bottas",
+                "BOT",
+                "Sauber",
+                "+1:23.230",
+                "Lapped",
+                "0",
+            ],
+            [
+                "20",
+                "Logan",
+                "Sargeant",
+                "SAR",
+                "Williams",
+                "+20.795",
+                "Lapped",
+                "0",
+            ],
+        ].map(
+            ([
+                position,
+                givenName,
+                familyName,
+                code,
+                team,
+                time,
+                status,
+                points,
+            ]) => ({
+                position,
+                points,
+                Driver: { givenName, familyName, code },
+                Constructor: { name: team },
+                Time: { time },
+                status,
+            }),
+        ),
+    ];
+    const bahrainFixture = {
+        MRData: {
+            xmlns: "",
+            series: "f1",
+            url: "https://api.jolpi.ca/ergast/f1/2024/1/results.json",
+            limit: "30",
+            offset: "0",
+            total: "20",
+            RaceTable: {
+                season: "2024",
+                Races: [
+                    {
+                        season: "2024",
+                        round: "1",
+                        url: "https://en.wikipedia.org/wiki/2024_Bahrain_Grand_Prix",
+                        raceName: "Bahrain Grand Prix",
+                        Circuit: {
+                            circuitId: "bahrain",
+                            url: "https://en.wikipedia.org/wiki/Bahrain_International_Circuit",
+                            circuitName: "Bahrain International Circuit",
+                            Location: {
+                                lat: "26.0325",
+                                long: "50.5106",
+                                locality: "Sakhir",
+                                country: "Bahrain",
+                            },
+                        },
+                        date: "2024-03-02",
+                        time: "15:00:00Z",
+                        Results: bahrainResults,
+                    },
+                ],
+            },
+        },
+    };
+
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url.pathname);
+        assert.equal(url.hostname, "api.jolpi.ca");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations\.ai/,
+        );
+        if (
+            url.pathname === "/ergast/f1/2024/1/results.json" ||
+            url.pathname === "/ergast/f1/current/1/results.json"
+        )
+            return Response.json(bahrainFixture);
+        if (url.pathname === "/ergast/f1/1900/1/results.json")
+            return Response.json({
+                MRData: { RaceTable: { season: "1900", Races: [] } },
+            });
+        return new Response("Not found", { status: 404 });
+    });
+
+    const c = await client(t);
+    const result = await call(c, "f1_results", { season: "2024", round: 1 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        season: "2024",
+        round: 1,
+        race_name: "Bahrain Grand Prix",
+        circuit: "Bahrain International Circuit",
+        location: "Sakhir, Bahrain",
+        date: "2024-03-02",
+        time: "15:00:00Z",
+        url: "https://en.wikipedia.org/wiki/2024_Bahrain_Grand_Prix",
+        total_finishers: 20,
+        top_finishers: [
+            {
+                position: 1,
+                driver: "Max Verstappen",
+                driver_code: "VER",
+                constructor: "Red Bull",
+                time: "1:31:44.742",
+                status: "Finished",
+                points: 26,
+            },
+            {
+                position: 2,
+                driver: "Sergio Pérez",
+                driver_code: "PER",
+                constructor: "Red Bull",
+                time: "+22.457",
+                status: "Finished",
+                points: 18,
+            },
+            {
+                position: 3,
+                driver: "Carlos Sainz",
+                driver_code: "SAI",
+                constructor: "Ferrari",
+                time: "+25.110",
+                status: "Finished",
+                points: 15,
+            },
+        ],
+    });
+    assert.deepEqual(requests, ["/ergast/f1/2024/1/results.json"]);
+
+    // Season omitted: the tool fetches the current season.
+    const current = await call(c, "f1_results", { round: 1 });
+    assert.notEqual(current.isError, true, JSON.stringify(current));
+    assert.equal(requests.at(-1), "/ergast/f1/current/1/results.json");
+
+    // An unknown season answers 200 with no races; the tool reports it.
+    assert.equal(
+        (await call(c, "f1_results", { season: "1900", round: 1 })).isError,
+        true,
+    );
+
+    // Bad seasons and rounds are rejected before any fetch.
+    const before = requests.length;
+    for (const args of [
+        { season: "2024", round: 0 },
+        { season: "2024", round: 25 },
+        { season: "2024", round: 1.5 },
+        { season: "abcd", round: 1 },
+        { season: "1800", round: 1 },
+        { season: "   ", round: 1 },
+        { season: "2024" },
+    ])
+        assert.equal(
+            (await call(c, "f1_results", args)).isError,
+            true,
+            JSON.stringify(args),
+        );
+    assert.equal(requests.length, before);
 });

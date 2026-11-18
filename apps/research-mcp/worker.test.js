@@ -342,6 +342,113 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("PaleoBioDB returns the exact taxon with decoded rank and extant flag", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (url, options) => {
+        fetches += 1;
+        const request = new Request(url, options);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "paleobiodb.org");
+        assert.equal(target.pathname, "/data1.2/taxa/list.json");
+        assert.equal(target.searchParams.get("show"), "attr");
+        assert.equal(request.redirect, "follow");
+        const headers = request.headers;
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        const name = target.searchParams.get("name");
+        if (name === "Panthera")
+            return Response.json({
+                records: [
+                    {
+                        oid: "txn:41066",
+                        rnk: 5,
+                        nam: "Panthera",
+                        att: "Oken 1816",
+                        par: "txn:57432",
+                        rid: "ref:6294",
+                        ext: "1",
+                        noc: 431,
+                    },
+                ],
+            });
+        if (name === "Panthera leo")
+            return Response.json({
+                records: [
+                    {
+                        oid: "txn:46521",
+                        rnk: 3,
+                        nam: "Panthera leo",
+                        att: "(Linnaeus 1758)",
+                        par: "txn:41066",
+                        ext: "1",
+                        noc: 129,
+                    },
+                ],
+            });
+        if (name === "Tyrannosaurus")
+            return Response.json({
+                records: [
+                    {
+                        oid: "txn:99999",
+                        rnk: 5,
+                        nam: "Tyrannosaurus",
+                        att: "Osborn 1905",
+                        par: "txn:92294",
+                        ext: "0",
+                        noc: 85,
+                    },
+                ],
+            });
+        return Response.json({
+            warnings: [
+                `The name '${name}' did not match any name in the taxonomy table`,
+            ],
+            records: [],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "paleobiodb_taxon", {
+        name: "Panthera",
+        limit: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Panthera",
+        total: 1,
+        taxa: [
+            {
+                name: "Panthera",
+                authority: "Oken 1816",
+                rank: "genus",
+                rank_code: 5,
+                taxon_id: "txn:41066",
+                parent_id: "txn:57432",
+                child_count: 431,
+                extant: true,
+            },
+        ],
+    });
+    result = await call(c, "paleobiodb_taxon", { name: "Panthera leo" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).taxa[0].rank, "species");
+    assert.equal(value(result).taxa[0].child_count, 129);
+    result = await call(c, "paleobiodb_taxon", { name: "Tyrannosaurus" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).taxa[0].extant, false);
+    result = await call(c, "paleobiodb_taxon", { name: "Zzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        query: "Zzzqqqxxyy",
+        total: 0,
+        taxa: [],
+    });
+    const before = fetches;
+    result = await call(c, "paleobiodb_taxon", { name: " " });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +471,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "paleobiodb_taxon",
             ].sort(),
         );
     });

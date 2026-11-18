@@ -102,7 +102,11 @@ describe("reasoning_effort model wiring", () => {
         expect(findModelByName("inkling")?.transform).toBeUndefined();
     });
 
-    it.each(["deepseek/deepseek-v4-flash", "deepseek/deepseek-v4.1-flash"])(
+    it.each([
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4.1-flash",
+        "deepseek/deepseek-v4.1-flash-1017",
+    ])(
         "maps low and xhigh onto the Azure levels accepted by %s",
         async (modelName) => {
             const transform = findModelByName(modelName)?.transform;

@@ -609,7 +609,7 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4.1-flash-1017",
         config: portkeyConfig["DeepSeek-V4.1-Flash-1017"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekThinking,
     },
     {
         name: "deepseek/deepseek-v4.1-flash-1017:fireworks",

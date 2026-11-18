@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { sudokuTools } from "./tools/sudoku.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "sudoku_puzzle",
             ].sort(),
         );
     });
@@ -644,4 +646,119 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("sudoku_puzzle returns fresh puzzles with difficulty and never the solution", async (t) => {
+    // Verbatim live fixtures (probe_fields.json, probe_diff_1.json). The first
+    // record carries the upstream solution too, proving the tool drops it.
+    const liveGrids = [
+        {
+            value: [
+                [0, 0, 0, 4, 0, 6, 0, 5, 0],
+                [0, 0, 0, 0, 0, 7, 8, 6, 0],
+                [0, 7, 0, 5, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 3, 0, 0, 0],
+                [9, 0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 3, 0, 6, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 9, 6, 0, 3, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 4, 1],
+            ],
+            solution: [
+                [2, 9, 3, 4, 8, 6, 1, 5, 7],
+                [1, 4, 5, 2, 3, 7, 8, 6, 9],
+                [6, 7, 8, 5, 1, 9, 2, 3, 4],
+                [4, 8, 1, 7, 5, 3, 9, 2, 6],
+                [9, 5, 6, 8, 2, 4, 7, 1, 3],
+                [7, 3, 2, 6, 9, 1, 4, 8, 5],
+                [3, 2, 7, 1, 4, 5, 6, 9, 8],
+                [5, 1, 4, 9, 6, 8, 3, 7, 2],
+                [8, 6, 9, 3, 7, 2, 5, 4, 1],
+            ],
+            difficulty: "Hard",
+        },
+        {
+            value: [
+                [5, 6, 3, 0, 4, 0, 0, 0, 0],
+                [0, 7, 0, 0, 5, 6, 0, 0, 0],
+                [0, 0, 0, 3, 8, 1, 5, 0, 6],
+                [0, 0, 4, 0, 7, 8, 0, 6, 0],
+                [0, 1, 7, 5, 6, 2, 0, 0, 8],
+                [0, 0, 0, 0, 3, 9, 7, 0, 0],
+                [7, 5, 0, 8, 9, 3, 4, 0, 0],
+                [0, 3, 0, 0, 2, 0, 8, 9, 0],
+                [0, 0, 0, 7, 1, 0, 6, 5, 3],
+            ],
+            difficulty: "Easy",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "sudoku-api.vercel.app");
+        assert.equal(target.pathname, "/api/dosuku");
+        assert.equal(
+            target.searchParams.get("query"),
+            "{newboard(limit:1){grids{value,difficulty}}}",
+        );
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            newboard: {
+                grids: [liveGrids[(fetchCalls - 1) % liveGrids.length]],
+            },
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "sudoku_puzzle", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        limit: 2,
+        puzzles: [
+            { grid: liveGrids[0].value, difficulty: "Hard" },
+            { grid: liveGrids[1].value, difficulty: "Easy" },
+        ],
+    });
+    // The solution never comes back, even though the upstream sent one.
+    assert.equal("solution" in value(result).puzzles[0], false);
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "sudoku_puzzle", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "sudoku_puzzle", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = sudokuTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return { newboard: { grids: [liveGrids[1]] } };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        puzzles: [{ grid: liveGrids[1].value, difficulty: "Easy" }],
+    });
+    assert.equal(stubCalls, 1);
+
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({ newboard: { grids: [] } })),
+        /no puzzle/,
+    );
+    await assert.rejects(
+        run({ limit: 1 }, async () => ({
+            newboard: { grids: [{ value: [[1, 2]] }] },
+        })),
+        /malformed/,
+    );
 });

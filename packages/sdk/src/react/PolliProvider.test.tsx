@@ -60,6 +60,23 @@ describe("PolliProvider", () => {
         expect(warn.mock.calls[0][0]).not.toContain("sk_secret_test");
     });
 
+    it("does not warn when no appKey is set", async () => {
+        stubWindow("http://127.0.0.1:4178/");
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+        await act(async () => {
+            create(
+                <PolliProvider storage={memoryStorage()}>
+                    <div />
+                </PolliProvider>,
+            );
+        });
+
+        expect(warn).not.toHaveBeenCalled();
+        expect(info).not.toHaveBeenCalled();
+    });
+
     it("starts PKCE with a stable callback and remembers the current route", async () => {
         const win = stubWindow("https://app.example/?view=models#/details");
         const storage = memoryStorage();

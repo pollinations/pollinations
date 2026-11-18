@@ -625,6 +625,76 @@ describe("media.pollinations.ai", () => {
         expect(dup.id).not.toBe(upload.id);
     });
 
+    it("serves a single byte range and rejects a range past the end", async () => {
+        const uploadRes = await uploadViaForm(VALID_KEY);
+        expect(uploadRes.status).toBe(200);
+        const upload = uploadRes.body as UploadResponse;
+        const url = `https://media.pollinations.ai/${upload.id}`;
+        const size = TINY_PNG.byteLength;
+
+        const partial = await SELF.fetch(url, {
+            headers: { Range: "bytes=0-3" },
+        });
+        expect(partial.status).toBe(206);
+        expect(partial.headers.get("content-range")).toBe(`bytes 0-3/${size}`);
+        expect(partial.headers.get("content-length")).toBe("4");
+        expect(partial.headers.get("accept-ranges")).toBe("bytes");
+        expect(Array.from(new Uint8Array(await partial.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(0, 4)),
+        );
+
+        const tail = await SELF.fetch(url, {
+            headers: { Range: `bytes=${size - 4}-` },
+        });
+        expect(tail.status).toBe(206);
+        expect(tail.headers.get("content-range")).toBe(
+            `bytes ${size - 4}-${size - 1}/${size}`,
+        );
+        expect(Array.from(new Uint8Array(await tail.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(-4)),
+        );
+
+        const suffix = await SELF.fetch(url, {
+            headers: { Range: "bytes=-4" },
+        });
+        expect(suffix.status).toBe(206);
+        expect(Array.from(new Uint8Array(await suffix.arrayBuffer()))).toEqual(
+            Array.from(TINY_PNG.slice(-4)),
+        );
+
+        const pastEnd = await SELF.fetch(url, {
+            headers: { Range: `bytes=${size}-` },
+        });
+        expect(pastEnd.status).toBe(416);
+        expect(pastEnd.headers.get("content-range")).toBe(`bytes */${size}`);
+        expect(await pastEnd.text()).toBe("");
+
+        // Malformed, reversed and multi-range headers are ignored, not
+        // rejected: the whole file is a valid answer to an unusable Range.
+        for (const range of ["pages=1-2", "bytes=0-1,3-4", "bytes=5-2"]) {
+            const full = await SELF.fetch(url, {
+                headers: { Range: range },
+            });
+            expect(full.status).toBe(200);
+            expect(new Uint8Array(await full.arrayBuffer())).toEqual(TINY_PNG);
+        }
+
+        const head = await SELF.fetch(url, {
+            method: "HEAD",
+            headers: { Range: "bytes=0-3" },
+        });
+        expect(head.status).toBe(200);
+        expect(head.headers.get("content-range")).toBeNull();
+        expect(head.headers.get("content-length")).toBe(String(size));
+        expect(head.headers.get("x-content-size")).toBe(String(size));
+        expect(await head.text()).toBe("");
+
+        // Full responses advertise range support too.
+        const full = await SELF.fetch(url);
+        expect(full.headers.get("accept-ranges")).toBe("bytes");
+        await full.arrayBuffer();
+    });
+
     it("streams a raw upload and preserves its file metadata", async () => {
         const log = vi.spyOn(console, "log");
         const uploadRes = await SELF.fetch(
@@ -1476,6 +1546,44 @@ describe("media.pollinations.ai", () => {
         expect(getRes.status).toBe(200);
         expect(body.length).toBe(TINY_PNG.length);
         expect(bucket.putCount).toBe(2);
+    });
+
+    it("real R2 aged seek skips rewrite and byte zero refreshes", async () => {
+        const id = "range-real-r2-probe";
+        const bytes = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
+        await env.MEDIA_BUCKET.put(id, bytes);
+        const put = vi.spyOn(env.MEDIA_BUCKET, "put");
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 16 * 86400000);
+        try {
+            for (const [range, count] of [
+                ["bytes=4-7", 0],
+                ["bytes=0-3", 1],
+            ] as const) {
+                const ctx = createExecutionContext();
+                const response = await app.fetch(
+                    new Request(`https://media.pollinations.ai/${id}`, {
+                        headers: { Range: range },
+                    }),
+                    env,
+                    ctx,
+                );
+                expect(response.status).toBe(206);
+                await response.arrayBuffer();
+                await waitOnExecutionContext(ctx);
+                expect(put).toHaveBeenCalledTimes(count);
+            }
+            const fullCtx = createExecutionContext();
+            const full = await app.fetch(
+                new Request(`https://media.pollinations.ai/${id}`),
+                env,
+                fullCtx,
+            );
+            expect(full.status).toBe(200);
+            expect(new Uint8Array(await full.arrayBuffer())).toEqual(bytes);
+            await waitOnExecutionContext(fullCtx);
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 
     it("identical uploads get distinct ids", async () => {

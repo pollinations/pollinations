@@ -1,6 +1,9 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import {
+    DEFAULT_R2_TTL_REFRESH_AGE_MS,
+    refreshR2ObjectTtl,
+} from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
@@ -137,12 +140,98 @@ export async function readMedia(
     id: string,
     ctx: Pick<ExecutionContext, "waitUntil">,
     method = "GET",
+    rangeHeader?: string,
 ): Promise<Response | null> {
-    const object = await (method === "HEAD"
+    const isHead = method === "HEAD";
+
+    // Range requests need the full size before fetching bytes, so read the
+    // metadata first and ask R2 for only the wanted slice. Plain GETs keep
+    // their single-operation path.
+    if (method === "GET" && rangeHeader) {
+        const meta = await env.MEDIA_BUCKET.head(id);
+        if (!meta) return null;
+        const headers = mediaHeaders(meta, id);
+        const range = requestedByteRange(rangeHeader, meta.size);
+        if (range === "unsatisfiable") {
+            headers.set("Content-Range", `bytes */${meta.size}`);
+            headers.set("Content-Length", "0");
+            return new Response(null, { status: 416, headers });
+        }
+        if (range) {
+            headers.set(
+                "Content-Range",
+                `bytes ${range.offset}-${range.offset + range.length - 1}/${meta.size}`,
+            );
+            headers.set("Content-Length", range.length.toString());
+            const ranged = await env.MEDIA_BUCKET.get(id, {
+                range: { offset: range.offset, length: range.length },
+            });
+            if (!ranged) return null;
+            // Refresh retention when playback starts, not on every seek.
+            if (
+                range.offset === 0 &&
+                Date.now() - meta.uploaded.getTime() >=
+                    DEFAULT_R2_TTL_REFRESH_AGE_MS
+            ) {
+                ctx.waitUntil(refreshAgedMedia(env, id));
+            }
+            return new Response(ranged.body, { status: 206, headers });
+        }
+    }
+
+    const object = await (isHead
         ? env.MEDIA_BUCKET.head(id)
         : env.MEDIA_BUCKET.get(id));
     if (!object) return null;
 
+    const headers = mediaHeaders(object, id);
+    if (!("body" in object)) {
+        headers.set("Content-Length", object.size.toString());
+        return new Response(null, { headers });
+    }
+    const body = refreshR2ObjectTtl(
+        env.MEDIA_BUCKET,
+        id,
+        object as R2ObjectBody,
+        (promise) => ctx.waitUntil(promise),
+        (error) => console.error("Media TTL refresh failed", error),
+    );
+    return new Response(body, { headers });
+}
+
+/**
+ * One byte range from a Range header. "unsatisfiable" is a well-formed range
+ * that starts past the end; undefined means the header belongs to a case the
+ * RFC allows ignoring (absent, malformed, or several ranges).
+ */
+function requestedByteRange(
+    header: string | undefined,
+    size: number,
+): { offset: number; length: number } | "unsatisfiable" | undefined {
+    const match = header?.trim().match(/^bytes=(\d*)-(\d*)$/i);
+    if (!match) return undefined;
+    const [, startText, endText] = match;
+    if (startText === "" && endText === "") return undefined;
+
+    if (startText === "") {
+        const suffix = Number(endText);
+        if (!Number.isSafeInteger(suffix)) return undefined;
+        if (suffix === 0 || size === 0) return "unsatisfiable";
+        const length = Math.min(suffix, size);
+        return { offset: size - length, length };
+    }
+
+    const start = Number(startText);
+    if (!Number.isSafeInteger(start)) return undefined;
+    if (start >= size) return "unsatisfiable";
+    if (endText === "") return { offset: start, length: size - start };
+
+    const end = Number(endText);
+    if (!Number.isSafeInteger(end) || end < start) return undefined;
+    return { offset: start, length: Math.min(end, size - 1) - start + 1 };
+}
+
+function mediaHeaders(object: R2Object, id: string): Headers {
     const contentType =
         object.httpMetadata?.contentType || "application/octet-stream";
     const disposition = opensInline(contentType) ? "inline" : "attachment";
@@ -151,6 +240,7 @@ export async function readMedia(
         "Content-Type": contentType,
         "Cache-Control":
             object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+        "Accept-Ranges": "bytes",
         "X-Content-Id": id,
         "X-Content-Size": object.size.toString(),
         Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
@@ -169,18 +259,28 @@ export async function readMedia(
         "Content-Security-Policy",
         "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     );
-    if (!("body" in object)) {
-        headers.set("Content-Length", object.size.toString());
-        return new Response(null, { headers });
-    }
-    const body = refreshR2ObjectTtl(
-        env.MEDIA_BUCKET,
-        id,
-        object as R2ObjectBody,
-        (promise) => ctx.waitUntil(promise),
-        (error) => console.error("Media TTL refresh failed", error),
-    );
-    return new Response(body, { headers });
+    return headers;
+}
+
+/** Rewrite an aged object from a full read so its lifecycle age resets. */
+async function refreshAgedMedia(
+    env: MediaStorageEnv,
+    id: string,
+): Promise<void> {
+    const object = await env.MEDIA_BUCKET.get(id);
+    if (!object) return;
+    const upload = new FixedLengthStream(object.size);
+    await Promise.all([
+        env.MEDIA_BUCKET.put(id, upload.readable, {
+            httpMetadata: object.httpMetadata,
+            customMetadata: object.customMetadata,
+            storageClass: object.storageClass,
+            // A concurrent delete or replacement must win, or the refresh
+            // would resurrect an object no API can delete any more.
+            onlyIf: { etagMatches: object.etag },
+        }),
+        object.body.pipeTo(upload.writable),
+    ]);
 }
 
 export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
@@ -191,8 +291,12 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
         return uploadUnlistedMedia(this.env, body, input);
     }
 
-    get(id: string): Promise<Response | null> {
-        return readMedia(this.env, id, this.ctx);
+    get(
+        id: string,
+        rangeHeader?: string,
+        method = "GET",
+    ): Promise<Response | null> {
+        return readMedia(this.env, id, this.ctx, method, rangeHeader);
     }
 
     async has(id: string): Promise<boolean> {

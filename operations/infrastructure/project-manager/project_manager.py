@@ -58,7 +58,7 @@ PR_TYPES = ["Bug", "Feature", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
 # Workflow sources, in order: an issue with the label, or a PR that closes one.
-LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "QUEST"), ("Quests", "POLLEN-QUEST")]
+LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 # Same date as REWARDS_START in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.

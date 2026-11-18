@@ -26,7 +26,7 @@ concurrency:
 jobs:
   organize:
     # Reclassify after a workflow label changes the source.
-    if: github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST' || github.event.label.name == 'POLLEN-QUEST'
+    if: github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST'
     runs-on: ubuntu-latest
     permissions:
       issues: write

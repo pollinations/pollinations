@@ -10,7 +10,10 @@ import {
     createOpenRouterGoogleSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
+import {
+    createReasoningEffortTransform,
+    remapReasoningEffort,
+} from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
 import { mediaToBedrock } from "./transforms/mediaToBedrock.ts";
@@ -25,6 +28,17 @@ import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
+// reasoning_effort values these providers 400 on, mapped to the nearest level
+// they accept (probed 2026-11-15, #19784).
+const effortMaxToXhigh = remapReasoningEffort({ max: "xhigh" });
+const effortNoneToLow = remapReasoningEffort({ none: "low" });
+const gptOssEffort = remapReasoningEffort({
+    none: "low",
+    xhigh: "high",
+    max: "high",
+});
+const grok46Effort = remapReasoningEffort({ none: "low", max: "xhigh" });
+const kimiK26Effort = remapReasoningEffort({ xhigh: "max" });
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Fireworks caches matching prefixes automatically and rejects Anthropic markers.
@@ -55,6 +69,15 @@ const mandatoryReasoningWithoutCacheControl = pipe(
 );
 // Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
 const stripReasoning = createReasoningEffortTransform("strip");
+// Azure Mistral rejects OpenAI's developer role; it means the same as system.
+const developerToSystem: TransformFn = (messages, options) => ({
+    messages: messages.map((message) =>
+        message.role === "developer"
+            ? { ...message, role: "system" as const }
+            : message,
+    ),
+    options,
+});
 // Claude families differ: Haiku 4.5 uses manual budget thinking; Sonnet/Opus
 // 4.6+ use adaptive + output_config.effort.
 const claudeManualThinking = createClaudeThinkingTransform("budget");
@@ -214,7 +237,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5-nano",
@@ -237,7 +260,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
         useResponsesApi: true,
     },
     {
@@ -249,6 +272,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
+        transform: gptOssEffort,
     },
     {
         name: "openai/gpt-5.4:aws",
@@ -273,12 +297,12 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5.5:aws",
@@ -343,7 +367,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortNoneToLow),
         useResponsesApi: true,
     },
     {
@@ -361,7 +385,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortNoneToLow),
         useResponsesApi: true,
     },
     {
@@ -658,7 +682,7 @@ const models: ModelDefinition[] = [
             (usesGrokReasoning(options)
                 ? portkeyConfig["grok-4-20-reasoning"]
                 : portkeyConfig["grok-4-20-non-reasoning"])(),
-        transform: grokTransform,
+        transform: pipe(effortMaxToXhigh, grokTransform),
     },
     {
         name: "x-ai/grok-4.20:openrouter:xai-zdr",
@@ -668,6 +692,7 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.3",
         config: portkeyConfig["grok-4.3"],
+        transform: effortMaxToXhigh,
     },
     {
         name: "x-ai/grok-4.3:openrouter:xai-zdr",
@@ -676,6 +701,7 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6",
         config: portkeyConfig["grok-4.6"],
+        transform: grok46Effort,
     },
     {
         name: "x-ai/grok-4.7",
@@ -1147,6 +1173,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
+            effortMaxToXhigh,
         ),
     },
     {
@@ -1158,7 +1185,7 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k2.6",
         config: portkeyConfig["Kimi-K2.6"],
-        transform: fireworksThinking,
+        transform: pipe(fireworksThinking, kimiK26Effort),
     },
     {
         name: "moonshotai/kimi-k2.6:deepinfra",
@@ -1489,8 +1516,8 @@ const models: ModelDefinition[] = [
     {
         name: "mistralai/mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
-        // Azure deployment 500s on reasoning_effort.
-        transform: stripReasoning,
+        // Azure deployment 500s on reasoning_effort and rejects developer.
+        transform: pipe(stripReasoning, developerToSystem),
     },
     {
         name: "mistralai/mistral-large-3:aws",

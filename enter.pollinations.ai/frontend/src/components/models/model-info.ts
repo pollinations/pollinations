@@ -24,6 +24,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Kandinsky Lab": "kandinsky",
     Krea: "krea",
     Kuaishou: "kling",
+    Lightricks: "lightricks",
     "Liquid AI": "liquid-ai",
     "Mirelo AI": "mirelo",
     Lykon: "lykon",

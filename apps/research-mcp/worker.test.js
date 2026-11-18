@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "nationality_predict",
             ].sort(),
         );
     });
@@ -644,4 +645,71 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("nationality_predict predicts countries from a name and rejects blanks before any fetch", async (t) => {
+    let count = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.nationalize.io");
+        assert.equal(url.href, "https://api.nationalize.io/?name=michael");
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        return Response.json({
+            count: 2540137,
+            name: "michael",
+            country: [
+                { country_id: "US", probability: 0.271268 },
+                { country_id: "DE", probability: 0.100369 },
+                { country_id: "GB", probability: 0.078091 },
+                { country_id: "AU", probability: 0.043048 },
+                { country_id: "CA", probability: 0.042205 },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "nationality_predict", { name: "michael" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "michael",
+        sample_count: 2540137,
+        countries: [
+            { country_id: "US", probability: 0.271268 },
+            { country_id: "DE", probability: 0.100369 },
+            { country_id: "GB", probability: 0.078091 },
+        ],
+        is_prediction: true,
+    });
+
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return Response.json({ count: 0, name: "zzzznotaname", country: [] });
+    });
+    const unknown = await call(c, "nationality_predict", {
+        name: "zzzznotaname",
+    });
+    assert.notEqual(unknown.isError, true, JSON.stringify(unknown));
+    assert.deepEqual(value(unknown), {
+        name: "zzzznotaname",
+        sample_count: 0,
+        countries: [],
+        is_prediction: true,
+    });
+
+    const before = count;
+    for (const args of [
+        { name: " " },
+        { name: "" },
+        { name: "michael", limit: 0 },
+        { name: "michael", limit: 11 },
+    ]) {
+        const bad = await call(c, "nationality_predict", args).catch(() => ({
+            isError: true,
+        }));
+        assert.equal(bad.isError, true);
+    }
+    assert.equal(count, before);
 });

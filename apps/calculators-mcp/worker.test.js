@@ -73,6 +73,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "iban_validate",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -397,6 +398,128 @@ test("currency tools use fixed public rates without forwarding caller credential
         { USD: 1.0299 },
     );
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
+});
+
+test("iban_validate returns bank details from OpenIBAN without forwarding caller credentials", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const target = new URL(url);
+        requests.push(target);
+        assert.equal(target.hostname, "openiban.com");
+        assert.equal(new Headers(options.headers).get("authorization"), null);
+        assert.equal(new Headers(options.headers).get("cookie"), null);
+        assert.ok(options.signal instanceof AbortSignal);
+        assert.equal(target.searchParams.get("getBIC"), "true");
+        const iban = target.pathname.split("/").pop();
+        if (iban === "FR1420041010050500013M02606")
+            return new Response("directory down", { status: 500 });
+        // Trimmed live fixtures: the DE record with full bank data, the GB
+        // record whose bank lookup comes back empty, and a wrong check pair.
+        if (iban === "GB29NWBK60161331926819")
+            return Response.json({
+                valid: true,
+                messages: ["Cannot get BIC. No information available."],
+                iban,
+                bankData: { bankCode: "", name: "" },
+                checkResults: {},
+            });
+        if (iban === "DE89370400440532013001")
+            return Response.json({
+                valid: false,
+                messages: ["Validation failed."],
+                iban,
+                bankData: {
+                    bankCode: "37040044",
+                    name: "Commerzbank",
+                    zip: "50447",
+                    city: "Köln",
+                    bic: "COBADEFFXXX",
+                },
+                checkResults: {},
+            });
+        return Response.json({
+            valid: true,
+            messages: [],
+            iban,
+            bankData: {
+                bankCode: "37040044",
+                name: "Commerzbank",
+                zip: "50447",
+                city: "Köln",
+                bic: "COBADEFFXXX",
+            },
+            checkResults: {},
+        });
+    });
+    const client = await clientFor(t);
+
+    // Spaced and lowercase, as IBANs are written by hand — normalised before
+    // the fetch, so the request carries the plain uppercase form.
+    assert.deepEqual(
+        await call(client, "iban_validate", {
+            iban: "de89 3704 0044 0532 0130 00",
+        }),
+        {
+            valid: true,
+            iban: "DE89370400440532013000",
+            bank_name: "Commerzbank",
+            bic: "COBADEFFXXX",
+            city: "Köln",
+        },
+    );
+    assert.equal(requests[0].pathname, "/validate/DE89370400440532013000");
+
+    // A valid IBAN whose bank the directory does not know: valid, but the
+    // bank fields come back null instead of failing the lookup.
+    assert.deepEqual(
+        await call(client, "iban_validate", {
+            iban: "GB29NWBK60161331926819",
+        }),
+        {
+            valid: true,
+            iban: "GB29NWBK60161331926819",
+            bank_name: null,
+            bic: null,
+            city: null,
+        },
+    );
+
+    // A wrong check pair is a result, not an error — and the bank is still
+    // identifiable from the IBAN structure.
+    assert.deepEqual(
+        await call(client, "iban_validate", {
+            iban: "DE89370400440532013001",
+        }),
+        {
+            valid: false,
+            iban: "DE89370400440532013001",
+            bank_name: "Commerzbank",
+            bic: "COBADEFFXXX",
+            city: "Köln",
+        },
+    );
+
+    // A malformed value is rejected before any fetch, and a directory
+    // failure surfaces as a tool error.
+    assert.equal(
+        (
+            await client.callTool({
+                name: "iban_validate",
+                arguments: { iban: "GB82" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(
+        (
+            await client.callTool({
+                name: "iban_validate",
+                arguments: { iban: "FR1420041010050500013M02606" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests.length, 4);
 });
 
 test("hash_text digests UTF-8 text with Web Crypto and rejects empty input", async (t) => {

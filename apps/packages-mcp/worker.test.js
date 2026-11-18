@@ -6,7 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
-import { imageTags } from "./tools/docker.js";
+import { imageTags, searchRepositories } from "./tools/docker.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
 
@@ -82,6 +82,7 @@ for (const modern of [false, true])
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
                 "container_image_tags",
+                "dockerhub_search",
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
@@ -770,4 +771,87 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+test("Docker Hub search honours page_size, reports the catalog count and finds nothing cleanly", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        assert.match(init.headers["User-Agent"], /hello@pollinations.ai/);
+        assert.equal(init.redirect, "follow");
+        assert.ok(init.signal instanceof AbortSignal);
+        if (url.includes("query=zzzqqqxxyy"))
+            return Response.json({ count: 0, next: null, results: [] });
+        return Response.json({
+            count: 296358,
+            results: [
+                {
+                    repo_name: "nginx",
+                    short_description: "Official build of Nginx.",
+                    star_count: 21422,
+                    pull_count: 13609163012,
+                    is_official: true,
+                    is_automated: false,
+                    repo_owner: "library",
+                },
+                {
+                    repo_name: "nginx/nginx-ingress",
+                    short_description: "NGINX Ingress Controller",
+                    star_count: 124,
+                    pull_count: 1088819097,
+                    is_official: false,
+                    is_automated: false,
+                    repo_owner: "nginx",
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const found = await call(client, "dockerhub_search", {
+        query: "nginx",
+        limit: 2,
+    });
+    await call(client, "dockerhub_search", { query: "nginx" });
+    assert.deepEqual(urls, [
+        "https://hub.docker.com/v2/search/repositories/?query=nginx&page_size=2",
+        "https://hub.docker.com/v2/search/repositories/?query=nginx&page_size=5",
+    ]);
+    assert.equal(found.query, "nginx");
+    assert.equal(found.limit, 2);
+    assert.equal(found.total, 296358);
+    assert.deepEqual(found.repositories, [
+        {
+            name: "nginx",
+            description: "Official build of Nginx.",
+            stars: 21422,
+            pulls: 13609163012,
+            official: true,
+        },
+        {
+            name: "nginx/nginx-ingress",
+            description: "NGINX Ingress Controller",
+            stars: 124,
+            pulls: 1088819097,
+            official: false,
+        },
+    ]);
+    // Out-of-range limits fall back to 5 in the handler itself, and an
+    // empty query is rejected before any fetch.
+    const fallback = await searchRepositories({ query: "nginx", limit: 99 });
+    assert.equal(fallback.limit, 5);
+    assert.equal(urls.length, 3);
+    await assert.rejects(searchRepositories({ query: "   " }), /search term/);
+    assert.equal(urls.length, 3);
+    // A term with no matches is an empty list, never an error.
+    const none = await call(client, "dockerhub_search", {
+        query: "zzzqqqxxyy",
+    });
+    assert.deepEqual(none, {
+        query: "zzzqqqxxyy",
+        limit: 5,
+        total: 0,
+        repositories: [],
+    });
+    assert.equal(urls.length, 4);
 });

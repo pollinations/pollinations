@@ -342,6 +342,118 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("deck_draw creates a fresh deck, draws from an existing one, and reports an exhausted deck", async (t) => {
+    const fetched = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        fetched.push(url.toString());
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname === "/api/deck/new/shuffle/")
+            return Response.json({
+                success: true,
+                deck_id: "bxl808co5a24",
+                remaining: 52,
+                shuffled: true,
+            });
+        if (url.pathname === "/api/deck/bxl808co5a24/draw/")
+            return Response.json({
+                success: true,
+                deck_id: "bxl808co5a24",
+                cards: [
+                    {
+                        code: "9S",
+                        image: "https://deckofcardsapi.com/static/img/9S.png",
+                        images: {
+                            svg: "https://deckofcardsapi.com/static/img/9S.svg",
+                            png: "https://deckofcardsapi.com/static/img/9S.png",
+                        },
+                        value: "9",
+                        suit: "SPADES",
+                    },
+                    {
+                        code: "7H",
+                        image: "https://deckofcardsapi.com/static/img/7H.png",
+                        images: {
+                            svg: "https://deckofcardsapi.com/static/img/7H.svg",
+                            png: "https://deckofcardsapi.com/static/img/7H.png",
+                        },
+                        value: "7",
+                        suit: "HEARTS",
+                    },
+                ],
+                remaining: 50,
+            });
+        if (url.pathname === "/api/deck/77134xyqnsrd/draw/")
+            return Response.json({
+                success: false,
+                deck_id: "77134xyqnsrd",
+                cards: [],
+                remaining: 0,
+                error: "Not enough cards remaining to draw 1 additional",
+            });
+        if (url.pathname === "/api/deck/zzzznotareal/draw/")
+            return Response.json(
+                { success: false, error: "Deck ID does not exist." },
+                { status: 404 },
+            );
+        throw new Error(`unexpected fetch ${url}`);
+    });
+    const c = await client(t);
+    let result = await call(c, "deck_draw", { count: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        deck_id: "bxl808co5a24",
+        remaining: 50,
+        cards: [
+            {
+                code: "9S",
+                value: "9",
+                suit: "SPADES",
+                image: "https://deckofcardsapi.com/static/img/9S.png",
+            },
+            {
+                code: "7H",
+                value: "7",
+                suit: "HEARTS",
+                image: "https://deckofcardsapi.com/static/img/7H.png",
+            },
+        ],
+    });
+    assert.deepEqual(fetched, [
+        "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1",
+        "https://deckofcardsapi.com/api/deck/bxl808co5a24/draw/?count=2",
+    ]);
+    result = await call(c, "deck_draw", {
+        deck_id: "bxl808co5a24",
+        count: 1,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).deck_id, "bxl808co5a24");
+    assert.equal(
+        fetched[2],
+        "https://deckofcardsapi.com/api/deck/bxl808co5a24/draw/?count=1",
+    );
+    result = await call(c, "deck_draw", { deck_id: "77134xyqnsrd" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /Not enough cards remaining/);
+    result = await call(c, "deck_draw", { deck_id: "zzzznotareal" });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(
+        result.content[0].text,
+        /deckofcardsapi\.com returned HTTP 404/,
+    );
+    const before = fetched.length;
+    for (const bad of [{ count: 0 }, { count: 6 }, { count: 1.5 }]) {
+        result = await call(c, "deck_draw", bad);
+        assert.equal(result.isError, true, JSON.stringify(result));
+    }
+    assert.equal(fetched.length, before);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +476,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "deck_draw",
             ].sort(),
         );
     });

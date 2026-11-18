@@ -364,10 +364,128 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "librivox_search",
             ].sort(),
         );
     });
 }
+
+test("LibriVox searches by exact title or author surname, strips HTML descriptions and returns empty on 404", async (t) => {
+    let count = 0;
+    const monteCristo = {
+        id: "47",
+        title: "Count of Monte Cristo",
+        description:
+            "<i>The Count of Monte Cristo</i> (French: <i>Le Comte de Monte-Cristo</i>) is an adventure novel by Alexandre Dumas, p\u00e8re. It is often considered, along with <i>The Three Musketeers</i>, as Dumas's most popular work. The writing of the work was completed in 1844. Like many of his novels, it is expanded from the plot outlines suggested by his collaborating ghostwriter Auguste Maquet.<br /><br />The story takes place in France, Italy, islands in the Mediterranean and the Levant during the historical events of 1815\u20131838 (from just before the Hundred Days through the reign of Louis-Philippe of France). The historical setting is a fundamental element of the book. It is primarily concerned with themes of justice, vengeance, mercy, and forgiveness, and is told in the style of an adventure story. (Summary from Wikipedia)<br /><br />\nThis book contains alternate versions of a number of chapters \u2013 indicated by an alt after the file number. The Zip files contain both versions of these chapters.<br /><br />There are 2 versions of the M4Bs made , one containing the original files for these chapters (4 parts), the other containing the alternate files for the chapters (5 parts).",
+        url_text_source: "https://www.gutenberg.org/etext/1184",
+        language: "English",
+        copyright_year: "1844",
+        num_sections: "128",
+        url_rss: "https://librivox.org/rss/47",
+        url_zip_file:
+            "https://archive.org/compress/count_monte_cristo_0711_librivox/formats=64KBPS MP3&file=/count_monte_cristo_0711_librivox.zip",
+        url_project: "https://en.wikipedia.org/wiki/Count_of_Monte_Cristo",
+        url_librivox:
+            "https://librivox.org/the-count-of-monte-cristo-by-alexandre-dumas/",
+        url_other: "",
+        totaltime: "49:43:15",
+        totaltimesecs: 178995,
+        authors: [
+            {
+                id: "431",
+                first_name: "Alexandre",
+                last_name: "Dumas",
+                dob: "1802",
+                dod: "1870",
+            },
+        ],
+    };
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        const headers = new Headers(init.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        assert.match(headers.get("user-agent"), /hello@pollinations.ai/);
+        assert.equal(url.hostname, "librivox.org");
+        assert.equal(url.searchParams.get("format"), "json");
+        if (url.searchParams.get("title") === "Count of Monte Cristo")
+            return Response.json({ books: [monteCristo] });
+        if (url.searchParams.get("author") === "dumas") {
+            assert.equal(url.searchParams.get("limit"), "2");
+            return Response.json({
+                books: [
+                    {
+                        ...monteCristo,
+                        id: "52",
+                        title: "Letters of Two Brides",
+                        totaltime: "9:09:20",
+                        authors: [
+                            {
+                                id: "86",
+                                first_name: "Honor\u00e9 de",
+                                last_name: "Balzac",
+                                dob: "1799",
+                                dod: "1870",
+                            },
+                        ],
+                    },
+                ],
+            });
+        }
+        return new Response('{"error":"Audiobooks could not be found"}', {
+            status: 404,
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "librivox_search", {
+        title: "Count of Monte Cristo",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        title: "Count of Monte Cristo",
+        author: null,
+        total: 1,
+        books: [
+            {
+                id: "47",
+                title: "Count of Monte Cristo",
+                authors: ["Alexandre Dumas"],
+                description:
+                    "The Count of Monte Cristo (French: Le Comte de Monte-Cristo) is an adventure novel by Alexandre Dumas, p\u00e8re. It is often considered, along with The Three Musketeers, as Dumas's most popular work. The writing of the work was completed in 1844. Like many of his novels, it is expanded from the plot outlines suggested by his collaborating ghostwriter Auguste Maquet.\n\nThe story takes place in France, Italy, islands in the Mediterranean and the Levant during the historical events of 1815\u20131838 (from ju\u2026",
+                description_truncated: true,
+                total_time: "49:43:15",
+                language: "English",
+                url: "https://librivox.org/the-count-of-monte-cristo-by-alexandre-dumas/",
+            },
+        ],
+    });
+    result = await call(c, "librivox_search", { author: "dumas", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 1);
+    assert.equal(value(result).books[0].title, "Letters of Two Brides");
+    assert.deepEqual(value(result).books[0].authors, ["Honor\u00e9 de Balzac"]);
+    assert.equal(value(result).books[0].total_time, "9:09:20");
+    result = await call(c, "librivox_search", { title: "zzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        title: "zzzqqqxxyy",
+        author: null,
+        total: 0,
+        books: [],
+    });
+    for (const args of [
+        { title: "x", author: "y" },
+        {},
+        { title: " " },
+        { title: "x", limit: 0 },
+        { author: "dumas", limit: 26 },
+    ]) {
+        result = await call(c, "librivox_search", args);
+        assert.equal(result.isError, true, JSON.stringify(args));
+    }
+    assert.equal(count, 3);
+});
 
 test("non-root routes stay private", async () => {
     assert.equal(

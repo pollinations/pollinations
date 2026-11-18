@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { sdssTools } from "./tools/sdss.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,10 +365,144 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "sdss_objects",
             ].sort(),
         );
     });
 }
+
+test("SDSS lists objects in a bounded box and keeps 64-bit objids exact", async (t) => {
+    // Verbatim live fixture (probe_box.json): five rows near ra 270, dec 0.
+    // Kept as raw text on purpose — the objids exceed JavaScript's safe
+    // integer range, so a Response.json fixture would round them at parse
+    // time, the exact bug the tool guards against.
+    const fixture = `[
+  {
+    "TableName": "Table1",
+    "Rows": [
+      { "objid": 1237651757210797159, "ra": 269.000001075665, "dec": -0.688975269789976 },
+      { "objid": 1237651759358280566, "ra": 269.000003406653, "dec": 0.880802514677414 },
+      { "objid": 1237659088182315802, "ra": 269.000005224597, "dec": -0.955010533889844 },
+      { "objid": 1237651758821409752, "ra": 269.000006770693, "dec": 0.616162931420696 },
+      { "objid": 1237651759358280468, "ra": 269.000014813017, "dec": 0.844065163894881 }
+    ]
+  },
+  {
+    "TableName": "SqlQuery",
+    "Rows": [
+      { "query": "SELECT TOP 5 objid,ra,dec FROM PhotoObj WHERE ra BETWEEN 269 AND 271 AND dec BETWEEN -1 AND 1" }
+    ]
+  }
+]`;
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "skyserver.sdss.org");
+        assert.equal(url.pathname, "/dr18/SkyServerWS/SearchTools/SqlSearch");
+        assert.equal(url.searchParams.get("format"), "json");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return new Response(fixture, {
+            headers: { "content-type": "application/json" },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "sdss_objects", {
+        ra: 270,
+        dec: 0,
+        limit: 5,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const cmd = requests[0].searchParams.get("cmd");
+    assert.match(cmd, /SELECT TOP 5 objid,ra,dec FROM PhotoObj/);
+    assert.match(cmd, /ra BETWEEN 269 AND 271/);
+    assert.match(cmd, /dec BETWEEN -1 AND 1/);
+    assert.doesNotMatch(cmd, /;/);
+    assert.deepEqual(value(result), {
+        ra: 270,
+        dec: 0,
+        limit: 5,
+        total: 5,
+        objects: [
+            {
+                objid: "1237651757210797159",
+                ra: 269.000001075665,
+                dec: -0.688975269789976,
+            },
+            {
+                objid: "1237651759358280566",
+                ra: 269.000003406653,
+                dec: 0.880802514677414,
+            },
+            {
+                objid: "1237659088182315802",
+                ra: 269.000005224597,
+                dec: -0.955010533889844,
+            },
+            {
+                objid: "1237651758821409752",
+                ra: 269.000006770693,
+                dec: 0.616162931420696,
+            },
+            {
+                objid: "1237651759358280468",
+                ra: 269.000014813017,
+                dec: 0.844065163894881,
+            },
+        ],
+    });
+    // The objid must be the exact digit string, not the rounded double
+    // JSON.parse would produce (1237651757210797200).
+    assert.notEqual(value(result).objects[0].objid, "1237651757210797200");
+
+    result = await call(c, "sdss_objects", { ra: 270, dec: 0 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.match(
+        requests[1].searchParams.get("cmd"),
+        /SELECT TOP 5 objid,ra,dec/,
+    );
+    assert.equal(value(result).limit, 5);
+
+    result = await call(c, "sdss_objects", { ra: 400, dec: 0 });
+    assert.equal(result.isError, true);
+    result = await call(c, "sdss_objects", { ra: 270, dec: 0, limit: 99 });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, 2);
+});
+
+test("SDSS handler falls back to 5 and rejects bad coordinates without fetching", async () => {
+    const run = sdssTools[0][3];
+    const fixture = `[{"TableName": "Table1", "Rows": [{"objid": 1237651757210797159, "ra": 269.0, "dec": 0.5}]}]`;
+    let count = 0;
+    mock.method(globalThis, "fetch", async () => {
+        count++;
+        return new Response(fixture, {
+            headers: { "content-type": "application/json" },
+        });
+    });
+    const out = await run({ ra: 270, dec: 0, limit: 99 });
+    assert.equal(out.limit, 5);
+    assert.equal(out.objects[0].objid, "1237651757210797159");
+    assert.equal(count, 1);
+    await assert.rejects(run({ ra: 400, dec: 0 }), /ra must be between/);
+    await assert.rejects(run({ ra: 270, dec: 100 }), /dec must be between/);
+    await assert.rejects(run({ ra: Number.NaN, dec: 0 }), /finite number/);
+    assert.equal(count, 1);
+    mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response("[]", {
+                headers: { "content-type": "application/json" },
+            }),
+    );
+    await assert.rejects(run({ ra: 270, dec: 0 }), /unexpected response/);
+});
 
 test("non-root routes stay private", async () => {
     assert.equal(

@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "obis_taxon",
             ].sort(),
         );
     });
@@ -644,4 +645,122 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("OBIS taxon lookup returns the projected record and an empty list on no match", async (t) => {
+    let fetches = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetches += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.obis.org");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        if (url.pathname === "/v3/taxon/Delphinus%20delphis") {
+            return Response.json({
+                total: 1,
+                results: [
+                    {
+                        scientificName: "Delphinus delphis",
+                        scientificNameAuthorship: "Linnaeus, 1758",
+                        taxonID: 137094,
+                        ncbi_id: 9728,
+                        taxonRank: "Species",
+                        taxonomicStatus: "accepted",
+                        acceptedNameUsage: "Delphinus delphis",
+                        acceptedNameUsageID: 137094,
+                        is_marine: true,
+                        is_terrestrial: false,
+                        kingdom: "Animalia",
+                        phylum: "Chordata",
+                        subphylum: "Vertebrata",
+                        class: "Mammalia",
+                        order: "Cetartiodactyla",
+                        family: "Delphinidae",
+                        genus: "Delphinus",
+                        species: "Delphinus delphis",
+                        kingdomid: 2,
+                        vernacularNames: ["common dolphin"],
+                    },
+                ],
+            });
+        }
+        if (url.pathname === "/v3/taxon/Delphinus") {
+            return Response.json({
+                total: 1,
+                results: [
+                    {
+                        scientificName: "Delphinus",
+                        scientificNameAuthorship: "Linnaeus, 1758",
+                        taxonID: 137015,
+                        ncbi_id: null,
+                        taxonRank: "Genus",
+                        taxonomicStatus: "accepted",
+                        acceptedNameUsage: "Delphinus",
+                        acceptedNameUsageID: 137015,
+                        is_marine: true,
+                        is_terrestrial: false,
+                        kingdom: "Animalia",
+                        phylum: "Chordata",
+                        class: "Mammalia",
+                        order: "Cetartiodactyla",
+                        family: "Delphinidae",
+                        genus: "Delphinus",
+                        species: null,
+                    },
+                ],
+            });
+        }
+        return Response.json({ total: 0, results: [] });
+    });
+
+    const c = await client(t);
+    let result = await call(c, "obis_taxon", { name: "Delphinus delphis" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "Delphinus delphis",
+        total: 1,
+        taxa: [
+            {
+                scientificName: "Delphinus delphis",
+                authorship: "Linnaeus, 1758",
+                taxonID: 137094,
+                ncbiId: 9728,
+                rank: "Species",
+                status: "accepted",
+                acceptedName: "Delphinus delphis",
+                isMarine: true,
+                isTerrestrial: false,
+                kingdom: "Animalia",
+                phylum: "Chordata",
+                class: "Mammalia",
+                order: "Cetartiodactyla",
+                family: "Delphinidae",
+                genus: "Delphinus",
+                species: "Delphinus delphis",
+            },
+        ],
+    });
+
+    result = await call(c, "obis_taxon", { name: "Delphinus" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).taxa[0].rank, "Genus");
+    assert.equal(value(result).taxa[0].taxonID, 137015);
+    assert.equal(value(result).taxa[0].species, null);
+
+    result = await call(c, "obis_taxon", { name: "zzzzqqqxxyy" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        name: "zzzzqqqxxyy",
+        total: 0,
+        taxa: [],
+    });
+
+    const before = fetches;
+    result = await call(c, "obis_taxon", { name: " " });
+    assert.equal(result.isError, true);
+    assert.equal(fetches, before);
 });

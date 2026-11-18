@@ -265,7 +265,8 @@ export async function callOpenRouterSeedance25FlashAPI(
         providerCost <= 0
     ) {
         throw UpstreamError.fromProvider(502, {
-            message: "OpenRouter Seedance 2.5 Flash returned invalid billing cost",
+            message:
+                "OpenRouter Seedance 2.5 Flash returned invalid billing cost",
         });
     }
     return {

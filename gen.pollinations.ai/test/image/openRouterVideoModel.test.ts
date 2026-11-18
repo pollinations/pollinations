@@ -5,8 +5,8 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callHeyGenVideoAPI,
-    callOpenRouterSeedance25FlashAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterSeedance25FlashAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -86,21 +86,24 @@ describe("OpenRouter Seedance 2.5 Flash", () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockHappyHorseSuccess(requests, 0.5);
-        const result = await callOpenRouterSeedance25FlashAPI("animate the scene", {
-            ...baseParams,
-            model: "bytedance/seedance-2.5-flash",
-            duration: 8,
-            resolution: "720p",
-            aspectRatio: "9:16",
-            audio: true,
-            image: [
-                "https://example.com/start.png",
-                "https://example.com/end.png",
-            ],
-            reference_images: ["https://example.com/reference.png"],
-            reference_videos: ["https://example.com/reference.mp4"],
-            reference_audios: ["https://example.com/reference.mp3"],
-        });
+        const result = await callOpenRouterSeedance25FlashAPI(
+            "animate the scene",
+            {
+                ...baseParams,
+                model: "bytedance/seedance-2.5-flash",
+                duration: 8,
+                resolution: "720p",
+                aspectRatio: "9:16",
+                audio: true,
+                image: [
+                    "https://example.com/start.png",
+                    "https://example.com/end.png",
+                ],
+                reference_images: ["https://example.com/reference.png"],
+                reference_videos: ["https://example.com/reference.mp4"],
+                reference_audios: ["https://example.com/reference.mp3"],
+            },
+        );
         expect(requests[0]).toEqual({
             model: "bytedance/seedance-2.5-flash",
             prompt: "animate the scene",
@@ -123,9 +126,18 @@ describe("OpenRouter Seedance 2.5 Flash", () => {
                 },
             ],
             input_references: [
-                { type: "image_url", image_url: { url: "https://example.com/reference.png" } },
-                { type: "video_url", video_url: { url: "https://example.com/reference.mp4" } },
-                { type: "audio_url", audio_url: { url: "https://example.com/reference.mp3" } },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/reference.png" },
+                },
+                {
+                    type: "video_url",
+                    video_url: { url: "https://example.com/reference.mp4" },
+                },
+                {
+                    type: "audio_url",
+                    audio_url: { url: "https://example.com/reference.mp3" },
+                },
             ],
         });
         expect(result.durationSeconds).toBe(8);

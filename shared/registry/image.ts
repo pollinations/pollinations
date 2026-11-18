@@ -1971,7 +1971,8 @@ const IMAGE_BASE_SERVICES = {
             {
                 "720p": {
                     label: "720p",
-                    description: "Estimated 720p video rate; actual cost follows OpenRouter's receipt.",
+                    description:
+                        "Estimated 720p video rate; actual cost follows OpenRouter's receipt.",
                 },
             },
             "480p",
@@ -1985,7 +1986,8 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5 Flash",
-        description: "Fast video generation from text, keyframes, and multimodal references with optional audio",
+        description:
+            "Fast video generation from text, keyframes, and multimodal references with optional audio",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video"],
         videoCapabilities: [

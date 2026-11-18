@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "nasa_images",
             ].sort(),
         );
     });
@@ -575,6 +576,113 @@ test("declared oversized body is rejected before reading", async (t) => {
         query: "large",
     });
     assert.equal(result.isError, true);
+});
+
+test("NASA image search projects titles, descriptions and asset collections", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, options) => {
+        const request = new Request(input, options);
+        requests.push(request);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "images-api.nasa.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            collection: {
+                metadata: { total_hits: 5940 },
+                items: [
+                    {
+                        href: "https://images-assets.nasa.gov/image/APOLLO 50th_FULL COLOR_300DPI/collection.json",
+                        data: [
+                            {
+                                title: "APOLLO 50th_FULL COLOR_300DPI",
+                                nasa_id: "APOLLO 50th_FULL COLOR_300DPI",
+                                date_created: "2018-06-18T00:00:00Z",
+                                description_508:
+                                    "Full color ogo for the 50th anniversary of the Apollo program",
+                                keywords: [
+                                    "Apollo",
+                                    "anniversary",
+                                    "logo",
+                                    "color",
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        href: "https://images-assets.nasa.gov/image/PIA24439/collection.json",
+                        data: [
+                            {
+                                title: "Apollo Footprint",
+                                nasa_id: "PIA24439",
+                                date_created: "2021-04-21T00:00:00Z",
+                                description_508:
+                                    "Buzz Aldrin took this iconic image of a bootprint on the Moon during the Apollo 11 moonwalk on July 20, 1969.",
+                                keywords: ["Apollo", "Moon"],
+                            },
+                        ],
+                    },
+                    {
+                        href: "https://images-assets.nasa.gov/image/NO-DESC/collection.json",
+                        data: [
+                            {
+                                title: "No description",
+                                nasa_id: "NO-DESC",
+                                date_created: "2020-01-01T00:00:00Z",
+                            },
+                        ],
+                    },
+                ],
+            },
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "nasa_images", { query: "apollo", limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(requests[0].url.includes("q=apollo"), true);
+    assert.equal(
+        new URL(requests[0].url).searchParams.get("media_type"),
+        "image",
+    );
+    assert.equal(new URL(requests[0].url).searchParams.get("page_size"), "2");
+    assert.deepEqual(value(result), {
+        query: "apollo",
+        total: 5940,
+        images: [
+            {
+                title: "APOLLO 50th_FULL COLOR_300DPI",
+                nasa_id: "APOLLO 50th_FULL COLOR_300DPI",
+                date_created: "2018-06-18T00:00:00Z",
+                description:
+                    "Full color ogo for the 50th anniversary of the Apollo program",
+                keywords: ["Apollo", "anniversary", "logo", "color"],
+                asset_collection:
+                    "https://images-assets.nasa.gov/image/APOLLO 50th_FULL COLOR_300DPI/collection.json",
+            },
+            {
+                title: "Apollo Footprint",
+                nasa_id: "PIA24439",
+                date_created: "2021-04-21T00:00:00Z",
+                description:
+                    "Buzz Aldrin took this iconic image of a bootprint on the Moon during the Apollo 11 moonwalk on July 20, 1969.",
+                keywords: ["Apollo", "Moon"],
+                asset_collection:
+                    "https://images-assets.nasa.gov/image/PIA24439/collection.json",
+            },
+        ],
+    });
+    result = await call(c, "nasa_images", { query: "apollo" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).images.length, 3);
+    assert.equal(value(result).images[2].description, null);
+    assert.deepEqual(value(result).images[2].keywords, []);
+    result = await call(c, "nasa_images", { query: " " });
+    assert.equal(result.isError, true);
+    assert.equal(requests.length, 2);
 });
 
 test("CrossRef search and work lookup formats DOIs, authors and citation metrics", async (t) => {

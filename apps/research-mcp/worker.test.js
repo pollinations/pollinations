@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { robloxTools } from "./tools/roblox.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "roblox_user",
             ].sort(),
         );
     });
@@ -644,4 +646,144 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("roblox_user fetches 10 upstream and slices client-side, with no credentials", async (t) => {
+    const liveUsers = [
+        {
+            previousUsernames: [],
+            hasVerifiedBadge: true,
+            id: 156,
+            name: "builderman",
+            displayName: "builderman",
+        },
+        {
+            previousUsernames: [],
+            hasVerifiedBadge: false,
+            id: 11823377664,
+            name: "builderman78s",
+            displayName: "buildermans",
+        },
+        {
+            previousUsernames: [],
+            hasVerifiedBadge: false,
+            id: 2995590308,
+            name: "BuildermanAt3AM",
+            displayName: "buildermans",
+        },
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const url = new URL(input);
+        assert.equal(url.hostname, "users.roblox.com");
+        assert.equal(url.pathname, "/v1/users/search");
+        assert.equal(url.searchParams.get("keyword"), "builderman");
+        // The endpoint only accepts 10, 25, 50 or 100 — never the sliced limit.
+        assert.equal(url.searchParams.get("limit"), "10");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.equal(new Headers(init.headers).get("cookie"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            previousPageCursor: null,
+            nextPageCursor: null,
+            data: liveUsers,
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "roblox_user", {
+        keyword: "builderman",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        keyword: "builderman",
+        limit: 2,
+        total: 3,
+        users: [
+            {
+                id: 156,
+                name: "builderman",
+                displayName: "builderman",
+                verified: true,
+            },
+            {
+                id: 11823377664,
+                name: "builderman78s",
+                displayName: "buildermans",
+                verified: false,
+            },
+        ],
+    });
+    assert.equal(fetchCalls, 1);
+
+    const defaultResult = await call(c, "roblox_user", {
+        keyword: "builderman",
+    });
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 5);
+    assert.equal(value(defaultResult).users.length, 3);
+    assert.equal(fetchCalls, 2);
+
+    const rejected = await call(c, "roblox_user", {
+        keyword: "builderman",
+        limit: 99,
+    });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 2);
+
+    const emptyRejected = await call(c, "roblox_user", { keyword: "   " });
+    assert.equal(emptyRejected.isError, true, JSON.stringify(emptyRejected));
+    assert.equal(fetchCalls, 2);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = robloxTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return { data: liveUsers };
+    };
+    assert.deepEqual(
+        await run({ keyword: "builderman", limit: 99 }, stubFetch),
+        {
+            keyword: "builderman",
+            limit: 5,
+            total: 3,
+            users: [
+                {
+                    id: 156,
+                    name: "builderman",
+                    displayName: "builderman",
+                    verified: true,
+                },
+                {
+                    id: 11823377664,
+                    name: "builderman78s",
+                    displayName: "buildermans",
+                    verified: false,
+                },
+                {
+                    id: 2995590308,
+                    name: "BuildermanAt3AM",
+                    displayName: "buildermans",
+                    verified: false,
+                },
+            ],
+        },
+    );
+    assert.equal(stubCalls, 1);
+    assert.deepEqual(
+        await run({ keyword: "builderman" }, async () => {
+            return { data: [] };
+        }),
+        {
+            keyword: "builderman",
+            limit: 5,
+            total: 0,
+            users: [],
+        },
+    );
 });

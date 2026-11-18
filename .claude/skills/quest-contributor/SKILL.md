@@ -1,14 +1,12 @@
 ---
 name: quest-contributor
-description: Contribute to Pollinations community quests in pollinations/pollinations and earn Quest rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled QUEST or POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, claim.
+description: Contribute to Pollinations community quests in pollinations/pollinations and earn Quest rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on a community quest. Covers the full loop - discover, choose, build, prove, submit, claim.
 ---
 
 # Quest Contributor
 
-Pollinations pays Quest rewards for merged PRs that solve community quests -
-issues labeled `QUEST` or `POLLEN-QUEST` in
+Contributors can claim Quest rewards for merged PRs that solve community quests in
 [pollinations/pollinations](https://github.com/pollinations/pollinations).
-This skill teaches an agent the whole loop.
 
 ## Rule zero: the issue is the contract
 
@@ -23,8 +21,7 @@ criteria. Read them first; they override anything here. In particular:
 
 ## 1. Discover
 
-Open quests:
-[Open community quests](https://github.com/pollinations/pollinations/issues?q=is%3Aissue+state%3Aopen+label%3AQUEST%2CPOLLEN-QUEST).
+Browse [open community quests](https://enter.pollinations.ai/quests) and open the linked GitHub issue.
 With a key, `polli quests` lists your quest states (open / claimable /
 claimed). New quests appear without warning - re-check before starting.
 

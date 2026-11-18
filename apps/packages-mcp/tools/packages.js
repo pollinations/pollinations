@@ -13,6 +13,7 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        wordpress: /^[a-z0-9][a-z0-9-]*$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +167,50 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "wordpress") {
+        const data = await fetchJson(
+            `https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=${encoded}`,
+        );
+        // The API ignores field-trimming on GET, so the full ~37 KB document
+        // is fetched and projected client-side; sections, screenshots and
+        // banners are never returned. There is no download total in the
+        // response, so active_installs is the install count, not downloads.
+        const stripHtml = (value) =>
+            value
+                ?.replace(/<[^>]*>/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        const description = stripHtml(data.sections?.description);
+        const versions = Object.keys(data.versions ?? {}).filter(
+            (v) => v !== "trunk",
+        );
+        if (version && !versions.includes(version))
+            throw new Error(
+                `WordPress plugin version ${version} not found for ${name}`,
+            );
+        return {
+            ecosystem,
+            name: data.name,
+            version: version ?? data.version,
+            description: description ? description.slice(0, 500) : undefined,
+            author: stripHtml(data.author),
+            authorProfile: data.author_profile,
+            homepage: data.homepage,
+            requires: data.requires,
+            tested: data.tested,
+            requiresPhp: data.requires_php,
+            rating: data.rating,
+            numRatings: data.num_ratings,
+            ratings: data.ratings,
+            activeInstalls: data.active_installs,
+            lastUpdated: data.last_updated,
+            added: data.added,
+            tags: Object.values(data.tags ?? {}),
+            downloadLink: data.download_link,
+            versions,
+            registryUrl: `https://wordpress.org/plugins/${encoded}/`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +248,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, WordPress plugin information, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, WordPress latest version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +258,7 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "wordpress",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

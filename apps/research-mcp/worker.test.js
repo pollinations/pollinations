@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { covidTools } from "./tools/covid.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "covid_stats",
             ].sort(),
         );
     });
@@ -644,4 +646,186 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("covid_stats returns cumulative counts for a country and accepts names and ISO codes", async (t) => {
+    const liveUsa = {
+        updated: 1795030757759,
+        country: "USA",
+        countryInfo: {
+            _id: 840,
+            iso2: "US",
+            iso3: "USA",
+            lat: 38,
+            long: -97,
+            flag: "https://disease.sh/assets/img/flags/us.png",
+        },
+        cases: 111820082,
+        todayCases: 0,
+        deaths: 1219487,
+        todayDeaths: 0,
+        recovered: 109814428,
+        todayRecovered: 0,
+        active: 786167,
+        critical: 940,
+        casesPerOneMillion: 333985,
+        deathsPerOneMillion: 3642,
+        tests: 1186851502,
+        testsPerOneMillion: 3544901,
+        population: 334805269,
+        continent: "North America",
+        oneCasePerPeople: 3,
+        oneDeathPerPeople: 275,
+        oneTestPerPeople: 0,
+        activePerOneMillion: 2348.13,
+        recoveredPerOneMillion: 327994.92,
+        criticalPerOneMillion: 2.81,
+    };
+    const liveGermany = {
+        updated: 1795030757771,
+        country: "Germany",
+        countryInfo: {
+            _id: 276,
+            iso2: "DE",
+            iso3: "DEU",
+            lat: 51,
+            long: 9,
+            flag: "https://disease.sh/assets/img/flags/de.png",
+        },
+        cases: 38828995,
+        todayCases: 0,
+        deaths: 183027,
+        todayDeaths: 0,
+        recovered: 38240600,
+        todayRecovered: 0,
+        active: 405368,
+        critical: 0,
+        casesPerOneMillion: 462891,
+        deathsPerOneMillion: 2182,
+        tests: 122332384,
+        testsPerOneMillion: 1458359,
+        population: 83883596,
+        continent: "Europe",
+        oneCasePerPeople: 2,
+        oneDeathPerPeople: 458,
+        oneTestPerPeople: 1,
+        activePerOneMillion: 4832.51,
+        recoveredPerOneMillion: 455876.98,
+        criticalPerOneMillion: 0,
+    };
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "disease.sh");
+        assert.ok(target.pathname.startsWith("/v3/covid-19/countries/"));
+        assert.equal(target.searchParams.get("strict"), "true");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const country = decodeURIComponent(target.pathname.split("/").pop());
+        if (country === "Zzzqqqxxyy")
+            return new Response(
+                JSON.stringify({
+                    message: "Country not found or doesn't have any cases",
+                }),
+                {
+                    status: 404,
+                    headers: { "content-type": "application/json" },
+                },
+            );
+        return Response.json(
+            country === "Germany" || country === "DE" ? liveGermany : liveUsa,
+        );
+    });
+    const c = await client(t);
+    const result = await call(c, "covid_stats", { country: "USA" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), {
+        country: "USA",
+        cases: 111820082,
+        deaths: 1219487,
+        recovered: 109814428,
+        active: 786167,
+        critical: 940,
+        casesPerOneMillion: 333985,
+        deathsPerOneMillion: 3642,
+        tests: 1186851502,
+        population: 334805269,
+        updated: "2026-11-18T19:39:17.759Z",
+    });
+    assert.equal(fetchCalls, 1);
+
+    // A name and an ISO2 code reach the same country.
+    const nameResult = await call(c, "covid_stats", {
+        country: "United States",
+    });
+    assert.notEqual(nameResult.isError, true, JSON.stringify(nameResult));
+    assert.equal(value(nameResult).country, "USA");
+    assert.equal(fetchCalls, 2);
+    const codeResult = await call(c, "covid_stats", { country: "DE" });
+    assert.notEqual(codeResult.isError, true, JSON.stringify(codeResult));
+    assert.equal(value(codeResult).country, "Germany");
+    assert.equal(value(codeResult).cases, 38828995);
+    assert.equal(fetchCalls, 3);
+
+    // An unknown country is a clean error, and an empty country is
+    // rejected before any fetch.
+    const unknown = await call(c, "covid_stats", {
+        country: "Zzzqqqxxyy",
+    });
+    assert.equal(unknown.isError, true, JSON.stringify(unknown));
+    assert.match(
+        unknown.content[0].text,
+        /No COVID data found for country "Zzzqqqxxyy"/,
+    );
+    assert.equal(fetchCalls, 4);
+    const empty = await call(c, "covid_stats", { country: "   " });
+    assert.equal(empty.isError, true, JSON.stringify(empty));
+    assert.equal(fetchCalls, 4);
+
+    // Handler fallback, direct call bypassing the MCP server.
+    const run = covidTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async (url) => {
+        stubCalls += 1;
+        assert.match(url, /countries\/usa\?strict=true/);
+        return liveUsa;
+    };
+    assert.deepEqual(await run({ country: "usa" }, stubFetch), {
+        country: "USA",
+        cases: 111820082,
+        deaths: 1219487,
+        recovered: 109814428,
+        active: 786167,
+        critical: 940,
+        casesPerOneMillion: 333985,
+        deathsPerOneMillion: 3642,
+        tests: 1186851502,
+        population: 334805269,
+        updated: "2026-11-18T19:39:17.759Z",
+    });
+    assert.equal(stubCalls, 1);
+
+    // A 404 from the API maps to the clean not-found error, and a
+    // response without case counts is a clean error too.
+    await assert.rejects(
+        run({ country: "Zzzqqqxxyy" }, async () => {
+            throw new Error("disease.sh returned HTTP 404.");
+        }),
+        /No COVID data found for country "Zzzqqqxxyy"/,
+    );
+    await assert.rejects(
+        run({ country: "USA" }, async () => ({ country: "USA" })),
+        /without case counts/,
+    );
+    await assert.rejects(
+        run({ country: "   " }, stubFetch),
+        /country name or code is required/,
+    );
+    assert.equal(stubCalls, 1);
 });

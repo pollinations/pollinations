@@ -342,6 +342,119 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("Treasury deficit merges the MTS deficit and outlays lines and treats 'null' amounts as missing", async (t) => {
+    const requests = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        requests.push(url);
+        assert.equal(url.hostname, "api.fiscaldata.treasury.gov");
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        assert.match(
+            new Headers(init.headers).get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        const line = url.searchParams.get("filter");
+        if (line === "line_code_nbr:eq:5694")
+            return Response.json({
+                data: [
+                    {
+                        record_date: "2026-10-31",
+                        current_month_net_outly_amt: "-404063547877.59",
+                        current_fytd_net_outly_amt: "-404063547877.59",
+                        record_fiscal_year: "2027",
+                    },
+                    {
+                        record_date: "2026-09-30",
+                        current_month_net_outly_amt: "-26900347102.02",
+                        current_fytd_net_outly_amt: "-1992473224352.42",
+                        record_fiscal_year: "2026",
+                    },
+                    {
+                        record_date: "2026-08-31",
+                        current_month_net_outly_amt: "-166796952277.38",
+                        current_fytd_net_outly_amt: "-1965591017473.53",
+                        record_fiscal_year: "2026",
+                    },
+                    {
+                        record_date: "2026-07-31",
+                        current_month_net_outly_amt: "null",
+                        current_fytd_net_outly_amt: "null",
+                        record_fiscal_year: "2026",
+                    },
+                ],
+                meta: { "total-count": 140 },
+            });
+        assert.equal(line, "line_code_nbr:eq:5691");
+        return Response.json({
+            data: [
+                {
+                    record_date: "2026-10-31",
+                    current_month_gross_outly_amt: "835147029099.80",
+                    current_month_app_rcpt_amt: "62143362619.44",
+                    current_month_net_outly_amt: "773003666480.36",
+                    current_fytd_gross_outly_amt: "835147029099.80",
+                    current_fytd_app_rcpt_amt: "62143362619.44",
+                    current_fytd_net_outly_amt: "773003666480.36",
+                },
+                {
+                    record_date: "2026-09-30",
+                    current_month_gross_outly_amt: "713363642417.32",
+                    current_month_app_rcpt_amt: "128588776077.06",
+                    current_month_net_outly_amt: "584774866340.26",
+                    current_fytd_gross_outly_amt: "8206254314039.45",
+                    current_fytd_app_rcpt_amt: "810454330726.22",
+                    current_fytd_net_outly_amt: "7395799983313.23",
+                },
+                {
+                    record_date: "2026-08-31",
+                    current_month_gross_outly_amt: "578047002761.35",
+                    current_month_app_rcpt_amt: "51217314642.55",
+                    current_month_net_outly_amt: "526829688118.80",
+                    current_fytd_gross_outly_amt: "7492908662745.26",
+                    current_fytd_app_rcpt_amt: "681865405549.16",
+                    current_fytd_net_outly_amt: "6811043257196.10",
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "treasury_deficit", { limit: 4 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const val = value(result);
+    assert.equal(val.total, 4);
+    assert.equal(val.history_months, 140);
+    assert.deepEqual(val.months[0], {
+        record_date: "2026-10-31",
+        deficit: -404063547877.59,
+        deficit_fiscal_ytd: -404063547877.59,
+        fiscal_year: "2027",
+        gross_outlays: 835147029099.8,
+        applicable_receipts: 62143362619.44,
+        net_outlays: 773003666480.36,
+        gross_outlays_fiscal_ytd: 835147029099.8,
+        applicable_receipts_fiscal_ytd: 62143362619.44,
+        net_outlays_fiscal_ytd: 773003666480.36,
+    });
+    assert.equal(val.months[1].deficit, -26900347102.02);
+    assert.equal(val.months[1].deficit_fiscal_ytd, -1992473224352.42);
+    assert.equal(val.months[1].gross_outlays, 713363642417.32);
+    // A "null" amount string stays missing, never zero, and a month with
+    // no outlays row keeps null outlays fields instead of failing.
+    assert.equal(val.months[3].deficit, null);
+    assert.equal(val.months[3].deficit_fiscal_ytd, null);
+    assert.equal(val.months[3].gross_outlays, null);
+    assert.equal(val.months[3].applicable_receipts, null);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0].searchParams.get("sort"), "-record_date");
+    assert.equal(requests[0].searchParams.get("page[size]"), "4");
+    // An out-of-range limit is rejected before any fetch.
+    const bad = await call(c, "treasury_deficit", { limit: 11 }).catch(() => ({
+        isError: true,
+    }));
+    assert.equal(bad.isError, true);
+    assert.equal(requests.length, 2);
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +477,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "treasury_deficit",
             ].sort(),
         );
     });

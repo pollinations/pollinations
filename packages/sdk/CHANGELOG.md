@@ -2,6 +2,15 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Added
+- `connectRealtime()` opens a realtime voice or transcription session on
+  `wss://gen.pollinations.ai/v1/realtime` and passes OpenAI Realtime events
+  through. `pcm16ToBase64()` and `base64ToPcm16()` convert the 24 kHz mono
+  PCM16 the models use.
+- `useRealtime()` opens the same session on the signed-in user's key.
+
 ## [5.1.0-alpha.32] - 2026-11-18
 
 ### Changed

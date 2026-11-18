@@ -4,6 +4,7 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
+import { kanyeTools } from "./tools/kanye.js";
 import worker from "./worker.js";
 
 afterEach(() => mock.restoreAll());
@@ -364,6 +365,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "kanye_quote",
             ].sort(),
         );
     });
@@ -644,4 +646,68 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("kanye_quote returns random quotes with no credentials and falls back on out-of-range limits", async (t) => {
+    const liveQuotes = [
+        "People say it's enough and I got my point across ... the point isn't across until we cross the point",
+        "Buy property",
+    ];
+    let fetchCalls = 0;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        fetchCalls += 1;
+        const request = new Request(input, init);
+        const target = new URL(request.url);
+        assert.equal(target.hostname, "api.kanye.rest");
+        assert.equal(target.pathname, "/");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        assert.match(
+            request.headers.get("user-agent"),
+            /hello@pollinations.ai/,
+        );
+        return Response.json({
+            quote: liveQuotes[(fetchCalls - 1) % liveQuotes.length],
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "kanye_quote", { limit: 2 });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.deepEqual(value(result), { limit: 2, quotes: liveQuotes });
+    assert.equal(fetchCalls, 2);
+
+    const defaultResult = await call(c, "kanye_quote", {});
+    assert.notEqual(defaultResult.isError, true, JSON.stringify(defaultResult));
+    assert.equal(value(defaultResult).limit, 1);
+    assert.equal(fetchCalls, 3);
+
+    const rejected = await call(c, "kanye_quote", { limit: 99 });
+    assert.equal(rejected.isError, true, JSON.stringify(rejected));
+    assert.equal(fetchCalls, 3);
+
+    // Handler fallback and dedupe, direct call bypassing the MCP server.
+    const run = kanyeTools[0][3];
+    let stubCalls = 0;
+    const stubFetch = async () => {
+        stubCalls += 1;
+        return { quote: "Buy property" };
+    };
+    assert.deepEqual(await run({ limit: 99 }, stubFetch), {
+        limit: 1,
+        quotes: ["Buy property"],
+    });
+    assert.equal(stubCalls, 1);
+    assert.deepEqual(await run({ limit: 3 }, stubFetch), {
+        limit: 3,
+        quotes: ["Buy property"],
+    });
+    assert.equal(stubCalls, 4);
+});
+
+test("kanye_quote errors cleanly when the API returns a quote without text", async (t) => {
+    mock.method(globalThis, "fetch", async () => Response.json({}));
+    const c = await client(t);
+    const result = await call(c, "kanye_quote", { limit: 1 });
+    assert.equal(result.isError, true, JSON.stringify(result));
+    assert.match(result.content[0].text, /without text/);
 });

@@ -5,8 +5,8 @@ Scores archived tool outputs with Jev, keeps outputs with relevance probability 
 ## Deploy and call
 
 1. Fork [the public source repository](https://github.com/ale-rls/jev-context-trimmer), keeping `agent.ts` at its root.
-2. In [My Models](https://enter.pollinations.ai/my-models), choose Code agent and enter your public repository URL. Private visibility permits owner-only calls; public listing requires publisher access.
-3. Call your deployed model through `POST /v1/responses` with a non-streaming request. The existing deployment is `community/ale-rls/jev-context-trimmer` (private, owner-callable). The caller needs generation access to the agent, Jev and Nano; requests spend the caller's Pollen.
+2. In [My listings](https://enter.pollinations.ai/my-models), choose Code agent and enter your public repository URL. Private visibility permits owner-only calls; public listing requires publisher access.
+3. Call your deployed model through `POST /v1/responses` with a non-streaming request. The existing deployment is `community/ale-rls/jev-context-trimmer` (private, owner-callable). The caller needs generation access to the agent, Jev and Nano; requests draw from the caller’s balance.
 
 ```json
 {
@@ -29,7 +29,7 @@ Three deployed-agent calls on 2026-09-30 used the same synthetic billing/weather
 | Paris weather question | 0.01 | 0.96 | paris_forecast | 128 / 247 |
 | Unrelated novel question | 0.01 | 0.01 | none | 247 / 247 |
 
-Observed cost: approximately **0.000333 Quest Pollen**. [Full evidence, inputs and tooling](https://github.com/ale-rls/jev-context-trimmer/blob/main/EVIDENCE.md) are in the public source repository.
+Observed cost: approximately **$0.000333 from Quest balance**. [Full evidence, inputs and tooling](https://github.com/ale-rls/jev-context-trimmer/blob/main/EVIDENCE.md) are in the public source repository.
 
 Run the eight local tests with Node.js 24:
 

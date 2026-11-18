@@ -9,6 +9,7 @@ import type { Fetcher as ScheduledFetcher } from "@cloudflare/workers-types/expe
 import {
     getModels,
     getRegistryModelDefinition,
+    isFreeModel,
 } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -146,6 +147,14 @@ describe("getGenerationModelRegistry", () => {
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
+            // Fireworks and the Azure-hosted Fireworks routes serve one choice
+            // per request and answer n>1 with "n must be 1 on serverless".
+            ["z-ai/glm-5.3", "n", false],
+            ["minimax/minimax-m3", "n", false],
+            ["nvidia/nemotron-3.5-lightning", "n", false],
+            // DeepInfra and OVH do honor n.
+            ["deepseek/deepseek-v4.1-flash", "n", true],
+            ["openai/gpt-oss-20b", "n", true],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(
@@ -404,4 +413,23 @@ describe("getGenerationModelRegistry", () => {
             expect.any(Error),
         );
     });
+});
+
+it("treats a model as free only when no rate or billing rule can charge", () => {
+    const paid = getRegistryModelDefinition("openai/gpt-5-nano");
+    const free = {
+        ...paid,
+        cost: { promptTextTokens: 0, completionTextTokens: 0 },
+    };
+    expect(isFreeModel(paid)).toBe(false);
+    expect(isFreeModel(free)).toBe(true);
+    expect(
+        isFreeModel({
+            ...free,
+            costVariants: { long: { promptTextTokens: 1e-6 } },
+        }),
+    ).toBe(false);
+    expect(
+        isFreeModel({ ...free, billing: { resolveTotalCost: () => 0.01 } }),
+    ).toBe(false);
 });

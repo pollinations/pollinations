@@ -344,7 +344,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether the paid balance is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -378,7 +378,17 @@ export const CreateChatCompletionRequestSchema = z
         max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(2147483647)
+            .nullable()
+            .optional()
+            .meta({
+                description:
+                    "Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request.",
+            }),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),
@@ -810,6 +820,9 @@ export const OpenAIModelSchema = z
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
+        required_safety: ModelInfoSchema.shape.required_safety.describe(
+            "Safety checks the gateway always applies to text input for this model; callers cannot disable them.",
+        ),
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
         base_model: z
@@ -819,13 +832,16 @@ export const OpenAIModelSchema = z
         paid_only: z
             .boolean()
             .describe(
-                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+                "True when the model needs the paid balance; the Quest balance can't pay for it. Same field as on `/models`.",
             ),
         pricing: z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
+            "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()
@@ -864,6 +880,9 @@ export const OpenAIModelSchema = z
         ),
         allowed_durations: ModelInfoSchema.shape.allowed_durations.describe(
             "Exact `duration` values in seconds when the model accepts a fixed set instead of a range.",
+        ),
+        resolutions: ModelInfoSchema.shape.resolutions.describe(
+            "Output resolutions the model accepts for the `resolution` parameter, such as `1k`, `2k` or `1080p`. The first entry is the default. Omitted when the model declares none.",
         ),
         per_user_rpm: z.number().positive().nullable().optional(),
         max_reference_images:
@@ -957,7 +976,7 @@ const imageSeedField = z
             "Seed for reproducible results. -1 maps to the stable compatibility seed.",
     });
 const imageQualityField = z
-    .enum(["standard", "hd", "low", "medium", "high"])
+    .enum(["standard", "hd", "low", "medium", "high", "auto"])
     .optional()
     .default("medium")
     .meta({
@@ -971,6 +990,16 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
+    description:
+        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+});
+const imageFrameCountField = z.number().int().min(2).max(16).optional();
+const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
+const imageBackgroundField = z
+    .enum(["auto", "opaque", "transparent"])
+    .optional();
+
 const imageResponseFormatField = z
     .enum(["url", "b64_json"])
     .optional()
@@ -988,7 +1017,18 @@ export const CreateImageRequestSchema = z
         model: imageModelField,
         n: imageNField,
         size: imageSizeField,
+        aspect_ratio: z
+            .enum(["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"])
+            .optional()
+            .meta({
+                description:
+                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+            }),
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
@@ -1070,6 +1110,10 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        output_format: imageOutputFormatField,
+        frame_count: imageFrameCountField,
+        frame_duration_ms: imageFrameDurationField,
+        background: imageBackgroundField,
         seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,

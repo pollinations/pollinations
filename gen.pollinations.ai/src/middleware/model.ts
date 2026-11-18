@@ -54,7 +54,9 @@ export type ModelVariables = {
 
 /** Required checks for every provider this request may reach. */
 export function getRequiredSafetyFeatures(
-    model: ModelVariables["model"] | undefined,
+    model:
+        | Pick<ModelVariables["model"], "definition" | "fallbackEntries">
+        | undefined,
 ): SafetyFeature[] {
     const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
     for (const fallback of model?.fallbackEntries ?? []) {
@@ -225,15 +227,22 @@ export async function resolveModelDefinition(
 
 /**
  * An explicit empty model must fail instead of silently using the default;
- * only an absent field may fall back.
+ * only an absent field may fall back. A value of any other type is a caller
+ * error too: passing it on used to reach string methods and surface as a 500.
  */
 function parseRawModel(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== "string") {
+        throw new HTTPException(400, {
+            message: "model: Invalid input: expected string",
+        });
+    }
     if (value === "") {
         throw new HTTPException(400, {
             message: "model: Too small: expected string to have >=1 characters",
         });
     }
-    return (value as string) || null;
+    return value;
 }
 
 /**
@@ -251,7 +260,9 @@ export function resolveModel(
         // Extract model from request
         let rawModel: string | null = null;
 
-        if (c.req.method === "GET") {
+        // Hono dispatches HEAD to the GET handler, so the query carries the
+        // model for both; reading GET alone made HEAD generate the default.
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";

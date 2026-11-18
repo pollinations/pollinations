@@ -795,7 +795,7 @@ export async function trackResponse(
         // handler reports on the error (an xAI video rejected after generation).
         const usage =
             error instanceof UpstreamError ? error.billedUsage : undefined;
-        if (!usage) {
+        if (!usage || isImplausibleProxyUsage(eventType, candidate, usage)) {
             return notBilled({
                 modelUsed,
                 ...trackJsonErrorUsage(
@@ -951,6 +951,19 @@ export async function trackResponse(
             modelUsed,
         });
     }
+    if (isImplausibleProxyUsage(eventType, candidate, modelUsage.usage)) {
+        return notBilled({
+            responseStatus: 502,
+            modelUsed,
+            usage: {},
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "usage_invalid",
+                errorMessage: `Community provider reported implausible usage: ${JSON.stringify(modelUsage.usage)}`,
+            },
+            errorOutput: { usage: modelUsage.usage },
+        });
+    }
     // Provider cost follows the serving route; price follows its caller choice.
     const {
         cost,
@@ -991,6 +1004,40 @@ export async function trackResponse(
                   )
                 : undefined,
     };
+}
+
+// A community proxy reports its own usage and its owner earns from it, so a
+// text call that claims more than this, summed over every prompt and every
+// completion bucket, is never charged.
+const MAX_PROXY_PROMPT_TOKENS = 2_000_000;
+const MAX_PROXY_COMPLETION_TOKENS = 200_000;
+
+function isImplausibleProxyUsage(
+    eventType: EventType,
+    candidate: FallbackCandidate,
+    usage: Usage,
+): boolean {
+    if (
+        eventType !== "generate.text" ||
+        candidate.communityEndpoint?.type !== "proxy"
+    ) {
+        return false;
+    }
+    let prompt = 0;
+    let completion = 0;
+    for (const [type, amount] of Object.entries(usage)) {
+        // Checked before it is summed: a negative count would cancel a large
+        // one, and text that reads as a number ("0x1") would turn the sum
+        // into text, which is never over a ceiling. Number.isFinite does
+        // not convert, so only a real number passes.
+        if (!Number.isFinite(amount) || amount < 0) return true;
+        if (type.startsWith("prompt")) prompt += amount;
+        else completion += amount;
+    }
+    return (
+        prompt > MAX_PROXY_PROMPT_TOKENS ||
+        completion > MAX_PROXY_COMPLETION_TOKENS
+    );
 }
 
 // A text answer reporting no tokens is billed at zero. Say why on its row,
@@ -1040,7 +1087,9 @@ function zeroUsageNote(
 }
 
 function streamErrorClass(code: string | undefined): string {
-    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "usage_missing" || code === "usage_invalid") {
+        return "UpstreamUsageError";
+    }
     if (code === "upstream_stream_error") return "UpstreamStreamError";
     return "UpstreamFinishReasonError";
 }

@@ -29,6 +29,9 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
+// GPU backends return JPEG; keep the existing complete 1x1 fixture dimensions.
+const gpuJpeg1x1Base64 =
+    "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH8AP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Af//Z";
 const imageBackendHost = "image-backend.test";
 const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
@@ -598,7 +601,7 @@ async function fakeImageBackendResponse(request: Request) {
 
     return Response.json([
         {
-            image: png1x1Base64,
+            image: gpuJpeg1x1Base64,
             isMature: false,
             isChild: false,
         },
@@ -1537,6 +1540,53 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
         "adjustmentUnits",
     );
+});
+
+test("seed -1 regenerates identical chat requests through the coordinator", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const init = {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            messages: [
+                { role: "user", content: "vcr random seed regeneration" },
+            ],
+            seed: -1,
+        }),
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const { response, wait } = await fetchWorker(
+            "/v1/chat/completions",
+            init,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        await response.json();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    for (const { seed } of mocks.portkeyDirect.state.requests) {
+        expect(Number.isInteger(seed)).toBe(true);
+        expect(seed).toBeGreaterThanOrEqual(0);
+        expect(seed).toBeLessThanOrEqual(2147483647);
+    }
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
+    }
 });
 
 test("chat completions reject a successful envelope without usage", async ({
@@ -3799,6 +3849,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         "black-forest-labs/flux.1-schnell:deepinfra",
     );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-image-dimensions")).toBe("1x1");
     await response.arrayBuffer();
     await wait();
 
@@ -3861,7 +3912,7 @@ test("fallback-only provider routes cannot be called directly", async ({
     expect(mocks.deepInfra.state.requests).toHaveLength(0);
 });
 
-test("OpenAI image generation returns token usage", async ({
+test("OpenAI image generation returns token usage and preserves produced dimensions in cache", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -3881,24 +3932,27 @@ test("OpenAI image generation returns token usage", async ({
     expect(registerResponse.status).toBe(200);
     await mocks.enable("tinybird", "imageBackend");
 
-    const { response, wait } = await fetchWorker("/v1/images/generations", {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${paidApiKey}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            model: "black-forest-labs/flux.1-schnell",
-            prompt: "vcr red square",
-            size: "1280x720",
-            seed: 42,
-            response_format: "b64_json",
-        }),
-    });
+    const generate = (response_format: "b64_json" | "url") =>
+        fetchWorker("/v1/images/generations", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${paidApiKey}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "black-forest-labs/flux.1-schnell",
+                prompt: "vcr red square",
+                size: "1280x720",
+                seed: 42,
+                response_format,
+            }),
+        });
+    const { response, wait } = await generate("b64_json");
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-cache")).toBe("MISS");
     expect(response.headers.get("x-cache-type")).toBeNull();
+    expect(response.headers.get("x-image-dimensions")).toBe("1x1");
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],
         usage: {
@@ -3912,24 +3966,54 @@ test("OpenAI image generation returns token usage", async ({
         },
     });
     await wait();
+
+    const cached = await generate("url");
+    expect(cached.response.status).toBe(200);
+    expect(cached.response.headers.get("x-cache")).toBe("HIT");
+    expect(cached.response.headers.get("x-image-dimensions")).toBe("1x1");
+    await expect(cached.response.json()).resolves.toMatchObject({
+        data: [{ url: expect.any(String) }],
+    });
+    await cached.wait();
 });
 
-test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
-    "%s rejects transparent backgrounds with 400",
-    async (model, { paidApiKey, mocks }) => {
+test.for(
+    ["openai/gpt-image-2", "tongyi-mai/z-image-turbo"].flatMap((model) =>
+        ["GET", "POST"].flatMap((method) =>
+            ["transparent", "background"].map((parameter) => ({
+                model,
+                method,
+                parameter,
+            })),
+        ),
+    ),
+)(
+    "$model $method $parameter rejects transparent backgrounds with 400",
+    async ({ model, method, parameter }, { paidApiKey, mocks }) => {
         await mocks.enable("tinybird");
 
-        const { response, wait } = await fetchWorker("/v1/images/generations", {
-            method: "POST",
+        const transparent =
+            parameter === "background"
+                ? { background: "transparent" }
+                : { transparent: true };
+        const url =
+            method === "POST"
+                ? "/v1/images/generations"
+                : `/image/transparent?model=${model}&${parameter}=${parameter === "background" ? "transparent" : "true"}`;
+        const { response, wait } = await fetchWorker(url, {
+            method,
             headers: {
                 "content-type": "application/json",
                 authorization: `Bearer ${paidApiKey}`,
             },
-            body: JSON.stringify({
-                model,
-                prompt: "transparent",
-                transparent: true,
-            }),
+            body:
+                method === "POST"
+                    ? JSON.stringify({
+                          model,
+                          prompt: "transparent",
+                          ...transparent,
+                      })
+                    : undefined,
         });
 
         expect(response.status).toBe(400);

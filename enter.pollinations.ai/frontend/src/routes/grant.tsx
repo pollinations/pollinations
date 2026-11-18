@@ -364,8 +364,9 @@ function GrantPage() {
             )}
             {modelEntry && (
                 <Text size="sm">
-                    {category ? "These models" : "This model"} may spend Pollen
-                    when used. The key’s existing spending limit still applies.
+                    {category ? "These models" : "This model"} may spend from
+                    your balance when used. The key’s existing spending limit
+                    still applies.
                 </Text>
             )}
         </AuthFlowScreen>

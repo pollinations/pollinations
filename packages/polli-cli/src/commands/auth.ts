@@ -10,6 +10,7 @@ import {
 import {
     ExitSignal,
     fail,
+    formatDollars,
     getOutputMode,
     printError,
     printInfo,
@@ -316,12 +317,24 @@ export async function showAuthStatus(): Promise<void> {
     // wallet is in `accountBalance` (needs account:usage). Unbudgeted keys
     // see the wallet total in `balance`, so only list it when it differs.
     const wallet = balance?.accountBalance?.total;
+    const keyBudget =
+        balance?.balance !== wallet ? balance?.balance : undefined;
+    // Scripts keep the `pollen` field; people read dollars.
+    const human = getOutputMode() === "human";
     printResult({
         authenticated: true,
         key: masked,
         name: profileName(profile),
-        pollen: wallet ?? "unknown",
-        key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
+        ...(human
+            ? {
+                  balance:
+                      wallet === undefined ? "unknown" : formatDollars(wallet),
+                  key_budget:
+                      keyBudget === undefined
+                          ? undefined
+                          : formatDollars(keyBudget),
+              }
+            : { pollen: wallet ?? "unknown", key_budget: keyBudget }),
     });
 }
 

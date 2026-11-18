@@ -14,8 +14,10 @@ if (!TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set");
 const ENTER = "https://enter.pollinations.ai";
 const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
-// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
-const SCOPE = "generate machines keys";
+// gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes. That
+// key carries `profile` and `usage`, and a key only creates, edits or revokes
+// keys within its own permissions.
+const SCOPE = "generate profile usage machines keys";
 // The computers a new Barbara can get; gen's pricing list gives their CPUs,
 // memory and rates. Only E2B's, whose envd Mama reaches directly (envd.ts).
 const SIZES: Record<string, string> = {
@@ -27,12 +29,12 @@ const DEFAULT_SIZE = "pollinations-large";
 // an image, a file reply, a connect link) on 2026-10-22/23. The first is the
 // default: Quest Pollen pays for it, so a new account's Barbara answers.
 const MODELS: Record<string, string> = {
-    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced · Quest Pollen",
+    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced · Uses Quest balance",
     "anthropic/claude-sonnet-5.5": "Claude Sonnet 5.5 · balanced",
     "anthropic/claude-opus-5.5": "Claude Opus 5.5 · smartest",
     "anthropic/claude-haiku-5.5": "Claude Haiku 5.5 · quick",
     "deepseek/deepseek-v4.1-flash-1017": "DeepSeek V4.1 Flash · cheapest",
-    "z-ai/glm-5.3-flash": "GLM 5.3 Flash · cheap · Quest Pollen",
+    "z-ai/glm-5.3-flash": "GLM 5.3 Flash · cheap · Uses Quest balance",
 };
 const DEFAULT_MODEL = Object.keys(MODELS)[0];
 // E2B's largest timeout: gen keeps the box running and bills the key.
@@ -153,13 +155,13 @@ async function signIn(from: TgUser) {
         );
         await say(
             from.id,
-            "Sign in to Pollinations. Your Barbaras run on your account and use your Pollen. On the next page, clear the expiry: your Barbaras stop when my access ends.",
+            "Sign in to Pollinations. Your Barbaras run on your account and use your balance. On the next page, clear the expiry and the budget: your Barbaras stop when my access ends or its budget runs out.",
             {
                 reply_markup: {
                     inline_keyboard: [
                         [
                             {
-                                text: "Pollinations Connect",
+                                text: "Connect your Pollinations account",
                                 url: code.verification_uri_complete,
                             },
                         ],
@@ -281,7 +283,7 @@ async function botLinkView(from: TgUser): Promise<View> {
         const size = pricing.templates[template];
         return {
             template,
-            text: `<b>${SIZES[template]}</b>: ${size.cpuCount} CPUs, ${size.memoryMB / 1024} GB, about ${rentPerDay(pricing, size).toFixed(1)} Pollen a day while she runs`,
+            text: `<b>${SIZES[template]}</b>: ${size.cpuCount} CPUs, ${size.memoryMB / 1024} GB, about $${rentPerDay(pricing, size).toFixed(1)} a day while she runs`,
         };
     });
     return {
@@ -399,11 +401,27 @@ async function setUp(owner: TgUser, bot: TgUser) {
         waitingBots.set(owner.id, bot);
         return signIn(owner);
     }
-    await say(
-        owner.id,
-        `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
-    );
     try {
+        // A sign-in's budget pays both her computer's rent and the BUDGET
+        // her box key gets from it (setBudget), so it needs both, with a day
+        // of rent to start.
+        const template = user.size ?? DEFAULT_SIZE;
+        const [{ pollenBudget }, pricing] = await Promise.all([
+            gen<SignIn>(user.key, "/account/key"),
+            gen<Pricing>(user.key, "/alpha/e2b/pricing"),
+        ]);
+        const rent = rentPerDay(pricing, pricing.templates[template]);
+        if (pollenBudget !== null && pollenBudget < BUDGET + rent) {
+            waitingBots.set(owner.id, bot);
+            return say(
+                owner.id,
+                `My access to your account has a budget of $${pollenBudget.toFixed(2)}. It pays for the $${BUDGET} she can spend and her computer, about $${rent.toFixed(1)} a day, so it can't set her up. Send /signin and clear the budget on the sign-in page, and I'll set her up then.`,
+            );
+        }
+        await say(
+            owner.id,
+            `Setting up @${bot.username}. This takes about two minutes, and I'll tell you when she's ready.`,
+        );
         const token = await botToken(bot.id);
         await tg("setManagedBotAccessSettings", {
             user_id: bot.id,
@@ -418,7 +436,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         }>(user.key, "/alpha/e2b/sandboxes", {
             method: "POST",
             body: {
-                templateID: user.size ?? DEFAULT_SIZE,
+                templateID: template,
                 timeout: KEEP_SECONDS,
                 autoPause: true,
                 metadata: { name: `barbara-${bot.username}` },
@@ -443,7 +461,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         await tg("setMyDescription", { description: READY }, token);
         await say(
             owner.id,
-            `${bot.first_name} is ready: @${bot.username}\nShe can spend ${BUDGET} Pollen. Change that under Settings.`,
+            `${bot.first_name} is ready: @${bot.username}\nShe can spend $${BUDGET}. Change that under Settings.`,
             {
                 reply_markup: {
                     inline_keyboard: [
@@ -554,7 +572,7 @@ const keysOf = async (key: string) =>
 const budgetText = (k?: Key) =>
     k?.pollenBalance == null
         ? "no budget limit"
-        : `${Math.round(k.pollenBalance * 100) / 100} Pollen left`;
+        : `$${Math.round(k.pollenBalance * 100) / 100} left`;
 
 async function setBudget(key: string, b: Barbara, pollen: number | null) {
     const k = keyOf(await keysOf(key), b);
@@ -744,7 +762,10 @@ const deleteView = (b: Barbara): View => ({
     },
 });
 
-// Deletes her box and revokes its key; the bot stays the owner's.
+// Deletes her box and revokes its key; the bot stays the owner's. Enter
+// refuses the revoke (403) when her key is outside this sign-in's limits, as
+// one made under an earlier sign-in can be. She is deleted all the same, and
+// the name of the key that stays on the account is returned.
 async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     const boxKey = keyOf(await keysOf(key), b);
     await gen(key, `/alpha/e2b/sandboxes/${b.box}`, {
@@ -752,11 +773,18 @@ async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
     }).catch((error) => {
         if (!String(error).includes("404")) throw error;
     });
+    let keyLeft: string | undefined;
     if (boxKey)
-        await gen(key, `/account/keys/${boxKey.id}`, { method: "DELETE" });
+        await gen(key, `/account/keys/${boxKey.id}`, {
+            method: "DELETE",
+        }).catch((error: Error) => {
+            if (!error.message.startsWith("403 ")) throw error;
+            keyLeft = boxKey.name;
+        });
     const user = userOf(owner.id);
     user.barbaras = user.barbaras.filter((x) => x.botId !== b.botId);
     save();
+    return keyLeft;
 }
 
 async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
@@ -772,7 +800,7 @@ async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
         reply_markup: {
             inline_keyboard: [
                 BUDGETS.map((pollen) => ({
-                    text: `${pollen} Pollen`,
+                    text: `$${pollen}`,
                     callback_data: `setbudget:${b.botId}:${pollen}`,
                 })),
                 [
@@ -803,7 +831,7 @@ async function modelView(owner: TgUser, b: Barbara): Promise<View> {
             "Switching keeps her conversation. She restarts once her current task is done.",
             "",
             // Measured on 2026-10-22 (see MODELS).
-            "A message costs roughly 0.25 Pollen on Opus, 0.12 on Sonnet, 0.07 on GPT-6.1 and 0.01 on the others. GPT-6.1 and GLM can spend Quest Pollen; the others need bought Pollen.",
+            "A message costs roughly $0.25 on Opus, $0.12 on Sonnet, $0.07 on GPT-6.1 and $0.01 on the others. GPT-6.1 and GLM can use Quest balance. The others require paid balance.",
         ].join("\n"),
         reply_markup: {
             inline_keyboard: [
@@ -979,7 +1007,7 @@ async function onButton(q: Callback) {
         ask(owner, { kind: "people", botId: b.botId });
         return say(
             owner.id,
-            `Choose up to ${left} people who can talk to @${b.bot}. They can use everything she can, including your connected apps and your Pollen.`,
+            `Choose up to ${left} people who can talk to @${b.bot}. They can use everything she can, including your connected apps and your balance.`,
             {
                 reply_markup: {
                     keyboard: [
@@ -1064,11 +1092,14 @@ async function onButton(q: Callback) {
     }
     if (action === "delete") return show(owner.id, deleteView(b), messageId);
     if (action === "deleted" && key) {
-        await deleteBarbara(owner, b, key);
+        const keyLeft = await deleteBarbara(owner, b, key);
+        const leftover = keyLeft
+            ? ` I couldn't revoke her key ${keyLeft}; revoke it at ${ENTER}/keys.`
+            : "";
         return show(
             owner.id,
             {
-                text: `@${b.bot} is deleted. Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
+                text: `@${b.bot} is deleted.${leftover} Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
                 reply_markup: userOf(owner.id).barbaras.length
                     ? {
                           inline_keyboard: [
@@ -1185,7 +1216,7 @@ export const expiryWarning = ({ expiresAt }: SignIn) =>
 
 export const budgetWarning = ({ pollenBudget }: SignIn, rent: number) =>
     pollenBudget !== null && pollenBudget < rent
-        ? `My access to your account has ${pollenBudget.toFixed(2)} Pollen left, about ${Math.floor((24 * pollenBudget) / rent)} hours of your Barbaras' computers. They stop when it runs out. To keep them running, send /signin and clear the budget.`
+        ? `My access to your account has $${pollenBudget.toFixed(2)} left, about ${Math.floor((24 * pollenBudget) / rent)} hours of your Barbaras' computers. They stop when it runs out. To keep them running, send /signin and clear the budget.`
         : undefined;
 
 // What their running Barbaras' computers cost a day. A box that doesn't

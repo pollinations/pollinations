@@ -204,15 +204,15 @@ export function paymentsFailing(rows) {
     return rows.length ? { payments: { kind: "PAYMENTS_FAILING", rows } } : {};
 }
 
-// Requests failing before any model is known (an API-key, sign-in or
-// balance check, mostly Enter's database) are failing while any minute of the
+// Errors without a model label and D1 failures trigger while any minute of the
 // last 30 had at least this many; quiet minutes have 0 to 6. They come in
 // bursts of seconds, and per-model health never sees them: the first bad
 // minute opens the card, and the 30-minute window keeps that one card open
 // across bursts. `minutes` are the infra_watch_early_errors rows.
 const EARLY_MIN_FAILURES = 25;
 const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
-const total = (rows, field) => rows.reduce((sum, m) => sum + m[field], 0);
+const total = (rows, field) =>
+    rows.reduce((sum, m) => sum + (m[field] ?? 0), 0);
 export function earlyErrors(minutes) {
     const bursts = minutes.filter((m) => m.failures >= EARLY_MIN_FAILURES);
     if (!bursts.length) return {};
@@ -225,6 +225,7 @@ export function earlyErrors(minutes) {
             bursts: bursts.length,
             failures: total(minutes, "failures"),
             d1: total(minutes, "d1_failures"),
+            r2: total(minutes, "r2_failures"),
             firstAt: minuteMs(bursts[0].minute),
             lastAt: minuteMs(bursts.at(-1).minute),
         },
@@ -599,15 +600,13 @@ const subjectOf = (key) =>
               : key.startsWith("gpu:")
                 ? `${GPU_POOLS[key.slice(4)].name} GPU pool`
                 : SUBJECT[key];
-// Early errors are named after Enter's database while it causes at least half
-// of them.
-const d1Main = (info) => info.d1 * 2 >= info.failures;
-const titleOf = (key, info) =>
-    key !== "early"
-        ? subjectOf(key)
-        : d1Main(info)
-          ? "Enter database (D1)"
-          : "requests before any model";
+function titleOf(key, info) {
+    if (key !== "early") return subjectOf(key);
+    if (info.d1 * 2 >= info.failures) return "Enter database (D1)";
+    if (info.r2 * 2 >= info.failures)
+        return "R2 failed to save generation results";
+    return "requests without a model label";
+}
 
 // An open card's colour by severity: red down, orange degraded, amber weak
 // primary. A closed card's colour is set by cardColor.
@@ -731,7 +730,7 @@ function paymentRows(rows) {
                 "",
                 `$${(r.amount_cents / 100).toFixed(2)} ${r.ref ? "auto top-up" : "pack"}, ${minute(r.at)}`,
             ],
-            ["", r.reason || "no credit recorded"],
+            ["", "no credit recorded"],
         ]),
         ...(unpaid.length > shown.length
             ? [["", `+${unpaid.length - shown.length} more payments`]]
@@ -773,11 +772,17 @@ function openRows(incident, now) {
     if (kind === "EARLY_ERRORS")
         return [
             ["WORST", `${info.worst} reqs failed in 1 min`],
-            ["CAUSE", `${info.d1} database, ${info.failures - info.d1} other`],
+            [
+                "CAUSE",
+                [
+                    ...(info.r2 ? [`${info.r2} R2`] : []),
+                    `${info.d1} database`,
+                    `${info.failures - info.d1 - (info.r2 ?? 0)} other`,
+                ].join(", "),
+            ],
             ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
             ["LAST", utc(info.lastAt)],
             ["ROUTE", info.route],
-            ["", "API keys, sign-in, billing fail"],
         ];
     if (kind === "ANALYTICS_DOWN")
         return [

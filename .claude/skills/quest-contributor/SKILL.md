@@ -1,11 +1,11 @@
 ---
 name: quest-contributor
-description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Pollen rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
+description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn 🌱 Quest balance. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim what a quest earned, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
 ---
 
 # Quest Contributor
 
-Pollinations pays Pollen rewards for merged PRs that solve community quests -
+Pollinations pays 🌱 Quest balance for merged PRs that solve community quests -
 issues labeled `POLLEN-QUEST` in
 [pollinations/pollinations](https://github.com/pollinations/pollinations).
 This skill teaches an agent the whole loop.
@@ -84,7 +84,7 @@ maintainer a one-line command to run it - do not fake a transcript.
 ## 7. Get paid
 
 After merge, open [enter.pollinations.ai/quests](https://enter.pollinations.ai/quests),
-check quests, and claim the pending reward. Rewards are keyed to your GitHub
+check quests, and claim what you earned. Earnings are keyed to your GitHub
 account. When a PR is not selected but an idea from it ships, maintainers
 sometimes pay a small bonus.
 

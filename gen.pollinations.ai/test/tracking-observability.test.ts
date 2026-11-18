@@ -28,6 +28,7 @@ import {
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -4050,6 +4051,242 @@ describe("trackResponse missing usage", () => {
         expect(tracking.responseStatus).toBe(502);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+    });
+});
+
+describe("trackResponse community proxy usage", () => {
+    const proxy = createCommunityEndpoint("proxy-usage-owner");
+    const agent: CommunityEndpointRuntime = {
+        ...proxy,
+        type: "endpoint_agent",
+    };
+    const served = (endpoint: CommunityEndpointRuntime): FallbackCandidate => ({
+        id: endpoint.modelId,
+        definition: communityModelDefinition(endpoint),
+        communityEndpoint: endpoint,
+    });
+    const json = (usage: Record<string, string>) =>
+        Response.json(
+            { choices: [] },
+            { headers: { "x-model-used": proxy.modelId, ...usage } },
+        );
+    const stream = (body: string) =>
+        new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+        });
+    const overCompletion = { "x-usage-completion-text-tokens": "200001" };
+    // A field the Responses usage schema does not check.
+    const cacheWrites = (count: unknown) => () =>
+        stream(
+            `event: response.completed\ndata: ${JSON.stringify({
+                type: "response.completed",
+                response: {
+                    object: "response",
+                    model: "upstream-test-model",
+                    status: "completed",
+                    usage: {
+                        input_tokens: 1,
+                        output_tokens: 1,
+                        total_tokens: 2,
+                        input_tokens_details: {
+                            cache_creation_input_tokens: count,
+                        },
+                    },
+                },
+            })}\n\n`,
+        );
+
+    it.each([
+        ["Chat JSON completion tokens", () => json(overCompletion)],
+        [
+            "reasoning added to visible output",
+            () =>
+                json({
+                    "x-usage-completion-text-tokens": "150000",
+                    "x-usage-completion-reasoning-tokens": "50001",
+                }),
+        ],
+        [
+            "cached prompt tokens",
+            () =>
+                json({
+                    "x-usage-prompt-text-tokens": "1",
+                    "x-usage-prompt-cached-tokens": "2000000",
+                }),
+        ],
+        [
+            "a Chat stream's terminal usage",
+            () =>
+                stream(
+                    `data: ${JSON.stringify({
+                        model: "upstream-test-model",
+                        choices: [],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 200_001,
+                            total_tokens: 200_011,
+                        },
+                    })}\n\ndata: [DONE]\n\n`,
+                ),
+        ],
+        [
+            "a Responses stream's terminal usage",
+            () =>
+                stream(
+                    `event: response.completed\ndata: ${JSON.stringify({
+                        type: "response.completed",
+                        response: {
+                            object: "response",
+                            model: "upstream-test-model",
+                            status: "completed",
+                            usage: {
+                                input_tokens: 10,
+                                output_tokens: 200_001,
+                                total_tokens: 200_011,
+                            },
+                        },
+                    })}\n\n`,
+                ),
+        ],
+        // A counter that is not a number is not within the ceiling either.
+        ["a count that is not a number", cacheWrites("bad")],
+        // Read as 2,000,001 prompt tokens less 2,000,000 cache writes: a sum
+        // of 1, billed as the 2,000,001.
+        ["a negative count that cancels the rest", cacheWrites(-2_000_000)],
+    ])(
+        "does not bill a proxy past the ceiling: %s",
+        async (_name, response) => {
+            const reply = response();
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(
+                    reply.headers.get("content-type") === "text/event-stream",
+                ),
+                reply,
+                served(proxy),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 502,
+                isBilledUsage: false,
+                usage: {},
+                errorTracking: { errorResponseCode: "usage_invalid" },
+                // The claim itself is kept for the error log.
+                errorOutput: { usage: expect.any(Object) },
+            });
+            expect(tracking.price).toBeUndefined();
+        },
+    );
+
+    // An empty answer is an error the provider still charged for. The text
+    // handler normalizes its usage as reported, with no schema in between.
+    // The total counts the reasoning on top, so the details are kept as
+    // they are and none is capped to the completion tokens.
+    const emptyAnswer = (imageTokens: unknown, completionTokens = 10) =>
+        openaiUsageToUsage({
+            prompt_tokens: 1,
+            completion_tokens: completionTokens,
+            total_tokens: completionTokens + 2,
+            completion_tokens_details: {
+                image_tokens: imageTokens as never,
+                reasoning_tokens: 1,
+            },
+        });
+
+    it.each([
+        [
+            "past the ceiling",
+            { promptTextTokens: 1, completionTextTokens: 200_001 },
+            false,
+        ],
+        [
+            "at the ceiling",
+            { promptTextTokens: 1, completionTextTokens: 200_000 },
+            true,
+        ],
+        ["a null count is a missing one", emptyAnswer(null), true],
+        // Text that reads as a number turns the sum into text, and text is
+        // never over a ceiling: this one billed 2,000,001 completion tokens.
+        ["a hex string count", emptyAnswer("0x1", 2_000_001), false],
+        ["a hex string count on a small answer", emptyAnswer("0x1"), false],
+        ["a numeric string count", emptyAnswer("1"), false],
+        ["a word for a count", emptyAnswer("bad"), false],
+        ["a boolean count", emptyAnswer(true), false],
+        ["an infinite count", emptyAnswer(Number.POSITIVE_INFINITY), false],
+        ["a negative count", emptyAnswer(-5), false],
+    ])(
+        "bills a proxy's failed answer only within the ceiling: %s",
+        async (_name, billedUsage, isBilledUsage) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(),
+                new Response(null, { status: 502 }),
+                served(proxy),
+                undefined,
+                new UpstreamError(502, {
+                    message: "Provider returned an empty response",
+                    billedUsage,
+                }),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 502,
+                isBilledUsage,
+            });
+        },
+    );
+
+    it.each([
+        [
+            "a proxy exactly at both ceilings",
+            "generate.text",
+            served(proxy),
+            {
+                "x-usage-prompt-text-tokens": "2000000",
+                "x-usage-completion-text-tokens": "200000",
+            },
+        ],
+        // An agent's usage is the sum of its own steps, and it is free.
+        ["an agent", "generate.text", served(agent), overCompletion],
+        [
+            "a registry model",
+            "generate.text",
+            candidateFixture(),
+            overCompletion,
+        ],
+        // Embedding batches are sized by their input, not by one answer.
+        [
+            "a proxy's embeddings",
+            "generate.embedding",
+            served(proxy),
+            { "x-usage-prompt-text-tokens": "2000001" },
+        ],
+    ] as const)(
+        "still bills %s",
+        async (_name, eventType, candidate, usage) => {
+            const tracking = await trackResponse(
+                eventType,
+                requestTrackingFixture(),
+                json(usage),
+                candidate,
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: 200,
+                isBilledUsage: true,
+            });
+        },
+    );
+
+    // A stream's usage names every bucket, most of them zero.
+    it("still bills a proxy's streamed answer with zero counts", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            cacheWrites(0)(),
+            served(proxy),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
     });
 });
 

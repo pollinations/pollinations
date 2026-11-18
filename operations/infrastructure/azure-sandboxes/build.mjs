@@ -20,22 +20,27 @@ const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
 // Staging first: the builder box runs there, and a broken image fails there
 // before production imports it.
 const staging = (url) => url.endsWith("/pollisbx-staging");
+// Local dev reuses staging's group, so a group can appear more than once.
 const groups = [
-    ...readFileSync(wrangler, "utf8").matchAll(
-        /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
+    ...new Set(
+        [
+            ...readFileSync(wrangler, "utf8").matchAll(
+                /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
+            ),
+        ].map(([, url]) => url),
     ),
-]
-    .map(([, url]) => url)
-    .sort((a, b) => staging(b) - staging(a));
+].sort((a, b) => staging(b) - staging(a));
 
-// The image line follows its group's line in each environment's block.
+// The image line follows its group's line in each block that uses it.
 function pin(group, image) {
     const lines = readFileSync(wrangler, "utf8").split("\n");
-    const at = lines.indexOf(`AZURE_SANDBOX_GROUP_URL = "${group}"`) + 1;
-    if (!lines[at]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
-        throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
-    }
-    lines[at] = `AZURE_SANDBOX_IMAGE = "${image}"`;
+    lines.forEach((line, i) => {
+        if (line !== `AZURE_SANDBOX_GROUP_URL = "${group}"`) return;
+        if (!lines[i + 1]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
+            throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
+        }
+        lines[i + 1] = `AZURE_SANDBOX_IMAGE = "${image}"`;
+    });
     writeFileSync(wrangler, lines.join("\n"));
 }
 const commit = execFileSync(

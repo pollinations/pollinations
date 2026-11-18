@@ -6,6 +6,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { fetchText } from "./fetch.js";
+import { imageTags } from "./tools/docker.js";
 import { lookup } from "./tools/packages.js";
 import worker from "./worker.js";
 
@@ -80,11 +81,13 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "container_image_tags",
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
                 "osv_query",
                 "osv_vulnerability",
+                "package_downloads",
                 "package_lookup",
             ],
         );
@@ -538,4 +541,233 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
         "https://registry.npmjs.org/JSONStream/latest",
         "https://pypi.org/pypi/example/1!2.0/json",
     ]);
+});
+
+test("Packagist expands the minified list, ranks non-semver and patch tags and matches v-prefixed tags", async (t) => {
+    t.mock.method(globalThis, "fetch", async (url) => {
+        assert.equal(url, "https://packagist.org/p2/monolog/monolog.json");
+        return Response.json({
+            minified: "composer/2.0",
+            packages: {
+                "monolog/monolog": [
+                    {
+                        name: "monolog/monolog",
+                        version: "v3.3.0-RC1",
+                        version_normalized: "3.3.0.0-RC1",
+                        description: "Logging for PHP",
+                        license: ["MIT"],
+                        require: { php: ">=8.2" },
+                        suggest: { "ext-mongodb": "MongoDB handler" },
+                    },
+                    { version: "3.10", version_normalized: "3.10.0.0" },
+                    {
+                        version: "3.10-p1",
+                        version_normalized: "3.10.0.0-patch1",
+                    },
+                    {
+                        version: "v3.2.0",
+                        version_normalized: "3.2.0.0",
+                        require: { php: ">=8.1" },
+                    },
+                    {
+                        version: "v3.1.0",
+                        version_normalized: "3.1.0.0",
+                        suggest: "__unset",
+                    },
+                ],
+            },
+        });
+    });
+    const client = await clientFor(t);
+    const latest = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+    });
+    assert.equal(latest.name, "monolog/monolog");
+    assert.equal(latest.version, "3.10-p1");
+    assert.equal(latest.description, "Logging for PHP");
+    assert.deepEqual(latest.license, ["MIT"]);
+    assert.deepEqual(latest.dependencies, { php: ">=8.2" });
+    assert.equal(
+        latest.registryUrl,
+        "https://packagist.org/packages/monolog/monolog",
+    );
+    const pinned = await call(client, "package_lookup", {
+        ecosystem: "packagist",
+        name: "monolog/monolog",
+        version: "3.1.0",
+    });
+    assert.equal(pinned.version, "v3.1.0");
+    assert.deepEqual(pinned.dependencies, { php: ">=8.1" });
+    assert.equal(pinned.suggest, undefined);
+});
+
+test("Go lookup uses @latest without a version and escapes capitals in path and version", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        const target = new URL(url);
+        assert.equal(target.hostname, "proxy.golang.org");
+        if (target.pathname.endsWith(".mod"))
+            return new Response("module example\n\ngo 1.22\n");
+        if (target.pathname.includes("gin-gonic"))
+            return Response.json({
+                Version: "v1.12.0",
+                Time: "2026-02-28T10:10:09Z",
+                Origin: { VCS: "git", URL: "https://github.com/gin-gonic/gin" },
+            });
+        return Response.json({
+            Version: "v68.0.0+incompatible",
+            Time: "2023-01-19T11:02:01Z",
+        });
+    });
+
+    const client = await clientFor(t);
+    const gin = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/gin-gonic/gin",
+    });
+    assert.equal(gin.version, "v1.12.0");
+    assert.equal(gin.time, "2026-02-28T10:10:09Z");
+    assert.equal(gin.origin.VCS, "git");
+    assert.match(gin.goMod, /^module example/);
+    assert.equal(
+        gin.registryUrl,
+        "https://pkg.go.dev/github.com/gin-gonic/gin@v1.12.0",
+    );
+
+    const azure = await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "github.com/Azure/azure-sdk-for-go",
+        version: "v68.0.0+incompatible",
+    });
+    assert.equal(azure.name, "github.com/Azure/azure-sdk-for-go");
+    assert.equal(azure.origin, null);
+    await call(client, "package_lookup", {
+        ecosystem: "golang",
+        name: "git.sr.ht/~emersion/go-scfg",
+        version: "v0.1.0",
+    });
+    assert.deepEqual(urls, [
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@latest",
+        "https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.12.0.mod",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.info",
+        "https://proxy.golang.org/github.com/!azure/azure-sdk-for-go/@v/v68.0.0%2Bincompatible.mod",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v0.1.0.info",
+        "https://proxy.golang.org/git.sr.ht/~emersion/go-scfg/@v/v68.0.0%2Bincompatible.mod",
+    ]);
+});
+
+test("package_downloads passes through daily counts and validates names", async (t) => {
+    const expected = {
+        package: "@scope/pkg",
+        start: "2026-10-29",
+        end: "2026-11-04",
+        downloads: [{ day: "2026-11-04", downloads: 42 }],
+    };
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        assert.equal(
+            url,
+            "https://api.npmjs.org/downloads/range/last-week/%40scope%2Fpkg",
+        );
+        assert.equal(init.headers.Authorization, undefined);
+        assert.equal(init.headers.Cookie, undefined);
+        return Response.json(expected);
+    });
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "package_downloads", { name: "@scope/pkg" }),
+        expected,
+    );
+
+    const bad = await client.callTool({
+        name: "package_downloads",
+        arguments: { name: "not a package!" },
+    });
+    assert.equal(bad.isError, true);
+
+    const badRange = await client.callTool({
+        name: "package_downloads",
+        arguments: { name: "zod", range: "since-forever" },
+    });
+    assert.equal(badRange.isError, true);
+});
+
+test("Docker Hub tags resolve official images under library and drop build attestations", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.match(init.headers["User-Agent"], /hello@pollinations\.ai/);
+        assert.equal(init.headers.Authorization, undefined);
+        return Response.json({
+            count: 9303,
+            results: [
+                {
+                    name: "22-alpine",
+                    last_updated: "2026-11-11T20:38:25.168462Z",
+                    tag_last_pushed: "2026-11-11T20:38:21.732094Z",
+                    full_size: 61366182,
+                    digest: "sha256:5b05da3f",
+                    images: [
+                        { architecture: "amd64", os: "linux", variant: null },
+                        { architecture: "arm64", os: "linux", variant: "v8" },
+                        { architecture: "arm", os: "linux", variant: "v7" },
+                        {
+                            architecture: "unknown",
+                            os: "unknown",
+                            variant: null,
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const filtered = await call(client, "container_image_tags", {
+        image: "node",
+        filter: "22-alpine",
+        limit: 5,
+    });
+    await call(client, "container_image_tags", { image: "node" });
+    assert.deepEqual(urls, [
+        "https://hub.docker.com/v2/repositories/library/node/tags?page_size=5&ordering=last_updated&name=22-alpine",
+        "https://hub.docker.com/v2/repositories/library/node/tags?page_size=25&ordering=last_updated",
+    ]);
+    assert.equal(filtered.repository, "library/node");
+    assert.equal(filtered.tag_count, 9303);
+    assert.deepEqual(filtered.tags, [
+        {
+            tag: "22-alpine",
+            last_pushed: "2026-11-11T20:38:21.732094Z",
+            size_bytes: 61366182,
+            digest: "sha256:5b05da3f",
+            platforms: ["linux/amd64", "linux/arm/v7", "linux/arm64/v8"],
+        },
+    ]);
+});
+test("Docker Hub exact tag and rejected repository names", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        return Response.json({
+            name: "13.2-slim",
+            last_updated: "2026-11-10T17:48:43.383832Z",
+            full_size: 324679011,
+            digest: "sha256:fa7bcee8",
+            images: [{ architecture: "amd64", os: "linux" }],
+        });
+    });
+    const client = await clientFor(t);
+    const one = await call(client, "container_image_tags", {
+        image: "grafana/grafana",
+        tag: "13.2-slim",
+    });
+    assert.deepEqual(urls, [
+        "https://hub.docker.com/v2/repositories/grafana/grafana/tags/13.2-slim",
+    ]);
+    assert.equal(one.tag_count, 1);
+    assert.equal(one.tags[0].last_pushed, "2026-11-10T17:48:43.383832Z");
+    assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
+    for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
+        await assert.rejects(imageTags({ image }), /tag|repository/i);
 });

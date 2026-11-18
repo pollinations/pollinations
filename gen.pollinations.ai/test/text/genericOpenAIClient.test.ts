@@ -70,9 +70,15 @@ describe("genericOpenAIClient", () => {
         },
     );
 
-    it.each([false, true])(
-        "normalizes configured Mistral thinking chunks and preserves usage (stream=%s)",
-        async (stream) => {
+    it.each([
+        ["mistralai/mistral-large-4", false],
+        ["mistralai/mistral-large-4", true],
+        // Reasoning on Mistral Small 4 also returns content as thinking chunks.
+        ["mistralai/mistral-small-4", false],
+        ["mistralai/mistral-small-4", true],
+    ] as const)(
+        "normalizes configured Mistral thinking chunks and preserves usage (%s stream=%s)",
+        async (model, stream) => {
             const usage = {
                 prompt_tokens: 2,
                 completion_tokens: 7,
@@ -99,7 +105,7 @@ describe("genericOpenAIClient", () => {
                 usage,
             };
             const resolved = resolveModelConfig([], {
-                model: "mistralai/mistral-large-4",
+                model,
                 stream,
             });
             const completion = await genericOpenAIClient(
@@ -1522,3 +1528,45 @@ describe("Chat Completions stream usage", () => {
         ).toThrow(/omitted terminal usage/);
     });
 });
+
+it.each(["length", "stop", null, undefined])(
+    "preserves provider truncation while normalizing completed tool calls (%s)",
+    async (finishReason) => {
+        const toolCalls = [
+            {
+                id: "cut",
+                type: "function",
+                function: { name: "Write", arguments: '{"path":' },
+            },
+        ];
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "write" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    Response.json({
+                        choices: [
+                            {
+                                finish_reason: finishReason,
+                                message: {
+                                    role: "assistant",
+                                    content: null,
+                                    tool_calls: toolCalls,
+                                },
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 2,
+                            total_tokens: 3,
+                        },
+                    }),
+            },
+        );
+        expect(completion.choices?.[0]?.finish_reason).toBe(
+            finishReason === "length" ? "length" : "tool_calls",
+        );
+        expect(completion.choices?.[0]?.message?.tool_calls).toEqual(toolCalls);
+    },
+);

@@ -63,6 +63,50 @@ for (const variant of ["flare", "sunburst"]) {
     });
 }
 
+test("HEAD and GET validate the same query model before generation", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const cases = [
+        [
+            "/image/head-model-check?model=openai/gpt-image-2.6-flare",
+            apiKey,
+            402,
+        ],
+        ["/image/head-model-check?model=openai/gpt-5.4-nano", paidApiKey, 400],
+        [
+            "/audio/head-model-check?model=openai/gpt-image-2.6-flare",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/text/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/image/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/audio/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+    ] as const;
+    for (const [path, key, status] of cases) {
+        for (const method of ["GET", "HEAD"]) {
+            const response = await fetchWorker(path, {
+                method,
+                headers: { Authorization: `Bearer ${key}` },
+            });
+            expect(response.status, `${method} ${path}`).toBe(status);
+            if (method === "HEAD") expect(await response.text()).toBe("");
+        }
+    }
+});
+
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
     const caller = await createTestApiKey();

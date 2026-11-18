@@ -3,6 +3,7 @@ import {
     signAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
@@ -11,6 +12,29 @@ import {
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
+
+/** Bound the wait for headers on each external community text attempt. */
+export const communityEndpointFetch: typeof fetch = async (input, init) => {
+    const deadline = new AbortController();
+    const callerSignal = init?.signal;
+    const signal = callerSignal
+        ? AbortSignal.any([callerSignal, deadline.signal])
+        : deadline.signal;
+    const timer = setTimeout(() => {
+        deadline.abort(
+            new DOMException(
+                "Community endpoint response timed out",
+                "TimeoutError",
+            ),
+        );
+    }, COMMUNITY_ENDPOINT_TIMEOUT_MS);
+    try {
+        return await fetch(input, { ...init, signal });
+    } finally {
+        // Once headers arrive, let the response body finish streaming.
+        clearTimeout(timer);
+    }
+};
 
 /**
  * The run token a delegating endpoint authenticates with, or undefined.

@@ -1102,7 +1102,7 @@ it("opens a payments card on the first unpaid payment with a ping, keeps it whil
             id: "pi_3UZX8i7rcjS3l7tr1Scu896L",
             ref: "in_1UZX8g7rcjS3l7trEyyzuUj8",
             amount_cents: 1065,
-            reason: "unknown auto top-up attempt",
+            reason: "",
             n: 1,
             at: "2026-11-08 14:32:15",
         },

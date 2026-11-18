@@ -55,6 +55,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "vLLM Semantic Router": "vllm-sr",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
+    Zyphra: "zyphra",
     xAI: "xai",
 };
 

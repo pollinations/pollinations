@@ -99,3 +99,105 @@ test.for([
         await waitOnExecutionContext(ctx);
     },
 );
+
+// A model of the wrong type must be a 400, never a 500 from string methods on
+// the value downstream.
+test.for([
+    {
+        name: "JSON speech with an object model",
+        path: "/v1/audio/speech",
+        body: { input: "hello", voice: "alloy", model: {} },
+    },
+    {
+        name: "JSON speech with a number model",
+        path: "/v1/audio/speech",
+        body: { input: "hello", voice: "alloy", model: 7 },
+    },
+    {
+        name: "JSON image edit with a boolean model",
+        path: "/v1/images/edits",
+        body: {
+            prompt: "make it blue",
+            image: "https://example.com/image.png",
+            model: true,
+        },
+    },
+])(
+    "rejects a non-string model in a $name request",
+    async ({ path, body }, { apiKey }) => {
+        const mocks = createFetchMock({ tinybird: createMockTinybird() });
+        await mocks.enable("tinybird");
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${apiKey}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(body),
+            }),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: { message: expect.stringContaining("model") },
+        });
+        await waitOnExecutionContext(ctx);
+    },
+);
+
+test.for([
+    {
+        name: "transcription",
+        path: "/v1/audio/transcriptions",
+        fields: { file: "audio" },
+    },
+    {
+        name: "voice changer",
+        path: "/v1/audio/voice-changer",
+        fields: { file: "audio" },
+    },
+    {
+        name: "image edit",
+        path: "/v1/images/edits",
+        fields: { prompt: "make it blue", image: "image" },
+    },
+])(
+    "rejects a file in the model field of a $name request",
+    async ({ path, fields }, { apiKey }) => {
+        const mocks = createFetchMock({ tinybird: createMockTinybird() });
+        await mocks.enable("tinybird");
+        const form = new FormData();
+        for (const [key, value] of Object.entries(fields))
+            form.set(
+                key,
+                new Blob(["x"], {
+                    type: value === "audio" ? "audio/mpeg" : "image/png",
+                }),
+                value,
+            );
+        // A file in the model field: FormData.get("model") returns a File.
+        form.set("model", new Blob(["m"], { type: "text/plain" }), "m.txt");
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: { authorization: `Bearer ${apiKey}` },
+                body: form,
+            }),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: { message: expect.stringContaining("model") },
+        });
+        await waitOnExecutionContext(ctx);
+    },
+);

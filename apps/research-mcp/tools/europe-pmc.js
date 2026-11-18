@@ -22,7 +22,7 @@ const ENTITIES = {
     nbsp: " ",
 };
 
-function decodeEntities(text) {
+export function decodeEntities(text) {
     return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
         const key = entity.toLowerCase();
         if (key.startsWith("#x")) {

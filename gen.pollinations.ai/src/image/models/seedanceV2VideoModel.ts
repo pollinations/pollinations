@@ -11,6 +11,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
@@ -53,7 +54,18 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        aspect_ratio:
+            safeParams.aspectRatio ??
+            (safeParams.dimensionsExplicit
+                ? closestRatioLogSpace(safeParams.width, safeParams.height, [
+                      "16:9",
+                      "4:3",
+                      "1:1",
+                      "3:4",
+                      "9:16",
+                      "21:9",
+                  ])
+                : "16:9"),
         generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {

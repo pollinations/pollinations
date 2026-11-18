@@ -72,6 +72,22 @@ const data = (over: Partial<Data> = {}): Data => ({
 });
 
 describe("monthlyLedgerAuditRows", () => {
+    it("preserves supplier cash-balance deficits while rejecting negative grants", () => {
+        const [deficit] = monthlyLedgerAuditRows(
+            data({ vendorLedger: [cloud({ type: "balance", paid: -0.28 })] }),
+            "2026-07",
+            "2026-08",
+        );
+        expect(deficit.invalidRows).toBe(0);
+        const [negativeGrant] = monthlyLedgerAuditRows(
+            data({
+                vendorLedger: [cloud({ type: "balance", credit: -1, paid: 0 })],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+        expect(negativeGrant.invalidRows).toBe(1);
+    });
     it("accepts invoice subscriptions and adjustments under the same categories as P&L", () => {
         const [row] = monthlyLedgerAuditRows(
             data({

@@ -17,7 +17,7 @@ export const PollenPackButtons: FC<{
     packs,
     selectedAmount,
     onSelect,
-    describe = (pollen, price) => `Select ${pollen} Pollen for ${price}`,
+    describe = (pollen, price) => `Select ${pollen} for ${price}`,
 }) => (
     <div
         className={cn(
@@ -26,7 +26,8 @@ export const PollenPackButtons: FC<{
         )}
     >
         {packs.map((pack) => {
-            const pollen = formatPollenPackValue(pack.amountUsd);
+            // What the pack adds to the balance, in the balance's dollars.
+            const pollen = `$${formatPollenPackValue(pack.amountUsd)}`;
             const price = formatUsdCents(
                 pack.amountUsd * 100 +
                     calculateServiceFeeCents(pack.amountUsd * 100),
@@ -41,23 +42,25 @@ export const PollenPackButtons: FC<{
                     aria-label={describe(pollen, price)}
                     // A value, not an action: never a border. Idle it is a
                     // quiet grey (a tint of the text colour, so it shows in
-                    // both modes). Two yellows only: hover is the pale 30%
-                    // of a resting outlined button, chosen is the full
-                    // accent and stays so on hover. The ring shows keyboard
-                    // focus only.
+                    // both modes). Hover is a pale wash of the fill; chosen
+                    // is the full fill with its dark text and stays so on
+                    // hover. The ring shows keyboard focus only.
                     className={cn(
                         "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
                         selected
-                            ? "bg-theme-bg-active text-theme-text-strong"
-                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-bg-active/30",
+                            ? "bg-theme-fill text-theme-on-fill"
+                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-fill-wash",
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">
                         {pollen}
                     </span>
-                    {/* Faded, not grey: readable on both fills. */}
-                    <span className="mt-1 text-xs opacity-70">pollen</span>
-                    <span className="mt-2 text-sm font-semibold">{price}</span>
+                    {/* What you pay, in parentheses under what you get; the
+                        footnote below the packs explains the fee. Faded, not
+                        grey: readable on both fills. */}
+                    <span className="mt-1.5 text-sm font-semibold opacity-70">
+                        ({price})
+                    </span>
                 </button>
             );
         })}

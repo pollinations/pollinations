@@ -8,6 +8,7 @@ import { diffTools } from "./tools/diff.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { integerTools } from "./tools/integer.js";
+import { openibanTools } from "./tools/openiban.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
@@ -32,6 +33,7 @@ const handler = createMcpHandler(
             ...diffTools,
             ...fractionTools,
             ...versionTools,
+            ...openibanTools,
         ]) {
             server.registerTool(
                 name,
@@ -40,7 +42,9 @@ const handler = createMcpHandler(
                     inputSchema: z.object(shape),
                     annotations: {
                         readOnlyHint: true,
-                        openWorldHint: name.startsWith("currency_"),
+                        openWorldHint:
+                            name.startsWith("currency_") ||
+                            name === "iban_validate",
                     },
                 },
                 async (args) => {

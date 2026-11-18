@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "itunes_search",
             ].sort(),
         );
     });
@@ -644,4 +645,129 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("iTunes search projects tracks, handles podcasts and empty results", async (t) => {
+    let count = 0;
+    const seen = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        count++;
+        const url = new URL(input);
+        seen.push(url);
+        assert.equal(url.hostname, "itunes.apple.com");
+        const headers = new Headers(init?.headers);
+        assert.equal(headers.get("authorization"), null);
+        assert.equal(headers.get("cookie"), null);
+        if (url.searchParams.get("term") === "beatles")
+            return Response.json({
+                resultCount: 2,
+                results: [
+                    {
+                        wrapperType: "track",
+                        kind: "song",
+                        artistName: "The Beatles",
+                        collectionName: "Abbey Road (Remastered)",
+                        trackName: "Here Comes the Sun",
+                        primaryGenreName: "Rock",
+                        trackPrice: 1.29,
+                        collectionPrice: 12.99,
+                        currency: "USD",
+                        releaseDate: "1969-09-26T12:00:00Z",
+                        previewUrl:
+                            "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/cd/7d/83/cd7d834f-34bf-7be0-1647-0fb0920d25a7/mzaf_5281747653026802926.plus.aac.p.m4a",
+                        trackViewUrl:
+                            "https://music.apple.com/us/album/here-comes-the-sun/1441164426?i=1441164589&uo=4",
+                        artworkUrl100:
+                            "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/7f/1d/a1/7f1da1d9-3c53-5873-7482-d692e7569d18/mzi.dofiniou.jpg/100x100bb.jpg",
+                    },
+                    {
+                        wrapperType: "track",
+                        kind: "song",
+                        artistName: "The Beatles",
+                        collectionName: "Abbey Road (Remastered)",
+                        trackName: "Hey Jude",
+                        primaryGenreName: "Rock",
+                        trackPrice: 1.29,
+                        collectionPrice: 12.99,
+                        currency: "USD",
+                        releaseDate: "1969-09-26T12:00:00Z",
+                        previewUrl: null,
+                        trackViewUrl:
+                            "https://music.apple.com/us/album/hey-jude/1441164426?i=1441164590&uo=4",
+                    },
+                ],
+            });
+        if (url.searchParams.get("term") === "serial")
+            return Response.json({
+                resultCount: 1,
+                results: [
+                    {
+                        wrapperType: "track",
+                        kind: "podcast",
+                        artistName: "Serial Productions & The New York Times",
+                        collectionName: "Serial",
+                        trackName: "Serial",
+                        primaryGenreName: "News",
+                        trackPrice: 0.0,
+                        currency: "USD",
+                        releaseDate: "2014-10-03T07:00:00Z",
+                        previewUrl: null,
+                        trackViewUrl:
+                            "https://podcasts.apple.com/us/podcast/serial/id917918570?uo=4",
+                    },
+                ],
+            });
+        return Response.json({ resultCount: 0, results: [] });
+    });
+    const c = await client(t);
+    let result = await call(c, "itunes_search", {
+        term: "beatles",
+        media: "music",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(seen[0].searchParams.get("term"), "beatles");
+    assert.equal(seen[0].searchParams.get("media"), "music");
+    assert.equal(seen[0].searchParams.get("limit"), "2");
+    assert.equal(value(result).total, 2);
+    assert.deepEqual(value(result).results[0], {
+        kind: "song",
+        track: "Here Comes the Sun",
+        artist: "The Beatles",
+        collection: "Abbey Road (Remastered)",
+        genre: "Rock",
+        price: 1.29,
+        currency: "USD",
+        releaseDate: "1969-09-26T12:00:00Z",
+        previewUrl:
+            "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/cd/7d/83/cd7d834f-34bf-7be0-1647-0fb0920d25a7/mzaf_5281747653026802926.plus.aac.p.m4a",
+        url: "https://music.apple.com/us/album/here-comes-the-sun/1441164426?i=1441164589&uo=4",
+    });
+    assert.equal(value(result).results[1].track, "Hey Jude");
+    assert.equal(value(result).results[1].previewUrl, null);
+
+    result = await call(c, "itunes_search", {
+        term: "serial",
+        media: "podcast",
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(seen[1].searchParams.get("media"), "podcast");
+    assert.equal(seen[1].searchParams.get("limit"), "5");
+    assert.equal(value(result).results[0].kind, "podcast");
+    assert.equal(
+        value(result).results[0].artist,
+        "Serial Productions & The New York Times",
+    );
+    assert.equal(value(result).results[0].price, 0);
+
+    result = await call(c, "itunes_search", { term: "qqqxxyyzz" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(value(result).total, 0);
+    assert.deepEqual(value(result).results, []);
+
+    const bad = await call(c, "itunes_search", { term: "beatles", limit: 26 });
+    assert.equal(bad.isError, true);
+    const empty = await call(c, "itunes_search", { term: "   " });
+    assert.equal(empty.isError, true);
+    assert.equal(count, 3);
 });

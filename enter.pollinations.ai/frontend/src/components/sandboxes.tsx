@@ -199,7 +199,7 @@ function TemplatePicker({
     onChange: (template: string, custom?: boolean) => void;
 }) {
     // Open, each option has room: the size and where it runs, then its price
-    // and that Quest pollen pays for it (as every sandbox can).
+    // and that Quest balance pays for it (as every sandbox can).
     const option = (id: string, size: Size) => (
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
             <span className="font-semibold">
@@ -495,7 +495,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
     // The prices' error, shown with the templates, and your list's, shown in
     // My sandboxes even before any loaded: sandboxes you can't see may still
-    // be running and costing pollen.
+    // be running and using balance.
     const [loadError, setLoadError] = useState<string | null>(null);
     const [listError, setListError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);

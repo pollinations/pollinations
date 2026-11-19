@@ -179,7 +179,7 @@ export const isNewModel = (model: ModelPrice): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only, not Quest Pollen.
+ * Check if a model requires paid balance only, not Quest balance.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

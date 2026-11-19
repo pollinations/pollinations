@@ -303,7 +303,7 @@ function filterEntriesByPermissions(
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
-    // A Quest Pollen only key can't use paid-only models whatever the balance.
+    // A Quest-balance-only key can't use paid-only models whatever the balance.
     if (c.var.auth.apiKey?.questPollenOnly) return false;
     return (user.packBalance ?? 0) > 0;
 }

@@ -38,18 +38,15 @@ function MediaRemoveButton({
 }) {
     if (!onRemove) return null;
     return (
-        <div className="polli-upload-remove polli:flex polli:justify-center">
-            <IconButton
-                variant="ghost"
-                aria-label={`Remove ${file.name}`}
-                aria-description={kind}
-                className="polli:min-h-7 polli:w-auto polli:gap-1 polli:px-1 polli:text-xs"
-                onClick={onRemove}
-            >
-                <XIcon className="polli:size-3" />
-                Remove
-            </IconButton>
-        </div>
+        <IconButton
+            variant="ghost"
+            aria-label={`Remove ${file.name}`}
+            aria-description={kind}
+            className="polli-upload-remove polli:absolute polli:top-1 polli:right-1 polli:z-10 polli:size-7 polli:rounded-full polli:bg-[rgb(0_0_0/0.65)] polli:text-[#fff] polli:hover:bg-[rgb(0_0_0/0.85)] polli:hover:text-[#fff]"
+            onClick={onRemove}
+        >
+            <XIcon className="polli:size-3.5" />
+        </IconButton>
     );
 }
 

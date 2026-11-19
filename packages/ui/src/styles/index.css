@@ -582,8 +582,8 @@
     }
 }
 
-/* Keep removal visible on touch and reveal it below a hovered or focused tile. */
-@media (hover: hover) and (pointer: fine) {
+/* Keep the corner control visible on touch and reveal it on hover or keyboard focus. */
+@media (hover: hover) and (pointer: fine) and (not (any-pointer: coarse)) {
     .polli-upload-remove {
         opacity: 0;
         pointer-events: none;

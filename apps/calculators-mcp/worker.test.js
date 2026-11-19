@@ -993,6 +993,29 @@ test("percentage is exact where float arithmetic drifts", async (t) => {
         "0.0000000000000001",
     );
 
+    // A negative base keeps the sign in the numerator, so the exact decimal still
+    // prints: -50 and -25, not -49.9999999999.
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "change",
+                a: "-100",
+                b: "-50",
+            })
+        ).result,
+        "-50",
+    );
+    assert.equal(
+        (
+            await call(client, "percentage", {
+                mode: "share",
+                a: "50",
+                b: "-200",
+            })
+        ).result,
+        "-25",
+    );
+
     // Signed percent change, both directions.
     assert.equal(
         (

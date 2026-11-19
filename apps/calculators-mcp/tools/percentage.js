@@ -56,10 +56,15 @@ function multiply(a, b) {
 
 function divide(a, b, label) {
     if (b.numerator === 0n) throw new Error(`division by zero in ${label}.`);
-    return {
-        numerator: a.numerator * b.denominator,
-        denominator: a.denominator * b.numerator,
-    };
+    let numerator = a.numerator * b.denominator;
+    let denominator = a.denominator * b.numerator;
+    // Keep the denominator positive so the sign lives in the numerator; rounding and the
+    // exact-decimal formatter both assume it, and a negative one turns -25 into -24.9999...
+    if (denominator < 0n) {
+        numerator = -numerator;
+        denominator = -denominator;
+    }
+    return { numerator, denominator };
 }
 
 function absolute(value) {

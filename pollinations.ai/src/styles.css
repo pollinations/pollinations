@@ -312,10 +312,14 @@ main > * {
 .play-parameter-grid:empty {
     display: none;
 }
+/* Keep a label level with the first option when its buttons wrap. */
+.play-parameter-grid [data-scope="field"][data-part="root"]:has(> [role="group"]) {
+    align-items: baseline;
+}
 @media (min-width: 64rem) {
     .play-parameter-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: center;
+        align-items: baseline;
     }
 }
 

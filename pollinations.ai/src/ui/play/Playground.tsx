@@ -2012,7 +2012,7 @@ export function Playground({
                                 videoReferenceMedia.length > 0) && (
                                 <fieldset
                                     aria-labelledby={referencesLabelId}
-                                    className="col-span-full m-0 min-w-0 border-0 p-0"
+                                    className="m-0 min-w-0 border-0 p-0"
                                 >
                                     <FieldStack
                                         orientation="inline"
@@ -2225,7 +2225,7 @@ export function Playground({
                                             orientation="inline"
                                             className="min-w-0"
                                         >
-                                            <div className="flex min-w-0 items-center gap-3">
+                                            <div className="flex min-w-0 max-w-64 items-center gap-3">
                                                 <Slider
                                                     aria-label="Video duration"
                                                     className="disabled:[--polli-slider-fill:var(--polli-color-text-muted)]"

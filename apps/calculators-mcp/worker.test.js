@@ -1043,6 +1043,47 @@ test("parse_csv handles the header, line endings and empty fields", async (t) =>
     );
 });
 
+test("parse_csv skips blank lines, keeps an empty quoted field and strips a BOM", async (t) => {
+    const client = await clientFor(t);
+
+    // A blank line is not a record, so it must not become a phantom empty row.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "a,b\n\n1,2",
+            separator: ",",
+            header: false,
+        }),
+        {
+            columns: [],
+            rows: [
+                ["a", "b"],
+                ["1", "2"],
+            ],
+            rowCount: 2,
+        },
+    );
+
+    // An empty quoted field is a record with one empty field, unlike a blank line.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: '""',
+            separator: ",",
+            header: false,
+        }),
+        { columns: [], rows: [[""]], rowCount: 1 },
+    );
+
+    // The BOM marks the encoding; it is not part of the first column name.
+    assert.deepEqual(
+        await call(client, "parse_csv", {
+            text: "\uFEFFa,b\n1,2",
+            separator: ",",
+            header: true,
+        }),
+        { columns: ["a", "b"], rows: [["1", "2"]], rowCount: 1 },
+    );
+});
+
 test("parse_csv rejects an unclosed quote and empty text", async (t) => {
     const client = await clientFor(t);
     for (const args of [

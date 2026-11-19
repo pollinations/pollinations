@@ -10,10 +10,17 @@ const MAX_ROWS = 5000;
 const MAX_FIELDS = 200;
 
 function parse(text, delimiter) {
+    // A UTF-8 BOM is an encoding marker, not part of the first column name.
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+
     const rows = [];
     let row = [];
     let field = "";
     let inQuotes = false;
+    // Set as soon as the record holds anything, so an empty quoted field ("") is a record
+    // while a blank line is not.
+    let recordStarted = false;
+    let quoteLine = 1;
     let index = 0;
     let line = 1;
 
@@ -26,11 +33,16 @@ function parse(text, delimiter) {
             );
     };
     const endRow = () => {
-        endField();
-        rows.push(row);
+        // A blank line is not a record; keeping it would turn a separating or trailing
+        // blank line into a phantom row.
+        if (recordStarted || row.length > 0 || field !== "") {
+            endField();
+            rows.push(row);
+            if (rows.length > MAX_ROWS)
+                throw new Error(`more than ${MAX_ROWS} records.`);
+        }
         row = [];
-        if (rows.length > MAX_ROWS)
-            throw new Error(`more than ${MAX_ROWS} records.`);
+        recordStarted = false;
     };
 
     while (index < text.length) {
@@ -57,10 +69,13 @@ function parse(text, delimiter) {
         // A quote only opens a quoted field at its start; in the middle it is a literal.
         if (character === '"' && field === "") {
             inQuotes = true;
+            recordStarted = true;
+            quoteLine = line;
             index += 1;
             continue;
         }
         if (character === delimiter) {
+            recordStarted = true;
             endField();
             index += 1;
             continue;
@@ -72,16 +87,17 @@ function parse(text, delimiter) {
             index += 1;
             continue;
         }
+        recordStarted = true;
         field += character;
         index += 1;
     }
 
     if (inQuotes)
         throw new Error(
-            `a quoted field is never closed, opened before line ${line}.`,
+            `a quoted field opened at line ${quoteLine} is never closed.`,
         );
     // A trailing line break ends the last record; it does not start an empty one.
-    if (field !== "" || row.length > 0) endRow();
+    if (recordStarted || field !== "" || row.length > 0) endRow();
     return rows;
 }
 

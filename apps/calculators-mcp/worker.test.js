@@ -993,6 +993,8 @@ test("summarize_numbers rejects empty, non-finite and out-of-range input", async
         { numbers: [1, Number.NaN] },
         { numbers: [1, Number.POSITIVE_INFINITY] },
         { numbers: [1], percentiles: [101] },
+        // A finite sum can still hide an infinite spread: 1.7e308 - (-1.7e308).
+        { numbers: [1.7e308, -1.7e308] },
     ]) {
         assert.equal(
             (

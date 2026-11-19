@@ -86,7 +86,19 @@ export const statsTools = [
                     `the sample's magnitude is out of range: the sum is ${total}.`,
                 );
             const sorted = [...numbers].sort((a, b) => a - b);
+            // max - min can overflow to Infinity even when the sum is finite, and the
+            // percentiles and quartiles interpolate across that same gap. Refuse rather
+            // than return the JSON null the caller cannot tell from a missing field.
+            const spread = sorted[sorted.length - 1] - sorted[0];
+            if (!Number.isFinite(spread))
+                throw new Error(
+                    `the sample's spread is out of range: max - min is ${spread}.`,
+                );
             const sampleDeviation = standardDeviation(numbers, true);
+            if (sampleDeviation !== null && !Number.isFinite(sampleDeviation))
+                throw new Error(
+                    `the sample's standard deviation is out of range: ${sampleDeviation}.`,
+                );
             const q1 = percentile(sorted, 25);
             const q3 = percentile(sorted, 75);
             const iqr = q3 - q1;
@@ -100,7 +112,7 @@ export const statsTools = [
                 median: round(percentile(sorted, 50)),
                 min: sorted[0],
                 max: sorted[sorted.length - 1],
-                range: round(sorted[sorted.length - 1] - sorted[0]),
+                range: round(spread),
                 // null, not 0, when a sample of one cannot have a spread.
                 standard_deviation:
                     sampleDeviation === null ? null : round(sampleDeviation),

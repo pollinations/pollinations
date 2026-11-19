@@ -992,7 +992,7 @@ const imageResolutionField = z
     });
 const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
     description:
-        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+        "GIF generation is supported by GPT Image 2.6 Flare and Sunburst and requires frame_count and frame_duration_ms. WebP is supported by Flare.",
 });
 const imageFrameCountField = z.number().int().min(2).max(16).optional();
 const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
@@ -1022,7 +1022,7 @@ export const CreateImageRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+                    "Optional aspect ratio when size is omitted or defaulted. Supported by GPT Image 2.6 Flare and by Sunburst for GIF generation.",
             }),
         quality: imageQualityField,
         output_format: imageOutputFormatField,

@@ -116,24 +116,40 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("Flare format cache", () => {
+describe("GPT Image 2.6 format cache", () => {
     afterEach(teardownFetchMock);
 
-    for (const { method, format, query } of [
-        { method: "GET", format: "png", query: "" },
-        { method: "GET", format: "webp", query: "&output_format=webp" },
+    const gif = {
+        output_format: "gif",
+        frame_count: 2,
+        frame_duration_ms: 150,
+    };
+    const gifQuery = "&output_format=gif&frame_count=2&frame_duration_ms=150";
+    for (const { variant, method, format, query } of [
+        { variant: "flare", method: "GET", format: "png", query: "" },
         {
+            variant: "flare",
+            method: "GET",
+            format: "webp",
+            query: "&output_format=webp",
+        },
+        {
+            variant: "flare",
             method: "GET",
             format: "gif",
-            query: "&output_format=gif&frame_count=2&frame_duration_ms=150",
+            query: gifQuery,
         },
-        { method: "POST", format: "png", query: "" },
+        { variant: "flare", method: "POST", format: "png", query: "" },
+        { variant: "sunburst", method: "GET", format: "gif", query: gifQuery },
+        { variant: "sunburst", method: "POST", format: "gif", query: "" },
     ] as const) {
         routeTest(
-            `serves ${format} on a fresh ${method} response and on the next cache hit`,
+            `serves ${variant} ${format} on a fresh ${method} response and on the next cache hit`,
             async ({ paidApiKey }) => {
-                const model = "openai/gpt-image-2.6-flare";
-                const prompt = "flare format cache regression";
+                const upstreamModel = `gpt-image-2.6-${variant}`;
+                const model = `openai/${upstreamModel}`;
+                const prompt = "GPT Image 2.6 format cache regression";
+                const wideGif = method === "POST" && format === "gif";
                 const seed = 42;
                 const url = new URL(
                     method === "GET"
@@ -142,6 +158,11 @@ describe("Flare format cache", () => {
                     "https://gen.pollinations.ai",
                 );
                 const legacyUrl = new URL(url);
+                if (variant === "sunburst") {
+                    legacyUrl.searchParams.delete("output_format");
+                    legacyUrl.searchParams.delete("frame_count");
+                    legacyUrl.searchParams.delete("frame_duration_ms");
+                }
                 if (method === "POST") {
                     const body = normalizedJsonBody(
                         JSON.stringify({
@@ -197,7 +218,14 @@ describe("Flare format cache", () => {
                             },
                             body:
                                 method === "POST"
-                                    ? JSON.stringify({ model, prompt, seed })
+                                    ? JSON.stringify({
+                                          model,
+                                          prompt,
+                                          seed,
+                                          ...(wideGif
+                                              ? { ...gif, aspect_ratio: "16:9" }
+                                              : {}),
+                                      })
                                     : undefined,
                         }),
                         bindings,
@@ -217,7 +245,14 @@ describe("Flare format cache", () => {
                         ).toEqual(Buffer.from(flareImages[format], "base64"));
                     } else {
                         expect(await response.json()).toMatchObject({
-                            data: [{ b64_json: flareImages[format] }],
+                            data: [
+                                {
+                                    b64_json: flareImages[format],
+                                    ...(wideGif
+                                        ? { media_type: "image/gif" }
+                                        : {}),
+                                },
+                            ],
                         });
                     }
                     await waitOnExecutionContext(ctx);
@@ -225,11 +260,10 @@ describe("Flare format cache", () => {
 
                 expect(requests).toEqual([
                     expect.objectContaining({
-                        model: "gpt-image-2.6-flare",
+                        model: upstreamModel,
                         output_format: format,
-                        ...(format === "gif"
-                            ? { frame_count: 2, frame_duration_ms: 150 }
-                            : {}),
+                        ...(format === "gif" ? gif : {}),
+                        ...(wideGif ? { size: "896x512" } : {}),
                     }),
                 ]);
             },
@@ -555,46 +589,51 @@ describe("GPT Image direct OpenAI routing", () => {
 });
 
 describe("GPT Image 2.6 fal fallback", () => {
-    it("forwards GIF parameters to the Flare fallback and returns GIF bytes", async () => {
-        const gif = Buffer.from(flareImages.gif, "base64");
-        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json(
+    it.each(["flare", "sunburst"] as const)(
+        "forwards GIF parameters to the %s fallback and returns GIF bytes",
+        async (variant) => {
+            const gif = Buffer.from(flareImages.gif, "base64");
+            const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json(
+                    {
+                        images: [
+                            {
+                                url: `data:image/gif;base64,${gif.toString("base64")}`,
+                                content_type: "image/gif",
+                            },
+                        ],
+                    },
+                    { headers: { "x-fal-billable-units": "0.01" } },
+                ),
+            );
+            const model = `openai/gpt-image-2.6-${variant}:fal` as const;
+            const result = await callGPTImage(
+                "pollinating bee in flight",
                 {
-                    images: [
-                        {
-                            url: `data:image/gif;base64,${gif.toString("base64")}`,
-                            content_type: "image/gif",
-                        },
-                    ],
+                    ...params,
+                    model,
+                    output_format: "gif",
+                    frame_count: 9,
+                    frame_duration_ms: 150,
+                    background: "auto",
                 },
-                { headers: { "x-fal-billable-units": "0.01" } },
-            ),
-        );
-        const model = "openai/gpt-image-2.6-flare:fal";
-        const result = await callGPTImage(
-            "pollinating bee in flight",
-            {
-                ...params,
+                userInfo,
                 model,
+            );
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(String(url)).toBe(
+                `https://fal.run/openai/gpt-image-2.6/${variant}/text-to-image`,
+            );
+            expect(JSON.parse(String(init?.body))).toMatchObject({
                 output_format: "gif",
                 frame_count: 9,
                 frame_duration_ms: 150,
                 background: "auto",
-            },
-            userInfo,
-            model,
-        );
-        expect(
-            JSON.parse(String(fetchMock.mock.calls[0][1]?.body)),
-        ).toMatchObject({
-            output_format: "gif",
-            frame_count: 9,
-            frame_duration_ms: 150,
-            background: "auto",
-        });
-        expect(result.buffer).toEqual(gif);
-        expect(result.mimeType).toBe("image/gif");
-    });
+            });
+            expect(result.buffer).toEqual(gif);
+            expect(result.mimeType).toBe("image/gif");
+        },
+    );
 
     for (const variant of ["flare", "sunburst"] as const) {
         const model = `openai/gpt-image-2.6-${variant}` as const;

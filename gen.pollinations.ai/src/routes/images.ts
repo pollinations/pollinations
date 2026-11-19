@@ -356,7 +356,7 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
 
         // OpenAI-style aspect_ratio is an optional convenience when no custom
         // size was specified. Explicit non-default size remains authoritative.
-        const flareAspectSizes: Record<string, string> = {
+        const aspectSizes: Record<string, string> = {
             "16:9": "1536x864",
             "9:16": "864x1536",
             "1:1": "1024x1024",
@@ -365,12 +365,15 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             "3:2": "1536x1024",
             "2:3": "1024x1536",
         };
+        const model = c.var.model.resolved;
         const ratio = body.aspect_ratio;
         const ratioSize =
-            c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
+            (model === "openai/gpt-image-2.6-flare" ||
+                (model === "openai/gpt-image-2.6-sunburst" &&
+                    body.output_format === "gif")) &&
             typeof ratio === "string" &&
             body.size === "1024x1024"
-                ? flareAspectSizes[ratio]
+                ? aspectSizes[ratio]
                 : undefined;
         // The generation handler resolves size again after the cache middleware,
         // so persist the effective size instead of only changing this local copy.

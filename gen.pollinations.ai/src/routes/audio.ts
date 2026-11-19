@@ -63,6 +63,7 @@ import {
 import { generateLyria35 } from "../audio/lyria.ts";
 import { transcribeMai } from "../audio/mai-transcription.ts";
 import { generateSoniloSfx, SONILO_MODEL } from "../audio/sonilo.ts";
+import { toSimplified } from "../audio/zh-simplified.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -2615,7 +2616,11 @@ export async function generateMaiSpeech(opts: {
                     "'": "&apos;",
                 })[ch] ?? ch,
         );
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${resolvedVoice.slice(0, 5)}"><voice name="${escapeXml(resolvedVoice)}">${escapeXml(text)}</voice></speak>`;
+    // The zh-CN voices misread Traditional characters; they read Simplified well.
+    const spoken = resolvedVoice.startsWith("zh-CN")
+        ? toSimplified(text)
+        : text;
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${resolvedVoice.slice(0, 5)}"><voice name="${escapeXml(resolvedVoice)}">${escapeXml(spoken)}</voice></speak>`;
     const response = await ensureUpstreamOk(
         await fetch(url, {
             method: "POST",
@@ -2638,7 +2643,7 @@ export async function generateMaiSpeech(opts: {
                   },
             body: gateway
                 ? JSON.stringify({
-                      text,
+                      text: spoken,
                       voice: resolvedVoice.split(":")[0],
                       outputFormat: responseFormat,
                   })

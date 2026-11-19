@@ -523,6 +523,7 @@ describe("gen worker routing", () => {
                 anchor: string;
                 "service-desc": { href: string; type: string }[];
                 "service-doc": { href: string; type: string }[];
+                "service-meta": { href: string; type: string }[];
             }[];
         };
         expect(body.linkset).toHaveLength(1);
@@ -535,6 +536,12 @@ describe("gen worker routing", () => {
         ]);
         expect(linkset["service-doc"]).toEqual([
             { href: `${origin}/docs/llm.txt`, type: "text/plain" },
+        ]);
+        expect(linkset["service-meta"]).toEqual([
+            {
+                href: `${origin}/.well-known/oauth-protected-resource`,
+                type: "application/json",
+            },
         ]);
         expect(catalog.headers.get("Cache-Control")).toBe(
             "public, max-age=3600",

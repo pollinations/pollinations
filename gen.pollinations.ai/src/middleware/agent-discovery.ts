@@ -13,6 +13,7 @@ const DISCOVERY_PATHS = new Set(["/", "/docs"]);
 export const AGENT_DISCOVERY_LINKS = [
     '</openapi.json>; rel="service-desc"',
     '</docs/llm.txt>; rel="service-doc"',
+    '</.well-known/oauth-protected-resource>; rel="service-meta"',
     '</.well-known/api-catalog>; rel="api-catalog"',
     '</.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");

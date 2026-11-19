@@ -146,6 +146,12 @@ export const wellKnownRoutes = new Hono<Env>()
                                 type: "text/plain",
                             },
                         ],
+                        "service-meta": [
+                            {
+                                href: `${origin}/.well-known/oauth-protected-resource`,
+                                type: "application/json",
+                            },
+                        ],
                     },
                 ],
             }),

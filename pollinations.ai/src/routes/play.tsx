@@ -1,4 +1,8 @@
-import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
+import {
+    PolliProvider,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
 import { Alert, ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
@@ -92,6 +96,7 @@ function HydratedPlayground({ connect }: ConnectProps) {
 }
 
 function PlayHero({ connect }: ConnectProps) {
+    const { login } = useAuthActions();
     const { isHydrated } = useAuthState();
     return (
         // The monitor robot, showing off something it just made.
@@ -105,7 +110,7 @@ function PlayHero({ connect }: ConnectProps) {
             <div className="self-start" inert={!isHydrated}>
                 <AppUserMenu
                     connectSize="lg"
-                    onConnect={() => connect.current?.()}
+                    onConnect={() => (connect.current ?? login)()}
                     labels={{ logout: "Disconnect app" }}
                 />
             </div>

@@ -67,7 +67,7 @@ describe("video controls", () => {
             "16:9",
         );
     });
-    it("separates references from frames only where Gen rejects their combination", () => {
+    it("separates references from frames when the route or provider rejects combining them", () => {
         for (const id of [
             "bytedance/seedance-2.0",
             "bytedance/seedance-2.5",

@@ -56,7 +56,7 @@ async function openDrafts(): Promise<IDBDatabase> {
     });
 }
 
-async function editDrafts(edit: (store: IDBObjectStore) => void) {
+async function editDrafts(edit?: (store: IDBObjectStore) => void) {
     const db = await openDrafts();
     try {
         await new Promise<void>((resolve, reject) => {
@@ -73,7 +73,7 @@ async function editDrafts(edit: (store: IDBObjectStore) => void) {
                     store.delete(cursor.primaryKey);
                     cursor.continue();
                 } else {
-                    edit(store);
+                    edit?.(store);
                 }
             };
         });
@@ -98,7 +98,12 @@ export async function saveConnectDraft(files: ConnectDrafts) {
 
 export async function takeConnectDraft(): Promise<ConnectDrafts | undefined> {
     const id = sessionStorage.getItem(key);
-    if (!id) return;
+    if (!id) {
+        // A closed consent tab loses its session key. Sweep its expired files
+        // on the next visit without making a fresh playground wait for storage.
+        void editDrafts().catch(() => {});
+        return;
+    }
     let draft: ConnectDrafts<StoredFile> | undefined;
     await editDrafts((store) => {
         const request = store.get(id);

@@ -338,7 +338,9 @@ main > * {
 @container play-inputs (min-width: 42rem) {
     .play-parameter-grid:has(> :nth-child(2)) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        background: linear-gradient(var(--polli-color-border) 0 0) center / 1px 100% no-repeat;
+        background: linear-gradient(
+            color-mix(in oklab, var(--polli-color-text-muted) 18%, transparent) 0 0
+        ) center / 1px calc(100% - 1rem) no-repeat;
     }
 }
 

@@ -1967,22 +1967,6 @@ export function Playground({
                                 </div>
                             )}
 
-                            {currentModel?.category === "video" &&
-                                videoConfig.exclusiveReferences && (
-                                    <OptionField
-                                        label="Guidance"
-                                        options={["frames", "references"]}
-                                        value={referenceMode}
-                                        onChange={(value) =>
-                                            setParam("guidance", value)
-                                        }
-                                        format={(mode) =>
-                                            mode === "frames"
-                                                ? "Frames"
-                                                : "References"
-                                        }
-                                    />
-                                )}
                             {(isVideoReferenceMode ||
                                 videoReferenceMedia.length > 0) && (
                                 <fieldset className="col-span-full m-0 min-w-0 border-0 p-0">
@@ -1995,6 +1979,35 @@ export function Playground({
                                     >
                                         References
                                     </Text>
+                                    {videoConfig.exclusiveReferences && (
+                                        <ButtonGroup
+                                            aria-label="Reference type"
+                                            className="mb-2"
+                                        >
+                                            {["frames", "references"].map(
+                                                (mode) => (
+                                                    <TabButton
+                                                        key={mode}
+                                                        size="sm"
+                                                        active={
+                                                            mode ===
+                                                            referenceMode
+                                                        }
+                                                        onClick={() =>
+                                                            setParam(
+                                                                "guidance",
+                                                                mode,
+                                                            )
+                                                        }
+                                                    >
+                                                        {mode === "frames"
+                                                            ? "Frames"
+                                                            : "Media"}
+                                                    </TabButton>
+                                                ),
+                                            )}
+                                        </ButtonGroup>
+                                    )}
                                     <div className="flex flex-wrap items-start gap-3">
                                         {frameTiles}
                                         {videoReferenceMedia.map((media) => {

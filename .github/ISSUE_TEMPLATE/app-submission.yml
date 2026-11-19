@@ -18,7 +18,7 @@ body:
 
         - **Content:** no spam, scams, or deceptive behavior.
 
-        - **Sign-in:** let visitors sign in with Pollinations so they use their own Pollen. Never ask them to paste a key. No App Key needed:
+        - **Sign-in:** let visitors sign in with Pollinations so they use their own balance. Never ask them to paste a key. No App Key needed:
 
           ```html
           <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>

@@ -307,19 +307,39 @@ main > * {
     color: inherit;
 }
 
-/* Allow room in each column for the shared label track and two media tiles. */
+@supports (position-area: top span-right) {
+    .play-stat-popover {
+        inset: auto;
+        margin: 0;
+        position-area: top span-right;
+        justify-self: start;
+        position-try-fallbacks: flip-block;
+        max-inline-size: min(16rem, 100%);
+    }
+}
+
 .play-parameter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-    align-items: baseline;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: 1.5rem 2rem;
 }
 .play-parameter-grid:empty {
     display: none;
 }
-/* Keep a label level with the first option when its buttons wrap. */
-.play-parameter-grid [data-scope="field"][data-part="root"]:has(> [role="group"]) {
-    align-items: baseline;
+/* Align labels with the first control row, including tall upload tiles. */
+.play-parameter-grid [data-scope="field"][data-part="root"] {
+    align-items: start;
+}
+.play-parameter-grid [data-scope="field"][data-part="root"] > :first-child {
+    min-height: 2rem;
+}
+/* Two 20rem fields plus the gutter. A lone field uses the full width. */
+@container play-inputs (min-width: 42rem) {
+    .play-parameter-grid:has(> :nth-child(2)) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        background: linear-gradient(var(--polli-color-border) 0 0) center / 1px 100% no-repeat;
+    }
 }
 
 .play-media-lightbox {

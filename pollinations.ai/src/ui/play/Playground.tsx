@@ -37,7 +37,6 @@ import {
     TabButton,
     Text,
     Textarea,
-    Tooltip,
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -641,6 +640,74 @@ function ModelPicker({
                 </Dropdown>
             </div>
             {stepButton(1)}
+        </div>
+    );
+}
+
+function RunStatBadge({
+    label,
+    value,
+    detail,
+    href,
+    linkLabel,
+}: {
+    label: string;
+    value?: string;
+    detail: string;
+    href: string;
+    linkLabel: string;
+}) {
+    const id = useId();
+    const panel = useRef<HTMLDivElement>(null);
+    const anchor = `--stat-${id}`;
+
+    return (
+        <div
+            onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") panel.current?.showPopover();
+            }}
+            onPointerLeave={(event) => {
+                if (
+                    event.pointerType === "mouse" &&
+                    !panel.current?.contains(document.activeElement)
+                ) {
+                    panel.current?.hidePopover();
+                }
+            }}
+        >
+            <button
+                type="button"
+                popoverTarget={id}
+                popoverTargetAction="show"
+                style={{ anchorName: anchor }}
+                aria-label={`${label} ${value ?? "unavailable"}`}
+                className="flex cursor-help rounded-lg"
+            >
+                <Chip size="md" data-theme="neutral" className="tabular-nums">
+                    <span className="text-theme-text-muted">{label}</span>{" "}
+                    {value ?? "—"}
+                </Chip>
+            </button>
+            <div
+                ref={panel}
+                id={id}
+                popover="auto"
+                style={{ positionAnchor: anchor }}
+                className="play-stat-popover w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
+            >
+                <p>
+                    {value ? detail : "No estimate available for this model."}
+                </p>
+                <InlineLink
+                    href={href}
+                    onBlur={() => panel.current?.hidePopover()}
+                    tone="quiet"
+                    className="mt-1 inline-block"
+                    style={{ fontWeight: "inherit" }}
+                >
+                    {linkLabel}
+                </InlineLink>
+            </div>
         </div>
     );
 }
@@ -1781,56 +1848,20 @@ export function Playground({
                                     <Text>{currentModel.description}</Text>
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                                    {[
-                                        {
-                                            label: "Cost",
-                                            value: cost,
-                                            detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
-                                        },
-                                        {
-                                            label: "Time",
-                                            value: time,
-                                            detail: "Average response time for successful requests over the last 7 days.",
-                                        },
-                                    ].map(
-                                        ({ label, value, detail }) =>
-                                            value && (
-                                                <Tooltip
-                                                    key={label}
-                                                    ariaLabel={`${label} ${value}`}
-                                                    content={detail}
-                                                    side="top"
-                                                    align="center"
-                                                    tapEnabled
-                                                >
-                                                    <Chip
-                                                        size="md"
-                                                        data-theme="neutral"
-                                                        className="tabular-nums"
-                                                    >
-                                                        <span className="text-theme-text-muted">
-                                                            {label}
-                                                        </span>{" "}
-                                                        {value}
-                                                    </Chip>
-                                                </Tooltip>
-                                            ),
-                                    )}
-                                    <InlineLink
+                                    <RunStatBadge
+                                        label="Cost"
+                                        value={cost}
+                                        detail="Median charge per successful paid request over the last 7 days. Your settings can affect the price."
                                         href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                        aria-label={`Pricing for ${currentModel.title} on Enter`}
-                                        tone="quiet"
-                                        style={{ fontWeight: "inherit" }}
-                                    >
-                                        Pricing
-                                    </InlineLink>
-                                    <InlineLink
+                                        linkLabel="Pricing"
+                                    />
+                                    <RunStatBadge
+                                        label="Time"
+                                        value={time}
+                                        detail="Average response time for successful requests over the last 7 days."
                                         href="https://model-monitor.pollinations.ai"
-                                        tone="quiet"
-                                        style={{ fontWeight: "inherit" }}
-                                    >
-                                        Model Monitor
-                                    </InlineLink>
+                                        linkLabel="Model Monitor"
+                                    />
                                 </div>
                             </>
                         )}
@@ -1839,7 +1870,7 @@ export function Playground({
                         as="section"
                         variant="card"
                         aria-label="Generation inputs"
-                        className="flex flex-col gap-5"
+                        className="@container/play-inputs flex flex-col gap-5"
                     >
                         {showPromptInput && (
                             <FieldStack
@@ -2176,7 +2207,7 @@ export function Playground({
                                 </fieldset>
                             )}
                             {isVisualModel && (
-                                <div className="contents">
+                                <>
                                     <OptionField
                                         label="Resolution"
                                         options={currentModel.resolutions}
@@ -2239,11 +2270,12 @@ export function Playground({
                                     {customSize && (
                                         <fieldset
                                             aria-labelledby={dimensionsLabelId}
-                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
+                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
                                         >
                                             <Text
                                                 as="span"
                                                 id={dimensionsLabelId}
+                                                className="min-h-8 content-center"
                                                 size="sm"
                                                 weight="semibold"
                                                 tone="strong"
@@ -2343,7 +2375,7 @@ export function Playground({
                                             }
                                         />
                                     </FieldStack>
-                                </div>
+                                </>
                             )}
                         </div>
                     </Surface>

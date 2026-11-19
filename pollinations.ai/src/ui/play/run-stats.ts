@@ -1,5 +1,3 @@
-import { performanceFilters } from "../../data/playground-model-overrides";
-
 export type ModelRunStat = {
     model: string;
     avg_cost_usd?: number | null;
@@ -31,7 +29,9 @@ export function fastModelsByTime(stats: ModelRunStat[]) {
                 : [];
         })
         .sort((a, b) => a.value - b.value);
-    const { minimumModels, fraction, maximumMedianRatio } = performanceFilters;
+    const minimumModels = 4;
+    const fraction = 0.25;
+    const maximumMedianRatio = 0.75;
     if (measured.length < minimumModels) return new Set<string>();
     const cutoff = measured[Math.ceil(measured.length * fraction) - 1].value;
     const middle = (measured.length - 1) / 2;

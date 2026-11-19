@@ -16,13 +16,15 @@ export function questionTypeLabel(type: string) {
     return labels[type as QuestionType];
 }
 
-export function verifiedQuestionTypes(model: string) {
+function decisionQuestionTypes(model: string) {
     const verified = playgroundModelOverride(model)?.decisionQuestionTypes;
-    return questionTypes.filter((type) => verified?.includes(type));
+    return verified
+        ? questionTypes.filter((type) => verified.includes(type))
+        : ["noul" as const];
 }
 
 export function decisionForm(model: string, params: PlaySearch) {
-    const types = verifiedQuestionTypes(model);
+    const types = decisionQuestionTypes(model);
     const type = types.find((type) => type === params.questionType) ?? types[0];
     const instructions =
         params.question ??

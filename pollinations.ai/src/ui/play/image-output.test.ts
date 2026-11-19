@@ -14,7 +14,7 @@ describe("image output selection", () => {
             frame_defaults: { frame_count: 6, frame_duration_ms: 150 },
         },
     };
-    it("uses the local GIF metadata until the catalog publishes its own entry", () => {
+    it("uses the local GIF metadata until the catalog publishes its format list", () => {
         const model = { name: "openai/gpt-image-2.6-flare", paid_only: true };
         const preview = playgroundModelOverride(model.name)?.imageFormats;
         const local = previewImageFormats(model, preview);
@@ -27,8 +27,10 @@ describe("image output selection", () => {
             { ...model, output_formats: catalog },
             preview,
         );
-        expect(published?.gif).toEqual(catalog.gif);
-        expect(published?.png.mode).toBe("default");
+        expect(published).toEqual(catalog);
+        expect(
+            previewImageFormats({ ...model, output_formats: {} }, preview),
+        ).toEqual({});
     });
     it("keeps the normal image request until an advertised format is selected", () => {
         const still = imageOutput(catalog);

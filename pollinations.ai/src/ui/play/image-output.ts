@@ -19,7 +19,7 @@ export function previewImageFormats(
     model: ModelInfo & { output_formats?: ImageFormats },
     preview?: PreviewFormats,
 ): ImageFormats | undefined {
-    if (!preview) return model.output_formats;
+    if (model.output_formats || !preview) return model.output_formats;
     const formats: ImageFormats = {};
     for (const [key, entry] of Object.entries(preview)) {
         const { mode } = entry;
@@ -31,7 +31,7 @@ export function previewImageFormats(
                     entry.input_modalities ?? model.input_modalities ?? [],
             };
     }
-    return { ...formats, ...model.output_formats };
+    return formats;
 }
 
 export function imageFormatLabel(value: string) {

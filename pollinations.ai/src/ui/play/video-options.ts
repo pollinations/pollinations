@@ -1,7 +1,6 @@
-import {
-    playgroundModelOverride,
-    videoDefaultRatios,
-} from "../../data/playground-model-overrides";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
+
+const videoDefaultRatios = ["", "16:9", "9:16"];
 
 export function videoOptions(id: string, capabilities: readonly string[]) {
     const rules = playgroundModelOverride(id);

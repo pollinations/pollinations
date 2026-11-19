@@ -10,8 +10,10 @@ describe("Decide form", () => {
         expect(form.types).toEqual(["noul"]);
         expect(form.question?.type).toBe("noul");
     });
-    it("does not offer an unverified model", () => {
-        expect(decisionForm("unknown", {}).question).toBeUndefined();
+    it("starts a newly listed decision model with a yes-or-no question", () => {
+        const form = decisionForm("unknown", { questionType: "score" });
+        expect(form.types).toEqual(["noul"]);
+        expect(form.question?.type).toBe("noul");
     });
     it("keeps the user's scale in order and trims empty lines", () => {
         expect(

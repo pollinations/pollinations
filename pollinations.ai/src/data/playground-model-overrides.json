@@ -1,31 +1,4 @@
 {
-    "$performanceFilters": { "minimumModels": 4, "fraction": 0.25, "maximumMedianRatio": 0.75 },
-    "$imageFilters": { "edit": "Edit", "gif": "GIF", "svg": "SVG", "4k": "4K" },
-    "$image4KDimensions": { "width": "3840", "height": "2160" },
-    "$uploadLimitsMiB": { "image": 5, "video": 20, "audio": 20, "stemSeparation": 50 },
-    "$videoDefaultRatios": ["", "16:9", "9:16"],
-    "$videoFilters": {
-        "end_frame": "First + last frames",
-        "reference_videos": "Reference video",
-        "audio_output": "With sound",
-        "4k": "4K"
-    },
-    "$audioTasks": {
-        "speech-generation": "Speech",
-        "transcription": "Transcribe",
-        "music-and-sound-effects": "Music",
-        "voice-changer": "Tools",
-        "voice-isolator": "Tools",
-        "stem-separation": "Tools"
-    },
-    "$audioEndpoints": {
-        "/v1/audio/transcriptions": ["transcription"],
-        "/alpha/audio/stem-separation": ["stem-separation"],
-        "/v1/audio/voice-changer": ["voice-changer"],
-        "/v1/audio/voice-isolator": ["voice-isolator"],
-        "/v1/audio/speech": ["speech-generation", "music-and-sound-effects"],
-        "/audio/{text}": ["speech-generation", "music-and-sound-effects"]
-    },
     "alibaba/happyhorse-1.1": {
         "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
         "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",

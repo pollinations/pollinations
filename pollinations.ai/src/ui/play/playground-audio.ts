@@ -5,11 +5,9 @@ import type {
 } from "@pollinations/sdk";
 import {
     type AudioCatalogMetadata,
-    audioEndpoints,
-    audioTaskIds,
     playgroundModelOverride,
 } from "../../data/playground-model-overrides";
-import { audioEndpoint } from "./audio-endpoint";
+import { audioEndpoint, audioRoute, audioTaskIds } from "./audio-endpoint";
 
 type AudioModel = {
     id: string;
@@ -21,9 +19,9 @@ type AudioModel = {
 export function audioTaskForModel(
     model: Pick<AudioModel, "id" | "supportedEndpoints">,
 ) {
-    const endpoint = audioEndpoint(model);
-    if (!endpoint) return undefined;
-    const matches = audioEndpoints[endpoint];
+    const route = audioRoute(model);
+    if (!route) return undefined;
+    const matches: readonly string[] = route[1];
     // Several operations share the speech endpoint. Only use a model override
     // when the operation also matches its current catalog endpoint.
     const preferred = playgroundModelOverride(model.id)?.audioTask;

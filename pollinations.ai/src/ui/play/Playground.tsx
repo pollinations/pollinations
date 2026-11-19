@@ -68,18 +68,12 @@ import {
 import { API_BASE_URL, ENTER_URL } from "../../config";
 import {
     type AudioCatalogMetadata,
-    audioTaskGroups,
-    audioTaskIds,
-    image4KDimensions,
-    imageFilters,
     playgroundAudioMetadata,
     playgroundModelOverride,
-    uploadLimitsMiB,
-    videoFilters,
 } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
-import { audioEndpoint } from "./audio-endpoint";
+import { audioEndpoint, audioTaskGroups, audioTaskIds } from "./audio-endpoint";
 import {
     type ConnectDrafts,
     saveConnectDraft,
@@ -87,12 +81,7 @@ import {
 } from "./connect-draft";
 import { DecisionAnswerPanel } from "./DecisionAnswerPanel";
 import { DecisionCriteriaFields } from "./DecisionCriteriaFields";
-import {
-    decisionForm,
-    questionTypeLabel,
-    URGENCY_EXAMPLE,
-    verifiedQuestionTypes,
-} from "./decision";
+import { decisionForm, questionTypeLabel, URGENCY_EXAMPLE } from "./decision";
 import {
     type ImageFormats,
     imageFormatLabel,
@@ -325,10 +314,7 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
     if (task.id === "decide")
-        return (
-            model.supportedEndpoints.includes("/alpha/decisions") &&
-            verifiedQuestionTypes(model.id).length > 0
-        );
+        return model.supportedEndpoints.includes("/alpha/decisions");
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
     return true;
 }
@@ -497,6 +483,16 @@ function VoicePicker({
         </FieldStack>
     );
 }
+
+const imageFilters = { edit: "Edit", gif: "GIF", svg: "SVG", "4k": "4K" };
+const videoFilters = {
+    end_frame: "First + last frames",
+    reference_videos: "Reference video",
+    audio_output: "With sound",
+    "4k": "4K",
+};
+const image4KDimensions = { width: "3840", height: "2160" };
+const uploadLimitsMiB = { image: 5, video: 20, audio: 20, stemSeparation: 50 };
 
 const imageFilterOptions = ["All", ...Object.values(imageFilters)];
 const audioFilters = ["All", ...new Set(Object.values(audioTaskGroups))];

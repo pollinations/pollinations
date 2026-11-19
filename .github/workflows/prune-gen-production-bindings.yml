@@ -1,0 +1,67 @@
+name: Maintenance / Remove stale Gen production bindings
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pollinations-cloudflare-production
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  prune:
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Remove and verify the six approved bindings
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: |
+          set -euo pipefail
+
+          wrangler=(./node_modules/.bin/wrangler)
+          worker=(--config gen.pollinations.ai/wrangler.toml --env production --name pollinations-gen)
+          targets=(
+            AIRFORCE_API_KEY
+            AZURE_CONTENT_SAFETY_API_KEY
+            AZURE_CONTENT_SAFETY_ENDPOINT
+            AZURE_MYCELI_PROD_UAENORTH_API_KEY
+            FIREWORKS_API_KEY
+            WEFT_SELLER_API_KEY
+          )
+          work=$(mktemp -d)
+          trap 'rm -rf "$work"' EXIT
+
+          list_names() {
+            "${wrangler[@]}" secret list "${worker[@]}" --format json |
+              jq -r '.[] | .name | strings' | LC_ALL=C sort -u
+          }
+
+          list_names > "$work/before"
+          printf '%s\n' "${targets[@]}" | LC_ALL=C sort > "$work/targets"
+          LC_ALL=C comm -23 "$work/before" "$work/targets" > "$work/expected"
+          if [[ $(wc -l < "$work/expected") -ne 57 ]]; then
+            echo "::error::Expected 57 non-target Gen production bindings. No bindings removed."
+            exit 1
+          fi
+
+          LC_ALL=C comm -12 "$work/before" "$work/targets" > "$work/present"
+          while IFS= read -r binding; do
+            "${wrangler[@]}" secret delete "$binding" "${worker[@]}"
+          done < "$work/present"
+
+          list_names > "$work/after"
+          diff -u "$work/expected" "$work/after"
+          echo "Verified exactly 57 Gen production bindings."

@@ -1319,7 +1319,7 @@ const TEXT_BASE_SERVICES = {
     },
     "google/gemini-4-neon": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
-        aliases: ["gemini-4-neon"],
+        aliases: [],
         provider: "google",
         publisher: "Google",
         category: "text",
@@ -1339,7 +1339,7 @@ const TEXT_BASE_SERVICES = {
         billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Neon",
         description:
-            "Gemini 4 multimodal reasoning for coding, agents, and general-purpose tasks via Vertex AI",
+            "Multimodal reasoning for coding and tool use, with native web search",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3000,

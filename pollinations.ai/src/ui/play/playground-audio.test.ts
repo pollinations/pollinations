@@ -172,11 +172,11 @@ describe("catalog-driven audio requests", () => {
         }
     });
 
-    it("omits inputs rejected by MAI with an older catalog", () => {
+    it("hides transcription controls when the catalog lists no optional inputs", () => {
         expect(
             transcriptionControls({
                 ...model("/v1/audio/transcriptions"),
-                id: "microsoft/mai-transcribe-2",
+                audioInputConstraints: { transcription_options: [] },
             }),
         ).toEqual({ language: false, prompt: false });
     });

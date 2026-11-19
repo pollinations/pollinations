@@ -14,15 +14,10 @@ type AudioModel = {
 };
 
 export function transcriptionControls(model: AudioModel) {
-    // Older catalogs omit the hint. Remove the MAI exception once Gen publishes transcription_options.
     const options = model.audioInputConstraints?.transcription_options;
-    if (options === undefined) {
-        const acceptsOptions = model.id !== "microsoft/mai-transcribe-2";
-        return { language: acceptsOptions, prompt: acceptsOptions };
-    }
     return {
-        language: options.includes("language"),
-        prompt: options.includes("prompt"),
+        language: options?.includes("language") ?? true,
+        prompt: options?.includes("prompt") ?? true,
     };
 }
 

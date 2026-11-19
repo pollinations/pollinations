@@ -45,6 +45,10 @@ export const ModelListQueryParamsSchema = z.object({
         description:
             "`true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both.",
     }),
+    free: z.enum(["true", "false", "1", "0"]).optional().meta({
+        description:
+            "`true`/`1` returns only models whose applicable pricing is explicitly zero; missing or unknown pricing is excluded. `false`/`0` excludes verified-free models. A cached response alone does not make a model free.",
+    }),
     limit: z.coerce.number().int().min(1).max(500).optional().meta({
         description:
             "Return at most this many models (1-500), after every other filter and in catalog order.",

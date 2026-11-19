@@ -20,6 +20,39 @@ type HealthLookup = (entry: GenerationModelEntry) => ModelHealth;
 const isCommunityProxy = (entry: GenerationModelEntry) =>
     entry.info.community && !entry.info.agent;
 
+function pricingIsVerifiedZero(
+    pricing: GenerationModelEntry["info"]["pricing"],
+): boolean {
+    let sawPrice = false;
+    for (const [key, value] of Object.entries(pricing)) {
+        if (key === "currency") continue;
+        const price = Number(value);
+        if (!Number.isFinite(price)) return false;
+        sawPrice = true;
+        if (price !== 0) return false;
+    }
+    return sawPrice;
+}
+
+/**
+ * True only when every applicable charge is explicitly zero. Missing prices,
+ * unknown values, and nonzero variants or adjustments all count as not free.
+ */
+export function isVerifiedFree(info: GenerationModelEntry["info"]): boolean {
+    if (info.paid_only) return false;
+    if (!pricingIsVerifiedZero(info.pricing)) return false;
+    if (
+        info.pricing_variants?.some(
+            (variant) => !pricingIsVerifiedZero(variant.pricing),
+        )
+    )
+        return false;
+    return (info.pricing_adjustments ?? []).every((adjustment) => {
+        const price = Number(adjustment.price);
+        return Number.isFinite(price) && price === 0;
+    });
+}
+
 // A missing feed must not turn discovery into a 502 or label a model
 // healthy; an empty row set makes every lookup resolve to "unknown".
 export async function getModelHealthLookup(
@@ -87,6 +120,10 @@ export async function filterCatalogEntries(
     const words = query.query?.toLowerCase().split(/\s+/).filter(Boolean) ?? [];
     const capabilities = splitList(query.capabilities ?? "");
     const agent = query.agent === "true" || query.agent === "1";
+    const free =
+        query.free === undefined
+            ? undefined
+            : query.free === "true" || query.free === "1";
     const filtered = entries.filter(({ info }) => {
         if (source !== undefined && info.community !== (source === "community"))
             return false;
@@ -94,6 +131,7 @@ export async function filterCatalogEntries(
             return false;
         if (query.category !== undefined && info.category !== query.category)
             return false;
+        if (free !== undefined && isVerifiedFree(info) !== free) return false;
         const have: string[] = info.capabilities ?? [];
         if (!capabilities.every((item) => have.includes(item))) return false;
         const text = [

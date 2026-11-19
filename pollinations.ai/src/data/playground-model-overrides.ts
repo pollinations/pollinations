@@ -18,7 +18,6 @@ type PlaygroundModelOverride = {
     source: string;
     supports4K?: boolean;
     imageFormats?: PreviewFormats;
-    decisionQuestionTypes?: string[];
     audioTask?: string;
     audioCatalog?: AudioCatalogMetadata;
     audioGroup?: string;

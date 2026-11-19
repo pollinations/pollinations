@@ -3,18 +3,6 @@ import { describe, expect, it } from "vitest";
 import { ApiUrlCard, apiExample } from "./ApiUrlCard";
 
 describe("API URL card", () => {
-    it("shows the endpoint without a copy button while a request is incomplete", () => {
-        const html = renderToStaticMarkup(
-            <ApiUrlCard
-                url="https://gen.pollinations.ai/alpha/decisions"
-                pendingMessage="Complete the Decide form to see a copyable API request."
-            />,
-        );
-        expect(html).toContain("For developers");
-        expect(html).toContain("https://gen.pollinations.ai/alpha/decisions");
-        expect(html).not.toContain("Copy API example");
-    });
-
     it.each(["image", "video", "audio"])(
         "copies a GET URL for %s",
         (category) => {
@@ -48,23 +36,6 @@ describe("API URL card", () => {
         );
         expect(example).toContain("-F 'file=@clip.wav'");
         expect(example).toContain("-o stems.zip");
-    });
-
-    it("copies the nested decision question as JSON", () => {
-        const fields = {
-            model: "model",
-            state: "Export failed",
-            questions: {
-                urgent: { type: "noul", instructions: "Is this urgent?" },
-            },
-        };
-        const example = apiExample(
-            "https://gen.pollinations.ai/alpha/decisions",
-            fields,
-        );
-        expect(example).toContain(JSON.stringify(fields));
-        expect(example).toContain("Content-Type: application/json");
-        expect(example).not.toContain("-o ");
     });
 
     it("copies a JSON speech request", () => {

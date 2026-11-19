@@ -20,10 +20,10 @@ function formatDuration(ms: number): string {
     return rest ? `${minutes} ${plural(rest, "second")}` : minutes;
 }
 
-export function runStatsLine(stat: ModelRunStat | undefined): string {
+export function runStatsDetail(stat: ModelRunStat | undefined): string {
     const cost =
         stat?.avg_cost_usd && stat.avg_cost_usd > 0
-            ? `7-day median of ${formatCost(stat.avg_cost_usd)} per request`
+            ? `${formatCost(stat.avg_cost_usd)} per request`
             : "";
     const time =
         stat?.avg_response_ms && stat.avg_response_ms > 0

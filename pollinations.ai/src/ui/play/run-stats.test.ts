@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { runStatsLine } from "./run-stats";
+import { runStatsDetail } from "./run-stats";
 
 const line = (cost?: number, ms?: number) =>
-    runStatsLine({ model: "m", avg_cost_usd: cost, avg_response_ms: ms });
+    runStatsDetail({ model: "m", avg_cost_usd: cost, avg_response_ms: ms });
 
-describe("runStatsLine", () => {
+describe("runStatsDetail", () => {
     it("shows dollars to two significant digits", () => {
-        expect(line(0.004)).toBe("7-day median of $0.004 per request");
-        expect(line(0.0473)).toBe("7-day median of $0.047 per request");
-        expect(line(0.4199)).toBe("7-day median of $0.42 per request");
-        expect(line(1.2)).toBe("7-day median of $1.2 per request");
+        expect(line(0.004)).toBe("$0.004 per request");
+        expect(line(0.0473)).toBe("$0.047 per request");
+        expect(line(0.4199)).toBe("$0.42 per request");
+        expect(line(1.2)).toBe("$1.2 per request");
     });
 
     it("shows whole seconds under a minute", () => {
@@ -26,17 +26,15 @@ describe("runStatsLine", () => {
     });
 
     it("joins both numbers and skips missing or zero ones", () => {
-        expect(line(0.004, 3000)).toBe(
-            "7-day median of $0.004 per request · about 3 seconds",
-        );
+        expect(line(0.004, 3000)).toBe("$0.004 per request · about 3 seconds");
         expect(line(0.42, 100000)).toBe(
-            "7-day median of $0.42 per request · about 1 minute 40 seconds",
+            "$0.42 per request · about 1 minute 40 seconds",
         );
         expect(line(0, 3000)).toBe("About 3 seconds");
         expect(line(0.5, null as unknown as undefined)).toBe(
-            "7-day median of $0.5 per request",
+            "$0.5 per request",
         );
         expect(line(0, 0)).toBe("");
-        expect(runStatsLine(undefined)).toBe("");
+        expect(runStatsDetail(undefined)).toBe("");
     });
 });

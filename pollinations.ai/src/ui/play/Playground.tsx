@@ -26,6 +26,7 @@ import {
     type FileUploadProps,
     ImageIcon,
     InfoTip,
+    InlineLink,
     Input,
     MediaPlaceholder,
     MicIcon,
@@ -56,7 +57,7 @@ import {
     useState,
     useSyncExternalStore,
 } from "react";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL, ENTER_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
@@ -75,7 +76,7 @@ import {
     uploadReference,
     VIDEO_EXTENSIONS,
 } from "./playground-audio";
-import { type ModelRunStat, runStatsLine } from "./run-stats";
+import { type ModelRunStat, runStatsDetail } from "./run-stats";
 import { createRunStore } from "./run-store";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { videoOptions } from "./video-options";
@@ -1464,7 +1465,8 @@ export function Playground() {
     // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
     const run = needsSignIn ? () => login() : generate;
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
-    const statsLine = runStatsLine(modelStats);
+    const statsDetail = runStatsDetail(modelStats);
+    const hasMedianCost = (modelStats?.avg_cost_usd ?? 0) > 0;
 
     const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
     const audioInput =
@@ -1594,26 +1596,34 @@ export function Playground() {
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
                         />
-                        {(currentModel?.description || statsLine) && (
+                        {currentModel && (
                             <div className="flex min-w-0 flex-col gap-1">
-                                {currentModel?.description && (
+                                {currentModel.description && (
                                     <Text size="sm">
                                         {currentModel.description}
                                     </Text>
                                 )}
-                                {statsLine && (
-                                    <Text size="xs" tone="muted">
-                                        {statsLine}
-                                        {(modelStats?.avg_cost_usd ?? 0) >
-                                            0 && (
-                                            <InfoTip
-                                                label="About this cost"
-                                                tapEnabled
-                                                content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
-                                            />
-                                        )}
-                                    </Text>
-                                )}
+                                <Text size="xs" tone="muted">
+                                    {hasMedianCost && "7-day median "}
+                                    <InlineLink
+                                        href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                        aria-label={`${hasMedianCost ? "Cost" : "Pricing"} for ${currentModel.title} on Enter`}
+                                        showIcon={false}
+                                    >
+                                        {hasMedianCost ? "cost" : "Pricing"}
+                                    </InlineLink>
+                                    {statsDetail &&
+                                        (hasMedianCost
+                                            ? ` of ${statsDetail}`
+                                            : ` · ${statsDetail}`)}
+                                    {hasMedianCost && (
+                                        <InfoTip
+                                            label="About this cost"
+                                            tapEnabled
+                                            content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
+                                        />
+                                    )}
+                                </Text>
                             </div>
                         )}
                     </div>

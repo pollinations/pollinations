@@ -9,11 +9,15 @@ response = client.chat.completions.create(model="openai/gpt-5.4-nano", messages=
 print(response.choices[0].message.content)
 ```
 
-### Image (URL — no code needed)
+### Image (URL — no code needed, no account)
 
 ```plaintext
-https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell
+https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768
 ```
+
+Free API Classic: no key, no sign-in, no payment. One image per 45 seconds per
+IP, capped at 768x768, served by the `sana` model. `gen.pollinations.ai/image/{prompt}`
+needs an API key.
 
 ### Audio (cURL)
 

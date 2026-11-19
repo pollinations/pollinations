@@ -126,7 +126,7 @@ export function AudioPlayer({
                         {playing ? (
                             <span
                                 aria-hidden="true"
-                                className="polli:m-1 polli:size-4 polli:rounded-sm polli:bg-current"
+                                className="polli:m-1 polli:size-4 polli:rounded-sm polli:bg-[var(--polli-media-icon,currentColor)]"
                             />
                         ) : (
                             <PlayIcon />

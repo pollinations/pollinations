@@ -36,7 +36,7 @@ function isPreviewableImage(file: File): boolean {
 
 function PreviewPlaceholder({ icon }: { icon: ReactNode }) {
     return (
-        <div className="polli:flex polli:size-full polli:items-center polli:justify-center polli:text-theme-text-soft">
+        <div className="polli:flex polli:size-full polli:items-center polli:justify-center polli:text-[color:var(--polli-media-icon,var(--polli-color-text-soft))]">
             {icon}
         </div>
     );

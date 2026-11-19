@@ -38,12 +38,12 @@ export function MediaRemoveButton({
     const Icon = kind ? mediaTypeIcons[kind] : XIcon;
     const icon = (
         <Icon
-            className="polli:size-4 polli:text-theme-text-soft"
+            className="polli:size-4 polli:text-[color:var(--polli-media-icon,currentColor)]"
             strokeWidth={2.25}
         />
     );
     const badge =
-        "polli:box-border polli:size-7 polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-fill-wash polli:shadow-sm";
+        "polli:box-border polli:size-7 polli:rounded-lg polli:border polli:border-theme-border polli:bg-surface-opaque polli:shadow-sm";
     return (
         <div
             className="polli:absolute polli:top-1 polli:right-1"

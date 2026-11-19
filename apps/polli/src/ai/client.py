@@ -1018,6 +1018,8 @@ class PollinationsClient:
                         if mode == "api" and response.status in (401, 403):
                             raise UpstreamAuthError(response.status, "HTTP authentication error")
 
+            except UpstreamAuthError:
+                raise
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"
                 logger.warning(f"API timeout (attempt {attempt + 1})")

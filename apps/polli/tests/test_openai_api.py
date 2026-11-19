@@ -370,6 +370,24 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payloads[1]["model"], config.ai.fallback_model)
         self.assertTrue(all("_explicit_model" not in payload for payload in payloads))
 
+    async def test_buffered_api_request_raises_upstream_auth_error(self):
+        client = PollinationsClient()
+        response = FakeHTTPResponse({"error": "invalid key"})
+        response.status = 401
+        session = SimpleNamespace(post=MagicMock(return_value=response))
+        client.get_session = AsyncMock(return_value=session)
+
+        from src.ai.client import UpstreamAuthError, _auth_override
+
+        token = _auth_override.set("Bearer sk_revoked")
+        try:
+            with patch("src.ai.client.asyncio.sleep", new=AsyncMock()), self.assertRaises(UpstreamAuthError):
+                await client._call_api_with_tools([{"role": "user", "content": "hi"}], mode="api")
+        finally:
+            _auth_override.reset(token)
+
+        self.assertEqual(session.post.call_count, 1)
+
     async def test_stream_request_omits_internal_model_parameter(self):
         client = PollinationsClient()
         response = FakeHTTPResponse({})

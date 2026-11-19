@@ -1346,7 +1346,9 @@ export async function createAndReturnImageCached(
 
         return {
             buffer: processedBuffer,
-            mimeType: result.mimeType,
+            // Let the response handler detect the format after post-processing.
+            mimeType:
+                processedBuffer === result.buffer ? result.mimeType : undefined,
             trackingData: result.trackingData,
         };
     } catch (error) {

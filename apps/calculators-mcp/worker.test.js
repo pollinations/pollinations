@@ -1044,3 +1044,25 @@ test("url_parse resolves a relative reference against a base, and refuses withou
         );
     }
 });
+
+test("url_parse ignores a base when the URL is already absolute", async (t) => {
+    const client = await clientFor(t);
+
+    // An absolute URL needs no base, so a base that is not a URL must not reject it.
+    const withBadBase = await call(client, "url_parse", {
+        url: "https://example.com/x",
+        base: "not a url",
+    });
+    assert.equal(withBadBase.absolute, true);
+    assert.equal(withBadBase.host, "example.com");
+    assert.equal(withBadBase.path, "/x");
+
+    // A valid base cannot change an absolute URL either, and `absolute` still reports
+    // which of the two inputs the result came from.
+    const withGoodBase = await call(client, "url_parse", {
+        url: "https://example.com/x",
+        base: "https://elsewhere.test/dir/",
+    });
+    assert.equal(withGoodBase.absolute, true);
+    assert.equal(withGoodBase.host, "example.com");
+});

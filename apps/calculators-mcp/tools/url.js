@@ -45,15 +45,26 @@ export const urlTools = [
                 ),
         },
         ({ url, base }) => {
+            // Parse the URL on its own first. An absolute URL does not need the base, so a
+            // base that is not a URL must not reject it, and `absolute` describes the
+            // input rather than whether a base was passed.
             let parsed;
+            let absolute = true;
             try {
-                parsed = base === undefined ? new URL(url) : new URL(url, base);
+                parsed = new URL(url);
             } catch {
-                throw new Error(
-                    base === undefined
-                        ? `${JSON.stringify(url)} is not an absolute URL, and no base was given to resolve it against.`
-                        : `${JSON.stringify(url)} cannot be resolved against ${JSON.stringify(base)}.`,
-                );
+                absolute = false;
+                if (base === undefined)
+                    throw new Error(
+                        `${JSON.stringify(url)} is not an absolute URL, and no base was given to resolve it against.`,
+                    );
+                try {
+                    parsed = new URL(url, base);
+                } catch {
+                    throw new Error(
+                        `${JSON.stringify(url)} cannot be resolved against ${JSON.stringify(base)}.`,
+                    );
+                }
             }
 
             const scheme = parsed.protocol.replace(/:$/, "");
@@ -62,7 +73,7 @@ export const urlTools = [
             return {
                 // A relative reference only becomes absolute once a base resolves it, and the
                 // caller benefits from knowing which happened.
-                absolute: base === undefined,
+                absolute,
                 scheme,
                 // WHATWG keeps the brackets on an IPv6 hostname; they delimit the literal
                 // rather than being part of the address, so they come off here.

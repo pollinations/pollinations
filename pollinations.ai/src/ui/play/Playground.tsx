@@ -50,7 +50,6 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
-    type ReactNode,
     type RefObject,
     useCallback,
     useEffect,
@@ -462,13 +461,11 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
-    children,
 }: {
     models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
-    children: ReactNode;
 }) {
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
@@ -498,10 +495,7 @@ function ModelPicker({
             <Button
                 size="icon"
                 intent="neutral"
-                className={cn(
-                    "shrink-0 lg:self-start",
-                    direction === 1 && "lg:order-last",
-                )}
+                className="shrink-0"
                 aria-label={label}
                 title={label}
                 onClick={() => step(direction)}
@@ -514,112 +508,109 @@ function ModelPicker({
     }
 
     return (
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:gap-4">
-            <div className="flex min-w-0 items-center gap-2 lg:contents">
-                {stepButton(-1)}
-                <div className="w-80 min-w-0">
-                    <Dropdown
-                        portalled={false}
-                        className="w-[var(--reference-width)] overscroll-y-contain p-2 max-sm:w-[min(calc(100vw-2.5rem),24rem)]"
-                        trigger={(open) => (
-                            <Button
-                                type="button"
-                                intent="neutral"
-                                size="lg"
-                                disabled={isLoading || models.length === 0}
-                                className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
-                                title={selected?.title}
-                                aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
-                                aria-description={
-                                    selected &&
-                                    [
-                                        selected.paidOnly
-                                            ? "Uses paid balance only"
-                                            : "Works with any balance",
-                                        selected.publisher,
-                                    ]
-                                        .filter(Boolean)
-                                        .join(", ")
+        <div className="flex min-w-0 items-center gap-2">
+            {stepButton(-1)}
+            <div className="w-80 min-w-0">
+                <Dropdown
+                    portalled={false}
+                    className="w-[var(--reference-width)] overscroll-y-contain p-2 max-sm:w-[min(calc(100vw-2.5rem),24rem)]"
+                    trigger={(open) => (
+                        <Button
+                            type="button"
+                            intent="neutral"
+                            size="lg"
+                            disabled={isLoading || models.length === 0}
+                            className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
+                            title={selected?.title}
+                            aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
+                            aria-description={
+                                selected &&
+                                [
+                                    selected.paidOnly
+                                        ? "Uses paid balance only"
+                                        : "Works with any balance",
+                                    selected.publisher,
+                                ]
+                                    .filter(Boolean)
+                                    .join(", ")
+                            }
+                            onPointerDown={(event) => {
+                                swiped.current = false;
+                                swipeStart.current =
+                                    canStep &&
+                                    event.pointerType === "touch" &&
+                                    event.isPrimary
+                                        ? {
+                                              x: event.clientX,
+                                              y: event.clientY,
+                                          }
+                                        : null;
+                            }}
+                            onPointerCancel={() => {
+                                swipeStart.current = null;
+                            }}
+                            onPointerUp={(event) => {
+                                const start = swipeStart.current;
+                                swipeStart.current = null;
+                                if (!start || !canStep) return;
+                                const dx = event.clientX - start.x;
+                                if (
+                                    Math.abs(dx) < 40 ||
+                                    Math.abs(dx) <=
+                                        Math.abs(event.clientY - start.y)
+                                )
+                                    return;
+                                swiped.current = true;
+                                step(dx < 0 ? 1 : -1);
+                            }}
+                            onClickCapture={(event) => {
+                                if (swiped.current && event.detail > 0) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
                                 }
-                                onPointerDown={(event) => {
-                                    swiped.current = false;
-                                    swipeStart.current =
-                                        canStep &&
-                                        event.pointerType === "touch" &&
-                                        event.isPrimary
-                                            ? {
-                                                  x: event.clientX,
-                                                  y: event.clientY,
-                                              }
-                                            : null;
-                                }}
-                                onPointerCancel={() => {
-                                    swipeStart.current = null;
-                                }}
-                                onPointerUp={(event) => {
-                                    const start = swipeStart.current;
-                                    swipeStart.current = null;
-                                    if (!start || !canStep) return;
-                                    const dx = event.clientX - start.x;
-                                    if (
-                                        Math.abs(dx) < 40 ||
-                                        Math.abs(dx) <=
-                                            Math.abs(event.clientY - start.y)
-                                    )
-                                        return;
-                                    swiped.current = true;
-                                    step(dx < 0 ? 1 : -1);
-                                }}
-                                onClickCapture={(event) => {
-                                    if (swiped.current && event.detail > 0) {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                    }
-                                    swiped.current = false;
-                                }}
+                                swiped.current = false;
+                            }}
+                        >
+                            <span
+                                className="flex min-w-0 flex-1 text-left"
+                                aria-live="polite"
                             >
-                                <span
-                                    className="flex min-w-0 flex-1 text-left"
-                                    aria-live="polite"
-                                >
-                                    {isLoading ? (
-                                        "Loading models…"
-                                    ) : selected ? (
-                                        <MediaModelOption model={selected} />
-                                    ) : (
-                                        "No models available"
-                                    )}
-                                </span>
-                                <ChevronIcon expanded={open} />
-                            </Button>
-                        )}
-                    >
-                        {(close) => (
-                            <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
-                                <div className="flex flex-col gap-1">
-                                    {sorted.map((model) => (
-                                        <TabButton
-                                            key={model.id}
-                                            active={model.id === selectedModel}
-                                            size="sm"
-                                            variant="ghost"
-                                            className="play-model-option w-full justify-start text-left"
-                                            onClick={() => {
-                                                onSelectModel(model.id);
-                                                close();
-                                            }}
-                                        >
-                                            <MediaModelOption model={model} />
-                                        </TabButton>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        )}
-                    </Dropdown>
-                </div>
-                {stepButton(1)}
+                                {isLoading ? (
+                                    "Loading models…"
+                                ) : selected ? (
+                                    <MediaModelOption model={selected} />
+                                ) : (
+                                    "No models available"
+                                )}
+                            </span>
+                            <ChevronIcon expanded={open} />
+                        </Button>
+                    )}
+                >
+                    {(close) => (
+                        <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
+                            <div className="flex flex-col gap-1">
+                                {sorted.map((model) => (
+                                    <TabButton
+                                        key={model.id}
+                                        active={model.id === selectedModel}
+                                        size="sm"
+                                        variant="ghost"
+                                        className="play-model-option w-full justify-start text-left"
+                                        onClick={() => {
+                                            onSelectModel(model.id);
+                                            close();
+                                        }}
+                                    >
+                                        <MediaModelOption model={model} />
+                                    </TabButton>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    )}
+                </Dropdown>
             </div>
-            {children}
+            {stepButton(1)}
         </div>
     );
 }
@@ -1758,9 +1749,25 @@ export function Playground({
                         selectedModel={selectedModel}
                         isLoading={isLoading || !isHydrated}
                         onSelectModel={selectModel}
+                    />
+                    {isHydrated &&
+                        !isLoading &&
+                        !catalogError &&
+                        selectedModel &&
+                        !currentModel && (
+                            <Alert intent="warning">
+                                Your selected model is unavailable. Choose
+                                another model to continue.
+                            </Alert>
+                        )}
+                    <Surface
+                        as="section"
+                        variant="card"
+                        aria-label="Generation inputs"
+                        className="flex flex-col gap-5"
                     >
                         {currentModel && (
-                            <div className="flex w-full min-w-0 flex-col gap-1 lg:w-auto lg:flex-1">
+                            <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
                                 {currentModel.description && (
                                     <Text>{currentModel.description}</Text>
                                 )}
@@ -1816,25 +1823,8 @@ export function Playground({
                                         Model Monitor
                                     </InlineLink>
                                 </div>
-                            </div>
+                            </header>
                         )}
-                    </ModelPicker>
-                    {isHydrated &&
-                        !isLoading &&
-                        !catalogError &&
-                        selectedModel &&
-                        !currentModel && (
-                            <Alert intent="warning">
-                                Your selected model is unavailable. Choose
-                                another model to continue.
-                            </Alert>
-                        )}
-                    <Surface
-                        as="section"
-                        variant="card"
-                        aria-label="Generation inputs"
-                        className="flex flex-col gap-5"
-                    >
                         {showPromptInput && (
                             <FieldStack
                                 label={

@@ -66,6 +66,15 @@ const OPTIONAL_SECRET_KEYS = [
     "WEFT_SELLER_API_KEY",
 ];
 
+// Keep the existing upload contract for production and local development.
+const STAGING_UNUSED_KEYS = new Set([
+    "AIRFORCE_API_KEY",
+    "AZURE_CONTENT_SAFETY_API_KEY",
+    "AZURE_CONTENT_SAFETY_ENDPOINT",
+    "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
+    "FIREWORKS_API_KEY",
+]);
+
 const [sourcePath, environment] = process.argv.slice(2);
 
 if (!sourcePath || !environment) {
@@ -79,7 +88,11 @@ const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const filtered = {};
 const missing = [];
 
+const skipStagingKey = (key) =>
+    environment === "staging" && STAGING_UNUSED_KEYS.has(key);
+
 for (const key of REQUIRED_SECRET_KEYS) {
+    if (skipStagingKey(key)) continue;
     if (source[key] === undefined) {
         missing.push(key);
     } else {
@@ -87,6 +100,7 @@ for (const key of REQUIRED_SECRET_KEYS) {
     }
 }
 for (const key of OPTIONAL_SECRET_KEYS) {
+    if (skipStagingKey(key)) continue;
     if (source[key] !== undefined) {
         filtered[key] = source[key];
     }

@@ -3,6 +3,7 @@ import inventory from "./playground-model-overrides.json";
 type PlaygroundModelOverride = {
     reason: string;
     source: string;
+    decisionQuestionTypes?: string[];
     musicAndSounds?: boolean;
     durationFromInput?: boolean;
     requiresImage?: boolean;

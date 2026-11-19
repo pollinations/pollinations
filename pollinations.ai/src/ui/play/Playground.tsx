@@ -1,4 +1,5 @@
 import {
+    type DecisionAnswer,
     type ModelCategory,
     type ModelInfo,
     Pollinations,
@@ -24,6 +25,7 @@ import {
     FieldStack,
     FileUpload,
     type FileUploadProps,
+    GitBranchIcon,
     ImageIcon,
     InfoTip,
     InlineLink,
@@ -75,6 +77,13 @@ import {
     saveConnectDraft,
     type VideoReference,
 } from "./connect-draft";
+import { DecisionAnswerPanel } from "./DecisionAnswerPanel";
+import {
+    decisionForm,
+    questionTypeLabel,
+    URGENCY_EXAMPLE,
+    verifiedQuestionTypes,
+} from "./decision";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -156,6 +165,12 @@ const WORKSPACES = [
         category: "audio",
         operations: ["music-and-sound-effects", "stem-separation"],
     },
+    {
+        label: "Decide",
+        icon: GitBranchIcon,
+        category: "decision",
+        operations: ["decide"],
+    },
 ] as const;
 type Workspace = (typeof WORKSPACES)[number];
 const TASKS = WORKSPACES.flatMap((workspace) =>
@@ -221,7 +236,7 @@ const UPLOAD_MAX_MB: Record<UploadMedia, number> = {
     audio: 20,
 };
 
-type PlaygroundResult =
+type MediaResult =
     | {
           type: "image" | "video" | "audio" | "stems";
           url: string;
@@ -232,6 +247,10 @@ type PlaygroundResult =
           text: string;
       };
 
+type PlaygroundResult =
+    | MediaResult
+    | { type: "decision"; answer: DecisionAnswer; question: string };
+
 function promptPlaceholder(
     task: Task,
     editsImage: boolean,
@@ -241,6 +260,7 @@ function promptPlaceholder(
         id,
         workspace: { category },
     } = task;
+    if (id === "decide") return "Describe the situation…";
     if (format === "gif") return "Describe the animation you want…";
     if (format === "svg" && !editsImage)
         return "Describe the vector image you want…";
@@ -311,6 +331,11 @@ function specialImageFormat(formats: PlaygroundModel["outputFormats"]) {
 
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
+    if (task.id === "decide")
+        return (
+            model.supportedEndpoints.includes("/alpha/decisions") &&
+            verifiedQuestionTypes(model.id).length > 0
+        );
     const format = specialImageFormat(model.outputFormats);
     if (task.id === "gif") return !!format;
     if (format && model.outputFormats?.[format]?.mode === "native")
@@ -714,7 +739,7 @@ function ResultDownloadButton({
     result,
     className,
 }: {
-    result: PlaygroundResult;
+    result: MediaResult;
     className?: string;
 }) {
     const format =
@@ -751,7 +776,7 @@ function Lightbox({
     open,
     onClose,
 }: {
-    result: PlaygroundResult;
+    result: MediaResult;
     open: boolean;
     onClose: () => void;
 }) {
@@ -821,6 +846,13 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
 function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
 
+    if (result.type === "decision")
+        return (
+            <DecisionAnswerPanel
+                answer={result.answer}
+                question={result.question}
+            />
+        );
     const zoomButtonClass =
         "block w-full cursor-zoom-in border-0 bg-transparent p-0";
 
@@ -969,6 +1001,7 @@ export function Playground({
         TASKS.find((item) => item.id === params.task) ??
         TASKS.find((item) => item.workspace.category === params.tab) ??
         TASKS[0];
+    const isDecide = task.id === "decide";
     const activeCategory = task.workspace.category;
     const isFormatTab = task.id === "gif";
     const lastTask = useRef(new Map<Workspace, Task>());
@@ -979,7 +1012,7 @@ export function Playground({
         savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {
         model: selectedModel = "",
-        prompt = "",
+        prompt = isDecide ? URGENCY_EXAMPLE : "",
         size: selectedResolution = "",
         width = "",
         height = "",
@@ -1059,7 +1092,15 @@ export function Playground({
                     ...Object.fromEntries(
                         PLAY_SEARCH_KEYS.map((key) => [
                             key,
-                            values[key] || undefined,
+                            values.task === "decide" &&
+                            [
+                                "prompt",
+                                "question",
+                                "choices",
+                                "levels",
+                            ].includes(key)
+                                ? values[key]
+                                : values[key] || undefined,
                         ]),
                     ),
                 }),
@@ -1103,6 +1144,18 @@ export function Playground({
             ),
         [visibleModels, selectedModel, task],
     );
+    const decision =
+        isDecide && currentModel
+            ? decisionForm(currentModel.id, params)
+            : undefined;
+    const decisionRequest =
+        decision?.question && currentModel && prompt.trim()
+            ? {
+                  model: currentModel.id,
+                  state: prompt.trim(),
+                  questions: { decision: decision.question },
+              }
+            : undefined;
     const audioTask =
         currentModel?.category === "audio"
             ? audioTaskForModel(currentModel)
@@ -1157,12 +1210,14 @@ export function Playground({
                 return;
             }
         }
-        if (selectedModel && (!isFormatTab || currentModel)) return;
+        if (selectedModel && ((!isFormatTab && !isDecide) || currentModel))
+            return;
         const first = visibleModels.find((model) => supportsTask(model, task));
         if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
         task,
         isFormatTab,
+        isDecide,
         hasFormatModels,
         currentModel,
         selectedModel,
@@ -1267,7 +1322,11 @@ export function Playground({
         : currentModel?.category !== "audio" ||
           (transcription?.prompt ??
               currentModel.inputModalities.includes("text"));
-    const promptLabel = isAudioTranscription ? "Instructions" : "Description";
+    const promptLabel = isDecide
+        ? "Context"
+        : isAudioTranscription
+          ? "Instructions"
+          : "Description";
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
@@ -1342,7 +1401,7 @@ export function Playground({
                       0,
               )
             : null;
-    const audioError = clipError ?? audioRequestError;
+    const inputError = decision?.error ?? clipError ?? audioRequestError;
     // An input image or video fixes the output shape, so Auto follows it;
     // otherwise Auto may render square and the default ratio applies.
     const sendsVisualInput =
@@ -1391,7 +1450,7 @@ export function Playground({
         currentModel?.supportedEndpoints.includes("/audio/{text}") &&
         audioFiles.length === 0;
     const apiMethod = isVisualModel || audioGet ? "GET" : "POST";
-    const apiFields: Record<string, string | number> | undefined =
+    const apiFields: Record<string, unknown> | undefined =
         currentModel?.category === "audio" && !audioGet
             ? {
                   model: currentModel.id,
@@ -1427,10 +1486,15 @@ export function Playground({
                             : { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
                         : {}),
               }
-            : undefined;
+            : decisionRequest;
+    const postEndpoint = isDecide
+        ? "/alpha/decisions"
+        : currentAudioEndpoint === "/audio/{text}"
+          ? "/v1/audio/speech"
+          : currentAudioEndpoint;
     const apiUrl = currentModel
         ? apiMethod === "POST"
-            ? `${API_BASE_URL}${currentAudioEndpoint === "/audio/{text}" ? "/v1/audio/speech" : currentAudioEndpoint}`
+            ? `${API_BASE_URL}${postEndpoint}`
             : `${API_BASE_URL}/${currentModel.category}/${encodeURIComponent(
                   prompt.trim() || "your-prompt-here",
               )}?${new URLSearchParams(
@@ -1583,6 +1647,21 @@ export function Playground({
 
         try {
             const { client } = session;
+            if (decisionRequest) {
+                const { answers } = await client.decision(decisionRequest);
+                const answer = answers.decision;
+                if (answer?.type !== decisionRequest.questions.decision.type)
+                    throw new Error("The model returned an unexpected answer.");
+                runStore.set({
+                    result: {
+                        type: "decision",
+                        answer,
+                        question:
+                            decisionRequest.questions.decision.instructions,
+                    },
+                });
+                return;
+            }
             const uploadFiles = (files: File[]) =>
                 Promise.all(
                     files.map((file) =>
@@ -1693,25 +1772,31 @@ export function Playground({
     const editsImage =
         currentModel?.category === "image" &&
         (requiresImage || referenceImages.length > 0);
-    const generateLabel = format
-        ? `Generate ${format.toUpperCase()}`
-        : currentModel?.category === "video"
-          ? "Generate video"
-          : currentModel?.category === "audio"
-            ? isAudioTranscription
-                ? "Transcribe audio"
-                : currentAudioEndpoint === "/v1/audio/voice-changer"
-                  ? "Change voice"
-                  : currentAudioEndpoint === "/v1/audio/voice-isolator"
-                    ? "Isolate speech"
-                    : currentAudioEndpoint === "/alpha/audio/stem-separation"
-                      ? "Separate stems"
-                      : "Generate audio"
-            : editsImage
-              ? "Edit image"
-              : "Generate image";
+    const generateLabel = isDecide
+        ? "Evaluate"
+        : format
+          ? `Generate ${format.toUpperCase()}`
+          : currentModel?.category === "video"
+            ? "Generate video"
+            : currentModel?.category === "audio"
+              ? isAudioTranscription
+                  ? "Transcribe audio"
+                  : currentAudioEndpoint === "/v1/audio/voice-changer"
+                    ? "Change voice"
+                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                      ? "Isolate speech"
+                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                        ? "Separate stems"
+                        : "Generate audio"
+              : editsImage
+                ? "Edit image"
+                : "Generate image";
     const GenerateIcon = task.workspace.icon;
-    const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
+    const busyLabel = isDecide
+        ? "Evaluating…"
+        : isAudioTranscription
+          ? "Transcribing…"
+          : "Generating…";
     // The placeholder belongs to the tab whose run is in flight; audio has none.
     const busyVisual =
         running === "image" || running === "video" ? running : null;
@@ -1741,8 +1826,8 @@ export function Playground({
         ? "Finish recording first"
         : needsSignIn
           ? null
-          : audioError
-            ? audioError
+          : inputError
+            ? inputError
             : needsEditImage
               ? "Add an image to edit"
               : missingInput
@@ -1942,7 +2027,11 @@ export function Playground({
                         key={item.label}
                         active={item === task.workspace}
                         size="lg"
-                        modality={item.category}
+                        modality={
+                            item.category === "decision"
+                                ? "text"
+                                : item.category
+                        }
                         icon={item.icon}
                         onClick={() => {
                             if (item === task.workspace) return;
@@ -2031,7 +2120,9 @@ export function Playground({
                             className="flex min-w-0 flex-col gap-3"
                         >
                             {showPromptInput && (
-                                <FieldStack>
+                                <FieldStack
+                                    label={isDecide ? "Context" : undefined}
+                                >
                                     <Textarea
                                         aria-label={
                                             isAudioTranscription
@@ -2039,7 +2130,11 @@ export function Playground({
                                                 : promptLabel
                                         }
                                         value={prompt}
-                                        rows={isAudioTranscription ? 3 : 7}
+                                        rows={
+                                            isAudioTranscription || isDecide
+                                                ? 3
+                                                : 7
+                                        }
                                         onChange={(event) =>
                                             setParam(
                                                 "prompt",
@@ -2061,13 +2156,67 @@ export function Playground({
                                             format,
                                         )}
                                         className={cn(
-                                            "lg:min-h-56",
-                                            isAudioTranscription
+                                            !isDecide && "lg:min-h-56",
+                                            isAudioTranscription || isDecide
                                                 ? "min-h-24"
                                                 : "min-h-44",
                                         )}
                                     />
                                 </FieldStack>
+                            )}
+                            {decision && (
+                                <>
+                                    <OptionField
+                                        label="Question type"
+                                        options={decision.types}
+                                        value={decision.type}
+                                        onChange={(type) =>
+                                            setParam("questionType", type)
+                                        }
+                                        format={questionTypeLabel}
+                                    />
+                                    <FieldStack label="Question">
+                                        <Input
+                                            aria-label="Question"
+                                            value={decision.instructions}
+                                            onChange={(event) =>
+                                                setParam(
+                                                    "question",
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                    </FieldStack>
+                                    {(decision.type === "choice" ||
+                                        decision.type === "score") && (
+                                        <FieldStack
+                                            label={
+                                                decision.type === "score"
+                                                    ? "Scale (low to high, one per line)"
+                                                    : "Choices (one per line)"
+                                            }
+                                        >
+                                            <Textarea
+                                                rows={3}
+                                                aria-label={
+                                                    decision.type === "score"
+                                                        ? "Scale"
+                                                        : "Choices"
+                                                }
+                                                value={decision.criteria}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        decision.type ===
+                                                            "score"
+                                                            ? "levels"
+                                                            : "choices",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                    )}
+                                </>
                             )}
                             {audioInput}
                             {isReferenceImageListMode && (
@@ -2510,7 +2659,9 @@ export function Playground({
                             )}
                         </div>
                     )}
-                    {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
+                    {apiUrl && (!isDecide || decisionRequest) && (
+                        <ApiUrlCard url={apiUrl} fields={apiFields} />
+                    )}
                 </div>
             </div>
         </div>

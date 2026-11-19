@@ -7,7 +7,7 @@ function shellQuote(value: string): string {
 
 export function apiExample(
     url: string,
-    fields?: Record<string, string | number>,
+    fields?: Record<string, unknown>,
 ): string {
     if (!fields) return url;
 
@@ -15,7 +15,8 @@ export function apiExample(
         `curl ${shellQuote(url)}`,
         `  -H ${shellQuote("Authorization: Bearer YOUR_API_KEY")}`,
     ];
-    if (url.endsWith("/v1/audio/speech")) {
+    const decision = url.endsWith("/alpha/decisions");
+    if (decision || url.endsWith("/v1/audio/speech")) {
         command.push(
             `  -H ${shellQuote("Content-Type: application/json")}`,
             `  -d ${shellQuote(JSON.stringify(fields))}`,
@@ -30,7 +31,7 @@ export function apiExample(
     }
     if (url.endsWith("/alpha/audio/stem-separation")) {
         command.push("  -o stems.zip");
-    } else if (!url.endsWith("/v1/audio/transcriptions")) {
+    } else if (!decision && !url.endsWith("/v1/audio/transcriptions")) {
         command.push("  -o output.mp3");
     }
     return command.join(" \\\n");
@@ -56,7 +57,7 @@ export function ApiUrlCard({
     fields,
 }: {
     url: string;
-    fields?: Record<string, string | number>;
+    fields?: Record<string, unknown>;
 }) {
     const example = apiExample(url, fields);
 

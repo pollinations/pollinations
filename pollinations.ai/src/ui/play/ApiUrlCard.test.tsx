@@ -38,6 +38,23 @@ describe("API URL card", () => {
         expect(example).toContain("-o stems.zip");
     });
 
+    it("copies the nested decision question as JSON", () => {
+        const fields = {
+            model: "model",
+            state: "Export failed",
+            questions: {
+                urgent: { type: "noul", instructions: "Is this urgent?" },
+            },
+        };
+        const example = apiExample(
+            "https://gen.pollinations.ai/alpha/decisions",
+            fields,
+        );
+        expect(example).toContain(JSON.stringify(fields));
+        expect(example).toContain("Content-Type: application/json");
+        expect(example).not.toContain("-o ");
+    });
+
     it("copies a JSON speech request", () => {
         const example = apiExample(
             "https://gen.pollinations.ai/v1/audio/speech",

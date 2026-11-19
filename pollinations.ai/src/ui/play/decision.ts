@@ -1,0 +1,65 @@
+import type { DecisionQuestion } from "@pollinations/sdk";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
+import type { PlaySearch } from "../../routes/-play-search";
+
+export const URGENCY_EXAMPLE =
+    "My export failed twice, and I need it for a meeting in ten minutes.";
+
+const questionTypes = ["noul", "choice", "score"] as const;
+type QuestionType = DecisionQuestion["type"];
+const labels: Record<QuestionType, string> = {
+    noul: "Yes / No",
+    choice: "Choose one",
+    score: "Score",
+};
+export function questionTypeLabel(type: string) {
+    return labels[type as QuestionType];
+}
+
+export function verifiedQuestionTypes(model: string) {
+    const verified = playgroundModelOverride(model)?.decisionQuestionTypes;
+    return questionTypes.filter((type) => verified?.includes(type));
+}
+
+export function decisionForm(model: string, params: PlaySearch) {
+    const types = verifiedQuestionTypes(model);
+    const type = types.find((type) => type === params.questionType) ?? types[0];
+    const instructions =
+        params.question ??
+        (type === "choice"
+            ? "Which team should handle this?"
+            : type === "score"
+              ? "How urgent is this?"
+              : "Does this need urgent attention?");
+    const criteria =
+        type === "score"
+            ? (params.levels ?? "Low\nMedium\nHigh")
+            : (params.choices ?? "Billing\nTechnical support");
+    const options = criteria
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    let question: (DecisionQuestion & { instructions: string }) | undefined;
+    let error: string | undefined;
+    if (!type) error = "No verified question types for this model.";
+    else if (!instructions.trim()) error = "Enter a question.";
+    else if (type === "noul")
+        question = { type, instructions: instructions.trim() };
+    else if (new Set(options).size !== options.length || options.length < 2)
+        error = "Enter at least two distinct options, one per line.";
+    else if (type === "choice")
+        question = {
+            type,
+            instructions: instructions.trim(),
+            criteria: Object.fromEntries(
+                options.map((option) => [option, option]),
+            ),
+        };
+    else
+        question = {
+            type,
+            instructions: instructions.trim(),
+            criteria: options,
+        };
+    return { types, type, instructions, criteria, question, error };
+}

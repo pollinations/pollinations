@@ -1404,10 +1404,14 @@ export function Playground() {
         stats.find((stat) => stat.model === currentModel?.id),
     );
 
-    const canUseAudioInput = isHydrated && isLoggedIn;
-    const audioInputHint = needsSignIn
-        ? "Connect your Pollinations account to import or record audio."
-        : audioConstraintHint(inputConstraints);
+    const audioInputHint =
+        [
+            audioConstraintHint(inputConstraints),
+            needsSignIn &&
+                "You can preview clips here. Signing in clears local selections.",
+        ]
+            .filter(Boolean)
+            .join(" ") || undefined;
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
@@ -1434,12 +1438,12 @@ export function Playground() {
                     )}
                 {uploadMedia.includes("audio") ? (
                     <AudioInput
-                        key={`${currentModel.id}-${canUseAudioInput}`}
+                        key={currentModel.id}
                         value={audioFiles}
                         onChange={setAudioFiles}
                         onBusyChange={setRecording}
                         onClipDuration={onClipDuration}
-                        disabled={!canUseAudioInput || isGenerating}
+                        disabled={isGenerating}
                         importLabel={`Import ${mediaUploadLabel}`}
                         {...uploadProps(uploadMedia, "Use one media file.")}
                     />
@@ -1680,7 +1684,7 @@ export function Playground() {
                                     >
                                         {media === "audio" ? (
                                             <AudioInput
-                                                key={`${currentModel?.id}-${canUseAudioInput}`}
+                                                key={currentModel?.id}
                                                 value={videoReferences.audio}
                                                 onChange={(audio) =>
                                                     setVideoReferences(
@@ -1692,10 +1696,7 @@ export function Playground() {
                                                 }
                                                 onBusyChange={setRecording}
                                                 onClipDuration={onClipDuration}
-                                                disabled={
-                                                    !canUseAudioInput ||
-                                                    isGenerating
-                                                }
+                                                disabled={isGenerating}
                                                 maxFiles={
                                                     currentModel?.maxReferenceAudios ??
                                                     Infinity

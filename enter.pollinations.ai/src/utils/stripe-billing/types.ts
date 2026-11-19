@@ -48,7 +48,7 @@ export type BillingOverview = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
-    /** USD credit from the buyer’s last pack (checkout or auto top-up); null before the first. */
+    /** USD credit from the buyer's last pack (checkout or auto top-up); null before the first. */
     lastPackPollen: number | null;
     /** Every method Stripe saved for the buyer, default first. */
     paymentMethods: SavedPaymentMethod[];

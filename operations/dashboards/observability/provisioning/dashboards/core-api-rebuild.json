@@ -343,7 +343,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is spend funded by purchased credit; the Quest balance is funded by grants and must not be read as revenue.",
+      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is spend funded by purchased credit; the Quest balance is funded by rewards and must not be read as revenue.",
       "fieldConfig": {
         "defaults": {
           "color": {

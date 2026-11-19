@@ -12,7 +12,7 @@ const BUCKET_COLUMNS = {
 } as const satisfies Record<Bucket, unknown>;
 
 /**
- * Atomically deducts the charge from the user’s balance.
+ * Atomically deducts the charge from the user's balance.
  *
  * This is the authoritative deduction ladder — the one place a positive charge
  * picks a bucket and money actually moves, read top-to-bottom as the `decision`

@@ -137,7 +137,7 @@ we been cooking fr fr 🔥 keep the votes coming!
 '-------------------------------------------------------------------------------'
 \`\`\`
 
-ads to earn credit is winning! 🗳️
+“Display ads to earn Pollen” is winning! 🗳️
 
 💳 **Vote here:** https://github.com/pollinations/pollinations/issues/4826
 ```

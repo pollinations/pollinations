@@ -1296,7 +1296,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.*Pollen/"
+              "options": "/^(Paid|Quest)$/"
             },
             "properties": [
               {
@@ -1332,7 +1332,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Paid Pollen"
+            "displayName": "Paid"
           }
         ]
       },
@@ -1394,9 +1394,9 @@
               "requests (sum)": 1
             },
             "renameByName": {
-              "paid_pollen (sum)": "Paid Pollen",
+              "paid_pollen (sum)": "Paid",
               "product_path": "Product path",
-              "quest_pollen (sum)": "Quest Pollen",
+              "quest_pollen (sum)": "Quest",
               "requests (sum)": "Requests"
             }
           }

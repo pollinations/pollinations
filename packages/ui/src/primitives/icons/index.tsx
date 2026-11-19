@@ -278,14 +278,6 @@ export function GraduationCapIcon(props: IconProps) {
     );
 }
 
-export function LightbulbIcon(props: IconProps) {
-    return (
-        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <path d="M9 17c0-2.5-3-3.5-3-7a6 6 0 1 1 12 0c0 3.5-3 4.5-3 7zM10 21h4" />
-        </svg>
-    );
-}
-
 export function SparklesIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

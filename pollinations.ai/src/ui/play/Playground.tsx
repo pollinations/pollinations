@@ -29,7 +29,6 @@ import {
     InlineLink,
     Input,
     LayersIcon,
-    LightbulbIcon,
     MediaPlaceholder,
     MicIcon,
     ScrollArea,
@@ -597,7 +596,10 @@ function ModelPicker({
                                 {isLoading ? (
                                     "Loading models…"
                                 ) : selected ? (
-                                    <MediaModelOption model={selected} />
+                                    <MediaModelOption
+                                        model={selected}
+                                        showWalletIcon={false}
+                                    />
                                 ) : models.length ? (
                                     "Choose a model"
                                 ) : (
@@ -680,7 +682,7 @@ function RunStatBadge({
                 <Chip size="md" data-theme="neutral" className="tabular-nums">
                     <span className="text-theme-text-muted">{label}</span>{" "}
                     {value ?? "—"}
-                    {value && afterValue}
+                    {afterValue}
                 </Chip>
             </button>
             <div
@@ -1986,9 +1988,8 @@ export function Playground({
                         {currentModel && (
                             <>
                                 {currentModel.description && (
-                                    <Text className="flex items-start gap-2">
-                                        <LightbulbIcon className="mt-[calc((1lh-1rem)/2)] size-4 shrink-0 text-theme-text-muted" />
-                                        <span>{currentModel.description}</span>
+                                    <Text tone="soft" data-theme="accent">
+                                        {currentModel.description}
                                     </Text>
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">

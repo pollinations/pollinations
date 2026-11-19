@@ -1,10 +1,7 @@
-import {
-    PolliProvider,
-    useAuthActions,
-    useAuthState,
-} from "@pollinations/sdk/react";
-import { ContentHeader, InlineLink } from "@pollinations/ui";
+import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
+import { BrandMark, ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
+import { LoginButton } from "@pollinations/ui/auth/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
@@ -57,48 +54,30 @@ function HydratedPlayground() {
     return isHydrated ? <Playground /> : null;
 }
 
-/**
- * Before connecting, the sentence itself connects (the playground's Generate
- * button does too); once connected, the account menu shows below it.
- */
 function PlayHero() {
     const { isLoggedIn, isHydrated } = useAuthState();
-    const { login } = useAuthActions();
-    const connect =
-        isHydrated && !isLoggedIn ? (
-            // Connecting leaves for enter, so it carries the external arrow.
-            // Wrapped: login() takes an optional request, not the click event.
-            <InlineLink
-                as="button"
-                type="button"
-                external
-                onClick={() => login()}
-            >
-                Connect your Pollinations account
-            </InlineLink>
-        ) : (
-            "Connect your Pollinations account"
-        );
-
     return (
         // The monitor robot, showing off something it just made.
         <HeroScene page="play" compactBottom>
             <ContentHeader
                 eyebrow="Models in the browser"
                 title="Try it out."
-                subtitle={
-                    <>
-                        Create images, video and audio. {connect} to use your
-                        own balance.
-                    </>
-                }
+                subtitle="Create images, video and audio with your own balance."
                 variant="page"
             />
-            {isLoggedIn && (
-                <div className="self-start">
+            <div className="self-start">
+                {isLoggedIn ? (
                     <AppUserMenu labels={{ logout: "Disconnect app" }} />
-                </div>
-            )}
+                ) : (
+                    <LoginButton
+                        size="lg"
+                        disabled={!isHydrated}
+                        icon={<BrandMark className="size-full" />}
+                    >
+                        Connect your Pollinations account
+                    </LoginButton>
+                )}
+            </div>
         </HeroScene>
     );
 }

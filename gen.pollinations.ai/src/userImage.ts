@@ -170,7 +170,10 @@ export async function fetchUserImage(
     imageUrl: string,
     options: FetchUserImageOptions = {},
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
-    const { maxBytes = MAX_IMAGE_SIZE, redirect, signal } = options;
+    // Refuse redirects by default. A followed redirect lands on a host the
+    // URL guard never saw. Callers may still pass redirect: "follow" if they
+    // have a reason to; the strict paths already pass "manual" explicitly.
+    const { maxBytes = MAX_IMAGE_SIZE, redirect = "manual", signal } = options;
 
     if (imageUrl.startsWith("data:")) {
         const bytes = decodeDataUri(
@@ -195,7 +198,7 @@ export async function fetchUserImage(
     let response: Response;
     try {
         response = await fetch(url, {
-            ...(redirect && { redirect }),
+            redirect,
             headers: { "User-Agent": "Pollinations/1.0" },
             ...(signal && { signal }),
         });

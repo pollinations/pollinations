@@ -5,8 +5,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
-import { takeConnectDraft } from "../ui/play/connect-draft";
-import { type ConnectDrafts, Playground } from "../ui/play/Playground";
+import { type ConnectDrafts, takeConnectDraft } from "../ui/play/connect-draft";
+import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import { validatePlaySearch } from "./-play-search";
@@ -61,7 +61,7 @@ function HydratedPlayground({ connect }: ConnectProps) {
     useEffect(() => {
         if (!isHydrated) return;
         let active = true;
-        restore.current ??= takeConnectDraft<ConnectDrafts>();
+        restore.current ??= takeConnectDraft();
         restore.current.then(
             (saved) => {
                 if (active) setDrafts(saved ?? {});

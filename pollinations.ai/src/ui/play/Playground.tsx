@@ -64,7 +64,7 @@ import { API_BASE_URL, ENTER_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
-import { saveConnectDraft } from "./connect-draft";
+import { type ConnectDrafts, saveConnectDraft } from "./connect-draft";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -234,15 +234,6 @@ const tabRuns = {
     video: createRunStore<PlaygroundResult>(),
     audio: createRunStore<PlaygroundResult>(),
 };
-
-type TabDraft = {
-    params: PlaySearch;
-    referenceImages: File[];
-    videoReferences: Record<UploadMedia, File[]>;
-    audioFiles: File[];
-};
-
-export type ConnectDrafts = Partial<Record<PlaygroundCategory, TabDraft>>;
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);

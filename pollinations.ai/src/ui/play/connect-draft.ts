@@ -1,5 +1,46 @@
-// File objects can be structured-cloned by IndexedDB. Keep the lookup key in
-// this tab, and consume the files once Play returns from the OAuth redirect.
+import type { PlaySearch } from "../../routes/-play-search";
+
+type Category = "image" | "video" | "audio";
+type TabDraft<T> = {
+    params: PlaySearch;
+    referenceImages: T[];
+    videoReferences: Record<Category, T[]>;
+    audioFiles: T[];
+};
+export type ConnectDrafts<T = File> = Partial<Record<Category, TabDraft<T>>>;
+
+type StoredFile = {
+    bytes: ArrayBuffer;
+    name: string;
+    type: string;
+    lastModified: number;
+};
+
+// WebKit private sessions can store ArrayBuffers in IndexedDB but reject Files.
+async function mapFiles<T, R>(
+    drafts: ConnectDrafts<T>,
+    convert: (file: T) => R | Promise<R>,
+): Promise<ConnectDrafts<R>> {
+    const result: ConnectDrafts<R> = {};
+    const map = (files: T[]) => Promise.all(files.map(convert));
+    for (const category of ["image", "video", "audio"] as const) {
+        const draft = drafts[category];
+        if (!draft) continue;
+        result[category] = {
+            params: draft.params,
+            referenceImages: await map(draft.referenceImages),
+            videoReferences: {
+                image: await map(draft.videoReferences.image),
+                video: await map(draft.videoReferences.video),
+                audio: await map(draft.videoReferences.audio),
+            },
+            audioFiles: await map(draft.audioFiles),
+        };
+    }
+    return result;
+}
+
+// Keep the lookup key in this tab and consume the draft once after the redirect.
 const key = "play-connect-draft";
 const lifetime = 30 * 60 * 1000;
 
@@ -41,7 +82,13 @@ async function editDrafts(edit: (store: IDBObjectStore) => void) {
     }
 }
 
-export async function saveConnectDraft<T>(draft: T) {
+export async function saveConnectDraft(files: ConnectDrafts) {
+    const draft = await mapFiles(files, async (file) => ({
+        bytes: await file.arrayBuffer(),
+        name: file.name,
+        type: file.type,
+        lastModified: file.lastModified,
+    }));
     const id = sessionStorage.getItem(key) ?? crypto.randomUUID();
     sessionStorage.setItem(key, id);
     await editDrafts((store) =>
@@ -49,10 +96,10 @@ export async function saveConnectDraft<T>(draft: T) {
     );
 }
 
-export async function takeConnectDraft<T>(): Promise<T | undefined> {
+export async function takeConnectDraft(): Promise<ConnectDrafts | undefined> {
     const id = sessionStorage.getItem(key);
     if (!id) return;
-    let draft: T | undefined;
+    let draft: ConnectDrafts<StoredFile> | undefined;
     await editDrafts((store) => {
         const request = store.get(id);
         request.onsuccess = () => {
@@ -62,5 +109,15 @@ export async function takeConnectDraft<T>(): Promise<T | undefined> {
         };
     });
     sessionStorage.removeItem(key);
-    return draft;
+    return (
+        draft &&
+        mapFiles(
+            draft,
+            (file) =>
+                new File([file.bytes], file.name, {
+                    type: file.type,
+                    lastModified: file.lastModified,
+                }),
+        )
+    );
 }

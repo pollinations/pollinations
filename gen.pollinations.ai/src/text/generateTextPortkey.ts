@@ -85,11 +85,6 @@ export async function generateTextPortkey(
     const modelDef = state.options.model
         ? findModelByName(state.options.model)
         : null;
-    const useResponsesApi = modelDef?.useResponsesApi;
-    const chatViaResponses =
-        typeof useResponsesApi === "function"
-            ? useResponsesApi(state.options)
-            : useResponsesApi;
 
     if (modelDef?.transform) {
         // Transforms return the complete intended options (a copy of the
@@ -164,7 +159,7 @@ export async function generateTextPortkey(
     const communityResponsesEndpoint =
         !modelDef &&
         typeof state.options.modelConfig?.responsesEndpoint === "string";
-    if (chatViaResponses || communityResponsesEndpoint) {
+    if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
         return await callChatViaResponses(
             state.messages,
             state.options,

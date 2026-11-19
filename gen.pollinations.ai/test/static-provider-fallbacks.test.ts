@@ -79,6 +79,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
         "google/gemini-4-argon:openrouter:ai-studio",
         "google/gemini-4-argon",
         "google-ai-studio",
@@ -1866,28 +1871,36 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
-    it("bills Gemini 4 Hydrogen's Vercel backup at the Gemini API rate it mirrors", () => {
-        const primary = TEXT_SERVICES["google/gemini-4-hydrogen"];
-        const fallback = TEXT_SERVICES["google/gemini-4-hydrogen:vercel"];
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
         expect(primary).toMatchObject({
             provider: "google",
             paidOnly: true,
             priceMultiplier: 1,
-            aliases: [],
-            fallbacks: ["google/gemini-4-hydrogen:vercel"],
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
         });
         expect(fallback.cost).toMatchObject({
-            promptTextTokens: 1.5 / 1_000_000,
-            promptCachedTokens: 0.075 / 1_000_000,
-            completionTextTokens: 7.5 / 1_000_000,
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
         });
         const billing = calculateUsageBilling({
-            model: "google/gemini-4-hydrogen",
+            model,
             usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
             servedBy: fallback,
             quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.009, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
     });
 

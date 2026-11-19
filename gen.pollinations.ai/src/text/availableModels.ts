@@ -6,10 +6,8 @@ import { createClaudeThinkingTransform } from "./transforms/createClaudeThinking
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import {
     adaptGoogleSearchToolForOpenRouter,
-    adaptGoogleSearchToolForVercel,
     adaptGoogleSearchToolForVertex,
     createOpenRouterGoogleSearchTransform,
-    isGoogleSearchTool,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import {
@@ -129,8 +127,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
-    /** Route all or selected Chat requests through the model's Responses endpoint. */
-    useResponsesApi?: boolean | ((options: TransformOptions) => boolean);
+    /** Route Chat requests through the model's declared Responses endpoint. */
+    useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
     useSystemOneApi?: boolean;
     /** Search before formatting JSON on Gemini 2.5 through Vercel. */
@@ -952,28 +950,6 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-4-hydrogen",
-        config: portkeyConfig["google/gemini-4-hydrogen"],
-        transform: pipe(
-            sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
-        name: "google/gemini-4-hydrogen:vercel",
-        config: portkeyConfig["google/gemini-4-hydrogen:vercel"],
-        // Vercel exposes native Google Search through Responses.
-        useResponsesApi: ({ tools }) =>
-            tools?.some(isGoogleSearchTool) ?? false,
-        transform: pipe(
-            sanitizeToolSchemas,
-            mediaToVercelFiles,
-            adaptGoogleSearchToolForVercel,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
         name: "google/gemini-4-carbon",
         config: portkeyConfig["google/gemini-4-carbon"],
         transform: pipe(
@@ -989,6 +965,26 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas,
             createOpenRouterGoogleSearchTransform("exa"),
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen",
+        config: portkeyConfig["google/gemini-4-hydrogen"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen:openrouter:vertex-global",
+        config: portkeyConfig[
+            "google/gemini-4-hydrogen:openrouter:vertex-global"
+        ],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

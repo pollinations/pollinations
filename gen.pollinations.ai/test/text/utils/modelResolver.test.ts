@@ -4,6 +4,22 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const messages = [{ role: "user" as const, content: "Hello" }];
 
+describe("Gemini 4 Hydrogen Vertex route", () => {
+    it("uses the global Vertex model ID and keeps Gemini tool transforms", async () => {
+        const model = findModelByName("google/gemini-4-hydrogen");
+        expect(model).toBeDefined();
+        const resolved = resolveModelConfig(messages, {
+            model: "google/gemini-4-hydrogen",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": "gemini-4-hydrogen",
+        });
+        expect(model?.transform).toBeTypeOf("function");
+    });
+});
+
 describe("resolveModelConfig", () => {
     it("keeps Microsoft Decision-1 backup pins in the native config", () => {
         for (const [suffix, pin] of [
@@ -65,39 +81,6 @@ describe("resolveModelConfig", () => {
         expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://ai-gateway.vercel.sh/v1",
-        });
-    });
-
-    it("routes Gemini 4 Hydrogen to Vertex with a Vercel fallback", async () => {
-        const primary = resolveModelConfig(messages, {
-            model: "google/gemini-4-hydrogen",
-        });
-        expect(primary.options.modelConfig).toMatchObject({
-            provider: "vertex-ai",
-            "vertex-model-id": "gemini-4-hydrogen",
-            "vertex-region": "global",
-        });
-
-        const fallback = resolveModelConfig(messages, {
-            model: "google/gemini-4-hydrogen:vercel",
-        });
-        expect(fallback.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
-        });
-        expect(fallback.options.providerOptions).toEqual({
-            gateway: { only: ["google"] },
-        });
-
-        const route = findModelByName("google/gemini-4-hydrogen:vercel");
-        if (typeof route?.useResponsesApi !== "function") {
-            throw new Error("Expected request-dependent Responses routing");
-        }
-        const search = { tools: [{ type: "google_search" }] };
-        expect(route.useResponsesApi({})).toBe(false);
-        expect(route.useResponsesApi(search)).toBe(true);
-        expect(await route.transform?.(messages, search)).toMatchObject({
-            options: { tools: [{ type: "web_search" }] },
         });
     });
 

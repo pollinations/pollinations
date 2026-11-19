@@ -412,17 +412,6 @@ export const CHAT_PARAMETERS = {
         "include_reasoning",
         "reasoning_effort",
     ],
-    // Vercel AI Gateway Gemini 4 Hydrogen parameters (2026-11-12): no seed or
-    // top_p. Google ignores temperature on this model.
-    vercelGemini4: [
-        ...TOOL_CHAT,
-        "temperature",
-        "stop",
-        "structured_outputs",
-        "reasoning",
-        "include_reasoning",
-        "reasoning_effort",
-    ],
     vercelMistralLarge4: [
         ...TOOL_CHAT,
         "temperature",

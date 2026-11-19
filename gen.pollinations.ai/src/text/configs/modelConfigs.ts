@@ -1377,17 +1377,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "global",
     ),
-    "google/gemini-4-hydrogen": createVertexGeminiConfig(
-        "gemini-4-hydrogen",
-        "global",
-    ),
-    "google/gemini-4-hydrogen:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "google/gemini-4-hydrogen",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["google"] } },
-            },
-        }),
     "google/gemini-4-carbon": createVertexGeminiConfig(
         "gemini-4-carbon",
         "global",
@@ -1396,6 +1385,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         "google/gemini-4-carbon",
         "google-ai-studio",
     ),
+    "google/gemini-4-hydrogen": createVertexGeminiConfig(
+        "gemini-4-hydrogen",
+        "global",
+    ),
+    "google/gemini-4-hydrogen:openrouter:vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-4-hydrogen",
+            "google-vertex/global",
+        ),
     "google/gemini-4-argon": createVertexGeminiConfig(
         "gemini-4-argon",
         "global",

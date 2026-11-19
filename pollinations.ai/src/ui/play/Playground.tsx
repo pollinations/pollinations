@@ -355,6 +355,60 @@ function OptionField({
     );
 }
 
+function VideoDurationField({
+    duration,
+    onChange,
+}: {
+    duration: NonNullable<ReturnType<typeof mediaModelSettings>["duration"]>;
+    onChange: (seconds: string) => void;
+}) {
+    const { min, max, options, step, value } = duration;
+    const count = options.length || Math.floor((max - min) / step) + 1;
+    const secondsAt = (index: number) => options[index] ?? min + index * step;
+
+    if (count <= 6) {
+        return (
+            <OptionField
+                label="Duration"
+                options={Array.from({ length: count }, (_, i) =>
+                    String(secondsAt(i)),
+                )}
+                value={String(value)}
+                onChange={onChange}
+                format={(seconds) => `${seconds}s`}
+            />
+        );
+    }
+
+    return (
+        <FieldStack label="Duration" orientation="inline" className="min-w-0">
+            <div className="flex min-w-0 max-w-64 items-center gap-3">
+                <Slider
+                    aria-label="Video duration"
+                    aria-valuetext={`${value} seconds`}
+                    min={0}
+                    max={count - 1}
+                    step={1}
+                    value={
+                        options.length
+                            ? options.indexOf(value)
+                            : (value - min) / step
+                    }
+                    onChange={(event) =>
+                        onChange(String(secondsAt(Number(event.target.value))))
+                    }
+                />
+                <span
+                    aria-hidden="true"
+                    className="text-xs tabular-nums text-theme-text-muted"
+                >
+                    {value}s
+                </span>
+            </div>
+        </FieldStack>
+    );
+}
+
 function voiceLabel(voice: string) {
     return voice.charAt(0).toUpperCase() + voice.slice(1);
 }
@@ -2181,76 +2235,12 @@ export function Playground({
                                         </>
                                     )}
                                     {videoDuration && (
-                                        <FieldStack
-                                            label="Duration"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <div className="flex min-w-0 max-w-64 items-center gap-3">
-                                                <Slider
-                                                    aria-label="Video duration"
-                                                    className="disabled:[--polli-slider-fill:var(--polli-color-text-muted)]"
-                                                    disabled={
-                                                        videoDuration.min ===
-                                                        videoDuration.max
-                                                    }
-                                                    aria-valuetext={`${videoDuration.value} seconds`}
-                                                    min={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? 0
-                                                            : videoDuration.min
-                                                    }
-                                                    max={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? videoDuration
-                                                                  .options
-                                                                  .length - 1
-                                                            : videoDuration.max
-                                                    }
-                                                    step={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? 1
-                                                            : videoDuration.step
-                                                    }
-                                                    value={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? videoDuration.options.indexOf(
-                                                                  videoDuration.value,
-                                                              )
-                                                            : videoDuration.value
-                                                    }
-                                                    onChange={(event) => {
-                                                        const value = Number(
-                                                            event.target.value,
-                                                        );
-                                                        setParam(
-                                                            "duration",
-                                                            String(
-                                                                videoDuration
-                                                                    .options
-                                                                    .length
-                                                                    ? videoDuration
-                                                                          .options[
-                                                                          value
-                                                                      ]
-                                                                    : value,
-                                                            ),
-                                                        );
-                                                    }}
-                                                />
-                                                {/* The slider's aria-valuetext already reads the value. */}
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="text-xs tabular-nums text-theme-text-muted"
-                                                >
-                                                    {videoDuration.value}s
-                                                </span>
-                                            </div>
-                                        </FieldStack>
+                                        <VideoDurationField
+                                            duration={videoDuration}
+                                            onChange={(seconds) =>
+                                                setParam("duration", seconds)
+                                            }
+                                        />
                                     )}
 
                                     {customSize && (

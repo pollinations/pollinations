@@ -1744,9 +1744,7 @@ export function Playground({
                         {currentModel && (
                             <div className="flex w-full min-w-0 flex-col gap-1 lg:w-auto lg:flex-1">
                                 {currentModel.description && (
-                                    <Text size="sm">
-                                        {currentModel.description}
-                                    </Text>
+                                    <Text>{currentModel.description}</Text>
                                 )}
                                 <Text size="xs" tone="muted">
                                     {hasMedianCost && "7-day median "}
@@ -2357,52 +2355,52 @@ export function Playground({
                                 </div>
                             )}
                         </div>
-                    </Surface>
-
-                    {/* Not connected is not a broken state, so the button
+                        {/* Not connected is not a broken state, so the button
                             becomes the connect action. When it genuinely
                             cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <Button
-                            size="lg"
-                            intent="brand"
-                            // The page's main action: nectar whether it signs
-                            // in or generates. Busy fills with honey and shows
-                            // Polli. aria-disabled, not disabled, so focus
-                            // stays on the button; generate() ignores repeats.
-                            disabled={!!blockedReason}
-                            aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
-                            aria-describedby={
-                                clipError && blockedReason === clipError
-                                    ? clipStatusId
-                                    : statusId
-                            }
-                            icon={needsSignIn ? undefined : <GenerateIcon />}
-                            onClick={run}
-                            className={cn(
-                                needsSignIn && "h-12 gap-2 px-5 py-0",
-                            )}
-                        >
-                            {needsSignIn ? (
-                                <>
-                                    <BrandMark className="h-6 w-6" />
-                                    {connectLabel}
-                                </>
-                            ) : (
-                                generateText
-                            )}
-                        </Button>
-                        {/* One line stays reserved, so text never moves anything. */}
-                        <Text
-                            id={statusId}
-                            size="xs"
-                            tone="muted"
-                            className="min-h-5 max-sm:w-full"
-                        >
-                            {blockedReason !== clipError && blockedReason}
-                        </Text>
-                    </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <Button
+                                size="lg"
+                                intent="brand"
+                                // The page's main action: nectar whether it signs
+                                // in or generates. Busy fills with honey and shows
+                                // Polli. aria-disabled, not disabled, so focus
+                                // stays on the button; generate() ignores repeats.
+                                disabled={!!blockedReason}
+                                aria-disabled={isGenerating || undefined}
+                                aria-busy={isGenerating}
+                                aria-describedby={
+                                    clipError && blockedReason === clipError
+                                        ? clipStatusId
+                                        : statusId
+                                }
+                                icon={
+                                    needsSignIn ? undefined : <GenerateIcon />
+                                }
+                                onClick={run}
+                                className={cn(
+                                    needsSignIn && "h-12 gap-2 px-5 py-0",
+                                )}
+                            >
+                                {needsSignIn ? (
+                                    <>
+                                        <BrandMark className="h-6 w-6" />
+                                        {connectLabel}
+                                    </>
+                                ) : (
+                                    generateText
+                                )}
+                            </Button>
+                            <Text
+                                id={statusId}
+                                size="xs"
+                                tone="muted"
+                                className="empty:hidden max-sm:w-full"
+                            >
+                                {blockedReason !== clipError && blockedReason}
+                            </Text>
+                        </div>
+                    </Surface>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

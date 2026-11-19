@@ -1300,9 +1300,6 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-11-12").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Gemini API paid-tier rates for gemini-4-hydrogen (2026-11-12). Vertex
-        // has not published its own rate. Cache writes bill at the input rate
-        // until 2027-01-12, when Vertex adds TTL-based cache writes.
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.075),
@@ -1318,8 +1315,8 @@ const TEXT_BASE_SERVICES = {
             "High-throughput agentic model for long-horizon coding, tool use and multimodal analysis with a 1M-token context",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
-        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
-        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        maxReferenceImages: 3000,
+        maxReferenceVideos: 10,
         tools: true,
         search: true,
         reasoning: true,

@@ -1976,16 +1976,14 @@ export function Playground({
                                     aria-labelledby={referencesLabelId}
                                     className="col-span-full m-0 min-w-0 border-0 p-0"
                                 >
-                                    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-                                        <Text
-                                            as="span"
-                                            id={referencesLabelId}
-                                            size="sm"
-                                            weight="semibold"
-                                            tone="strong"
-                                        >
-                                            References
-                                        </Text>
+                                    <FieldStack
+                                        orientation="inline"
+                                        label={
+                                            <span id={referencesLabelId}>
+                                                References
+                                            </span>
+                                        }
+                                    >
                                         {videoConfig.exclusiveReferences && (
                                             <ButtonGroup aria-label="Reference type">
                                                 {["frames", "references"].map(
@@ -2012,117 +2010,123 @@ export function Playground({
                                                 )}
                                             </ButtonGroup>
                                         )}
-                                    </div>
-                                    <div className="flex flex-wrap items-start gap-3">
-                                        {frameTiles}
-                                        {videoReferenceMedia.map((media) => {
-                                            const Icon = CATEGORY_ICON[media];
-                                            const maxVideos =
-                                                media === "video"
-                                                    ? currentModel?.maxReferenceVideos
-                                                    : undefined;
-                                            return (
-                                                <div
-                                                    key={media}
-                                                    className="min-w-0 max-w-full"
-                                                >
-                                                    {media === "audio" ? (
-                                                        <AudioInput
-                                                            key={
-                                                                currentModel?.id
-                                                            }
-                                                            value={
-                                                                videoReferences.audio
-                                                            }
-                                                            onChange={(audio) =>
-                                                                setVideoReferences(
-                                                                    (
-                                                                        previous,
-                                                                    ) => ({
-                                                                        ...previous,
+                                        <div className="flex flex-wrap items-start gap-3">
+                                            {frameTiles}
+                                            {videoReferenceMedia.map(
+                                                (media) => {
+                                                    const Icon =
+                                                        CATEGORY_ICON[media];
+                                                    const maxVideos =
+                                                        media === "video"
+                                                            ? currentModel?.maxReferenceVideos
+                                                            : undefined;
+                                                    return (
+                                                        <div
+                                                            key={media}
+                                                            className="min-w-0 max-w-full"
+                                                        >
+                                                            {media ===
+                                                            "audio" ? (
+                                                                <AudioInput
+                                                                    key={
+                                                                        currentModel?.id
+                                                                    }
+                                                                    value={
+                                                                        videoReferences.audio
+                                                                    }
+                                                                    onChange={(
                                                                         audio,
-                                                                    }),
-                                                                )
-                                                            }
-                                                            onBusyChange={
-                                                                setRecording
-                                                            }
-                                                            onClipDuration={
-                                                                onClipDuration
-                                                            }
-                                                            disabled={
-                                                                isGenerating
-                                                            }
-                                                            maxFiles={
-                                                                currentModel?.maxReferenceAudios ??
-                                                                Infinity
-                                                            }
-                                                            {...uploadProps(
-                                                                ["audio"],
-                                                                "Too many audio clips.",
+                                                                    ) =>
+                                                                        setVideoReferences(
+                                                                            (
+                                                                                previous,
+                                                                            ) => ({
+                                                                                ...previous,
+                                                                                audio,
+                                                                            }),
+                                                                        )
+                                                                    }
+                                                                    onBusyChange={
+                                                                        setRecording
+                                                                    }
+                                                                    onClipDuration={
+                                                                        onClipDuration
+                                                                    }
+                                                                    disabled={
+                                                                        isGenerating
+                                                                    }
+                                                                    maxFiles={
+                                                                        currentModel?.maxReferenceAudios ??
+                                                                        Infinity
+                                                                    }
+                                                                    {...uploadProps(
+                                                                        [
+                                                                            "audio",
+                                                                        ],
+                                                                        "Too many audio clips.",
+                                                                    )}
+                                                                />
+                                                            ) : (
+                                                                <FileUpload
+                                                                    value={
+                                                                        videoReferences[
+                                                                            media
+                                                                        ]
+                                                                    }
+                                                                    onChange={(
+                                                                        files,
+                                                                    ) =>
+                                                                        setVideoReferences(
+                                                                            (
+                                                                                previous,
+                                                                            ) => ({
+                                                                                ...previous,
+                                                                                [media]:
+                                                                                    files,
+                                                                            }),
+                                                                        )
+                                                                    }
+                                                                    maxFiles={
+                                                                        maxVideos ??
+                                                                        Infinity
+                                                                    }
+                                                                    {...uploadProps(
+                                                                        [media],
+                                                                        maxVideos
+                                                                            ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                                                                            : "Too many files.",
+                                                                    )}
+                                                                    label={`Add ${MEDIA_PLURAL[media]}`}
+                                                                    icon={
+                                                                        <Icon className="h-6 w-6 shrink-0" />
+                                                                    }
+                                                                    // Images preview as thumbnails.
+                                                                    previewIcon={
+                                                                        media ===
+                                                                        "image" ? undefined : (
+                                                                            <Icon className="h-6 w-6" />
+                                                                        )
+                                                                    }
+                                                                />
                                                             )}
-                                                        />
-                                                    ) : (
-                                                        <FileUpload
-                                                            value={
-                                                                videoReferences[
-                                                                    media
-                                                                ]
-                                                            }
-                                                            onChange={(files) =>
-                                                                setVideoReferences(
-                                                                    (
-                                                                        previous,
-                                                                    ) => ({
-                                                                        ...previous,
-                                                                        [media]:
-                                                                            files,
-                                                                    }),
-                                                                )
-                                                            }
-                                                            maxFiles={
-                                                                maxVideos ??
-                                                                Infinity
-                                                            }
-                                                            {...uploadProps(
-                                                                [media],
-                                                                maxVideos
-                                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
-                                                                    : "Too many files.",
-                                                            )}
-                                                            label={`Add ${MEDIA_PLURAL[media]}`}
-                                                            icon={
-                                                                <Icon className="h-6 w-6 shrink-0" />
-                                                            }
-                                                            // Images preview as thumbnails.
-                                                            previewIcon={
-                                                                media ===
-                                                                "image" ? undefined : (
-                                                                    <Icon className="h-6 w-6" />
-                                                                )
-                                                            }
-                                                        />
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    {clipStatus && (
-                                        <Text
-                                            size="xs"
-                                            tone="muted"
-                                            className="mt-2"
-                                        >
-                                            {clipStatus}
-                                        </Text>
-                                    )}
-                                    {((isVideoReferenceMode &&
-                                        referenceImages.length > 0) ||
-                                        videoReferenceMedia.some(
-                                            (media) =>
-                                                videoReferences[media].length >
-                                                0,
-                                        )) && <UploadPrivacyNote />}
+                                                        </div>
+                                                    );
+                                                },
+                                            )}
+                                        </div>
+                                        {clipStatus && (
+                                            <Text size="xs" tone="muted">
+                                                {clipStatus}
+                                            </Text>
+                                        )}
+                                        {((isVideoReferenceMode &&
+                                            referenceImages.length > 0) ||
+                                            videoReferenceMedia.some(
+                                                (media) =>
+                                                    videoReferences[media]
+                                                        .length > 0,
+                                            )) && <UploadPrivacyNote />}
+                                    </FieldStack>
                                 </fieldset>
                             )}
                             {isVisualModel && (

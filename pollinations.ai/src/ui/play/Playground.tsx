@@ -106,29 +106,45 @@ type PlaygroundModel = MediaModelMetadata & {
     audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
 
-const TASKS = (
-    [
-        { id: "image", label: "Create image", category: "image" },
-        { id: "edit-image", label: "Edit image", category: "image" },
-        { id: "video", label: "Create video", category: "video" },
-        {
-            id: "speech-generation",
-            label: "Generate speech",
-            category: "audio",
-        },
-        {
-            id: "music-and-sound-effects",
-            label: "Music & effects",
-            category: "audio",
-        },
-        { id: "transcription", label: "Transcribe", category: "audio" },
-        { id: "voice-changer", label: "Change voice", category: "audio" },
-        { id: "voice-isolator", label: "Isolate speech", category: "audio" },
-        { id: "stem-separation", label: "Separate stems", category: "audio" },
-    ] as const
-).map((task) => ({ ...task, runStore: createRunStore<PlaygroundResult>() }));
+const WORKSPACES = [
+    {
+        label: "Image",
+        category: "image",
+        operations: [{ id: "image", label: "Image" }],
+    },
+    {
+        label: "Video",
+        category: "video",
+        operations: [{ id: "video", label: "Video" }],
+    },
+    {
+        label: "Speech",
+        category: "audio",
+        operations: [
+            { id: "speech-generation", label: "Generate speech" },
+            { id: "transcription", label: "Transcribe" },
+            { id: "voice-changer", label: "Change voice" },
+            { id: "voice-isolator", label: "Isolate speech" },
+        ],
+    },
+    {
+        label: "Music & sounds",
+        category: "audio",
+        operations: [
+            { id: "music-and-sound-effects", label: "Generate music & sounds" },
+            { id: "stem-separation", label: "Separate stems" },
+        ],
+    },
+] as const;
+type Workspace = (typeof WORKSPACES)[number];
+const TASKS = WORKSPACES.flatMap((workspace) =>
+    workspace.operations.map((operation) => ({
+        ...operation,
+        workspace,
+        runStore: createRunStore<PlaygroundResult>(),
+    })),
+);
 type Task = (typeof TASKS)[number];
-type AudioTask = Extract<Task, { category: "audio" }>["id"];
 
 function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
@@ -199,9 +215,12 @@ type PlaygroundResult =
           text: string;
       };
 
-function promptPlaceholder(task: Task): string {
-    const { category, id } = task;
-    if (id === "edit-image") return "Describe the changes you want…";
+function promptPlaceholder(task: Task, editsImage: boolean): string {
+    const {
+        id,
+        workspace: { category },
+    } = task;
+    if (editsImage) return "Describe the changes you want…";
     if (category === "image") return "Describe the image you want…";
     if (category === "video") return "Describe the video you want…";
     if (id === "transcription")
@@ -263,7 +282,7 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
         .join("|");
 }
 
-function audioTaskForModel(model: PlaygroundModel): AudioTask {
+function audioTaskForModel(model: PlaygroundModel) {
     const endpoint = audioEndpoint(model);
     if (endpoint === "/v1/audio/transcriptions") return "transcription";
     if (endpoint === "/v1/audio/voice-changer") return "voice-changer";
@@ -281,13 +300,8 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
 }
 
 function supportsTask(model: PlaygroundModel, task: Task) {
-    if (model.category !== task.category) return false;
-    if (task.category === "audio") return audioTaskForModel(model) === task.id;
-    if (task.id === "edit-image")
-        return (
-            referenceImageLimit(model) > 0 &&
-            model.supportedEndpoints.includes("/v1/images/edits")
-        );
+    if (model.category !== task.workspace.category) return false;
+    if (model.category === "audio") return audioTaskForModel(model) === task.id;
     return true;
 }
 
@@ -414,12 +428,12 @@ function VoicePicker({
 }
 
 function ModelPicker({
-    models,
+    groups,
     selectedModel,
     isLoading,
     onSelectModel,
 }: {
-    models: PlaygroundModel[];
+    groups: { task: Task; models: PlaygroundModel[] }[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
@@ -427,14 +441,8 @@ function ModelPicker({
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
     const sorted = useMemo(
-        () =>
-            [...models].sort((a, b) =>
-                a.title.localeCompare(b.title, "en", {
-                    numeric: true,
-                    sensitivity: "base",
-                }),
-            ),
-        [models],
+        () => groups.flatMap((group) => group.models),
+        [groups],
     );
     const index = sorted.findIndex((model) => model.id === selectedModel);
     const selected = sorted[index];
@@ -476,7 +484,7 @@ function ModelPicker({
                             type="button"
                             intent="neutral"
                             size="lg"
-                            disabled={isLoading || models.length === 0}
+                            disabled={isLoading || sorted.length === 0}
                             className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
                             title={selected?.title}
                             aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
@@ -547,20 +555,36 @@ function ModelPicker({
                     {(close) => (
                         <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
                             <div className="flex flex-col gap-1">
-                                {sorted.map((model) => (
-                                    <TabButton
-                                        key={model.id}
-                                        active={model.id === selectedModel}
-                                        size="sm"
-                                        variant="ghost"
-                                        className="play-model-option w-full justify-start text-left"
-                                        onClick={() => {
-                                            onSelectModel(model.id);
-                                            close();
-                                        }}
+                                {groups.map((group) => (
+                                    <fieldset
+                                        key={group.task.id}
+                                        className="m-0 flex min-w-0 flex-col gap-1 border-0 p-0"
                                     >
-                                        <MediaModelOption model={model} />
-                                    </TabButton>
+                                        {groups.length > 1 && (
+                                            <legend className="px-3 py-1 text-xs text-theme-text-muted">
+                                                {group.task.label}
+                                            </legend>
+                                        )}
+                                        {group.models.map((model) => (
+                                            <TabButton
+                                                key={model.id}
+                                                active={
+                                                    model.id === selectedModel
+                                                }
+                                                size="sm"
+                                                variant="ghost"
+                                                className="play-model-option w-full justify-start text-left"
+                                                onClick={() => {
+                                                    onSelectModel(model.id);
+                                                    close();
+                                                }}
+                                            >
+                                                <MediaModelOption
+                                                    model={model}
+                                                />
+                                            </TabButton>
+                                        ))}
+                                    </fieldset>
                                 ))}
                             </div>
                         </ScrollArea>
@@ -826,9 +850,10 @@ export function Playground({
     );
     const task =
         TASKS.find((item) => item.id === params.task) ??
-        TASKS.find((item) => item.category === params.tab) ??
+        TASKS.find((item) => item.workspace.category === params.tab) ??
         TASKS[0];
-    const activeCategory = task.category;
+    const activeCategory = task.workspace.category;
+    const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
     const savedDraft = drafts[params.task ?? task.id] ?? drafts[activeCategory];
     const restored =
@@ -938,9 +963,22 @@ export function Playground({
             ? audioTaskForModel(currentModel)
             : undefined;
 
-    const taskModels = useMemo(
-        () => visibleModels.filter((model) => supportsTask(model, task)),
-        [task, visibleModels],
+    const groups = useMemo(
+        () =>
+            TASKS.filter((item) => item.workspace === task.workspace)
+                .map((item) => ({
+                    task: item,
+                    models: visibleModels
+                        .filter((model) => supportsTask(model, item))
+                        .sort((a, b) =>
+                            a.title.localeCompare(b.title, "en", {
+                                numeric: true,
+                                sensitivity: "base",
+                            }),
+                        ),
+                }))
+                .filter((group) => group.models.length),
+        [task.workspace, visibleModels],
     );
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that
@@ -969,11 +1007,10 @@ export function Playground({
             }
         }
         if (selectedModel) return;
-        const first = taskModels[0];
+        const first = visibleModels.find((model) => supportsTask(model, task));
         if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
         task,
-        taskModels,
         selectedModel,
         visibleModels,
         isHydrated,
@@ -1274,23 +1311,28 @@ export function Playground({
         });
     }, [maxReferenceImages, currentModel]);
 
-    function selectTask(next: Task) {
+    function selectTask(next: Task, modelId?: string) {
         if (next === task) return;
+        lastTask.current.set(task.workspace, task);
         taskDrafts.current[task.id] = {
             params,
             referenceImages,
             videoReferences,
             audioFiles,
         };
-        const saved = taskDrafts.current[next.id];
+        const draft = taskDrafts.current[next.id];
+        const saved =
+            !modelId || draft?.params.model === modelId ? draft : undefined;
         linkedModelRef.current = "";
         setParams({
             ...(saved?.params ?? {
-                model: visibleModels.find((model) => supportsTask(model, next))
-                    ?.id,
+                model:
+                    modelId ??
+                    visibleModels.find((model) => supportsTask(model, next))
+                        ?.id,
             }),
             task: next.id,
-            tab: next.category,
+            tab: next.workspace.category,
         });
         setReferenceImages(saved?.referenceImages ?? []);
         setVideoReferences(
@@ -1301,6 +1343,13 @@ export function Playground({
 
     function selectModel(modelId: string) {
         if (modelId === selectedModel) return;
+        const group = groups.find((group) =>
+            group.models.some((model) => model.id === modelId),
+        );
+        if (group && group.task !== task) {
+            selectTask(group.task, modelId);
+            return;
+        }
         setParams((previous) => ({
             ...previous,
             model: modelId,
@@ -1422,6 +1471,16 @@ export function Playground({
         }
     }
 
+    const requiresImage =
+        currentModel?.category === "image" &&
+        (currentModel.id === "prunaai/p-image-edit" ||
+            (currentModel.supportedEndpoints.includes("/v1/images/edits") &&
+                !currentModel.supportedEndpoints.includes(
+                    "/v1/images/generations",
+                )));
+    const editsImage =
+        currentModel?.category === "image" &&
+        (requiresImage || referenceImages.length > 0);
     const generateLabel =
         currentModel?.category === "video"
             ? "Generate video"
@@ -1435,7 +1494,7 @@ export function Playground({
                       : currentAudioEndpoint === "/alpha/audio/stem-separation"
                         ? "Separate stems"
                         : "Generate audio"
-              : task.id === "edit-image"
+              : editsImage
                 ? "Edit image"
                 : "Generate image";
     const GenerateIcon = isAudioTranscription
@@ -1461,8 +1520,7 @@ export function Playground({
 
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
-    const needsEditImage =
-        task.id === "edit-image" && referenceImages.length === 0;
+    const needsEditImage = requiresImage && referenceImages.length === 0;
     const missingInput = requiresMediaUpload
         ? audioFiles.length === 0
         : !prompt.trim();
@@ -1608,14 +1666,22 @@ export function Playground({
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
             <ButtonGroup aria-label="Playground task">
-                {TASKS.map((item) => (
+                {WORKSPACES.map((item) => (
                     <ModalityTab
-                        key={item.id}
-                        active={item === task}
+                        key={item.label}
+                        active={item === task.workspace}
                         size="sm"
                         modality={item.category}
                         icon={CATEGORY_ICON[item.category]}
-                        onClick={() => selectTask(item)}
+                        onClick={() => {
+                            if (item === task.workspace) return;
+                            const next =
+                                lastTask.current.get(item) ??
+                                TASKS.find(
+                                    (candidate) => candidate.workspace === item,
+                                );
+                            if (next) selectTask(next);
+                        }}
                     >
                         {item.label}
                     </ModalityTab>
@@ -1649,7 +1715,7 @@ export function Playground({
                     >
                         <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
                             <ModelPicker
-                                models={taskModels}
+                                groups={groups}
                                 selectedModel={selectedModel}
                                 isLoading={isLoading || !isHydrated}
                                 onSelectModel={selectModel}
@@ -1743,7 +1809,10 @@ export function Playground({
                                             run();
                                         }
                                     }}
-                                    placeholder={promptPlaceholder(task)}
+                                    placeholder={promptPlaceholder(
+                                        task,
+                                        editsImage,
+                                    )}
                                     className={cn(
                                         "lg:min-h-56",
                                         isAudioTranscription
@@ -1849,7 +1918,9 @@ export function Playground({
                                         className="min-w-0"
                                         label={
                                             <span className="inline-flex flex-wrap items-center gap-2">
-                                                Reference images
+                                                {requiresImage
+                                                    ? "Image required"
+                                                    : "Reference images"}
                                                 <span
                                                     role="img"
                                                     aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}

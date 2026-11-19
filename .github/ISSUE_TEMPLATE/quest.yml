@@ -65,7 +65,7 @@ body:
       value: |
         - [AGENTS.md](https://github.com/pollinations/pollinations/blob/main/AGENTS.md)
         - [API docs](https://gen.pollinations.ai/api/docs)
-        - Apps: sign users in with [Pollinations Connect](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step), no App Key needed; never ask visitors to paste a key:
+        - Apps: sign users in with [Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step), no App Key needed; never ask visitors to paste a key:
           `<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>`
           `<polli-connect></polli-connect>`
         -

@@ -1111,6 +1111,32 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "google/gemini-4-neon": {
+        "google/gemini-4-neon:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-11-18").getTime(),
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
+            // Keep the direct Vertex quote; bill actual provider receipts if available.
+            cost: {
+                promptTextTokens: perMillion(3) * 1.055,
+                promptCachedTokens: perMillion(0.15) * 1.055,
+                promptCacheWriteTokens: perMillion(3) * 1.055,
+                promptAudioTokens: perMillion(3) * 1.055,
+                promptImageTokens: perMillion(3) * 1.055,
+                promptVideoTokens: perMillion(3) * 1.055,
+                completionTextTokens: perMillion(15) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 14 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
+        },
+    },
     "google/gemini-4-argon": {
         "google/gemini-4-argon:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,

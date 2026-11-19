@@ -1478,9 +1478,7 @@ export function Playground() {
                 label={
                     requiresMediaUpload
                         ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
-                        : uploadMedia.includes("audio")
-                          ? undefined
-                          : `Reference ${mediaUploadLabel}`
+                        : "References"
                 }
             >
                 {uploadMedia.includes("audio") ? (

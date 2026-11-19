@@ -487,7 +487,7 @@ function ModelPicker({
                             disabled={isLoading || sorted.length === 0}
                             className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
                             title={selected?.title}
-                            aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
+                            aria-label={`Model: ${selected?.title ?? (sorted.length ? "Choose a model" : "Unavailable")}`}
                             aria-description={
                                 selected &&
                                 [
@@ -544,6 +544,8 @@ function ModelPicker({
                                     "Loading models…"
                                 ) : selected ? (
                                     <MediaModelOption model={selected} />
+                                ) : sorted.length ? (
+                                    "Choose a model"
                                 ) : (
                                     "No models available"
                                 )}
@@ -943,7 +945,12 @@ export function Playground({
     const visibleModels = useMemo(
         () =>
             catalog.models
-                .filter((model) => !model.community)
+                .filter(
+                    (model) =>
+                        !model.community &&
+                        model.health?.status !== "degraded" &&
+                        model.health?.status !== "down",
+                )
                 .map(playgroundModel)
                 .filter((model): model is PlaygroundModel => model !== null)
                 // Audio endpoints Play cannot call yet stay off the menu.

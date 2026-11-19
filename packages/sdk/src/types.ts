@@ -1279,6 +1279,11 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    health?: {
+        status: "healthy" | "degraded" | "down" | "unknown";
+        success_rate: number | null;
+        requests: number;
+    };
     agent?: boolean;
     base_model?: string;
     input_modalities?: ModelInputModality[];

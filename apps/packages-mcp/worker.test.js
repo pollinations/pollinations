@@ -89,6 +89,7 @@ for (const modern of [false, true])
                 "osv_vulnerability",
                 "package_downloads",
                 "package_lookup",
+                "spdx_license",
             ],
         );
         const data = await call(client, "package_lookup", {
@@ -770,4 +771,62 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     assert.deepEqual(one.tags[0].platforms, ["linux/amd64"]);
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
+});
+
+test("spdx_license parses expressions, normalizes case, lists exceptions and unknown IDs from one cached list", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        urls.push(url);
+        assert.equal(init.headers.Authorization, undefined);
+        return Response.json({
+            licenseListVersion: "3.29.0",
+            licenses: [
+                {
+                    licenseId: "MIT",
+                    name: "MIT License",
+                    isOsiApproved: true,
+                    isFsfLibre: true,
+                    isDeprecatedLicenseId: false,
+                    reference: "https://spdx.org/licenses/MIT.html",
+                    seeAlso: ["https://opensource.org/license/MIT"],
+                },
+                {
+                    licenseId: "GPL-2.0-or-later",
+                    name: "GNU General Public License v2.0 or later",
+                    isOsiApproved: true,
+                    isFsfLibre: true,
+                    isDeprecatedLicenseId: false,
+                    reference:
+                        "https://spdx.org/licenses/GPL-2.0-or-later.html",
+                    seeAlso: [],
+                },
+                {
+                    licenseId: "BUSL-1.1",
+                    name: "Business Source License 1.1",
+                    isOsiApproved: false,
+                    isDeprecatedLicenseId: false,
+                    reference: "https://spdx.org/licenses/BUSL-1.1.html",
+                    seeAlso: [],
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const data = await call(client, "spdx_license", {
+        expression:
+            "(mit OR GPL-2.0-or-later WITH Classpath-exception-2.0) AND BUSL-1.1 AND Made-Up-1.0 AND MIT",
+    });
+    assert.equal(data.licenseListVersion, "3.29.0");
+    assert.deepEqual(
+        data.licenses.map((l) => [l.id, l.osiApproved, l.fsfLibre]),
+        [
+            ["MIT", true, true],
+            ["GPL-2.0-or-later", true, true],
+            ["BUSL-1.1", false, false],
+        ],
+    );
+    assert.deepEqual(data.exceptions, ["Classpath-exception-2.0"]);
+    assert.deepEqual(data.unknown, ["Made-Up-1.0"]);
+    await call(client, "spdx_license", { expression: "MIT" });
+    assert.deepEqual(urls, ["https://spdx.org/licenses/licenses.json"]);
 });

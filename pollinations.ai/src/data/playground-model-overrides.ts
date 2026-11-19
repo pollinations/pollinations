@@ -18,12 +18,31 @@ type PlaygroundModelOverride = {
     maxDurationWithReference?: number;
 };
 
-const { $audioTasks, $videoFilters, ...models } = inventory;
-export const videoFilters = $videoFilters;
-export const audioTasks = $audioTasks;
+const {
+    $audioTasks: audioTaskGroups,
+    $audioEndpoints: audioEndpoints,
+    $performanceFilters: performanceFilters,
+    $imageFilters: imageFilters,
+    $image4KDimensions: image4KDimensions,
+    $uploadLimitsMiB: uploadLimitsMiB,
+    $videoFilters: videoFilters,
+    $videoDefaultRatios: videoDefaultRatios,
+    ...models
+} = inventory;
+
+export {
+    audioEndpoints,
+    audioTaskGroups,
+    image4KDimensions,
+    imageFilters,
+    performanceFilters,
+    uploadLimitsMiB,
+    videoDefaultRatios,
+    videoFilters,
+};
 export const audioTaskIds = Object.keys(
-    audioTasks,
-) as (keyof typeof audioTasks)[];
+    audioTaskGroups,
+) as (keyof typeof audioTaskGroups)[];
 
 const overrides = new Map<string, PlaygroundModelOverride>(
     Object.entries(models),

@@ -1,3 +1,5 @@
+import { performanceFilters } from "../../data/playground-model-overrides";
+
 export type ModelRunStat = {
     model: string;
     avg_cost_usd?: number | null;
@@ -16,4 +18,32 @@ export function formatRunTime(ms?: number | null): string | undefined {
     const minutes = Math.floor(seconds / 60);
     const rest = seconds % 60;
     return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
+}
+
+export function fastModelsByTime(stats: ModelRunStat[]) {
+    const measured = stats
+        .flatMap((stat) => {
+            const value = stat.avg_response_ms;
+            return typeof value === "number" &&
+                Number.isFinite(value) &&
+                value > 0
+                ? [{ id: stat.model, value }]
+                : [];
+        })
+        .sort((a, b) => a.value - b.value);
+    const { minimumModels, fraction, maximumMedianRatio } = performanceFilters;
+    if (measured.length < minimumModels) return new Set<string>();
+    const cutoff = measured[Math.ceil(measured.length * fraction) - 1].value;
+    const middle = (measured.length - 1) / 2;
+    const median =
+        (measured[Math.floor(middle)].value +
+            measured[Math.ceil(middle)].value) /
+        2;
+    return new Set(
+        cutoff <= median * maximumMedianRatio
+            ? measured
+                  .filter((item) => item.value <= cutoff)
+                  .map((item) => item.id)
+            : [],
+    );
 }

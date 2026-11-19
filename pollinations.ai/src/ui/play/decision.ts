@@ -31,14 +31,12 @@ export function decisionForm(model: string, params: PlaySearch) {
             : type === "score"
               ? "How urgent is this?"
               : "Does this need urgent attention?");
-    const criteria =
+    const criteria = (
         type === "score"
             ? (params.levels ?? "Low\nMedium\nHigh")
-            : (params.choices ?? "Billing\nTechnical support");
-    const options = criteria
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
+            : (params.choices ?? "Billing\nTechnical support")
+    ).split("\n");
+    const options = criteria.map((s) => s.trim()).filter(Boolean);
     let question: (DecisionQuestion & { instructions: string }) | undefined;
     let error: string | undefined;
     if (!type) error = "No verified question types for this model.";
@@ -46,7 +44,7 @@ export function decisionForm(model: string, params: PlaySearch) {
     else if (type === "noul")
         question = { type, instructions: instructions.trim() };
     else if (new Set(options).size !== options.length || options.length < 2)
-        error = "Enter at least two distinct options, one per line.";
+        error = "Enter at least two distinct options.";
     else if (type === "choice")
         question = {
             type,

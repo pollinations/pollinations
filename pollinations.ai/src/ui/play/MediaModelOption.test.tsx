@@ -7,15 +7,23 @@ describe("model dropdown option", () => {
         [true, "Uses paid balance only", "polli-wallet-text-paid"],
         [false, "Works with any balance", "polli-wallet-text-tier"],
     ] as const)(
-        "keeps %s access colored beside the name",
+        "shows the %s wallet icon after the price",
         (paidOnly, label, color) => {
             const html = renderToStaticMarkup(
                 <MediaModelOption
-                    model={{ title: "Example model", paidOnly }}
+                    model={{
+                        title: "Example model",
+                        publisher: "Example publisher",
+                        paidOnly,
+                    }}
+                    cost="$0.12"
                 />,
             );
             expect(html).toContain(`aria-label="${label}"`);
             expect(html).toContain(color);
+            expect(html).toMatch(
+                /Example model.*Example publisher.*\$0\.12.*role="img"/s,
+            );
         },
     );
 });

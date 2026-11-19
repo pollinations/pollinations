@@ -5,8 +5,8 @@ import type {
     StemSeparationOptions,
 } from "@pollinations/sdk";
 import {
+    audioEndpoints,
     audioTaskIds,
-    audioTasks,
     playgroundModelOverride,
 } from "../../data/playground-model-overrides";
 import { audioEndpoint } from "./audio-endpoint";
@@ -23,13 +23,13 @@ export function audioTaskForModel(
 ) {
     const endpoint = audioEndpoint(model);
     if (!endpoint) return undefined;
-    const matches = audioTaskIds.filter((task) =>
-        audioTasks[task].endpoints.includes(endpoint),
-    );
+    const matches = audioEndpoints[endpoint];
     // Several operations share the speech endpoint. Only use a model override
     // when the operation also matches its current catalog endpoint.
     const preferred = playgroundModelOverride(model.id)?.audioTask;
-    return matches.find((task) => task === preferred) ?? matches[0];
+    const selected =
+        preferred && matches.includes(preferred) ? preferred : matches[0];
+    return audioTaskIds.find((task) => task === selected);
 }
 
 export function transcriptionControls(model: AudioModel) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRunCost, formatRunTime } from "./run-stats";
+import { fastModelsByTime, formatRunCost, formatRunTime } from "./run-stats";
 
 describe("model stat badges", () => {
     it("shows dollars to two significant digits", () => {
@@ -27,5 +27,25 @@ describe("model stat badges", () => {
             expect(formatRunCost(value)).toBeUndefined();
             expect(formatRunTime(value)).toBeUndefined();
         }
+    });
+});
+
+describe("Fast model filter", () => {
+    const rank = (...times: (number | null)[]) => [
+        ...fastModelsByTime(
+            times.map((avg_response_ms, index) => ({
+                model: String(index),
+                avg_response_ms,
+            })),
+        ),
+    ];
+
+    it("hides the filter for sparse or closely grouped measurements", () => {
+        expect(rank(null, 0, 1, 100, 200)).toEqual([]);
+        expect(rank(95, 96, 97, 98)).toEqual([]);
+    });
+
+    it("includes ties at the cutoff and excludes missing times", () => {
+        expect(rank(null, 1, 1, 4, 5, 8, 10, 11, 14)).toEqual(["1", "2"]);
     });
 });

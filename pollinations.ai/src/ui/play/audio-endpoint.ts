@@ -1,16 +1,14 @@
-const AUDIO_ENDPOINTS = [
-    "/v1/audio/transcriptions",
-    "/alpha/audio/stem-separation",
-    "/v1/audio/voice-changer",
-    "/v1/audio/voice-isolator",
-    "/v1/audio/speech",
-    "/audio/{text}",
-] as const;
+import { audioEndpoints } from "../../data/playground-model-overrides";
+
+// The inventory lists specialist routes before the generic speech endpoints.
+const endpoints = Object.keys(
+    audioEndpoints,
+) as (keyof typeof audioEndpoints)[];
 
 export function audioEndpoint(model: {
     supportedEndpoints: readonly string[];
 }) {
-    return AUDIO_ENDPOINTS.find((endpoint) =>
+    return endpoints.find((endpoint) =>
         model.supportedEndpoints.includes(endpoint),
     );
 }

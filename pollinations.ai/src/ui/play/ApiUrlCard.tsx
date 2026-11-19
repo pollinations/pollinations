@@ -99,11 +99,12 @@ export function ApiUrlCard({
                             </code>
                             <span
                                 aria-hidden="true"
-                                className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
+                                className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
                             >
                                 <CopyStateIcon
                                     copied={copied}
                                     className="h-4 w-4"
+                                    style={{ color: "inherit" }}
                                 />
                             </span>
                         </>

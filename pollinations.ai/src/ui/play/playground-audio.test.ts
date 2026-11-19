@@ -53,6 +53,19 @@ describe("catalog-driven audio requests", () => {
         expect(audioEndpoint(model("/future/audio"))).toBeUndefined();
     });
 
+    it("prefers a specialist route when the catalog also lists speech", () => {
+        const model = {
+            id: "new-model-from-catalog",
+            supportedEndpoints: [
+                "/audio/{text}",
+                "/v1/audio/speech",
+                "/v1/audio/transcriptions",
+            ],
+        };
+        expect(audioEndpoint(model)).toBe("/v1/audio/transcriptions");
+        expect(audioTaskForModel(model)).toBe("transcription");
+    });
+
     it("uses the catalog endpoint before a workspace override", () => {
         expect(
             audioTaskForModel({

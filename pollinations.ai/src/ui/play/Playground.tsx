@@ -67,9 +67,12 @@ import {
 } from "react";
 import { API_BASE_URL, ENTER_URL } from "../../config";
 import {
+    audioTaskGroups,
     audioTaskIds,
-    audioTasks,
+    image4KDimensions,
+    imageFilters,
     playgroundModelOverride,
+    uploadLimitsMiB,
     videoFilters,
 } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
@@ -81,6 +84,7 @@ import {
     type VideoReference,
 } from "./connect-draft";
 import { DecisionAnswerPanel } from "./DecisionAnswerPanel";
+import { DecisionCriteriaFields } from "./DecisionCriteriaFields";
 import {
     decisionForm,
     questionTypeLabel,
@@ -111,7 +115,12 @@ import {
     uploadReference,
     VIDEO_EXTENSIONS,
 } from "./playground-audio";
-import { formatRunCost, formatRunTime, type ModelRunStat } from "./run-stats";
+import {
+    fastModelsByTime,
+    formatRunCost,
+    formatRunTime,
+    type ModelRunStat,
+} from "./run-stats";
 import { createRunStore } from "./run-store";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { videoOptions } from "./video-options";
@@ -140,16 +149,16 @@ type PlaygroundModel = MediaModelMetadata & {
 
 const WORKSPACES = [
     {
-        label: "Video",
-        icon: VideoIcon,
-        category: "video",
-        operations: ["video"],
-    },
-    {
         label: "Image",
         icon: ImageIcon,
         category: "image",
         operations: ["image"],
+    },
+    {
+        label: "Video",
+        icon: VideoIcon,
+        category: "video",
+        operations: ["video"],
     },
     {
         label: "Audio",
@@ -224,11 +233,6 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     image: "image/*",
     video: ["video/*", ...VIDEO_EXTENSIONS].join(","),
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
-};
-const UPLOAD_MAX_MB: Record<UploadMedia, number> = {
-    image: 5,
-    video: 20,
-    audio: 20,
 };
 
 type MediaResult =
@@ -492,11 +496,8 @@ function VoicePicker({
     );
 }
 
-const imageFilters = ["All", "Edit", "GIF", "SVG", "4K"] as const;
-const audioFilters = [
-    "All",
-    ...new Set(audioTaskIds.map((task) => audioTasks[task].group)),
-];
+const imageFilterOptions = ["All", ...Object.values(imageFilters)];
+const audioFilters = ["All", ...new Set(Object.values(audioTaskGroups))];
 
 function audioGroupForModel(model: PlaygroundModel) {
     const task = audioTaskForModel(model);
@@ -504,7 +505,7 @@ function audioGroupForModel(model: PlaygroundModel) {
     const override = playgroundModelOverride(model.id);
     return (
         (override?.audioTask === task && override.audioGroup) ||
-        audioTasks[task].group
+        audioTaskGroups[task]
     );
 }
 
@@ -533,16 +534,16 @@ function matchesModelFilter(model: PlaygroundModel, filter: string) {
         return false;
     }
     switch (filter) {
-        case "Edit":
+        case imageFilters.edit:
             return (
                 model.inputModalities.includes("image") &&
                 (model.maxReferenceImages ?? 0) > 0
             );
-        case "GIF":
+        case imageFilters.gif:
             return !!model.outputFormats?.gif;
-        case "SVG":
+        case imageFilters.svg:
             return model.outputFormats?.svg?.mode === "native";
-        case "4K":
+        case imageFilters["4k"]:
             return model.resolutions.length
                 ? model.resolutions.some((size) => size.toLowerCase() === "4k")
                 : !!playgroundModelOverride(model.id)?.supports4K;
@@ -559,21 +560,23 @@ function modelHighlights(model: PlaygroundModel) {
         return group ? [group] : undefined;
     }
     if (model.category === "image")
-        return imageFilters.filter(
+        return imageFilterOptions.filter(
             (value) =>
                 value !== "All" &&
-                value !== "Edit" &&
+                value !== imageFilters.edit &&
                 matchesModelFilter(model, value),
         );
 }
 
 function ModelPicker({
     models,
+    stats,
     selectedModel,
     isLoading,
     onSelectModel,
 }: {
     models: PlaygroundModel[];
+    stats: ModelRunStat[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (model: PlaygroundModel, filter?: string) => void;
@@ -581,11 +584,30 @@ function ModelPicker({
     const [filter, setFilter] = useState("All");
     const category = models[0]?.category;
     const imageModels = category === "image";
+    const costByModel = useMemo(
+        () =>
+            new Map(
+                stats.map((stat) => [
+                    stat.model,
+                    formatRunCost(stat.avg_cost_usd),
+                ]),
+            ),
+        [stats],
+    );
+    const fastModels = useMemo(() => {
+        const ids = new Set(models.map((model) => model.id));
+        const measured = stats.filter((stat) => ids.has(stat.model));
+        return fastModelsByTime(measured);
+    }, [models, stats]);
+    function matches(model: PlaygroundModel, value: string) {
+        if (value === "Fast") return fastModels.has(model.id);
+        return matchesModelFilter(model, value);
+    }
     const filterOptions =
         category === "video"
             ? ["All", ...Object.values(videoFilters)]
             : imageModels
-              ? imageFilters
+              ? imageFilterOptions
               : category === "audio"
                 ? audioFilters
                 : [];
@@ -593,11 +615,14 @@ function ModelPicker({
     const eligibleModels = questOnly
         ? models.filter((model) => !model.paidOnly)
         : models;
-    const filters = filterOptions.filter((value) =>
-        models.some((model) => matchesModelFilter(model, value)),
-    );
+    const filters = [
+        "All",
+        "Fast",
+        ...filterOptions.filter((value) => value !== "All"),
+    ].filter((value) => models.some((model) => matches(model, value)));
+    const activeFilter = filters.includes(filter) ? filter : "All";
     const visible = eligibleModels.filter((model) =>
-        matchesModelFilter(model, filter),
+        matches(model, activeFilter),
     );
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
@@ -708,7 +733,7 @@ function ModelPicker({
                                 ) : selected ? (
                                     <MediaModelOption
                                         model={selected}
-                                        showWalletIcon={false}
+                                        showPricing={false}
                                     />
                                 ) : models.length ? (
                                     "Choose a model"
@@ -722,7 +747,7 @@ function ModelPicker({
                 >
                     {(close) => (
                         <>
-                            {filters.length > 0 && (
+                            {filters.length > 1 && (
                                 <fieldset
                                     aria-label={`Filter ${category} models`}
                                     className="mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 px-1 pt-1 pb-2"
@@ -730,16 +755,18 @@ function ModelPicker({
                                     {filters.map((value) => (
                                         <TabButton
                                             key={value}
-                                            active={value === filter}
+                                            active={value === activeFilter}
+                                            title={
+                                                value === "Fast"
+                                                    ? "Fastest quarter by measured response time"
+                                                    : undefined
+                                            }
                                             className="max-sm:px-2 max-sm:text-xs"
                                             size="sm"
                                             disabled={
                                                 questOnly &&
                                                 !eligibleModels.some((model) =>
-                                                    matchesModelFilter(
-                                                        model,
-                                                        value,
-                                                    ),
+                                                    matches(model, value),
                                                 )
                                             }
                                             onClick={() => setFilter(value)}
@@ -784,9 +811,11 @@ function ModelPicker({
                                             onClick={() => {
                                                 onSelectModel(
                                                     model,
-                                                    imageModels ||
-                                                        category === "video"
-                                                        ? filter
+                                                    activeFilter !== "Fast" &&
+                                                        (imageModels ||
+                                                            category ===
+                                                                "video")
+                                                        ? activeFilter
                                                         : undefined,
                                                 );
                                                 close();
@@ -794,6 +823,7 @@ function ModelPicker({
                                         >
                                             <MediaModelOption
                                                 model={model}
+                                                cost={costByModel.get(model.id)}
                                                 highlights={
                                                     filter === "All"
                                                         ? modelHighlights(model)
@@ -1213,7 +1243,7 @@ export function Playground({
     const uploadProps = (
         media: UploadMedia[],
         tooMany: string,
-        maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item])),
+        maxMb = Math.max(...media.map((item) => uploadLimitsMiB[item])),
     ) => {
         const messages = {
             size: `Each file must be under ${maxMb} MB.`,
@@ -1734,9 +1764,11 @@ export function Playground({
 
     function selectModel(model: PlaygroundModel, filter?: string) {
         const outputFormat =
-            filter === "GIF" || filter === "SVG"
-                ? filter.toLowerCase()
-                : undefined;
+            filter === imageFilters.gif
+                ? "gif"
+                : filter === imageFilters.svg
+                  ? "svg"
+                  : undefined;
         const selection: PlaySearch = { format: outputFormat };
         if (
             model.category === "video" &&
@@ -1745,15 +1777,17 @@ export function Playground({
         )
             selection.sound = "on";
         if (
-            filter === (model.category === "video" ? videoFilters["4k"] : "4K")
+            filter ===
+            (model.category === "video"
+                ? videoFilters["4k"]
+                : imageFilters["4k"])
         ) {
             const size = model.resolutions.find(
                 (size) => size.toLowerCase() === "4k",
             );
             if (size) selection.size = size;
             else if (model.category === "image") {
-                selection.width = "3840";
-                selection.height = "2160";
+                Object.assign(selection, image4KDimensions);
             }
         }
         const modelId = model.id;
@@ -2079,7 +2113,7 @@ export function Playground({
         ? uploadProps(
               uploadMedia,
               "Use one media file.",
-              isStemSeparation ? 50 : undefined,
+              isStemSeparation ? uploadLimitsMiB.stemSeparation : undefined,
           )
         : undefined;
     const audioInput =
@@ -2247,14 +2281,14 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
-                    <Surface
-                        as="section"
+                    <section
                         aria-label="Model details"
-                        className="@container flex flex-col gap-2"
+                        className="@container flex min-w-0 flex-col gap-2"
                     >
                         <ModelPicker
                             key={activeCategory}
                             models={pickerModels}
+                            stats={stats}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
@@ -2293,7 +2327,7 @@ export function Playground({
                                 </div>
                             </>
                         )}
-                    </Surface>
+                    </section>
                     <Surface
                         as="section"
                         variant="card"
@@ -2385,34 +2419,18 @@ export function Playground({
                                     </FieldStack>
                                     {(decision.type === "choice" ||
                                         decision.type === "score") && (
-                                        <FieldStack
-                                            orientation="inline"
-                                            className="[&>div:first-child]:self-start [&>div:first-child]:pt-2"
-                                            label={
-                                                decision.type === "score"
-                                                    ? "Scale (low to high, one per line)"
-                                                    : "Choices (one per line)"
-                                            }
-                                        >
-                                            <Textarea
-                                                rows={3}
-                                                aria-label={
+                                        <DecisionCriteriaFields
+                                            type={decision.type}
+                                            values={decision.criteria}
+                                            onChange={(values) =>
+                                                setParam(
                                                     decision.type === "score"
-                                                        ? "Scale"
-                                                        : "Choices"
-                                                }
-                                                value={decision.criteria}
-                                                onChange={(event) =>
-                                                    setParam(
-                                                        decision.type ===
-                                                            "score"
-                                                            ? "levels"
-                                                            : "choices",
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                        </FieldStack>
+                                                        ? "levels"
+                                                        : "choices",
+                                                    values.join("\n"),
+                                                )
+                                            }
+                                        />
                                     )}
                                 </>
                             )}
@@ -2797,53 +2815,51 @@ export function Playground({
                                 </>
                             )}
                         </div>
-
-                        {/* Not connected is not a broken state, so the button
-                                becomes the connect action. When it genuinely
-                                cannot fire, the line beside it says why. */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                // The page's main action: nectar whether it signs
-                                // in or generates. Busy fills with honey and shows
-                                // Polli. aria-disabled, not disabled, so focus
-                                // stays on the button; generate() ignores repeats.
-                                disabled={!!blockedReason}
-                                aria-disabled={isGenerating || undefined}
-                                aria-busy={isGenerating}
-                                aria-describedby={
-                                    clipError && blockedReason === clipError
-                                        ? clipStatusId
-                                        : statusId
-                                }
-                                icon={
-                                    needsSignIn ? undefined : <GenerateIcon />
-                                }
-                                onClick={run}
-                                className={cn(
-                                    needsSignIn && "h-12 gap-2 px-5 py-0",
-                                )}
-                            >
-                                {needsSignIn ? (
-                                    <>
-                                        <BrandMark className="h-6 w-6" />
-                                        {connectLabel}
-                                    </>
-                                ) : (
-                                    generateText
-                                )}
-                            </Button>
-                            <Text
-                                id={statusId}
-                                size="xs"
-                                tone="muted"
-                                className="empty:hidden max-sm:w-full"
-                            >
-                                {blockedReason !== clipError && blockedReason}
-                            </Text>
-                        </div>
                     </Surface>
+
+                    {/* Not connected is not a broken state, so the button
+                            becomes the connect action. When it genuinely
+                            cannot fire, the line beside it says why. */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <Button
+                            size="lg"
+                            intent="brand"
+                            // The page's main action: nectar whether it signs
+                            // in or generates. Busy fills with honey and shows
+                            // Polli. aria-disabled, not disabled, so focus
+                            // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
+                            aria-disabled={isGenerating || undefined}
+                            aria-busy={isGenerating}
+                            aria-describedby={
+                                clipError && blockedReason === clipError
+                                    ? clipStatusId
+                                    : statusId
+                            }
+                            icon={needsSignIn ? undefined : <GenerateIcon />}
+                            onClick={run}
+                            className={cn(
+                                needsSignIn && "h-12 gap-2 px-5 py-0",
+                            )}
+                        >
+                            {needsSignIn ? (
+                                <>
+                                    <BrandMark className="h-6 w-6" />
+                                    {connectLabel}
+                                </>
+                            ) : (
+                                generateText
+                            )}
+                        </Button>
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="empty:hidden max-sm:w-full"
+                        >
+                            {blockedReason !== clipError && blockedReason}
+                        </Text>
+                    </div>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

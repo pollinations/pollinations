@@ -257,8 +257,7 @@ export const MCP_SERVERS = [
         binding: "CALCULATORS_MCP",
         billing: "downstream",
         pricing: {
-            description:
-                "Local utilities and public ECB rates. No Pollen charge.",
+            description: "Local utilities and public ECB rates. Free.",
             rates: [],
         },
     },
@@ -271,7 +270,7 @@ export const MCP_SERVERS = [
         binding: "NETWORK_MCP",
         billing: "downstream",
         pricing: {
-            description: "Network diagnostics. No Pollen charge.",
+            description: "Network diagnostics. Free.",
             rates: [],
         },
     },
@@ -284,7 +283,7 @@ export const MCP_SERVERS = [
         binding: "PACKAGES_MCP",
         billing: "downstream",
         pricing: {
-            description: "Public registry lookups. No Pollen charge.",
+            description: "Public registry lookups. Free.",
             rates: [],
         },
     },

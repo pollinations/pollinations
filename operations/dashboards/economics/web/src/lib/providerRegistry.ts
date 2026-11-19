@@ -14,7 +14,9 @@ import type {
 import {
     type Category,
     type CategoryValue,
+    canonicalCategory,
     cloudCategory,
+    forecastCategory,
     isCategory,
     isComputeOrInfrastructureCategory,
 } from "./categories";
@@ -279,7 +281,17 @@ export function initializeProviderRegistry(value: unknown): void {
                     `Vendor details: invalid access link for ${provider.id}`,
                 );
         seen.add(provider.id);
-        return { ...provider, ...mappings.get(provider.id) };
+        return {
+            ...provider,
+            ...mappings.get(provider.id),
+            category: forecastCategory(provider),
+            ...(provider.cashRules && {
+                cashRules: provider.cashRules.map((rule) => ({
+                    ...rule,
+                    category: forecastCategory(rule) as Category,
+                })),
+            }),
+        };
     });
     // A new model mapping may precede its private journal. Keep the valid
     // catalog usable; observed vendors without definitions need reconciliation.
@@ -349,7 +361,7 @@ export function transactionCategory(
 ): CategoryValue {
     if (row.kind === "opening_balance") return "balance_sheet";
 
-    const supplied = normalizeProviderName(row.category);
+    const supplied = canonicalCategory(row.category);
     if (supplied === "creator_payout") return "revenue_share";
     // A reviewed deposit/refund or other balance-sheet movement is not a
     // recurring vendor expense (for example a Deel deposit is not payroll).

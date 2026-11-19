@@ -67,7 +67,7 @@ export const AGENT_FIELD_DESCRIPTIONS = {
     base_model:
         "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
     pricing:
-        "Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+        'Rates in US dollars per billed unit; `currency` is always `"pollen"`, the API\'s name for US dollars. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.',
 };
 
 export const ModelInfoSchema = z.object({
@@ -225,7 +225,7 @@ export const ModelInfoSchema = z.object({
         )
         .optional()
         .describe(
-            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is $0.02 per megapixel.",
         ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),

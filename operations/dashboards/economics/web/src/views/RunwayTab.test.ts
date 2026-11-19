@@ -101,6 +101,7 @@ describe("RunwayTab labels", () => {
                 ...base,
                 vendor: "stripe sales",
                 values: { january: 95, february: null, plan: 190 },
+                creditValues: { january: -7 },
                 details: [
                     {
                         label: "Gross customer payments",
@@ -109,6 +110,7 @@ describe("RunwayTab labels", () => {
                     {
                         label: "Stripe fees",
                         values: { january: -5, plan: -10 },
+                        creditValues: { january: -7 },
                     },
                 ],
             },
@@ -126,6 +128,10 @@ describe("RunwayTab labels", () => {
             "Stripe fees",
         ]);
         expect(displayed[0].values.january).toBe(140);
+        expect(displayed[0].creditValues).toBeUndefined();
+        expect(
+            displayed.find((r) => r.vendor === "Stripe fees")?.creditValues,
+        ).toEqual({ january: -7 });
         expect(displayed[0].values.february).toBeNull();
         expect(displayed[0].actualIssues?.january).toBe(
             "Historical settlement basis",
@@ -155,6 +161,8 @@ describe("RunwayTab labels", () => {
                 refunds: 100,
                 reversals: 20,
                 stripe_fees: 80,
+                stripe_fees_credit: 461.38,
+                fee_credit_funding: 0,
                 dispute_fees: 60,
                 net_sales: 880,
                 net_after_fees: 800,
@@ -170,6 +178,8 @@ describe("RunwayTab labels", () => {
                 refunds: 10,
                 reversals: 5,
                 stripe_fees: 5,
+                stripe_fees_credit: 0,
+                fee_credit_funding: 0,
                 dispute_fees: 2,
                 net_sales: 85,
                 net_after_fees: 80,
@@ -178,7 +188,10 @@ describe("RunwayTab labels", () => {
                 coverage_complete: 1,
             },
         ];
-        const result = buildRunway([], new Date(), [], undefined, sales);
+        const result = buildRunway([], new Date(), [], undefined, sales, {
+            baselineMonth: "2026-09",
+            asOf: "2026-10-14",
+        });
         const actual = result.columns.find(
             (c) => c.month === "2026-09" && c.kind === "actual",
         );
@@ -215,7 +228,7 @@ describe("RunwayTab labels", () => {
                 (sum, r) => sum + (r.values[forecast.id] ?? Number.NaN),
                 0,
             ),
-        ).toBeCloseTo(892.104, 8);
+        ).toBeCloseTo(800 + 80 * 1.1202, 8); // October ECB rate for future EUR.
         expect(actual.netUsd).toBeNull(); // No Bank coverage in this fixture.
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
@@ -224,9 +237,12 @@ describe("RunwayTab labels", () => {
             }),
         );
         expect(html).toContain("Revenue calculation info");
+        expect(html).not.toContain("−461");
         expect(html).not.toContain("Plan baseline:");
         expect(html).not.toContain("Provisional runway —");
-        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash adjustments/s);
+        expect(html).toMatch(
+            /aria-expanded="false"[^>]*>.*?Cash reconciliation/s,
+        );
         expect(html).not.toMatch(/<button[^>]*>Cash change<\/button>/);
         const bridgeHtml = renderToStaticMarkup(
             createElement(
@@ -285,9 +301,9 @@ describe("RunwayTab labels", () => {
         expect(bridgeHtml).toContain("Other cash movements");
         expect(bridgeHtml).toContain("Exchange-rate changes");
         expect(html).not.toContain("Revenue · net after deductions");
-        expect(html).toContain("Customer payments");
-        expect(html).toContain("Stripe fees");
-        expect(html).toContain("Refunds, disputes &amp; chargebacks");
+        expect(html).not.toContain("Customer payments");
+        expect(html).not.toContain('aria-label="Stripe fees calculation info"');
+        expect(html).not.toContain("Refunds, disputes &amp; chargebacks");
         expect(html).not.toContain('aria-label="Refunds calculation info"');
         expect(html).not.toContain(
             'aria-label="Disputes &amp; chargebacks calculation info"',
@@ -457,7 +473,7 @@ describe("RunwayTab labels", () => {
 
         const cards = html.slice(0, html.indexOf("<table"));
         expect(cards.match(/<\/section>/g)).toHaveLength(3);
-        expect(cards).toContain('aria-label="Cash"');
+        expect(cards).toContain('aria-label="Wise bank cash"');
         expect(cards).toContain('aria-label="Outlook"');
         expect(cards).toContain('aria-label="Pollen balance"');
         expect(html).not.toContain("Unspent Pollen");
@@ -484,7 +500,7 @@ describe("RunwayTab labels", () => {
         expect(runwayValueClass(null)).toBe("text-theme-text-soft");
     });
 
-    it("shows category totals while vendor detail starts collapsed", () => {
+    it("shows revenue and expense totals while details start collapsed", () => {
         const data: Data = {
             privateConfig: PRIVATE_CONFIG_FIXTURE,
             opTransactions: [
@@ -538,6 +554,8 @@ describe("RunwayTab labels", () => {
                     refunds: 20,
                     net_sales: 100,
                     stripe_fees: 5,
+                    stripe_fees_credit: 0,
+                    fee_credit_funding: 0,
                     dispute_fees: 0,
                     net_after_fees: 95,
                     payments: 3,
@@ -550,10 +568,12 @@ describe("RunwayTab labels", () => {
             createElement(RunwayTab, { data, year: "2026" }),
         );
         expect(html).toContain("Revenue");
-        expect(html).toContain("Compute");
         expect(html).not.toContain("Revenue · net after deductions");
-        const balanceIndex = html.indexOf(
-            'aria-label="Cash balance calculation info"',
+        const resultIndex = html.indexOf(
+            'aria-label="Operating result calculation info"',
+        );
+        const reconciliationIndex = html.indexOf(
+            'aria-label="Cash reconciliation calculation info"',
         );
         const revenueIndex = html.indexOf(
             'aria-label="Revenue calculation info"',
@@ -561,26 +581,23 @@ describe("RunwayTab labels", () => {
         const expensesIndex = html.indexOf(
             'aria-label="Expenses calculation info"',
         );
-        const computeIndex = html.indexOf(
-            'aria-label="Compute calculation info"',
-        );
-        expect(balanceIndex).toBeLessThan(revenueIndex);
         expect(revenueIndex).toBeLessThan(expensesIndex);
-        expect(expensesIndex).toBeLessThan(computeIndex);
-        expect(html).toContain("runway-subcategory");
+        expect(resultIndex).toBeLessThan(revenueIndex);
+        expect(expensesIndex).toBeLessThan(reconciliationIndex);
+        expect(html).not.toContain("runway-subcategory");
         expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
         expect(html).toContain('aria-label="Expenses calculation info"');
-        expect(
-            html.match(/aria-label="Cash change calculation info"/g),
-        ).toHaveLength(1);
+        expect(html).not.toContain('aria-label="Cash change calculation info"');
         expect(html).not.toContain("Revenue less expenses");
-        expect(html).toContain('aria-label="Cash balance calculation info"');
+        expect(html).not.toContain(
+            'aria-label="Cash balance calculation info"',
+        );
         expect(html).toContain('aria-label="Revenue calculation info"');
-        expect(html).toContain('aria-label="Compute calculation info"');
-        expect(html).toContain(
+        expect(html).not.toContain('aria-label="Compute calculation info"');
+        expect(html).not.toContain(
             'aria-label="Customer payments calculation info"',
         );
         expect(html).toContain('class="sr-only">Line item</span>');

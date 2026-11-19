@@ -238,6 +238,35 @@ export function GitPullRequestIcon(props: IconProps) {
     );
 }
 
+// GitHub's own merged and closed-issue marks, from Octicons (MIT, see
+// licenses/Octicons-MIT.txt), so a PR or issue reads as it does on GitHub.
+export function GitMergeIcon(props: IconProps) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            {...props}
+        >
+            <path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0 0 .005V3.25Z" />
+        </svg>
+    );
+}
+
+export function IssueClosedIcon(props: IconProps) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            {...props}
+        >
+            <path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z" />
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z" />
+        </svg>
+    );
+}
+
 export function GraduationCapIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -305,6 +334,16 @@ export function AudioIcon(props: IconProps) {
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
+        </svg>
+    );
+}
+
+export function LayersIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+            <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+            <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
         </svg>
     );
 }

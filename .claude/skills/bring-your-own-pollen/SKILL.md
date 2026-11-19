@@ -1,10 +1,10 @@
 ---
 name: bring-your-own-pollen
-description: Add Bring Your Own Pollen (BYOP) to an app with Pollinations Connect so each user pays with their own Pollen instead of the app's key. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
+description: Add Pollinations Pay (BYOP) so each user can pay from their own balance. Use when building an app, CLI, extension or agent tool on Pollinations and you need the user-authorized sk_ key, when you must choose between the OAuth code flow, the fragment flow and the device flow, or when an app key's usage must be attributed and monetized.
 ---
-# bring-your-own-pollen — user-paid Pollinations apps
+# Pollinations Pay for apps
 
-BYOP lets your users authorize your app to spend **their** Pollen. The app
+BYOP lets your users authorize your app to spend from **their** balance. The app
 sends users to the consent screen with a publishable **App Key** (`pk_...`)
 and gets back a scoped user key (`sk_...`) for generation calls. The app
 owner never pays for user usage, and users keep control of budget, expiry and
@@ -25,9 +25,20 @@ Full reference: `https://gen.pollinations.ai/docs/llm.txt?section=byop` and
 If you are unsure, default to the **OAuth code flow with PKCE** for new web
 work; it keeps `sk_...` out of the browser callback URL.
 
-## Step 1 — App Key (`client_id`)
+## Step 1 — App Key (`client_id`, optional)
 
-Create one at `https://enter.pollinations.ai/keys` → **Apps** → **Create**,
+Every flow, including the `<polli-connect>` drop-in, works without an App Key:
+the consent screen then shows the redirect hostname and usage isn't
+attributed or monetized. For a quick static app, just add the button:
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+<polli-connect></polli-connect> <!-- element.apiKey holds the user's sk_ key -->
+```
+
+Never ask visitors to paste an `sk_` key, or to create a `pk_` key themselves.
+
+To show your app's name and earn, create one at `https://enter.pollinations.ai/keys?tab=app` → **App** → **Create**,
 or via the API:
 
 ```bash
@@ -59,13 +70,13 @@ https://enter.pollinations.ai/authorize
 ```
 
 Optional restrictions: `models=image,text` (or individual IDs),
-`budget=10` (Pollen cap, default 5, at most 10 from a link), `expiry=7` (days,
+`budget=10` (spending cap in dollars, default 5, at most 10 from a link), `expiry=7` (days,
 default 7). The user can change these on the consent screen. A requested
 `machines` scope starts unticked there; `keys` is only offered in the device
 flow and on redirects to `http://localhost` or `http://127.0.0.1`.
 
 Handle the callback — validate `state`, then exchange the single-use code
-(10-minute TTL):
+(10-minute TTL). Send the same `client_id` as on the auth link, or none:
 
 ```bash
 curl -X POST https://enter.pollinations.ai/api/oauth/token \
@@ -146,7 +157,7 @@ curl https://enter.pollinations.ai/api/device/userinfo \
 
 ## Checklist
 
-- [ ] App Key created with the exact `redirect_uri` and `earningsEnabled` if you monetize.
+- [ ] If you use an App Key: exact `redirect_uri` registered, and `earningsEnabled` if you monetize.
 - [ ] Fresh PKCE verifier + S256 challenge per attempt.
 - [ ] `state` validated on the callback.
 - [ ] Token kept in memory/`sessionStorage`; expiry handled by re-running the flow.

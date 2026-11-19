@@ -730,7 +730,7 @@ export class Watch extends DurableObject {
             },
         );
         // Every probe refused (401 or 402) means our key, not the models:
-        // revoked, out of pollen or over its budget. Those probes don't
+        // revoked, out of balance or over its budget. Those probes don't
         // count, so the models stay due and the cycle fails until it works.
         if (
             probes.length > 1 &&

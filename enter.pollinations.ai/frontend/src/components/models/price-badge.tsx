@@ -18,6 +18,7 @@ import {
     SearchIcon,
     SparklesIcon,
     TokensIcon,
+    ToolIcon,
     Tooltip,
     VideoIcon,
     WalletIcon,
@@ -94,6 +95,7 @@ const formatAdjustmentUnit = ({
         if (unit === "second") return "sec";
         if (unit === "page") return "page";
         if (unit === "generation") return "gen";
+        if (unit === "call") return "call";
     }
     return `${quantityLabel} ${unit}`;
 };
@@ -451,12 +453,20 @@ export const UsagePriceRows: FC<{
               ? ClockIcon
               : adjustment.kind === "page"
                 ? BookIcon
-                : adjustment.kind === "cache_storage"
-                  ? PRICE_ICON.cached
-                  : adjustment.kind in PRICE_ICON
-                    ? PRICE_ICON[adjustment.kind as PriceKind]
-                    : undefined;
-        const unit = `/${formatAdjustmentUnit(adjustment)}`;
+                : adjustment.kind === "tool_call"
+                  ? ToolIcon
+                  : adjustment.kind === "cache_storage"
+                    ? PRICE_ICON.cached
+                    : adjustment.kind in PRICE_ICON
+                      ? PRICE_ICON[adjustment.kind as PriceKind]
+                      : undefined;
+        // A sub-cent rate per second reads better per hour, as on the
+        // Models list's audio rates.
+        const perHour =
+            adjustment.unit === "second" &&
+            adjustment.quantity === 1 &&
+            Number(adjustment.price) < 0.01;
+        const unit = perHour ? "/hr" : `/${formatAdjustmentUnit(adjustment)}`;
         const unitLabel = adjustment.suffix
             ? `${unit} · ${adjustment.suffix}`
             : unit;
@@ -483,7 +493,13 @@ export const UsagePriceRows: FC<{
                     }
                 />
                 <LedgerPriceValue
-                    value={`$${formatDisplayPrice(adjustment.price).value}`}
+                    value={`$${
+                        formatDisplayPrice(
+                            adjustment.price,
+                            perHour ? "second" : undefined,
+                            perHour,
+                        ).value
+                    }`}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -738,7 +754,7 @@ export const ModelPricingLedger: FC<{
             {requestBadge && (
                 <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
                     {align === "right" && <span aria-hidden="true" />}
-                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <LedgerLabel Icon={WalletIcon} label="Balance" />
                     <div className="flex justify-end pr-2">{requestBadge}</div>
                     <span aria-hidden="true" />
                 </div>

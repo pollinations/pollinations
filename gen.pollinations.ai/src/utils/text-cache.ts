@@ -6,7 +6,7 @@
 
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { putGenerationResult, refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -16,8 +16,11 @@ import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { parseBooleanLike } from "@/util.ts";
 
-// Parameters to exclude from cache key (auth + cache control)
-const EXCLUDED_PARAMS = ["key", "no-cache"];
+// Parameters to exclude from cache key (auth + cache control). "stream" is
+// excluded because the streaming distinction is already captured by
+// STREAM_CACHE_VERSION below: an explicit "stream": false (or null, or a
+// ?stream=false query) must not fork the entry and bill a second generation.
+const EXCLUDED_PARAMS = ["key", "no-cache", "stream"];
 const CACHED_HEADER_NAMES = new Set([
     "x-fallback-target",
     "x-model-used",
@@ -110,7 +113,8 @@ export async function generateCacheKey(
             const bodyObj = JSON.parse(bodyText);
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
-            streams ||= parseBooleanLike(bodyObj.stream) === true;
+            // JSON requests select response format from the body, not the query.
+            streams = parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
@@ -295,15 +299,23 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         completeResponse.set(chunk, offset);
                         offset += chunk.byteLength;
                     }
+                    chunks = [];
 
                     if (isStreamingErrorResponse(response, completeResponse)) {
                         resolveWrite();
                         return;
                     }
 
-                    await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
-                        customMetadata: prepareMetadata(response),
-                    });
+                    await putGenerationResult(
+                        c.env.TEXT_BUCKET,
+                        cacheKey,
+                        completeResponse,
+                        {
+                            customMetadata: prepareMetadata(response),
+                        },
+                        "TEXT_BUCKET",
+                        c.var.requestId,
+                    );
                     log?.info(
                         "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
                         { size: totalSize },
@@ -311,8 +323,6 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                     resolveWrite();
                 } catch (error) {
                     rejectWrite(error);
-                } finally {
-                    chunks = [];
                 }
             })();
         },

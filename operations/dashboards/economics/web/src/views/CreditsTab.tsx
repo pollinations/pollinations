@@ -268,7 +268,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                     </span>
                                     {row.expiryAssumed && (
                                         <span className="block text-xs text-theme-text-muted">
-                                            Expiry ignored by agreement
+                                            Expiry assumption approved
                                         </span>
                                     )}
                                     {!row.creditTermsKnown &&

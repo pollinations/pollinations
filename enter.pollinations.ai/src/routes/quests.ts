@@ -38,6 +38,7 @@ const questCatalogItemSchema = z.object({
             unit: z.enum(["pollen", "users", "days"]),
         })
         .optional(),
+    repeatable: z.boolean().optional(),
     url: z.string().nullable(),
 });
 
@@ -82,7 +83,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Monthly Quest Standings",
             description:
-                "Returns this calendar month's (UTC) Quest Pollen ranking: the top three plus, for a signed-in user, the rows around them.",
+                "Returns this calendar month's (UTC) Quest reward ranking: the top three plus, for a signed-in user, the rows around them.",
             responses: {
                 200: {
                     description: "Monthly quest standings",

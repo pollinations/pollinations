@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-10-27
+Last updated: 2026-11-16
 
 ## Capacity Summary
 
@@ -9,12 +9,77 @@ Last updated: 2026-10-27
 | Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.540889/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2× RTX 3060 | Vast.ai | $0.139259/hr all-in | **ACTIVE — burst-capacity regression; follow-up required** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 3060 + RTX 4070 | Vast.ai | $0.208981/hr all-in | **ACTIVE — two production GPUs, bounded queues** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the five running Vast instances cost **$1.060148/hr** in total
-(**$763.31 per 30-day month**, 720 hours, excluding metered inference fallbacks).
-All five are production workers; there is no isolated canary left running.
+The five serving Vast workers cost **$1.129870/hr** in total
+(**$813.51 per 720 hours**). Stopped Matrix test instance `57109379` retains
+100 GB at **$0.027778/hr ($20.00/720h)**. Total retained Vast compute and
+storage is **$1.157648/hr ($833.51/720h)**, excluding bandwidth and metered
+fallbacks.
+
+### 2026-11-16 — DreamShaper Austria replacement
+
+Vast instance `60915225` (machine `44854`, Austria, RTX 3060 12 GB, 35 GiB
+disk) replaces Korea instance `51216212`. Korea lost its heartbeat at 00:11
+UTC and resumed after container restarts. The host logs available to us
+confirmed the restarts. The stop reason remains unknown.
+
+Austria reuses the named tunnel and registry URL
+`dreamshaper-canary-51216212.myceli.ai`. The contract expires **2027-01-31
+22:55 UTC**. The slot costs **$0.096204/hr** including storage, an increase of
+**$27.67 per 720 hours**. Together the two DreamShaper replicas cost
+**$0.208981/hr ($150.47/720h)**.
+
+The isolated load test completed **420/420 at 210 RPM**, **759/780 at 260
+RPM**, and **264/330 at 330 RPM**. All rejections were queue-full 503s.
+All 30 outbound checks reached Gen. After the Vast reboot, all three model
+processes restarted, and the fixed-seed image matched after 26 seconds.
+
+Korea's connector drained at **11:23:38 UTC**. Austria kept four tunnel
+connections and handled authenticated renders and live traffic on the existing
+hostname. In the next three minutes, Gen recorded **1 final 503 in 979
+requests (0.10%)** and successful-request p95 of **2.982s**. The nine-minute
+baseline had **1 final 503 in 3,365 requests (0.03%)** and p95 of **2.827s**.
+Vast confirmed Korea instance `51216212` and its local storage were removed
+by **11:30:43 UTC**. Both production replicas had fresh heartbeats, and an
+authenticated Gen image request returned 200 after retirement.
+
+### 2026-11-11 — DreamShaper US network-fault replacement
+
+Human-approved instance `60143951` (machine `68274`, Nevada, US, RTX 4070
+12 GB, 35 GB disk) replaced `52741049`, whose outbound network failures
+repeatedly expired its Gen registry entry. The old instance drained before
+its destruction at 10:16 CET (09:16 UTC); Vast confirmed no retained compute
+or storage.
+Korea `51216212` was the other production DreamShaper replica at that cutover.
+The replacement contract expires **2026-12-26 03:46:47 CET (02:46:47 UTC)**.
+
+The replacement reuses `dreamshaper-isolated-60134609.pollinations.ai`; its
+numeric suffix identifies a deleted predecessor, not the current instance.
+Its production label is `dreamshaper-vast-02-production`. The slot increased
+from **$0.081481/hr to $0.112778/hr** including storage, or **+$22.53/720h**.
+Both DreamShaper GPUs total **$0.170556/hr ($122.80/720h)**.
+
+Qualification passed 12 regression tests, authenticated direct/public image
+checks, dimensions, fixed-seed parity, child recovery, full-container recovery
+of all three model processes, and 34 periodic outbound probes. Public load
+passed **630/630 at 210 RPM** and **385/385 at 385 RPM** (0.979s p95). One
+valid 275-RPM run shed **11/275** requests with queue-full 503s; a later
+275-RPM run passed without a configuration change. These are backend admission
+measurements, not a zero-error guarantee. `WORKERS=3` and `QUEUE_LIMIT=2`
+remain unchanged. An authenticated Gen image passed after retirement.
+
+In the first ten minutes after drain (10:16–10:26 CET), final 5xx fell from
+**105/8,506 (1.234%)** in the 30-minute pre-promotion baseline to
+**4/2,888 (0.139%)**. Successful-request p95 improved from **2.872s to 2.248s**
+at comparable traffic (283.5 versus 288.8 requests/minute). This short window
+is early evidence of improvement, not a long-term availability guarantee.
+
+[PR #19478](https://github.com/pollinations/pollinations/pull/19478), deployed
+through [promotion #19483](https://github.com/pollinations/pollinations/pull/19483),
+adds a 10-second heartbeat timeout, working five-second retries, and an
+infra-watch alert using Gen's shared registry reader. Both GPUs run the fix.
 
 ### 2026-10-27 — cloudflared security upgrade
 
@@ -202,8 +267,8 @@ exists after the routing change deploys.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
-| dreamshaper-vast-01 | 51216212 | 130717 / South Korea, KR | RTX 3060 | $0.057778/hr | ACTIVE — named tunnel `dreamshaper-canary-51216212.myceli.ai` |
-| dreamshaper-vast-02 | 52741049 | 35285 / US | RTX 3060 | $0.081481/hr | ACTIVE — named tunnel `dreamshaper-canary-35285.myceli.ai` |
+| dreamshaper-vast-01 | 60915225 | 44854 / Austria, AT | RTX 3060 | $0.096204/hr | ACTIVE — named tunnel `dreamshaper-canary-51216212.myceli.ai` |
+| dreamshaper-vast-02 | 60143951 | 68274 / California, US | RTX 4070 | $0.112778/hr | ACTIVE — named tunnel `dreamshaper-isolated-60134609.pollinations.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
@@ -250,8 +315,8 @@ Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3`, the
 validated RTX 4070 sustained the expected 200 RPM per-worker load with zero
 errors. The model is small enough for three copies on its 12 GB card.
 
-The two-card pool covers the measured 5.72 img/s peak and uses cross-worker 503
-retry for short bursts. **Never size this from a single-client benchmark** —
+The two-card pool uses cross-worker 503 retry for short bursts.
+**Never size this from a single-client benchmark** —
 the first rollout did, sized one card at 6.18 img/s, and produced a latency
 climb to 57s in production before emergency capacity was restored.
 

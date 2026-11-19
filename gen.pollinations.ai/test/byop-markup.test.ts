@@ -27,7 +27,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { checkBalance } from "@/utils/generation-access.ts";
 import {
     getDefinedRequestEstimate,
@@ -180,6 +180,55 @@ describe("BYOP markup", () => {
             }
         },
     );
+
+    it("checks a media request against its own price, not the model's average", async () => {
+        const model = "google/veo-3.1-fast";
+        const other = "alibaba/wan-2.7";
+        const userId = await createBalanceUser("request-price", {
+            tier: 0,
+            pack: 1,
+        });
+        const prices: Record<string, number | undefined> = { [model]: 0.32 };
+        const vars = {
+            auth: { user: { id: userId } },
+            balance: {
+                getBalance: (id: string) => getUserBalance(db, id),
+                requestPrice: ({ resolved }: { resolved: string }) =>
+                    prices[resolved],
+            },
+            model: testModel(model),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+        const refusedAt = (price: string) => ({
+            status: 402,
+            message: expect.stringContaining(
+                `This request costs about ${price}`,
+            ),
+        });
+
+        // A short clip is affordable although the average request is not.
+        await expect(
+            checkBalance(vars, fakeStatsEnv(5, model)),
+        ).resolves.toBeUndefined();
+
+        // A long clip is refused although the average request is affordable.
+        prices[model] = 2.8;
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, model)),
+        ).rejects.toMatchObject(refusedAt("$2.8000"));
+
+        // Another model in the caller's list is checked on its own price,
+        prices[other] = 1.5;
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, other), testModel(other)),
+        ).rejects.toMatchObject(refusedAt("$1.5000"));
+
+        // and on its average when that price cannot be calculated.
+        prices[other] = undefined;
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.3, other), testModel(other)),
+        ).resolves.toBeUndefined();
+    });
 
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
@@ -805,6 +854,60 @@ describe("BYOP markup", () => {
                 definition,
             ),
         ).toBe(1.25);
+    });
+
+    it("estimates megapixel-priced models from the median, else one megapixel", async () => {
+        // The listed rate is per megapixel (or a millionth of one), not per
+        // request: it must not discard the median, and without a median the
+        // estimate is one whole megapixel, never $0 or a millionth of it.
+        // No median: too few priced requests (0), or Tinybird is unreachable
+        // (nothing cached and the fetch fails).
+        const tinybirdDown = {
+            ...fakeStatsEnv(0),
+            KV: { get: async () => null, put: async () => undefined },
+        } as unknown as CloudflareBindings;
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("Tinybird unreachable"));
+        for (const [model, median] of [
+            ["black-forest-labs/flux-3-image-klein", 0.009],
+            ["qwen/qwen-image-2.1", 0.02],
+            ["black-forest-labs/flux.2-max", 0.4],
+        ] as const) {
+            expect(
+                getEstimatedPrice(
+                    { data: [{ model, avg_cost_usd: median }] },
+                    model,
+                    getRegistryModelDefinition(model),
+                ),
+            ).toBe(median);
+
+            const vars = {
+                auth: {
+                    user: { id: "preflight-payer" },
+                    apiKey: { id: "sk-test", pollenBalance: 0.001 },
+                },
+                balance: {
+                    getBalance: async () => ({
+                        tierBalance: 0,
+                        packBalance: 0.001,
+                    }),
+                },
+                model: testModel(model),
+                log: fakeLog(),
+            } as unknown as Parameters<typeof checkBalance>[0];
+            for (const statsEnv of [
+                fakeStatsEnv(median, model),
+                fakeStatsEnv(0, model),
+                tinybirdDown,
+            ]) {
+                await expect(
+                    checkBalance(vars, statsEnv),
+                ).rejects.toMatchObject({ status: 402 });
+            }
+        }
+        expect(fetchSpy).toHaveBeenCalledTimes(3);
+        fetchSpy.mockRestore();
     });
 
     it("retains legacy price estimates after a canonical rename", () => {

@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [✍️ Voiceprint](https://llm-voiceprint.jm716111.chatgpt.site) | Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a zero-Pollen local scan. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [💬 Ask Them All](https://ask-them-all.pollinations.app) | Ask one question and several labs answer it in parallel through a single Pollinations key, side by side, with a summary of where they agree and differ. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🎮 Vaultwright](https://vaultwright.rekty-dev.workers.dev) | A heist game AI agents play over a remote MCP server: five locks a day, an alarm budget, a signed handle, and a live spectator board. Pollinations writes the hints. | [@rekty](https://github.com/rekty) |
-| [🎮 Empty Room](https://rekty.github.io/empty-room) | Three AI agents in a plain room with nothing to do. Each turn they speak and act; drop an object in and watch what they make of it. The page checks every move. | [@rekty](https://github.com/rekty) |
-| [🖼️ Cover Story](https://rekty.github.io/cover-story) | Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested. | [@rekty](https://github.com/rekty) |
-| [📚 Phenomena Lab](https://phenomena-lab.jm716111.chatgpt.site) | Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [📚 Unfold](https://sugamdeol.github.io/unfold) | Name a science topic and a Pollinations model draws it: parts, links and the steps that read the figure. Walk the diagram step by step, or click a part and ask about it. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [🎮 Model Machine](https://sugamdeol.github.io/model-machine) | A computer with no CPU: a Pollinations model returns each next machine state, one instruction per call, while a reference core runs beside it to show where it drifts. | [@Sugamdeol](https://github.com/Sugamdeol) |
-| [📚 Pixel Letter](https://pixel-letter-studio.cris16esl.chatgpt.site) | Pollinations LLM-designed PNG postcards with locally hidden messages, optional AES-GCM encryption and OAuth BYOP. Secrets stay on the device; recipients decode without API calls. Includes a free demo. | [@CristopherSalazar](https://github.com/CristopherSalazar) |
-| [💬 Crosscheck](https://chappoo974.github.io/model-crosscheck) | Ask multiple Pollinations text models the same question. Compare their answers side by side, vote before revealing identities, and pay with your own Pollen. | [@Chappoo974](https://github.com/Chappoo974) |
+| [🎮 Decision Arena — Grid Rush](https://decisionarena.edgeone.cool) | A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race. | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Herd Check](https://patbing.github.io/herd-check) | Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Schelling Table](https://tomdacatto.github.io/pollinations-schelling-table) | A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or use your balance to seat Pollinations models. | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Where It Slips](https://tomdacatto.github.io/pollinations-where-it-slips) | A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Idle Hands](https://tomdacatto.github.io/pollinations-idle-hands) | Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Read On](https://patbing.github.io/read-on) | Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Under Oath](https://patbing.github.io/under-oath) | One AI keeps a sealed word, another gets 20 yes/no questions. Code judges the guess, a referee model re-checks every answer, a hash seals the word. Race the Asker. BYOP. | [@patbing](https://github.com/patbing) |
+| [📚 Science Explainer](https://mhmdrizki803-boop.github.io/science-explainer) | Name a science topic and a Pollinations model writes rival explanations, each with a prediction. You run observations and the explanations that fail are falsified. Pay from your own balance. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
+| [🖼️ AI Wallpaper Generator for Phone](https://www.androidponsel.com/wallpaper-generator) | Free AI phone wallpaper generator with device-specific resolution, prompt enhancement via Dialagram LLM, 8 style presets, and curated gallery. Uses Flux Schnell via Pollinations image API. | [@slrdone](https://github.com/slrdone) |
+| [🖼️ Cover Studio](https://polli-cover-studio.surge.sh) | Turns a title, an author and one line of premise into a finished 1600x2400 book cover. Pollinations paints the artwork, the page sets the type, and you download the PNG. | [@mikeymontaz7-dotcom](https://github.com/mikeymontaz7-dotcom) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -42,7 +42,7 @@
 ### What's Included
 
 - **Unified endpoint**: single API at `gen.pollinations.ai` for all generation
-- **Pollen credits**: simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **Prepaid credit**: simple pay-as-you-go, priced in dollars
 - **All models, one place**: Flux, GPT, Claude, Gemini, Seedream, and more
 - **API keys**: secret keys for model usage, app keys for tracking BYOP apps.
 - **CLI**: `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
@@ -54,16 +54,16 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
-- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Choose a sandbox template** <sub>Nov 11</sub><br>Compare sandbox templates by provider, size, hourly price, and Quest eligibility, then open creation with your choice selected. The Sandboxes page also shows running and paused states more clearly.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Inspect media before editing**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 11</sub><br>Use the FFmpeg MCP tool `probeMedia` to inspect one public HTTPS media URL before choosing `runFfmpeg` arguments. It returns format and stream metadata as JSON, including duration, codecs, resolution, bitrate, and frame rate.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Hash text in MCP**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 11</sub><br>The calculators MCP tool `hash_text` hashes UTF-8 text locally and returns lowercase hex and base64 digests. It uses SHA-256 by default; SHA-1 is available for checksum compatibility.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Pick a decision model**](https://enter.pollinations.ai/models) <sub>Nov 11</sub><br>Ask Jev's `jev_decide` tool now accepts an optional `model` argument. Choose an accessible model that lists `/alpha/decisions` as a supported endpoint, or omit it to use the default Jev model.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Look up RubyGems**](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Nov 11</sub><br>The packages MCP tool `package_lookup` now fetches the current version of a Ruby gem or an exact version you specify. Results include dependencies, license, download counts, and yank status.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **ElevenLabs SFX v3**](https://enter.pollinations.ai/models?q=elevenlabs/eleven-text-to-sound-v3) <sub>Nov 10</sub><br>Generate MP3 sound effects from text with `elevenlabs/eleven-text-to-sound-v3`. Set duration, looping, and prompt influence. Paid access is required.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Scribe v3 batch transcription**](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3) <sub>Nov 10</sub><br>Transcribe audio with `elevenlabs/scribe-v3`, including word timestamps and speaker labels in supported response formats. Paid access is required.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Scribe v3 Live transcription**](https://enter.pollinations.ai/models?q=elevenlabs/scribe-v3-live) <sub>Nov 10</sub><br>Use `elevenlabs/scribe-v3-live` for realtime transcription sessions with incremental and final transcripts. Paid access is required.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Gemini Omni 1.2 Flash video**](https://enter.pollinations.ai/models?q=google/gemini-omni-1.2-flash) <sub>Nov 9</sub><br>Generate paid videos with `google/gemini-omni-1.2-flash` from text or up to two reference images. It supports start and end frames, synchronized audio, and 3 to 15 second output from 360p through 4K.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Longer Wan 3.0 videos**](https://enter.pollinations.ai/models) <sub>Nov 9</sub><br>Choose any duration from 2 to 15 seconds for Wan 3.0 videos made from text, frames, or reference media. The default stays at 5 seconds.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Qwen 4 Max added**](https://enter.pollinations.ai/models?q=qwen/qwen4-max) <sub>Nov 18</sub><br>Use paid-only `qwen/qwen4-max` with text or image input, tools, reasoning, and a 1,000,000-token context.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Clone a ZONOS voice**](https://gen.pollinations.ai/docs) <sub>Nov 18</sub><br>Send a public HTTP(S) `reference_audio` URL with `zyphra/zonos3-mini` speech requests to generate text in that voice. Audio can be up to 20 MiB; the model uses its first 60 seconds.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Connect without an App Key**](https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider) <sub>Nov 18</sub><br>Apps can sign users in through Pollinations Connect without an App Key. PKCE is still required; an App Key still enables app-name display, usage attribution, and developer earnings.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Quests, grouped by progress** <sub>Nov 18</sub><br>Browse Setup, Grow, Contribute, and Community tabs, then check claimable work and the separate monthly leaderboard. Quest amounts identify whether they add to Quest or Paid balance.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Hy4 Flash joins text**](https://enter.pollinations.ai/models?q=tencent/hy4-flash) <sub>Nov 17</sub><br>Use `tencent/hy4-flash` for text and image input, reasoning, and tools. It is paid-only and has a listed context length of 1,024,000 tokens.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **DeepSeek Flash gains Quest access**](https://enter.pollinations.ai/models) <sub>Nov 17</sub><br>DeepSeek V4.1 Flash 1017 now accepts Quest balance as well as paid balance, with a 60 requests-per-minute per-user limit.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **GPT-6.2 Astra arrives**](https://enter.pollinations.ai/models?q=openai/gpt-6.2-astra) <sub>Nov 17</sub><br>Use paid-only `openai/gpt-6.2-astra` with text or image input, tools, and reasoning. It accepts up to 10 reference images and has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **GPT-6.2 Sol arrives**](https://enter.pollinations.ai/models?q=openai/gpt-6.2-sol) <sub>Nov 17</sub><br>Use paid-only `openai/gpt-6.2-sol` with text or image input, tools, and reasoning. It has a 1,050,000-token context; long-context pricing applies to the full request above 272,000 tokens.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **MAI Image Flash arrives**](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7-flash) <sub>Nov 17</sub><br>Generate or edit images with `microsoft/mai-image-2.7-flash`, using up to five reference images for edits.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **MAI Image 2.7 arrives**](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.7) <sub>Nov 17</sub><br>Generate images from text or edit them with up to five reference images using `microsoft/mai-image-2.7`. It accepts Quest or paid balance.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
@@ -89,7 +89,7 @@
 
 - 🔓 **100% Open Source**: code, decisions, roadmap all public
 - 🤝 **Community-Built**: 500+ projects already using our APIs
-- 🌱 **Pollen Quests**: earn Pollen by completing Quests
+- 🌱 **Quests**: complete Quests to add to your balance
 - 🖼️ **Image Generation**: Text-to-image and image editing
 - 📝 **Text Generation**: Chat, reasoning, vision, function calling, structured outputs
 - 🎬 **Video Generation**: Text-to-video and image-to-video
@@ -106,7 +106,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay from their own balance |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -121,7 +121,7 @@ Build a reusable text agent without hosting an agent server. Choose a system pro
 
 - **Private or public**: keep an agent owner-only or publish it after receiving community publisher access.
 - **Normal model API**: call a registered agent by its `owner/agent-name` model ID.
-- **Dashboard, CLI, or API**: manage agents in [My Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
+- **Dashboard, CLI, or API**: manage agents in [My listings](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
 
 See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior.
 
@@ -280,7 +280,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Identifies your app in Pollinations Connect | Can't authenticate requests | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Pay | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
@@ -438,7 +438,7 @@ We're exploring:
 
 We want AI tools to be:
 
-- **Open & Accessible**: Earn Pollen by contributing, without a credit card
+- **Open & Accessible**: Add to your balance by contributing, without a credit card
 
 - **Transparent & Ethical**: Inspect our code and discuss how the platform works
 
@@ -474,7 +474,7 @@ The main folders are:
 
 - [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
-- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, Pollen credits, and pack checkout.
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, balances, and top-up checkout.
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 

@@ -1,7 +1,10 @@
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
-import { normalizeSeed } from "@/util.ts";
 import type { ChatMessage, RequestData } from "./types.js";
+
+function normalizeTextSeed(seed: number): number {
+    return seed === -1 ? Math.floor(Math.random() * 2147483648) : seed;
+}
 
 export function requestsJson(json: unknown, jsonMode: unknown): boolean {
     return (
@@ -9,6 +12,33 @@ export function requestsJson(json: unknown, jsonMode: unknown): boolean {
         json === true ||
         (typeof json === "string" && json.toLowerCase() === "true")
     );
+}
+
+/** Whether the caller asked for spoken output, explicitly or via `audio`. */
+export function requestsAudioOutput(request: Record<string, unknown>): boolean {
+    return (
+        request.audio !== undefined ||
+        (Array.isArray(request.modalities) &&
+            request.modalities.includes("audio"))
+    );
+}
+
+/** Drop audio fields before sending a request to a model without audio output. */
+export function withoutAudioParams<T extends Record<string, unknown>>(
+    request: T,
+): T {
+    if (!("modalities" in request) && !("audio" in request)) return request;
+    const { modalities: _modalities, audio: _audio, ...rest } = request;
+    return rest as T;
+}
+
+/** Caller metadata is for endpoint agents; static and proxy providers reject it. */
+export function withoutCallerMetadata<T extends Record<string, unknown>>(
+    request: T,
+): T {
+    if (!("metadata" in request)) return request;
+    const { metadata: _metadata, ...rest } = request;
+    return rest as T;
 }
 
 export function getChatRequestData(
@@ -42,7 +72,7 @@ export function getChatRequestData(
     const seed =
         requestData.seed == null
             ? {}
-            : { seed: normalizeSeed(requestData.seed) };
+            : { seed: normalizeTextSeed(requestData.seed) };
     const responseFormat =
         !requestData.response_format && requestsJson(json, jsonMode)
             ? { response_format: { type: "json_object" } as const }
@@ -78,7 +108,7 @@ export function getSimpleTextRequestData(
         model,
         messages,
         ...(options.seed !== undefined
-            ? { seed: normalizeSeed(options.seed) }
+            ? { seed: normalizeTextSeed(options.seed) }
             : {}),
         ...(json ? { response_format: { type: "json_object" } } : {}),
     };

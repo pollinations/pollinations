@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
+import { infrastructureReport } from "./apiCosts";
 import { dataConfidence } from "./dataConfidence";
 import { modelReconcileRows } from "./modelReconcile";
+import { buildRunway } from "./runway";
+import { isToolUsage, toolUsageRows } from "./toolUsage";
 import {
     matchesSituation,
     meterMatchPct,
     providerCostCheck,
+    providerEconomicsReport,
     type UnitEconomicsRow,
     unitEconomicsReport,
     unitEconomicsRows,
@@ -56,6 +60,77 @@ const data = (over: Partial<Data>): Data => ({
     vendorLedger: [],
     opPollen: [],
     ...over,
+});
+
+it("adds shared infrastructure to vendor totals without treating it as missing inference usage", () => {
+    const month = "2026-07";
+    const input = data({
+        vendorLedger: [
+            cloud({ paid: -100 }),
+            cloud({
+                vendor: "bedrock",
+                type: "infra",
+                resource_name: "EC2",
+                paid: -30,
+                credit: -15,
+            }),
+            cloud({ type: "infra", resource_name: "EC2", paid: 5 }),
+            cloud({
+                type: "infra",
+                resource_name: "Ignore grant",
+                credit: 500,
+            }),
+            cloud({
+                vendor: "cloudflare",
+                type: "infrastructure",
+                resource_name: "Workers",
+                paid: -10,
+            }),
+            cloud({ vendor: "cloudflare", type: "balance", paid: 100 }),
+        ],
+        opPollen: [pollen({ price_paid: 200, cost_paid: 100 })],
+    });
+    expect(infrastructureReport(input, month)).toMatchObject({
+        summary: { cashUsd: 35, creditUsd: 15, totalUsd: 50 },
+        rows: [
+            {
+                vendor: "aws",
+                service: "EC2",
+                cashUsd: 25,
+                creditUsd: 15,
+                totalUsd: 40,
+            },
+            { vendor: "cloudflare", service: "Workers", totalUsd: 10 },
+        ],
+    });
+    const providers = providerEconomicsReport(input, month);
+    expect(providers.blockers).toEqual([]);
+    expect(providers).toMatchObject({
+        summary: {
+            providerCashUsd: 135,
+            providerCreditUsd: 15,
+            providerUsageUsd: 150,
+        },
+        currentResultUsd: 65,
+        fullCostResultUsd: 50,
+    });
+    expect(providers.rows).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                vendor: "aws",
+                providerUsageUsd: 140,
+                economicContributionUsd: 60,
+            }),
+            expect.objectContaining({
+                vendor: "cloudflare",
+                providerUsageUsd: 10,
+                retainedPaidUsd: null,
+            }),
+        ]),
+    );
+    expect(
+        unitEconomicsReport(input, month, "inference").summary.providerUsageUsd,
+    ).toBe(100);
 });
 
 const economicsRow = (
@@ -500,4 +575,147 @@ it("includes unmatched cash and credit costs in provisional results until actual
     expect(completed.summary.providerUsageUsd).toBe(
         recorded.summary.providerUsageUsd,
     );
+});
+
+it("separates billed tools from inference and shared bills without changing Runway costs", () => {
+    const month = "2026-07";
+    const input = data({
+        vendorLedger: [
+            cloud({ vendor: "azure", paid: -100 }),
+            cloud({
+                vendor: "azure",
+                type: "infra",
+                resource_name: "Virtual Machines",
+                credit: -50,
+            }),
+            cloud({
+                vendor: "azure",
+                type: "infra",
+                resource_name: "Azure Container Apps",
+                credit: -20,
+            }),
+            cloud({
+                vendor: "cloudflare",
+                type: "infra",
+                resource_name: "Workers",
+                credit: -30,
+            }),
+            cloud({
+                vendor: "e2b",
+                type: "infra",
+                resource_name: "vCPU rental",
+                credit: -40,
+            }),
+            cloud({
+                vendor: "e2b",
+                type: "infra",
+                resource_name: "Refund",
+                paid: 5,
+            }),
+            cloud({
+                vendor: "exa",
+                type: "infra",
+                resource_name: "Search",
+                paid: -10,
+            }),
+            cloud({
+                vendor: "exa",
+                type: "infra",
+                resource_name: "Grant",
+                credit: 500,
+            }),
+            cloud({ vendor: "e2b", type: "balance", paid: 900 }),
+        ],
+        opPollen: [
+            pollen({
+                vendor: "azure",
+                model: "model",
+                price_paid: 200,
+                cost_paid: 100,
+            }),
+            pollen({
+                vendor: "azure",
+                model: "sandbox",
+                price_paid: 3,
+                cost_paid: 12,
+            }),
+            pollen({
+                vendor: "e2b",
+                model: "sandbox",
+                price_paid: 10,
+                price_quests: 2,
+                cost_paid: 40,
+            }),
+            pollen({
+                vendor: "exa",
+                model: "exa",
+                price_paid: 8,
+                byop_paid: 1,
+                cost_paid: 8,
+            }),
+            pollen({
+                vendor: "cloudflare",
+                model: "computer",
+                price_paid: 2,
+                cost_paid: 2,
+            }),
+        ],
+    });
+    expect(isToolUsage({ vendor: "azure", model: "sandbox" })).toBe(true);
+    expect(isToolUsage({ vendor: "azure", model: "computer" })).toBe(false);
+    expect(isToolUsage({ vendor: "cloudflare", model: "machines" })).toBe(
+        false,
+    );
+    expect(toolUsageRows(input, month).map((r) => r.vendor)).toEqual([
+        "azure",
+        "e2b",
+        "exa",
+        "cloudflare",
+    ]);
+    const tools = infrastructureReport(input, month, "tools");
+    const infrastructure = infrastructureReport(input, month);
+    expect(tools.summary).toEqual({ cashUsd: 5, creditUsd: 40, totalUsd: 45 });
+    expect(infrastructure.summary).toEqual({
+        cashUsd: 5,
+        creditUsd: 140,
+        totalUsd: 145,
+    });
+    expect(
+        infrastructure.rows.every((row) => row.kind === "infrastructure"),
+    ).toBe(true);
+    const runway = buildRunway([], new Date("2026-08-15"), input.vendorLedger);
+    const infraRows = runway.rows.filter(
+        (row) => row.category === "infrastructure",
+    );
+    expect(
+        infraRows.reduce(
+            (sum, row) => sum + (row.values[`${month}:actual`] ?? 0),
+            0,
+        ),
+    ).toBe(-5);
+    expect(
+        infraRows.reduce(
+            (sum, row) => sum + (row.creditValues?.[`${month}:actual`] ?? 0),
+            0,
+        ),
+    ).toBe(-140);
+    expect(
+        unitEconomicsReport(input, month, "inference").summary.paidPollenUsd,
+    ).toBe(200);
+    const providers = providerEconomicsReport(input, month);
+    expect(providers.summary).toMatchObject({
+        paidPollenUsd: 223,
+        questPollenUsd: 2,
+        retainedPaidUsd: 222,
+        providerUsageUsd: 245,
+    });
+    expect(providers.fullCostResultUsd).toBe(-23);
+    expect(providers.rows.find((row) => row.vendor === "e2b")).toMatchObject({
+        providerUsageUsd: 35,
+        paidPollenUsd: 10,
+    });
+    input.opPollen?.push(
+        pollen({ vendor: "composio", model: "composio", price_paid: 1 }),
+    );
+    expect(providerEconomicsReport(input, month).fullCostResultUsd).toBeNull();
 });

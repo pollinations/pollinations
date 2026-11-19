@@ -18,6 +18,15 @@ body:
 
         - **Content:** no spam, scams, or deceptive behavior.
 
+        - **Sign-in:** let visitors sign in with Pollinations so they use their own balance. Never ask them to paste a key. No App Key needed:
+
+          ```html
+          <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+          <polli-connect></polli-connect>
+          ```
+
+          Read the user's key from the element's `apiKey`. [Guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step)
+
         <br>
 
         Automated pre-review → maintainer review → community catalog.
@@ -36,7 +45,7 @@ body:
     id: app-description
     attributes:
       label: App Description
-      description: One or two sentences on what the app does and how it uses Pollinations, 200 characters max. It appears on your app's card.
+      description: One or two sentences on what the app does and how it uses Pollinations, 200 characters max. It appears on your app's card. Use balance or dollar amounts when describing billing.
       placeholder: Creates collaborative images using the Pollinations image API.
     validations:
       required: true
@@ -133,7 +142,7 @@ body:
     id: quest
     attributes:
       label: Quest
-      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
+      description: If you built this app for a community quest, enter the quest number. After the catalog PR merges, you can claim what you earned.
       placeholder: "#15600"
 
   - type: markdown

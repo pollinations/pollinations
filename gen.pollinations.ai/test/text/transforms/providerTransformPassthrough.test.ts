@@ -18,6 +18,8 @@ describe("provider transform passthrough", () => {
     it.each([
         "mistral-small-3.2",
         "grok",
+        "grok-large",
+        "grok-4.6",
         "kimi",
         "kimi-code",
         "glm",
@@ -78,13 +80,10 @@ describe("provider transform passthrough", () => {
         ]);
     });
 
-    it.each([
-        "mistral",
-        "grok-large",
-        "grok-4.6",
-        "mimo-v2.5",
-        "mimo-v2.5-pro",
-    ])("does not transform %s requests", (modelName) => {
-        expect(findModelByName(modelName)?.transform).toBeUndefined();
-    });
+    it.each(["mistral", "mimo-v2.5", "mimo-v2.5-pro"])(
+        "does not transform %s requests",
+        (modelName) => {
+            expect(findModelByName(modelName)?.transform).toBeUndefined();
+        },
+    );
 });

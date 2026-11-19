@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 // A JSON number carries about 15 significant digits, so the operand is a string: the
-// factors of 123456789012345678901234567890 are not recoverable from a double.
-const MAX_INPUT_DIGITS = 30;
+// factors of 12345678901234567890123 are not recoverable from a double.
+// Twelve Miller-Rabin bases are deterministic only below 3.18 * 10**23, so the cap
+// stays under that: a 24-digit input could be a strong pseudoprime to all of them.
+const MAX_INPUT_DIGITS = 23;
 
 // Trial division clears the small factors, which is most of the work for ordinary
 // numbers. What survives has no factor below the bound, so it is either prime or a
@@ -39,8 +41,8 @@ function modPow(base, exponent, modulus) {
     return result;
 }
 
-// The first twelve primes as bases decide primality exactly below 3.3 * 10**24, which
-// is above the largest 30-digit input this tool accepts.
+// The first twelve primes as bases decide primality exactly below
+// 318,665,857,834,031,151,167,461 (~3.18 * 10**23), which covers every accepted input.
 const WITNESSES = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];
 
 function isPrime(value) {
@@ -176,7 +178,7 @@ function factorize(value) {
 export const factorTools = [
     [
         "factor_integer",
-        "Return the prime factorization of an integer up to 30 digits, exactly, with no floating point anywhere. Trial division clears the small primes, then a deterministic Miller-Rabin test and Pollard's rho split the remainder. Each factor is reported as a decimal string with its exponent; a prime input comes back as itself with exponent 1.",
+        "Return the prime factorization of an integer up to 23 digits, exactly, with no floating point anywhere. Trial division clears the small primes, then a deterministic Miller-Rabin test and Pollard's rho split the remainder. Each factor is reported as a decimal string with its exponent; a prime input comes back as itself with exponent 1.",
         {
             value: z
                 .string()

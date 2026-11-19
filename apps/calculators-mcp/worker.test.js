@@ -878,9 +878,9 @@ test("factor_integer factors exactly and rejects non-integers", async (t) => {
             ],
         },
     );
-    // A 30-digit input: the factors have to multiply back to it, or a digit was lost.
+    // A 23-digit input: the factors have to multiply back to it, or a digit was lost.
     const large = await call(client, "factor_integer", {
-        value: "123456789012345678901234567890",
+        value: "12345678901234567890123",
     });
     assert.equal(
         large.factors.reduce(
@@ -888,9 +888,17 @@ test("factor_integer factors exactly and rejects non-integers", async (t) => {
                 total * BigInt(prime) ** BigInt(exponent),
             1n,
         ),
-        123456789012345678901234567890n,
+        12345678901234567890123n,
     );
-    for (const value of ["1", "0", "abc", "-5", "+7"])
+    // Twelve Miller-Rabin bases stop being exact past 23 digits, so 24 are refused.
+    for (const value of [
+        "1",
+        "0",
+        "abc",
+        "-5",
+        "+7",
+        "123456789012345678901234",
+    ])
         assert.equal(
             (
                 await client.callTool({

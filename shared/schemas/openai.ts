@@ -842,6 +842,9 @@ export const OpenAIModelSchema = z
         pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
             "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
         ),
+      is_specialized: ModelInfoSchema.shape.is_specialized.describe(
+        "True when the model is a specialist (decision, guard, or other narrow-purpose model) rather than a general-purpose model. Omitted when the model is not marked specialized.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

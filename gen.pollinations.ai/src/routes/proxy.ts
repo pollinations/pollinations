@@ -404,6 +404,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.pricing_adjustments && {
             pricing_adjustments: entry.info.pricing_adjustments,
         }),
+          ...(entry.info.is_specialized && { is_specialized: true }),
         top_provider: {
             max_completion_tokens: entry.info.max_completion_tokens ?? null,
         },

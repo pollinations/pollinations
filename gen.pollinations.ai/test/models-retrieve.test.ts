@@ -962,3 +962,40 @@ test("model listings expose pricing adjustments so agents can see Gemini surchar
         );
     }
 });
+
+test("model listings expose is_specialized so agents can tell specialist models from general-purpose ones", async () => {
+  type ListedModel = { id: string; is_specialized?: boolean };
+  const list = (await (await fetchWorker("/v1/models")).json()) as {
+    data: ListedModel[];
+  };
+  const registry = await getGenerationModelRegistry(env);
+  expect(list.data.length).toBeGreaterThan(0);
+  for (const model of list.data) {
+  expect(model.is_specialized, model.id).toEqual(
+    registry.resolve(model.id)?.info.is_specialized || undefined,
+    );
+  }
+  const specializedModels = list.data.filter((model) => model.is_specialized);
+  expect(specializedModels.length).toBeGreaterThan(0);
+  // A decision model answers with choices, not free text — it must be flagged.
+  const decisionModel = specializedModels.find(
+    (model) => model.id === "typesafe/jev-1.14",
+    );
+  expect(decisionModel?.is_specialized, "typesafe/jev-1.14").toBe(true);
+  // A general-purpose model and an unmarked model both omit the field.
+  const generalModel = list.data.find(
+    (model) => model.id === "openai/gpt-5.4-nano",
+    );
+  expect(generalModel?.is_specialized, "openai/gpt-5.4-nano").toBeUndefined();
+  const unmarkedModel = list.data.find(
+    (model) => model.id === "tongyi-mai/z-image-turbo",
+    );
+  expect(
+    unmarkedModel?.is_specialized,
+    "tongyi-mai/z-image-turbo",
+    ).toBeUndefined();
+  const response = await fetchWorker("/v1/models/typesafe%2Fjev-1.14");
+  expect(response.status, "typesafe/jev-1.14").toBe(200);
+  const retrieved = (await response.json()) as ListedModel;
+  expect(retrieved.is_specialized, "typesafe/jev-1.14").toBe(true);
+});

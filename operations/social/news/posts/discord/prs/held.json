@@ -20,8 +20,26 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20320": {
+      "merge_sha": "aab6f0fdbc577e83a82bb9133451984787033534",
+      "merged_at": "2026-11-19T11:11:01Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/quest-dashboard"
+      ]
+    },
+    "20322": {
+      "merge_sha": "c8aed0ccf4c842a2c9535fc00369ca0d097b121d",
+      "merged_at": "2026-11-19T11:26:25Z",
+      "required": []
+    },
+    "20325": {
+      "merge_sha": "1d9de61c15650d0fd7db6c714d91abe0b0395b95",
+      "merged_at": "2026-11-19T12:25:04Z",
+      "required": []
     }
   },
-  "production": "c04bb2fb08db6e3e6df3db44517ed7e0e93420da",
+  "production": "15733eb071f2c8886a0a1c3268d7652e14fcb5a1",
   "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
 }

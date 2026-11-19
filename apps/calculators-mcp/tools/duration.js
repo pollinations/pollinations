@@ -64,6 +64,13 @@ export const durationTools = [
                     Number(value),
                 ]),
             );
+            // A 300-digit day count is accepted by the pattern but overflows a double,
+            // and JSON turns Infinity into null, which the caller cannot tell from a
+            // missing field.
+            if (Object.values(numeric).some((value) => !Number.isFinite(value)))
+                throw new Error(
+                    `${JSON.stringify(duration)} has a component too large to represent.`,
+                );
             const calendarBound = numeric.years > 0 || numeric.months > 0;
             // The sign is folded into the total rather than left to a sibling flag: a caller
             // that reads totalSeconds alone must not get a positive answer for "-PT1H".
@@ -78,6 +85,10 @@ export const durationTools = [
                 : sign === "-"
                   ? -magnitude
                   : magnitude;
+            if (totalSeconds !== null && !Number.isFinite(totalSeconds))
+                throw new Error(
+                    `${JSON.stringify(duration)} is too long to express in seconds.`,
+                );
 
             return {
                 negative: sign === "-",

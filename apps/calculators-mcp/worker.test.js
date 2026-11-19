@@ -1019,6 +1019,8 @@ test("duration_iso signs the total and rejects durations that are not one", asyn
         // The sign belongs in front of the P, not inside the component.
         { duration: "P-1D" },
         { duration: "" },
+        // A 305-digit day count is a double Infinity, and JSON would report it as null.
+        { duration: `P${"9".repeat(305)}D` },
     ]) {
         assert.equal(
             (await client.callTool({ name: "duration_iso", arguments: args }))

@@ -69,6 +69,7 @@ for (const modern of [false, true])
                 "to_fraction",
                 "convert_number_base",
                 "check_digit",
+                "chmod_permissions",
                 "integer_math",
                 "diff_text",
                 "create_qr",
@@ -945,6 +946,102 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
                 .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("chmod_permissions converts octal, ls strings and chmod clauses with special bits", async (t) => {
+    const client = await clientFor(t);
+
+    assert.deepEqual(await call(client, "chmod_permissions", { mode: "755" }), {
+        octal: "0755",
+        symbolic: "rwxr-xr-x",
+        chmod: "u=rwx,g=rx,o=rx",
+        special: { setuid: false, setgid: false, sticky: false },
+        who: { owner: "rwx", group: "r-x", other: "r-x" },
+    });
+
+    // Uppercase S/T represents special bits without the underlying execute bit.
+    assert.deepEqual(
+        await call(client, "chmod_permissions", { mode: "-rwSr-xr-T" }),
+        {
+            octal: "5654",
+            symbolic: "rwSr-xr-T",
+            chmod: "u=rws,g=rx,o=rt",
+            special: { setuid: true, setgid: false, sticky: true },
+            who: { owner: "rwS", group: "r-x", other: "r-T" },
+        },
+    );
+
+    assert.deepEqual(
+        await call(client, "chmod_permissions", {
+            mode: "u+s,g+w,o-rx",
+            base: "0755",
+            umask: "022",
+        }),
+        {
+            octal: "4770",
+            symbolic: "rwsrwx---",
+            chmod: "u=rwxs,g=rwx,o=",
+            special: { setuid: true, setgid: false, sticky: false },
+            who: { owner: "rws", group: "rwx", other: "---" },
+            after_umask: {
+                octal: "4750",
+                symbolic: "rwsr-x---",
+                chmod: "u=rwxs,g=rx,o=",
+                special: { setuid: true, setgid: false, sticky: false },
+                who: { owner: "rws", group: "r-x", other: "---" },
+            },
+        },
+    );
+
+    // Every special/rwx combination round-trips through its emitted symbolic and chmod forms.
+    for (const sample of ["0000", "1777", "2750", "4755", "6775", "7000"]) {
+        const fromOctal = await call(client, "chmod_permissions", {
+            mode: sample,
+        });
+        assert.equal(
+            (
+                await call(client, "chmod_permissions", {
+                    mode: fromOctal.symbolic,
+                })
+            ).octal,
+            sample,
+        );
+        assert.equal(
+            (
+                await call(client, "chmod_permissions", {
+                    mode: fromOctal.chmod,
+                })
+            ).octal,
+            sample,
+        );
+    }
+});
+
+test("chmod_permissions rejects invalid modes, missing base modes and bad umasks", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { mode: "855" },
+        { mode: "75" },
+        { mode: "-rwxr-xr" },
+        { mode: "rwxr-xr-w" },
+        { mode: "+x" },
+        { mode: "u+t", base: "0755" },
+        { mode: "u=q" },
+        { mode: "u=rwx," },
+        { mode: "755", umask: "899" },
+        { mode: "" },
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "chmod_permissions",
+                    arguments: args,
+                })
+            ).isError,
             true,
             JSON.stringify(args),
         );

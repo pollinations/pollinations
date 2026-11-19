@@ -835,7 +835,7 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
                     style={{ color: modalityTextColor(category) }}
                 />
             }
-            className="mx-auto w-full max-w-3xl"
+            className="w-full max-w-3xl max-md:mx-auto"
         />
     );
 }
@@ -893,7 +893,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     </Text>
                 </Surface>
             ) : (
-                <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-card bg-surface-opaque text-theme-text-strong">
+                <div className="relative w-fit max-w-full overflow-hidden rounded-card bg-surface-opaque text-theme-text-strong max-md:mx-auto">
                     <ResultDownloadButton
                         result={result}
                         className="absolute bottom-3 right-3 z-10"

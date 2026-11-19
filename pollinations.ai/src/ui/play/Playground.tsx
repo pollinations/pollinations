@@ -331,6 +331,7 @@ function OptionField({
     value,
     onChange,
     format = (option) => option,
+    className,
 }: {
     label: string;
     options: readonly string[];
@@ -338,10 +339,15 @@ function OptionField({
     value: string | undefined;
     onChange: (option: string) => void;
     format?: (option: string) => string;
+    className?: string;
 }) {
     if (options.length === 0) return null;
     return (
-        <FieldStack label={label} orientation="inline" className="min-w-0">
+        <FieldStack
+            label={label}
+            orientation="inline"
+            className={cn("min-w-0", className)}
+        >
             {options.length === 1 ? (
                 <Chip
                     data-theme="neutral"
@@ -381,6 +387,21 @@ function VoicePicker({
     value: string;
     onChange: (voice: string) => void;
 }) {
+    if (voices.length <= 6) {
+        return (
+            <OptionField
+                label="Voice"
+                options={voices}
+                className={
+                    voices.length > 1
+                        ? "col-span-full max-sm:flex max-sm:flex-col max-sm:items-stretch"
+                        : undefined
+                }
+                value={value}
+                onChange={onChange}
+            />
+        );
+    }
     return (
         <FieldStack label="Voice" orientation="inline" className="min-w-0">
             <Dropdown

@@ -25,7 +25,7 @@ const EMBEDDING_BASE_SERVICES = {
         },
         title: "Gemini Embedding 2",
         description:
-            "Turns text, images, audio and video into vectors for semantic search. 3072 dimensions, 8192 token limit.",
+            "Match text, images, audio and video by meaning, such as finding a clip from a written description.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -44,7 +44,7 @@ const EMBEDDING_BASE_SERVICES = {
         },
         title: "Text Embedding 3 Small",
         description:
-            "Low-cost text vectors for search and similarity. 1536 dimensions, 8192 token limit.",
+            "Find passages with similar meanings using compact, low-cost text embeddings.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -63,7 +63,7 @@ const EMBEDDING_BASE_SERVICES = {
         },
         title: "Text Embedding 3 Large",
         description:
-            "High-quality text vectors for demanding search. 3072 dimensions, 8192 token limit.",
+            "Find relevant passages across languages with text embeddings of up to 3,072 dimensions.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -88,7 +88,7 @@ const EMBEDDING_BASE_SERVICES = {
         },
         title: "Embed 4",
         description:
-            "Multilingual text and image vectors. 1536 dimensions, 128K context.",
+            "Match images with descriptions in multiple languages, even in long documents.",
         inputModalities: ["text", "image"],
         outputModalities: ["embedding"],
         contextLength: 128000,
@@ -106,7 +106,7 @@ const EMBEDDING_BASE_SERVICES = {
         },
         title: "Qwen3 Embedding 8B",
         description:
-            "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
+            "Search long documents across languages and choose how much detail to store in each text embedding.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         // Verified on the live DeepInfra route; its catalog still lists 32K.

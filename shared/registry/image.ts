@@ -42,7 +42,7 @@ const IMAGE_BASE_SERVICES = {
         cost: { completionImageTokens: 0.08 },
         title: "Stable Diffusion 3.5 Large",
         description:
-            "Generate images or restyle one reference image at roughly one megapixel",
+            "Create an image from a description, or give an existing picture a new style.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
@@ -57,7 +57,8 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: { completionImageTokens: 0.04 },
         title: "Stable Image Core",
-        description: "Text-to-image generation at roughly two megapixels",
+        description:
+            "Turn a description into an image of about two megapixels.",
         inputModalities: ["text"],
         outputModalities: ["image"],
         maxReferenceImages: 0,
@@ -75,7 +76,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Krea 2 Medium",
         description:
-            "Style-rich generation with strong prompt adherence and clean typography",
+            "Create illustrations in a style you describe, with clear lettering for titles and posters.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -96,7 +97,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "DreamShaper 8 LCM",
         description:
-            "Near-instant images at rock-bottom cost; simpler detail than premium models",
+            "Sketch out a visual idea quickly before spending time on finer details.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -113,7 +114,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.1 Kontext Pro",
         description:
-            "Edits an existing image from instructions: swap, restyle or refine",
+            "Edit a picture in plain language to replace an object, change its style, or refine a detail.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
@@ -131,7 +132,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX 1.1 Pro",
         description:
-            "Fast text-to-image generation with precise dimensions and reproducible seeds",
+            "Generate images at the dimensions you choose. Reuse a seed to repeat a result.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -172,7 +173,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.2 Pro",
         description:
-            "High-fidelity generation and multi-reference editing with strong prompt adherence",
+            "Build a detailed image from a description and up to eight reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
@@ -231,7 +232,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["1k", "2k"],
         title: "FLUX.3 Image",
         description:
-            "Flagship text-to-image and multi-reference editing at 1K or 2K with up to ten references",
+            "Create or edit a 1K or 2K image using up to ten reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -255,7 +256,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.3 Image Klein",
         description:
-            "Distilled text-to-image and multi-reference editing up to 4K with up to ten references",
+            "Create an image up to 4K or guide an edit with up to ten reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -281,7 +282,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.2 Flex",
         description:
-            "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
+            "Create designs with readable lettering, or adjust how closely an edit follows your instructions.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -323,7 +324,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.2 Max",
         description:
-            "Flagship-tier generation and multi-reference editing with the highest consistency and prompt adherence in the FLUX.2 line",
+            "Combine details from several reference pictures while keeping subjects consistent in the finished image.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
@@ -346,7 +347,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6 Flash",
         description:
-            "Photorealistic generation and editing with up to five references and accurate text rendering",
+            "Create or edit realistic pictures with readable text, such as a label on a product.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
@@ -369,7 +370,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6",
         description:
-            "Detailed photorealistic generation and editing with up to five references and strong instruction following",
+            "Build a realistic scene from detailed instructions and up to five reference images.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
@@ -391,7 +392,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.7",
         description:
-            "Precise, controllable generation and editing with up to five references",
+            "Describe precise changes to an image and guide the edit with up to five reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
@@ -413,7 +414,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.7 Flash",
         description:
-            "Faster, lower-cost generation and editing with up to five references",
+            "Quickly try changes to an image using a description and up to five reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
@@ -437,7 +438,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Nano Banana",
         description:
-            "Quick image generation and editing that follows instructions well",
+            "Create an image or quickly revise one by describing what to change.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
@@ -460,7 +461,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Nano Banana 2",
         description:
-            "Sharper detail and better text rendering in generated and edited images",
+            "Create or edit images with sharp details and legible lettering.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
@@ -483,7 +484,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Nano Banana 2 Lite",
         description:
-            "Speedy, affordable image generation and editing for everyday use",
+            "Quickly draft an image or try several small edits to a picture.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
@@ -506,7 +507,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Nano Banana 2.1",
         description:
-            "Balanced image generation and editing with output up to 2K",
+            "Create or edit an image up to 2K using a description and reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini Nano Banana 2.1 provider limit.
@@ -530,8 +531,7 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
         title: "Nano Banana Pro",
-        description:
-            "Studio-quality images up to 4K, with reasoning for tricky prompts",
+        description: "Turn a complex brief into a detailed image up to 4K.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
@@ -550,7 +550,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Seedream 5.0 Lite",
         description:
-            "Image generation that can search the web and reason about your prompt",
+            "Create a 2K or 3K image from a description and reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -595,7 +595,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["1k", "2k"],
         title: "Seedream 5.0 Flash",
         description:
-            "Image generation and editing at 1K or 2K with up to ten references",
+            "Create a 1K or 2K image from a description and up to ten reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -612,7 +612,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.035, // per 2K image; settle from gateway receipt
         },
         title: "Seedream 5.0 Pro",
-        description: "Premium multimodal image generation and editing",
+        description:
+            "Combine details from up to ten reference pictures to create or edit a 2K image.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -629,7 +630,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.03, // per image
         },
         title: "Seedream 4.0",
-        description: "Photorealistic images with strong prompt adherence",
+        description:
+            "Turn a description into a realistic scene or use reference pictures to guide an edit.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
@@ -646,7 +648,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.04 * 1.055, // per image
         },
         title: "Seedream 4.5",
-        description: "Premium photorealism for lifelike scenes and portraits",
+        description:
+            "Create lifelike scenes and portraits with up to fourteen reference pictures to guide the details.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from OpenRouter schema.
@@ -669,7 +672,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
         },
         title: "Ideogram 4.0 Turbo",
-        description: "Fast images with crisp, accurate text and typography",
+        description:
+            "Quickly turn a headline or slogan into an image with crisp lettering.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -685,7 +689,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
         },
         title: "Ideogram 4.0 Balanced",
-        description: "Balanced speed and quality with accurate text rendering",
+        description:
+            "Create posters and other designs that balance readable lettering with image detail.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -702,7 +707,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Ideogram 4.0 Quality",
         description:
-            "Highest-fidelity images with spot-on typography; slower to generate",
+            "Create detailed artwork with carefully rendered lettering for a finished design.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -723,7 +728,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: perMillion(8), // per 1M tokens
         },
         title: "GPT Image 1 Mini",
-        description: "Affordable image creation and editing for everyday use",
+        description:
+            "Draft images or try everyday edits, such as changing the background of a picture.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -749,7 +755,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "GPT Image 1.5",
         description:
-            "High-fidelity image generation and editing with fine detail",
+            "Create a detailed image or describe a small change to make in an existing picture.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -773,7 +779,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "GPT Image 2",
         description:
-            "Premium high-resolution images with excellent prompt following",
+            "Turn detailed instructions into a high-resolution image or use them to edit a picture.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
@@ -797,7 +803,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "GPT Image 2.5 Flare",
         description:
-            "Fast image generation and precise editing with reference images",
+            "Quickly draft images and use reference pictures to guide targeted changes.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
@@ -822,7 +828,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "GPT Image 2.5 Sunburst",
         description:
-            "Detailed image generation with precise control over reference-image edits",
+            "Build a detailed scene or use a reference picture to guide a precise edit.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
@@ -847,7 +853,7 @@ const IMAGE_BASE_SERVICES = {
         billing: GPT_IMAGE_26_BILLING,
         title: "GPT Image 2.6 Flare",
         description:
-            "Fast image generation and editing with consistent reference details",
+            "Quickly generate or edit an image while keeping details from your reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
@@ -871,7 +877,7 @@ const IMAGE_BASE_SERVICES = {
         billing: GPT_IMAGE_26_BILLING,
         title: "GPT Image 2.6 Sunburst",
         description:
-            "Detailed compositions and precise editing that preserves reference details",
+            "Arrange a detailed scene and refine individual elements while preserving details from your references.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
@@ -890,7 +896,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.002, // per image
         },
         title: "FLUX.1 Schnell",
-        description: "Fast, high-quality images at a tiny cost",
+        description:
+            "Turn text into quick image drafts to explore several ideas.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -908,7 +915,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Z-Image Turbo",
         description:
-            "Instant, budget-friendly images with crisp upscaled output",
+            "Quickly generate a sharp image from a description using built-in upscaling.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -962,7 +969,8 @@ const IMAGE_BASE_SERVICES = {
         // Omitted size/audio used to give portrait video with billed audio.
         cacheVersion: "2026-09-30-landscape-audio-opt-in",
         title: "Veo 3.1 Fast",
-        description: "Fast video with optional audio at 720p or 1080p",
+        description:
+            "Create a short video from text or opening and closing images, with optional sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -991,7 +999,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "360p", "1080p", "4k"],
         title: "Gemini Omni 1.1 Flash",
         description:
-            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+            "Set the opening and closing images for a clip up to ten seconds long with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1021,7 +1029,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "360p", "1080p", "4k"],
         title: "Gemini Omni 1.2 Flash",
         description:
-            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+            "Create a video with synchronized sound at up to 4K, using text or opening and closing images.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1082,7 +1090,8 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Seedance 1.0 Pro Fast",
-        description: "Video from text or a start image at 480p, 720p, or 1080p",
+        description:
+            "Animate a starting image or describe a short video up to 1080p.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -1140,7 +1149,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p"],
         title: "Seedance 2.0",
         description:
-            "720p video with natively synced sound, from text, images, or references",
+            "Create a 720p video with synchronized sound. Guide it with reference images, video, or audio.",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1197,7 +1206,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "480p"],
         title: "Seedance 2.0 Mini",
         description:
-            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
+            "Choose opening and closing images for a clip up to ten seconds long with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1222,7 +1231,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Seedance 2.0 Fast",
         description:
-            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
+            "Animate opening and closing images into a four- or five-second clip with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1248,7 +1257,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p"],
         title: "Wan 2.6",
         description:
-            "Video with sound from text or an image (720p, 5/10/15s clips)",
+            "Turn a description or starting image into a 720p video with sound lasting five, ten, or fifteen seconds.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -1277,7 +1286,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Wan 2.2",
         description:
-            "Generates low-cost, 5-second silent clips at 480p for drafts",
+            "Draft a five-second silent clip using text or images for the opening and closing frames.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -1358,7 +1367,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
         description:
-            "Keyframe-controlled video with sound at 720p or 1080p; also accepts reference images and videos",
+            "Create video with sound using opening and closing images or visual references from pictures and clips.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1426,7 +1435,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "2-15 second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+            "Guide a clip with images, video, or audio references and choose whether to include sound.",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -1456,7 +1465,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Wan 2.7 Image",
         description:
-            "Text-to-image and instruction-based editing up to 2K resolution",
+            "Create an image up to 2K or edit an existing picture by describing the change.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
@@ -1476,7 +1485,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Wan 2.7 Image Pro",
         description:
-            "Detailed 4K image generation and editing with a thinking mode",
+            "Create or edit a detailed 4K image from a description and reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
@@ -1528,7 +1537,7 @@ const IMAGE_BASE_SERVICES = {
         ),
         title: "Qwen Image",
         description:
-            "Versatile image creation and editing, strong at text inside images",
+            "Create or edit images with readable words on signs, labels, and other objects.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // Replicate qwen-image-edit-plus works best with 1 to 3.
@@ -1581,7 +1590,7 @@ const IMAGE_BASE_SERVICES = {
         ),
         title: "Qwen Image 2.1",
         description:
-            "Generates and edits images from prompts and up to ten references, with accurate text rendering",
+            "Create or edit a design with readable lettering and up to ten reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1601,7 +1610,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Qwen Image 2.1 Turbo",
         description:
-            "Low-cost generation and editing with up to 10 reference images",
+            "Quickly try image variations using a description and up to ten reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1620,7 +1629,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.04, // per image
         },
         title: "Qwen Image 2.1 Pro",
-        description: "Generation and editing with up to 10 reference images",
+        description:
+            "Create a new scene or guide an edit by combining up to ten reference images.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1668,7 +1678,7 @@ const IMAGE_BASE_SERVICES = {
         ),
         title: "Qwen Image 3",
         description:
-            "Creates and edits detailed images with crisp multilingual text and complex layouts",
+            "Create or edit intricate layouts with crisp text in multiple languages.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3,
@@ -1686,7 +1696,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.02, // per image
         },
         title: "Grok Imagine",
-        description: "Photorealistic image generation and quick edits",
+        description:
+            "Create realistic images or quickly edit a photo by describing the change.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
@@ -1713,7 +1724,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Grok Imagine Pro",
         description:
-            "Higher-fidelity photorealistic images for polished results",
+            "Create detailed, lifelike images from a description or up to three reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3, // OpenRouter input_references limit.
@@ -1793,7 +1804,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["1k", "2k"],
         title: "Grok Imagine Image 2.0",
         description:
-            "Creates and edits high-detail images at 1K or 2K with up to three references",
+            "Create or edit a detailed 1K or 2K image with up to three reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 3,
@@ -1816,7 +1827,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Recraft V4.1 Vector",
         description:
-            "Editable SVG generation and reference-guided vector design",
+            "Turn text or a reference picture into an editable SVG that stays sharp at any size.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
@@ -1835,7 +1846,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.007,
         },
         title: "Recraft V4.1 Flash",
-        description: "Fast, low-cost raster image generation from text",
+        description:
+            "Turn a written brief into a quick illustration for a design draft.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -1853,7 +1865,8 @@ const IMAGE_BASE_SERVICES = {
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",
-        description: "Short videos from text or an image (720p, 1-15s)",
+        description:
+            "Turn a prompt or starting image into a 720p video up to fifteen seconds long.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -1913,7 +1926,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "480p", "1080p"],
         title: "Grok Imagine Video 1.5",
         description:
-            "Video from text or a start image with synchronized audio at 480p, 720p, or 1080p",
+            "Animate an opening image or describe a scene to create video with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -1973,7 +1986,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "480p", "1080p"],
         title: "Grok Imagine Video 1.5 Lite",
         description:
-            "Faster, lower-cost video from text or a start image at 480p, 720p, or 1080p",
+            "Quickly draft a video up to 1080p from text or a starting image.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -2057,7 +2070,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and reference media at 480p or 720p; reference-video edits pick their own length",
+            "Create a four-second clip with synchronized sound, or use a reference video to guide an edit.",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -2086,7 +2099,8 @@ const IMAGE_BASE_SERVICES = {
         },
         resolutions: ["720p"],
         title: "HappyHorse 1.1",
-        description: "Text and first-frame video generation at 720p",
+        description:
+            "Turn a description or opening image into a 720p clip up to fifteen seconds long.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -2115,7 +2129,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p"],
         title: "Kling 3.0 Standard",
         description:
-            "Cinematic video with optional synchronized audio from text or start and end frames at 720p",
+            "Guide a 720p clip with opening and closing images and add synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -2160,7 +2174,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "1080p"],
         title: "FLUX 3 Max",
         description:
-            "Fast video from text or start and end frames with optional synchronized audio at 720p or 1080p",
+            "Create a video up to twenty seconds long with optional sound and control over its opening and closing images.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -2211,7 +2225,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "768p"],
         title: "HeyGen Video 1",
         description:
-            "Text and first-frame video with synchronized dialogue, ambience and effects at 480p or 768p",
+            "Create a video from text or an opening image, complete with dialogue, background sounds, and effects.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -2265,7 +2279,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "768p", "2k"],
         title: "MiniMax H3",
         description:
-            "Five-second text-to-video clips with synchronized stereo audio at 480p, 768p, or 2K",
+            "Turn a description into a five-second clip with synchronized stereo sound.",
         inputModalities: ["text"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["audio_output"],
@@ -2337,7 +2351,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max",
         description:
-            "High-quality 5–15 second video from text, start/end frames, or reference media with synchronized audio at 480p, 768p, or 1080p",
+            "Guide a video with images, clips, or audio references to create a scene with synchronized sound.",
         inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
         videoCapabilities: [
@@ -2418,7 +2432,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
-            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
+            "Quickly turn opening and closing images into a clip up to fifteen seconds long with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -2441,7 +2455,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.005,
         },
         title: "FLUX.2 Klein 4B",
-        description: "Fast image generation and editing up to 2.4 megapixels",
+        description:
+            "Quickly generate or edit an image up to 2.4 megapixels using reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
@@ -2458,7 +2473,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.005, // per image
         },
         title: "P-Image",
-        description: "Cheap, speedy text-to-image for rapid iteration",
+        description:
+            "Try out visual ideas quickly by turning short descriptions into image drafts.",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -2474,7 +2490,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.01, // per image
         },
         title: "P-Image-Edit",
-        description: "Fast instruction-based photo editing",
+        description:
+            "Quickly edit a photo by describing what to change, such as a color or background.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 5, // Pollinations route cap.
@@ -2493,7 +2510,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Lightning Image Turbo",
         description:
-            "Image generation with up to two reference images for visual guidance",
+            "Use up to two reference pictures to guide the image you describe.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 2,
@@ -2545,7 +2562,8 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "1080p"],
         title: "P-Video",
-        description: "Affordable video from text or an image at 720p or 1080p",
+        description:
+            "Turn a description or opening image into a short 720p or 1080p video.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
@@ -2593,7 +2611,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Kandinsky 6.0 Lite",
         description:
-            "Fast 5-second video from text or start image with synchronized audio at 480p",
+            "Animate an opening image or describe a scene for a five-second clip with synchronized sound.",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -2617,7 +2635,8 @@ const IMAGE_BASE_SERVICES = {
         // The output keeps the source video's dimensions.
         resolutions: ["source"],
         title: "Mirelo SFX 2.0",
-        description: "Adds synchronized sound effects to an existing video",
+        description:
+            "Add sound effects to an existing video that match the action on screen.",
         inputModalities: ["text", "video"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["reference_videos", "audio_output"],

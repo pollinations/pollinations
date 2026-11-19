@@ -28,16 +28,6 @@
         "deploy-applications.yml:Deploy operations/dashboards/kpi",
         "deploy-applications.yml:Deploy operations/dashboards/quest-dashboard"
       ]
-    },
-    "20322": {
-      "merge_sha": "c8aed0ccf4c842a2c9535fc00369ca0d097b121d",
-      "merged_at": "2026-11-19T11:26:25Z",
-      "required": []
-    },
-    "20325": {
-      "merge_sha": "1d9de61c15650d0fd7db6c714d91abe0b0395b95",
-      "merged_at": "2026-11-19T12:25:04Z",
-      "required": []
     }
   },
   "production": "15733eb071f2c8886a0a1c3268d7652e14fcb5a1",

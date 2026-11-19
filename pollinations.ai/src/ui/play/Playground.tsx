@@ -1922,35 +1922,31 @@ export function Playground({
         ));
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            <div className="@container">
-                <fieldset
-                    aria-label="Playground task"
-                    className="m-0 grid min-w-0 grid-cols-2 gap-2 border-0 p-0 @min-[36rem]:flex @min-[36rem]:flex-wrap"
-                >
-                    {WORKSPACES.map((item) => (
-                        <ModalityTab
-                            key={item.label}
-                            active={item === task.workspace}
-                            size="lg"
-                            className="max-sm:px-2"
-                            modality={item.category}
-                            icon={item.icon}
-                            onClick={() => {
-                                if (item === task.workspace) return;
-                                const next =
-                                    lastTask.current.get(item) ??
-                                    TASKS.find(
-                                        (candidate) =>
-                                            candidate.workspace === item,
-                                    );
-                                if (next) selectTask(next);
-                            }}
-                        >
-                            {item.label}
-                        </ModalityTab>
-                    ))}
-                </fieldset>
-            </div>
+            <fieldset
+                aria-label="Playground task"
+                className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+            >
+                {WORKSPACES.map((item) => (
+                    <ModalityTab
+                        key={item.label}
+                        active={item === task.workspace}
+                        size="lg"
+                        modality={item.category}
+                        icon={item.icon}
+                        onClick={() => {
+                            if (item === task.workspace) return;
+                            const next =
+                                lastTask.current.get(item) ??
+                                TASKS.find(
+                                    (candidate) => candidate.workspace === item,
+                                );
+                            if (next) selectTask(next);
+                        }}
+                    >
+                        {item.label}
+                    </ModalityTab>
+                ))}
+            </fieldset>
 
             <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (

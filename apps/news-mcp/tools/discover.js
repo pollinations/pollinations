@@ -120,8 +120,10 @@ export const discoverTools = [
 
             const candidates = [
                 ...declaredFeeds(page.text, page.url),
+                // Conventional paths sit at the site root. Resolving them against a post
+                // URL would probe /2024/01/post/feed instead of /feed.
                 ...CONVENTIONAL_PATHS.map(
-                    (path) => new URL(path, page.url).href,
+                    (path) => new URL(`/${path}`, page.url).href,
                 ),
             ].slice(0, MAX_CANDIDATES);
 

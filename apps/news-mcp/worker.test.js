@@ -314,6 +314,43 @@ test("feed_discover falls back to conventional paths and collapses one feed list
     await c.close();
 });
 
+test("feed_discover probes conventional paths at the site root, not under the page", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = String(input);
+        requests.push(url);
+        if (url === "https://example.net/blog/post")
+            return new Response(
+                "<html><head><title>Post</title></head></html>",
+                {
+                    headers: { "content-type": "text/html" },
+                },
+            );
+        if (url === "https://example.net/feed")
+            return new Response(
+                '<feed xmlns="http://www.w3.org/2005/Atom"><title>Net</title></feed>',
+                { headers: { "content-type": "application/atom+xml" } },
+            );
+        return new Response("nope", { status: 404 });
+    });
+    const c = await client();
+    const data = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://example.net/blog/post" },
+            })
+        ).content[0].text,
+    );
+    assert.deepEqual(data.feeds, [
+        { url: "https://example.net/feed", type: "atom", title: "Net" },
+    ]);
+    assert.equal(
+        requests.includes("https://example.net/blog/post/feed"),
+        false,
+    );
+    await c.close();
+});
 test("feed_discover reports a feed it cannot read the title of, and no feed at all", async (t) => {
     t.mock.method(globalThis, "fetch", async (input) => {
         const url = String(input);

@@ -29,6 +29,7 @@ import {
     InlineLink,
     Input,
     LayersIcon,
+    LightbulbIcon,
     MediaPlaceholder,
     MicIcon,
     ScrollArea,
@@ -1985,7 +1986,10 @@ export function Playground({
                         {currentModel && (
                             <>
                                 {currentModel.description && (
-                                    <Text>{currentModel.description}</Text>
+                                    <Text className="flex items-start gap-2">
+                                        <LightbulbIcon className="mt-[calc((1lh-1rem)/2)] size-4 shrink-0 text-theme-text-muted" />
+                                        <span>{currentModel.description}</span>
+                                    </Text>
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <RunStatBadge

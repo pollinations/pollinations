@@ -842,6 +842,9 @@ export const OpenAIModelSchema = z
         pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
             "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
         ),
+        flat_rate: ModelInfoSchema.shape.flat_rate.describe(
+            "True when the price is a flat rate per image rather than per unit. Omitted when the model is not flat-rate.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()

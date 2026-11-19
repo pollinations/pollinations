@@ -1870,6 +1870,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
+    "quiverai/arrow-2": {
+        aliases: [],
+        provider: "quiverai",
+        publisher: "QuiverAI",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Arrow 2",
+        description:
+            "Generate editable SVG illustrations, icons, and diagrams from text and reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14,
+    },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
         provider: "fal",

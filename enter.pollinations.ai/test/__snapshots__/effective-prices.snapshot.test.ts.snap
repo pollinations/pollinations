@@ -4184,6 +4184,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.02,
     },
   },
+  "quiverai/arrow-2": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.000004,
+    },
+  },
   "qwen/qwen-audio-3.0-tts-flash": {
     "cost": {
       "completionAudioTokens": 0.000015,

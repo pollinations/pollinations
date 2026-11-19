@@ -63,6 +63,7 @@ const OPTIONAL_SECRET_KEYS = [
     "E2B_API_KEY",
     "GEMINI_API_KEY",
     "KILO_API_KEY",
+    "QUIVER_API_KEY",
     "WEFT_SELLER_API_KEY",
 ];
 

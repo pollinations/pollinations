@@ -6169,6 +6169,13 @@
       "aliases": []
     },
     {
+      "id": "quiverai",
+      "aliases": [],
+      "modelLabels": {
+        "arrow-2": "quiverai/arrow-2"
+      }
+    },
+    {
       "id": "regolo",
       "aliases": []
     },

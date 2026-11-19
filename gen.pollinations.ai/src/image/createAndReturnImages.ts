@@ -46,6 +46,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callArrowSVGAPI } from "./models/quiverSvgModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
@@ -1191,6 +1192,9 @@ const generateImage = async (
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
+        case "quiverai/arrow-2":
+            return await callArrowSVGAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-flash":
             return await callRecraftFlashFalAPI(prompt, safeParams);

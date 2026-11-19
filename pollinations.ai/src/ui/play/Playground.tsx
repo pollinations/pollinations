@@ -1986,7 +1986,12 @@ export function Playground({
                             onSelectModel={selectModel}
                         />
                         {currentModel && (
-                            <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+                            <>
+                                {currentModel.description && (
+                                    <Text tone="soft" data-theme="accent">
+                                        {currentModel.description}
+                                    </Text>
+                                )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <RunStatBadge
                                         label="Cost"
@@ -2012,16 +2017,7 @@ export function Playground({
                                         linkLabel="Model Monitor"
                                     />
                                 </div>
-                                {currentModel.description && (
-                                    <Text
-                                        tone="soft"
-                                        data-theme="accent"
-                                        className="min-w-0 flex-[1_1_20rem]"
-                                    >
-                                        {currentModel.description}
-                                    </Text>
-                                )}
-                            </div>
+                            </>
                         )}
                     </div>
                     <Surface

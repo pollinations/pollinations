@@ -18,6 +18,15 @@ body:
 
         - **Content:** no spam, scams, or deceptive behavior.
 
+        - **Sign-in:** let visitors sign in with Pollinations so they use their own balance. Never ask them to paste a key. No App Key needed:
+
+          ```html
+          <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+          <polli-connect></polli-connect>
+          ```
+
+          Read the user's key from the element's `apiKey`. [Guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step)
+
         <br>
 
         Automated pre-review → maintainer review → community catalog.

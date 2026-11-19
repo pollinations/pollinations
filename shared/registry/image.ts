@@ -31,6 +31,37 @@ const GPT_IMAGE_26_BILLING: BillingRules = {
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
+    "stability-ai/stable-diffusion-3.5-large": {
+        aliases: ["sd3.5-large"],
+        provider: "aws",
+        publisher: "Stability AI",
+        category: "image",
+        addedDate: new Date("2026-11-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: { completionImageTokens: 0.08 },
+        title: "Stable Diffusion 3.5 Large",
+        description:
+            "Generate images or restyle one reference image at roughly one megapixel",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
+    "stability-ai/stable-image-core": {
+        aliases: ["stable-image-core"],
+        provider: "aws",
+        publisher: "Stability AI",
+        category: "image",
+        addedDate: new Date("2026-11-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: { completionImageTokens: 0.04 },
+        title: "Stable Image Core",
+        description: "Text-to-image generation at roughly two megapixels",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        maxReferenceImages: 0,
+    },
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],
         provider: "fal",

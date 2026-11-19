@@ -30,6 +30,12 @@ const OPENAI_CHAT_AUDIO_VOICES = [
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "stealth/glyph-cluster": {
+        "stealth/glyph-cluster:kilo": {
+            provider: "kilo",
+            fallbackOnStatuses: [429],
+        },
+    },
     "openai/gpt-5.5": {
         // Global rates are inferred by removing AWS's documented 10% regional
         // premium; using them before confirmation is a maintainer-approved risk.

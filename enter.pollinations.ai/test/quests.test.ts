@@ -1754,7 +1754,6 @@ test("quest check records model-usage rewards per modality", async ({
 
 const AGENT_QUEST_REWARDS: Record<string, number> = {
     use_agent: 0.25,
-    use_community_model: 0.25,
     create_used_community_model: 2,
 };
 const NO_AGENT_FLAGS = {
@@ -1771,18 +1770,14 @@ const ALL_AGENT_FLAGS = {
 for (const { flags, expected } of [
     { flags: {}, expected: [] },
     { flags: { usedAgent: 1 }, expected: ["use_agent"] },
-    { flags: { usedCommunityModel: 1 }, expected: ["use_community_model"] },
     {
         flags: { createdUsedCommunityModel: 1 },
         expected: ["create_used_community_model"],
     },
     {
         flags: ALL_AGENT_FLAGS,
-        expected: [
-            "create_used_community_model",
-            "use_agent",
-            "use_community_model",
-        ],
+        // The retired community model quest awards nothing new.
+        expected: ["create_used_community_model", "use_agent"],
     },
 ]) {
     test(`agent quests award each milestone once: ${expected.join("+") || "none"}`, async ({

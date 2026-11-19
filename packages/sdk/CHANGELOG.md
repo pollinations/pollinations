@@ -2,13 +2,20 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.33] - 2026-11-18
+## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added
 
 - `ModelInfo.max_reference_audios` exposes the model’s maximum number of reference audio clips per request.
 - `ModelInfo.audio_input_constraints` describes audio duration limits, required visual references, and supported transcription inputs (`language` and `prompt`).
 - `separateStems()` submits an audio file for stem separation and returns the ZIP archive.
+
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Changed
+- `PolliProvider`'s `appKey` is optional. Without an App Key, sign-in still
+  works: the consent screen names the app by its hostname. Dev warnings now
+  appear only for an `appKey` that isn't a `pk_` key.
 
 ## [5.1.0-alpha.32] - 2026-11-18
 

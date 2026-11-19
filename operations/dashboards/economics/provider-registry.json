@@ -1,5 +1,5 @@
 {
-  "version": 39,
+  "version": 40,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -5014,6 +5014,14 @@
     {
       "id": "joshua-peschke",
       "aliases": []
+    },
+    {
+      "id": "kilo",
+      "aliases": [
+        "kilo.ai",
+        "kilo-code",
+        "kilo-gateway"
+      ]
     },
     {
       "id": "lambda",

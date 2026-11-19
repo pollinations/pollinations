@@ -18,6 +18,7 @@ const PROVIDER_NAMES: Record<string, string> = {
     fireworks: "Fireworks AI",
     google: "Google",
     inferenceport: "InferencePort",
+    kilo: "Kilo Gateway",
     mistral: "Mistral AI",
     novita: "Novita AI",
     openai: "OpenAI",

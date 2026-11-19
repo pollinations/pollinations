@@ -873,7 +873,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-09-29").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        cost: { completionAudioTokens: 30 / 1_000_000 },
+        cost: { completionAudioTokens: 36.3 / 1_000_000 },
         title: "TTS-1 HD",
         description:
             "Higher-quality speech synthesis with six voices and six output formats",

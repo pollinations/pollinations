@@ -53,6 +53,7 @@ import {
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callStabilityImage } from "./models/stabilityImageModel.ts";
 import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
@@ -929,6 +930,12 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
+        case "stability-ai/stable-diffusion-3.5-large":
+        case "stability-ai/stable-diffusion-3.5-large:stability":
+            return callStabilityImage(prompt, safeParams, "sd35");
+        case "stability-ai/stable-image-core":
+        case "stability-ai/stable-image-core:stability":
+            return callStabilityImage(prompt, safeParams, "core");
         case "openai/gpt-image-1-mini":
         case "openai/gpt-image-1.5":
         case "openai/gpt-image-2":

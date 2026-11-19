@@ -103,6 +103,26 @@ const omitOpenAISampling = omitParameters(
 );
 const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
+const glyphReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    return {
+        messages,
+        options: {
+            ...rest,
+            ...(reasoning_effort === undefined
+                ? {}
+                : {
+                      reasoning: {
+                          ...(rest.reasoning as
+                              | Record<string, unknown>
+                              | undefined),
+                          effort: reasoning_effort,
+                      },
+                  }),
+        },
+    };
+};
+
 interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
@@ -1084,25 +1104,12 @@ const models: ModelDefinition[] = [
     {
         name: "stealth/glyph-cluster",
         config: portkeyConfig["stealth/glyph-cluster"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(reasoning_effort === undefined
-                        ? {}
-                        : {
-                              reasoning: {
-                                  ...(rest.reasoning as
-                                      | Record<string, unknown>
-                                      | undefined),
-                                  effort: reasoning_effort,
-                              },
-                          }),
-                },
-            };
-        },
+        transform: glyphReasoning,
+    },
+    {
+        name: "stealth/glyph-cluster:kilo",
+        config: portkeyConfig["stealth/glyph-cluster:kilo"],
+        transform: glyphReasoning,
     },
     {
         name: "liquid/d1",

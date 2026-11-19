@@ -279,7 +279,7 @@ export async function showAuthStatus(): Promise<void> {
             authenticated: false,
             message: "Not logged in. Run: polli auth login",
         });
-        return;
+        throw new ExitSignal(1);
     }
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
@@ -301,7 +301,7 @@ export async function showAuthStatus(): Promise<void> {
             key: masked,
             status: "API key rejected. Run: polli auth login",
         });
-        return;
+        throw new ExitSignal(1);
     }
 
     if (!profile) {

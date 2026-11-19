@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-18T06:15:32.041539+00:00",
+  "generated_at": "2026-11-19T06:09:36.924877+00:00",
   "models": [
     {
       "id": "2026-10-20:openai/gpt-6-luna",
@@ -3343,6 +3343,63 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-18:openai/tts-1-hd",
+      "model_id": "openai/tts-1-hd",
+      "title": "TTS-1 HD",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-11-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000363"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-18:zyphra/zonos3-mini",
+      "model_id": "zyphra/zonos3-mini",
+      "title": "ZONOS3-Mini",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-11-18",
+      "pricing_units": {
+        "before": {
+          "completionAudioTokens": {
+            "unit": "byte"
+          }
+        },
+        "after": {
+          "completionAudioTokens": {
+            "unit": "byte"
+          }
+        }
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text"
+          ],
+          "after": [
+            "text",
+            "audio"
+          ]
+        }
+      }
     }
   ],
   "api": [
@@ -4137,6 +4194,49 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-18",
+      "emoji": "🤖",
+      "title": "Qwen 4 Max added",
+      "text": "Use paid-only `qwen/qwen4-max` with text or image input, tools, reasoning, and a 1,000,000-token context. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen4-max).",
+      "prs": [
+        19889
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-18",
+      "emoji": "🎵",
+      "title": "Clone a ZONOS voice",
+      "text": "Send a public HTTP(S) `reference_audio` URL with `zyphra/zonos3-mini` speech requests to generate text in that voice. Audio can be up to 20 MiB; the model uses its first 60 seconds. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        20129
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-11-18",
+      "emoji": "🔗",
+      "title": "Connect without an App Key",
+      "text": "Apps can sign users in through Pollinations Connect without an App Key. PKCE is still required; an App Key still enables app-name display, usage attribution, and developer earnings. [Read the React SDK guide](https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider).",
+      "prs": [
+        19980
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-18",
+      "emoji": "🎯",
+      "title": "Quests, grouped by progress",
+      "text": "Browse Setup, Grow, Contribute, and Community tabs, then check claimable work and the separate monthly leaderboard. Quest amounts identify whether they add to Quest or Paid balance.",
+      "prs": [
+        19952,
+        20038,
+        20039,
+        20080
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-11-17",
       "emoji": "🤖",

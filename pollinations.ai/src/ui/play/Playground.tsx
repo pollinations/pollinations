@@ -37,6 +37,7 @@ import {
     TabButton,
     Text,
     Textarea,
+    Tooltip,
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -81,7 +82,7 @@ import {
     uploadReference,
     VIDEO_EXTENSIONS,
 } from "./playground-audio";
-import { type ModelRunStat, runStatsDetail } from "./run-stats";
+import { formatRunCost, formatRunTime, type ModelRunStat } from "./run-stats";
 import { createRunStore } from "./run-store";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { videoOptions } from "./video-options";
@@ -417,7 +418,7 @@ function VoicePicker({
         <FieldStack label="Voice" orientation="inline" className="min-w-0">
             <Dropdown
                 portalled={false}
-                className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
+                className="w-[var(--reference-width)] overscroll-y-contain p-2"
                 trigger={(open) => (
                     <Button
                         type="button"
@@ -516,19 +517,30 @@ function ModelPicker({
         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:gap-4">
             <div className="flex min-w-0 items-center gap-2 lg:contents">
                 {stepButton(-1)}
-                <div className="w-64 min-w-0">
+                <div className="w-80 min-w-0">
                     <Dropdown
                         portalled={false}
-                        className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
+                        className="w-[var(--reference-width)] overscroll-y-contain p-2"
                         trigger={(open) => (
                             <Button
                                 type="button"
                                 intent="neutral"
                                 size="lg"
                                 disabled={isLoading || models.length === 0}
-                                className="w-full touch-pan-y justify-between gap-2"
+                                className="w-full touch-pan-y justify-between gap-2 px-3"
                                 title={selected?.title}
                                 aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
+                                aria-description={
+                                    selected &&
+                                    [
+                                        selected.paidOnly
+                                            ? "Uses paid balance only"
+                                            : "Works with any balance",
+                                        selected.publisher,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ")
+                                }
                                 onPointerDown={(event) => {
                                     swiped.current = false;
                                     swipeStart.current =
@@ -566,11 +578,17 @@ function ModelPicker({
                                     swiped.current = false;
                                 }}
                             >
-                                <span className="truncate" aria-live="polite">
-                                    {isLoading
-                                        ? "Loading models…"
-                                        : (selected?.title ??
-                                          "No models available")}
+                                <span
+                                    className="flex min-w-0 flex-1 text-left"
+                                    aria-live="polite"
+                                >
+                                    {isLoading ? (
+                                        "Loading models…"
+                                    ) : selected ? (
+                                        <MediaModelOption model={selected} />
+                                    ) : (
+                                        "No models available"
+                                    )}
                                 </span>
                                 <ChevronIcon expanded={open} />
                             </Button>
@@ -1611,8 +1629,8 @@ export function Playground({
     useImperativeHandle(connectRef, () => connect);
     const run = needsSignIn ? connect : generate;
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
-    const statsDetail = runStatsDetail(modelStats);
-    const hasMedianCost = (modelStats?.avg_cost_usd ?? 0) > 0;
+    const cost = formatRunCost(modelStats?.avg_cost_usd);
+    const time = formatRunTime(modelStats?.avg_response_ms);
 
     const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
     const audioInput =
@@ -1746,29 +1764,52 @@ export function Playground({
                                 {currentModel.description && (
                                     <Text>{currentModel.description}</Text>
                                 )}
-                                <Text size="xs" tone="muted">
-                                    {hasMedianCost && "7-day median "}
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                    {[
+                                        {
+                                            label: "Cost",
+                                            value: cost,
+                                            detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
+                                        },
+                                        {
+                                            label: "Time",
+                                            value: time,
+                                            detail: "Average response time for successful requests over the last 7 days.",
+                                        },
+                                    ].map(
+                                        ({ label, value, detail }) =>
+                                            value && (
+                                                <Tooltip
+                                                    key={label}
+                                                    ariaLabel={`${label} ${value}`}
+                                                    content={detail}
+                                                    side="top"
+                                                    align="center"
+                                                    tapEnabled
+                                                >
+                                                    <Chip
+                                                        size="md"
+                                                        data-theme="neutral"
+                                                        className="tabular-nums"
+                                                    >
+                                                        <span className="text-theme-text-muted">
+                                                            {label}
+                                                        </span>{" "}
+                                                        {value}
+                                                    </Chip>
+                                                </Tooltip>
+                                            ),
+                                    )}
                                     <InlineLink
                                         href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                        aria-label={`${hasMedianCost ? "Cost" : "Pricing"} for ${currentModel.title} on Enter`}
+                                        aria-label={`Pricing for ${currentModel.title} on Enter`}
                                         tone="quiet"
                                         style={{ fontWeight: "inherit" }}
                                         showIcon={false}
                                     >
-                                        {hasMedianCost ? "cost" : "Pricing"}
+                                        Pricing
                                     </InlineLink>
-                                    {statsDetail &&
-                                        (hasMedianCost
-                                            ? ` of ${statsDetail}`
-                                            : ` · ${statsDetail}`)}
-                                    {hasMedianCost && (
-                                        <InfoTip
-                                            label="About this cost"
-                                            tapEnabled
-                                            content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
-                                        />
-                                    )}
-                                </Text>
+                                </div>
                             </div>
                         )}
                     </ModelPicker>

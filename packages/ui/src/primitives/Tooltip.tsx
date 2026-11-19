@@ -27,6 +27,7 @@ export function getTooltipPosition(
     viewport: { width: number; height: number },
     align: "start" | "center",
     clampToViewport: boolean,
+    side: "top" | "bottom" = "bottom",
 ) {
     let left =
         align === "center"
@@ -41,10 +42,13 @@ export function getTooltipPosition(
             ),
         );
     }
-    let top = trigger.bottom + 4;
-    if (top + popup.height > viewport.height - TOOLTIP_VIEWPORT_MARGIN) {
-        top = trigger.top - popup.height - 4;
-    }
+    const above = trigger.top - popup.height - 4;
+    const below = trigger.bottom + 4;
+    const useAbove =
+        side === "top"
+            ? above >= TOOLTIP_VIEWPORT_MARGIN
+            : below + popup.height > viewport.height - TOOLTIP_VIEWPORT_MARGIN;
+    const top = useAbove ? above : below;
     return { top: Math.max(TOOLTIP_VIEWPORT_MARGIN, top), left };
 }
 
@@ -52,6 +56,7 @@ type TooltipProps = {
     children: ReactNode;
     content: ReactNode;
     align?: "start" | "center";
+    side?: "top" | "bottom";
     ariaLabel?: string;
     clampToViewport?: boolean;
     className?: string;
@@ -73,6 +78,7 @@ export const Tooltip: FC<TooltipProps> = ({
     children,
     content,
     align = "start",
+    side = "bottom",
     ariaLabel,
     clampToViewport = true,
     className,
@@ -172,10 +178,11 @@ export const Tooltip: FC<TooltipProps> = ({
                     { width: window.innerWidth, height: window.innerHeight },
                     align,
                     clampToViewport,
+                    side,
                 ),
             );
         }
-    }, [showTooltip, align, clampToViewport, maxWidth, content]);
+    }, [showTooltip, align, side, clampToViewport, maxWidth, content]);
 
     // Informational triggers use help; action wrappers can override the cursor.
     // Only real controls get the expanded tap area; on a plain span wrapper it

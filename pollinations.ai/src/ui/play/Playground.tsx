@@ -327,12 +327,14 @@ function defaultModelId(
 function OptionField({
     label,
     options,
+    defaultValue = options[0],
     value,
     onChange,
     format = (option) => option,
 }: {
     label: string;
     options: readonly string[];
+    defaultValue?: string;
     value: string | undefined;
     onChange: (option: string) => void;
     format?: (option: string) => string;
@@ -342,6 +344,7 @@ function OptionField({
         <FieldStack label={label} orientation="inline" className="min-w-0">
             {options.length === 1 ? (
                 <Chip
+                    data-theme="neutral"
                     size="lg"
                     aria-label={`Fixed ${label.toLowerCase()}: ${format(options[0])}`}
                     className="justify-self-start"
@@ -353,6 +356,9 @@ function OptionField({
                     {options.map((option) => (
                         <TabButton
                             key={option || "auto"}
+                            data-theme={
+                                option === defaultValue ? "neutral" : undefined
+                            }
                             active={option === value}
                             size="sm"
                             onClick={() => onChange(option)}
@@ -398,6 +404,11 @@ function VoicePicker({
                             {voices.map((voice) => (
                                 <TabButton
                                     key={voice}
+                                    data-theme={
+                                        voice === voices[0]
+                                            ? "neutral"
+                                            : undefined
+                                    }
                                     active={voice === value}
                                     size="sm"
                                     variant="ghost"
@@ -1060,13 +1071,14 @@ export function Playground() {
         );
     // "" is not picked yet; an explicit Auto is stored as "auto".
     const pickedRatio = aspectRatio === "auto" ? "" : aspectRatio;
+    const defaultVideoRatio = sendsVisualInput
+        ? videoConfig.ratios[0]
+        : videoConfig.defaultRatio;
     const videoAspectRatio =
         currentModel?.category === "video"
             ? aspectRatio && videoConfig.ratios.includes(pickedRatio)
                 ? pickedRatio
-                : sendsVisualInput
-                  ? videoConfig.ratios[0]
-                  : videoConfig.defaultRatio
+                : defaultVideoRatio
             : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
@@ -1836,6 +1848,7 @@ export function Playground() {
                                             <OptionField
                                                 label="Aspect ratio"
                                                 options={videoConfig.ratios}
+                                                defaultValue={defaultVideoRatio}
                                                 value={videoAspectRatio}
                                                 onChange={(ratio) =>
                                                     setParam(
@@ -1849,6 +1862,11 @@ export function Playground() {
                                             />
                                             <OptionField
                                                 label="Sound"
+                                                defaultValue={
+                                                    videoConfig.defaultSound
+                                                        ? "on"
+                                                        : "off"
+                                                }
                                                 options={
                                                     videoConfig.sound ===
                                                     "optional"
@@ -1878,6 +1896,12 @@ export function Playground() {
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <Slider
                                                     aria-label="Video duration"
+                                                    className={
+                                                        videoDuration.value ===
+                                                        videoDuration.defaultValue
+                                                            ? "[--polli-slider-fill:var(--polli-color-text-muted)]"
+                                                            : undefined
+                                                    }
                                                     disabled={
                                                         videoDuration.min ===
                                                         videoDuration.max

@@ -69,6 +69,7 @@ describe("catalog-only media settings", () => {
             max: 15,
             options: [5, 10, 15],
             step: 1,
+            defaultValue: 10,
             value: 10,
         });
         expect(

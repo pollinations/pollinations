@@ -1,7 +1,6 @@
 import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
-import { BrandMark, ContentHeader } from "@pollinations/ui";
+import { ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
-import { LoginButton } from "@pollinations/ui/auth/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
@@ -55,7 +54,7 @@ function HydratedPlayground() {
 }
 
 function PlayHero() {
-    const { isLoggedIn, isHydrated } = useAuthState();
+    const { isHydrated } = useAuthState();
     return (
         // The monitor robot, showing off something it just made.
         <HeroScene page="play" compactBottom>
@@ -65,18 +64,11 @@ function PlayHero() {
                 subtitle="Create images, video and audio with your own balance."
                 variant="page"
             />
-            <div className="self-start">
-                {isLoggedIn ? (
-                    <AppUserMenu labels={{ logout: "Disconnect app" }} />
-                ) : (
-                    <LoginButton
-                        size="lg"
-                        disabled={!isHydrated}
-                        icon={<BrandMark className="size-full" />}
-                    >
-                        Connect your Pollinations account
-                    </LoginButton>
-                )}
+            <div className="self-start" inert={!isHydrated}>
+                <AppUserMenu
+                    connectSize="lg"
+                    labels={{ logout: "Disconnect app" }}
+                />
             </div>
         </HeroScene>
     );

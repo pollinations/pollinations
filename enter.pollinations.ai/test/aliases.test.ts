@@ -174,6 +174,8 @@ test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/tts-1", 1],
         ["openai/tts-1-hd", 1],
+        // Azure marks these fal meters ineligible for subscription credits.
+        ["lightricks/ltx-2.5-pro:azure", 1],
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],

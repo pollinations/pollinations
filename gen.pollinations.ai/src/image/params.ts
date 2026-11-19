@@ -7,6 +7,7 @@ import {
 import {
     durationError,
     type ModelDefinition,
+    type PricingInput,
 } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
@@ -436,3 +437,17 @@ export const ImageParamsSchema = z
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
+
+/** Request facts that select a model's rate sheet. Billing and price quotes share them. */
+export function pricingInputFromParams(
+    params: Omit<ImageParams, "model">,
+): PricingInput {
+    return {
+        resolution: params.resolution,
+        quality: params.quality,
+        hasImage: (params.image?.length ?? 0) > 0,
+        hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+        maxImageDimension: Math.max(params.width, params.height),
+        megapixels: (params.width * params.height) / 1_000_000,
+    };
+}

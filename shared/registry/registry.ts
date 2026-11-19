@@ -245,6 +245,8 @@ export type ModelDefinition = {
     minDuration?: number; // Video and audio: minimum accepted duration in seconds
     maxDuration?: number; // Video and audio: maximum accepted duration in seconds
     defaultDuration?: number; // Video-only: duration when caller omits the param
+    minBilledSeconds?: number; // Video-only: seconds the provider bills at least per clip
+    billedSecondsFollowReference?: boolean; // Video-only: with a reference video, the provider bills the output length it picks
     allowedDurations?: number[]; // Video and audio: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images

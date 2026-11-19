@@ -1,4 +1,5 @@
 import type { PlaySearch } from "../../routes/-play-search";
+import { videoOptions } from "./video-options";
 
 type Category = "image" | "video" | "audio";
 type TabDraft<T> = {
@@ -112,15 +113,29 @@ export async function takeConnectDraft(): Promise<ConnectDrafts | undefined> {
         };
     });
     sessionStorage.removeItem(key);
-    return (
-        draft &&
-        mapFiles(
-            draft,
-            (file) =>
-                new File([file.bytes], file.name, {
-                    type: file.type,
-                    lastModified: file.lastModified,
-                }),
-        )
+    if (!draft) return;
+    // Older drafts could retain uploads behind both positions of the mode switch.
+    for (const saved of Object.values(draft)) {
+        if (
+            saved.referenceImages.length &&
+            Object.values(saved.videoReferences).some(
+                (files) => files.length,
+            ) &&
+            videoOptions(saved.params.model ?? "", []).exclusiveReferences
+        ) {
+            const { guidance } = saved.params as PlaySearch & {
+                guidance?: string;
+            };
+            if (guidance === "references") saved.referenceImages = [];
+            else saved.videoReferences = { image: [], video: [], audio: [] };
+        }
+    }
+    return mapFiles(
+        draft,
+        (file) =>
+            new File([file.bytes], file.name, {
+                type: file.type,
+                lastModified: file.lastModified,
+            }),
     );
 }

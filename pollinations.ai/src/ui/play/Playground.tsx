@@ -222,7 +222,7 @@ function promptPlaceholder(task: Task, editsImage: boolean): string {
     if (category === "image") return "Describe the image you want…";
     if (category === "video") return "Describe the video you want…";
     if (id === "transcription")
-        return "Vocabulary, names, or context for the transcript";
+        return "Optional vocabulary, names, or context for the transcript…";
     if (id === "speech-generation") return "Enter the words you want spoken…";
     if (id === "music-and-sound-effects")
         return "Describe the music or sound you want…";
@@ -928,7 +928,6 @@ export function Playground({
     drafts: ConnectDrafts;
 }) {
     const dimensionsLabelId = useId();
-    const referencesLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
     const session = useMemo(
@@ -1163,21 +1162,17 @@ export function Playground({
         currentModel?.videoCapabilities ?? [],
     );
     const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
-    const referenceMode =
-        params.guidance === "references" ? "references" : "frames";
-    const usesReferences =
-        videoConfig.exclusiveReferences && referenceMode === "references";
     const maxReferenceImages = referenceImageLimit(currentModel);
     const supportsReferenceImages = maxReferenceImages > 0;
-    const isVideoReferenceMode =
+    const supportsFrames =
         currentModel?.category === "video" &&
-        !usesReferences &&
         currentModel.videoCapabilities.includes("start_frame") &&
         supportsReferenceImages;
     const isReferenceImageListMode =
         supportsReferenceImages && currentModel?.category === "image";
+    const acceptsImageParam = supportsFrames || isReferenceImageListMode;
     const supportsLastFrame =
-        isVideoReferenceMode &&
+        supportsFrames &&
         (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
         maxReferenceImages >= 2;
     const currentAudioEndpoint =
@@ -1227,8 +1222,25 @@ export function Playground({
         !!currentModel &&
         isLoggedIn &&
         catalog.allowedModelIds.has(currentModel.id);
+    const videoReferenceMedia =
+        currentModel?.category === "video"
+            ? UPLOAD_MEDIA_ORDER.filter((media) =>
+                  currentModel.videoCapabilities.includes(
+                      REFERENCE_CAPABILITY[media],
+                  ),
+              )
+            : [];
+    const hasReferenceMedia = videoReferenceMedia.some(
+        (media) => videoReferences[media].length > 0,
+    );
+    const framesDisabled =
+        videoConfig.exclusiveReferences && (hasReferenceMedia || recording);
+    const mediaDisabled =
+        videoConfig.exclusiveReferences &&
+        supportsFrames &&
+        referenceImages.length > 0;
     const mediaSettings = mediaModelSettings(
-        currentModel?.id === "alibaba/wan-2.7" && usesReferences
+        currentModel?.id === "alibaba/wan-2.7" && hasReferenceMedia
             ? { ...currentModel, maxDuration: 10 }
             : currentModel,
         {
@@ -1238,16 +1250,6 @@ export function Playground({
     );
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
-    // The reference uploads that are on screen for this model and mode.
-    const videoReferenceMedia =
-        currentModel?.category === "video" &&
-        (!videoConfig.exclusiveReferences || usesReferences)
-            ? UPLOAD_MEDIA_ORDER.filter((media) =>
-                  currentModel.videoCapabilities.includes(
-                      REFERENCE_CAPABILITY[media],
-                  ),
-              )
-            : [];
     const selectedAudioClips =
         currentModel?.category === "video" ? videoReferences.audio : audioFiles;
     const [clipDurations, setClipDurations] = useState(
@@ -1295,9 +1297,7 @@ export function Playground({
     // An input image or video fixes the output shape, so Auto follows it;
     // otherwise Auto may render square and the default ratio applies.
     const sendsVisualInput =
-        (supportsReferenceImages &&
-            !usesReferences &&
-            referenceImages.length > 0) ||
+        (acceptsImageParam && referenceImages.length > 0) ||
         videoReferenceMedia.some(
             (media) => media !== "audio" && videoReferences[media].length > 0,
         );
@@ -1385,13 +1385,12 @@ export function Playground({
                                 aspectRatio: videoAspectRatio,
                                 duration: videoDuration?.value,
                                 seed: fixedSeed,
-                                image:
-                                    supportsReferenceImages && !usesReferences
-                                        ? exampleReferenceUrls(
-                                              "image",
-                                              referenceImages,
-                                          )
-                                        : undefined,
+                                image: acceptsImageParam
+                                    ? exampleReferenceUrls(
+                                          "image",
+                                          referenceImages,
+                                      )
+                                    : undefined,
                                 ...Object.fromEntries(
                                     videoReferenceMedia.map((media) => [
                                         REFERENCE_CAPABILITY[media],
@@ -1471,7 +1470,6 @@ export function Playground({
             model: modelId,
             size: undefined,
             duration: undefined,
-            guidance: undefined,
             sound: undefined,
         }));
         setAudioFiles([]);
@@ -1503,10 +1501,9 @@ export function Playground({
                     ),
                 );
             const requestSeed = fixedSeed ?? randomGenerationSeed();
-            const referenceUrls =
-                supportsReferenceImages && !usesReferences
-                    ? await uploadFiles(referenceImages)
-                    : [];
+            const referenceUrls = acceptsImageParam
+                ? await uploadFiles(referenceImages)
+                : [];
 
             if (currentModel.category === "video") {
                 const [images, videos, audios] = await Promise.all(
@@ -1708,15 +1705,13 @@ export function Playground({
     const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
-            <FieldStack
-                orientation="inline"
-                helper={uploadMedia.includes("audio") ? clipStatus : undefined}
-                className="min-w-0"
-                label={
+            <fieldset
+                aria-label={
                     requiresMediaUpload
-                        ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
-                        : "References"
+                        ? `${mediaUploadLabel} input`
+                        : "Reference media"
                 }
+                className="flex min-w-0 flex-col gap-2"
             >
                 {uploadMedia.includes("audio") ? (
                     <AudioInput
@@ -1748,10 +1743,15 @@ export function Playground({
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
                 )}
-            </FieldStack>
+                {clipStatus && (
+                    <Text size="xs" tone="muted">
+                        {clipStatus}
+                    </Text>
+                )}
+            </fieldset>
         ) : null;
     const frameTiles =
-        isVideoReferenceMode &&
+        supportsFrames &&
         (supportsLastFrame
             ? ["First frame", "Last frame"]
             : ["First frame"]
@@ -1759,7 +1759,10 @@ export function Playground({
             <fieldset
                 key={label}
                 aria-label={label}
-                className="m-0 min-w-0 border-0 p-0"
+                className={cn(
+                    "m-0 min-w-0 border-0 p-0",
+                    framesDisabled && "grayscale",
+                )}
             >
                 <FileUpload
                     value={referenceImages.slice(index, index + 1)}
@@ -1769,7 +1772,9 @@ export function Playground({
                         ["image"],
                         `Use one image for the ${label.toLowerCase()}.`,
                     )}
-                    disabled={index > 0 && !referenceImages[0]}
+                    disabled={
+                        framesDisabled || (index > 0 && !referenceImages[0])
+                    }
                     label={label}
                 />
                 {referenceImages[index] && (
@@ -1867,77 +1872,59 @@ export function Playground({
                         aria-label="Generation inputs"
                         className="@container/play-inputs flex flex-col gap-5"
                     >
-                        {showPromptInput && (
-                            <FieldStack
-                                label={
-                                    <>
-                                        {promptLabel}
-                                        {isAudioTranscription && (
-                                            <span className="font-normal text-theme-text-muted">
-                                                {" "}
-                                                (optional)
-                                            </span>
-                                        )}
-                                    </>
-                                }
-                            >
-                                <Textarea
-                                    value={prompt}
-                                    rows={isAudioTranscription ? 3 : 7}
-                                    onChange={(event) =>
-                                        setParam("prompt", event.target.value)
-                                    }
-                                    onKeyDown={(event) => {
-                                        if (
-                                            event.key === "Enter" &&
-                                            (event.metaKey || event.ctrlKey)
-                                        ) {
-                                            event.preventDefault();
-                                            run();
+                        <fieldset
+                            aria-label="Model input"
+                            className="flex min-w-0 flex-col gap-3"
+                        >
+                            {showPromptInput && (
+                                <FieldStack>
+                                    <Textarea
+                                        aria-label={
+                                            isAudioTranscription
+                                                ? "Instructions (optional)"
+                                                : promptLabel
                                         }
-                                    }}
-                                    placeholder={promptPlaceholder(
-                                        task,
-                                        editsImage,
-                                    )}
-                                    className={cn(
-                                        "lg:min-h-56",
-                                        isAudioTranscription
-                                            ? "min-h-24"
-                                            : "min-h-44",
-                                    )}
-                                />
-                            </FieldStack>
-                        )}
-                        <div className="play-reference-inputs empty:hidden">
+                                        value={prompt}
+                                        rows={isAudioTranscription ? 3 : 7}
+                                        onChange={(event) =>
+                                            setParam(
+                                                "prompt",
+                                                event.target.value,
+                                            )
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (
+                                                event.key === "Enter" &&
+                                                (event.metaKey || event.ctrlKey)
+                                            ) {
+                                                event.preventDefault();
+                                                run();
+                                            }
+                                        }}
+                                        placeholder={promptPlaceholder(
+                                            task,
+                                            editsImage,
+                                        )}
+                                        className={cn(
+                                            "lg:min-h-56",
+                                            isAudioTranscription
+                                                ? "min-h-24"
+                                                : "min-h-44",
+                                        )}
+                                    />
+                                </FieldStack>
+                            )}
                             {audioInput}
                             {isReferenceImageListMode && (
-                                <div className="min-w-0">
-                                    <FieldStack
-                                        orientation="inline"
-                                        className="min-w-0"
-                                        label={
-                                            <span className="inline-flex flex-wrap items-center gap-2">
-                                                {requiresImage
-                                                    ? "Image required"
-                                                    : "Reference images"}
-                                                <span
-                                                    role="img"
-                                                    aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
-                                                    className="inline-flex items-center gap-1.5 text-xs tabular-nums text-theme-text-muted"
-                                                >
-                                                    <ImageIcon
-                                                        aria-hidden="true"
-                                                        className="h-3.5 w-3.5"
-                                                    />
-                                                    <span aria-hidden="true">
-                                                        {referenceImages.length}
-                                                        /{maxReferenceImages}
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        }
-                                    >
+                                <fieldset
+                                    aria-label={
+                                        requiresImage
+                                            ? "Required image"
+                                            : "Reference images"
+                                    }
+                                    className="flex min-w-0 flex-col gap-2"
+                                >
+                                    <div className="flex flex-wrap items-end gap-2">
                                         <FileUpload
                                             value={referenceImages}
                                             onChange={setReferenceImages}
@@ -1948,166 +1935,138 @@ export function Playground({
                                             )}
                                             label="Add image"
                                         />
-                                        {referenceImages.length > 0 && (
-                                            <UploadPrivacyNote />
-                                        )}
-                                    </FieldStack>
-                                </div>
-                            )}
-
-                            {(isVideoReferenceMode ||
-                                videoReferenceMedia.length > 0) && (
-                                <fieldset
-                                    aria-labelledby={referencesLabelId}
-                                    className="m-0 min-w-0 border-0 p-0"
-                                >
-                                    <FieldStack
-                                        orientation="inline"
-                                        label={
-                                            <span id={referencesLabelId}>
-                                                References
-                                            </span>
-                                        }
-                                    >
-                                        {videoConfig.exclusiveReferences && (
-                                            <ButtonGroup aria-label="Reference type">
-                                                {["frames", "references"].map(
-                                                    (mode) => (
-                                                        <TabButton
-                                                            key={mode}
-                                                            size="sm"
-                                                            active={
-                                                                mode ===
-                                                                referenceMode
-                                                            }
-                                                            onClick={() =>
-                                                                setParam(
-                                                                    "guidance",
-                                                                    mode,
-                                                                )
-                                                            }
-                                                        >
-                                                            {mode === "frames"
-                                                                ? "Frames"
-                                                                : "Media"}
-                                                        </TabButton>
-                                                    ),
-                                                )}
-                                            </ButtonGroup>
-                                        )}
-                                        <div className="flex flex-wrap items-start gap-3">
-                                            {frameTiles}
-                                            {videoReferenceMedia.map(
-                                                (media) => {
-                                                    const Icon =
-                                                        CATEGORY_ICON[media];
-                                                    const maxVideos =
-                                                        media === "video"
-                                                            ? currentModel?.maxReferenceVideos
-                                                            : undefined;
-                                                    return (
-                                                        <div
-                                                            key={media}
-                                                            className="min-w-0 max-w-full"
-                                                        >
-                                                            {media ===
-                                                            "audio" ? (
-                                                                <AudioInput
-                                                                    key={
-                                                                        currentModel?.id
-                                                                    }
-                                                                    value={
-                                                                        videoReferences.audio
-                                                                    }
-                                                                    onChange={(
-                                                                        audio,
-                                                                    ) =>
-                                                                        setVideoReferences(
-                                                                            (
-                                                                                previous,
-                                                                            ) => ({
-                                                                                ...previous,
-                                                                                audio,
-                                                                            }),
-                                                                        )
-                                                                    }
-                                                                    onBusyChange={
-                                                                        setRecording
-                                                                    }
-                                                                    onClipDuration={
-                                                                        onClipDuration
-                                                                    }
-                                                                    disabled={
-                                                                        isGenerating
-                                                                    }
-                                                                    maxFiles={
-                                                                        currentModel?.maxReferenceAudios ??
-                                                                        Infinity
-                                                                    }
-                                                                    {...uploadProps(
-                                                                        [
-                                                                            "audio",
-                                                                        ],
-                                                                        "Too many audio clips.",
-                                                                    )}
-                                                                />
-                                                            ) : (
-                                                                <FileUpload
-                                                                    value={
-                                                                        videoReferences[
-                                                                            media
-                                                                        ]
-                                                                    }
-                                                                    onChange={(
-                                                                        files,
-                                                                    ) =>
-                                                                        setVideoReferences(
-                                                                            (
-                                                                                previous,
-                                                                            ) => ({
-                                                                                ...previous,
-                                                                                [media]:
-                                                                                    files,
-                                                                            }),
-                                                                        )
-                                                                    }
-                                                                    maxFiles={
-                                                                        maxVideos ??
-                                                                        Infinity
-                                                                    }
-                                                                    {...uploadProps(
-                                                                        [media],
-                                                                        maxVideos
-                                                                            ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
-                                                                            : "Too many files.",
-                                                                    )}
-                                                                    label={`Add ${media}`}
-                                                                    icon={
-                                                                        <Icon className="h-6 w-6 shrink-0" />
-                                                                    }
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    );
-                                                },
+                                        {maxReferenceImages > 1 &&
+                                            referenceImages.length > 0 && (
+                                                <Text
+                                                    size="xs"
+                                                    tone="muted"
+                                                    aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
+                                                >
+                                                    {referenceImages.length}/
+                                                    {maxReferenceImages}
+                                                </Text>
                                             )}
-                                        </div>
-                                        {clipStatus && (
-                                            <Text size="xs" tone="muted">
-                                                {clipStatus}
-                                            </Text>
-                                        )}
-                                        {((isVideoReferenceMode &&
-                                            referenceImages.length > 0) ||
-                                            videoReferenceMedia.some(
-                                                (media) =>
-                                                    videoReferences[media]
-                                                        .length > 0,
-                                            )) && <UploadPrivacyNote />}
-                                    </FieldStack>
+                                    </div>
+                                    {referenceImages.length > 0 && (
+                                        <UploadPrivacyNote />
+                                    )}
                                 </fieldset>
                             )}
-                        </div>
+
+                            {(supportsFrames ||
+                                videoReferenceMedia.length > 0) && (
+                                <fieldset
+                                    aria-label="Video references"
+                                    className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                                >
+                                    <div className="flex flex-wrap items-start gap-3">
+                                        {frameTiles}
+                                        {videoReferenceMedia.map((media) => {
+                                            const Icon = CATEGORY_ICON[media];
+                                            const maxVideos =
+                                                media === "video"
+                                                    ? currentModel?.maxReferenceVideos
+                                                    : undefined;
+                                            return (
+                                                <div
+                                                    key={media}
+                                                    className={cn(
+                                                        "min-w-0 max-w-full",
+                                                        mediaDisabled &&
+                                                            "grayscale",
+                                                    )}
+                                                >
+                                                    {media === "audio" ? (
+                                                        <AudioInput
+                                                            key={
+                                                                currentModel?.id
+                                                            }
+                                                            value={
+                                                                videoReferences.audio
+                                                            }
+                                                            onChange={(audio) =>
+                                                                setVideoReferences(
+                                                                    (
+                                                                        previous,
+                                                                    ) => ({
+                                                                        ...previous,
+                                                                        audio,
+                                                                    }),
+                                                                )
+                                                            }
+                                                            onBusyChange={
+                                                                setRecording
+                                                            }
+                                                            onClipDuration={
+                                                                onClipDuration
+                                                            }
+                                                            disabled={
+                                                                isGenerating ||
+                                                                mediaDisabled
+                                                            }
+                                                            maxFiles={
+                                                                currentModel?.maxReferenceAudios ??
+                                                                Infinity
+                                                            }
+                                                            {...uploadProps(
+                                                                ["audio"],
+                                                                "Too many audio clips.",
+                                                            )}
+                                                        />
+                                                    ) : (
+                                                        <FileUpload
+                                                            disabled={
+                                                                mediaDisabled
+                                                            }
+                                                            value={
+                                                                videoReferences[
+                                                                    media
+                                                                ]
+                                                            }
+                                                            onChange={(files) =>
+                                                                setVideoReferences(
+                                                                    (
+                                                                        previous,
+                                                                    ) => ({
+                                                                        ...previous,
+                                                                        [media]:
+                                                                            files,
+                                                                    }),
+                                                                )
+                                                            }
+                                                            maxFiles={
+                                                                maxVideos ??
+                                                                Infinity
+                                                            }
+                                                            {...uploadProps(
+                                                                [media],
+                                                                maxVideos
+                                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                                                                    : "Too many files.",
+                                                            )}
+                                                            label={`Add ${media}`}
+                                                            icon={
+                                                                <Icon className="h-6 w-6 shrink-0" />
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {clipStatus && (
+                                        <Text size="xs" tone="muted">
+                                            {clipStatus}
+                                        </Text>
+                                    )}
+                                    {((supportsFrames &&
+                                        referenceImages.length > 0) ||
+                                        hasReferenceMedia) && (
+                                        <UploadPrivacyNote />
+                                    )}
+                                </fieldset>
+                            )}
+                        </fieldset>
                         <div className="play-parameter-grid">
                             {currentModel && currentModel.voices.length > 0 && (
                                 <VoicePicker

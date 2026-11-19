@@ -21,7 +21,6 @@ export const PLAY_SEARCH_KEYS = [
     "language",
     "stems",
     "sound",
-    "guidance",
 ] as const;
 
 export type PlaySearch = Partial<

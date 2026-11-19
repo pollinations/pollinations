@@ -520,14 +520,14 @@ function ModelPicker({
                 <div className="w-80 min-w-0">
                     <Dropdown
                         portalled={false}
-                        className="w-[var(--reference-width)] overscroll-y-contain p-2"
+                        className="w-[var(--reference-width)] overscroll-y-contain p-2 max-sm:w-[min(calc(100vw-2.5rem),24rem)]"
                         trigger={(open) => (
                             <Button
                                 type="button"
                                 intent="neutral"
                                 size="lg"
                                 disabled={isLoading || models.length === 0}
-                                className="w-full touch-pan-y justify-between gap-2 px-3"
+                                className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
                                 title={selected?.title}
                                 aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
                                 aria-description={
@@ -603,7 +603,7 @@ function ModelPicker({
                                             active={model.id === selectedModel}
                                             size="sm"
                                             variant="ghost"
-                                            className="w-full justify-start text-left"
+                                            className="play-model-option w-full justify-start text-left"
                                             onClick={() => {
                                                 onSelectModel(model.id);
                                                 close();
@@ -2402,52 +2402,51 @@ export function Playground({
                                 </div>
                             )}
                         </div>
-                        {/* Not connected is not a broken state, so the button
+                    </Surface>
+
+                    {/* Not connected is not a broken state, so the button
                             becomes the connect action. When it genuinely
                             cannot fire, the line beside it says why. */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                // The page's main action: nectar whether it signs
-                                // in or generates. Busy fills with honey and shows
-                                // Polli. aria-disabled, not disabled, so focus
-                                // stays on the button; generate() ignores repeats.
-                                disabled={!!blockedReason}
-                                aria-disabled={isGenerating || undefined}
-                                aria-busy={isGenerating}
-                                aria-describedby={
-                                    clipError && blockedReason === clipError
-                                        ? clipStatusId
-                                        : statusId
-                                }
-                                icon={
-                                    needsSignIn ? undefined : <GenerateIcon />
-                                }
-                                onClick={run}
-                                className={cn(
-                                    needsSignIn && "h-12 gap-2 px-5 py-0",
-                                )}
-                            >
-                                {needsSignIn ? (
-                                    <>
-                                        <BrandMark className="h-6 w-6" />
-                                        {connectLabel}
-                                    </>
-                                ) : (
-                                    generateText
-                                )}
-                            </Button>
-                            <Text
-                                id={statusId}
-                                size="xs"
-                                tone="muted"
-                                className="empty:hidden max-sm:w-full"
-                            >
-                                {blockedReason !== clipError && blockedReason}
-                            </Text>
-                        </div>
-                    </Surface>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <Button
+                            size="lg"
+                            intent="brand"
+                            // The page's main action: nectar whether it signs
+                            // in or generates. Busy fills with honey and shows
+                            // Polli. aria-disabled, not disabled, so focus
+                            // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
+                            aria-disabled={isGenerating || undefined}
+                            aria-busy={isGenerating}
+                            aria-describedby={
+                                clipError && blockedReason === clipError
+                                    ? clipStatusId
+                                    : statusId
+                            }
+                            icon={needsSignIn ? undefined : <GenerateIcon />}
+                            onClick={run}
+                            className={cn(
+                                needsSignIn && "h-12 gap-2 px-5 py-0",
+                            )}
+                        >
+                            {needsSignIn ? (
+                                <>
+                                    <BrandMark className="h-6 w-6" />
+                                    {connectLabel}
+                                </>
+                            ) : (
+                                generateText
+                            )}
+                        </Button>
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="empty:hidden max-sm:w-full"
+                        >
+                            {blockedReason !== clipError && blockedReason}
+                        </Text>
+                    </div>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

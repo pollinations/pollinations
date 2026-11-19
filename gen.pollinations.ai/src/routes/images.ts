@@ -5,6 +5,7 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
+import { HOTSHOT_XL_MODEL } from "@shared/registry/image.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -338,6 +339,20 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
+
+        if (c.var.model.resolved === HOTSHOT_XL_MODEL) {
+            if (body.stream === true || body.aspect_ratio !== undefined) {
+                throw new UpstreamError(400, {
+                    message:
+                        "Hotshot-XL does not support streaming or aspect_ratio.",
+                });
+            }
+            // Use the model's fixed size when the client omits the schema's
+            // generic 1024x1024 default. Keep explicitly requested sizes.
+            if ((await c.req.json<CreateImageRequest>()).size === undefined) {
+                body.size = "auto";
+            }
+        }
 
         // OpenAI-style aspect_ratio is an optional convenience when no custom
         // size was specified. Explicit non-default size remains authoritative.

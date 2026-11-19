@@ -1,5 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import { HOTSHOT_XL_MODEL } from "@shared/registry/image.ts";
 import debug from "debug";
 import { isRetryableFallbackError } from "../fallback.ts";
 import {
@@ -18,6 +19,7 @@ import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callHotshotXL } from "./models/hotshotXLModel.ts";
 import {
     callIdeogramBalancedAPI,
     callIdeogramQualityAPI,
@@ -930,6 +932,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
+        case HOTSHOT_XL_MODEL:
+            return callHotshotXL(prompt, safeParams);
         case "stability-ai/stable-diffusion-3.5-large":
         case "stability-ai/stable-diffusion-3.5-large:stability":
             return callStabilityImage(prompt, safeParams, "sd35");
@@ -1334,6 +1338,7 @@ export async function createAndReturnImageCached(
             ["image/gif", "image/webp", "image/png"].includes(resultFormat);
         const processedBuffer =
             result.mimeType === "image/svg+xml" ||
+            result.mimeType === "image/gif" ||
             preserveFlareFormat ||
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")

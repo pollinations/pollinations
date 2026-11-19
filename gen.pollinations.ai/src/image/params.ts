@@ -1,4 +1,9 @@
-import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import {
+    HOTSHOT_XL_MODEL,
+    HOTSHOT_XL_SIDE_LENGTH,
+    IMAGE_SERVICES,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
 import {
     durationError,
     type ModelDefinition,
@@ -151,6 +156,27 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        if (data.model === HOTSHOT_XL_MODEL) {
+            if (data.output_format !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "Hotshot-XL always returns a GIF. Omit output_format.",
+                });
+            }
+            if (
+                (data.width !== undefined &&
+                    data.width !== HOTSHOT_XL_SIDE_LENGTH) ||
+                (data.height !== undefined &&
+                    data.height !== HOTSHOT_XL_SIDE_LENGTH)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Hotshot-XL only supports 512x512 output.",
+                });
+            }
+        }
         const isFlare =
             data.model === "openai/gpt-image-2.6-flare" ||
             data.model === "openai/gpt-image-2.6-flare:fal";

@@ -998,7 +998,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
-                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
+                "Generate an image from a text prompt. Returns JPEG, PNG, WebP, GIF, or SVG depending on the selected model.",
                 "",
                 "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
                 "",
@@ -1267,6 +1267,7 @@ export const proxyRoutes = new Hono<Env>()
                 "OpenAI-compatible image generation endpoint.",
                 "",
                 'Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).',
+                "`hotshotco/hotshot-xl` returns a 512×512 animated GIF when selected. Omit `output_format` for this model.",
                 "",
                 FLUX_SIZE_DESCRIPTION,
                 "",

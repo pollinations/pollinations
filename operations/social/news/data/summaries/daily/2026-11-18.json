@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-18",
+  "period_start": "2026-11-18",
+  "period_end": "2026-11-18",
+  "title": "A new text model and voice cloning",
+  "summary": "Qwen 4 Max and reference-audio voice cloning arrived alongside keyless Connect sign-in, clearer Quests, and seekable stored media.\n\nAdded paid-only `qwen/qwen4-max` with image input, tools, reasoning, and a 1,000,000-token context. Speech requests can now use a public reference audio URL with `zyphra/zonos3-mini` to clone a voice. Seedance 2.0 now follows explicit video dimensions when choosing an aspect ratio. Provider compatibility fixes also reduce rejected reasoning and message-role requests, while Glyph Cluster gains a fallback for upstream 429s before streaming starts.\n\nApps using `<polli-connect>` or `PolliProvider` can sign users in without an App Key. PKCE is still required. An App Key still supplies the app name on the consent screen and enables usage attribution and developer earnings. Separately, agent edits can save when an unchanged stored base model has been retired.\n\nThe Quests page groups Setup, Grow, Contribute, and Community quests into tabs and gives the monthly leaderboard its own card. Progress and claim labels distinguish Quest balance from Paid balance. GitHub contribution cards state what can be earned, and community quest discovery now reads issues directly from the `QUEST` label, including closed issues needed for historical claims. Rewards and claiming behavior are unchanged.",
+  "pr_count": 32,
+  "prs": [
+    {
+      "number": 19265,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19330,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19494,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19685,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19687,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19779,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19789,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19849,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19888,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19889,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19894,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19937,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19952,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19964,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19980,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 19997,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20019,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20038,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20039,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20062,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20071,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20080,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20095,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20097,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20129,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20133,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20141,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20150,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20157,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20181,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20243,
+      "date": "2026-11-18"
+    },
+    {
+      "number": 20303,
+      "date": "2026-11-18"
+    }
+  ],
+  "generated_at": "2026-11-19T06:08:36.084576+00:00",
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Qwen 4 Max added",
+      "text": "Use paid-only `qwen/qwen4-max` with text or image input, tools, reasoning, and a 1,000,000-token context. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen4-max).",
+      "prs": [
+        19889
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Clone a ZONOS voice",
+      "text": "Send a public HTTP(S) `reference_audio` URL with `zyphra/zonos3-mini` speech requests to generate text in that voice. Audio can be up to 20 MiB; the model uses its first 60 seconds. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        20129
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Connect without an App Key",
+      "text": "Apps can sign users in through Pollinations Connect without an App Key. PKCE is still required; an App Key still enables app-name display, usage attribution, and developer earnings. [Read the React SDK guide](https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider).",
+      "prs": [
+        19980
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quests, grouped by progress",
+      "text": "Browse Setup, Grow, Contribute, and Community tabs, then check claimable work and the separate monthly leaderboard. Quest amounts identify whether they add to Quest or Paid balance.",
+      "prs": [
+        19952,
+        20038,
+        20039,
+        20080
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

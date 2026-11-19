@@ -1,12 +1,12 @@
 ---
 name: pollinations-api
-description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. Without an API key, the user can approve a device authorization in their own browser, or an agent with a USDC wallet can buy a prepaid key over x402.
+description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. A first image needs no account; every other call uses POLLINATIONS_API_KEY, which the user can approve in their own browser, or an agent with a USDC wallet can buy a prepaid key over x402.
 ---
 
 # pollinations-api — Pollinations REST API
 
 Direct REST access to `https://gen.pollinations.ai` without installing the CLI.
-The image URL works keyless; authenticated calls use `POLLINATIONS_API_KEY`.
+Generations on that host need a key; the Free API Classic image route needs none.
 If no key is available, the user can approve a device authorization in their own browser.
 With no user to approve, an agent can buy a prepaid key over x402 (below).
 
@@ -16,10 +16,13 @@ or when you only need one quick call.
 
 ## Auth
 
-- Keyless (no header): `GET /image/{prompt}`.
 - Authenticated: header `Authorization: Bearer $POLLINATIONS_API_KEY`
   (an existing key, or a user-approved device authorization below).
 - Same key permissions, billing and caching as the CLI path.
+- Without a key, `GET /image/{prompt}` still answers when the same prompt and
+  `seed` are already in the shared cache (`x-cache: HIT`). That is an image
+  another caller generated, not a new generation: a fresh prompt returns
+  `401`. Check `x-cache` before trusting a keyless `200`.
 
 ## Get a key without copying one into the agent
 
@@ -98,14 +101,33 @@ only with the user's permission.
 
 Each payment creates a new key; store it like the device authorization key above.
 
-## First call (keyless image, no code)
+## First call (image, no key, no account)
+
+The Free API Classic route needs no account, no key and no payment:
 
 ```plaintext
-https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
+https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768
 ```
 
-Open the URL or `curl -o out.png "<url>"`. If it returns an image,
-discovery works.
+```bash
+curl -sS -L -o out.jpg "https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768"
+```
+
+What that route does:
+
+- One image per 45 seconds per IP. A refusal is HTTP `402` with
+  `{"code":"FREE_LIMIT"}` and a `retry-after` header; wait, then retry the
+  same URL.
+- Output is capped at 768x768, the model is `sana`, and `model=` is ignored.
+- The `pollinations.ai` wordmark is burned in; `nologo=true` does not remove it.
+- A refusal body is JSON, not an image. Check the content type before saving
+  the response to a `.jpg`.
+
+A fresh image carries `x-auth-status: unauthenticated` and `x-cache: MISS`,
+so a real generation and a cached one are easy to tell apart.
+
+For every other endpoint, get a key first: `gen.pollinations.ai/image/{prompt}`
+returns `401` for any prompt that is not already cached.
 
 ## Text (OpenAI-compatible)
 

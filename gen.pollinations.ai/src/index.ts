@@ -142,7 +142,11 @@ function llmsTxt(c: Context<Env>): Response {
     return new Response(
         `# Pollinations
 
-> Generate text, images, audio, video, 3D, and embeddings through the Pollinations API, CLI, or MCP server. API calls use a Pollinations key.
+> Generate text, images, audio, video, 3D, and embeddings through the Pollinations API, CLI, or MCP server. Most API calls use a Pollinations key; a first image needs no account.
+
+## First call, no account
+
+- [Free image, no key and no sign-in](https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768): The Free API Classic route. One image per 45 seconds per IP, up to 768x768.
 
 ## Start here
 

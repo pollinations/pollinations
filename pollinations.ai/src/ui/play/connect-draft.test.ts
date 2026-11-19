@@ -16,7 +16,7 @@ const selection: ConnectDrafts = {
     audio: {
         params: { model: "zyphra/zonos3-mini", prompt: "Hello" },
         referenceImages: [],
-        videoReferences: { image: [], video: [], audio: [] },
+        videoReferences: [],
         audioFiles: [recording],
     },
 };
@@ -87,6 +87,23 @@ it("preserves separate drafts for tasks with the same media type", async () => {
     expect(drafts?.["stem-separation"].audioFiles).toEqual([]);
 });
 
+it("restores mixed reference files in selection order", async () => {
+    const videoReferences = [
+        { id: "1", media: "audio", file: recording },
+        { id: "2", media: "image", file: new File([], "scene.png") },
+        { id: "3", media: "audio", file: recording },
+    ] satisfies ConnectDrafts["video"]["videoReferences"];
+    await saveConnectDraft({ video: { ...selection.audio, videoReferences } });
+    const restored = (await takeConnectDraft())?.video.videoReferences;
+    expect(
+        restored?.map(({ id, media, file }) => [id, media, file.name]),
+    ).toEqual([
+        ["1", "audio", "voice.wav"],
+        ["2", "image", "scene.png"],
+        ["3", "audio", "voice.wav"],
+    ]);
+});
+
 it.each(["frames", "references"])(
     "restores the active uploads from an older %s draft",
     async (guidance) => {
@@ -95,7 +112,9 @@ it.each(["frames", "references"])(
             video: {
                 params,
                 referenceImages: [new File(["frame"], "first.png")],
-                videoReferences: { image: [], video: [], audio: [recording] },
+                videoReferences: [
+                    { id: "voice", media: "audio", file: recording },
+                ],
                 audioFiles: [],
             },
         });
@@ -103,9 +122,9 @@ it.each(["frames", "references"])(
         expect(restored?.referenceImages.map((file) => file.name)).toEqual(
             guidance === "frames" ? ["first.png"] : [],
         );
-        expect(
-            restored?.videoReferences.audio.map((file) => file.name),
-        ).toEqual(guidance === "references" ? [recording.name] : []);
+        expect(restored?.videoReferences.map(({ file }) => file.name)).toEqual(
+            guidance === "references" ? [recording.name] : [],
+        );
     },
 );
 

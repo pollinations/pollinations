@@ -117,6 +117,7 @@ export {
     type ToolCallDetailsProps,
     type ToolCallStatus,
 } from "./compositions/ToolCallDetails.tsx";
+export { UploadedFileTile } from "./compositions/UploadedMedia.tsx";
 export { cn } from "./lib/cn-app.ts";
 export { formatCount } from "./lib/format-count.ts";
 export {

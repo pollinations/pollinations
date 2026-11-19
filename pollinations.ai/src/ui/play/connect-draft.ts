@@ -2,10 +2,11 @@ import type { PlaySearch } from "../../routes/-play-search";
 import { videoOptions } from "./video-options";
 
 type Category = "image" | "video" | "audio";
+export type VideoReference<T = File> = { id: string; media: Category; file: T };
 type TabDraft<T> = {
     params: PlaySearch;
     referenceImages: T[];
-    videoReferences: Record<Category, T[]>;
+    videoReferences: VideoReference<T>[];
     audioFiles: T[];
 };
 export type ConnectDrafts<T = File> = Record<string, TabDraft<T>>;
@@ -28,11 +29,13 @@ async function mapFiles<T, R>(
         result[task] = {
             params: draft.params,
             referenceImages: await map(draft.referenceImages),
-            videoReferences: {
-                image: await map(draft.videoReferences.image),
-                video: await map(draft.videoReferences.video),
-                audio: await map(draft.videoReferences.audio),
-            },
+            videoReferences: await Promise.all(
+                draft.videoReferences.map(async ({ id, media, file }) => ({
+                    id,
+                    media,
+                    file: await convert(file),
+                })),
+            ),
             audioFiles: await map(draft.audioFiles),
         };
     }
@@ -116,18 +119,29 @@ export async function takeConnectDraft(): Promise<ConnectDrafts | undefined> {
     if (!draft) return;
     // Older drafts could retain uploads behind both positions of the mode switch.
     for (const saved of Object.values(draft)) {
+        if (!Array.isArray(saved.videoReferences)) {
+            const grouped: Record<Category, StoredFile[]> =
+                saved.videoReferences;
+            saved.videoReferences = (
+                ["image", "video", "audio"] as const
+            ).flatMap((media) =>
+                grouped[media].map((file) => ({
+                    id: crypto.randomUUID(),
+                    media,
+                    file,
+                })),
+            );
+        }
         if (
             saved.referenceImages.length &&
-            Object.values(saved.videoReferences).some(
-                (files) => files.length,
-            ) &&
+            saved.videoReferences.length &&
             videoOptions(saved.params.model ?? "", []).exclusiveReferences
         ) {
             const { guidance } = saved.params as PlaySearch & {
                 guidance?: string;
             };
             if (guidance === "references") saved.referenceImages = [];
-            else saved.videoReferences = { image: [], video: [], audio: [] };
+            else saved.videoReferences = [];
         }
     }
     return mapFiles(

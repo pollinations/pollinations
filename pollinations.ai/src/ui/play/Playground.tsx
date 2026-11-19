@@ -37,6 +37,7 @@ import {
     TabButton,
     Text,
     Textarea,
+    UploadedFileTile,
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -62,7 +63,11 @@ import { API_BASE_URL, ENTER_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
-import { type ConnectDrafts, saveConnectDraft } from "./connect-draft";
+import {
+    type ConnectDrafts,
+    saveConnectDraft,
+    type VideoReference,
+} from "./connect-draft";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -988,9 +993,18 @@ export function Playground({
     const [referenceImages, setReferenceImages] = useState<File[]>(
         restored?.referenceImages ?? [],
     );
-    const [videoReferences, setVideoReferences] = useState<
-        Record<UploadMedia, File[]>
-    >(restored?.videoReferences ?? { image: [], video: [], audio: [] });
+    const [referenceQueue, setReferenceQueue] = useState<VideoReference[]>(
+        restored?.videoReferences ?? [],
+    );
+    const videoReferences = useMemo(() => {
+        const grouped: Record<UploadMedia, File[]> = {
+            image: [],
+            video: [],
+            audio: [],
+        };
+        for (const { media, file } of referenceQueue) grouped[media].push(file);
+        return grouped;
+    }, [referenceQueue]);
     const [recording, setRecording] = useState(false);
     const [audioFiles, setAudioFiles] = useState<File[]>(
         restored?.audioFiles ?? [],
@@ -1432,7 +1446,7 @@ export function Playground({
         taskDrafts.current[task.id] = {
             params,
             referenceImages,
-            videoReferences,
+            videoReferences: referenceQueue,
             audioFiles,
         };
         const draft = taskDrafts.current[next.id];
@@ -1450,9 +1464,7 @@ export function Playground({
             tab: next.workspace.category,
         });
         setReferenceImages(saved?.referenceImages ?? []);
-        setVideoReferences(
-            saved?.videoReferences ?? { image: [], video: [], audio: [] },
-        );
+        setReferenceQueue(saved?.videoReferences ?? []);
         setAudioFiles(saved?.audioFiles ?? []);
     }
 
@@ -1473,7 +1485,34 @@ export function Playground({
             sound: undefined,
         }));
         setAudioFiles([]);
-        setVideoReferences({ image: [], video: [], audio: [] });
+        setReferenceQueue([]);
+    }
+
+    function videoUploadProps(media: UploadMedia) {
+        const maxVideos =
+            media === "video" ? currentModel?.maxReferenceVideos : undefined;
+        const value = videoReferences[media];
+        return {
+            ...uploadProps(
+                [media],
+                media === "audio"
+                    ? "Too many audio clips."
+                    : maxVideos
+                      ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
+                      : "Too many files.",
+            ),
+            value,
+            maxFiles:
+                (media === "audio"
+                    ? currentModel?.maxReferenceAudios
+                    : maxVideos) ?? Infinity,
+            onChange(files: File[]) {
+                const added = files
+                    .slice(value.length)
+                    .map((file) => ({ id: crypto.randomUUID(), media, file }));
+                setReferenceQueue((previous) => [...previous, ...added]);
+            },
+        };
     }
 
     function setFrameImage(index: number, files: File[]) {
@@ -1672,7 +1711,7 @@ export function Playground({
             [task.id]: {
                 params,
                 referenceImages,
-                videoReferences,
+                videoReferences: referenceQueue,
                 audioFiles,
             },
         };
@@ -1682,9 +1721,7 @@ export function Playground({
                     (draft) =>
                         draft.referenceImages.length ||
                         draft.audioFiles.length ||
-                        Object.values(draft.videoReferences).some(
-                            (files) => files.length,
-                        ),
+                        draft.videoReferences.length,
                 )
             ) {
                 await saveConnectDraft(saved);
@@ -1750,6 +1787,28 @@ export function Playground({
                 )}
             </fieldset>
         ) : null;
+    const queuedTiles = referenceQueue.map(
+        (item) =>
+            videoReferenceMedia.includes(item.media) && (
+                <UploadedFileTile
+                    key={item.id}
+                    drop={videoUploadProps(item.media)}
+                    file={item.file}
+                    modality={item.media}
+                    disabled={
+                        item.media === "audio" && (recording || isGenerating)
+                    }
+                    onClipDuration={
+                        item.media === "audio" ? onClipDuration : undefined
+                    }
+                    onRemove={() =>
+                        setReferenceQueue((previous) =>
+                            previous.filter((entry) => entry !== item),
+                        )
+                    }
+                />
+            ),
+    );
     const frameTiles =
         supportsFrames &&
         (supportsLastFrame
@@ -1959,98 +2018,39 @@ export function Playground({
                                     aria-label="Video references"
                                     className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
                                 >
-                                    <div className="flex flex-wrap items-start gap-3">
+                                    <div
+                                        className={cn(
+                                            "flex flex-wrap items-start gap-3",
+                                            mediaDisabled &&
+                                                "[&_button:disabled]:grayscale [&_label:has(input:disabled)]:grayscale",
+                                        )}
+                                    >
+                                        {queuedTiles}
                                         {frameTiles}
                                         {videoReferenceMedia.map((media) => {
                                             const Icon = CATEGORY_ICON[media];
-                                            const maxVideos =
-                                                media === "video"
-                                                    ? currentModel?.maxReferenceVideos
-                                                    : undefined;
-                                            return (
-                                                <div
+                                            return media === "audio" ? (
+                                                <AudioInput
+                                                    key={`${currentModel?.id}-audio`}
+                                                    actionsOnly
+                                                    {...videoUploadProps(media)}
+                                                    onBusyChange={setRecording}
+                                                    disabled={
+                                                        isGenerating ||
+                                                        mediaDisabled
+                                                    }
+                                                />
+                                            ) : (
+                                                <FileUpload
                                                     key={media}
-                                                    className={cn(
-                                                        "min-w-0 max-w-full",
-                                                        mediaDisabled &&
-                                                            "grayscale",
-                                                    )}
-                                                >
-                                                    {media === "audio" ? (
-                                                        <AudioInput
-                                                            key={
-                                                                currentModel?.id
-                                                            }
-                                                            value={
-                                                                videoReferences.audio
-                                                            }
-                                                            onChange={(audio) =>
-                                                                setVideoReferences(
-                                                                    (
-                                                                        previous,
-                                                                    ) => ({
-                                                                        ...previous,
-                                                                        audio,
-                                                                    }),
-                                                                )
-                                                            }
-                                                            onBusyChange={
-                                                                setRecording
-                                                            }
-                                                            onClipDuration={
-                                                                onClipDuration
-                                                            }
-                                                            disabled={
-                                                                isGenerating ||
-                                                                mediaDisabled
-                                                            }
-                                                            maxFiles={
-                                                                currentModel?.maxReferenceAudios ??
-                                                                Infinity
-                                                            }
-                                                            {...uploadProps(
-                                                                ["audio"],
-                                                                "Too many audio clips.",
-                                                            )}
-                                                        />
-                                                    ) : (
-                                                        <FileUpload
-                                                            disabled={
-                                                                mediaDisabled
-                                                            }
-                                                            value={
-                                                                videoReferences[
-                                                                    media
-                                                                ]
-                                                            }
-                                                            onChange={(files) =>
-                                                                setVideoReferences(
-                                                                    (
-                                                                        previous,
-                                                                    ) => ({
-                                                                        ...previous,
-                                                                        [media]:
-                                                                            files,
-                                                                    }),
-                                                                )
-                                                            }
-                                                            maxFiles={
-                                                                maxVideos ??
-                                                                Infinity
-                                                            }
-                                                            {...uploadProps(
-                                                                [media],
-                                                                maxVideos
-                                                                    ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
-                                                                    : "Too many files.",
-                                                            )}
-                                                            label={`Add ${media}`}
-                                                            icon={
-                                                                <Icon className="h-6 w-6 shrink-0" />
-                                                            }
-                                                        />
-                                                    )}
-                                                </div>
+                                                    actionsOnly
+                                                    {...videoUploadProps(media)}
+                                                    disabled={mediaDisabled}
+                                                    label={`Add ${media}`}
+                                                    icon={
+                                                        <Icon className="h-6 w-6 shrink-0" />
+                                                    }
+                                                />
                                             );
                                         })}
                                     </div>

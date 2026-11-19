@@ -9,11 +9,7 @@ import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { CloudUploadIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
-import {
-    fileMediaKind,
-    MediaRemoveButton,
-    UploadedClipPlayer,
-} from "./UploadedMedia.tsx";
+import { UploadedFileTile } from "./UploadedMedia.tsx";
 
 export type AudioInputProps = {
     value: File[];
@@ -28,43 +24,9 @@ export type AudioInputProps = {
     maxFiles?: number;
     maxSizeBytes: number;
     disabled?: boolean;
+    /** Render the recording and import actions inline with a shared preview queue. */
+    actionsOnly?: boolean;
 };
-
-function Clip({
-    file,
-    onRemove,
-    onClipDuration,
-    disabled,
-}: {
-    file: File;
-    onRemove: () => void;
-    onClipDuration?: AudioInputProps["onClipDuration"];
-    disabled: boolean;
-}) {
-    const kind = fileMediaKind(file) ?? "audio";
-    const reportDuration = useCallback(
-        (seconds: number | null) => onClipDuration?.(file, seconds),
-        [file, onClipDuration],
-    );
-    return (
-        <div
-            title={file.name}
-            className="polli-upload-tile polli:relative polli:w-20 polli:shrink-0"
-        >
-            <UploadedClipPlayer
-                file={file}
-                video={kind === "video"}
-                disabled={disabled}
-                onDuration={onClipDuration && reportDuration}
-            />
-            <MediaRemoveButton
-                file={file}
-                kind={kind}
-                onRemove={disabled ? undefined : onRemove}
-            />
-        </div>
-    );
-}
 
 export function AudioInput({
     value,
@@ -78,6 +40,7 @@ export function AudioInput({
     maxFiles = 1,
     maxSizeBytes,
     disabled = false,
+    actionsOnly = false,
 }: AudioInputProps) {
     const picker = useRef<HTMLInputElement>(null);
     const [busy, setBusy] = useState(false);
@@ -115,25 +78,37 @@ export function AudioInput({
     return (
         <fieldset
             aria-label="Audio clips"
-            className="polli:m-0 polli:w-full polli:min-w-0 polli:border-0 polli:p-0"
+            className={
+                actionsOnly
+                    ? "polli:contents"
+                    : "polli:m-0 polli:w-full polli:min-w-0 polli:border-0 polli:p-0"
+            }
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
                 e.preventDefault();
                 if (!busy) add(Array.from(e.dataTransfer.files));
             }}
         >
-            <div className="polli:flex polli:flex-wrap polli:items-start polli:gap-3">
-                {value.map((file, i) => (
-                    <Clip
-                        key={`${file.name}-${file.lastModified}-${i}`}
-                        file={file}
-                        onClipDuration={onClipDuration}
-                        disabled={disabled || busy}
-                        onRemove={() =>
-                            onChange(value.filter((_, n) => n !== i))
-                        }
-                    />
-                ))}
+            <div
+                className={
+                    actionsOnly
+                        ? "polli:contents"
+                        : "polli:flex polli:flex-wrap polli:items-start polli:gap-3"
+                }
+            >
+                {!actionsOnly &&
+                    value.map((file, i) => (
+                        <UploadedFileTile
+                            modality="audio"
+                            key={`${file.name}-${file.lastModified}-${i}`}
+                            file={file}
+                            onClipDuration={onClipDuration}
+                            disabled={disabled || busy}
+                            onRemove={() =>
+                                onChange(value.filter((_, n) => n !== i))
+                            }
+                        />
+                    ))}
                 {canAdd && (
                     <>
                         <AudioRecorder

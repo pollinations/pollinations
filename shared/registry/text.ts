@@ -3151,7 +3151,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
@@ -3183,7 +3183,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: ["nemotron-3.5-lightning"],
         provider: "azure",
         publisher: "NVIDIA",
@@ -3513,7 +3513,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: [],
         provider: "fireworks",
         publisher: "Z.ai",

@@ -1805,9 +1805,15 @@ export function Playground({
                                         aria-label={`Pricing for ${currentModel.title} on Enter`}
                                         tone="quiet"
                                         style={{ fontWeight: "inherit" }}
-                                        showIcon={false}
                                     >
                                         Pricing
+                                    </InlineLink>
+                                    <InlineLink
+                                        href="https://model-monitor.pollinations.ai"
+                                        tone="quiet"
+                                        style={{ fontWeight: "inherit" }}
+                                    >
+                                        Model Monitor
                                     </InlineLink>
                                 </div>
                             </div>

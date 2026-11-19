@@ -431,11 +431,6 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
         if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
-        const mediaData =
-            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
-            mediaType.startsWith("video/")
-                ? { media_type: mediaType }
-                : {};
 
         if (body.response_format === "url") {
             // Media emits one enclosure link for the stored file.
@@ -463,7 +458,10 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
             c,
             c.json(
                 imageResponse(
-                    { b64_json: base64, ...mediaData },
+                    // Base64 bytes carry no Content-Type, so declare the type
+                    // for every media type; without it the SDK falls back to
+                    // image/png and mislabels JPEG output.
+                    { b64_json: base64, media_type: mediaType },
                     body.prompt,
                     usage,
                 ),

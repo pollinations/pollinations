@@ -90,6 +90,13 @@ export const timeTools = [
         ({ start, changes, end }) => {
             if ((changes === undefined) === (end === undefined))
                 throw new Error("Provide exactly one of changes or end");
+            // The shape has no required field, and Temporal answers an empty
+            // duration with "No valid fields: days,hours,microseconds,...",
+            // which names units this tool does not accept.
+            if (changes !== undefined && Object.keys(changes).length === 0)
+                throw new Error(
+                    "changes needs at least one unit, for example { days: 1 }",
+                );
             const from = instant(start).toZonedDateTimeISO("UTC");
             if (end !== undefined) {
                 const to = instant(end).toZonedDateTimeISO("UTC");

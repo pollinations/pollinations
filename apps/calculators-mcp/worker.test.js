@@ -176,6 +176,17 @@ test("date math clamps month ends, supports reverse intervals and rejects confli
                 .isError,
             true,
         );
+    // An empty changes object must name the argument instead of surfacing
+    // Temporal's "No valid fields: days,hours,microseconds,..." TypeError.
+    const emptyChanges = await client.callTool({
+        name: "time_math",
+        arguments: { start: "2026-01-01", changes: {} },
+    });
+    assert.equal(emptyChanges.isError, true);
+    assert.match(
+        emptyChanges.content[0].text,
+        /changes needs at least one unit/,
+    );
 });
 test("cron uses exclusive starts, OR semantics, DST and bounded impossible schedules", {
     timeout: 10000,

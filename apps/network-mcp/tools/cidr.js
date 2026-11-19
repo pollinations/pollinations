@@ -24,10 +24,17 @@ export function inspect(cidr, addresses) {
         throw new Error(
             "Use dotted-decimal IPv4 or zone-free IPv6 with a CIDR prefix",
         );
+    // Bound the prefix by family before the library sees it: ipaddr throws its
+    // own "neither IPv6 nor IPv4 CIDR format" for 33 or 129.
+    const bits = input.includes(":") ? 128 : 32;
+    const prefix = Number(prefixText);
+    if (prefix > bits)
+        throw new Error(
+            `An ${bits === 32 ? "IPv4" : "IPv6"} prefix must be 0-${bits}.`,
+        );
     const parsed = ipaddr.parseCIDR(cidr),
-        [ip, prefix] = parsed;
-    const version = ip.kind() === "ipv4" ? 4 : 6,
-        bits = version === 4 ? 32 : 128;
+        [ip] = parsed;
+    const version = ip.kind() === "ipv4" ? 4 : 6;
     // Reuse the library's subnet operations instead of duplicating mask arithmetic.
     const family = version === 4 ? ipaddr.IPv4 : ipaddr.IPv6;
     const network = family.networkAddressFromCIDR(cidr).toString();

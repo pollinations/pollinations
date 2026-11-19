@@ -1,4 +1,10 @@
-import { type ChangeEvent, type ReactNode, useEffect, useId } from "react";
+import {
+    type ChangeEvent,
+    type ReactNode,
+    useEffect,
+    useId,
+    useRef,
+} from "react";
 import { cn } from "../lib/cn.ts";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
 import {
@@ -7,6 +13,7 @@ import {
     type TileModality,
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
+import { useUploadReorder } from "../lib/use-upload-reorder.ts";
 import { ImageIcon } from "../primitives/icons/index.tsx";
 import { UploadedFileTile } from "./UploadedMedia.tsx";
 
@@ -26,6 +33,7 @@ export type FileUploadProps = {
     className?: string;
     /** Render the add control when the caller owns the preview queue. */
     actionsOnly?: boolean;
+    reorderable?: boolean;
 };
 
 export function FileUpload({
@@ -46,6 +54,7 @@ export function FileUpload({
     disabled = false,
     className,
     actionsOnly = false,
+    reorderable = false,
 }: FileUploadProps) {
     // A near-miss file drop should not navigate the browser away from the app.
     // Mounted upload controls share one document-level guard.
@@ -65,6 +74,9 @@ export function FileUpload({
         if (rejected.length > 0) onReject?.(rejected);
     }
 
+    const fileKeys = useRef(new WeakMap<File, number>());
+    const nextKey = useRef(0);
+    const reorder = useUploadReorder(value, onChange, !reorderable || disabled);
     const canAdd = !disabled && value.length < maxFiles;
     const inputId = useId();
 
@@ -90,24 +102,32 @@ export function FileUpload({
         >
             <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
                 {!actionsOnly &&
-                    value.map((file, index) => (
-                        <li
-                            key={`${file.name}-${index}`}
-                            className="polli:list-none"
-                        >
-                            <UploadedFileTile
-                                file={file}
-                                modality={tileModality}
-                                previewIcon={previewIcon}
-                                disabled={disabled}
-                                onRemove={() =>
-                                    onChange(
-                                        value.filter((_, n) => n !== index),
-                                    )
-                                }
-                            />
-                        </li>
-                    ))}
+                    value.map((file, index) => {
+                        let key = fileKeys.current.get(file);
+                        if (!key) {
+                            key = ++nextKey.current;
+                            fileKeys.current.set(file, key);
+                        }
+                        return (
+                            <li
+                                key={`${key}-${value.slice(0, index).filter((prior) => prior === file).length}`}
+                                className="polli:list-none"
+                            >
+                                <UploadedFileTile
+                                    file={file}
+                                    reorder={reorder(index)}
+                                    modality={tileModality}
+                                    previewIcon={previewIcon}
+                                    disabled={disabled}
+                                    onRemove={() =>
+                                        onChange(
+                                            value.filter((_, n) => n !== index),
+                                        )
+                                    }
+                                />
+                            </li>
+                        );
+                    })}
                 {(canAdd || value.length === 0) && (
                     <li className="polli:list-none">
                         <label

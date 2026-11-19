@@ -11,6 +11,7 @@ import {
     partitionFiles,
     type RejectedFile,
 } from "../lib/partition-files.ts";
+import type { useUploadReorder } from "../lib/use-upload-reorder.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, XIcon } from "../primitives/icons/index.tsx";
 import { MediaPlayer } from "./AudioPlayer.tsx";
@@ -190,8 +191,10 @@ export function UploadedFileTile({
     onClipDuration,
     previewIcon,
     drop,
+    reorder,
 }: {
     file: File;
+    reorder?: ReturnType<ReturnType<typeof useUploadReorder>>;
     modality?: TileModality;
     disabled?: boolean;
     onRemove: () => void;
@@ -211,6 +214,7 @@ export function UploadedFileTile({
     );
     return (
         <fieldset
+            {...reorder}
             aria-label={file.name}
             title={file.name}
             onDragOver={drop && ((event) => event.preventDefault())}

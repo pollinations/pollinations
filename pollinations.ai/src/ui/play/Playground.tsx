@@ -38,7 +38,9 @@ import {
     Text,
     Textarea,
     UploadedFileTile,
+    useUploadReorder,
     VideoIcon,
+    VideoRecorder,
     XIcon,
 } from "@pollinations/ui";
 import {
@@ -1005,7 +1007,9 @@ export function Playground({
         for (const { media, file } of referenceQueue) grouped[media].push(file);
         return grouped;
     }, [referenceQueue]);
-    const [recording, setRecording] = useState(false);
+    const [recordingAudio, setRecordingAudio] = useState(false);
+    const [recordingVideo, setRecordingVideo] = useState(false);
+    const recording = recordingAudio || recordingVideo;
     const [audioFiles, setAudioFiles] = useState<File[]>(
         restored?.audioFiles ?? [],
     );
@@ -1740,8 +1744,24 @@ export function Playground({
     const time = formatRunTime(modelStats?.avg_response_ms);
 
     const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
+    const cameraTile = (maxBytes: number, onRecord: (file: File) => void) => (
+        <VideoRecorder
+            key={currentModel?.id}
+            maxBytes={maxBytes}
+            onRecord={onRecord}
+            onBusyChange={setRecordingVideo}
+            disabled={recordingAudio || isGenerating || mediaDisabled}
+        />
+    );
+    const audioUploadProps = acceptsMediaUpload
+        ? uploadProps(
+              uploadMedia,
+              "Use one media file.",
+              isStemSeparation ? 50 : undefined,
+          )
+        : undefined;
     const audioInput =
-        currentModel?.category === "audio" && acceptsMediaUpload ? (
+        currentModel?.category === "audio" && audioUploadProps ? (
             <fieldset
                 aria-label={
                     requiresMediaUpload
@@ -1750,33 +1770,41 @@ export function Playground({
                 }
                 className="flex min-w-0 flex-col gap-2"
             >
-                {uploadMedia.includes("audio") ? (
-                    <AudioInput
-                        key={currentModel.id}
-                        value={audioFiles}
-                        onChange={setAudioFiles}
-                        onBusyChange={setRecording}
-                        onClipDuration={onClipDuration}
-                        disabled={isGenerating}
-                        importLabel={`Import ${mediaUploadLabel}`}
-                        {...uploadProps(
-                            uploadMedia,
-                            "Use one media file.",
-                            isStemSeparation ? 50 : undefined,
+                <div className="flex flex-wrap items-start gap-3">
+                    {uploadMedia.includes("video") &&
+                        audioFiles.length === 0 &&
+                        cameraTile(audioUploadProps.maxSizeBytes, (file) =>
+                            setAudioFiles([file]),
                         )}
-                    />
-                ) : (
-                    <FileUpload
-                        value={audioFiles}
-                        onChange={setAudioFiles}
-                        disabled={isGenerating}
-                        maxFiles={1}
-                        {...uploadProps(uploadMedia, "Use one media file.")}
-                        icon={<MediaUploadIcon className="h-6 w-6 shrink-0" />}
-                        previewIcon={<MediaUploadIcon className="h-5 w-5" />}
-                        label={`Add ${mediaUploadLabel}`}
-                    />
-                )}
+                    {uploadMedia.includes("audio") ? (
+                        <AudioInput
+                            key={currentModel.id}
+                            value={audioFiles}
+                            onChange={setAudioFiles}
+                            actionsOnly={audioFiles.length === 0}
+                            onBusyChange={setRecordingAudio}
+                            onClipDuration={onClipDuration}
+                            disabled={isGenerating || recordingVideo}
+                            importLabel={`Import ${mediaUploadLabel}`}
+                            {...audioUploadProps}
+                        />
+                    ) : (
+                        <FileUpload
+                            value={audioFiles}
+                            onChange={setAudioFiles}
+                            disabled={isGenerating || recordingVideo}
+                            maxFiles={1}
+                            {...audioUploadProps}
+                            icon={
+                                <MediaUploadIcon className="h-6 w-6 shrink-0" />
+                            }
+                            previewIcon={
+                                <MediaUploadIcon className="h-5 w-5" />
+                            }
+                            label={`Add ${mediaUploadLabel}`}
+                        />
+                    )}
+                </div>
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
                 )}
@@ -1787,16 +1815,24 @@ export function Playground({
                 )}
             </fieldset>
         ) : null;
+    const reorderReference = useUploadReorder(
+        referenceQueue,
+        setReferenceQueue,
+        recording || isGenerating,
+    );
     const queuedTiles = referenceQueue.map(
-        (item) =>
+        (item, index) =>
             videoReferenceMedia.includes(item.media) && (
                 <UploadedFileTile
                     key={item.id}
+                    reorder={reorderReference(index)}
                     drop={videoUploadProps(item.media)}
                     file={item.file}
                     modality={item.media}
                     disabled={
-                        item.media === "audio" && (recording || isGenerating)
+                        (item.media === "audio" &&
+                            (recording || isGenerating)) ||
+                        (item.media === "video" && recordingVideo)
                     }
                     onClipDuration={
                         item.media === "audio" ? onClipDuration : undefined
@@ -1985,6 +2021,7 @@ export function Playground({
                                 >
                                     <div className="flex flex-wrap items-end gap-2">
                                         <FileUpload
+                                            reorderable
                                             value={referenceImages}
                                             onChange={setReferenceImages}
                                             maxFiles={maxReferenceImages}
@@ -2029,28 +2066,50 @@ export function Playground({
                                         {frameTiles}
                                         {videoReferenceMedia.map((media) => {
                                             const Icon = CATEGORY_ICON[media];
+                                            const props =
+                                                videoUploadProps(media);
                                             return media === "audio" ? (
                                                 <AudioInput
                                                     key={`${currentModel?.id}-audio`}
                                                     actionsOnly
-                                                    {...videoUploadProps(media)}
-                                                    onBusyChange={setRecording}
+                                                    {...props}
+                                                    onBusyChange={
+                                                        setRecordingAudio
+                                                    }
                                                     disabled={
                                                         isGenerating ||
+                                                        recordingVideo ||
                                                         mediaDisabled
                                                     }
                                                 />
                                             ) : (
-                                                <FileUpload
-                                                    key={media}
-                                                    actionsOnly
-                                                    {...videoUploadProps(media)}
-                                                    disabled={mediaDisabled}
-                                                    label={`Add ${media}`}
-                                                    icon={
-                                                        <Icon className="h-6 w-6 shrink-0" />
-                                                    }
-                                                />
+                                                <Fragment key={media}>
+                                                    {media === "video" &&
+                                                        props.value.length <
+                                                            props.maxFiles &&
+                                                        cameraTile(
+                                                            props.maxSizeBytes,
+                                                            (file) =>
+                                                                props.onChange([
+                                                                    ...props.value,
+                                                                    file,
+                                                                ]),
+                                                        )}
+                                                    <FileUpload
+                                                        actionsOnly
+                                                        {...props}
+                                                        disabled={
+                                                            mediaDisabled ||
+                                                            (media ===
+                                                                "video" &&
+                                                                recordingVideo)
+                                                        }
+                                                        label={`Add ${media}`}
+                                                        icon={
+                                                            <Icon className="h-6 w-6 shrink-0" />
+                                                        }
+                                                    />
+                                                </Fragment>
                                             );
                                         })}
                                     </div>

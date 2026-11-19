@@ -16,7 +16,7 @@ export {
     type AudioInputProps,
 } from "./compositions/AudioInput.tsx";
 export { AudioPlayer } from "./compositions/AudioPlayer.tsx";
-export { AudioRecorder } from "./compositions/AudioRecorder.tsx";
+export { AudioRecorder, VideoRecorder } from "./compositions/AudioRecorder.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
     ChatConversation,
@@ -131,6 +131,7 @@ export {
     periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export { useUploadReorder } from "./lib/use-upload-reorder.ts";
 export { BrandMark, type BrandMarkProps } from "./primitives/BrandMark.tsx";
 export {
     Button,

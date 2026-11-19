@@ -4,20 +4,32 @@ import {
     mediaActionTileClass,
     mediaTileTint,
 } from "../lib/media-action-tile.ts";
-import { RECORDING_SAMPLE_RATE, recordedWav } from "../lib/recorded-wav.ts";
-import { MicIcon } from "../primitives/icons/index.tsx";
+import {
+    nextRecordingName,
+    RECORDING_SAMPLE_RATE,
+    recordedWav,
+} from "../lib/recorded-wav.ts";
+import { MicIcon, VideoIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 
 type Capture = { stream: MediaStream; started: number };
 
-function RecordingIndicator({ stream, started }: Capture) {
+function RecordingIndicator({
+    stream,
+    started,
+    video,
+}: Capture & { video: boolean }) {
+    const preview = useRef<HTMLVideoElement>(null);
     const meter = useRef<HTMLSpanElement>(null);
     const [seconds, setSeconds] = useState(0);
     useEffect(() => {
+        const camera = preview.current;
+        if (camera) camera.srcObject = stream;
         let context: AudioContext | undefined;
         let sample: (() => void) | undefined;
         try {
             if (
+                !video &&
                 !window.matchMedia("(prefers-reduced-motion: reduce)")
                     .matches &&
                 typeof AudioContext !== "undefined"
@@ -50,40 +62,75 @@ function RecordingIndicator({ stream, started }: Capture) {
             sample ? 100 : 250,
         );
         return () => {
+            if (camera) camera.srcObject = null;
             window.clearInterval(timer);
             if (context) void context.close().catch(() => {});
         };
-    }, [stream, started]);
+    }, [stream, started, video]);
     return (
         <>
-            <span ref={meter} className="polli-mic-meter" aria-hidden="true">
-                <i />
-                <i />
-                <MicIcon className="polli:size-6" />
-                <i />
-                <i />
-            </span>
-            <span className="polli:whitespace-nowrap polli:tabular-nums">
+            {video ? (
+                <video
+                    ref={preview}
+                    autoPlay
+                    muted
+                    playsInline
+                    aria-label="Camera preview"
+                    className="polli:absolute polli:inset-0 polli:size-full polli:rounded-xl polli:object-cover"
+                />
+            ) : (
+                <span
+                    ref={meter}
+                    className="polli-mic-meter"
+                    aria-hidden="true"
+                >
+                    <i />
+                    <i />
+                    <MicIcon className="polli:size-6" />
+                    <i />
+                    <i />
+                </span>
+            )}
+            <span
+                className={
+                    video
+                        ? "polli:relative polli:rounded polli:bg-[rgb(0_0_0/0.65)] polli:px-1 polli:text-[#fff] polli:tabular-nums"
+                        : "polli:whitespace-nowrap polli:tabular-nums"
+                }
+            >
                 Stop {audioTime(seconds)}
             </span>
         </>
     );
 }
 
-export function AudioRecorder({
-    onRecord,
-    onBusyChange,
-    maxBytes,
-    disabled = false,
-    label = "Record audio",
-}: {
+type RecorderProps = {
     onRecord: (file: File) => void;
     onBusyChange?: (busy: boolean) => void;
     maxBytes: number;
     disabled?: boolean;
     label?: string;
-}) {
+};
+
+export function AudioRecorder(props: RecorderProps) {
+    return <CaptureTile {...props} video={false} />;
+}
+
+export function VideoRecorder(props: RecorderProps) {
+    return <CaptureTile {...props} video />;
+}
+
+function CaptureTile({
+    onRecord,
+    onBusyChange,
+    maxBytes,
+    disabled = false,
+    video,
+    label = video ? "Record video" : "Record audio",
+}: RecorderProps & { video: boolean }) {
+    const Icon = video ? VideoIcon : MicIcon;
     const recorder = useRef<MediaRecorder | null>(null);
+    const busy = useRef(false);
     const mounted = useRef(false);
     const busyCallback = useRef(onBusyChange);
     useEffect(() => {
@@ -98,31 +145,43 @@ export function AudioRecorder({
         mounted.current = true;
         setAvailable(
             typeof MediaRecorder !== "undefined" &&
-                typeof OfflineAudioContext !== "undefined" &&
+                (video || typeof OfflineAudioContext !== "undefined") &&
                 !!navigator.mediaDevices?.getUserMedia,
         );
         return () => {
             mounted.current = false;
             for (const track of recorder.current?.stream.getTracks() ?? [])
                 track.stop();
-            busyCallback.current?.(false);
+            if (busy.current) busyCallback.current?.(false);
         };
-    }, []);
+    }, [video]);
 
     async function record() {
         setError("");
         setState("requesting");
+        busy.current = true;
         busyCallback.current?.(true);
         let stream: MediaStream | undefined;
         try {
             stream = await navigator.mediaDevices.getUserMedia({
-                audio: { channelCount: 1 },
+                audio: video || { channelCount: 1 },
+                video,
             });
             if (!mounted.current) {
                 for (const track of stream.getTracks()) track.stop();
                 return;
             }
-            const active = new MediaRecorder(stream);
+            const mimeType =
+                video &&
+                [
+                    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+                    "video/mp4",
+                    "video/webm",
+                ].find((type) => MediaRecorder.isTypeSupported(type));
+            const active = new MediaRecorder(
+                stream,
+                mimeType ? { mimeType } : undefined,
+            );
             recorder.current = active;
             const chunks: Blob[] = [];
             let size = 0;
@@ -135,7 +194,8 @@ export function AudioRecorder({
                 if (size <= maxBytes) chunks.push(data);
                 if (
                     (size > maxBytes ||
-                        performance.now() - started >= maxMilliseconds) &&
+                        (!video &&
+                            performance.now() - started >= maxMilliseconds)) &&
                     active.state === "recording"
                 )
                     active.stop();
@@ -151,16 +211,24 @@ export function AudioRecorder({
                 try {
                     if (failed || !size)
                         throw new Error(
-                            "No usable audio was recorded. Try recording again.",
+                            "No usable media was recorded. Try recording again.",
                         );
                     if (size > maxBytes)
                         throw new Error(
                             "Recording exceeded the upload limit. Try a shorter recording.",
                         );
-                    const file = await recordedWav(
-                        new Blob(chunks, { type: active.mimeType }),
-                        maxBytes,
-                    );
+                    const blob = new Blob(chunks, {
+                        type: active.mimeType.split(";")[0],
+                    });
+                    const file = video
+                        ? new File(
+                              [blob],
+                              nextRecordingName(
+                                  blob.type === "video/mp4" ? "mp4" : "webm",
+                              ),
+                              { type: blob.type },
+                          )
+                        : await recordedWav(blob, maxBytes);
                     if (mounted.current) onRecord(file);
                 } catch (cause) {
                     if (mounted.current)
@@ -172,6 +240,7 @@ export function AudioRecorder({
                 } finally {
                     if (mounted.current) {
                         setState("idle");
+                        busy.current = false;
                         busyCallback.current?.(false);
                     }
                 }
@@ -183,14 +252,17 @@ export function AudioRecorder({
             recorder.current = null;
             if (!mounted.current) return;
             setState("idle");
+            busy.current = false;
             busyCallback.current?.(false);
             setError(
                 cause instanceof DOMException &&
                     cause.name === "NotAllowedError"
-                    ? "Microphone access was denied. Allow it in your browser or upload a file."
+                    ? video
+                        ? "Camera or microphone access was denied. Allow access or import a video."
+                        : "Microphone access was denied. Allow it in your browser or upload a file."
                     : cause instanceof Error
                       ? cause.message
-                      : "Could not start the microphone.",
+                      : "Could not start recording.",
             );
         }
     }
@@ -204,7 +276,7 @@ export function AudioRecorder({
                     disabled || waiting,
                     typeof state === "object",
                 )}
-                {...mediaTileTint("audio")}
+                {...mediaTileTint(video ? "video" : "audio")}
                 aria-label={
                     typeof state === "object" ? "Stop recording" : undefined
                 }
@@ -217,10 +289,10 @@ export function AudioRecorder({
                 }}
             >
                 {typeof state === "object" ? (
-                    <RecordingIndicator {...state} />
+                    <RecordingIndicator {...state} video={video} />
                 ) : (
                     <>
-                        <MicIcon />
+                        <Icon />
                         <span>
                             {state === "preparing"
                                 ? "Preparing…"

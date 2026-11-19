@@ -5,7 +5,7 @@ export const RECORDING_SAMPLE_RATE = 44100;
 const HEADER_BYTES = 44;
 let recordingNumber = 0;
 
-function nextRecordingName() {
+export function nextRecordingName(extension: string) {
     // Keep numbering across model changes and reloads in this tab.
     const key = "pollinations.ui.recordingNumber";
     try {
@@ -17,7 +17,7 @@ function nextRecordingName() {
         // Browsers with storage disabled still number clips for this page.
     }
     recordingNumber += 1;
-    return `Pollinations recording ${String(recordingNumber).padStart(2, "0")}.wav`;
+    return `Pollinations recording ${String(recordingNumber).padStart(2, "0")}.${extension}`;
 }
 
 export async function recordedWav(blob: Blob, maxBytes: number): Promise<File> {
@@ -45,7 +45,7 @@ export async function recordedWav(blob: Blob, maxBytes: number): Promise<File> {
     }
     return new File(
         [pcmToWav(new Uint8Array(pcm.buffer), audio.sampleRate)],
-        nextRecordingName(),
+        nextRecordingName("wav"),
         {
             type: "audio/wav",
         },

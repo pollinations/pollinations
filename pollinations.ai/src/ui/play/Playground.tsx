@@ -1098,6 +1098,9 @@ export function Playground({
         [catalog.models],
     );
 
+    const hasGifModels = visibleModels.some(
+        (model) => model.category === "image" && !!model.outputFormats?.gif,
+    );
     const currentModel = useMemo(
         () =>
             visibleModels.find(
@@ -1141,6 +1144,18 @@ export function Playground({
                 !!linked &&
                 (model.id === linked || model.aliases.includes(linked)),
         );
+        if (isGif && !hasGifModels) {
+            setParams((previous) => ({
+                ...previous,
+                task: "image",
+                tab: "image",
+                model:
+                    linkedModel?.category === "image"
+                        ? linkedModel.id
+                        : undefined,
+            }));
+            return;
+        }
         if (linkedModel && (!isGif || supportsTask(linkedModel, task))) {
             const linkedTask = supportsTask(linkedModel, task)
                 ? task
@@ -1160,6 +1175,7 @@ export function Playground({
     }, [
         task,
         isGif,
+        hasGifModels,
         currentModel,
         selectedModel,
         visibleModels,
@@ -1924,7 +1940,9 @@ export function Playground({
                 aria-label="Playground task"
                 className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
             >
-                {WORKSPACES.map((item) => (
+                {WORKSPACES.filter(
+                    (item) => item.operations[0].id !== "gif" || hasGifModels,
+                ).map((item) => (
                     <ModalityTab
                         key={item.label}
                         active={item === task.workspace}

@@ -259,4 +259,36 @@ describe("CreateChatCompletionRequestSchema", () => {
             }).success,
         ).toBe(true);
     });
+
+    it("requires logprobs when top_logprobs is set", () => {
+        for (const logprobs of [undefined, false]) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                ...(logprobs !== undefined && { logprobs }),
+                top_logprobs: 3,
+            });
+            expect(result.success).toBe(false);
+        }
+
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                logprobs: true,
+                top_logprobs: 3,
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                logprobs: true,
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                logprobs: false,
+                top_logprobs: null,
+            }).success,
+        ).toBe(true);
+    });
 });

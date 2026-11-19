@@ -25,7 +25,6 @@
       "merge_sha": "290708929c6a99e302294ba499c0b9d5a3b2c68a",
       "merged_at": "2026-11-19T13:21:53Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",

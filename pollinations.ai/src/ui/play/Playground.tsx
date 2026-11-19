@@ -1115,6 +1115,9 @@ export function Playground({
         () => visibleModels.find((model) => model.id === selectedModel),
         [visibleModels, selectedModel],
     );
+    const description = isGif
+        ? "GIF mode turns a text prompt into a short animation."
+        : currentModel?.description;
     const audioTask =
         currentModel?.category === "audio"
             ? audioTaskForModel(currentModel)
@@ -1976,9 +1979,7 @@ export function Playground({
                         />
                         {currentModel && (
                             <>
-                                {currentModel.description && (
-                                    <Text>{currentModel.description}</Text>
-                                )}
+                                {description && <Text>{description}</Text>}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <RunStatBadge
                                         label="Cost"

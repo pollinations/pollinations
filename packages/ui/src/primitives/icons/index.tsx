@@ -615,6 +615,23 @@ export function MicIcon(props: IconProps) {
     );
 }
 
+export function SpeakingHeadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 21v-4.5A8 8 0 0 1 2 10a6.5 6.5 0 0 1 13 0l2 3h-3v3a2 2 0 0 1-2 2H9v3" />
+            <path d="M18 9a5 5 0 0 1 0 6m3-8a8 8 0 0 1 0 10" />
+        </svg>
+    );
+}
+
+export function TranscribeIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M3 10v4m4-9v14m4-12v10M15 7h6m-6 5h6m-6 5h4" />
+        </svg>
+    );
+}
+
 export function SpeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

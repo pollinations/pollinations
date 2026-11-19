@@ -33,11 +33,13 @@ import {
     MicIcon,
     ScrollArea,
     Slider,
+    SpeakingHeadIcon,
     StableLabel,
     Surface,
     TabButton,
     Text,
     Textarea,
+    TranscribeIcon,
     UploadedFileTile,
     VideoIcon,
     VideoRecorder,
@@ -120,45 +122,43 @@ const WORKSPACES = [
         label: "Image",
         icon: ImageIcon,
         category: "image",
-        operations: [{ id: "image", label: "Image" }],
+        operations: ["image"],
     },
     {
         label: "Video",
         icon: VideoIcon,
         category: "video",
-        operations: [{ id: "video", label: "Video" }],
+        operations: ["video"],
     },
     {
         label: "GIF",
         icon: LayersIcon,
         category: "image",
-        operations: [{ id: "gif", label: "GIF" }],
+        operations: ["gif"],
     },
     {
-        label: "Speech",
-        icon: MicIcon,
+        label: "Voice",
+        icon: SpeakingHeadIcon,
         category: "audio",
-        operations: [
-            { id: "speech-generation", label: "Generate speech" },
-            { id: "transcription", label: "Transcribe" },
-            { id: "voice-changer", label: "Change voice" },
-            { id: "voice-isolator", label: "Isolate speech" },
-        ],
+        operations: ["speech-generation", "voice-changer", "voice-isolator"],
     },
     {
-        label: "Music & Sounds",
+        label: "Transcribe",
+        icon: TranscribeIcon,
+        category: "audio",
+        operations: ["transcription"],
+    },
+    {
+        label: "Music",
         icon: AudioIcon,
         category: "audio",
-        operations: [
-            { id: "music-and-sound-effects", label: "Generate music & sounds" },
-            { id: "stem-separation", label: "Separate stems" },
-        ],
+        operations: ["music-and-sound-effects", "stem-separation"],
     },
 ] as const;
 type Workspace = (typeof WORKSPACES)[number];
 const TASKS = WORKSPACES.flatMap((workspace) =>
-    workspace.operations.map((operation) => ({
-        ...operation,
+    workspace.operations.map((id) => ({
+        id,
         workspace,
         runStore: createRunStore<PlaygroundResult>(),
     })),
@@ -467,29 +467,25 @@ function VoicePicker({
 }
 
 function ModelPicker({
-    groups,
+    models,
     selectedModel,
     isLoading,
     onSelectModel,
 }: {
-    groups: { task: Task; models: PlaygroundModel[] }[];
+    models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
-    onSelectModel: (modelId: string) => void;
+    onSelectModel: (model: PlaygroundModel) => void;
 }) {
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
-    const sorted = useMemo(
-        () => groups.flatMap((group) => group.models),
-        [groups],
-    );
-    const index = sorted.findIndex((model) => model.id === selectedModel);
-    const selected = sorted[index];
-    const canStep = !isLoading && index >= 0 && sorted.length > 1;
+    const index = models.findIndex((model) => model.id === selectedModel);
+    const selected = models[index];
+    const canStep = !isLoading && index >= 0 && models.length > 1;
 
     function step(direction: number) {
-        const next = (index + direction + sorted.length) % sorted.length;
-        onSelectModel(sorted[next].id);
+        const next = (index + direction + models.length) % models.length;
+        onSelectModel(models[next]);
     }
 
     function stepButton(direction: -1 | 1) {
@@ -523,10 +519,10 @@ function ModelPicker({
                             type="button"
                             intent="neutral"
                             size="lg"
-                            disabled={isLoading || sorted.length === 0}
+                            disabled={isLoading || models.length === 0}
                             className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
                             title={selected?.title}
-                            aria-label={`Model: ${selected?.title ?? (sorted.length ? "Choose a model" : "Unavailable")}`}
+                            aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
                             aria-description={
                                 selected &&
                                 [
@@ -583,7 +579,7 @@ function ModelPicker({
                                     "Loading models…"
                                 ) : selected ? (
                                     <MediaModelOption model={selected} />
-                                ) : sorted.length ? (
+                                ) : models.length ? (
                                     "Choose a model"
                                 ) : (
                                     "No models available"
@@ -596,36 +592,20 @@ function ModelPicker({
                     {(close) => (
                         <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
                             <div className="flex flex-col gap-1">
-                                {groups.map((group) => (
-                                    <fieldset
-                                        key={group.task.id}
-                                        className="m-0 flex min-w-0 flex-col gap-1 border-0 p-0"
+                                {models.map((model) => (
+                                    <TabButton
+                                        key={model.id}
+                                        active={model.id === selectedModel}
+                                        size="sm"
+                                        variant="ghost"
+                                        className="play-model-option w-full justify-start text-left"
+                                        onClick={() => {
+                                            onSelectModel(model);
+                                            close();
+                                        }}
                                     >
-                                        {groups.length > 1 && (
-                                            <legend className="px-3 py-1 text-xs text-theme-text-muted">
-                                                {group.task.label}
-                                            </legend>
-                                        )}
-                                        {group.models.map((model) => (
-                                            <TabButton
-                                                key={model.id}
-                                                active={
-                                                    model.id === selectedModel
-                                                }
-                                                size="sm"
-                                                variant="ghost"
-                                                className="play-model-option w-full justify-start text-left"
-                                                onClick={() => {
-                                                    onSelectModel(model.id);
-                                                    close();
-                                                }}
-                                            >
-                                                <MediaModelOption
-                                                    model={model}
-                                                />
-                                            </TabButton>
-                                        ))}
-                                    </fieldset>
+                                        <MediaModelOption model={model} />
+                                    </TabButton>
                                 ))}
                             </div>
                         </ScrollArea>
@@ -1099,23 +1079,17 @@ export function Playground({
             ? audioTaskForModel(currentModel)
             : undefined;
 
-    const groups = useMemo(
-        () =>
-            TASKS.filter((item) => item.workspace === task.workspace)
-                .map((item) => ({
-                    task: item,
-                    models: visibleModels
-                        .filter((model) => supportsTask(model, item))
-                        .sort((a, b) =>
-                            a.title.localeCompare(b.title, "en", {
-                                numeric: true,
-                                sensitivity: "base",
-                            }),
-                        ),
-                }))
-                .filter((group) => group.models.length),
-        [task.workspace, visibleModels],
-    );
+    const pickerModels = useMemo(() => {
+        const tasks = TASKS.filter((item) => item.workspace === task.workspace);
+        return visibleModels
+            .filter((model) => tasks.some((item) => supportsTask(model, item)))
+            .sort((a, b) =>
+                a.title.localeCompare(b.title, "en", {
+                    numeric: true,
+                    sensitivity: "base",
+                }),
+            );
+    }, [task.workspace, visibleModels]);
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that
     // model's tab; older links use an alias, such as ?model=flux.
@@ -1505,13 +1479,16 @@ export function Playground({
         setAudioFiles(saved?.audioFiles ?? []);
     }
 
-    function selectModel(modelId: string) {
+    function selectModel(model: PlaygroundModel) {
+        const modelId = model.id;
         if (modelId === selectedModel) return;
-        const group = groups.find((group) =>
-            group.models.some((model) => model.id === modelId),
-        );
-        if (group && group.task !== task) {
-            selectTask(group.task, modelId);
+        if (!supportsTask(model, task)) {
+            const next = TASKS.find(
+                (item) =>
+                    item.workspace === task.workspace &&
+                    supportsTask(model, item),
+            );
+            if (next) selectTask(next, modelId);
             return;
         }
         setParams((previous) => ({
@@ -1696,11 +1673,7 @@ export function Playground({
             : editsImage
               ? "Edit image"
               : "Generate image";
-    const GenerateIcon = isGif
-        ? LayersIcon
-        : isAudioTranscription
-          ? MicIcon
-          : CATEGORY_ICON[activeCategory];
+    const GenerateIcon = task.workspace.icon;
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
     // The placeholder belongs to the tab whose run is in flight; audio has none.
     const busyVisual =
@@ -1925,7 +1898,7 @@ export function Playground({
                 className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
             >
                 {WORKSPACES.filter(
-                    (item) => item.operations[0].id !== "gif" || hasGifModels,
+                    (item) => item.operations[0] !== "gif" || hasGifModels,
                 ).map((item) => (
                     <ModalityTab
                         key={item.label}
@@ -1969,7 +1942,7 @@ export function Playground({
                         )}
                     <div className="@container flex min-w-0 flex-col gap-2">
                         <ModelPicker
-                            groups={groups}
+                            models={pickerModels}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}

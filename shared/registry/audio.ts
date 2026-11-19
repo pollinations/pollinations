@@ -328,6 +328,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe a recording with timestamps for each passage. The model detects the language.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: [],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/eleven-v4": {
@@ -494,6 +495,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Change the voice in a recording while keeping the speaker's timing and emotion.",
         inputModalities: ["audio"],
+        audioInputConstraints: { max_seconds: 300 },
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: ["/v1/audio/voice-changer"],
@@ -514,6 +516,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Remove background noise from audio or video so the speaker is easier to hear.",
         inputModalities: ["audio", "video"],
+        audioInputConstraints: { min_seconds: 4.6 },
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
@@ -576,6 +579,8 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Compose music from a description, optionally using a reference track to guide the sound.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
+        audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
         maxDuration: 300,
@@ -598,6 +603,8 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Compose music from a detailed prompt or guide the result with a reference track.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
+        audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
         maxDuration: 300,
@@ -713,6 +720,7 @@ const AUDIO_BASE_SERVICES = {
             "Turn recorded speech into a transcript or a timed subtitle file.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language", "prompt"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
@@ -735,6 +743,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe speech in multiple languages and supply context for names or specialized terms.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language", "prompt"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/scribe-v3": {
@@ -752,6 +761,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe a conversation with speaker labels and a timestamp for each word.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/scribe-v2": {
@@ -771,6 +781,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe interviews in over 90 languages and label who said what.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-transcribe": {
@@ -790,6 +801,7 @@ const AUDIO_BASE_SERVICES = {
             "Turn speech into formatted text with speaker labels and word timestamps.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "google/gemini-3.5-transcribe": {
@@ -813,6 +825,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe a discussion and label the voices of up to eight speakers.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-tts": {
@@ -954,6 +967,7 @@ const AUDIO_BASE_SERVICES = {
             "Turn speech in 99 languages into transcripts or timed subtitles.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "assemblyai/universal-3.5-pro": {
@@ -1043,6 +1057,7 @@ const AUDIO_BASE_SERVICES = {
             "Transcribe conversations even when speakers switch languages. Supply context for unfamiliar words.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        transcriptionOptions: ["language", "prompt"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stability-ai/stable-audio-3-medium": {
@@ -1073,6 +1088,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Create stereo music or soundscapes that run for over six minutes.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         minDuration: 1,
         maxDuration: 380,
@@ -1106,6 +1122,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Create long stereo music tracks or restyle a recording for a fixed price per generation.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         minDuration: 1,
         maxDuration: 380,
@@ -1125,6 +1142,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Read text aloud in the Alloy voice or clone a voice from a reference recording.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         voices: ["alloy"],
         supportedEndpoints: ["/v1/audio/speech"],

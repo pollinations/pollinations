@@ -17,6 +17,7 @@ export {
 
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import type { ModelInfo } from "./model-info.ts";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
 import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
@@ -251,6 +252,9 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    maxReferenceAudios?: number; // Maximum reference audio clips accepted in one request
+    audioInputConstraints?: ModelInfo["audio_input_constraints"];
+    transcriptionOptions?: ModelInfo["transcription_options"];
     supportsTransparency?: boolean; // Image-only: `transparent=true` returns a PNG with alpha; other models reject it
     /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;

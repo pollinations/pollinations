@@ -2,6 +2,7 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     DEFAULT_R2_TTL_REFRESH_AGE_MS,
+    putGenerationResult,
     refreshR2ObjectTtl,
 } from "@shared/r2-storage.ts";
 
@@ -304,7 +305,11 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
     }
 
     /** Trusted generation write; the caller selects headers safe for public replay. */
-    async put(id: string, response: Response): Promise<void> {
+    async put(
+        id: string,
+        response: Response,
+        requestId?: string,
+    ): Promise<void> {
         if (!/^[a-f0-9]{64}$/.test(id))
             throw new Error("Invalid generation ID");
         const body = await response.arrayBuffer();
@@ -319,14 +324,21 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
                 metadata[`header_${name}`] = value;
             }
         }
-        await this.env.MEDIA_BUCKET.put(id, body, {
-            httpMetadata: {
-                contentType:
-                    response.headers.get("content-type") ||
-                    "application/octet-stream",
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
+        await putGenerationResult(
+            this.env.MEDIA_BUCKET,
+            id,
+            body,
+            {
+                httpMetadata: {
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: metadata,
             },
-            customMetadata: metadata,
-        });
+            "MEDIA_BUCKET",
+            requestId,
+        );
     }
 }

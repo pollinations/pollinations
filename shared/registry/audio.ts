@@ -492,7 +492,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Voice Changer",
         description:
-            "Change the voice in a recording while keeping the speaker’s timing and emotion.",
+            "Change the voice in a recording while keeping the speaker's timing and emotion.",
         inputModalities: ["audio"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -596,7 +596,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven Music v2.5",
         description:
-            "Compose music from a reference track or describe how each section should sound.",
+            "Compose music from a detailed prompt or guide the result with a reference track.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 3,
@@ -1104,7 +1104,7 @@ const AUDIO_BASE_SERVICES = {
         cacheVersion: "2026-10-21-a2a-duration",
         title: "Stable Audio 3 Large",
         description:
-            "Create long stereo music tracks or reshape a recording by describing a new style.",
+            "Create long stereo music tracks or restyle a recording for a fixed price per generation.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 1,

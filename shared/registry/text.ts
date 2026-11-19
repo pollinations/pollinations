@@ -69,7 +69,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Glyph Cluster (Stealth)",
         description:
-            "Explore a long coding problem with tools. Prompts and replies may be retained and used for training.",
+            "Explore long coding problems with tools. Zero data retention is unavailable, and prompts and replies may be retained and used for training.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         contextLength: 256000,
@@ -96,7 +96,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5.4 Nano",
         description:
-            "Ask everyday questions about text or images and get a quick reply.",
+            "Get quick, low-cost answers to everyday questions about text or images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -122,7 +122,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5 Nano",
         description:
-            "Label incoming messages or extract names from text in high volumes.",
+            "Label messages or extract names quickly and at low cost for simple, high-volume tasks.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -412,7 +412,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.6 Sol",
         description:
-            "Connect details across long documents and images to solve complex problems.",
+            "Use frontier reasoning to connect evidence across long documents and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -470,7 +470,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6.1 Terra",
         description:
-            "Interpret a screenshot and plan the next step in a computer task.",
+            "Interpret screenshots quickly and use visual reasoning to plan computer tasks.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -526,7 +526,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.6 Terra",
         description:
-            "Compare a diagram with the written explanation around it.",
+            "Balance reasoning depth and speed when analyzing text and images together.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -640,7 +640,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Astra",
         description:
-            "Build and debug software using code, screenshots, and tools across multiple steps.",
+            "Use frontier reasoning to debug complex code and work through visual tasks with tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -698,7 +698,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Sol",
         description:
-            "Break a complex programming task into steps and use tools to carry them out.",
+            "Balance reasoning depth and efficiency for complex coding tasks that need several tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -754,7 +754,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6.2 Astra",
         description:
-            "Investigate a demanding problem across many rounds of analysis and tool use.",
+            "Use frontier reasoning for demanding work that takes many rounds of analysis and tool use.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -871,7 +871,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6.1 Sol",
         description:
-            "Get quick feedback as you revise code over several rounds of edits.",
+            "Get faster responses on demanding coding and tool tasks with reasoning close to the Astra tier.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -929,7 +929,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Luna",
         description:
-            "Classify messages or extract details from images at high volume.",
+            "Handle focused, high-volume tasks efficiently, such as extracting details from messages and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -1878,7 +1878,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Span-01 Lite",
         description:
-            "Estimate whether a conversation shows a behavior you describe in a yes/no question. Respan retains prompts and excludes them from training.",
+            "Score conversation behavior with plain-text yes/no (noul) questions via /alpha/decisions or the same JSON in the last user message on /v1/chat/completions. Respan retains prompts and excludes them from training.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1903,7 +1903,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Jev",
         description:
-            "Get a choice, score, or probability with calibrated confidence that software can act on.",
+            "Get calibrated confidence for a choice, score, or yes/no answer. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Its own request shape, so it is offered on the decisions route and
         // the chat adapter only — /text returns plain content and has nothing
         // to return here.
@@ -1934,7 +1934,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kev 4B",
         description:
-            "Pick an option or get a numerical score or probability. The provider does not retain prompts.",
+            "Get choices, scores, or probabilities from a small open-weight model with zero prompt retention. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1961,7 +1961,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Decider V1.2 27B",
         description:
-            "Classify long passages of text using choices, scores, or yes/no probabilities.",
+            "Score or classify text-only state in a 262K-token context window. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1989,7 +1989,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "d1",
         description:
-            "Choose a category, assign a score, or estimate the probability of a yes/no answer.",
+            "Choose a category, assign a score, or estimate a yes/no probability. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2014,7 +2014,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "d1.2",
         description:
-            "Ask questions about text or JSON and get a choice, score, or probability for each.",
+            "Get choices, scores, or probabilities for questions about text or JSON state. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -2091,7 +2091,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Microsoft-Decision-1.1",
         description:
-            "Route a support request by giving each possible destination a probability.",
+            "Route requests quickly by assigning a calibrated probability to each allowed option. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2118,7 +2118,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Microsoft-Decision-1",
         description:
-            "Score a fixed set of choices and get a calibrated probability for each one.",
+            "Get a calibrated probability for each option in a fixed list. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2174,7 +2174,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Luna Decisions",
         description:
-            "Ask questions about long passages of text and get structured answers with probabilities and confidence scores.",
+            "Get probabilities and confidence scores from text-only state, billed only for input tokens. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2366,7 +2366,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Sonnet 4.6",
         description:
-            "Draft and revise prose, discuss a piece of code, or analyze a document in conversation.",
+            "Balance response speed and cost for writing, coding, and analysis.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2445,7 +2445,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 4.6",
         description:
-            "Weigh evidence across several documents to examine a difficult question in depth.",
+            "Analyze difficult questions in depth when reasoning quality matters more than speed or cost.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2502,7 +2502,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5",
         description:
-            "Carry a complex project through several stages of coding, analysis, and tool use.",
+            "Use frontier reasoning for complex analysis, coding, and projects that take many tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2528,7 +2528,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5.5",
         description:
-            "Plan and implement a sequence of changes across a codebase using tools.",
+            "Use flagship reasoning to plan and implement demanding changes across a codebase.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
@@ -2556,7 +2556,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5.5 Fast",
         description:
-            "Get faster code and analysis output during interactive development.",
+            "Get faster output for interactive coding and tool use at a premium rate.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Same image limit as Opus 5.5.
@@ -2582,7 +2582,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5",
         description:
-            "Work through a difficult problem by following a plan across many tool calls.",
+            "Use premium frontier reasoning for difficult problems that require a long sequence of tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2609,7 +2609,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5.2",
         description:
-            "Investigate a question that takes several rounds of planning, analysis, and tool use.",
+            "Apply frontier reasoning to demanding projects that require extended planning and tool use.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20,
@@ -2636,7 +2636,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5.1",
         description:
-            "Tackle complex coding problems that need sustained reasoning and repeated tool calls.",
+            "Use frontier reasoning for complex coding tasks that need sustained analysis and repeated tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across both providers.
@@ -3645,7 +3645,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Llama 4 Scout",
         description:
-            "Ask questions about text and images in a 128,000-token context window.",
+            "Analyze text and images within 128K tokens, without tool calling or structured output.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Pollinations cap.
@@ -3678,7 +3678,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MiniMax M2.7",
         description:
-            "Give coding instructions in multiple languages and use tools to carry out each step.",
+            "Debug and refactor code across programming languages, with low-cost tool use for multistep tasks.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -4061,7 +4061,7 @@ const TEXT_BASE_SERVICES = {
         cacheVersion: "2026-11-12-a95b-checkpoint",
         title: "Qwen3.8 2.4T A95B",
         description:
-            "Work through extended coding tasks with tools and a model whose weights are publicly available.",
+            "Use open-weight reasoning for extended coding tasks with tools. For image input, use Qwen3.8 Max.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

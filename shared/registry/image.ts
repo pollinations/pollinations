@@ -550,7 +550,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "Seedream 5.0 Lite",
         description:
-            "Create a 2K or 3K image from a description and reference pictures.",
+            "Create or edit 2K and 3K images with built-in visual reasoning for detailed instructions and reference pictures.",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
@@ -999,7 +999,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "360p", "1080p", "4k"],
         title: "Gemini Omni 1.1 Flash",
         description:
-            "Set the opening and closing images for a clip up to ten seconds long with synchronized sound.",
+            "Create up to 10 seconds of video with synchronized sound at up to 4K, from text or opening and closing images.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1029,7 +1029,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "360p", "1080p", "4k"],
         title: "Gemini Omni 1.2 Flash",
         description:
-            "Create a video with synchronized sound at up to 4K, using text or opening and closing images.",
+            "Create up to 15 seconds of video with synchronized sound at up to 4K, from text or opening and closing images.",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

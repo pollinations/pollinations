@@ -41,7 +41,7 @@ export const REALTIME_SERVICES = {
         cost: { promptAudioSeconds: 0.54 / 3600 },
         title: "MAI Transcribe 2 Streaming",
         description:
-            "Transcribe multilingual speech live and receive each passage as its wording becomes final.",
+            "Transcribe multilingual speech live from 16 or 24 kHz mono PCM audio. Manually commit each segment to finalize its text.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],

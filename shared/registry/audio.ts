@@ -308,7 +308,7 @@ export const AUDIO_VOICES = [
     ...QWEN_AUDIO_TTS_VOICES,
 ];
 
-// Requests without a model must work on Quest Pollen, so the default stays
+// Requests without a model must work on Quest balance, so the default stays
 // on a model that is not paid-only.
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {

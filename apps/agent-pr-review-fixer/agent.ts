@@ -494,7 +494,7 @@ function outputText(data: Body): string {
     return text;
 }
 
-/** Cost of the review call from the live catalog prices (Pollen). */
+/** Cost of the review call from the live USD catalog prices. */
 async function reviewCost(
     pollinations: Pollinations,
     model: string,

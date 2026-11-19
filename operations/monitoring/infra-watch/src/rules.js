@@ -198,7 +198,7 @@ export function legacyDown(rows, open = {}) {
 
 // Payments in trouble, the infra_watch_payments rows: a Stripe webhook or
 // checkout 5xx in the last 15 minutes, or a pack or auto top-up paid 15
-// minutes to 24 hours ago with no pollen credited. Each is a paying customer
+// minutes to 24 hours ago with no balance credit recorded. Each is a paying customer
 // and there are none in a normal month, so the first row opens the card.
 export function paymentsFailing(rows) {
     return rows.length ? { payments: { kind: "PAYMENTS_FAILING", rows } } : {};
@@ -567,7 +567,7 @@ const LABEL = {
     DEGRADED: "DEGRADED",
     PRIMARY_WEAK: "PRIMARY WEAK",
     WATCH_DOWN: "DOWN",
-    SIGNUP_BURST: "QUEST POLLEN RESTRICTED",
+    SIGNUP_BURST: "QUEST BALANCE RESTRICTED",
     LEGACY_DOWN: "DEGRADED",
     COMMUNITY_DOWN: "DOWN",
     PAYMENTS_FAILING: "FAILING",

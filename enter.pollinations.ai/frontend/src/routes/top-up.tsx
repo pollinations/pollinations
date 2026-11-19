@@ -19,7 +19,7 @@ import { checkoutNotice, validateTopUpSearch } from "../lib/top-up-search.ts";
 import { pageTitle } from "../page-meta.ts";
 
 /**
- * Standalone top-up: the wallet and top-up sections of the pollen page on
+ * Standalone top-up: the wallet and top-up sections of the Credits page on
  * the auth-flow background, without the dashboard around them. Linked from
  * the low-balance notice gen returns inside chats, so the user can pay and
  * go back to the app.

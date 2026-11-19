@@ -383,12 +383,12 @@ describe("BYOP markup", () => {
                     packBalance: 100,
                 }),
             },
-            model: testModel("meta/llama-4-maverick"),
+            model: testModel("openai/gpt-4o-mini"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(0.01, "meta/llama-4-maverick")),
+            checkBalance(vars, fakeStatsEnv(0.01, "openai/gpt-4o-mini")),
         ).rejects.toMatchObject({
             status: 402,
             errorCode: "QUEST_POLLEN_ONLY",
@@ -496,12 +496,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("meta/llama-4-maverick"),
+            model: testModel("openai/gpt-4o-mini"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "meta/llama-4-maverick")),
+            checkBalance(vars, fakeStatsEnv(1, "openai/gpt-4o-mini")),
         ).rejects.toMatchObject({
             status: 402,
         });

@@ -15,6 +15,7 @@ import type {
     GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
+import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
@@ -286,6 +287,7 @@ describe("GenerationCoordinator", () => {
             });
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
             const handoffs: ExecutionContext[] = [];
+            const retryLog = vi.spyOn(console, "warn");
             if (execution === "behind the public origin") {
                 env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
                 onTestFinished(() => {
@@ -346,11 +348,28 @@ describe("GenerationCoordinator", () => {
                     ) {
                         const context = createExecutionContext();
                         handoffs.push(context);
-                        return worker.fetch(
+                        // Fail the first physical write after the provider has returned.
+                        const bucket = env.TEST_MEDIA_BUCKET;
+                        const put = vi
+                            .spyOn(bucket, "put")
+                            .mockRejectedValueOnce(
+                                new Error("put: Service unavailable (10043)"),
+                            );
+                        const media = new MediaUpload(context, {
+                            MEDIA_BUCKET: bucket,
+                            MAX_FILE_SIZE: "104857600",
+                        });
+                        const handoff = await worker.fetch(
                             new Request(input, init),
-                            env,
+                            {
+                                ...env,
+                                MEDIA: media as unknown as typeof env.MEDIA,
+                            },
                             context,
                         );
+                        expect(put).toHaveBeenCalledTimes(2);
+                        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
+                        return handoff;
                     }
                     if (url.pathname === "/v0/pipes/public_model_stats.json") {
                         return Response.json({ data: [] });
@@ -414,6 +433,7 @@ describe("GenerationCoordinator", () => {
                     state.storage.get<{
                         bodyChunks: number;
                         started: boolean;
+                        requestId: string;
                         cache: GenerationJobHead["cache"];
                     }>("job"),
             );
@@ -483,6 +503,18 @@ describe("GenerationCoordinator", () => {
             expect(executions).toBe(1);
             expect(requestBytes).toBeGreaterThan(29_700_000);
             expect(billed).toHaveLength(1);
+            expect(billed[0].requestId).toBe(stored.requestId);
+            if (execution === "behind the public origin") {
+                expect(retryLog).toHaveBeenCalledWith(
+                    "Retrying R2 generation write",
+                    {
+                        requestId: stored.requestId,
+                        binding: "MEDIA_BUCKET",
+                        attempt: 1,
+                        code: "10043",
+                    },
+                );
+            }
             expect(billed[0].totalPrice).toBeGreaterThan(0);
             const after = await getUserBalance(drizzle(env.DB), userId);
             expect(before.packBalance - after.packBalance).toBeCloseTo(

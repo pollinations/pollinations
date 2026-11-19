@@ -381,6 +381,44 @@ describe("media.pollinations.ai", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it.each([
+        ["10043", 3],
+        ["10012", 1],
+    ] as const)(
+        "preserves terminal R2 error %s and logs the job ID and binding",
+        async (code, attempts) => {
+            const bucket = createTestR2Bucket();
+            const error = new Error(`put: failed (${code})`);
+            const put = vi.spyOn(bucket, "put").mockRejectedValue(error);
+            const log = vi.spyOn(console, "error");
+            try {
+                const storage = new MediaUpload(
+                    createExecutionContext(),
+                    createMediaEnv(bucket),
+                );
+                await expect(
+                    storage.put(
+                        "e".repeat(64),
+                        new Response(TINY_PNG),
+                        "job-1",
+                    ),
+                ).rejects.toBe(error);
+                expect(put).toHaveBeenCalledTimes(attempts);
+                expect(log).toHaveBeenCalledWith(
+                    "Failed to save generation result",
+                    {
+                        requestId: "job-1",
+                        binding: "MEDIA_BUCKET",
+                        attempt: attempts,
+                        code,
+                    },
+                );
+            } finally {
+                log.mockRestore();
+            }
+        },
+    );
+
     it("HEAD reads metadata without refreshing an aged generated file", async () => {
         const id = "e".repeat(64);
         const bucket = createTestR2Bucket();

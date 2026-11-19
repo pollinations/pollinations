@@ -2,6 +2,36 @@ const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 
+/** Retry only the R2 put: the provider response is already fully buffered. */
+export async function putGenerationResult(
+    bucket: R2Bucket,
+    key: string,
+    bytes: ArrayBuffer | Uint8Array,
+    options: R2PutOptions,
+    binding: "TEXT_BUCKET" | "MEDIA_BUCKET",
+    requestId: string | undefined,
+): Promise<void> {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            await bucket.put(key, bytes, options);
+            return;
+        } catch (error) {
+            const code =
+                error instanceof Error
+                    ? /\((\d+)\)$/.exec(error.message)?.[1]
+                    : undefined;
+            const details = { requestId, binding, attempt, code };
+            if (attempt === 3 || (code !== "10001" && code !== "10043")) {
+                console.error("Failed to save generation result", details);
+                throw error;
+            }
+            console.warn("Retrying R2 generation write", details);
+            const delayMs = 250 * 2 ** (attempt - 1) * (1 + Math.random());
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+}
+
 type RefreshR2ObjectTtlOptions = {
     minRefreshAgeMs?: number;
     now?: () => Date;

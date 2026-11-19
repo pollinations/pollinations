@@ -70,9 +70,15 @@ test.for([
         path: "/v1/audio/speech/with-timestamps",
         fields: speech,
     },
+    {
+        name: "multipart speech (voice)",
+        path: "/v1/audio/speech",
+        fields: { input: "hello", voice: "" },
+        field: "voice",
+    },
 ])(
-    "rejects an empty model in a $name request",
-    async ({ path, fields, json }, { apiKey }) => {
+    "rejects an empty field in a $name request",
+    async ({ path, fields, json, field = "model" }, { apiKey }) => {
         const mocks = createFetchMock({ tinybird: createMockTinybird() });
         await mocks.enable("tinybird");
         const form = new FormData();
@@ -94,7 +100,7 @@ test.for([
 
         expect(response.status).toBe(400);
         expect(await response.json()).toMatchObject({
-            error: { message: expect.stringContaining("model") },
+            error: { message: expect.stringContaining(field) },
         });
         await waitOnExecutionContext(ctx);
     },

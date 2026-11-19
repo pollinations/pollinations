@@ -829,6 +829,7 @@ export function Playground({
     drafts: ConnectDrafts;
 }) {
     const dimensionsLabelId = useId();
+    const referencesLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
     const session = useMemo(
@@ -1971,45 +1972,47 @@ export function Playground({
 
                             {(isVideoReferenceMode ||
                                 videoReferenceMedia.length > 0) && (
-                                <fieldset className="col-span-full m-0 min-w-0 border-0 p-0">
-                                    <Text
-                                        as="legend"
-                                        size="sm"
-                                        weight="semibold"
-                                        tone="strong"
-                                        className="mb-2"
-                                    >
-                                        References
-                                    </Text>
-                                    {videoConfig.exclusiveReferences && (
-                                        <ButtonGroup
-                                            aria-label="Reference type"
-                                            className="mb-2"
+                                <fieldset
+                                    aria-labelledby={referencesLabelId}
+                                    className="col-span-full m-0 min-w-0 border-0 p-0"
+                                >
+                                    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                                        <Text
+                                            as="span"
+                                            id={referencesLabelId}
+                                            size="sm"
+                                            weight="semibold"
+                                            tone="strong"
                                         >
-                                            {["frames", "references"].map(
-                                                (mode) => (
-                                                    <TabButton
-                                                        key={mode}
-                                                        size="sm"
-                                                        active={
-                                                            mode ===
-                                                            referenceMode
-                                                        }
-                                                        onClick={() =>
-                                                            setParam(
-                                                                "guidance",
-                                                                mode,
-                                                            )
-                                                        }
-                                                    >
-                                                        {mode === "frames"
-                                                            ? "Frames"
-                                                            : "Media"}
-                                                    </TabButton>
-                                                ),
-                                            )}
-                                        </ButtonGroup>
-                                    )}
+                                            References
+                                        </Text>
+                                        {videoConfig.exclusiveReferences && (
+                                            <ButtonGroup aria-label="Reference type">
+                                                {["frames", "references"].map(
+                                                    (mode) => (
+                                                        <TabButton
+                                                            key={mode}
+                                                            size="sm"
+                                                            active={
+                                                                mode ===
+                                                                referenceMode
+                                                            }
+                                                            onClick={() =>
+                                                                setParam(
+                                                                    "guidance",
+                                                                    mode,
+                                                                )
+                                                            }
+                                                        >
+                                                            {mode === "frames"
+                                                                ? "Frames"
+                                                                : "Media"}
+                                                        </TabButton>
+                                                    ),
+                                                )}
+                                            </ButtonGroup>
+                                        )}
+                                    </div>
                                     <div className="flex flex-wrap items-start gap-3">
                                         {frameTiles}
                                         {videoReferenceMedia.map((media) => {

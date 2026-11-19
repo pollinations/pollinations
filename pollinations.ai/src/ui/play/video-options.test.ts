@@ -69,13 +69,16 @@ describe("video controls", () => {
     });
     it("separates references from frames only where Gen rejects their combination", () => {
         for (const id of [
+            "bytedance/seedance-2.0",
+            "bytedance/seedance-2.5",
             "alibaba/wan-2.7",
             "alibaba/wan-3.0",
             "minimax/minimax-h3-max",
         ])
             expect(videoOptions(id, []).exclusiveReferences).toBe(true);
         expect(
-            videoOptions("bytedance/seedance-2.0", []).exclusiveReferences,
+            videoOptions("bytedance/seedance-1-pro-fast", [])
+                .exclusiveReferences,
         ).toBe(false);
         expect(videoOptions("bytedance/seedance-2.5", []).ratios).toContain(
             "21:9",

@@ -195,7 +195,7 @@ export const ModelInfoSchema = z.object({
                 .array(z.enum(["language", "prompt"]))
                 .optional()
                 .describe(
-                    "Supported optional transcription inputs. An empty array means the model accepts neither language nor prompt.",
+                    "Supported optional transcription inputs. Omission means support is unspecified. An empty array means neither language nor prompt is supported.",
                 ),
             requires_reference_visual: z
                 .boolean()
@@ -206,7 +206,7 @@ export const ModelInfoSchema = z.object({
         })
         .optional()
         .describe(
-            "Model-specific requirements for input audio. Only declared constraints are included.",
+            "Declared provider requirements for input audio. Clients can use these hints before submission; providers may apply additional validation.",
         ),
     capabilities: z.array(ModelCapabilitySchema),
     supported_parameters: z

@@ -1,11 +1,15 @@
 import { Pollinations } from "@pollinations/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getAudioModelsInfo } from "../../../../shared/registry/model-info";
 import { audioEndpoint } from "./audio-endpoint";
 import {
     audioConstraintError,
     audioInputError,
     generatePlaygroundAudio,
+    type ReferenceUploads,
     supportsAudioLength,
+    transcriptionControls,
+    uploadReference,
 } from "./playground-audio";
 
 const client = new Pollinations({
@@ -22,6 +26,25 @@ const video = new File(["video bytes"], "clip.mp4", { type: "video/mp4" });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("catalog-driven audio requests", () => {
+    it("supports the default speech route and registry overrides for audio uploads", () => {
+        for (const entry of getAudioModelsInfo()) {
+            if (
+                !entry.input_modalities?.some(
+                    (kind) => kind === "audio" || kind === "video",
+                )
+            )
+                continue;
+            expect(
+                audioEndpoint({
+                    // Gen lists speech for audio definitions without an endpoint override.
+                    supportedEndpoints: entry.supported_endpoints ?? [
+                        "/v1/audio/speech",
+                    ],
+                }),
+                entry.name,
+            ).toBeDefined();
+        }
+    });
     it("routes by endpoint, not a list of known model names", () => {
         expect(audioEndpoint(model("/v1/audio/voice-changer"))).toBe(
             "/v1/audio/voice-changer",
@@ -104,7 +127,7 @@ describe("catalog-driven audio requests", () => {
             )
             .mockImplementation(async () => new Response("speech"));
         vi.stubGlobal("fetch", fetchRequest);
-        const referenceUrls = new WeakMap<File, Promise<string>>();
+        const referenceUrls = new WeakMap() as ReferenceUploads;
         const speak = (prompt: string) =>
             generatePlaygroundAudio(
                 client,
@@ -126,6 +149,36 @@ describe("catalog-driven audio requests", () => {
                 "https://media.pollinations.ai/reference",
             );
         }
+    });
+
+    it("uploads the file again after the media retention period", async () => {
+        const send = vi
+            .fn()
+            .mockResolvedValueOnce(Response.json({ url: "first" }))
+            .mockResolvedValueOnce(Response.json({ url: "second" }));
+        vi.stubGlobal("fetch", send);
+        const cache: ReferenceUploads = new WeakMap();
+        vi.useFakeTimers();
+        try {
+            await expect(uploadReference(client, file, cache)).resolves.toBe(
+                "first",
+            );
+            vi.setSystemTime(Date.now() + 31 * 86400_000);
+            await expect(uploadReference(client, file, cache)).resolves.toBe(
+                "second",
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("omits inputs rejected by MAI with an older catalog", () => {
+        expect(
+            transcriptionControls({
+                ...model("/v1/audio/transcriptions"),
+                id: "microsoft/mai-transcribe-2",
+            }),
+        ).toEqual({ language: false, prompt: false });
     });
 
     it("uploads a video and sends it as the reference video", async () => {
@@ -227,12 +280,14 @@ describe("catalog-driven audio requests", () => {
         const result = await generatePlaygroundAudio(client, spec, {
             prompt: "",
             file,
+            stemVariationId: "two_stems_v1",
         });
         expect(send).toHaveBeenCalledTimes(1);
         const [url, request] = send.mock.calls[0];
         expect(url).toBe("https://example.test/alpha/audio/stem-separation");
         expect(request.body.get("file").name).toBe(file.name);
         expect(request.body.get("model")).toBe(spec.id);
+        expect(request.body.get("stem_variation_id")).toBe("two_stems_v1");
         expect(result.type).toBe("stems");
         if (result.type === "stems") {
             expect(result.archive.type).toBe("application/zip");
@@ -269,7 +324,7 @@ describe("catalog-driven audio requests", () => {
     });
 
     it.each([
-        { options: undefined, prompt: null, language: null },
+        { options: undefined, prompt: "Polly", language: "de" },
         { options: [], prompt: null, language: null },
         { options: ["language"], prompt: null, language: "de" },
         { options: ["prompt"], prompt: "Polly", language: null },

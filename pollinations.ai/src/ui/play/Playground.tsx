@@ -50,9 +50,11 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
     type ReactNode,
+    type RefObject,
     useCallback,
     useEffect,
     useId,
+    useImperativeHandle,
     useMemo,
     useRef,
     useState,
@@ -62,6 +64,7 @@ import { API_BASE_URL, ENTER_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
+import { saveConnectDraft } from "./connect-draft";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -72,6 +75,7 @@ import {
     audioInputError,
     generatePlaygroundAudio,
     isVideo,
+    type ReferenceUploads,
     supportsAudioLength,
     transcriptionControls,
     uploadReference,
@@ -223,7 +227,7 @@ function mediaResult(
 }
 
 // Kept in memory so leaving /play and coming back restores the last inputs,
-// result and any run still in flight. Nothing is written to disk.
+// result and any run still in flight. Connect saves selected files for the redirect.
 let lastInputs: PlaySearch | undefined;
 const tabRuns = {
     image: createRunStore<PlaygroundResult>(),
@@ -237,6 +241,8 @@ type TabDraft = {
     videoReferences: Record<UploadMedia, File[]>;
     audioFiles: File[];
 };
+
+export type ConnectDrafts = Partial<Record<PlaygroundCategory, TabDraft>>;
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
@@ -822,7 +828,13 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     );
 }
 
-export function Playground() {
+export function Playground({
+    connectRef,
+    drafts,
+}: {
+    connectRef: RefObject<(() => void) | null>;
+    drafts: ConnectDrafts;
+}) {
     const dimensionsLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
@@ -834,7 +846,7 @@ export function Playground() {
                           apiKey,
                           baseUrl: API_BASE_URL,
                       }),
-                      referenceUrls: new WeakMap<File, Promise<string>>(),
+                      referenceUrls: new WeakMap() as ReferenceUploads,
                   }
                 : null,
         [apiKey],
@@ -857,7 +869,11 @@ export function Playground() {
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
         () => CATEGORY_ORDER.find((value) => value === params.tab) ?? "image",
     );
-    const tabDrafts = useRef<Partial<Record<PlaygroundCategory, TabDraft>>>({});
+    const tabDrafts = useRef(drafts);
+    const restored =
+        drafts[activeCategory]?.params.model === params.model
+            ? drafts[activeCategory]
+            : undefined;
     const {
         model: selectedModel = "",
         prompt = "",
@@ -872,17 +888,19 @@ export function Playground() {
         sound = "",
     } = params;
     const duration = Number(params.duration) || 0;
-    const referenceMode =
-        params.guidance === "references" ? "references" : "frames";
     function setParam(key: keyof PlaySearch, value: string) {
         setParams((previous) => ({ ...previous, [key]: value }));
     }
-    const [referenceImages, setReferenceImages] = useState<File[]>([]);
+    const [referenceImages, setReferenceImages] = useState<File[]>(
+        restored?.referenceImages ?? [],
+    );
     const [videoReferences, setVideoReferences] = useState<
         Record<UploadMedia, File[]>
-    >({ image: [], video: [], audio: [] });
+    >(restored?.videoReferences ?? { image: [], video: [], audio: [] });
     const [recording, setRecording] = useState(false);
-    const [audioFiles, setAudioFiles] = useState<File[]>([]);
+    const [audioFiles, setAudioFiles] = useState<File[]>(
+        restored?.audioFiles ?? [],
+    );
     const linkedModelRef = useRef(selectedModel);
     const runStore = tabRuns[activeCategory];
     const { result, running, error } = useSyncExternalStore(
@@ -895,8 +913,11 @@ export function Playground() {
     const statusId = useId();
     const clipStatusId = useId();
     // Shared FileUpload limits and rejection messages for these media.
-    const uploadProps = (media: UploadMedia[], tooMany: string) => {
-        const maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item]));
+    const uploadProps = (
+        media: UploadMedia[],
+        tooMany: string,
+        maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item])),
+    ) => {
         const messages = {
             size: `Each file must be under ${maxMb} MB.`,
             count: tooMany,
@@ -1048,6 +1069,8 @@ export function Playground() {
         currentModel?.videoCapabilities ?? [],
     );
     const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
+    const referenceMode =
+        params.guidance === "references" ? "references" : "frames";
     const usesReferences =
         videoConfig.exclusiveReferences && referenceMode === "references";
     const maxReferenceImages = referenceImageLimit(currentModel);
@@ -1067,6 +1090,10 @@ export function Playground() {
         currentModel?.category === "audio"
             ? audioEndpoint(currentModel)
             : undefined;
+    const isStemSeparation =
+        currentAudioEndpoint === "/alpha/audio/stem-separation";
+    const stemVariationId =
+        params.stems === "2" ? "two_stems_v1" : "six_stems_v1";
     const isAudioTranscription =
         currentAudioEndpoint === "/v1/audio/transcriptions";
     const transcription =
@@ -1142,13 +1169,16 @@ export function Playground() {
                 ),
         );
     }, [selectedAudioClips]);
-    const rememberClipDuration = (file: File, seconds: number | null) => {
-        setClipDurations((previous) =>
-            previous.get(file) === seconds
-                ? previous
-                : new Map(previous).set(file, seconds),
-        );
-    };
+    const rememberClipDuration = useCallback(
+        (file: File, seconds: number | null) => {
+            setClipDurations((previous) =>
+                previous.get(file) === seconds
+                    ? previous
+                    : new Map(previous).set(file, seconds),
+            );
+        },
+        [],
+    );
     const inputConstraints = currentModel?.audioInputConstraints;
     const onClipDuration =
         inputConstraints?.min_seconds ||
@@ -1229,6 +1259,9 @@ export function Playground() {
                   ...(audioDuration !== undefined
                       ? { duration: audioDuration }
                       : {}),
+                  ...(isStemSeparation
+                      ? { stem_variation_id: stemVariationId }
+                      : {}),
                   ...(transcription?.language && language.trim()
                       ? { language: language.trim() }
                       : {}),
@@ -1293,11 +1326,12 @@ export function Playground() {
         : null;
 
     useEffect(() => {
+        if (!currentModel) return;
         setReferenceImages((current) => {
             if (current.length <= maxReferenceImages) return current;
             return current.slice(0, maxReferenceImages);
         });
-    }, [maxReferenceImages]);
+    }, [maxReferenceImages, currentModel]);
 
     function selectCategory(category: PlaygroundCategory) {
         if (category === activeCategory) return;
@@ -1333,7 +1367,15 @@ export function Playground() {
                 [activeCategory]: group.key,
             }));
         }
-        if (group.models.some((model) => model.id === selectedModel)) return;
+        if (group.models.some((model) => model.id === selectedModel)) {
+            if (activeCategory === "video" && group.key !== "all") {
+                setParam(
+                    "guidance",
+                    group.key === "start_frame" ? "frames" : "references",
+                );
+            }
+            return;
+        }
         const saved = lastGroupModel.current.get(
             `${activeCategory}/${group.key}`,
         );
@@ -1342,17 +1384,22 @@ export function Playground() {
                 group.models.find((model) => model.id === saved) ??
                 group.models[0]
             ).id,
+            group.key,
         );
     }
 
-    function selectModel(modelId: string) {
+    function selectModel(modelId: string, filter = groupKey) {
         if (modelId === selectedModel) return;
         setParams((previous) => ({
             ...previous,
             model: modelId,
             size: undefined,
             duration: undefined,
-            guidance: undefined,
+            guidance:
+                activeCategory === "video" &&
+                (filter === "reference_audios" || filter === "reference_videos")
+                    ? "references"
+                    : undefined,
             sound: undefined,
         }));
         setAudioFiles([]);
@@ -1442,6 +1489,9 @@ export function Playground() {
                         voice: selectedVoice || undefined,
                         duration: audioDuration,
                         language,
+                        stemVariationId: isStemSeparation
+                            ? stemVariationId
+                            : undefined,
                     },
                 );
                 runStore.set({
@@ -1535,7 +1585,42 @@ export function Playground() {
                 : null;
 
     // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
-    const run = needsSignIn ? () => login() : generate;
+    async function connect() {
+        if (recording) {
+            runStore.set({ error: "Finish recording before connecting." });
+            return;
+        }
+        const saved = {
+            ...tabDrafts.current,
+            [activeCategory]: {
+                params,
+                referenceImages,
+                videoReferences,
+                audioFiles,
+            },
+        };
+        try {
+            if (
+                Object.values(saved).some(
+                    (draft) =>
+                        draft.referenceImages.length ||
+                        draft.audioFiles.length ||
+                        Object.values(draft.videoReferences).some(
+                            (files) => files.length,
+                        ),
+                )
+            ) {
+                await saveConnectDraft(saved);
+            }
+            login();
+        } catch {
+            runStore.set({
+                error: "Couldn’t save your files for sign-in. Free up browser storage or remove the files and try again.",
+            });
+        }
+    }
+    useImperativeHandle(connectRef, () => connect);
+    const run = needsSignIn ? connect : generate;
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
     const statsDetail = runStatsDetail(modelStats);
     const hasMedianCost = (modelStats?.avg_cost_usd ?? 0) > 0;
@@ -1564,7 +1649,11 @@ export function Playground() {
                         onClipDuration={onClipDuration}
                         disabled={isGenerating}
                         importLabel={`Import ${mediaUploadLabel}`}
-                        {...uploadProps(uploadMedia, "Use one media file.")}
+                        {...uploadProps(
+                            uploadMedia,
+                            "Use one media file.",
+                            isStemSeparation ? 50 : undefined,
+                        )}
                     />
                 ) : (
                     <FileUpload
@@ -1769,6 +1858,20 @@ export function Playground() {
                             )}
                             {audioInput}
 
+                            {isStemSeparation && (
+                                <OptionField
+                                    label="Stems"
+                                    options={["2", "6"]}
+                                    value={
+                                        stemVariationId === "two_stems_v1"
+                                            ? "2"
+                                            : "6"
+                                    }
+                                    onChange={(value) =>
+                                        setParam("stems", value)
+                                    }
+                                />
+                            )}
                             {transcription?.language && (
                                 <FieldStack
                                     label="Language"
@@ -1880,12 +1983,7 @@ export function Playground() {
                                         options={["frames", "references"]}
                                         value={referenceMode}
                                         onChange={(value) =>
-                                            setParam(
-                                                "guidance",
-                                                value === "references"
-                                                    ? value
-                                                    : "",
-                                            )
+                                            setParam("guidance", value)
                                         }
                                         format={(mode) =>
                                             mode === "frames"

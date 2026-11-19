@@ -18,6 +18,7 @@ export const PLAY_SEARCH_KEYS = [
     "seed",
     "voice",
     "language",
+    "stems",
     "sound",
     "guidance",
 ] as const;

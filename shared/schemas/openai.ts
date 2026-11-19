@@ -895,7 +895,7 @@ export const OpenAIModelSchema = z
             ),
         max_reference_audios:
             ModelInfoSchema.shape.max_reference_audios.describe(
-                "Maximum number of reference audio clips in one request. Omitted when the model declares no limit.",
+                "Maximum number of reference audio clips supported in one request. Omission means the model declares no count; the endpoint’s input shape still applies.",
             ),
         audio_input_constraints: ModelInfoSchema.shape.audio_input_constraints,
         health: ModelHealthSchema.optional(),

@@ -2,6 +2,7 @@ import type {
     AudioBinaryResponse,
     ModelInfo,
     Pollinations,
+    StemSeparationOptions,
 } from "@pollinations/sdk";
 import { audioEndpoint } from "./audio-endpoint";
 
@@ -13,7 +14,12 @@ type AudioModel = {
 };
 
 export function transcriptionControls(model: AudioModel) {
-    const options = model.audioInputConstraints?.transcription_options ?? [];
+    // Older catalogs omit the hint. Preserve the original transcription form.
+    const options = model.audioInputConstraints?.transcription_options;
+    if (options === undefined) {
+        const acceptsOptions = model.id !== "microsoft/mai-transcribe-2";
+        return { language: acceptsOptions, prompt: acceptsOptions };
+    }
     return {
         language: options.includes("language"),
         prompt: options.includes("prompt"),
@@ -69,14 +75,21 @@ export function audioInputError(
     return null;
 }
 
+export type ReferenceUploads = WeakMap<
+    File,
+    { url: Promise<string>; expires: number }
+>;
+// Untagged media has a 30-day retention period from upload.
+const mediaLifetime = 30 * 24 * 60 * 60 * 1000;
+
 // Cache the pending upload too, so concurrent requests share it. Failed uploads can be retried.
 export function uploadReference(
     client: Pollinations,
     file: File,
-    urls?: WeakMap<File, Promise<string>>,
+    urls?: ReferenceUploads,
 ) {
     const previous = urls?.get(file);
-    if (previous) return previous;
+    if (previous && previous.expires > Date.now()) return previous.url;
     const upload = client.upload(file, { name: file.name }).then(
         (result) => result.url,
         (error: unknown) => {
@@ -84,7 +97,7 @@ export function uploadReference(
             throw error;
         },
     );
-    urls?.set(file, upload);
+    urls?.set(file, { url: upload, expires: Date.now() + mediaLifetime });
     return upload;
 }
 
@@ -102,13 +115,15 @@ export async function generatePlaygroundAudio(
         voice,
         duration,
         language,
+        stemVariationId,
     }: {
         prompt: string;
         file?: File;
-        referenceUrls?: WeakMap<File, Promise<string>>;
+        referenceUrls?: ReferenceUploads;
         voice?: string;
         duration?: number;
         language?: string;
+        stemVariationId?: StemSeparationOptions["stemVariationId"];
     },
 ): Promise<
     | { type: "text"; text: string }
@@ -145,7 +160,10 @@ export async function generatePlaygroundAudio(
     if (endpoint === "/alpha/audio/stem-separation" && file) {
         return {
             type: "stems",
-            archive: await client.separateStems(file, { model: model.id }),
+            archive: await client.separateStems(file, {
+                model: model.id,
+                stemVariationId,
+            }),
         };
     }
     const options = {

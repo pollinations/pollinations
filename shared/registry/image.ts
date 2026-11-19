@@ -1154,6 +1154,8 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         maxReferenceAudios: 3,
         audioInputConstraints: {
+            // Replicate's serving model rejects shorter clips in reference-to-video mode.
+            min_seconds: 1.8,
             max_total_seconds: 15,
             requires_reference_visual: true,
         },
@@ -2082,6 +2084,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         maxReferenceAudios: 10,
         audioInputConstraints: {
+            min_seconds: 1.8,
             max_total_seconds: 30,
             requires_reference_visual: true,
         },

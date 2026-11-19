@@ -1,10 +1,12 @@
 import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
-import { ContentHeader } from "@pollinations/ui";
+import { Alert, ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
-import { Playground } from "../ui/play/Playground";
+import { takeConnectDraft } from "../ui/play/connect-draft";
+import { type ConnectDrafts, Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import { validatePlaySearch } from "./-play-search";
@@ -28,32 +30,68 @@ export const Route = createFileRoute("/play")({
  * token-driven light/dark choice as every other route.
  */
 function PlayPage() {
+    const connect = useRef<(() => void) | null>(null);
     return (
         <PolliProvider
             appKey={POLLI_APP_KEY}
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <PlayHero />
+            <PlayHero connect={connect} />
             <div className={postHeroSpacingClassName}>
-                <HydratedPlayground />
+                <HydratedPlayground connect={connect} />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
     );
 }
 
+type ConnectProps = { connect: RefObject<(() => void) | null> };
+
 /**
  * The playground reads its inputs from the URL once, on mount. Returning from
  * Connect, the provider first puts back the URL saved before sign-in, so the
  * playground mounts only after that.
  */
-function HydratedPlayground() {
+function HydratedPlayground({ connect }: ConnectProps) {
     const { isHydrated } = useAuthState();
-    return isHydrated ? <Playground /> : null;
+    const restore = useRef<Promise<ConnectDrafts | undefined> | null>(null);
+    const [drafts, setDrafts] = useState<ConnectDrafts>();
+    const [restoreError, setRestoreError] = useState(false);
+    useEffect(() => {
+        if (!isHydrated) return;
+        let active = true;
+        restore.current ??= takeConnectDraft<ConnectDrafts>();
+        restore.current.then(
+            (saved) => {
+                if (active) setDrafts(saved ?? {});
+            },
+            () => {
+                if (active) {
+                    setRestoreError(true);
+                    setDrafts({});
+                }
+            },
+        );
+        return () => {
+            active = false;
+        };
+    }, [isHydrated]);
+    return (
+        drafts && (
+            <>
+                {restoreError && (
+                    <Alert intent="warning">
+                        Couldn’t restore the files saved before sign-in.
+                    </Alert>
+                )}
+                <Playground connectRef={connect} drafts={drafts} />
+            </>
+        )
+    );
 }
 
-function PlayHero() {
+function PlayHero({ connect }: ConnectProps) {
     const { isHydrated } = useAuthState();
     return (
         // The monitor robot, showing off something it just made.
@@ -67,6 +105,7 @@ function PlayHero() {
             <div className="self-start" inert={!isHydrated}>
                 <AppUserMenu
                     connectSize="lg"
+                    onConnect={() => connect.current?.()}
                     labels={{ logout: "Disconnect app" }}
                 />
             </div>

@@ -61,6 +61,8 @@ export function videoOptions(id: string, capabilities: readonly string[]) {
         defaultSound:
             !id.startsWith("google/veo-") && id !== "kwaivgi/kling-v3.0-std",
         exclusiveReferences:
+            id === "bytedance/seedance-2.0" ||
+            id === "bytedance/seedance-2.5" ||
             id === "alibaba/wan-2.7" ||
             id === "alibaba/wan-3.0" ||
             id === "minimax/minimax-h3-max",

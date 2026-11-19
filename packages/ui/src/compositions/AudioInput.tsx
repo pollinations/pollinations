@@ -39,6 +39,10 @@ function Clip({
     disabled: boolean;
 }) {
     const [url, setUrl] = useState("");
+    const reportDuration = useCallback(
+        (seconds: number | null) => onClipDuration?.(file, seconds),
+        [file, onClipDuration],
+    );
     useEffect(() => {
         const src = URL.createObjectURL(file);
         setUrl(src);
@@ -54,10 +58,7 @@ function Clip({
                     src={url}
                     label={file.name}
                     disabled={disabled}
-                    onDuration={
-                        onClipDuration &&
-                        ((seconds) => onClipDuration(file, seconds))
-                    }
+                    onDuration={onClipDuration && reportDuration}
                 />
             )}
             <div className="polli:absolute polli:-top-2 polli:right-1">

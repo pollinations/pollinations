@@ -579,6 +579,7 @@ const AUDIO_BASE_SERVICES = {
         title: "Eleven Music",
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
@@ -602,6 +603,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         audioInputConstraints: { min_seconds: 10, max_seconds: 600 },
         outputModalities: ["audio"],
         minDuration: 3,
@@ -1089,6 +1091,7 @@ const AUDIO_BASE_SERVICES = {
         title: "Stable Audio 3 Medium",
         description: "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         minDuration: 1,
         maxDuration: 380,
@@ -1122,6 +1125,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         minDuration: 1,
         maxDuration: 380,
@@ -1141,6 +1145,7 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Speech in the Alloy voice or a voice cloned from a reference recording.",
         inputModalities: ["text", "audio"],
+        maxReferenceAudios: 1,
         outputModalities: ["audio"],
         voices: ["alloy"],
         supportedEndpoints: ["/v1/audio/speech"],

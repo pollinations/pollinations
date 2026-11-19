@@ -15,7 +15,6 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect, vi } from "vitest";
-import { audioEndpoint } from "../../pollinations.ai/src/ui/play/audio-endpoint.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -482,29 +481,6 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
-test("the playground can submit audio to each official media model that accepts it", async () => {
-    const response = await fetchWorker("/models");
-    expect(response.status).toBe(200);
-    const catalog = (await response.json()) as ModelInfo[];
-    for (const model of catalog) {
-        if (model.community || !model.input_modalities?.includes("audio"))
-            continue;
-        if (model.category === "audio") {
-            expect(
-                audioEndpoint({
-                    supportedEndpoints: model.supported_endpoints ?? [],
-                }),
-                model.name,
-            ).toBeDefined();
-        } else if (model.category === "image" || model.category === "video") {
-            expect(model.category, model.name).toBe("video");
-            expect(model.video_capabilities, model.name).toContain(
-                "reference_audios",
-            );
-        }
-    }
-});
-
 test("model listings and retrieval expose reference media limits", async () => {
     type ListedModel = {
         id: string;
@@ -535,7 +511,29 @@ test("model listings and retrieval expose reference media limits", async () => {
         );
     }
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
+    for (const [id, clips, total] of [
+        ["bytedance/seedance-2.0", 3, 15],
+        ["bytedance/seedance-2.5", 10, 30],
+        ["alibaba/wan-3.0", 5, 15],
+        ["minimax/minimax-h3-max", 3, 15],
+    ] as const) {
+        expect(
+            list.data.find((model) => model.id === id),
+            id,
+        ).toMatchObject({
+            max_reference_audios: clips,
+            audio_input_constraints: { max_total_seconds: total },
+        });
+    }
 
+    expect(
+        list.data.find((model) => model.id === "zyphra/zonos3-mini")
+            ?.max_reference_audios,
+    ).toBe(1);
+    expect(
+        list.data.find((model) => model.id === "bytedance/seedance-2.0")
+            ?.audio_input_constraints?.min_seconds,
+    ).toBe(1.8);
     expect(
         list.data.find((model) => model.id === "microsoft/mai-transcribe-2")
             ?.audio_input_constraints?.transcription_options,

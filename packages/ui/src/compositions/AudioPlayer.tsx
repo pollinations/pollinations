@@ -23,6 +23,14 @@ export function AudioPlayer({
     useEffect(() => {
         if (disabled) audio.current?.pause();
     }, [disabled]);
+    useEffect(() => {
+        if (!src || !onDuration) return;
+        // Some mobile browsers defer metadata until the first user gesture.
+        const timer = window.setTimeout(() => {
+            if (audio.current && audio.current.readyState < 1) onDuration(null);
+        }, 5000);
+        return () => window.clearTimeout(timer);
+    }, [src, onDuration]);
     function updateDuration(event: SyntheticEvent<HTMLAudioElement>) {
         const seconds = event.currentTarget.duration;
         const known = Number.isFinite(seconds) ? seconds : null;

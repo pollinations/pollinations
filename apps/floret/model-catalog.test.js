@@ -121,6 +121,17 @@ test("validates, normalizes, and semantically diffs public metadata", () => {
     );
 });
 
+test("detects changes to audio reference counts and provider constraints", () => {
+    const original = normalizeCatalog([model("audio")]);
+    for (const field of [
+        { max_reference_audios: 3 },
+        { audio_input_constraints: { transcription_options: [] } },
+    ]) {
+        const updated = normalizeCatalog([model("audio", field)]);
+        assert.equal(compareCatalogs(original, updated).changed.length, 1);
+    }
+});
+
 test("rejects malformed or empty catalogs", () => {
     assert.throws(() => validateCatalog([]), /non-empty/);
     assert.throws(() => validateCatalog([model("a"), model("a")]), /unique/);

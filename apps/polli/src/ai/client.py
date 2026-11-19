@@ -727,11 +727,20 @@ class PollinationsClient:
                 if actions is not None and action not in actions:
                     return {"error": f"Action not available here: {func_name} {action}"}
 
-            if (tool_context or {}).get("discord_mixed_batch") and (
+            # API mode and mixed-user batches are read-only surfaces: the
+            # restrictions are declared in the tool schema offered to the
+            # model, but the model chooses the arguments, so they must be
+            # enforced again here at execution time. The sets are shared with
+            # the schema builder (tool_filters.py).
+            restricted_context = (
+                (tool_context or {}).get("discord_mixed_batch")
+                or (tool_context or {}).get("is_http_api")
+            )
+            if restricted_context and (
                 func_name in API_EXCLUDED_TOOLS
                 or str(args.get("action", "")).lower() in API_RESTRICTED_ACTIONS.get(func_name, set())
             ):
-                return {"error": "Mixed-user batch is read-only. Defer this message to process its writes separately."}
+                return {"error": "This surface is read-only. Write actions are only available to authenticated maintainers."}
 
             if (tool_context or {}).get("discord_mixed_batch") and func_name == "discord_search":
                 tool_context_for_call = {**tool_context, "is_http_api": True, "is_admin": False}

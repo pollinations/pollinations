@@ -165,32 +165,6 @@ export async function generatePlaygroundAudio(
 
 type AudioConstraints = NonNullable<ModelInfo["audio_input_constraints"]>;
 
-export function audioConstraintHint(rules?: AudioConstraints) {
-    if (!rules) return undefined;
-    const {
-        min_seconds: min,
-        max_seconds: max,
-        max_total_seconds: total,
-    } = rules;
-    return (
-        [
-            min && max
-                ? `Use ${min}–${max} seconds per clip.`
-                : min
-                  ? `Use at least ${min} seconds per clip.`
-                  : max
-                    ? `Use up to ${max} seconds per clip.`
-                    : "",
-            total ? `Up to ${total} seconds of audio in total.` : "",
-            rules.requires_reference_visual
-                ? "Include a reference image or video with audio."
-                : "",
-        ]
-            .filter(Boolean)
-            .join(" ") || undefined
-    );
-}
-
 export function audioConstraintError(
     rules: AudioConstraints | undefined,
     files: File[],

@@ -67,7 +67,6 @@ import {
 } from "./media-model-settings";
 import {
     audioConstraintError,
-    audioConstraintHint,
     audioInputError,
     generatePlaygroundAudio,
     isVideo,
@@ -819,6 +818,7 @@ export function Playground() {
     const [stats, setStats] = useState<ModelRunStat[]>([]);
     const responseRef = useRef<HTMLDivElement>(null);
     const statusId = useId();
+    const clipStatusId = useId();
     // Shared FileUpload limits and rejection messages for these media.
     const uploadProps = (media: UploadMedia[], tooMany: string) => {
         const maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item]));
@@ -1465,16 +1465,14 @@ export function Playground() {
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
     const statsLine = runStatsLine(modelStats);
 
-    const audioInputHint = audioConstraintHint(inputConstraints);
+    const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
                 orientation={
                     uploadMedia.includes("audio") ? "stacked" : "inline"
                 }
-                helper={
-                    uploadMedia.includes("audio") ? audioInputHint : undefined
-                }
+                helper={uploadMedia.includes("audio") ? clipStatus : undefined}
                 className="min-w-0"
                 label={
                     requiresMediaUpload
@@ -1766,7 +1764,7 @@ export function Playground() {
                                         key={media}
                                         helper={
                                             media === "audio"
-                                                ? audioInputHint
+                                                ? clipStatus
                                                 : undefined
                                         }
                                         label={`Reference ${MEDIA_PLURAL[media]}`}
@@ -2145,7 +2143,11 @@ export function Playground() {
                             disabled={!!blockedReason}
                             aria-disabled={isGenerating || undefined}
                             aria-busy={isGenerating}
-                            aria-describedby={statusId}
+                            aria-describedby={
+                                clipError && blockedReason === clipError
+                                    ? clipStatusId
+                                    : statusId
+                            }
                             icon={needsSignIn ? undefined : <GenerateIcon />}
                             onClick={run}
                             className={cn(
@@ -2168,7 +2170,7 @@ export function Playground() {
                             tone="muted"
                             className="min-h-5 max-sm:w-full"
                         >
-                            {blockedReason}
+                            {blockedReason !== clipError && blockedReason}
                         </Text>
                     </div>
 

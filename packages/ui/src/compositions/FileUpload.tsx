@@ -18,8 +18,7 @@ import { ImageIcon } from "../primitives/icons/index.tsx";
 import {
     fileMediaKind,
     MediaRemoveButton,
-    mediaTypeIcons,
-    VideoThumbnail,
+    UploadedClipPlayer,
 } from "./UploadedMedia.tsx";
 
 const PREVIEWABLE_IMAGE_TYPES = new Set([
@@ -199,29 +198,33 @@ export function FileUpload({
             <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
                 {value.map((file, index) => {
                     const kind = fileMediaKind(file, tileModality);
-                    const PlaceholderIcon = mediaTypeIcons[kind ?? "image"];
                     return (
                         <li
                             key={`${file.name}-${index}`}
                             title={file.name}
-                            className="polli:relative polli:list-none"
+                            className="polli-upload-tile polli:relative polli:list-none"
                         >
-                            <div
-                                className="polli:relative polli:box-border polli:size-20 polli:overflow-hidden polli:rounded-xl polli:border-2 polli:border-theme-border polli:bg-theme-bg-pale"
-                                {...mediaTileTint(kind)}
-                            >
-                                <FilePreview
+                            {kind === "video" || kind === "audio" ? (
+                                <UploadedClipPlayer
+                                    video={kind === "video"}
                                     file={file}
-                                    placeholderIcon={
-                                        previewIcon ?? (
-                                            <PlaceholderIcon className="polli:size-5" />
-                                        )
-                                    }
+                                    disabled={disabled}
                                 />
-                                {kind === "video" && (
-                                    <VideoThumbnail file={file} />
-                                )}
-                            </div>
+                            ) : (
+                                <div
+                                    className="polli:relative polli:box-border polli:size-20 polli:overflow-hidden polli:rounded-xl polli:border-2 polli:border-theme-border polli:bg-theme-bg-pale"
+                                    {...mediaTileTint(kind)}
+                                >
+                                    <FilePreview
+                                        file={file}
+                                        placeholderIcon={
+                                            previewIcon ?? (
+                                                <ImageIcon className="polli:size-5" />
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
                             <span className="polli:sr-only">{file.name}</span>
                             <MediaRemoveButton
                                 file={file}

@@ -9,7 +9,7 @@ it("shows only the removable clip when the single slot is full", () => {
         <AudioInput value={[clip]} onChange={() => {}} maxSizeBytes={1024} />,
     );
     expect(html).not.toContain('type="file"');
-    expect(html.match(/<button\b/g)).toHaveLength(1);
+    expect(html).toContain('aria-label="Play sample.wav"');
     expect(html).toContain('aria-label="Remove sample.wav"');
 });
 

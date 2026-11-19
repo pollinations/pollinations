@@ -13,9 +13,8 @@ describe("FileUpload", () => {
                 tileModality="mixed"
             />,
         );
-        expect(html).toContain(
-            'aria-label="Video thumbnail for reference.MKV"',
-        );
+        expect(html).toContain("<video");
+        expect(html).toContain('aria-label="Play reference.MKV"');
         expect(html).toContain('aria-description="video"');
     });
 

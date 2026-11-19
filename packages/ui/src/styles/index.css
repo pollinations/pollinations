@@ -581,3 +581,16 @@
         scroll-behavior: auto !important;
     }
 }
+
+/* Keep removal visible on touch and reveal it below a hovered or focused tile. */
+@media (hover: hover) and (pointer: fine) {
+    .polli-upload-remove {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .polli-upload-tile:hover .polli-upload-remove,
+    .polli-upload-tile:focus-within .polli-upload-remove {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

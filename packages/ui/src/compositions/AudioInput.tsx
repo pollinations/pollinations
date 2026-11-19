@@ -8,12 +8,11 @@ import {
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { CloudUploadIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
-import { AudioPlayer } from "./AudioPlayer.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
 import {
     fileMediaKind,
     MediaRemoveButton,
-    VideoThumbnail,
+    UploadedClipPlayer,
 } from "./UploadedMedia.tsx";
 
 export type AudioInputProps = {
@@ -42,33 +41,22 @@ function Clip({
     onClipDuration?: AudioInputProps["onClipDuration"];
     disabled: boolean;
 }) {
-    const [url, setUrl] = useState("");
     const kind = fileMediaKind(file) ?? "audio";
     const reportDuration = useCallback(
         (seconds: number | null) => onClipDuration?.(file, seconds),
         [file, onClipDuration],
     );
-    useEffect(() => {
-        const src = URL.createObjectURL(file);
-        setUrl(src);
-        return () => URL.revokeObjectURL(src);
-    }, [file]);
     return (
         <div
             title={file.name}
-            className="polli:relative polli:size-20 polli:shrink-0"
+            className="polli-upload-tile polli:relative polli:w-20 polli:shrink-0"
         >
-            {url && (
-                <AudioPlayer
-                    src={url}
-                    label={file.name}
-                    tileModality={kind}
-                    disabled={disabled}
-                    onDuration={onClipDuration && reportDuration}
-                >
-                    {kind === "video" && <VideoThumbnail file={file} />}
-                </AudioPlayer>
-            )}
+            <UploadedClipPlayer
+                file={file}
+                video={kind === "video"}
+                disabled={disabled}
+                onDuration={onClipDuration && reportDuration}
+            />
             <MediaRemoveButton
                 file={file}
                 kind={kind}
@@ -128,11 +116,6 @@ export function AudioInput({
         <fieldset
             aria-label="Audio clips"
             className="polli:m-0 polli:w-full polli:min-w-0 polli:border-0 polli:p-0"
-            onPlay={(e) => {
-                for (const clip of e.currentTarget.querySelectorAll("audio")) {
-                    if (clip !== e.target) clip.pause();
-                }
-            }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
                 e.preventDefault();

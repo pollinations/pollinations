@@ -462,7 +462,7 @@ function ModelPicker({
     const selected = models.find((model) => model.id === selectedModel);
 
     return (
-        <FieldStack label="Model" className="w-fit min-w-0 max-w-full">
+        <div className="w-fit min-w-0 max-w-full">
             <Dropdown
                 portalled={false}
                 className="w-80 max-w-[calc(100vw-2rem)] p-2"
@@ -529,7 +529,7 @@ function ModelPicker({
                     </ScrollArea>
                 )}
             </Dropdown>
-        </FieldStack>
+        </div>
     );
 }
 

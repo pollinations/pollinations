@@ -961,8 +961,20 @@ test("slugify produces URL‑friendly slugs", async (t) => {
         slug: "trim-me",
     });
     assert.deepEqual(await call(client, "slugify", { value: "Café résumé" }), {
-        slug: "caf-r-sum",
+        slug: "cafe-resume",
     });
+    assert.deepEqual(await call(client, "slugify", { value: "Straße" }), {
+        slug: "strasse",
+    });
+    assert.deepEqual(await call(client, "slugify", { value: "Æther" }), {
+        slug: "aether",
+    });
+    assert.deepEqual(
+        await call(client, "slugify", { value: "Ｆｕｌｌ　ｗｉｄｔｈ" }),
+        {
+            slug: "full-width",
+        },
+    );
     assert.deepEqual(await call(client, "slugify", { value: "already-123" }), {
         slug: "already-123",
     });

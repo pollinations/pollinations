@@ -24,8 +24,6 @@ const COMPARABLE_FIELDS = [
     "duration_step",
     "max_reference_images",
     "max_reference_videos",
-    "max_reference_audios",
-    "audio_input_constraints",
     "input_modalities",
     "output_modalities",
     "capabilities",

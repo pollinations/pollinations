@@ -1,6 +1,18 @@
 import type { PreviewFormats } from "../ui/play/image-output";
 import inventory from "./playground-model-overrides.json";
 
+// Play can preview these optional fields before the catalog SDK release.
+export type AudioCatalogMetadata = {
+    max_reference_audios?: number;
+    audio_input_constraints?: {
+        min_seconds?: number;
+        max_seconds?: number;
+        max_total_seconds?: number;
+        requires_reference_visual?: boolean;
+    };
+    transcription_options?: readonly string[];
+};
+
 type PlaygroundModelOverride = {
     reason: string;
     source: string;
@@ -8,6 +20,7 @@ type PlaygroundModelOverride = {
     imageFormats?: PreviewFormats;
     decisionQuestionTypes?: string[];
     audioTask?: string;
+    audioCatalog?: AudioCatalogMetadata;
     audioGroup?: string;
     durationFromInput?: boolean;
     requiresImage?: boolean;
@@ -50,4 +63,19 @@ const overrides = new Map<string, PlaygroundModelOverride>(
 
 export function playgroundModelOverride(id: string) {
     return overrides.get(id);
+}
+
+export function playgroundAudioMetadata(
+    id: string,
+    catalog: AudioCatalogMetadata,
+) {
+    const preview = playgroundModelOverride(id)?.audioCatalog;
+    return {
+        maxReferenceAudios:
+            catalog.max_reference_audios ?? preview?.max_reference_audios,
+        audioInputConstraints:
+            catalog.audio_input_constraints ?? preview?.audio_input_constraints,
+        transcriptionOptions:
+            catalog.transcription_options ?? preview?.transcription_options,
+    };
 }

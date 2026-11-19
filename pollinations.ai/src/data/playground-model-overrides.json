@@ -51,7 +51,15 @@
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
         "defaultRatio": "16:9",
         "soundToggleDefault": true,
-        "exclusiveReferences": true
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 5,
+            "audio_input_constraints": {
+                "min_seconds": 1,
+                "max_seconds": 15,
+                "max_total_seconds": 15
+            }
+        }
     },
     "black-forest-labs/flux-3-image-klein": {
         "reason": "The Klein route accepts explicit dimensions up to its 4K tier.",
@@ -75,7 +83,15 @@
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
-        "exclusiveReferences": true
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 3,
+            "audio_input_constraints": {
+                "min_seconds": 1.8,
+                "max_total_seconds": 15,
+                "requires_reference_visual": true
+            }
+        }
     },
     "bytedance/seedance-2.0-fast": {
         "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
@@ -94,7 +110,15 @@
         "source": "gen.pollinations.ai/src/image/models/seedance25VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
-        "exclusiveReferences": true
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 10,
+            "audio_input_constraints": {
+                "min_seconds": 1.8,
+                "max_total_seconds": 30,
+                "requires_reference_visual": true
+            }
+        }
     },
     "bytedance/seedream-4.0": {
         "reason": "The Replicate adapter supports custom dimensions up to 4096 pixels.",
@@ -121,12 +145,26 @@
     "elevenlabs/music-v2": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",
-        "audioTask": "music-and-sound-effects"
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1,
+            "audio_input_constraints": {
+                "min_seconds": 10,
+                "max_seconds": 600
+            }
+        }
     },
     "elevenlabs/music-v2.5": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",
-        "audioTask": "music-and-sound-effects"
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1,
+            "audio_input_constraints": {
+                "min_seconds": 10,
+                "max_seconds": 600
+            }
+        }
     },
     "google/gemini-3-pro-image": {
         "reason": "The Vertex adapter maps large dimensions to its 4K image tier.",
@@ -213,7 +251,15 @@
         "reason": "Match the video adapter’s aspect ratios. Frames and reference media use separate generation modes.",
         "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
-        "exclusiveReferences": true
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 3,
+            "audio_input_constraints": {
+                "min_seconds": 2,
+                "max_seconds": 15,
+                "max_total_seconds": 15
+            }
+        }
     },
     "minimax/minimax-h3-max-turbo": {
         "reason": "Match the video adapter’s aspect ratios.",
@@ -276,12 +322,18 @@
     "stability-ai/stable-audio-3": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",
-        "audioTask": "music-and-sound-effects"
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
     },
     "stability-ai/stable-audio-3-medium": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",
-        "audioTask": "music-and-sound-effects"
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
     },
     "typesafe/jev-1.14": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
@@ -310,5 +362,112 @@
         "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
         "defaultRatio": "16:9"
+    },
+    "microsoft/mai-transcribe-2": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": []
+        }
+    },
+    "elevenlabs/eleven-multilingual-sts-v2": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "audio_input_constraints": {
+                "max_seconds": 300
+            }
+        }
+    },
+    "elevenlabs/voice-isolator": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "audio_input_constraints": {
+                "min_seconds": 4.6
+            }
+        }
+    },
+    "openai/whisper-large-v3": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "openai/gpt-transcribe": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "elevenlabs/scribe-v3": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "elevenlabs/scribe-v2": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "x-ai/grok-transcribe": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "google/gemini-3.5-transcribe": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "assemblyai/universal-2": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "assemblyai/universal-3.5-pro": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "zyphra/zonos3-mini": {
+        "reason": "Preview the model’s published audio capability metadata before release.",
+        "source": "shared/registry/audio.ts",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
     }
 }

@@ -1,6 +1,7 @@
 import { Pollinations } from "@pollinations/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getAudioModelsInfo } from "../../../../shared/registry/model-info";
+import { playgroundAudioMetadata } from "../../data/playground-model-overrides";
 import { audioEndpoint } from "./audio-endpoint";
 import {
     audioConstraintError,
@@ -214,11 +215,31 @@ describe("catalog-driven audio requests", () => {
         }
     });
 
+    it("uses preview metadata only for fields the catalog omits", () => {
+        expect(
+            playgroundAudioMetadata("bytedance/seedance-2.0", {
+                max_reference_audios: 2,
+            }),
+        ).toMatchObject({
+            maxReferenceAudios: 2,
+            audioInputConstraints: { min_seconds: 1.8 },
+        });
+        expect(
+            playgroundAudioMetadata("openai/gpt-transcribe", {
+                transcription_options: [],
+            }).transcriptionOptions,
+        ).toEqual([]);
+        expect(
+            playgroundAudioMetadata("microsoft/mai-transcribe-2", {})
+                .transcriptionOptions,
+        ).toEqual([]);
+    });
+
     it("hides transcription controls when the catalog lists no optional inputs", () => {
         expect(
             transcriptionControls({
                 ...model("/v1/audio/transcriptions"),
-                audioInputConstraints: { transcription_options: [] },
+                transcriptionOptions: [],
             }),
         ).toEqual({ language: false, prompt: false });
     });
@@ -347,9 +368,7 @@ describe("catalog-driven audio requests", () => {
                 client,
                 {
                     ...model("/v1/audio/transcriptions"),
-                    audioInputConstraints: {
-                        transcription_options: ["prompt", "language"],
-                    },
+                    transcriptionOptions: ["prompt", "language"],
                 },
                 {
                     prompt: "Names: Polly",
@@ -381,9 +400,7 @@ describe("catalog-driven audio requests", () => {
                 client,
                 {
                     ...model("/v1/audio/transcriptions"),
-                    audioInputConstraints: options
-                        ? { transcription_options: [...options] }
-                        : undefined,
+                    transcriptionOptions: options,
                 },
                 { file, prompt: "Polly", language: "de" },
             );

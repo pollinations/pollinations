@@ -893,11 +893,6 @@ export const OpenAIModelSchema = z
             ModelInfoSchema.shape.max_reference_videos.describe(
                 "Most reference or input videos one request accepts. Omitted when the model declares none.",
             ),
-        max_reference_audios:
-            ModelInfoSchema.shape.max_reference_audios.describe(
-                "Maximum number of reference audio clips supported in one request. Omission means the model declares no count; the endpoint’s input shape still applies.",
-            ),
-        audio_input_constraints: ModelInfoSchema.shape.audio_input_constraints,
         health: ModelHealthSchema.optional(),
         voices: ModelInfoSchema.shape.voices.describe(
             "Preset voice names for the `voice` parameter. Omitted when the model lists none.",

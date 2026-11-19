@@ -1199,13 +1199,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        maxReferenceAudios: 3,
-        audioInputConstraints: {
-            // Replicate's serving model rejects shorter clips in reference-to-video mode.
-            min_seconds: 1.8,
-            max_total_seconds: 15,
-            requires_reference_visual: true,
-        },
         minDuration: 4,
         maxDuration: 15,
         defaultDuration: 5,
@@ -1492,12 +1485,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        maxReferenceAudios: 5,
-        audioInputConstraints: {
-            min_seconds: 1,
-            max_seconds: 15,
-            max_total_seconds: 15,
-        },
         minDuration: 2,
         maxDuration: 15,
         defaultDuration: 5,
@@ -2133,12 +2120,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        maxReferenceAudios: 10,
-        audioInputConstraints: {
-            min_seconds: 1.8,
-            max_total_seconds: 30,
-            requires_reference_visual: true,
-        },
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,
@@ -2420,12 +2401,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2,
-        maxReferenceAudios: 3,
-        audioInputConstraints: {
-            min_seconds: 2,
-            max_seconds: 15,
-            max_total_seconds: 15,
-        },
         minDuration: 5,
         maxDuration: 15,
         defaultDuration: 5,

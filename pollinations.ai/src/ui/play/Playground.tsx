@@ -67,10 +67,12 @@ import {
 } from "react";
 import { API_BASE_URL, ENTER_URL } from "../../config";
 import {
+    type AudioCatalogMetadata,
     audioTaskGroups,
     audioTaskIds,
     image4KDimensions,
     imageFilters,
+    playgroundAudioMetadata,
     playgroundModelOverride,
     uploadLimitsMiB,
     videoFilters,
@@ -144,7 +146,8 @@ type PlaygroundModel = MediaModelMetadata & {
     publisher?: string;
     maxReferenceVideos?: number;
     maxReferenceAudios?: number;
-    audioInputConstraints?: ModelInfo["audio_input_constraints"];
+    audioInputConstraints?: AudioCatalogMetadata["audio_input_constraints"];
+    transcriptionOptions?: AudioCatalogMetadata["transcription_options"];
 };
 
 const WORKSPACES = [
@@ -183,9 +186,12 @@ const TASKS = WORKSPACES.flatMap((workspace) =>
 );
 type Task = (typeof TASKS)[number];
 
-function playgroundModel(model: ModelInfo): PlaygroundModel | null {
+function playgroundModel(
+    model: ModelInfo & AudioCatalogMetadata,
+): PlaygroundModel | null {
     const id = model.id ?? model.name;
     if (!id || !model.category) return null;
+    const override = playgroundModelOverride(id);
 
     return {
         id,
@@ -194,10 +200,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         description: model.description ?? "",
         category: model.category,
         inputModalities: model.input_modalities ?? [],
-        outputFormats: previewImageFormats(
-            model,
-            playgroundModelOverride(id)?.imageFormats,
-        ),
+        outputFormats: previewImageFormats(model, override?.imageFormats),
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
         resolutions: model.resolutions ?? [],
@@ -212,8 +215,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
         maxReferenceVideos: model.max_reference_videos,
-        maxReferenceAudios: model.max_reference_audios,
-        audioInputConstraints: model.audio_input_constraints,
+        ...playgroundAudioMetadata(id, model),
     };
 }
 

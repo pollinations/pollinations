@@ -1,10 +1,10 @@
 import type {
     AudioBinaryResponse,
-    ModelInfo,
     Pollinations,
     StemSeparationOptions,
 } from "@pollinations/sdk";
 import {
+    type AudioCatalogMetadata,
     audioEndpoints,
     audioTaskIds,
     playgroundModelOverride,
@@ -15,7 +15,7 @@ type AudioModel = {
     id: string;
     inputModalities: string[];
     supportedEndpoints: string[];
-    audioInputConstraints?: ModelInfo["audio_input_constraints"];
+    transcriptionOptions?: AudioCatalogMetadata["transcription_options"];
 };
 
 export function audioTaskForModel(
@@ -33,7 +33,7 @@ export function audioTaskForModel(
 }
 
 export function transcriptionControls(model: AudioModel) {
-    const options = model.audioInputConstraints?.transcription_options;
+    const options = model.transcriptionOptions;
     return {
         language: options?.includes("language") ?? true,
         prompt: options?.includes("prompt") ?? true,
@@ -190,7 +190,9 @@ export async function generatePlaygroundAudio(
     return { type: "audio", ...result };
 }
 
-type AudioConstraints = NonNullable<ModelInfo["audio_input_constraints"]>;
+type AudioConstraints = NonNullable<
+    AudioCatalogMetadata["audio_input_constraints"]
+>;
 
 export function audioConstraintError(
     rules: AudioConstraints | undefined,

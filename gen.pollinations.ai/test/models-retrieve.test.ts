@@ -481,13 +481,11 @@ test("model listings carry billing units so agents can price a call", async () =
     }
 });
 
-test("model listings and retrieval expose reference media limits", async () => {
+test("model listings expose reference media limits on /v1/models", async () => {
     type ListedModel = {
         id: string;
         max_reference_images?: number;
         max_reference_videos?: number;
-        max_reference_audios?: number;
-        audio_input_constraints?: ModelInfo["audio_input_constraints"];
     };
     const list = (await (await fetchWorker("/v1/models")).json()) as {
         data: ListedModel[];
@@ -503,80 +501,8 @@ test("model listings and retrieval expose reference media limits", async () => {
         expect(model.max_reference_videos, model.id).toEqual(
             info?.max_reference_videos,
         );
-        expect(model.max_reference_audios, model.id).toEqual(
-            info?.max_reference_audios,
-        );
-        expect(model.audio_input_constraints, model.id).toEqual(
-            info?.audio_input_constraints,
-        );
     }
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
-    for (const [id, clips, total] of [
-        ["bytedance/seedance-2.0", 3, 15],
-        ["bytedance/seedance-2.5", 10, 30],
-        ["alibaba/wan-3.0", 5, 15],
-        ["minimax/minimax-h3-max", 3, 15],
-    ] as const) {
-        expect(
-            list.data.find((model) => model.id === id),
-            id,
-        ).toMatchObject({
-            max_reference_audios: clips,
-            audio_input_constraints: { max_total_seconds: total },
-        });
-    }
-
-    expect(
-        list.data.find((model) => model.id === "zyphra/zonos3-mini")
-            ?.max_reference_audios,
-    ).toBe(1);
-    expect(
-        list.data.find((model) => model.id === "bytedance/seedance-2.0")
-            ?.audio_input_constraints?.min_seconds,
-    ).toBe(1.8);
-    expect(
-        list.data.find((model) => model.id === "microsoft/mai-transcribe-2")
-            ?.audio_input_constraints?.transcription_options,
-    ).toEqual([]);
-
-    for (const path of [
-        "/models",
-        "/audio/models",
-        "/image/models",
-        "/video/models",
-    ]) {
-        const response = await fetchWorker(path);
-        expect(response.status, path).toBe(200);
-        const models = (await response.json()) as ModelInfo[];
-        expect(
-            models.some((model) => model.audio_input_constraints),
-            path,
-        ).toBe(true);
-        for (const model of models) {
-            const info = registry.resolve(model.name)?.info;
-            expect(model.max_reference_audios, model.name).toEqual(
-                info?.max_reference_audios,
-            );
-            expect(model.audio_input_constraints, model.name).toEqual(
-                info?.audio_input_constraints,
-            );
-        }
-    }
-    for (const model of list.data.filter(
-        (entry) => entry.audio_input_constraints || entry.max_reference_audios,
-    )) {
-        const response = await fetchWorker(
-            `/v1/models/${encodeURIComponent(model.id)}`,
-        );
-        expect(response.status, model.id).toBe(200);
-        const retrieved = (await response.json()) as ListedModel;
-        expect(retrieved.max_reference_audios, model.id).toEqual(
-            model.max_reference_audios,
-        );
-        expect(retrieved.audio_input_constraints, model.id).toEqual(
-            model.audio_input_constraints,
-        );
-    }
 });
 
 test("retrieves a model by canonical ID", async () => {

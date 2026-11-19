@@ -155,6 +155,11 @@ describe("getGenerationModelRegistry", () => {
             // DeepInfra and OVH do honor n.
             ["deepseek/deepseek-v4.1-flash", "n", true],
             ["openai/gpt-oss-20b", "n", true],
+            // OVH answers stop and parallel_tool_calls: false with a 400.
+            ["openai/gpt-oss-20b", "stop", false],
+            ["openai/gpt-oss-20b", "parallel_tool_calls", false],
+            ["openai/gpt-oss-20b", "temperature", true],
+            ["openai/gpt-oss-20b", "logprobs", true],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

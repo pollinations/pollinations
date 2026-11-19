@@ -5,7 +5,7 @@ import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
-export type ModelStatus = "all" | "healthy" | "reliable";
+export type ModelStatus = "all" | "available" | "healthy" | "reliable";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
@@ -35,7 +35,12 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const STATUS_VALUES: readonly ModelStatus[] = ["all", "reliable", "healthy"];
+const STATUS_VALUES: readonly ModelStatus[] = [
+    "all",
+    "available",
+    "reliable",
+    "healthy",
+];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
@@ -70,6 +75,7 @@ function parseModelQueryFilter(
             return isModelSource(value) ? { key, value } : undefined;
         case "status":
             return value === "all" ||
+                value === "available" ||
                 value === "healthy" ||
                 value === "reliable"
                 ? { key, value }
@@ -126,7 +132,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:all"].filter(
+        ...["source:official", "status:available"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,
@@ -318,6 +324,8 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return Boolean(model.community) === (filter.value === "community");
         case "status":
             if (filter.value === "all") return true;
+            if (filter.value === "available")
+                return model.health?.status !== "down";
             if (filter.value === "reliable" && model.community && !model.agent)
                 return isModelReliable(model.health?.success_rate);
             return model.health?.status === "healthy";

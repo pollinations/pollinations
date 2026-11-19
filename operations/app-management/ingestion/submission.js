@@ -60,9 +60,20 @@ function section(body, label) {
     return match ? match[1].trim() : "";
 }
 
-// Single-line fields: ignore notes or footers added below the value.
+// A horizontal rule is layout, not a value: an empty field followed by one used to
+// parse as "---" and fail validation. Markdown allows ---, *** and ___ with spaces.
+function isSeparator(text) {
+    return /^([-*_])\1{2,}$/.test(text.replace(/\s+/g, ""));
+}
+
+// Single-line fields: ignore notes or footers added below the value. A rule where the
+// value should be means the field was left empty, so stop rather than take the note below it.
 function line(body, label) {
-    return section(body, label).split(/\r?\n/, 1)[0];
+    for (const candidate of section(body, label).split(/\r?\n/)) {
+        if (!candidate.trim()) continue;
+        return isSeparator(candidate) ? "" : candidate;
+    }
+    return "";
 }
 
 function normalizeUrl(value) {
@@ -118,10 +129,7 @@ function parseSubmission(body) {
     // A trailing separator is not a value. `### Quest\n\n---\n\nnotes` used to
     // parse as quest "---" and reject the submission, because `line()` returns
     // the first non-empty line of the section and the horizontal rule is one.
-    const quest = clean(line(body, "Quest"), 20)
-        .replace(/^#\s*/, "")
-        .replace(/^-{3,}$/, "")
-        .trim();
+    const quest = clean(line(body, "Quest"), 20).replace(/^#\s*/, "");
     const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {

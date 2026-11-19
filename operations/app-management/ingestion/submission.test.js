@@ -385,9 +385,17 @@ test("an empty Quest field followed by a separator is empty, not '---'", () => {
 ---
 
 Notes below the separator.`;
+    const stars = `${BODY.replace(/\n### Discord Username\nsunflower$/, "")}
+
+### Quest
+
+* * *
+
+Notes below the separator.`;
     const submission = parseSubmission(body);
     assert.equal(submission.quest, "");
     assert.deepEqual(validateSubmission(submission), []);
+    assert.equal(parseSubmission(stars).quest, "");
 });
 
 test("a Quest value still parses with and without the hash", () => {

@@ -22,6 +22,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { CopyDocs } from "../copy-docs.tsx";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
@@ -196,7 +197,23 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
         () => parseModelQuery(query, supportedFilterKeys),
         [query, supportedFilterKeys],
     );
+    const activeStatus = parsedQuery.filters.find(
+        ({ key }) => key === "status",
+    )?.value;
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
+    const downModelCount = useMemo(
+        () =>
+            allModels.filter(
+                (model) =>
+                    !model.agent &&
+                    model.health?.status === "down" &&
+                    (activeTab === "all" || model.type === activeTab) &&
+                    (explicitModelSource === undefined ||
+                        Boolean(model.community) ===
+                            (explicitModelSource === "community")),
+            ).length,
+        [activeTab, allModels, explicitModelSource],
+    );
     const visibleSearchText = getModelQueryVisibleSearch(
         search,
         filterTokens,
@@ -467,6 +484,21 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
         });
     };
 
+    const setStatusFilter = (status: "all" | "available") => {
+        const nextSearch = ensureModelQueryDefaults(search)
+            .split(/\s+/)
+            .map((token) =>
+                token.toLowerCase().startsWith("status:")
+                    ? `status:${status}`
+                    : token,
+            )
+            .join(" ");
+        setPendingRemovalIndex(undefined);
+        setDraftFilter(undefined);
+        setEditingFilterToken(undefined);
+        setSearch(nextSearch);
+    };
+
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
             to: ".",
@@ -488,16 +520,19 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
             }
             actionClassName="ml-auto"
             action={
-                kind === "models" && (
-                    <InlineLink
-                        href="https://model-monitor.pollinations.ai"
-                        size="sm"
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap"
-                    >
-                        <ModelHealthIcon />
-                        Model health
-                    </InlineLink>
-                )
+                <div className="flex items-center gap-4">
+                    <CopyDocs section={kind === "mcp" ? "mcp" : "api"} />
+                    {kind === "models" && (
+                        <InlineLink
+                            href="https://model-monitor.pollinations.ai"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                            <ModelHealthIcon />
+                            Model health
+                        </InlineLink>
+                    )}
+                </div>
             }
         >
             <div className="flex flex-col items-start gap-3">
@@ -519,6 +554,23 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                                 </TabButton>
                             ))}
                         </div>
+                        {downModelCount > 0 && (
+                            <button
+                                type="button"
+                                className="text-sm text-theme-text-muted underline decoration-theme-text-muted/40 underline-offset-4 transition-colors hover:text-theme-text-strong"
+                                onClick={() =>
+                                    setStatusFilter(
+                                        activeStatus === "all"
+                                            ? "available"
+                                            : "all",
+                                    )
+                                }
+                            >
+                                {activeStatus === "all"
+                                    ? "Hide down models"
+                                    : "Looking for down models? Show down models"}
+                            </button>
+                        )}
                     </div>
                 )}
                 <div className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -601,7 +653,7 @@ export const Models: FC<{ kind?: CatalogKind }> = ({ kind = "models" }) => {
                         Avoid sensitive data.
                     </strong>{" "}
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/safety">
                             Privacy filter
                         </InlineLink>
                         <span aria-hidden="true">·</span>

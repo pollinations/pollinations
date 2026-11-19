@@ -754,7 +754,7 @@ export const ModelPricingLedger: FC<{
             {requestBadge && (
                 <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
                     {align === "right" && <span aria-hidden="true" />}
-                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <LedgerLabel Icon={WalletIcon} label="Balance" />
                     <div className="flex justify-end pr-2">{requestBadge}</div>
                     <span aria-hidden="true" />
                 </div>

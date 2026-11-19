@@ -104,7 +104,7 @@ export const SandboxTemplateList: FC<{
                 logo={<ProviderLogo provider={template.provider} />}
                 price={
                     <div className="grid grid-cols-[4.5rem_3.5rem_3.5rem] gap-x-1">
-                        <LedgerRow Icon={WalletIcon} label="Pollen">
+                        <LedgerRow Icon={WalletIcon} label="Balance">
                             <div className="col-span-2 flex">
                                 <BalanceAccessChip access="quest" />
                             </div>

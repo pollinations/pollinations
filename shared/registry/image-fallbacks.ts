@@ -14,6 +14,18 @@ export const IMAGE_FALLBACKS = {
             provider: "azure",
         },
     },
+    "stability-ai/stable-diffusion-3.5-large": {
+        "stability-ai/stable-diffusion-3.5-large:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.065 },
+        },
+    },
+    "stability-ai/stable-image-core": {
+        "stability-ai/stable-image-core:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.03 },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",
@@ -40,15 +52,8 @@ export const IMAGE_FALLBACKS = {
     "alibaba/wan-3.0": {
         "alibaba/wan-3.0:fal": {
             provider: "fal",
-            // Fal Prime bills output only; retain the Alibaba quote.
-            cost: { promptVideoSeconds: 0, completionVideoSeconds: 0.068 },
-            costVariants: {
-                "720p": { promptVideoSeconds: 0, completionVideoSeconds: 0.14 },
-                "1080p": {
-                    promptVideoSeconds: 0,
-                    completionVideoSeconds: 0.28,
-                },
-            },
+            // fal lists Alibaba's per-second rates and also bills input video
+            // seconds, so the route inherits the Alibaba cost sheet.
         },
     },
     "google/veo-3.1-fast": {

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 import { Button, type ButtonProps } from "../../primitives/Button.tsx";
 
-/** Shared geometry for provider sign-in controls; busy shows a spinner. */
+/** Shared geometry for provider sign-in controls; busy shows Polli. */
 export function ProviderSignInButton({
     icon,
     className,
@@ -21,8 +21,10 @@ export function ProviderSignInButton({
             {props["aria-busy"] === true ? (
                 <span
                     aria-hidden="true"
-                    className="polli:h-5 polli:w-5 polli:shrink-0 polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent polli:motion-reduce:animate-none"
-                />
+                    className="polli:relative polli:h-5 polli:w-5 polli:shrink-0"
+                >
+                    <span className="polli-bee" />
+                </span>
             ) : (
                 icon
             )}

@@ -31,9 +31,9 @@ type PollenStatus = "limit-reached" | "no-pollen" | "unlimited" | "unavailable";
 
 const labels: Record<PollenStatus, string> = {
     "limit-reached": "Limit reached",
-    "no-pollen": "No pollen",
+    "no-pollen": "No balance",
     unlimited: "Unlimited",
-    unavailable: "pollen unavailable",
+    unavailable: "Balance unavailable",
 };
 
 const intents = {
@@ -110,8 +110,8 @@ export function AccountPollen({
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
-                <span className="polli:sr-only">App budget: </span>
-                {formatPollen(remaining)} pollen
+                <span className="polli:sr-only">App budget: </span>$
+                {formatPollen(remaining)}
             </span>
         );
     }
@@ -133,7 +133,7 @@ export function AccountPollen({
                             kind={kind === "paid" ? "paid" : "tier"}
                         />
                         <span className="polli:sr-only">
-                            {kind === "paid" ? "Paid" : "Quest"} pollen:{" "}
+                            {kind === "paid" ? "Paid" : "Quest"} balance:{" "}
                         </span>
                         {formatPollen(Math.max(0, amount))}
                     </span>

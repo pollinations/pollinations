@@ -169,7 +169,7 @@ describe("key permissions layout", () => {
         expect(html.indexOf("Example key")).toBeLessThan(
             html.indexOf("Expiry"),
         );
-        expect(html.indexOf("Quest pollen only")).toBeLessThan(cards[1].index);
+        expect(html.indexOf("Quest balance only")).toBeLessThan(cards[1].index);
         expect(html).not.toContain("paid Pollen");
         expect(html).not.toContain("Quest Pollen");
     });
@@ -182,7 +182,7 @@ describe("key permissions layout", () => {
         expect(limits.className).not.toContain("sm:");
         expect(limits.body).toContain("Expiry");
         expect(limits.body).toContain("Budget");
-        expect(limits.body).toContain("Quest pollen only");
+        expect(limits.body).toContain("Quest balance only");
         expect(limits.body).not.toContain("See your username and picture");
 
         expect(grants.className).toContain("grid-cols-1");
@@ -215,7 +215,7 @@ describe("key permissions layout", () => {
         expect(html).not.toContain("Manage keys, agents and models");
         expect(html).not.toContain("Run hosted sandboxes");
         expect(html.indexOf("Generate")).toBeLessThan(
-            html.indexOf("20% of the pollen"),
+            html.indexOf("20% of what"),
         );
     });
 

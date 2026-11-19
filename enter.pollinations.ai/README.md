@@ -5,7 +5,7 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 
 - **[API Authentication Guide](../gen.pollinations.ai/src/docs/authentication.md)** - How to use API keys for server-to-server requests
 - **[API Documentation](https://gen.pollinations.ai/docs)** - Interactive API reference
-- **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing
+- **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about billing and pricing
 
 ## Layout
 
@@ -20,4 +20,4 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 2. **Optional - Nix**: Install [nix](https://github.com/DeterminateSystems/nix-installer) for reproducible dev environment, then run `nix develop`
 3. Install dependencies: `npm install`
 4. Run the dev server: `npm run dev` (applies local migrations automatically)
-5. **Local Pollen**: after signing in, run `npm run seed:local` in `gen.pollinations.ai` to give every local account Quest Pollen.
+5. **Local balance**: after signing in, run `npm run seed:local` in `gen.pollinations.ai` to give every local account a Quest balance.

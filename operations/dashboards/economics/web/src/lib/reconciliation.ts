@@ -22,6 +22,7 @@ import { collectMonths, reportingMonths } from "./months";
 import { providerAccountBalanceRows } from "./providerBalances";
 import { providerCloseRows } from "./providerClose";
 import {
+    ledgerCategory,
     meterDriftExplanation,
     pollenWitnessExplanation,
     providerCheckExplanation,
@@ -40,6 +41,7 @@ export const RECONCILIATION_PAGES = {
     inference: "Inference",
     vendors: "Providers",
     gpu: "GPUs",
+    infrastructure: "Infrastructure",
     trends: "Trends",
     runway: "Runway",
     balances: "Balances",
@@ -253,22 +255,30 @@ export function reconciliationState(data: Data, now = new Date()) {
     };
     const modes = computeModeIndex(data);
     const identity = ledgerModelResolver(data);
+    const infrastructureMonths = new Set(
+        (data.vendorLedger ?? [])
+            .filter((row) => ledgerCategory(row) === "infrastructure")
+            .map((row) => `${row.start.slice(0, 7)}|${row.vendor}`),
+    );
     const costPages = (vendor: string, month: string): ReconciliationPage[] => {
         const pages: ReconciliationPage[] = [
             "trends",
             "runway",
             "vendor-ledger",
+            "vendors",
         ];
-        if (resolveProvider(vendor)?.category !== "infrastructure")
-            pages.push("vendors");
+        const infrastructureProvider =
+            resolveProvider(vendor)?.category === "infrastructure";
+        if (
+            infrastructureProvider ||
+            infrastructureMonths.has(`${month}|${vendor}`)
+        )
+            pages.push("infrastructure");
         const mode = pollenComputeMode(modes, month, vendor);
         if (mode === "managed-inference" || mode === "mixed")
             pages.push("inference");
         if (mode === "gpu-capacity" || mode === "mixed") pages.push("gpu");
-        if (
-            mode === "unclassified" &&
-            resolveProvider(vendor)?.category !== "infrastructure"
-        )
+        if (mode === "unclassified" && !infrastructureProvider)
             pages.push("inference", "gpu");
         return pages;
     };
@@ -316,6 +326,8 @@ export function reconciliationState(data: Data, now = new Date()) {
         data.vendorLedger ?? [],
         data.privateConfig?.forecastRules,
         data.stripeSales ?? [],
+        undefined,
+        data.vendorStatements,
     );
     const scheduledRules = forecastRuleEntries(
         data.privateConfig?.forecastRules,

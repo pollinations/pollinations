@@ -217,7 +217,7 @@ export type QuestStandingsResponse = z.infer<
 >;
 
 /**
- * This calendar month's (UTC) Quest Pollen race, cut down to what one viewer
+ * This calendar month's (UTC) Quest balance race, cut down to what one viewer
  * needs: the podium plus the rows just above and below them. Every quest
  * reward counts. Supporters are earners of a top-up quest at any time.
  * Movement compares each rank with the same race replayed up to the start of

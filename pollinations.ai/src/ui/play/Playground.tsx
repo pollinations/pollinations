@@ -38,7 +38,6 @@ import {
     Text,
     Textarea,
     UploadedFileTile,
-    useUploadReorder,
     VideoIcon,
     VideoRecorder,
     XIcon,
@@ -1815,17 +1814,11 @@ export function Playground({
                 )}
             </fieldset>
         ) : null;
-    const reorderReference = useUploadReorder(
-        referenceQueue,
-        setReferenceQueue,
-        recording || isGenerating,
-    );
     const queuedTiles = referenceQueue.map(
-        (item, index) =>
+        (item) =>
             videoReferenceMedia.includes(item.media) && (
                 <UploadedFileTile
                     key={item.id}
-                    reorder={reorderReference(index)}
                     drop={videoUploadProps(item.media)}
                     file={item.file}
                     modality={item.media}
@@ -2021,7 +2014,6 @@ export function Playground({
                                 >
                                     <div className="flex flex-wrap items-end gap-2">
                                         <FileUpload
-                                            reorderable
                                             value={referenceImages}
                                             onChange={setReferenceImages}
                                             maxFiles={maxReferenceImages}

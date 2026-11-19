@@ -131,7 +131,6 @@ export {
     periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
-export { useUploadReorder } from "./lib/use-upload-reorder.ts";
 export { BrandMark, type BrandMarkProps } from "./primitives/BrandMark.tsx";
 export {
     Button,

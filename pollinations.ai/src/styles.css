@@ -321,18 +321,15 @@ main > * {
 .play-parameter-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    align-items: start;
+    align-items: first baseline;
     gap: 1.5rem 2rem;
 }
 .play-parameter-grid:empty {
     display: none;
 }
-/* Align labels with the first control row, including tall upload tiles. */
-.play-parameter-grid [data-scope="field"][data-part="root"] {
-    align-items: start;
-}
-.play-parameter-grid [data-scope="field"][data-part="root"] > :first-child {
-    min-height: 2rem;
+/* Keep a wrapped group aligned to its first row of choices. */
+.play-parameter-grid > :has(> [role="group"]) {
+    align-items: first baseline;
 }
 /* Two 20rem fields plus the gutter. A lone field uses the full width. */
 @container play-inputs (min-width: 42rem) {

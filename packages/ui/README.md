@@ -197,11 +197,15 @@ Cancel and the alternative payment-method link on the line below.
   `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
-- **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
+- **Design compositions** — `Alert`, `AudioInput`, `AudioRecorder`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `CopyStateIcon`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
   `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
   `StatCard`.
+  `AudioInput` accepts imported files and microphone recordings. Pass `value`,
+  `onChange`, and `maxSizeBytes`. Record and Import appear while there is room
+  for another clip. At the limit (one clip by default), remove a clip to add another.
+  Clips stay local until the app submits them.
   `CopyButton` shows the one copy feedback (a check and "Copied"); a spot that
   draws its own icon uses `CopyStateIcon`, a clipboard that turns into a check.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label

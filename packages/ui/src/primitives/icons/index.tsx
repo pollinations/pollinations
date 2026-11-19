@@ -1,4 +1,5 @@
 import googleLogoUrl from "../../assets/google.svg";
+import type { TileModality } from "../../lib/media-action-tile.ts";
 import type { IconProps } from "./types.ts";
 
 const strokeProps = {
@@ -308,6 +309,40 @@ export function GoogleIcon({ className }: IconProps) {
     );
 }
 
+/** File-picker glyphs share a plus mark, distinct from the capture controls. */
+export function MediaFileIcon({
+    modality,
+    ...props
+}: IconProps & { modality: TileModality }) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            {modality === "image" && (
+                <>
+                    <rect x="2" y="3" width="16" height="15" rx="2" />
+                    <path d="m3 16 5-5 3 2 5-6" />
+                    <circle cx="7" cy="7" r="1" />
+                </>
+            )}
+            {modality === "video" && (
+                <>
+                    <rect x="2" y="3" width="16" height="15" rx="2" />
+                    <path d="M6 3v15m8-15v15M2 8h4m-4 5h4m8-5h4m-4 5h4" />
+                </>
+            )}
+            {modality === "audio" && (
+                <path d="M2 9v4m4-7v10m4-14v18m4-15v10m4-7v4" />
+            )}
+            {modality === "mixed" && <path d="M5 2h8l5 5v10H5zM13 2v5h5" />}
+            <path
+                d="M19 15v8m-4-4h8"
+                stroke="var(--polli-color-bg-pale, Canvas)"
+                strokeWidth="5"
+            />
+            <path d="M19 15v8m-4-4h8" />
+        </svg>
+    );
+}
+
 export function ImageIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -611,6 +646,23 @@ export function MicIcon(props: IconProps) {
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
             <path d="M12 19v3" />
+        </svg>
+    );
+}
+
+export function SpeakingHeadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 21v-4.5A8 8 0 0 1 2 10a6.5 6.5 0 0 1 13 0l2 3h-3v3a2 2 0 0 1-2 2H9v3" />
+            <path d="M18 9a5 5 0 0 1 0 6m3-8a8 8 0 0 1 0 10" />
+        </svg>
+    );
+}
+
+export function TranscribeIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M3 10v4m4-9v14m4-12v10M15 7h6m-6 5h6m-6 5h4" />
         </svg>
     );
 }

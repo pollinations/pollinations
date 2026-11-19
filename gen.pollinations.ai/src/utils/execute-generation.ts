@@ -205,7 +205,6 @@ export const generationHandoffRoutes = new Hono<Env>().post(
         if (!job) return c.notFound();
         // Correlate handoff errors with the verified job's billing event.
         c.set("requestId", job.requestId);
-        c.header("X-Request-Id", job.requestId);
         const body = new Uint8Array(await c.req.arrayBuffer());
         const { result, settlement } = await executeGeneration(
             {

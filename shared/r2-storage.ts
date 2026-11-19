@@ -1,4 +1,5 @@
 const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const RETRYABLE_R2_WRITE_CODES = new Set(["10001", "10043", "10058"]);
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 
@@ -21,12 +22,15 @@ export async function putGenerationResult(
                     ? /\((\d+)\)$/.exec(error.message)?.[1]
                     : undefined;
             const details = { requestId, binding, attempt, code };
-            if (attempt === 3 || (code !== "10001" && code !== "10043")) {
+            if (attempt === 3 || !RETRYABLE_R2_WRITE_CODES.has(code ?? "")) {
                 console.error("Failed to save generation result", details);
                 throw error;
             }
             console.warn("Retrying R2 generation write", details);
-            const delayMs = 250 * 2 ** (attempt - 1) * (1 + Math.random());
+            // R2 limits writes to the same key to one per second.
+            const minDelayMs =
+                code === "10058" ? 1000 : 250 * 2 ** (attempt - 1);
+            const delayMs = minDelayMs * (1 + Math.random());
             await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
     }

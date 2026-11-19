@@ -602,15 +602,18 @@ describe("text cache", () => {
         const bucket = createTestR2Bucket();
         const put = vi
             .spyOn(bucket, "put")
-            .mockRejectedValueOnce(new Error("put: Internal error (10001)"));
+            .mockRejectedValueOnce(new Error("put: Internal error (10001)"))
+            .mockRejectedValueOnce(new Error("put: Too many requests (10058)"));
         const bindings = createTextCacheEnv(bucket);
         const path = "/text/retry-storage?model=openai-fast";
         const first = await dispatch(cache.app, path, undefined, bindings);
         const body = await consumeAndWait(first);
+        expect(put).toHaveBeenCalledTimes(3);
+        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
+        expect(put.mock.calls[2]).toEqual(put.mock.calls[0]);
         const replay = await dispatch(cache.app, path, undefined, bindings);
         expect(await consumeAndWait(replay)).toBe(body);
         expect(replay.response.headers.get("x-cache")).toBe("HIT");
-        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
         expect(cache.originHits).toBe(1);
     });
 

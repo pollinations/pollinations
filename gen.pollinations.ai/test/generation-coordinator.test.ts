@@ -279,8 +279,9 @@ describe("GenerationCoordinator", () => {
         ["url", "in the alarm"],
         ["b64_json", "in the alarm"],
         ["url", "behind the public origin"],
+        ["url", "with exhausted handoff writes"],
     ] as const)(
-        "completes large Seedream uploads once through the real coordinator (%s, %s)",
+        "executes Seedream uploads once through the real coordinator (%s, %s)",
         async (responseFormat, execution) => {
             const { key, userId } = await createTestApiKey({
                 user: { packBalance: 100 },
@@ -288,7 +289,9 @@ describe("GenerationCoordinator", () => {
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
             const handoffs: ExecutionContext[] = [];
             const retryLog = vi.spyOn(console, "warn");
-            if (execution === "behind the public origin") {
+            let handoffWriteAttempts = 0;
+            const handoffFails = execution === "with exhausted handoff writes";
+            if (execution !== "in the alarm") {
                 env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
                 onTestFinished(() => {
                     env.GENERATION_EXECUTION_ORIGIN = undefined;
@@ -305,7 +308,7 @@ describe("GenerationCoordinator", () => {
             const providerStarted = new Promise<void>((resolve) => {
                 started = resolve;
             });
-            const output = new Uint8Array(6 * 1024 * 1024);
+            const output = new Uint8Array(handoffFails ? 100 : 6 * 1024 * 1024);
             output.set(
                 Buffer.from(
                     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
@@ -348,13 +351,13 @@ describe("GenerationCoordinator", () => {
                     ) {
                         const context = createExecutionContext();
                         handoffs.push(context);
-                        // Fail the first physical write after the provider has returned.
                         const bucket = env.TEST_MEDIA_BUCKET;
-                        const put = vi
-                            .spyOn(bucket, "put")
-                            .mockRejectedValueOnce(
-                                new Error("put: Service unavailable (10043)"),
-                            );
+                        const put = vi.spyOn(bucket, "put");
+                        const error = new Error(
+                            "put: Service unavailable (10043)",
+                        );
+                        if (handoffFails) put.mockRejectedValue(error);
+                        else put.mockRejectedValueOnce(error);
                         const media = new MediaUpload(context, {
                             MEDIA_BUCKET: bucket,
                             MAX_FILE_SIZE: "104857600",
@@ -367,7 +370,7 @@ describe("GenerationCoordinator", () => {
                             },
                             context,
                         );
-                        expect(put).toHaveBeenCalledTimes(2);
+                        handoffWriteAttempts = put.mock.calls.length;
                         expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
                         return handoff;
                     }
@@ -389,7 +392,9 @@ describe("GenerationCoordinator", () => {
                 form.set("safe", "false");
                 form.set("size", "1920x1080");
                 form.set("response_format", responseFormat);
-                for (const size of [9_992_143, 12_285_506]) {
+                for (const size of handoffFails
+                    ? [100]
+                    : [9_992_143, 12_285_506]) {
                     const bytes = new Uint8Array(size);
                     bytes.set(output.subarray(0, 8));
                     form.append(
@@ -439,7 +444,7 @@ describe("GenerationCoordinator", () => {
             );
             if (!stored) throw new Error("Generation job was not persisted");
             expect(stored.started).toBe(true);
-            expect(stored.bodyChunks).toBeGreaterThan(29);
+            expect(stored.bodyChunks).toBeGreaterThan(handoffFails ? 0 : 29);
             let disconnectError: Error | undefined;
             const firstSettled = first.catch((error: Error) => {
                 disconnectError = error;
@@ -467,6 +472,34 @@ describe("GenerationCoordinator", () => {
                 release();
             }
             const response = await second;
+            await Promise.all([
+                firstSettled,
+                waitOnExecutionContext(secondContext),
+                ...handoffs.map(waitOnExecutionContext),
+            ]);
+            const billed = tinybird.state.events.filter(
+                (event) => event.isBilledUsage,
+            );
+            expect(billed.map((event) => event.requestId)).toEqual([
+                stored.requestId,
+            ]);
+            if (handoffFails) {
+                expect(executions).toBe(1);
+                expect(handoffWriteAttempts).toBe(3);
+                expect(response.ok).toBe(false);
+                await response.text();
+                expect(tinybird.state.errorEvents).toContainEqual(
+                    expect.objectContaining({
+                        request_id: stored.requestId,
+                        route_path: expect.stringMatching(
+                            /^\/internal\/generation\//,
+                        ),
+                        message: "put: Service unavailable (10043)",
+                        status: 500,
+                    }),
+                );
+                return;
+            }
             expect(
                 response.status,
                 response.status === 200 ? "" : await response.text(),
@@ -483,11 +516,6 @@ describe("GenerationCoordinator", () => {
                 expect(result.b64_json?.length).toBe(
                     Math.ceil(output.length / 3) * 4,
                 );
-            await Promise.all([
-                firstSettled,
-                waitOnExecutionContext(secondContext),
-                ...handoffs.map(waitOnExecutionContext),
-            ]);
             expect(handoffs).toHaveLength(
                 execution === "behind the public origin" ? 1 : 0,
             );
@@ -497,14 +525,13 @@ describe("GenerationCoordinator", () => {
             expect(cached.headers.get("x-cache")).toBe("HIT");
             await cached.text();
             await waitOnExecutionContext(cacheContext);
-            const billed = tinybird.state.events.filter(
-                (event) => event.isBilledUsage,
-            );
+            expect(
+                tinybird.state.events.filter((event) => event.isBilledUsage),
+            ).toEqual(billed);
             expect(executions).toBe(1);
             expect(requestBytes).toBeGreaterThan(29_700_000);
-            expect(billed).toHaveLength(1);
-            expect(billed[0].requestId).toBe(stored.requestId);
             if (execution === "behind the public origin") {
+                expect(handoffWriteAttempts).toBe(2);
                 expect(retryLog).toHaveBeenCalledWith(
                     "Retrying R2 generation write",
                     {

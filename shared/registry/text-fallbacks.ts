@@ -1086,12 +1086,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemini-4-neon": {
-        "google/gemini-4-neon:openrouter:ai-studio": {
-            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
+        "google/gemini-4-neon:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-11-18").getTime(),
-            // Google AI Studio standard rates, plus OpenRouter's 5.5% credit fee.
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
             // Keep the direct Vertex quote; bill actual provider receipts if available.
             cost: {
                 promptTextTokens: perMillion(3) * 1.055,
@@ -1105,7 +1105,7 @@ export const TEXT_FALLBACKS = {
             billing: {
                 ...openRouterGeminiBilling({
                     searchCostPerThousandRequests: 14 * 1.055,
-                    storageCostPerMillionTokenHours: 2.25 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
                 }),
                 resolveTotalCost: reportedTextCost(1.055),
             },

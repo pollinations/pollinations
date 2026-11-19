@@ -1745,7 +1745,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000003,
     },
   },
-  "google/gemini-4-neon:openrouter:ai-studio": {
+  "google/gemini-4-neon:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.000015825,
       "promptAudioTokens": 0.000003165,

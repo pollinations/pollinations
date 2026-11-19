@@ -978,8 +978,8 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-4-neon:openrouter:ai-studio",
-        config: portkeyConfig["google/gemini-4-neon:openrouter:ai-studio"],
+        name: "google/gemini-4-neon:openrouter:vertex-global",
+        config: portkeyConfig["google/gemini-4-neon:openrouter:vertex-global"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,

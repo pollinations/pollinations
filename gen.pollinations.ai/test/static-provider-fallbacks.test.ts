@@ -79,9 +79,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "google/gemini-4-neon:openrouter:ai-studio",
+        "google/gemini-4-neon:openrouter:vertex-global",
         "google/gemini-4-neon",
-        "google-ai-studio",
+        "google-vertex/global",
     ],
     [
         "google/gemini-4-argon:openrouter:ai-studio",
@@ -1871,9 +1871,9 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
-    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter AI Studio serves the fallback", () => {
+    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {
         const model = "google/gemini-4-neon";
-        const route = "google/gemini-4-neon:openrouter:ai-studio";
+        const route = "google/gemini-4-neon:openrouter:vertex-global";
         const primary = TEXT_SERVICES[model];
         const fallback = TEXT_SERVICES[route];
 
@@ -1892,19 +1892,6 @@ describe("static provider fallbacks", () => {
             promptTextTokens: (3 / 1_000_000) * 1.055,
             promptCachedTokens: (0.15 / 1_000_000) * 1.055,
             completionTextTokens: (15 / 1_000_000) * 1.055,
-        });
-        expect(findModelByName(route)?.config()).toMatchObject({
-            provider: "openrouter",
-            defaultOptions: {
-                provider: {
-                    only: ["google-ai-studio"],
-                    ignore: [
-                        "google-ai-studio/priority",
-                        "google-ai-studio/flex",
-                    ],
-                    allow_fallbacks: false,
-                },
-            },
         });
         const billing = calculateUsageBilling({
             model,

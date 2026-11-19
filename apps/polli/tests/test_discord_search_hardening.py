@@ -126,6 +126,20 @@ class HandlerValidationAndScopeTests(unittest.IsolatedAsyncioTestCase):
         result = await tool_discord_search("history", 5, _context=context)
         self.assertIn("permission", result["error"])
 
+    async def test_history_reads_the_channel_named_by_the_caller(self):
+        here = SimpleNamespace(id=10, name="general", permissions_for=lambda _member: FakePermissions())
+        dev = SimpleNamespace(id=20, name="dev", permissions_for=lambda _member: FakePermissions())
+        guild = self.guild([here, dev])
+        guild.me = object()
+        guild.get_member = lambda _id: object()
+        context = {"discord_guild": guild, "channel_id": 10, "user_id": 1}
+        with patch(
+            "src.discord.search.discord_search_client.get_channel_history",
+            AsyncMock(return_value={"success": True}),
+        ) as history:
+            await tool_discord_search("history", 5, channel_name="dev", _context=context)
+        self.assertIs(history.await_args.kwargs["channel"], dev)
+
 
 class SearchClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_short_page_does_not_claim_no_more_results(self):

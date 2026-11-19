@@ -373,6 +373,10 @@ function OptionField({
     );
 }
 
+function voiceLabel(voice: string) {
+    return voice.charAt(0).toUpperCase() + voice.slice(1);
+}
+
 function VoicePicker({
     voices,
     value,
@@ -387,6 +391,7 @@ function VoicePicker({
             <OptionField
                 label="Voice"
                 options={voices}
+                format={voiceLabel}
                 className={
                     voices.length > 1
                         ? "col-span-full max-sm:flex max-sm:flex-col max-sm:items-stretch"
@@ -407,9 +412,9 @@ function VoicePicker({
                         type="button"
                         intent="neutral"
                         className="w-fit max-w-full self-start justify-between gap-2"
-                        aria-label={`Voice: ${value}`}
+                        aria-label={`Voice: ${voiceLabel(value)}`}
                     >
-                        <span className="truncate">{value}</span>
+                        <span className="truncate">{voiceLabel(value)}</span>
                         <ChevronIcon expanded={open} />
                     </Button>
                 )}
@@ -429,7 +434,7 @@ function VoicePicker({
                                         close();
                                     }}
                                 >
-                                    {voice}
+                                    {voiceLabel(voice)}
                                 </TabButton>
                             ))}
                         </div>
@@ -465,7 +470,7 @@ function ModelPicker({
                     <Button
                         type="button"
                         intent="neutral"
-                        size="md"
+                        size="lg"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
@@ -1416,14 +1421,7 @@ export function Playground() {
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
     const statsLine = runStatsLine(modelStats);
 
-    const audioInputHint =
-        [
-            audioConstraintHint(inputConstraints),
-            needsSignIn &&
-                "You can preview clips here. Signing in clears local selections.",
-        ]
-            .filter(Boolean)
-            .join(" ") || undefined;
+    const audioInputHint = audioConstraintHint(inputConstraints);
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
@@ -1437,17 +1435,11 @@ export function Playground() {
                 label={
                     requiresMediaUpload
                         ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
-                        : `Reference ${mediaUploadLabel}${currentModel.inputModalities.includes("audio") ? " (optional)" : ""}`
+                        : uploadMedia.includes("audio")
+                          ? undefined
+                          : `Reference ${mediaUploadLabel}`
                 }
             >
-                {audioTask === "speech-generation" &&
-                    uploadMedia.includes("audio") && (
-                        <Text size="sm" tone="muted">
-                            Use a short clip of one person speaking clearly.
-                            Keep it selected to use the same voice for another
-                            line.
-                        </Text>
-                    )}
                 {uploadMedia.includes("audio") ? (
                     <AudioInput
                         key={currentModel.id}
@@ -1507,7 +1499,7 @@ export function Playground() {
                     </div>
                 )}
                 <div className="flex flex-col gap-4 pt-6">
-                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
+                    <div className="grid items-end gap-2 sm:grid-cols-[fit-content(45%)_minmax(0,1fr)] sm:gap-x-4">
                         <ModelPicker
                             models={categoryModels}
                             selectedModel={selectedModel}
@@ -1522,17 +1514,27 @@ export function Playground() {
                                     : undefined
                             }
                         />
-                        {statsLine && (
-                            <Text size="xs" tone="muted" className="sm:pb-2">
-                                {statsLine}
-                                {(modelStats?.avg_cost_usd ?? 0) > 0 && (
-                                    <InfoTip
-                                        label="About this cost"
-                                        tapEnabled
-                                        content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
-                                    />
+                        {(currentModel?.description || statsLine) && (
+                            <div className="flex min-w-0 flex-col gap-1">
+                                {currentModel?.description && (
+                                    <Text size="sm">
+                                        {currentModel.description}
+                                    </Text>
                                 )}
-                            </Text>
+                                {statsLine && (
+                                    <Text size="xs" tone="muted">
+                                        {statsLine}
+                                        {(modelStats?.avg_cost_usd ?? 0) >
+                                            0 && (
+                                            <InfoTip
+                                                label="About this cost"
+                                                tapEnabled
+                                                content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
+                                            />
+                                        )}
+                                    </Text>
+                                )}
+                            </div>
                         )}
                     </div>
                     {isHydrated &&

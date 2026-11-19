@@ -1338,8 +1338,8 @@ export async function createAndReturnImageCached(
             ["image/gif", "image/webp", "image/png"].includes(resultFormat);
         const processedBuffer =
             result.mimeType === "image/svg+xml" ||
-            result.mimeType === "image/gif" ||
             preserveFlareFormat ||
+            result.mimeType === "image/gif" ||
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")
                 ? result.buffer

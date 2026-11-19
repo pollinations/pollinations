@@ -819,6 +819,7 @@ export const OpenAIModelSchema = z
         title: z.string(),
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
+        output_formats: ModelInfoSchema.shape.output_formats,
         output_modalities: z.array(z.string()).optional(),
         required_safety: ModelInfoSchema.shape.required_safety.describe(
             "Safety checks the gateway always applies to text input for this model; callers cannot disable them.",

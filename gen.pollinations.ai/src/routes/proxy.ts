@@ -391,6 +391,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         title: entry.info.title,
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
+        output_formats: entry.info.output_formats,
         output_modalities: entry.info.output_modalities,
         required_safety: getRequiredSafetyFeatures(entry),
         supported_endpoints: entry.supportedEndpoints,

@@ -25,6 +25,7 @@ const COMPARABLE_FIELDS = [
     "max_reference_images",
     "max_reference_videos",
     "input_modalities",
+    "output_formats",
     "output_modalities",
     "capabilities",
     "supported_endpoints",

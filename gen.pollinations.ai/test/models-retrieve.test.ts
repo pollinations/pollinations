@@ -505,6 +505,44 @@ test("model listings expose reference media limits on /v1/models", async () => {
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
 });
 
+test("lists and retrieves the same GIF generation contract", async () => {
+    const native = { mode: "native", input_modalities: ["text"] };
+    const selectable = {
+        mode: "selectable",
+        input_modalities: ["text"],
+        frame_defaults: { frame_count: 8, frame_duration_ms: 120 },
+    };
+    const expected = [
+        ["hotshotco/hotshot-xl", native],
+        ["openai/gpt-image-2.6-flare", selectable],
+        ["openai/gpt-image-2.6-sunburst", selectable],
+    ] as const;
+    for (const path of ["/models", "/image/models", "/v1/models"]) {
+        const response = await fetchWorker(path);
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as
+            | ModelInfo[]
+            | { data: (ModelInfo & { id: string })[] };
+        const entries = Array.isArray(body) ? body : body.data;
+        for (const [id, gif] of expected) {
+            expect(
+                entries.find((m) => ("id" in m ? m.id : m.name) === id)
+                    ?.output_formats?.gif,
+                path,
+            ).toEqual(gif);
+        }
+    }
+    for (const [id, gif] of expected) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(id)}`,
+        );
+        expect(response.status).toBe(200);
+        expect(
+            ((await response.json()) as ModelInfo).output_formats?.gif,
+        ).toEqual(gif);
+    }
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,

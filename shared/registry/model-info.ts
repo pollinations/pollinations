@@ -156,6 +156,33 @@ export const ModelInfoSchema = z.object({
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
+    output_formats: z
+        .record(
+            z.string(),
+            z.object({
+                mode: z
+                    .enum(["native", "selectable"])
+                    .describe(
+                        "Native means the model always returns this format and callers omit output_format. For selectable formats, send the format key as output_format.",
+                    ),
+                input_modalities: z
+                    .array(z.enum(MODEL_INPUT_MODALITIES))
+                    .describe("Inputs accepted when generating this format."),
+                frame_defaults: z
+                    .object({
+                        frame_count: z.number().int().positive(),
+                        frame_duration_ms: z.number().int().positive(),
+                    })
+                    .optional()
+                    .describe(
+                        "Suggested values for the required animation request parameters.",
+                    ),
+            }),
+        )
+        .optional()
+        .describe(
+            "Verified format-specific generation options, keyed by output format. Omission means unspecified. Other formats may be available.",
+        ),
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
@@ -310,6 +337,7 @@ export function modelInfoFromDefinition(
         title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
+        output_formats: service.outputFormats,
         output_modalities: service.outputModalities,
         required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,

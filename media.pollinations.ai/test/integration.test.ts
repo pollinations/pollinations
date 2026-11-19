@@ -322,6 +322,48 @@ describe("media.pollinations.ai", () => {
         },
     );
 
+    it("reports the original Sunburst fal JPEG bytes as JPEG on existing media URLs", async () => {
+        const id = "a".repeat(64);
+        const ctx = createExecutionContext();
+        await new MediaUpload(ctx, env).put(
+            id,
+            new Response(GPS_ORIENTATION_JPEG, {
+                headers: {
+                    "Content-Type": "image/png",
+                    "Content-Disposition": 'inline; filename="sunburst.png"',
+                    "X-Model-Used": "openai/gpt-image-2.6-sunburst:fal",
+                },
+            }),
+        );
+        const url = `https://media.pollinations.ai/${id}`;
+        const full = await SELF.fetch(url);
+        expect(full.status).toBe(200);
+        expect(full.headers.get("content-type")).toBe("image/jpeg");
+        expect(full.headers.get("content-disposition")).toBe(
+            'inline; filename="sunburst.jpeg"',
+        );
+        expect(new Uint8Array(await full.arrayBuffer())).toEqual(
+            GPS_ORIENTATION_JPEG,
+        );
+
+        const ranged = await SELF.fetch(url, {
+            headers: { Range: "bytes=4-7" },
+        });
+        expect(ranged.status).toBe(206);
+        expect(ranged.headers.get("content-type")).toBe("image/jpeg");
+        expect(new Uint8Array(await ranged.arrayBuffer())).toEqual(
+            GPS_ORIENTATION_JPEG.slice(4, 8),
+        );
+
+        const head = await SELF.fetch(url, { method: "HEAD" });
+        expect(head.headers.get("content-type")).toBe("image/jpeg");
+        const metadata = await SELF.fetch(`${url}/metadata`);
+        expect(await metadata.json()).toMatchObject({
+            contentType: "image/jpeg",
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
     it("does not regenerate a missing file, but a new generation may reuse its ID", async () => {
         const id = "b".repeat(64);
         const ctx = createExecutionContext();

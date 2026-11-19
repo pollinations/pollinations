@@ -49,6 +49,7 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
+    type ReactNode,
     useCallback,
     useEffect,
     useId,
@@ -467,11 +468,13 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
+    children,
 }: {
     models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
+    children: ReactNode;
 }) {
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
@@ -494,108 +497,114 @@ function ModelPicker({
         onSelectModel(sorted[next].id);
     }
 
-    return (
-        <div className="flex w-fit min-w-0 max-w-full items-center gap-1">
-            {canStep &&
-                ([-1, 1] as const).map((direction) => {
-                    const label =
-                        direction === -1 ? "Previous model" : "Next model";
-                    return (
-                        <Button
-                            key={direction}
-                            size="icon"
-                            intent="neutral"
-                            className="shrink-0"
-                            aria-label={label}
-                            title={label}
-                            onClick={() => step(direction)}
-                        >
-                            <ChevronIcon
-                                className={
-                                    direction === -1
-                                        ? "rotate-90"
-                                        : "-rotate-90"
-                                }
-                            />
-                        </Button>
-                    );
-                })}
-            <Dropdown
-                portalled={false}
-                className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
-                trigger={(open) => (
-                    <Button
-                        type="button"
-                        intent="neutral"
-                        size="lg"
-                        disabled={isLoading || models.length === 0}
-                        className="min-w-0 touch-pan-y justify-between gap-2"
-                        aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
-                        onPointerDown={(event) => {
-                            swiped.current = false;
-                            swipeStart.current =
-                                canStep &&
-                                event.pointerType === "touch" &&
-                                event.isPrimary
-                                    ? { x: event.clientX, y: event.clientY }
-                                    : null;
-                        }}
-                        onPointerCancel={() => {
-                            swipeStart.current = null;
-                        }}
-                        onPointerUp={(event) => {
-                            const start = swipeStart.current;
-                            swipeStart.current = null;
-                            if (!start || !canStep) return;
-                            const dx = event.clientX - start.x;
-                            if (
-                                Math.abs(dx) < 40 ||
-                                Math.abs(dx) <=
-                                    Math.abs(event.clientY - start.y)
-                            )
-                                return;
-                            swiped.current = true;
-                            step(dx < 0 ? 1 : -1);
-                        }}
-                        onClickCapture={(event) => {
-                            if (swiped.current && event.detail > 0) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                            }
-                            swiped.current = false;
-                        }}
-                    >
-                        <span className="truncate" aria-live="polite">
-                            {isLoading
-                                ? "Loading models…"
-                                : (selected?.title ?? "No models available")}
-                        </span>
-                        <ChevronIcon expanded={open} />
-                    </Button>
-                )}
+    function stepButton(direction: -1 | 1) {
+        if (!canStep) return null;
+        const label = direction === -1 ? "Previous model" : "Next model";
+        return (
+            <Button
+                size="icon"
+                intent="neutral"
+                className="shrink-0"
+                aria-label={label}
+                title={label}
+                onClick={() => step(direction)}
             >
-                {(close) => (
-                    <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
-                        <div className="flex flex-col gap-1">
-                            {sorted.map((model) => (
-                                <TabButton
-                                    key={model.id}
-                                    active={model.id === selectedModel}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start text-left"
-                                    onClick={() => {
-                                        onSelectModel(model.id);
-                                        close();
-                                    }}
-                                >
-                                    <MediaModelOption model={model} />
-                                </TabButton>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                )}
-            </Dropdown>
+                <ChevronIcon
+                    className={direction === -1 ? "rotate-90" : "-rotate-90"}
+                />
+            </Button>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-2 sm:gap-4">
+            {stepButton(-1)}
+            <div className="grid min-w-0 flex-1 items-center gap-2 sm:grid-cols-[fit-content(45%)_minmax(0,1fr)] sm:gap-x-4">
+                <div className="min-w-0">
+                    <Dropdown
+                        portalled={false}
+                        className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
+                        trigger={(open) => (
+                            <Button
+                                type="button"
+                                intent="neutral"
+                                size="lg"
+                                disabled={isLoading || models.length === 0}
+                                className="max-w-full touch-pan-y justify-between gap-2"
+                                aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
+                                onPointerDown={(event) => {
+                                    swiped.current = false;
+                                    swipeStart.current =
+                                        canStep &&
+                                        event.pointerType === "touch" &&
+                                        event.isPrimary
+                                            ? {
+                                                  x: event.clientX,
+                                                  y: event.clientY,
+                                              }
+                                            : null;
+                                }}
+                                onPointerCancel={() => {
+                                    swipeStart.current = null;
+                                }}
+                                onPointerUp={(event) => {
+                                    const start = swipeStart.current;
+                                    swipeStart.current = null;
+                                    if (!start || !canStep) return;
+                                    const dx = event.clientX - start.x;
+                                    if (
+                                        Math.abs(dx) < 40 ||
+                                        Math.abs(dx) <=
+                                            Math.abs(event.clientY - start.y)
+                                    )
+                                        return;
+                                    swiped.current = true;
+                                    step(dx < 0 ? 1 : -1);
+                                }}
+                                onClickCapture={(event) => {
+                                    if (swiped.current && event.detail > 0) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    }
+                                    swiped.current = false;
+                                }}
+                            >
+                                <span className="truncate" aria-live="polite">
+                                    {isLoading
+                                        ? "Loading models…"
+                                        : (selected?.title ??
+                                          "No models available")}
+                                </span>
+                                <ChevronIcon expanded={open} />
+                            </Button>
+                        )}
+                    >
+                        {(close) => (
+                            <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
+                                <div className="flex flex-col gap-1">
+                                    {sorted.map((model) => (
+                                        <TabButton
+                                            key={model.id}
+                                            active={model.id === selectedModel}
+                                            size="sm"
+                                            variant="ghost"
+                                            className="w-full justify-start text-left"
+                                            onClick={() => {
+                                                onSelectModel(model.id);
+                                                close();
+                                            }}
+                                        >
+                                            <MediaModelOption model={model} />
+                                        </TabButton>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        )}
+                    </Dropdown>
+                </div>
+                {children}
+            </div>
+            {stepButton(1)}
         </div>
     );
 }
@@ -1650,13 +1659,12 @@ export function Playground() {
                             ))}
                         </ButtonGroup>
                     )}
-                    <div className="grid items-end gap-2 sm:grid-cols-[fit-content(45%)_minmax(0,1fr)] sm:gap-x-4">
-                        <ModelPicker
-                            models={activeGroup?.models ?? categoryModels}
-                            selectedModel={selectedModel}
-                            isLoading={isLoading || !isHydrated}
-                            onSelectModel={selectModel}
-                        />
+                    <ModelPicker
+                        models={activeGroup?.models ?? categoryModels}
+                        selectedModel={selectedModel}
+                        isLoading={isLoading || !isHydrated}
+                        onSelectModel={selectModel}
+                    >
                         {currentModel && (
                             <div className="flex min-w-0 flex-col gap-1">
                                 {currentModel.description && (
@@ -1689,7 +1697,7 @@ export function Playground() {
                                 </Text>
                             </div>
                         )}
-                    </div>
+                    </ModelPicker>
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&

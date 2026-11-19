@@ -7,8 +7,13 @@
  */
 export const PLAY_SEARCH_KEYS = [
     "tab",
+    "task",
     "model",
     "prompt",
+    "questionType",
+    "question",
+    "choices",
+    "levels",
     "size",
     "width",
     "height",

@@ -1,0 +1,90 @@
+{
+    "jaredpalmer/kev-4b": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "liquid/d1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "liquid/d1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "microsoft/microsoft-decision-1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "microsoft/microsoft-decision-1.1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "openai/gpt-6-luna-decisions": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "perplexity/pplx-decider-v1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "respan/span-01-lite": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul"
+        ]
+    },
+    "typesafe/jev-1.14": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    },
+    "vllm-sr/d3": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": [
+            "noul",
+            "choice",
+            "score"
+        ]
+    }
+}

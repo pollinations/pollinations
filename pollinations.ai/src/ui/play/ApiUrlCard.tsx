@@ -1,4 +1,10 @@
-import { CopyButton, CopyStateIcon, Eyebrow, Heading } from "@pollinations/ui";
+import {
+    CopyButton,
+    CopyStateIcon,
+    Eyebrow,
+    Heading,
+    Text,
+} from "@pollinations/ui";
 import { Fragment } from "react";
 
 function shellQuote(value: string): string {
@@ -7,7 +13,7 @@ function shellQuote(value: string): string {
 
 export function apiExample(
     url: string,
-    fields?: Record<string, string | number>,
+    fields?: Record<string, unknown>,
 ): string {
     if (!fields) return url;
 
@@ -15,7 +21,8 @@ export function apiExample(
         `curl ${shellQuote(url)}`,
         `  -H ${shellQuote("Authorization: Bearer YOUR_API_KEY")}`,
     ];
-    if (url.endsWith("/v1/audio/speech")) {
+    const decision = url.endsWith("/alpha/decisions");
+    if (decision || url.endsWith("/v1/audio/speech")) {
         command.push(
             `  -H ${shellQuote("Content-Type: application/json")}`,
             `  -d ${shellQuote(JSON.stringify(fields))}`,
@@ -28,7 +35,7 @@ export function apiExample(
             ),
         );
     }
-    if (!url.endsWith("/v1/audio/transcriptions")) {
+    if (!decision && !url.endsWith("/v1/audio/transcriptions")) {
         command.push("  -o output.mp3");
     }
     return command.join(" \\\n");
@@ -52,9 +59,11 @@ function withBreaks(text: string) {
 export function ApiUrlCard({
     url,
     fields,
+    pendingMessage,
 }: {
     url: string;
-    fields?: Record<string, string | number>;
+    fields?: Record<string, unknown>;
+    pendingMessage?: string;
 }) {
     const example = apiExample(url, fields);
 
@@ -69,28 +78,39 @@ export function ApiUrlCard({
                     Use it from the API
                 </Heading>
             </div>
-            <CopyButton
-                value={example}
-                aria-label="Copy API example"
-                className="polli-surface-card relative block w-full min-w-0 select-none rounded-card bg-surface-opaque min-h-16 p-3.5 pr-16 text-left transition-colors hover:bg-surface-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-text-soft sm:p-4 sm:pr-16"
-            >
-                {(copied) => (
-                    <>
-                        <code className="block whitespace-pre-wrap font-mono text-sm leading-7 text-theme-text-strong [overflow-wrap:anywhere]">
-                            {withBreaks(example)}
-                        </code>
-                        <span
-                            aria-hidden="true"
-                            className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
-                        >
-                            <CopyStateIcon
-                                copied={copied}
-                                className="h-4 w-4"
-                            />
-                        </span>
-                    </>
-                )}
-            </CopyButton>
+            {pendingMessage ? (
+                <div className="polli-surface-card space-y-1 rounded-card bg-surface-opaque p-3.5 sm:p-4">
+                    <code className="block font-mono text-sm text-theme-text-strong [overflow-wrap:anywhere]">
+                        POST {url}
+                    </code>
+                    <Text size="sm" tone="muted">
+                        {pendingMessage}
+                    </Text>
+                </div>
+            ) : (
+                <CopyButton
+                    value={example}
+                    aria-label="Copy API example"
+                    className="polli-surface-card relative block w-full min-w-0 select-none rounded-card bg-surface-opaque min-h-16 p-3.5 pr-16 text-left transition-colors hover:bg-surface-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-text-soft sm:p-4 sm:pr-16"
+                >
+                    {(copied) => (
+                        <>
+                            <code className="block whitespace-pre-wrap font-mono text-sm leading-7 text-theme-text-strong [overflow-wrap:anywhere]">
+                                {withBreaks(example)}
+                            </code>
+                            <span
+                                aria-hidden="true"
+                                className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
+                            >
+                                <CopyStateIcon
+                                    copied={copied}
+                                    className="h-4 w-4"
+                                />
+                            </span>
+                        </>
+                    )}
+                </CopyButton>
+            )}
         </section>
     );
 }

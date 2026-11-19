@@ -2172,13 +2172,6 @@ export function Playground({
                                                                     icon={
                                                                         <Icon className="h-6 w-6 shrink-0" />
                                                                     }
-                                                                    // Images preview as thumbnails.
-                                                                    previewIcon={
-                                                                        media ===
-                                                                        "image" ? undefined : (
-                                                                            <Icon className="h-6 w-6" />
-                                                                        )
-                                                                    }
                                                                 />
                                                             )}
                                                         </div>

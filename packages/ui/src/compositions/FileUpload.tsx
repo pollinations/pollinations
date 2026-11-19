@@ -14,8 +14,13 @@ import {
     type TileModality,
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { IconButton } from "../primitives/IconButton.tsx";
-import { ImageIcon, XIcon } from "../primitives/icons/index.tsx";
+import { ImageIcon } from "../primitives/icons/index.tsx";
+import {
+    fileMediaKind,
+    MediaRemoveButton,
+    mediaTypeIcons,
+    VideoThumbnail,
+} from "./UploadedMedia.tsx";
 
 const PREVIEWABLE_IMAGE_TYPES = new Set([
     "image/gif",
@@ -33,7 +38,7 @@ function PreviewPlaceholder({ icon }: { icon: ReactNode }) {
     return (
         <div
             className={cn(
-                "polli:flex polli:items-center polli:justify-center polli:rounded-xl polli:bg-theme-bg-active polli:text-theme-text-soft",
+                "polli:flex polli:items-center polli:justify-center polli:rounded-xl polli:bg-theme-bg-pale polli:text-theme-text-soft",
                 "polli:h-20 polli:w-20",
             )}
         >
@@ -152,7 +157,7 @@ export function FileUpload({
             Drag here or <span className="polli:underline">browse</span>
         </>
     ),
-    previewIcon = <ImageIcon className="polli:h-5 polli:w-5" />,
+    previewIcon,
     disabled = false,
     className,
 }: FileUploadProps) {
@@ -197,34 +202,44 @@ export function FileUpload({
             }}
         >
             <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
-                {value.map((file, index) => (
-                    <li
-                        key={`${file.name}-${index}`}
-                        title={file.name}
-                        className="polli:relative polli:list-none"
-                    >
-                        <FilePreview
-                            file={file}
-                            placeholderIcon={previewIcon}
-                        />
-                        <span className="polli:sr-only">{file.name}</span>
-                        {!disabled && (
-                            <div className="polli:absolute polli:-top-2 polli:right-1">
-                                <IconButton
-                                    intent="danger"
-                                    title={`Remove ${file.name}`}
-                                    onClick={() =>
-                                        onChange(
-                                            value.filter((_, i) => i !== index),
+                {value.map((file, index) => {
+                    const kind = fileMediaKind(file, tileModality);
+                    const PlaceholderIcon = mediaTypeIcons[kind ?? "image"];
+                    return (
+                        <li
+                            key={`${file.name}-${index}`}
+                            title={file.name}
+                            className="polli:relative polli:list-none"
+                        >
+                            <div {...mediaTileTint(kind)}>
+                                <FilePreview
+                                    file={file}
+                                    placeholderIcon={
+                                        previewIcon ?? (
+                                            <PlaceholderIcon className="polli:size-5" />
                                         )
                                     }
-                                >
-                                    <XIcon className="polli:h-3 polli:w-3" />
-                                </IconButton>
+                                />
                             </div>
-                        )}
-                    </li>
-                ))}
+                            {kind === "video" && <VideoThumbnail file={file} />}
+                            <span className="polli:sr-only">{file.name}</span>
+                            <MediaRemoveButton
+                                file={file}
+                                kind={kind}
+                                onRemove={
+                                    disabled
+                                        ? undefined
+                                        : () =>
+                                              onChange(
+                                                  value.filter(
+                                                      (_, i) => i !== index,
+                                                  ),
+                                              )
+                                }
+                            />
+                        </li>
+                    );
+                })}
                 {(canAdd || value.length === 0) && (
                     <li className="polli:list-none">
                         <label

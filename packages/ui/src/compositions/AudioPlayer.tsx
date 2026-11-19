@@ -1,4 +1,10 @@
-import { type SyntheticEvent, useEffect, useRef, useState } from "react";
+import {
+    type ReactNode,
+    type SyntheticEvent,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { audioTime } from "../lib/audio-time.ts";
 import { cn } from "../lib/cn.ts";
 import { mediaActionTileClass } from "../lib/media-action-tile.ts";
@@ -9,11 +15,13 @@ export function AudioPlayer({
     label,
     disabled = false,
     onDuration,
+    children,
 }: {
     src: string;
     label: string;
     disabled?: boolean;
     onDuration?: (seconds: number | null) => void;
+    children?: ReactNode;
 }) {
     const audio = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
@@ -69,7 +77,7 @@ export function AudioPlayer({
                 type="button"
                 className={cn(
                     mediaActionTileClass(disabled || error),
-                    "polli:border-solid",
+                    "polli:isolate polli:border-solid",
                 )}
                 title={label}
                 aria-label={
@@ -96,6 +104,14 @@ export function AudioPlayer({
                     }
                 }}
             >
+                {children && (
+                    <span
+                        aria-hidden="true"
+                        className="polli:pointer-events-none polli:absolute polli:inset-0 polli:-z-10 polli:opacity-40"
+                    >
+                        {children}
+                    </span>
+                )}
                 {error ? (
                     "Preview unavailable"
                 ) : (

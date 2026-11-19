@@ -6,11 +6,15 @@ import {
     type TileModality,
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { IconButton } from "../primitives/IconButton.tsx";
-import { CloudUploadIcon, XIcon } from "../primitives/icons/index.tsx";
+import { CloudUploadIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 import { AudioPlayer } from "./AudioPlayer.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
+import {
+    fileMediaKind,
+    MediaRemoveButton,
+    VideoThumbnail,
+} from "./UploadedMedia.tsx";
 
 export type AudioInputProps = {
     value: File[];
@@ -39,6 +43,7 @@ function Clip({
     disabled: boolean;
 }) {
     const [url, setUrl] = useState("");
+    const kind = fileMediaKind(file) ?? "audio";
     const reportDuration = useCallback(
         (seconds: number | null) => onClipDuration?.(file, seconds),
         [file, onClipDuration],
@@ -59,18 +64,15 @@ function Clip({
                     label={file.name}
                     disabled={disabled}
                     onDuration={onClipDuration && reportDuration}
-                />
-            )}
-            <div className="polli:absolute polli:-top-2 polli:right-1">
-                <IconButton
-                    intent="danger"
-                    title={`Remove ${file.name}`}
-                    onClick={onRemove}
-                    disabled={disabled}
                 >
-                    <XIcon className="polli:size-3" />
-                </IconButton>
-            </div>
+                    {kind === "video" && <VideoThumbnail file={file} />}
+                </AudioPlayer>
+            )}
+            <MediaRemoveButton
+                file={file}
+                kind={kind}
+                onRemove={disabled ? undefined : onRemove}
+            />
         </div>
     );
 }

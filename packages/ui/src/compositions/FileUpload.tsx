@@ -7,7 +7,7 @@ import {
     type TileModality,
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { ImageIcon } from "../primitives/icons/index.tsx";
+import { ImageIcon, MediaFileIcon } from "../primitives/icons/index.tsx";
 import { UploadedFileTile } from "./UploadedMedia.tsx";
 
 export type FileUploadProps = {
@@ -19,6 +19,7 @@ export type FileUploadProps = {
     accept?: string;
     icon?: ReactNode;
     label?: ReactNode;
+    inputLabel?: string;
     previewIcon?: ReactNode;
     tileModality?: TileModality;
     /** Fully locks the field: no add, no remove, drops ignored. */
@@ -36,7 +37,8 @@ export function FileUpload({
     maxSizeBytes = 10 * 1024 * 1024,
     accept = "image/*",
     tileModality,
-    icon = <ImageIcon className="polli:h-6 polli:w-6" />,
+    icon,
+    inputLabel,
     label = (
         <>
             Drag here or <span className="polli:underline">browse</span>
@@ -115,10 +117,16 @@ export function FileUpload({
                             className={mediaActionTileClass(!canAdd)}
                             {...mediaTileTint(tileModality)}
                         >
-                            {icon}
+                            {icon ??
+                                (tileModality ? (
+                                    <MediaFileIcon modality={tileModality} />
+                                ) : (
+                                    <ImageIcon />
+                                ))}
                             <span>{label}</span>
                             <input
                                 id={inputId}
+                                aria-label={inputLabel}
                                 type="file"
                                 accept={accept}
                                 multiple={maxFiles > 1}

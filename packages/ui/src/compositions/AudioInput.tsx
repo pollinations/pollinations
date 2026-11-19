@@ -6,7 +6,7 @@ import {
     type TileModality,
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { CloudUploadIcon } from "../primitives/icons/index.tsx";
+import { MediaFileIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
 import { AudioRecorder } from "./AudioRecorder.tsx";
 import { UploadedFileTile } from "./UploadedMedia.tsx";
@@ -20,6 +20,7 @@ export type AudioInputProps = {
     onReject?: (files: RejectedFile[]) => void;
     accept?: string;
     importLabel?: string;
+    inputLabel?: string;
     tileModality?: TileModality;
     maxFiles?: number;
     maxSizeBytes: number;
@@ -35,7 +36,8 @@ export function AudioInput({
     onClipDuration,
     onReject,
     accept = "audio/*",
-    importLabel = "Import audio",
+    importLabel,
+    inputLabel = importLabel ?? "Choose audio file",
     tileModality = "audio",
     maxFiles = 1,
     maxSizeBytes,
@@ -111,12 +113,6 @@ export function AudioInput({
                     ))}
                 {canAdd && (
                     <>
-                        <AudioRecorder
-                            disabled={disabled}
-                            maxBytes={maxSizeBytes}
-                            onBusyChange={changeBusy}
-                            onRecord={(file) => add([file])}
-                        />
                         <input
                             hidden
                             ref={picker}
@@ -124,7 +120,7 @@ export function AudioInput({
                             accept={accept}
                             multiple={maxFiles > 1}
                             disabled={busy || disabled}
-                            aria-label={importLabel}
+                            aria-label={inputLabel}
                             onChange={(e) => {
                                 add(Array.from(e.currentTarget.files ?? []));
                                 e.currentTarget.value = "";
@@ -133,15 +129,22 @@ export function AudioInput({
                         {!busy && (
                             <button
                                 type="button"
+                                aria-label={inputLabel}
                                 className={mediaActionTileClass(disabled)}
                                 {...mediaTileTint(tileModality)}
                                 disabled={disabled}
                                 onClick={() => picker.current?.click()}
                             >
-                                <CloudUploadIcon />
-                                <span>{importLabel}</span>
+                                <MediaFileIcon modality={tileModality} />
+                                <span>{importLabel ?? "Audio"}</span>
                             </button>
                         )}
+                        <AudioRecorder
+                            disabled={disabled}
+                            maxBytes={maxSizeBytes}
+                            onBusyChange={changeBusy}
+                            onRecord={(file) => add([file])}
+                        />
                     </>
                 )}
             </div>

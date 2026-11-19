@@ -50,9 +50,11 @@ import {
     modalityBgVar,
     modalityTextColor,
 } from "@pollinations/ui/gen";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
+    type ReactNode,
     type RefObject,
     useCallback,
     useEffect,
@@ -415,8 +417,8 @@ function VideoDurationField({
     );
 }
 
-function voiceLabel(voice: string) {
-    return voice.charAt(0).toUpperCase() + voice.slice(1);
+function capitalize(value: string) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function VoicePicker({
@@ -433,7 +435,7 @@ function VoicePicker({
             <OptionField
                 label="Voice"
                 options={voices}
-                format={voiceLabel}
+                format={capitalize}
                 value={value}
                 onChange={onChange}
             />
@@ -449,9 +451,9 @@ function VoicePicker({
                         type="button"
                         intent="neutral"
                         className="w-fit max-w-full self-start justify-between gap-2"
-                        aria-label={`Voice: ${voiceLabel(value)}`}
+                        aria-label={`Voice: ${capitalize(value)}`}
                     >
-                        <span className="truncate">{voiceLabel(value)}</span>
+                        <span className="truncate">{capitalize(value)}</span>
                         <ChevronIcon expanded={open} />
                     </Button>
                 )}
@@ -471,7 +473,7 @@ function VoicePicker({
                                         close();
                                     }}
                                 >
-                                    {voiceLabel(voice)}
+                                    {capitalize(voice)}
                                 </TabButton>
                             ))}
                         </div>
@@ -636,12 +638,14 @@ function ModelPicker({
 function RunStatBadge({
     label,
     value,
+    afterValue,
     detail,
     href,
     linkLabel,
 }: {
     label: string;
     value?: string;
+    afterValue?: ReactNode;
     detail: string;
     href: string;
     linkLabel: string;
@@ -675,6 +679,7 @@ function RunStatBadge({
                 <Chip size="md" data-theme="neutral" className="tabular-nums">
                     <span className="text-theme-text-muted">{label}</span>{" "}
                     {value ?? "—"}
+                    {value && afterValue}
                 </Chip>
             </button>
             <div
@@ -1032,6 +1037,7 @@ export function Playground({
         const onReject: FileUploadProps["onReject"] = (rejected) =>
             runStore.set({ error: messages[rejected[0].reason] });
         return {
+            inputLabel: `Choose ${media.join(" or ")} file`,
             tileModality: media.length === 1 ? media[0] : ("mixed" as const),
             accept: media.map((item) => UPLOAD_ACCEPT[item]).join(","),
             maxSizeBytes: maxMb * 1024 * 1024,
@@ -1817,11 +1823,6 @@ export function Playground({
                 className="flex min-w-0 flex-col gap-2"
             >
                 <div className="flex flex-wrap items-start gap-3">
-                    {uploadMedia.includes("video") &&
-                        audioFiles.length === 0 &&
-                        cameraTile(audioUploadProps.maxSizeBytes, (file) =>
-                            setAudioFiles([file]),
-                        )}
                     {uploadMedia.includes("audio") ? (
                         <AudioInput
                             key={currentModel.id}
@@ -1831,7 +1832,7 @@ export function Playground({
                             onBusyChange={setRecordingAudio}
                             onClipDuration={onClipDuration}
                             disabled={isGenerating || recordingVideo}
-                            importLabel={`Import ${mediaUploadLabel}`}
+                            importLabel={capitalize(mediaUploadLabel)}
                             {...audioUploadProps}
                         />
                     ) : (
@@ -1841,15 +1842,17 @@ export function Playground({
                             disabled={isGenerating || recordingVideo}
                             maxFiles={1}
                             {...audioUploadProps}
-                            icon={
-                                <MediaUploadIcon className="h-6 w-6 shrink-0" />
-                            }
                             previewIcon={
                                 <MediaUploadIcon className="h-5 w-5" />
                             }
-                            label={`Add ${mediaUploadLabel}`}
+                            label={capitalize(mediaUploadLabel)}
                         />
                     )}
+                    {uploadMedia.includes("video") &&
+                        audioFiles.length === 0 &&
+                        cameraTile(audioUploadProps.maxSizeBytes, (file) =>
+                            setAudioFiles([file]),
+                        )}
                 </div>
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
@@ -1885,6 +1888,9 @@ export function Playground({
                 />
             ),
     );
+    const videoPicker = videoReferenceMedia.includes("video")
+        ? videoUploadProps("video")
+        : undefined;
     const frameTiles =
         supportsFrames &&
         (supportsLastFrame
@@ -1911,6 +1917,7 @@ export function Playground({
                         framesDisabled || (index > 0 && !referenceImages[0])
                     }
                     label={label}
+                    inputLabel={`Choose ${label.toLowerCase()}`}
                 />
                 {referenceImages[index] && (
                     <Text size="xs" tone="muted" className="mt-1 text-center">
@@ -1984,6 +1991,15 @@ export function Playground({
                                     <RunStatBadge
                                         label="Cost"
                                         value={cost}
+                                        afterValue={
+                                            <WalletKindIcon
+                                                kind={
+                                                    currentModel.paidOnly
+                                                        ? "paid"
+                                                        : "tier"
+                                                }
+                                            />
+                                        }
                                         detail="Median charge per successful paid request over the last 7 days. Your settings can affect the price."
                                         href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
                                         linkLabel="Pricing"
@@ -2067,7 +2083,7 @@ export function Playground({
                                                 ["image"],
                                                 `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
                                             )}
-                                            label="Add image"
+                                            label="Image"
                                         />
                                         {maxReferenceImages > 1 &&
                                             referenceImages.length > 0 && (
@@ -2103,7 +2119,6 @@ export function Playground({
                                         {queuedTiles}
                                         {frameTiles}
                                         {videoReferenceMedia.map((media) => {
-                                            const Icon = CATEGORY_ICON[media];
                                             const props =
                                                 videoUploadProps(media);
                                             return media === "audio" ? (
@@ -2121,35 +2136,30 @@ export function Playground({
                                                     }
                                                 />
                                             ) : (
-                                                <Fragment key={media}>
-                                                    {media === "video" &&
-                                                        props.value.length <
-                                                            props.maxFiles &&
-                                                        cameraTile(
-                                                            props.maxSizeBytes,
-                                                            (file) =>
-                                                                props.onChange([
-                                                                    ...props.value,
-                                                                    file,
-                                                                ]),
-                                                        )}
-                                                    <FileUpload
-                                                        actionsOnly
-                                                        {...props}
-                                                        disabled={
-                                                            mediaDisabled ||
-                                                            (media ===
-                                                                "video" &&
-                                                                recordingVideo)
-                                                        }
-                                                        label={`Add ${media}`}
-                                                        icon={
-                                                            <Icon className="h-6 w-6 shrink-0" />
-                                                        }
-                                                    />
-                                                </Fragment>
+                                                <FileUpload
+                                                    key={media}
+                                                    actionsOnly
+                                                    {...props}
+                                                    disabled={
+                                                        mediaDisabled ||
+                                                        (media === "video" &&
+                                                            recordingVideo)
+                                                    }
+                                                    label={capitalize(media)}
+                                                />
                                             );
                                         })}
+                                        {videoPicker &&
+                                            videoPicker.value.length <
+                                                videoPicker.maxFiles &&
+                                            cameraTile(
+                                                videoPicker.maxSizeBytes,
+                                                (file) =>
+                                                    videoPicker.onChange([
+                                                        ...videoPicker.value,
+                                                        file,
+                                                    ]),
+                                            )}
                                     </div>
                                     {clipStatus && (
                                         <Text size="xs" tone="muted">

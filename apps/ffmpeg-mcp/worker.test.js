@@ -556,3 +556,46 @@ test("reports usage for executed failures", async () => {
         await client.close();
     }
 });
+
+test("rejects URL and path arguments before execution", async () => {
+    const { calls, env, worker } = createHarness();
+    const client = await connect(worker, env, calls);
+    for (const args of [
+        ["-i", "https://evil.example.com/source.mp4"],
+        ["-i", "file:///etc/passwd"],
+        ["-i", "/etc/passwd"],
+        ["-i", "./local/input.mp4"],
+        ["-i", "input0", "-f", "concat", "-safe", "0", "-i", "../secret.txt"],
+    ]) {
+        const result = await client.callTool({
+            name: "runFfmpeg",
+            arguments: {
+                sources: ["https://example.com/source.mp4"],
+                args,
+                outputExtension: "mp4",
+            },
+        });
+        assert.equal(result.isError, true);
+    }
+    assert.equal(calls.run.length, 0);
+    await client.close();
+});
+
+test("accepts ordinary filter arguments alongside input references", async () => {
+    const publicSource = "https://cdn.example.com/source.mp4";
+    const { calls, env, worker } = createHarness({
+        expectedSource: publicSource,
+    });
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "runFfmpeg",
+        arguments: {
+            sources: [publicSource],
+            args: ["-i", "input0", "-vf", "scale=1280:-2", "-t", "10"],
+            outputExtension: "mp4",
+        },
+    });
+    assert.equal(result.isError, undefined);
+    assert.equal(calls.run.length, 1);
+    await client.close();
+});

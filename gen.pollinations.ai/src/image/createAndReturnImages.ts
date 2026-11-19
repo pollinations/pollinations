@@ -1,5 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import { HOTSHOT_XL_MODEL } from "@shared/registry/image.ts";
 import debug from "debug";
 import { isRetryableFallbackError } from "../fallback.ts";
 import {
@@ -18,6 +19,7 @@ import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callHotshotXL } from "./models/hotshotXLModel.ts";
 import {
     callIdeogramBalancedAPI,
     callIdeogramQualityAPI,
@@ -608,10 +610,7 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (
-        config.modelName === "gpt-image-2.6-flare" &&
-        safeParams.output_format === "gif"
-    ) {
+    if (safeParams.output_format === "gif") {
         // GIF frames are tiled into a shared provider pixel budget. Using the
         // still-image minimum (655,360 pixels) would make many GIFs impossible.
         // Keep each frame within 896x512 (or rotated) so up to 16 frames fit.
@@ -664,7 +663,7 @@ const callGPTImageWithEndpoint = async (
     // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
-    // PNG remains the default; Flare may request lossless WebP or an animated GIF.
+    // GPT Image 2.6 uses the same GIF settings on OpenAI and fal.
     const outputFormat = safeParams.output_format ?? "png";
     const requestBody = {
         ...(config.provider === "openai" ? { model: config.modelName } : {}),
@@ -871,7 +870,7 @@ const callGPTImageWithEndpoint = async (
         buffer: imageBuffer,
         // Return the requested format without forcing it through the JPEG converter.
         mimeType:
-            config.modelName === "gpt-image-2.6-flare"
+            outputFormat === "gif" || config.modelName === "gpt-image-2.6-flare"
                 ? `image/${outputFormat}`
                 : undefined,
         trackingData: {
@@ -930,6 +929,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
+        case HOTSHOT_XL_MODEL:
+            return callHotshotXL(prompt, safeParams);
         case "stability-ai/stable-diffusion-3.5-large":
         case "stability-ai/stable-diffusion-3.5-large:stability":
             return callStabilityImage(prompt, safeParams, "sd35");
@@ -1326,15 +1327,16 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...resultMetadata } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // GIF frames and WebP/PNG output must not pass through JPEG/EXIF conversion.
-        // Other models retain their existing JPEG metadata behavior.
         const resultFormat = result.mimeType ?? detectMimeType(result.buffer);
         const preserveFlareFormat =
             safeParams.model.startsWith("openai/gpt-image-2.6-flare") &&
-            ["image/gif", "image/webp", "image/png"].includes(resultFormat);
+            ["image/webp", "image/png"].includes(resultFormat);
         const processedBuffer =
             result.mimeType === "image/svg+xml" ||
+            (safeParams.output_format === "gif" &&
+                resultFormat === "image/gif") ||
             preserveFlareFormat ||
+            result.mimeType === "image/gif" ||
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")
                 ? result.buffer
@@ -1346,7 +1348,9 @@ export async function createAndReturnImageCached(
 
         return {
             buffer: processedBuffer,
-            mimeType: result.mimeType,
+            // Let the response handler detect the format after post-processing.
+            mimeType:
+                processedBuffer === result.buffer ? result.mimeType : undefined,
             trackingData: result.trackingData,
         };
     } catch (error) {

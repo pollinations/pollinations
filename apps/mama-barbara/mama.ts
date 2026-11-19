@@ -27,7 +27,7 @@ const SIZES: Record<string, string> = {
 const DEFAULT_SIZE = "pollinations-large";
 // Models that did a whole Barbara turn in Claude Code through gen (a photo,
 // an image, a file reply, a connect link) on 2026-10-22/23. The first is the
-// default: Quest Pollen pays for it, so a new account's Barbara answers.
+// default: the Quest balance covers it, so a new account's Barbara answers.
 const MODELS: Record<string, string> = {
     "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced · Uses Quest balance",
     "anthropic/claude-sonnet-5.5": "Claude Sonnet 5.5 · balanced",

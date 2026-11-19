@@ -34,7 +34,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Exact current values from the latest d1_user snapshot, excluding banned accounts. Registrations use the selected time range and exclude accounts deleted before the latest snapshot. Quest debt and Paid overdraft are allowed by design: a request is charged in full after it runs, so the charge can take a balance below zero. Most of these balances are a fraction of a Pollen; Current balance extremes lists the largest.",
+      "description": "Exact current values from the latest d1_user snapshot, excluding banned accounts. Registrations use the selected time range and exclude accounts deleted before the latest snapshot. Quest debt and Paid overdraft are allowed by design: a request is charged in full after it runs, so the charge can take a balance below zero. Most of these balances are a fraction of a dollar; Current balance extremes lists the largest.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -94,7 +94,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -114,7 +114,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -205,7 +205,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful billed consumption by funding bucket and by who serves the model. Community models are hosted by their owners, and 75% of their price is credited back to the owner in the payer's bucket (Paid to Paid, Quest to Quest). BYOP app markup is also credited to app owners. Paid is therefore consumed value, not cash or Pollinations revenue; Quest is free Pollen. Regular traffic only; excludes legacy, operations and dev.",
+      "description": "Daily successful billed consumption by funding bucket and by who serves the model. Community models are hosted by their owners, and 75% of their price is credited back to the owner in the payer's bucket (Paid to Paid, Quest to Quest). BYOP app markup is also credited to app owners. Paid is therefore consumed value, not cash or Pollinations revenue; Quest is subsidized usage. Regular traffic only; excludes legacy, operations and dev.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -223,7 +223,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -375,7 +375,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",

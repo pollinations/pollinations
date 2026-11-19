@@ -58,7 +58,7 @@ No cash purchase ≠ non-payment or abuse; pack spend ≠ proof of cash.
 
 # Auto-top-up: principal vs gross payment
 
-Auto-top-up `amount_usd` in D1 is the Pollen principal credited; Stripe fees and taxes sit
+Auto-top-up `amount_usd` in D1 is the USD amount added to the paid balance; Stripe fees and taxes sit
 on top. Gross cash is in Tinybird `stripe_event` as `payment_intent.succeeded` rows with an
 empty `user_id` (auto top-ups are not attributed there); per user, fetch the invoice by
 `stripe_invoice_id` and use `amount_paid`. Keep principal, gross payment, tax, refunds and
@@ -75,7 +75,7 @@ tb-prod.sh "SELECT toDate(start_time) AS day, round(avg(total_price), 6) AS avg_
 ```
 
 Provider cost, `priceMultiplier` markup and pack-credit promotions move independently;
-check all three. Keep cash paid separate from Pollen credited — a Pollen discount doesn't
+check all three. Keep cash paid separate from the amount credited — a top-up discount doesn't
 change cash buying power. Note who was exposed before the payment event you're explaining
 and any simultaneous changes.
 
@@ -98,7 +98,7 @@ For "these users pay more" or "X caused conversion" claims, define the compariso
 # Notes
 
 - `stripe_event` is the source of truth for pack-purchase revenue analytics.
-- `generation_event_v2` records Pollen consumption, not cash revenue.
+- `generation_event_v2` records usage spend, not cash revenue.
 - Both datasets use `user_id`, so revenue and usage can be joined directly.
 - The dashboard's `daily_stripe_revenue` pipe applies the same paid-event filter.
 - For pre-migration revenue history, note that Polar was the pre-Stripe merchant

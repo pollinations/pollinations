@@ -88,7 +88,7 @@ export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// Pollen amounts per usage type, plus what the user is billed.
+// USD amounts per usage type, plus what the user is billed.
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
@@ -96,7 +96,7 @@ export type UsagePrice = Usage & {
 // Provider cost rates in USD-equivalent per usage unit.
 export type CostDefinition = { [K in UsageType]?: number };
 
-// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
+// User-facing charge rates in USD per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
 export type CostVariantMetadata = {
@@ -196,7 +196,7 @@ export type ModelDefinition = {
     // undefined (or an unknown name — warned) bills at base rates. Selection
     // is code; money is data.
     selectCostVariant?: (context: CostVariantContext) => string | undefined;
-    // USD-cost to Pollen-price multiplier. Required on every model — there is
+    // Provider cost to customer price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
     // Override the multiplier for a named cost variant when customer tiers
@@ -223,7 +223,7 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // True when callers may only spend paid balance; false when Quest balance
     // also works. Required on every model — there is no implicit default.
     paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
@@ -260,7 +260,7 @@ export type ModelDefinition = {
     supportsStreaming?: boolean;
 };
 
-// Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
+// Helper: Convert usage counts to rated USD cost or customer charge.
 // When a usage type is reported by upstream but the registry has no rate for it,
 // log a warning (so we know which (model, usageType) pair needs adding) and bill
 // that line as 0. Throwing here drops the whole tracking event and creates a
@@ -397,7 +397,7 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    // Effective per-unit Pollen price sheet (cost variant × multiplier), not
+    // Effective per-unit USD price sheet (cost variant × multiplier), not
     // the request-time base sheet. Provider-reported billing units can differ
     // from public usage units, so this sheet alone may not reproduce totals
     // overridden by providerBilling; those use its units and unitCost.
@@ -751,7 +751,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 }
 
 /**
- * Get Pollen price definition for a public model name (cost × multiplier)
+ * Get the USD price definition for a public model name (cost × multiplier)
  */
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];

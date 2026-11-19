@@ -1,5 +1,5 @@
 /**
- * Pollen calculation utilities
+ * Balance calculation utilities
  *
  * Uses explicit free pricing or real usage data from Tinybird (rolling 7-day
  * median). Returns "—" when no data is available—no theoretical estimates.

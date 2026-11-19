@@ -144,7 +144,7 @@ const firstAutoTopUpQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-/** Quests earned by buying Pollen; the monthly standings mark their earners. */
+/** Quests earned by topping up the paid balance; the monthly standings mark their earners. */
 export const TOP_UP_QUEST_IDS = [
     legacyFirstTopUpQuest.id,
     legacyOverHundredPollenQuest.id,

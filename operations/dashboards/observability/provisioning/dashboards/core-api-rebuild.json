@@ -87,7 +87,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -107,7 +107,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -343,7 +343,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is revenue-bearing Pollen; Quest is free Pollen granted to users and must not be read as revenue.",
+      "description": "Daily gross billed Direct API consumption from generation_usage_hourly. Paid is spend funded by purchased credit; the Quest balance is funded by grants and must not be read as revenue.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -361,7 +361,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -625,7 +625,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Official models ranked over the selected range using successful Direct API calls only. Paid and Quest show gross Pollen consumption. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
+      "description": "Official models ranked over the selected range using successful Direct API calls only. Paid and Quest show gross usage spend. Token fields and native audio/video duration expose usage scale without duplicating model health or provider economics.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -659,7 +659,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -679,7 +679,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",

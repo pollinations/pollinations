@@ -1157,7 +1157,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Distinct signed-in people who viewed the Pollen or top-up page, started a Stripe checkout, and of those starters paid in the range (live-mode checkout completed or async payment succeeded). Auto top-up charges are not checkouts and are not shown. Percentages are of the first stage.",
+      "description": "Distinct signed-in people who viewed the Credits or top-up page, started a Stripe checkout, and of those starters paid in the range (live-mode checkout completed or async payment succeeded). Auto top-up charges are not checkouts and are not shown. Percentages are of the first stage.",
       "fieldConfig": {
         "defaults": {
           "color": {

@@ -1859,7 +1859,7 @@ const TEXT_BASE_SERVICES = {
         category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
-        // Free upstream, so Quest Pollen can reach it at no cost.
+        // Free upstream, so Quest balance can reach it at no cost.
         paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0),

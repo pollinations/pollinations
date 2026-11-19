@@ -12,7 +12,7 @@ const BUCKET_COLUMNS = {
 } as const satisfies Record<Bucket, unknown>;
 
 /**
- * Atomically deducts pollen from user balance.
+ * Atomically deducts the charge from the user’s balance.
  *
  * This is the authoritative deduction ladder — the one place a positive charge
  * picks a bucket and money actually moves, read top-to-bottom as the `decision`
@@ -20,16 +20,16 @@ const BUCKET_COLUMNS = {
  * of whether an estimate is affordable, while `createBalanceCheckResult` only
  * labels a meter for reporting. Neither is an authoritative write-path rule.
  *
- *   1. paid-only  → `pack` only (never Quest Pollen)
- *   2. quest-only → `tier` only, for keys that never spend paid Pollen
+ *   1. paid-only  → `pack` only (never Quest balance)
+ *   2. quest-only → `tier` only, for keys that never spend paid balance
  *   3. restricted → `pack`, including debt for requests already admitted
- *   4. tier       → Quest Pollen when it covers the full amount (`>=`)
- *   5. pack       → any positive paid balance when Quest Pollen can't cover
- *   6. tier       → fall back to Quest Pollen when pack is non-positive
+ *   4. tier       → Quest balance when it covers the full amount (`>=`)
+ *   5. pack       → any positive paid balance when Quest balance can't cover
+ *   6. tier       → fall back to Quest balance when pack is non-positive
  *
- * The final `tier` fall-through is load-bearing: when Quest Pollen cannot cover
- * the charge and paid balance is non-positive, the charge accrues Quest-Pollen
- * debt instead of reducing paid balance further. Non-positive amounts return
+ * The final `tier` fall-through is load-bearing: when Quest balance cannot cover
+ * the charge and paid balance is non-positive, the charge adds debt to the
+ * Quest balance instead of reducing paid balance further. Non-positive amounts return
  * without selecting a bucket or writing.
  * Restrictions reject new Quest-only requests at preflight. Those already in
  * flight still settle in their permitted bucket; completed work is never free.

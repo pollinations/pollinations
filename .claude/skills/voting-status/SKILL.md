@@ -137,7 +137,7 @@ we been cooking fr fr 🔥 keep the votes coming!
 '-------------------------------------------------------------------------------'
 \`\`\`
 
-ads to earn pollen is winning! 🗳️
+ads to earn credit is winning! 🗳️
 
 💳 **Vote here:** https://github.com/pollinations/pollinations/issues/4826
 ```
@@ -151,9 +151,9 @@ ads to earn pollen is winning! 🗳️
 
 **still in beta — values may shift as we find balance**
 
-## ⚡ pollen update
+## ⚡ balance update
 
-hourly grants have ended. existing balances remain spendable, and paid pollen packs keep working.
+hourly grants have ended. existing balances remain spendable, and paid balance top-ups keep working.
 
 ## 🛠️ app showcase
 

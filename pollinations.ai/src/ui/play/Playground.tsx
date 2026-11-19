@@ -327,7 +327,6 @@ function defaultModelId(
 function OptionField({
     label,
     options,
-    defaultValue = options[0],
     value,
     onChange,
     format = (option) => option,
@@ -335,7 +334,6 @@ function OptionField({
 }: {
     label: string;
     options: readonly string[];
-    defaultValue?: string;
     value: string | undefined;
     onChange: (option: string) => void;
     format?: (option: string) => string;
@@ -362,9 +360,6 @@ function OptionField({
                     {options.map((option) => (
                         <TabButton
                             key={option || "auto"}
-                            data-theme={
-                                option === defaultValue ? "neutral" : undefined
-                            }
                             active={option === value}
                             size="sm"
                             onClick={() => onChange(option)}
@@ -425,11 +420,6 @@ function VoicePicker({
                             {voices.map((voice) => (
                                 <TabButton
                                     key={voice}
-                                    data-theme={
-                                        voice === voices[0]
-                                            ? "neutral"
-                                            : undefined
-                                    }
                                     active={voice === value}
                                     size="sm"
                                     variant="ghost"
@@ -1869,7 +1859,6 @@ export function Playground() {
                                             <OptionField
                                                 label="Aspect ratio"
                                                 options={videoConfig.ratios}
-                                                defaultValue={defaultVideoRatio}
                                                 value={videoAspectRatio}
                                                 onChange={(ratio) =>
                                                     setParam(
@@ -1883,11 +1872,6 @@ export function Playground() {
                                             />
                                             <OptionField
                                                 label="Sound"
-                                                defaultValue={
-                                                    videoConfig.defaultSound
-                                                        ? "on"
-                                                        : "off"
-                                                }
                                                 options={
                                                     videoConfig.sound ===
                                                     "optional"
@@ -1917,12 +1901,7 @@ export function Playground() {
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <Slider
                                                     aria-label="Video duration"
-                                                    className={
-                                                        videoDuration.value ===
-                                                        videoDuration.defaultValue
-                                                            ? "[--polli-slider-fill:var(--polli-color-text-muted)]"
-                                                            : undefined
-                                                    }
+                                                    className="disabled:[--polli-slider-fill:var(--polli-color-text-muted)]"
                                                     disabled={
                                                         videoDuration.min ===
                                                         videoDuration.max

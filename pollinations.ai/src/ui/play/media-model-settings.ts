@@ -36,12 +36,9 @@ export function mediaModelSettings(
         (options.length
             ? options.includes(value)
             : value >= min && value <= max && (value - min) % step === 0);
-    const defaultValue = allowed(model?.defaultDuration)
+    const fallback = allowed(model?.defaultDuration)
         ? model.defaultDuration
         : min;
-    const value = allowed(selected.duration) ? selected.duration : defaultValue;
-    return {
-        resolution,
-        duration: { min, max, options, step, defaultValue, value },
-    };
+    const value = allowed(selected.duration) ? selected.duration : fallback;
+    return { resolution, duration: { min, max, options, step, value } };
 }

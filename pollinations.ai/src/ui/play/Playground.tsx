@@ -283,6 +283,55 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     return "speech-generation";
 }
 
+const VIDEO_FILTER_LABELS = {
+    start_frame: "Start from an image",
+    reference_videos: "Use a video",
+    reference_audios: "Use audio",
+} as const;
+
+function modelFilterGroups(
+    category: PlaygroundCategory,
+    models: PlaygroundModel[],
+) {
+    if (category === "audio") {
+        return Object.entries(AUDIO_GROUP_LABEL)
+            .map(([key, label]) => ({
+                key,
+                label,
+                models: models.filter(
+                    (model) => audioTaskForModel(model) === key,
+                ),
+            }))
+            .filter((group) => group.models.length > 0);
+    }
+    const filters =
+        category === "image"
+            ? [
+                  {
+                      key: "edit",
+                      label: "Edit an image",
+                      models: models.filter(
+                          (model) =>
+                              referenceImageLimit(model) > 0 &&
+                              model.supportedEndpoints.includes(
+                                  "/v1/images/edits",
+                              ),
+                      ),
+                  },
+              ]
+            : Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
+                  key,
+                  label,
+                  models: models.filter((model) =>
+                      model.videoCapabilities.includes(key),
+                  ),
+              }));
+    return [
+        { key: "all", label: "All", models },
+        ...filters.filter((group) => group.models.length > 0),
+    ];
+}
+
 /** The catalog lists each tab's configured default model first. */
 function defaultModelId(
     models: PlaygroundModel[],
@@ -840,21 +889,18 @@ export function Playground() {
     );
 
     const modelGroups = useMemo(
-        () =>
-            activeCategory === "audio"
-                ? Object.entries(AUDIO_GROUP_LABEL)
-                      .map(([key, label]) => ({
-                          key,
-                          label,
-                          models: categoryModels.filter(
-                              (model) => audioTaskForModel(model) === key,
-                          ),
-                      }))
-                      .filter((group) => group.models.length > 0)
-                : [],
+        () => modelFilterGroups(activeCategory, categoryModels),
         [activeCategory, categoryModels],
     );
-    const activeGroup = modelGroups.find((group) => group.key === audioTask);
+    const [visualFilters, setVisualFilters] = useState({
+        image: "all",
+        video: "all",
+    });
+    const groupKey =
+        activeCategory === "audio" ? audioTask : visualFilters[activeCategory];
+    const activeGroup =
+        modelGroups.find((group) => group.key === groupKey) ??
+        (activeCategory !== "audio" ? modelGroups[0] : undefined);
     const lastGroupModel = useRef(new Map<string, string>());
 
     // Picks the model for the open tab. One effect, so a linked ?model= and
@@ -1200,7 +1246,33 @@ export function Playground() {
         setAudioFiles(saved?.audioFiles ?? []);
     }
 
+    function selectGroup(group: (typeof modelGroups)[number]) {
+        if (group === activeGroup) return;
+        if (activeGroup)
+            lastGroupModel.current.set(
+                `${activeCategory}/${activeGroup.key}`,
+                selectedModel,
+            );
+        if (activeCategory !== "audio") {
+            setVisualFilters((previous) => ({
+                ...previous,
+                [activeCategory]: group.key,
+            }));
+        }
+        if (group.models.some((model) => model.id === selectedModel)) return;
+        const saved = lastGroupModel.current.get(
+            `${activeCategory}/${group.key}`,
+        );
+        selectModel(
+            (
+                group.models.find((model) => model.id === saved) ??
+                group.models[0]
+            ).id,
+        );
+    }
+
     function selectModel(modelId: string) {
+        if (modelId === selectedModel) return;
         setParams((previous) => ({
             ...previous,
             model: modelId,
@@ -1480,26 +1552,7 @@ export function Playground() {
                                     key={group.key}
                                     size="sm"
                                     active={group === activeGroup}
-                                    onClick={() => {
-                                        if (group === activeGroup) return;
-                                        if (activeGroup)
-                                            lastGroupModel.current.set(
-                                                activeGroup.key,
-                                                selectedModel,
-                                            );
-                                        const saved =
-                                            lastGroupModel.current.get(
-                                                group.key,
-                                            );
-                                        selectModel(
-                                            (
-                                                group.models.find(
-                                                    (model) =>
-                                                        model.id === saved,
-                                                ) ?? group.models[0]
-                                            ).id,
-                                        );
-                                    }}
+                                    onClick={() => selectGroup(group)}
                                 >
                                     {group.label}
                                 </TabButton>

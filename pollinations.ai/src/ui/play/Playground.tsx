@@ -30,7 +30,6 @@ import {
     InfoTip,
     InlineLink,
     Input,
-    LayersIcon,
     MediaPlaceholder,
     MicIcon,
     ScrollArea,
@@ -84,6 +83,7 @@ import {
     URGENCY_EXAMPLE,
     verifiedQuestionTypes,
 } from "./decision";
+import { imageMime, imageOutput } from "./image-output";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -140,12 +140,6 @@ const WORKSPACES = [
         icon: ImageIcon,
         category: "image",
         operations: ["image"],
-    },
-    {
-        label: "GIF · SVG",
-        icon: LayersIcon,
-        category: "image",
-        operations: ["gif"],
     },
     {
         label: "Voice",
@@ -254,7 +248,7 @@ type PlaygroundResult =
 function promptPlaceholder(
     task: Task,
     editsImage: boolean,
-    format?: "gif" | "svg",
+    format?: keyof typeof imageMime,
 ): string {
     const {
         id,
@@ -275,12 +269,10 @@ function promptPlaceholder(
     return "Describe what you want…";
 }
 
-const FORMAT_MIME = { gif: "image/gif", svg: "image/svg+xml" } as const;
-
 /** MIME subtypes that are not the usual file extension. */
 const FILE_EXTENSIONS: Record<string, string> = {
     "image/jpeg": "jpg",
-    [FORMAT_MIME.svg]: "svg",
+    [imageMime.svg]: "svg",
     "audio/mpeg": "mp3",
     "audio/x-wav": "wav",
     "video/quicktime": "mov",
@@ -323,12 +315,6 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
         .join("|");
 }
 
-// Play can request GIF explicitly. SVG is currently a native output.
-function specialImageFormat(formats: PlaygroundModel["outputFormats"]) {
-    if (formats?.svg?.mode === "native") return "svg";
-    if (formats?.gif) return "gif";
-}
-
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
     if (task.id === "decide")
@@ -336,10 +322,6 @@ function supportsTask(model: PlaygroundModel, task: Task) {
             model.supportedEndpoints.includes("/alpha/decisions") &&
             verifiedQuestionTypes(model.id).length > 0
         );
-    const format = specialImageFormat(model.outputFormats);
-    if (task.id === "gif") return !!format;
-    if (format && model.outputFormats?.[format]?.mode === "native")
-        return false;
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
     return true;
 }
@@ -744,7 +726,7 @@ function ResultDownloadButton({
 }) {
     const format =
         result.type === "image" &&
-        Object.keys(FORMAT_MIME).find((ext) =>
+        Object.keys(imageMime).find((ext) =>
             result.filename.endsWith(`.${ext}`),
         );
     const label = `Download ${format ? format.toUpperCase() : result.type}`;
@@ -997,17 +979,20 @@ export function Playground({
               )
             : (lastInputs ?? {}),
     );
+    const legacyGif =
+        params.task === "gif" || (!params.task && params.tab === "gif");
     const task =
-        TASKS.find((item) => item.id === params.task) ??
+        TASKS.find((item) => item.id === (legacyGif ? "image" : params.task)) ??
         TASKS.find((item) => item.workspace.category === params.tab) ??
         TASKS[0];
     const isDecide = task.id === "decide";
     const activeCategory = task.workspace.category;
-    const isFormatTab = task.id === "gif";
     const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
     const savedDraft =
-        drafts[task.id] ?? (isFormatTab ? undefined : drafts[activeCategory]);
+        (legacyGif ? drafts.gif : undefined) ??
+        drafts[task.id] ??
+        drafts[activeCategory];
     const restored =
         savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {
@@ -1131,11 +1116,6 @@ export function Playground({
         [catalog.models],
     );
 
-    const hasFormatModels = visibleModels.some(
-        (model) =>
-            model.category === "image" &&
-            !!specialImageFormat(model.outputFormats),
-    );
     const currentModel = useMemo(
         () =>
             visibleModels.find(
@@ -1178,26 +1158,38 @@ export function Playground({
     useEffect(() => {
         if (!isHydrated || isLoading || catalogError) return;
         if (visibleModels.length === 0) return;
-        const linked = linkedModelRef.current;
+        const linked = legacyGif ? selectedModel : linkedModelRef.current;
         linkedModelRef.current = "";
         const linkedModel = visibleModels.find(
             (model) =>
                 !!linked &&
                 (model.id === linked || model.aliases.includes(linked)),
         );
-        if (isFormatTab && !hasFormatModels) {
+        if (legacyGif) {
+            const image =
+                linkedModel?.category === "image" ? linkedModel : undefined;
+            const model =
+                image ??
+                visibleModels.find(
+                    (model) =>
+                        model.category === "image" &&
+                        (model.outputFormats?.gif ||
+                            model.outputFormats?.svg?.mode === "native"),
+                ) ??
+                visibleModels.find((model) => model.category === "image");
             setParams((previous) => ({
                 ...previous,
                 task: "image",
                 tab: "image",
-                model:
-                    linkedModel?.category === "image"
-                        ? linkedModel.id
+                model: model?.id,
+                format:
+                    model?.outputFormats?.gif?.mode === "selectable"
+                        ? "gif"
                         : undefined,
             }));
             return;
         }
-        if (linkedModel && (!isFormatTab || supportsTask(linkedModel, task))) {
+        if (linkedModel) {
             const linkedTask = supportsTask(linkedModel, task)
                 ? task
                 : TASKS.find((item) => supportsTask(linkedModel, item));
@@ -1210,15 +1202,13 @@ export function Playground({
                 return;
             }
         }
-        if (selectedModel && ((!isFormatTab && !isDecide) || currentModel))
-            return;
+        if (selectedModel && (!isDecide || currentModel)) return;
         const first = visibleModels.find((model) => supportsTask(model, task));
         if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
         task,
-        isFormatTab,
+        legacyGif,
         isDecide,
-        hasFormatModels,
         currentModel,
         selectedModel,
         visibleModels,
@@ -1256,12 +1246,17 @@ export function Playground({
         currentModel?.videoCapabilities ?? [],
     );
     const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
-    const format = isFormatTab
-        ? specialImageFormat(currentModel?.outputFormats)
-        : undefined;
-    const formatInfo = format
-        ? currentModel?.outputFormats?.[format]
-        : undefined;
+    const {
+        format,
+        info: formatInfo,
+        options: formatOptions,
+        request: outputOptions,
+    } = imageOutput(
+        currentModel?.category === "image"
+            ? currentModel.outputFormats
+            : undefined,
+        params.format,
+    );
     const inputModalities =
         formatInfo?.input_modalities ?? currentModel?.inputModalities;
     const maxReferenceImages = inputModalities?.includes("image")
@@ -1317,8 +1312,8 @@ export function Playground({
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
-    const showPromptInput = isFormatTab
-        ? !!formatInfo?.input_modalities.includes("text")
+    const showPromptInput = formatInfo
+        ? formatInfo.input_modalities.includes("text")
         : currentModel?.category !== "audio" ||
           (transcription?.prompt ??
               currentModel.inputModalities.includes("text"));
@@ -1423,14 +1418,6 @@ export function Playground({
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
-    const gifOptions =
-        format === "gif" && formatInfo?.mode === "selectable"
-            ? {
-                  outputFormat: "gif" as const,
-                  frameCount: formatInfo.frame_defaults?.frame_count,
-                  frameDurationMs: formatInfo.frame_defaults?.frame_duration_ms,
-              }
-            : undefined;
     // Few image models declare resolutions, but /image accepts width and
     // height for all of them. Blank keeps the model's default size.
     const customSize =
@@ -1503,9 +1490,10 @@ export function Playground({
                       ...(isVisualModel
                           ? {
                                 ...imageSize,
-                                output_format: gifOptions?.outputFormat,
-                                frame_count: gifOptions?.frameCount,
-                                frame_duration_ms: gifOptions?.frameDurationMs,
+                                output_format: outputOptions?.outputFormat,
+                                frame_count: outputOptions?.frameCount,
+                                frame_duration_ms:
+                                    outputOptions?.frameDurationMs,
                                 resolution: mediaSettings.resolution,
                                 aspectRatio: videoAspectRatio,
                                 duration: videoDuration?.value,
@@ -1545,11 +1533,13 @@ export function Playground({
 
     useEffect(() => {
         if (!currentModel) return;
+        // Keep still-image references when a different output mode hides them.
+        const limit = currentModel.maxReferenceImages ?? 0;
         setReferenceImages((current) => {
-            if (current.length <= maxReferenceImages) return current;
-            return current.slice(0, maxReferenceImages);
+            if (current.length <= limit) return current;
+            return current.slice(0, limit);
         });
-    }, [maxReferenceImages, currentModel]);
+    }, [currentModel]);
 
     function selectTask(next: Task, modelId?: string) {
         if (next === task) return;
@@ -1594,6 +1584,7 @@ export function Playground({
         setParams((previous) => ({
             ...previous,
             model: modelId,
+            format: undefined,
             size: undefined,
             duration: undefined,
             sound: undefined,
@@ -1706,7 +1697,7 @@ export function Playground({
                 const response = await client.image(trimmedPrompt, {
                     model: currentModel.id,
                     ...imageSize,
-                    ...gifOptions,
+                    ...outputOptions,
                     resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
@@ -1715,7 +1706,7 @@ export function Playground({
                 if (
                     format &&
                     response.contentType.split(";")[0].trim() !==
-                        FORMAT_MIME[format]
+                        imageMime[format]
                 )
                     throw new Error(
                         `Expected a ${format.toUpperCase()} image, but the model returned ${response.contentType}.`,
@@ -1771,7 +1762,7 @@ export function Playground({
                 )));
     const editsImage =
         currentModel?.category === "image" &&
-        (requiresImage || referenceImages.length > 0);
+        (requiresImage || (acceptsImageParam && referenceImages.length > 0));
     const generateLabel = isDecide
         ? "Evaluate"
         : format
@@ -2020,9 +2011,7 @@ export function Playground({
                 aria-label="Playground task"
                 className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
             >
-                {WORKSPACES.filter(
-                    (item) => item.operations[0] !== "gif" || hasFormatModels,
-                ).map((item) => (
+                {WORKSPACES.map((item) => (
                     <ModalityTab
                         key={item.label}
                         active={item === task.workspace}
@@ -2417,6 +2406,22 @@ export function Playground({
                             )}
                             {isVisualModel && (
                                 <>
+                                    <OptionField
+                                        label="Output format"
+                                        options={formatOptions}
+                                        value={format ?? "still"}
+                                        onChange={(value) =>
+                                            setParam(
+                                                "format",
+                                                value === "still" ? "" : value,
+                                            )
+                                        }
+                                        format={(value) =>
+                                            value === "still"
+                                                ? "Still image"
+                                                : value.toUpperCase()
+                                        }
+                                    />
                                     <OptionField
                                         label="Resolution"
                                         options={currentModel.resolutions}

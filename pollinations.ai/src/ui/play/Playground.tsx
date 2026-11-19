@@ -473,8 +473,8 @@ function ModelPicker({
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
 }) {
-    const selected = models.find((model) => model.id === selectedModel);
-
+    const swipeStart = useRef<{ x: number; y: number } | null>(null);
+    const swiped = useRef(false);
     const sorted = useMemo(
         () =>
             [...models].sort((a, b) =>
@@ -485,9 +485,41 @@ function ModelPicker({
             ),
         [models],
     );
+    const index = sorted.findIndex((model) => model.id === selectedModel);
+    const selected = sorted[index];
+    const canStep = !isLoading && index >= 0 && sorted.length > 1;
+
+    function step(direction: number) {
+        const next = (index + direction + sorted.length) % sorted.length;
+        onSelectModel(sorted[next].id);
+    }
 
     return (
-        <div className="w-fit min-w-0 max-w-full">
+        <div className="flex w-fit min-w-0 max-w-full items-center gap-1">
+            {canStep &&
+                ([-1, 1] as const).map((direction) => {
+                    const label =
+                        direction === -1 ? "Previous model" : "Next model";
+                    return (
+                        <Button
+                            key={direction}
+                            size="icon"
+                            intent="neutral"
+                            className="shrink-0"
+                            aria-label={label}
+                            title={label}
+                            onClick={() => step(direction)}
+                        >
+                            <ChevronIcon
+                                className={
+                                    direction === -1
+                                        ? "rotate-90"
+                                        : "-rotate-90"
+                                }
+                            />
+                        </Button>
+                    );
+                })}
             <Dropdown
                 portalled={false}
                 className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
@@ -497,10 +529,43 @@ function ModelPicker({
                         intent="neutral"
                         size="lg"
                         disabled={isLoading || models.length === 0}
-                        className="w-fit max-w-full self-start justify-between gap-2"
+                        className="min-w-0 touch-pan-y justify-between gap-2"
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
+                        onPointerDown={(event) => {
+                            swiped.current = false;
+                            swipeStart.current =
+                                canStep &&
+                                event.pointerType === "touch" &&
+                                event.isPrimary
+                                    ? { x: event.clientX, y: event.clientY }
+                                    : null;
+                        }}
+                        onPointerCancel={() => {
+                            swipeStart.current = null;
+                        }}
+                        onPointerUp={(event) => {
+                            const start = swipeStart.current;
+                            swipeStart.current = null;
+                            if (!start || !canStep) return;
+                            const dx = event.clientX - start.x;
+                            if (
+                                Math.abs(dx) < 40 ||
+                                Math.abs(dx) <=
+                                    Math.abs(event.clientY - start.y)
+                            )
+                                return;
+                            swiped.current = true;
+                            step(dx < 0 ? 1 : -1);
+                        }}
+                        onClickCapture={(event) => {
+                            if (swiped.current && event.detail > 0) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            swiped.current = false;
+                        }}
                     >
-                        <span className="truncate">
+                        <span className="truncate" aria-live="polite">
                             {isLoading
                                 ? "Loading models…"
                                 : (selected?.title ?? "No models available")}

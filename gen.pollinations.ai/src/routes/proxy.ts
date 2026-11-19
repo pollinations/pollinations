@@ -303,7 +303,7 @@ function filterEntriesByPermissions(
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
-    // A Quest Pollen only key can't use paid-only models whatever the balance.
+    // A Quest-balance-only key can't use paid-only models whatever the balance.
     if (c.var.auth.apiKey?.questPollenOnly) return false;
     return (user.packBalance ?? 0) > 0;
 }
@@ -473,6 +473,7 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Models (OpenAI-compatible)",
             description:
                 'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, decision, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
@@ -511,6 +512,7 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/models/:model{.+}",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "Retrieve Model (OpenAI-compatible)",
             description:
                 "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Manual visibility, API-key model permissions, and paid-only rules match the list endpoint. Retrieval does not apply the automatic reliability filter. Metadata matches the `/v1/models?reliability=all` entry, including `health`. Returns 404 when the model does not exist or is not accessible to the caller.",
@@ -558,6 +560,7 @@ export const proxyRoutes = new Hono<Env>()
         "/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Models",
             description:
                 "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, decision, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -579,6 +582,7 @@ export const proxyRoutes = new Hono<Env>()
         "/3d/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List 3D Models",
             description:
                 "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -600,6 +604,7 @@ export const proxyRoutes = new Hono<Env>()
         "/image/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Image & Video Models",
             description:
                 "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here. Check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -621,6 +626,7 @@ export const proxyRoutes = new Hono<Env>()
         "/video/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Video Models",
             description:
                 "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -642,6 +648,7 @@ export const proxyRoutes = new Hono<Env>()
         "/text/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Text Models (Detailed)",
             description:
                 "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -665,6 +672,7 @@ export const proxyRoutes = new Hono<Env>()
         "/audio/models",
         describeRoute({
             tags: ["🤖 Models"],
+            security: [],
             summary: "List Audio Models",
             description:
                 "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -688,6 +696,7 @@ export const proxyRoutes = new Hono<Env>()
         "/embeddings/models",
         describeRoute({
             tags: ["🔢 Embeddings"],
+            security: [],
             summary: "List Embedding Models",
             description:
                 "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends the Quest balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
@@ -998,7 +1007,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
-                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
+                "Generate an image from a text prompt. Returns JPEG, PNG, WebP, GIF, or SVG depending on the selected model.",
                 "",
                 "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
                 "",
@@ -1267,6 +1276,7 @@ export const proxyRoutes = new Hono<Env>()
                 "OpenAI-compatible image generation endpoint.",
                 "",
                 'Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).',
+                "`hotshotco/hotshot-xl` returns a 512×512 animated GIF when selected. Omit `output_format` for this model.",
                 "",
                 FLUX_SIZE_DESCRIPTION,
                 "",

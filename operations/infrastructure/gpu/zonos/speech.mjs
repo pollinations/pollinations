@@ -30,21 +30,43 @@ async function handleSpeech(request, response) {
     let ffmpeg;
     let exited;
     try {
+        const contentType = request.headers["content-type"] ?? "";
+        const multipart = contentType.startsWith("multipart/form-data");
+        // Gen accepts 20 MiB of reference audio, plus the text and form headers.
+        const maxBytes = (multipart ? 20 * 1024 * 1024 : 0) + 64 * 1024;
         const chunks = [];
         let bytes = 0;
         for await (const chunk of request) {
             bytes += chunk.length;
-            if (bytes > 64 * 1024) {
+            if (bytes > maxBytes) {
                 unavailable(response, 413, "Request is too large");
                 return;
             }
             chunks.push(chunk);
         }
         let input;
+        let reference;
         try {
-            input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            const body = Buffer.concat(chunks);
+            if (multipart) {
+                const form = await new Response(body, {
+                    headers: { "content-type": contentType },
+                }).formData();
+                reference = form.get("reference_audio");
+                if (!(reference instanceof File) || !reference.size) {
+                    unavailable(
+                        response,
+                        400,
+                        "Expected a reference audio file",
+                    );
+                    return;
+                }
+                input = { text: form.get("text"), format: form.get("format") };
+            } else {
+                input = JSON.parse(body.toString("utf8"));
+            }
         } catch {
-            unavailable(response, 400, "Invalid JSON");
+            unavailable(response, 400, "Invalid speech request");
             return;
         }
         if (
@@ -61,11 +83,27 @@ async function handleSpeech(request, response) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
                 text: input.text,
-                speaker_embedding_id: speakerId,
+                ...(reference
+                    ? {
+                          speaker_mode: "embedding",
+                          speaker_audio_base64: Buffer.from(
+                              await reference.arrayBuffer(),
+                          ).toString("base64"),
+                      }
+                    : { speaker_embedding_id: speakerId }),
                 stream: true,
             }),
             signal: abort.signal,
         });
+        if (reference && upstream.status === 400) {
+            await upstream.body?.cancel();
+            unavailable(
+                response,
+                400,
+                "ZONOS could not process the reference audio",
+            );
+            return;
+        }
         const sampleRate = Number(upstream.headers.get("x-audio-sample-rate"));
         if (
             !upstream.ok ||
@@ -85,7 +123,7 @@ async function handleSpeech(request, response) {
         }
         const pcm = input.format === "pcm";
         ffmpeg = spawn(
-            "ffmpeg",
+            "/usr/bin/ffmpeg",
             [
                 "-loglevel",
                 "error",

@@ -13,6 +13,14 @@ classification_answer = manager.classification_answer
 
 
 class ClassificationTest(unittest.TestCase):
+    def test_quest_label_classifies_issues_and_linked_prs(self):
+        with patch.object(manager, "IS_PULL_REQUEST", False):
+            self.assertEqual(manager.item_source({"QUEST"}), "Quests")
+        linked = [{"labels": {"nodes": [{"name": "QUEST"}]}}]
+        with patch.object(manager, "IS_PULL_REQUEST", True), \
+             patch.object(manager, "closing_issues", return_value=linked):
+            self.assertEqual(manager.item_source(set()), "Quests")
+
     def test_pr_type_has_no_issue_priority(self):
         for work_type in ("Bug", "Feature", "Task"):
             self.assertEqual(classification_answer({"area": "Models", "type": work_type, "priority": "High"}, ["Models"], True),
@@ -110,8 +118,8 @@ class RewardCommentTest(unittest.TestCase):
 
     def test_default_reward_is_announced_once_on_opening(self):
         opened, item = {"action": "opened"}, {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}}
-        self.assertTrue(self.post(opened, item).startswith("Reward: $5 in Quest balance\n"))
-        self.assertTrue(self.post(opened, item, is_pr=False).startswith("Reward: $2 in Quest balance\n"))
+        self.assertTrue(self.post(opened, item).startswith("Earns 🌱 $5 in Quest balance\n"))
+        self.assertTrue(self.post(opened, item, is_pr=False).startswith("Earns 🌱 $2 in Quest balance\n"))
         # Bots, re-runs (the manual dispatch has no action) and items from before the rollout get none.
         self.assertIsNone(self.post(opened, {**item, "user": {"type": "Bot"}}))
         self.assertIsNone(self.post({}, item))

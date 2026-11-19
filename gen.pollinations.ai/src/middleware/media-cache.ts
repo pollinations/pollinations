@@ -107,7 +107,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             }
             return {
                 response: captured,
-                write: c.env.MEDIA.put(cacheKey, stored),
+                write: c.env.MEDIA.put(cacheKey, stored, c.var.requestId),
             };
         },
     };

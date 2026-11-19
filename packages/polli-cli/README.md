@@ -98,7 +98,7 @@ polli quests --claimed       # already-completed and earned quest status
 Two kinds of keys:
 
 - **Secret (`sk_`)** — backend use, full access. Default.
-- **App Key (`pk_`)** — identifies your app in Pollinations Connect; never authenticates requests.
+- **App Key (`pk_`)** — identifies your app in Pollinations Pay; never authenticates requests.
 
 ```bash
 polli keys list

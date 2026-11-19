@@ -34,7 +34,7 @@ type ChartProps = {
 
 // The y-axis sits on the right, under the unit switch. It is never narrower
 // than 6 characters at the 10px label size ("2.5K", "0.0015"), so switching
-// unit or period doesn't move the bars; only tiny Pollen scales
+// unit or period doesn't move the bars; only small dollar amounts
 // ("0.00000005") widen it. The plot starts at the table's text inset.
 const AXIS_GAP = 8;
 const AXIS_CHAR_WIDTH = 6;

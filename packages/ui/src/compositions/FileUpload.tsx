@@ -36,12 +36,7 @@ function isPreviewableImage(file: File): boolean {
 
 function PreviewPlaceholder({ icon }: { icon: ReactNode }) {
     return (
-        <div
-            className={cn(
-                "polli:flex polli:items-center polli:justify-center polli:rounded-xl polli:bg-theme-bg-pale polli:text-theme-text-soft",
-                "polli:h-20 polli:w-20",
-            )}
-        >
+        <div className="polli:flex polli:size-full polli:items-center polli:justify-center polli:text-theme-text-soft">
             {icon}
         </div>
     );
@@ -120,7 +115,7 @@ function FilePreview({
             ref={canvasRef}
             role="img"
             aria-label={file.name}
-            className="polli:h-20 polli:w-20 polli:rounded-xl"
+            className="polli:block polli:size-full"
             width={PREVIEW_SIZE}
             height={PREVIEW_SIZE}
         />
@@ -211,7 +206,10 @@ export function FileUpload({
                             title={file.name}
                             className="polli:relative polli:list-none"
                         >
-                            <div {...mediaTileTint(kind)}>
+                            <div
+                                className="polli:relative polli:box-border polli:size-20 polli:overflow-hidden polli:rounded-xl polli:border-2 polli:border-theme-border polli:bg-theme-bg-pale"
+                                {...mediaTileTint(kind)}
+                            >
                                 <FilePreview
                                     file={file}
                                     placeholderIcon={
@@ -220,8 +218,10 @@ export function FileUpload({
                                         )
                                     }
                                 />
+                                {kind === "video" && (
+                                    <VideoThumbnail file={file} />
+                                )}
                             </div>
-                            {kind === "video" && <VideoThumbnail file={file} />}
                             <span className="polli:sr-only">{file.name}</span>
                             <MediaRemoveButton
                                 file={file}

@@ -328,11 +328,20 @@ main > * {
     display: none;
 }
 /* Align labels with the first control row, including tall upload tiles. */
-.play-parameter-grid [data-scope="field"][data-part="root"] {
+:is(.play-reference-inputs, .play-parameter-grid) [data-scope="field"][data-part="root"] {
     align-items: start;
 }
-.play-parameter-grid [data-scope="field"][data-part="root"] > :first-child {
+:is(.play-reference-inputs, .play-parameter-grid) [data-scope="field"][data-part="root"] > :first-child {
     min-height: 2rem;
+}
+/* Give previews the label's space on phones. Frames / Media stays beside it. */
+@container play-inputs (max-width: 28rem) {
+    .play-reference-inputs [data-scope="field"][data-part="root"] {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+    .play-reference-inputs [data-scope="field"][data-part="root"] > :not(:first-child, [role="group"]) {
+        grid-column: 1 / -1;
+    }
 }
 /* Two 20rem fields plus the gutter. A lone field uses the full width. */
 @container play-inputs (min-width: 42rem) {

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import type { TileModality } from "../lib/media-action-tile.ts";
-import { modalityColorVar } from "../modules/gen/themes.ts";
+import { cn } from "../lib/cn.ts";
+import { mediaTileTint, type TileModality } from "../lib/media-action-tile.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import {
     AudioIcon,
@@ -38,18 +38,26 @@ export function MediaRemoveButton({
     const Icon = kind ? mediaTypeIcons[kind] : XIcon;
     const icon = (
         <Icon
-            className="polli:size-4"
-            style={kind && { color: modalityColorVar(kind) }}
+            className="polli:size-4 polli:text-theme-text-soft"
+            strokeWidth={2.25}
         />
     );
+    const badge =
+        "polli:box-border polli:size-7 polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-fill-wash polli:shadow-sm";
     return (
-        <div className="polli:absolute polli:-top-2 polli:right-1">
+        <div
+            className="polli:absolute polli:top-1 polli:right-1"
+            {...mediaTileTint(kind)}
+        >
             {onRemove ? (
                 <IconButton
                     intent="danger"
                     title={`Remove ${file.name}`}
                     aria-description={kind}
-                    className="polli:group polli:bg-black/85 polli:focus-visible:bg-intent-danger-bg-hover"
+                    className={cn(
+                        badge,
+                        "polli:group polli:focus-visible:bg-intent-danger-bg-hover",
+                    )}
                     onClick={onRemove}
                 >
                     <span className="polli:group-hover:hidden polli:group-focus-visible:hidden">
@@ -62,7 +70,10 @@ export function MediaRemoveButton({
                     <span
                         role="img"
                         aria-label={kind}
-                        className="polli:grid polli:size-6 polli:place-items-center polli:rounded polli:bg-black/85"
+                        className={cn(
+                            badge,
+                            "polli:grid polli:place-items-center",
+                        )}
                     >
                         {icon}
                     </span>

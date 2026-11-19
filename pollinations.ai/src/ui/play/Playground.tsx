@@ -1909,95 +1909,8 @@ export function Playground({
                                 />
                             </FieldStack>
                         )}
-                        <div className="play-parameter-grid">
-                            {currentModel && currentModel.voices.length > 0 && (
-                                <VoicePicker
-                                    key={currentModel.id}
-                                    voices={currentModel.voices}
-                                    value={selectedVoice}
-                                    onChange={(value) =>
-                                        setParam("voice", value)
-                                    }
-                                />
-                            )}
+                        <div className="play-reference-inputs empty:hidden">
                             {audioInput}
-
-                            {isStemSeparation && (
-                                <OptionField
-                                    label="Stems"
-                                    options={["2", "6"]}
-                                    value={
-                                        stemVariationId === "two_stems_v1"
-                                            ? "2"
-                                            : "6"
-                                    }
-                                    onChange={(value) =>
-                                        setParam("stems", value)
-                                    }
-                                />
-                            )}
-                            {transcription?.language && (
-                                <FieldStack
-                                    label="Language"
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <Input
-                                        className="max-w-40"
-                                        placeholder="Auto (e.g. en)"
-                                        value={language}
-                                        onChange={(event) =>
-                                            setParam(
-                                                "language",
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                </FieldStack>
-                            )}
-
-                            {showsAudioLength && (
-                                <FieldStack
-                                    label={
-                                        <span className="font-normal">
-                                            Duration
-                                        </span>
-                                    }
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <Input
-                                            className="w-24 min-w-0"
-                                            aria-label="Duration in seconds"
-                                            type="number"
-                                            hideNumberSteppers
-                                            min={0}
-                                            step="any"
-                                            placeholder={
-                                                currentModel.defaultDuration?.toString() ??
-                                                "Auto"
-                                            }
-                                            value={audioLength}
-                                            onChange={(event) =>
-                                                setParam(
-                                                    "length",
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        <Text
-                                            as="span"
-                                            size="sm"
-                                            tone="muted"
-                                            aria-hidden="true"
-                                        >
-                                            seconds
-                                        </Text>
-                                    </div>
-                                </FieldStack>
-                            )}
-
                             {isReferenceImageListMode && (
                                 <div className="min-w-0">
                                     <FieldStack
@@ -2193,6 +2106,94 @@ export function Playground({
                                             )) && <UploadPrivacyNote />}
                                     </FieldStack>
                                 </fieldset>
+                            )}
+                        </div>
+                        <div className="play-parameter-grid">
+                            {currentModel && currentModel.voices.length > 0 && (
+                                <VoicePicker
+                                    key={currentModel.id}
+                                    voices={currentModel.voices}
+                                    value={selectedVoice}
+                                    onChange={(value) =>
+                                        setParam("voice", value)
+                                    }
+                                />
+                            )}
+
+                            {isStemSeparation && (
+                                <OptionField
+                                    label="Stems"
+                                    options={["2", "6"]}
+                                    value={
+                                        stemVariationId === "two_stems_v1"
+                                            ? "2"
+                                            : "6"
+                                    }
+                                    onChange={(value) =>
+                                        setParam("stems", value)
+                                    }
+                                />
+                            )}
+                            {transcription?.language && (
+                                <FieldStack
+                                    label="Language"
+                                    orientation="inline"
+                                    className="min-w-0"
+                                >
+                                    <Input
+                                        className="max-w-40"
+                                        placeholder="Auto (e.g. en)"
+                                        value={language}
+                                        onChange={(event) =>
+                                            setParam(
+                                                "language",
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </FieldStack>
+                            )}
+
+                            {showsAudioLength && (
+                                <FieldStack
+                                    label={
+                                        <span className="font-normal">
+                                            Duration
+                                        </span>
+                                    }
+                                    orientation="inline"
+                                    className="min-w-0"
+                                >
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <Input
+                                            className="w-24 min-w-0"
+                                            aria-label="Duration in seconds"
+                                            type="number"
+                                            hideNumberSteppers
+                                            min={0}
+                                            step="any"
+                                            placeholder={
+                                                currentModel.defaultDuration?.toString() ??
+                                                "Auto"
+                                            }
+                                            value={audioLength}
+                                            onChange={(event) =>
+                                                setParam(
+                                                    "length",
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <Text
+                                            as="span"
+                                            size="sm"
+                                            tone="muted"
+                                            aria-hidden="true"
+                                        >
+                                            seconds
+                                        </Text>
+                                    </div>
+                                </FieldStack>
                             )}
                             {isVisualModel && (
                                 <>

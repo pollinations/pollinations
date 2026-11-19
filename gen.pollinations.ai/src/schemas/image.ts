@@ -144,7 +144,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
 
     output_format: z.enum(["png", "webp", "gif"]).optional().meta({
         description:
-            "Animated GIF generation is supported by GPT Image 2.6 Flare and Sunburst. WebP is supported by Flare. GPT Image 2.6 requests default to upstream PNG.",
+            "Animated GIF generation is supported by GPT Image 2.6 Flare and Sunburst. WebP is supported by Flare.",
     }),
     frame_count: z.coerce.number().int().min(2).max(16).optional().meta({
         description: "Required for GIF output; 2 to 16 frames.",

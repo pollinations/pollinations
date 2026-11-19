@@ -1618,9 +1618,7 @@ export function Playground({
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
-                orientation={
-                    uploadMedia.includes("audio") ? "stacked" : "inline"
-                }
+                orientation="inline"
                 helper={uploadMedia.includes("audio") ? clipStatus : undefined}
                 className="min-w-0"
                 label={

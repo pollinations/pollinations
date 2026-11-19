@@ -501,9 +501,10 @@ function ModelPicker({
             <Button
                 size="icon"
                 intent="neutral"
-                className={
-                    direction === 1 ? "shrink-0 lg:order-last" : "shrink-0"
-                }
+                className={cn(
+                    "shrink-0 lg:self-start",
+                    direction === 1 && "lg:order-last",
+                )}
                 aria-label={label}
                 title={label}
                 onClick={() => step(direction)}
@@ -516,10 +517,10 @@ function ModelPicker({
     }
 
     return (
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:gap-4">
             <div className="flex min-w-0 items-center gap-2 lg:contents">
                 {stepButton(-1)}
-                <div className="min-w-0 lg:max-w-[45%]">
+                <div className="w-64 min-w-0">
                     <Dropdown
                         portalled={false}
                         className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
@@ -529,7 +530,8 @@ function ModelPicker({
                                 intent="neutral"
                                 size="lg"
                                 disabled={isLoading || models.length === 0}
-                                className="max-w-full touch-pan-y justify-between gap-2"
+                                className="w-full touch-pan-y justify-between gap-2"
+                                title={selected?.title}
                                 aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
                                 onPointerDown={(event) => {
                                     swiped.current = false;
@@ -1717,7 +1719,7 @@ export function Playground({
                 ))}
             </fieldset>
 
-            <div className="grid overflow-clip">
+            <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (
                     <div className="pt-4">
                         <Alert intent="danger">

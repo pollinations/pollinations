@@ -1665,28 +1665,35 @@ export function Playground({
         ));
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            <ButtonGroup aria-label="Playground task">
-                {WORKSPACES.map((item) => (
-                    <ModalityTab
-                        key={item.label}
-                        active={item === task.workspace}
-                        size="sm"
-                        modality={item.category}
-                        icon={CATEGORY_ICON[item.category]}
-                        onClick={() => {
-                            if (item === task.workspace) return;
-                            const next =
-                                lastTask.current.get(item) ??
-                                TASKS.find(
-                                    (candidate) => candidate.workspace === item,
-                                );
-                            if (next) selectTask(next);
-                        }}
-                    >
-                        {item.label}
-                    </ModalityTab>
-                ))}
-            </ButtonGroup>
+            <div className="@container">
+                <fieldset
+                    aria-label="Playground task"
+                    className="m-0 grid min-w-0 grid-cols-2 gap-2 border-0 p-0 @min-[36rem]:flex"
+                >
+                    {WORKSPACES.map((item) => (
+                        <ModalityTab
+                            key={item.label}
+                            active={item === task.workspace}
+                            size="lg"
+                            className="max-sm:px-2"
+                            modality={item.category}
+                            icon={CATEGORY_ICON[item.category]}
+                            onClick={() => {
+                                if (item === task.workspace) return;
+                                const next =
+                                    lastTask.current.get(item) ??
+                                    TASKS.find(
+                                        (candidate) =>
+                                            candidate.workspace === item,
+                                    );
+                                if (next) selectTask(next);
+                            }}
+                        >
+                            {item.label}
+                        </ModalityTab>
+                    ))}
+                </fieldset>
+            </div>
 
             <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (
@@ -1707,79 +1714,79 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <ModelPicker
+                            groups={groups}
+                            selectedModel={selectedModel}
+                            isLoading={isLoading || !isHydrated}
+                            onSelectModel={selectModel}
+                        />
+                        {currentModel && (
+                            <>
+                                {currentModel.description && (
+                                    <Text>{currentModel.description}</Text>
+                                )}
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                    {[
+                                        {
+                                            label: "Cost",
+                                            value: cost,
+                                            detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
+                                        },
+                                        {
+                                            label: "Time",
+                                            value: time,
+                                            detail: "Average response time for successful requests over the last 7 days.",
+                                        },
+                                    ].map(
+                                        ({ label, value, detail }) =>
+                                            value && (
+                                                <Tooltip
+                                                    key={label}
+                                                    ariaLabel={`${label} ${value}`}
+                                                    content={detail}
+                                                    side="top"
+                                                    align="center"
+                                                    tapEnabled
+                                                >
+                                                    <Chip
+                                                        size="md"
+                                                        data-theme="neutral"
+                                                        className="tabular-nums"
+                                                    >
+                                                        <span className="text-theme-text-muted">
+                                                            {label}
+                                                        </span>{" "}
+                                                        {value}
+                                                    </Chip>
+                                                </Tooltip>
+                                            ),
+                                    )}
+                                    <InlineLink
+                                        href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                        aria-label={`Pricing for ${currentModel.title} on Enter`}
+                                        tone="quiet"
+                                        style={{ fontWeight: "inherit" }}
+                                    >
+                                        Pricing
+                                    </InlineLink>
+                                    <InlineLink
+                                        href="https://model-monitor.pollinations.ai"
+                                        tone="quiet"
+                                        style={{ fontWeight: "inherit" }}
+                                    >
+                                        Model Monitor
+                                    </InlineLink>
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <Surface
                         as="section"
                         variant="card"
                         aria-label="Generation inputs"
                         className="flex flex-col gap-5"
                     >
-                        <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
-                            <ModelPicker
-                                groups={groups}
-                                selectedModel={selectedModel}
-                                isLoading={isLoading || !isHydrated}
-                                onSelectModel={selectModel}
-                            />
-                            {currentModel && (
-                                <>
-                                    {currentModel.description && (
-                                        <Text>{currentModel.description}</Text>
-                                    )}
-                                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                                        {[
-                                            {
-                                                label: "Cost",
-                                                value: cost,
-                                                detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
-                                            },
-                                            {
-                                                label: "Time",
-                                                value: time,
-                                                detail: "Average response time for successful requests over the last 7 days.",
-                                            },
-                                        ].map(
-                                            ({ label, value, detail }) =>
-                                                value && (
-                                                    <Tooltip
-                                                        key={label}
-                                                        ariaLabel={`${label} ${value}`}
-                                                        content={detail}
-                                                        side="top"
-                                                        align="center"
-                                                        tapEnabled
-                                                    >
-                                                        <Chip
-                                                            size="md"
-                                                            data-theme="neutral"
-                                                            className="tabular-nums"
-                                                        >
-                                                            <span className="text-theme-text-muted">
-                                                                {label}
-                                                            </span>{" "}
-                                                            {value}
-                                                        </Chip>
-                                                    </Tooltip>
-                                                ),
-                                        )}
-                                        <InlineLink
-                                            href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                            aria-label={`Pricing for ${currentModel.title} on Enter`}
-                                            tone="quiet"
-                                            style={{ fontWeight: "inherit" }}
-                                        >
-                                            Pricing
-                                        </InlineLink>
-                                        <InlineLink
-                                            href="https://model-monitor.pollinations.ai"
-                                            tone="quiet"
-                                            style={{ fontWeight: "inherit" }}
-                                        >
-                                            Model Monitor
-                                        </InlineLink>
-                                    </div>
-                                </>
-                            )}
-                        </header>
                         {showPromptInput && (
                             <FieldStack
                                 label={
@@ -2349,53 +2356,51 @@ export function Playground({
                                 </div>
                             )}
                         </div>
+                    </Surface>
 
-                        {/* Not connected is not a broken state, so the button
+                    {/* Not connected is not a broken state, so the button
                             becomes the connect action. When it genuinely
                             cannot fire, the line beside it says why. */}
-                        <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-theme-text-strong/10 pt-4">
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                // The page's main action: nectar whether it signs
-                                // in or generates. Busy fills with honey and shows
-                                // Polli. aria-disabled, not disabled, so focus
-                                // stays on the button; generate() ignores repeats.
-                                disabled={!!blockedReason}
-                                aria-disabled={isGenerating || undefined}
-                                aria-busy={isGenerating}
-                                aria-describedby={
-                                    clipError && blockedReason === clipError
-                                        ? clipStatusId
-                                        : statusId
-                                }
-                                icon={
-                                    needsSignIn ? undefined : <GenerateIcon />
-                                }
-                                onClick={run}
-                                className={cn(
-                                    needsSignIn && "h-12 gap-2 px-5 py-0",
-                                )}
-                            >
-                                {needsSignIn ? (
-                                    <>
-                                        <BrandMark className="h-6 w-6" />
-                                        {connectLabel}
-                                    </>
-                                ) : (
-                                    generateText
-                                )}
-                            </Button>
-                            <Text
-                                id={statusId}
-                                size="xs"
-                                tone="muted"
-                                className="empty:hidden max-sm:w-full"
-                            >
-                                {blockedReason !== clipError && blockedReason}
-                            </Text>
-                        </footer>
-                    </Surface>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <Button
+                            size="lg"
+                            intent="brand"
+                            // The page's main action: nectar whether it signs
+                            // in or generates. Busy fills with honey and shows
+                            // Polli. aria-disabled, not disabled, so focus
+                            // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
+                            aria-disabled={isGenerating || undefined}
+                            aria-busy={isGenerating}
+                            aria-describedby={
+                                clipError && blockedReason === clipError
+                                    ? clipStatusId
+                                    : statusId
+                            }
+                            icon={needsSignIn ? undefined : <GenerateIcon />}
+                            onClick={run}
+                            className={cn(
+                                needsSignIn && "h-12 gap-2 px-5 py-0",
+                            )}
+                        >
+                            {needsSignIn ? (
+                                <>
+                                    <BrandMark className="h-6 w-6" />
+                                    {connectLabel}
+                                </>
+                            ) : (
+                                generateText
+                            )}
+                        </Button>
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="empty:hidden max-sm:w-full"
+                        >
+                            {blockedReason !== clipError && blockedReason}
+                        </Text>
+                    </div>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

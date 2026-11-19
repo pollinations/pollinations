@@ -19,10 +19,13 @@ or when you only need one quick call.
 - Authenticated: header `Authorization: Bearer $POLLINATIONS_API_KEY`
   (an existing key, or a user-approved device authorization below).
 - Same key permissions, billing and caching as the CLI path.
-- Without a key, `GET /image/{prompt}` still answers when the same prompt and
-  `seed` are already in the shared cache (`x-cache: HIT`). That is an image
-  another caller generated, not a new generation: a fresh prompt returns
-  `401`. Check `x-cache` before trusting a keyless `200`.
+- Without a key, `GET /image/{prompt}` still answers when that exact request
+  is already in the shared cache (`x-cache: HIT`). The cache key is built from
+  the path and the query parameters, so the prompt, `seed`, `width`, `model`
+  and the rest have to match the cached call; change one and the keyless
+  request misses the cache and returns `401`. That is an image another caller
+  generated, not a new generation. Check `x-cache` before trusting a keyless
+  `200`.
 
 ## Get a key without copying one into the agent
 
@@ -110,7 +113,7 @@ https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768
 ```
 
 ```bash
-curl -sS -L -o out.jpg "https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768"
+curl -sS -L --fail -o out.jpg "https://image.pollinations.ai/prompt/a%20cat%20in%20space?width=768&height=768"
 ```
 
 What that route does:
@@ -120,8 +123,10 @@ What that route does:
   same URL.
 - Output is capped at 768x768, the model is `sana`, and `model=` is ignored.
 - The `pollinations.ai` wordmark is burned in; `nologo=true` does not remove it.
-- A refusal body is JSON, not an image. Check the content type before saving
-  the response to a `.jpg`.
+- A refusal body is JSON, not an image. `--fail` makes curl exit non-zero and
+  write no file on a `402`, so a rate-limited response is never saved as
+  `out.jpg`; retry after the `retry-after` header. Check the content type
+  before saving any response to a `.jpg`.
 
 A fresh image carries `x-auth-status: unauthenticated` and `x-cache: MISS`,
 so a real generation and a cached one are easy to tell apart.

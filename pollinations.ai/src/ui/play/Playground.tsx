@@ -26,6 +26,7 @@ import {
     FileUpload,
     type FileUploadProps,
     GitBranchIcon,
+    GitHubIcon,
     ImageIcon,
     InfoTip,
     InlineLink,
@@ -34,13 +35,11 @@ import {
     MicIcon,
     ScrollArea,
     Slider,
-    SpeakingHeadIcon,
     StableLabel,
     Surface,
     TabButton,
     Text,
     Textarea,
-    TranscribeIcon,
     UploadedFileTile,
     VideoIcon,
     VideoRecorder,
@@ -67,7 +66,12 @@ import {
     useSyncExternalStore,
 } from "react";
 import { API_BASE_URL, ENTER_URL } from "../../config";
-import { playgroundModelOverride } from "../../data/playground-model-overrides";
+import {
+    audioTaskIds,
+    audioTasks,
+    playgroundModelOverride,
+    videoFilters,
+} from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
@@ -83,7 +87,13 @@ import {
     URGENCY_EXAMPLE,
     verifiedQuestionTypes,
 } from "./decision";
-import { imageMime, imageOutput } from "./image-output";
+import {
+    type ImageFormats,
+    imageFormatLabel,
+    imageMime,
+    imageOutput,
+    previewImageFormats,
+} from "./image-output";
 import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
@@ -118,7 +128,7 @@ type PlaygroundModel = MediaModelMetadata & {
     description: string;
     category: ModelCategory;
     inputModalities: string[];
-    outputFormats?: ModelInfo["output_formats"];
+    outputFormats?: ImageFormats;
     supportedEndpoints: string[];
     voices: string[];
     paidOnly: boolean;
@@ -142,22 +152,10 @@ const WORKSPACES = [
         operations: ["image"],
     },
     {
-        label: "Voice",
-        icon: SpeakingHeadIcon,
-        category: "audio",
-        operations: ["speech-generation", "voice-changer", "voice-isolator"],
-    },
-    {
-        label: "Transcribe",
-        icon: TranscribeIcon,
-        category: "audio",
-        operations: ["transcription"],
-    },
-    {
-        label: "Music",
+        label: "Audio",
         icon: AudioIcon,
         category: "audio",
-        operations: ["music-and-sound-effects", "stem-separation"],
+        operations: audioTaskIds,
     },
     {
         label: "Decide",
@@ -187,7 +185,10 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         description: model.description ?? "",
         category: model.category,
         inputModalities: model.input_modalities ?? [],
-        outputFormats: model.output_formats,
+        outputFormats: previewImageFormats(
+            model,
+            playgroundModelOverride(id)?.imageFormats,
+        ),
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
         resolutions: model.resolutions ?? [],
@@ -491,6 +492,81 @@ function VoicePicker({
     );
 }
 
+const imageFilters = ["All", "Edit", "GIF", "SVG", "4K"] as const;
+const audioFilters = [
+    "All",
+    ...new Set(audioTaskIds.map((task) => audioTasks[task].group)),
+];
+
+function audioGroupForModel(model: PlaygroundModel) {
+    const task = audioTaskForModel(model);
+    if (!task) return undefined;
+    const override = playgroundModelOverride(model.id);
+    return (
+        (override?.audioTask === task && override.audioGroup) ||
+        audioTasks[task].group
+    );
+}
+
+function acceptsFramePair(model: PlaygroundModel) {
+    return (
+        model.inputModalities.includes("image") &&
+        (model.maxReferenceImages ?? 0) >= 2 &&
+        model.videoCapabilities.includes("start_frame") &&
+        model.videoCapabilities.includes("end_frame")
+    );
+}
+
+function matchesModelFilter(model: PlaygroundModel, filter: string) {
+    if (filter === "All") return true;
+    if (model.category === "audio") return audioGroupForModel(model) === filter;
+    if (model.category === "video") {
+        if (filter === videoFilters.end_frame) return acceptsFramePair(model);
+        if (filter === videoFilters["4k"])
+            return model.resolutions.some(
+                (size) => size.toLowerCase() === "4k",
+            );
+        if (filter === videoFilters.reference_videos)
+            return model.videoCapabilities.includes("reference_videos");
+        if (filter === videoFilters.audio_output)
+            return model.videoCapabilities.includes("audio_output");
+        return false;
+    }
+    switch (filter) {
+        case "Edit":
+            return (
+                model.inputModalities.includes("image") &&
+                (model.maxReferenceImages ?? 0) > 0
+            );
+        case "GIF":
+            return !!model.outputFormats?.gif;
+        case "SVG":
+            return model.outputFormats?.svg?.mode === "native";
+        case "4K":
+            return model.resolutions.length
+                ? model.resolutions.some((size) => size.toLowerCase() === "4k")
+                : !!playgroundModelOverride(model.id)?.supports4K;
+    }
+}
+
+function modelHighlights(model: PlaygroundModel) {
+    if (model.category === "video")
+        return [videoFilters.reference_videos, videoFilters["4k"]].filter(
+            (filter) => matchesModelFilter(model, filter),
+        );
+    if (model.category === "audio") {
+        const group = audioGroupForModel(model);
+        return group ? [group] : undefined;
+    }
+    if (model.category === "image")
+        return imageFilters.filter(
+            (value) =>
+                value !== "All" &&
+                value !== "Edit" &&
+                matchesModelFilter(model, value),
+        );
+}
+
 function ModelPicker({
     models,
     selectedModel,
@@ -500,8 +576,29 @@ function ModelPicker({
     models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
-    onSelectModel: (model: PlaygroundModel) => void;
+    onSelectModel: (model: PlaygroundModel, filter?: string) => void;
 }) {
+    const [filter, setFilter] = useState("All");
+    const category = models[0]?.category;
+    const imageModels = category === "image";
+    const filterOptions =
+        category === "video"
+            ? ["All", ...Object.values(videoFilters)]
+            : imageModels
+              ? imageFilters
+              : category === "audio"
+                ? audioFilters
+                : [];
+    const [questOnly, setQuestOnly] = useState(false);
+    const eligibleModels = questOnly
+        ? models.filter((model) => !model.paidOnly)
+        : models;
+    const filters = filterOptions.filter((value) =>
+        models.some((model) => matchesModelFilter(model, value)),
+    );
+    const visible = eligibleModels.filter((model) =>
+        matchesModelFilter(model, filter),
+    );
     const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const swiped = useRef(false);
     const index = models.findIndex((model) => model.id === selectedModel);
@@ -535,9 +632,15 @@ function ModelPicker({
     return (
         <div className="flex min-w-0 items-center gap-2">
             {stepButton(-1)}
-            <div className="w-full min-w-0 @min-[28rem]:w-80">
+            <div className="min-w-0 flex-1">
                 <Dropdown
                     portalled={false}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setFilter("All");
+                            setQuestOnly(false);
+                        }
+                    }}
                     className="w-[var(--reference-width)] overscroll-y-contain p-2"
                     trigger={(open) => (
                         <Button
@@ -618,25 +721,90 @@ function ModelPicker({
                     )}
                 >
                     {(close) => (
-                        <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
-                            <div className="flex flex-col gap-1">
-                                {models.map((model) => (
+                        <>
+                            {filters.length > 0 && (
+                                <fieldset
+                                    aria-label={`Filter ${category} models`}
+                                    className="mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 px-1 pt-1 pb-2"
+                                >
+                                    {filters.map((value) => (
+                                        <TabButton
+                                            key={value}
+                                            active={value === filter}
+                                            className="max-sm:px-2 max-sm:text-xs"
+                                            size="sm"
+                                            disabled={
+                                                questOnly &&
+                                                !eligibleModels.some((model) =>
+                                                    matchesModelFilter(
+                                                        model,
+                                                        value,
+                                                    ),
+                                                )
+                                            }
+                                            onClick={() => setFilter(value)}
+                                        >
+                                            {value}
+                                        </TabButton>
+                                    ))}
                                     <TabButton
-                                        key={model.id}
-                                        active={model.id === selectedModel}
+                                        active={questOnly}
                                         size="sm"
-                                        variant="ghost"
-                                        className="play-model-option w-full justify-start text-left"
-                                        onClick={() => {
-                                            onSelectModel(model);
-                                            close();
-                                        }}
+                                        intent="green"
+                                        ariaLabel="Quests"
+                                        className="ml-auto size-9 shrink-0 p-0"
+                                        title="Show models that accept Quest balance"
+                                        disabled={
+                                            !questOnly &&
+                                            !visible.some(
+                                                (model) => !model.paidOnly,
+                                            )
+                                        }
+                                        onClick={() => setQuestOnly(!questOnly)}
                                     >
-                                        <MediaModelOption model={model} />
+                                        <WalletKindIcon
+                                            kind="tier"
+                                            className="size-4"
+                                        />
                                     </TabButton>
-                                ))}
-                            </div>
-                        </ScrollArea>
+                                </fieldset>
+                            )}
+                            <ScrollArea
+                                key={filter + questOnly}
+                                className="max-h-[min(20rem,45dvh)] overscroll-y-contain pr-2"
+                            >
+                                <div className="flex flex-col gap-1">
+                                    {visible.map((model) => (
+                                        <TabButton
+                                            key={model.id}
+                                            active={model.id === selectedModel}
+                                            size="sm"
+                                            variant="ghost"
+                                            className="play-model-option w-full justify-start text-left"
+                                            onClick={() => {
+                                                onSelectModel(
+                                                    model,
+                                                    imageModels ||
+                                                        category === "video"
+                                                        ? filter
+                                                        : undefined,
+                                                );
+                                                close();
+                                            }}
+                                        >
+                                            <MediaModelOption
+                                                model={model}
+                                                highlights={
+                                                    filter === "All"
+                                                        ? modelHighlights(model)
+                                                        : undefined
+                                                }
+                                            />
+                                        </TabButton>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </>
                     )}
                 </Dropdown>
             </div>
@@ -1271,9 +1439,7 @@ export function Playground({
         supportsReferenceImages && currentModel?.category === "image";
     const acceptsImageParam = supportsFrames || isReferenceImageListMode;
     const supportsLastFrame =
-        supportsFrames &&
-        (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
-        maxReferenceImages >= 2;
+        currentModel?.category === "video" && acceptsFramePair(currentModel);
     const currentAudioEndpoint =
         currentModel?.category === "audio"
             ? audioEndpoint(currentModel)
@@ -1569,9 +1735,36 @@ export function Playground({
         setAudioFiles(saved?.audioFiles ?? []);
     }
 
-    function selectModel(model: PlaygroundModel) {
+    function selectModel(model: PlaygroundModel, filter?: string) {
+        const outputFormat =
+            filter === "GIF" || filter === "SVG"
+                ? filter.toLowerCase()
+                : undefined;
+        const selection: PlaySearch = { format: outputFormat };
+        if (
+            model.category === "video" &&
+            filter === videoFilters.audio_output &&
+            videoOptions(model.id, model.videoCapabilities).sound === "optional"
+        )
+            selection.sound = "on";
+        if (
+            filter === (model.category === "video" ? videoFilters["4k"] : "4K")
+        ) {
+            const size = model.resolutions.find(
+                (size) => size.toLowerCase() === "4k",
+            );
+            if (size) selection.size = size;
+            else if (model.category === "image") {
+                selection.width = "3840";
+                selection.height = "2160";
+            }
+        }
         const modelId = model.id;
-        if (modelId === selectedModel) return;
+        if (modelId === selectedModel) {
+            if (filter)
+                setParams((previous) => ({ ...previous, ...selection }));
+            return;
+        }
         if (!supportsTask(model, task)) {
             const next = TASKS.find(
                 (item) =>
@@ -1584,10 +1777,10 @@ export function Playground({
         setParams((previous) => ({
             ...previous,
             model: modelId,
-            format: undefined,
             size: undefined,
             duration: undefined,
             sound: undefined,
+            ...selection,
         }));
         setAudioFiles([]);
         setReferenceQueue([]);
@@ -1705,6 +1898,7 @@ export function Playground({
                 });
                 if (
                     format &&
+                    formatInfo?.mode !== "default" &&
                     response.contentType.split(";")[0].trim() !==
                         imageMime[format]
                 )
@@ -2056,8 +2250,13 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
-                    <div className="@container flex min-w-0 flex-col gap-2">
+                    <Surface
+                        as="section"
+                        aria-label="Model details"
+                        className="@container flex flex-col gap-2"
+                    >
                         <ModelPicker
+                            key={activeCategory}
                             models={pickerModels}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
@@ -2097,7 +2296,7 @@ export function Playground({
                                 </div>
                             </>
                         )}
-                    </div>
+                    </Surface>
                     <Surface
                         as="section"
                         variant="card"
@@ -2111,6 +2310,14 @@ export function Playground({
                             {showPromptInput && (
                                 <FieldStack
                                     label={isDecide ? "Context" : undefined}
+                                    orientation={
+                                        isDecide ? "inline" : "stacked"
+                                    }
+                                    className={
+                                        isDecide
+                                            ? "[&>div:first-child]:self-start [&>div:first-child]:pt-2"
+                                            : undefined
+                                    }
                                 >
                                     <Textarea
                                         aria-label={
@@ -2164,7 +2371,10 @@ export function Playground({
                                         }
                                         format={questionTypeLabel}
                                     />
-                                    <FieldStack label="Question">
+                                    <FieldStack
+                                        label="Question"
+                                        orientation="inline"
+                                    >
                                         <Input
                                             aria-label="Question"
                                             value={decision.instructions}
@@ -2179,6 +2389,8 @@ export function Playground({
                                     {(decision.type === "choice" ||
                                         decision.type === "score") && (
                                         <FieldStack
+                                            orientation="inline"
+                                            className="[&>div:first-child]:self-start [&>div:first-child]:pt-2"
                                             label={
                                                 decision.type === "score"
                                                     ? "Scale (low to high, one per line)"
@@ -2416,11 +2628,7 @@ export function Playground({
                                                 value === "still" ? "" : value,
                                             )
                                         }
-                                        format={(value) =>
-                                            value === "still"
-                                                ? "Still image"
-                                                : value.toUpperCase()
-                                        }
+                                        format={imageFormatLabel}
                                     />
                                     <OptionField
                                         label="Resolution"
@@ -2592,51 +2800,53 @@ export function Playground({
                                 </>
                             )}
                         </div>
-                    </Surface>
 
-                    {/* Not connected is not a broken state, so the button
-                            becomes the connect action. When it genuinely
-                            cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <Button
-                            size="lg"
-                            intent="brand"
-                            // The page's main action: nectar whether it signs
-                            // in or generates. Busy fills with honey and shows
-                            // Polli. aria-disabled, not disabled, so focus
-                            // stays on the button; generate() ignores repeats.
-                            disabled={!!blockedReason}
-                            aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
-                            aria-describedby={
-                                clipError && blockedReason === clipError
-                                    ? clipStatusId
-                                    : statusId
-                            }
-                            icon={needsSignIn ? undefined : <GenerateIcon />}
-                            onClick={run}
-                            className={cn(
-                                needsSignIn && "h-12 gap-2 px-5 py-0",
-                            )}
-                        >
-                            {needsSignIn ? (
-                                <>
-                                    <BrandMark className="h-6 w-6" />
-                                    {connectLabel}
-                                </>
-                            ) : (
-                                generateText
-                            )}
-                        </Button>
-                        <Text
-                            id={statusId}
-                            size="xs"
-                            tone="muted"
-                            className="empty:hidden max-sm:w-full"
-                        >
-                            {blockedReason !== clipError && blockedReason}
-                        </Text>
-                    </div>
+                        {/* Not connected is not a broken state, so the button
+                                becomes the connect action. When it genuinely
+                                cannot fire, the line beside it says why. */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <Button
+                                size="lg"
+                                intent="brand"
+                                // The page's main action: nectar whether it signs
+                                // in or generates. Busy fills with honey and shows
+                                // Polli. aria-disabled, not disabled, so focus
+                                // stays on the button; generate() ignores repeats.
+                                disabled={!!blockedReason}
+                                aria-disabled={isGenerating || undefined}
+                                aria-busy={isGenerating}
+                                aria-describedby={
+                                    clipError && blockedReason === clipError
+                                        ? clipStatusId
+                                        : statusId
+                                }
+                                icon={
+                                    needsSignIn ? undefined : <GenerateIcon />
+                                }
+                                onClick={run}
+                                className={cn(
+                                    needsSignIn && "h-12 gap-2 px-5 py-0",
+                                )}
+                            >
+                                {needsSignIn ? (
+                                    <>
+                                        <BrandMark className="h-6 w-6" />
+                                        {connectLabel}
+                                    </>
+                                ) : (
+                                    generateText
+                                )}
+                            </Button>
+                            <Text
+                                id={statusId}
+                                size="xs"
+                                tone="muted"
+                                className="empty:hidden max-sm:w-full"
+                            >
+                                {blockedReason !== clipError && blockedReason}
+                            </Text>
+                        </div>
+                    </Surface>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not
@@ -2664,9 +2874,32 @@ export function Playground({
                             )}
                         </div>
                     )}
-                    {apiUrl && (!isDecide || decisionRequest) && (
-                        <ApiUrlCard url={apiUrl} fields={apiFields} />
+                    {apiUrl && (
+                        <ApiUrlCard
+                            url={apiUrl}
+                            fields={apiFields}
+                            pendingMessage={
+                                isDecide && !decisionRequest
+                                    ? "Complete the Decide form to see a copyable API request."
+                                    : undefined
+                            }
+                        />
                     )}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        {needsSignIn && (
+                            <Button
+                                as="a"
+                                href={ENTER_URL}
+                                intent="brand"
+                                icon={<GitHubIcon />}
+                            >
+                                Sign in with GitHub
+                            </Button>
+                        )}
+                        <InlineLink href={`${API_BASE_URL}/docs`} tone="quiet">
+                            Read the API docs
+                        </InlineLink>
+                    </div>
                 </div>
             </div>
         </div>

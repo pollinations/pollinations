@@ -15,6 +15,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Google: "google",
     Hexgrad: "hexgrad",
     HeyGen: "heygen",
+    Hotshot: "hotshot",
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",

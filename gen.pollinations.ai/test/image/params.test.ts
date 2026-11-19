@@ -6,6 +6,21 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
+    it("uses Hotshot-XL's fixed GIF dimensions when size is omitted", () => {
+        const model = "hotshotco/hotshot-xl";
+        expect(ImageParamsSchema.parse({ model })).toMatchObject({
+            width: 512,
+            height: 512,
+        });
+        expect(
+            ImageParamsSchema.safeParse({ model, width: 1024 }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({ model, output_format: "png" })
+                .success,
+        ).toBe(false);
+    });
+
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "black-forest-labs/flux.1-schnell",

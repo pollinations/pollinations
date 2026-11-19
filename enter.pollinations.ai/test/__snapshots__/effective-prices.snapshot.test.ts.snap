@@ -1939,6 +1939,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.01055,
     },
   },
+  "hotshotco/hotshot-xl": {
+    "cost": {},
+    "price": {},
+  },
   "hyper3d/rodin-2.5": {
     "cost": {
       "completionImageTokens": 0.1,

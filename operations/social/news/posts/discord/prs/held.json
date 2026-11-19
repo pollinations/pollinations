@@ -20,8 +20,25 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20310": {
+      "merge_sha": "8fc4c212a4d55b8a32d8578b3ed313712d6cf0af",
+      "merged_at": "2026-11-19T04:14:19Z",
+      "required": []
+    },
+    "20315": {
+      "merge_sha": "b44c361f629d5e3eade008ef223ee5c046f889ec",
+      "merged_at": "2026-11-19T07:14:18Z",
+      "required": []
+    },
+    "20318": {
+      "merge_sha": "4e6620508322ebe0550a6c0b0d350d122d6da8ea",
+      "merged_at": "2026-11-19T10:18:46Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
     }
   },
-  "production": "3bd232b07d325b9be991c2df6d1231a88a7a8213",
+  "production": "c04bb2fb08db6e3e6df3db44517ed7e0e93420da",
   "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
 }

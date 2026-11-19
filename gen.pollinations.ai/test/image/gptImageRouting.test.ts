@@ -726,6 +726,123 @@ describe("GPT Image 2.6 fal fallback", () => {
     });
 });
 
+describe("Sunburst fal still format", () => {
+    afterEach(teardownFetchMock);
+
+    for (const [format, bytes] of [
+        ["jpeg", legacyJpeg],
+        ["png", flareImages.png],
+    ] as const) {
+        routeTest(
+            `serves existing Sunburst fal ${format} bytes from the original cache key`,
+            async ({ paidApiKey }) => {
+                const url = new URL(
+                    `https://gen.pollinations.ai/image/sunburst-fal-legacy-${format}?model=openai/gpt-image-2.6-sunburst&seed=42`,
+                );
+                const cached = Buffer.from(bytes, "base64");
+                await env.MEDIA.put(
+                    await generateCacheKey(url),
+                    new Response(cached, {
+                        headers: {
+                            "Content-Type": "image/png",
+                            "Content-Disposition":
+                                'inline; filename="sunburst.png"',
+                            "X-Model-Used": "openai/gpt-image-2.6-sunburst:fal",
+                        },
+                    }),
+                );
+                const ctx = createExecutionContext();
+                const response = await worker.fetch(
+                    new Request(url, {
+                        headers: { Authorization: `Bearer ${paidApiKey}` },
+                    }),
+                    withInlineGenerationCoordinator(env),
+                    ctx,
+                );
+                expect(response.status).toBe(200);
+                expect(response.headers.get("x-cache")).toBe("HIT");
+                expect(response.headers.get("content-type")).toBe(
+                    `image/${format}`,
+                );
+                expect(response.headers.get("content-disposition")).toBe(
+                    `inline; filename="sunburst.${format}"`,
+                );
+                expect(Buffer.from(await response.arrayBuffer())).toEqual(
+                    cached,
+                );
+                await waitOnExecutionContext(ctx);
+            },
+        );
+    }
+
+    routeTest(
+        "serves fresh and cached Sunburst fal stills as JPEG",
+        async ({ paidApiKey }) => {
+            const png = `data:image/png;base64,${flareImages.png}`;
+            const requests: string[] = [];
+            const mocks = createFetchMock({
+                tinybird: createMockTinybird(),
+                upstream: {
+                    state: requests,
+                    handlerMap: {
+                        "api.openai.com": async () =>
+                            Response.json({}, { status: 503 }),
+                        "fal.run": async (request) => {
+                            requests.push(new URL(request.url).pathname);
+                            return Response.json(
+                                {
+                                    images: [
+                                        { url: png, content_type: "image/png" },
+                                    ],
+                                },
+                                { headers: { "x-fal-billable-units": "0.01" } },
+                            );
+                        },
+                        "content-safety.test": async () =>
+                            Response.json({ categoriesAnalysis: [] }),
+                    },
+                    reset: () => {
+                        requests.length = 0;
+                    },
+                },
+            });
+            await mocks.enable("tinybird", "upstream");
+            // Use the actual local Images binding for PNG-to-JPEG conversion.
+            const bindings = withInlineGenerationCoordinator({
+                ...env,
+                ENVIRONMENT: "development",
+            });
+
+            for (const cache of ["MISS", "HIT"]) {
+                const ctx = createExecutionContext();
+                const response = await worker.fetch(
+                    new Request(
+                        "https://gen.pollinations.ai/image/sunburst-fal-still?model=openai/gpt-image-2.6-sunburst&seed=42",
+                        { headers: { Authorization: `Bearer ${paidApiKey}` } },
+                    ),
+                    bindings,
+                    ctx,
+                );
+                expect(
+                    response.status,
+                    response.ok ? "" : await response.clone().text(),
+                ).toBe(200);
+                expect(response.headers.get("x-model-used")).toBe(
+                    "openai/gpt-image-2.6-sunburst:fal",
+                );
+                expect(response.headers.get("x-cache")).toBe(cache);
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                expect([...bytes.subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+                expect(response.headers.get("content-type")).toBe("image/jpeg");
+                await waitOnExecutionContext(ctx);
+            }
+            expect(requests).toEqual([
+                "/openai/gpt-image-2.6/sunburst/text-to-image",
+            ]);
+        },
+    );
+});
+
 describe("GPT Image 2.5", () => {
     for (const model of [
         "openai/gpt-image-2.5-flare",

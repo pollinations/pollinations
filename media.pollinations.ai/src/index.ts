@@ -38,6 +38,7 @@ import {
     rawUploadFileName,
     readMedia,
     storedFileName,
+    storedMediaContentType,
     uploadUnlistedMedia,
 } from "./media-upload.ts";
 import {
@@ -1166,9 +1167,10 @@ api.get(
             );
             return c.json({
                 id,
-                contentType:
-                    object.httpMetadata?.contentType ||
-                    "application/octet-stream",
+                contentType: await storedMediaContentType(
+                    c.env.MEDIA_BUCKET,
+                    object,
+                ),
                 size: object.size,
                 ...(object.customMetadata?.uploadedAt && {
                     uploadedAt: object.customMetadata.uploadedAt,

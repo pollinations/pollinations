@@ -623,6 +623,28 @@ describe("docs routes", () => {
         expect(amountList.get.tags).toEqual(["x402 Prepaid Keys"]);
         expect(amountList.get.security).toEqual([]);
 
+        // Model discovery is readable without a key, so every listing route
+        // must say so instead of inheriting the spec-level bearer requirement.
+        for (const path of [
+            "/models",
+            "/v1/models",
+            "/v1/models/{model}",
+            "/text/models",
+            "/image/models",
+            "/audio/models",
+            "/video/models",
+            "/3d/models",
+            "/embeddings/models",
+            "/models/status",
+            "/models/stats",
+        ]) {
+            const modelGet = (
+                schema.paths[path] as Record<string, unknown> | undefined
+            )?.get as Record<string, unknown> | undefined;
+            expect(modelGet, `GET ${path} missing`).toBeDefined();
+            expect(modelGet?.security, `GET ${path} security`).toEqual([]);
+        }
+
         vi.mocked(fetch).mockResolvedValue(Response.json(schema));
         await expect(
             fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),

@@ -5,6 +5,10 @@ import { perMillion } from "./price-helpers";
 import type { BillingRules, ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
+export const HOTSHOT_XL_MODEL = "hotshotco/hotshot-xl" as const;
+export const HOTSHOT_XL_SIDE_LENGTH = 512;
+// https://replicate.com/pricing (shared Nvidia L40S)
+export const HOTSHOT_XL_GPU_SECOND_COST = 0.000975;
 const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
 // The fal fallback reports its complete USD charge, without token counts.
@@ -31,6 +35,40 @@ const GPT_IMAGE_26_BILLING: BillingRules = {
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
+    [HOTSHOT_XL_MODEL]: {
+        aliases: [],
+        provider: "replicate",
+        publisher: "Hotshot",
+        category: "image",
+        addedDate: new Date("2026-11-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        flatRate: false,
+        cost: {},
+        billing: {
+            adjustments: [
+                {
+                    id: "replicate.hotshot_xl.gpu_seconds.v1",
+                    description: "Replicate GPU processing time",
+                    kind: "image",
+                    unit: "GPU second",
+                    unitCost: HOTSHOT_XL_GPU_SECOND_COST,
+                    publicPricing: {
+                        label: "GPU processing time",
+                        quantity: 1,
+                        unit: "GPU second",
+                    },
+                    countUnits: (_output, input) =>
+                        input?.providerBilling?.units ?? 0,
+                },
+            ],
+        },
+        title: "Hotshot-XL",
+        description:
+            "Generate a short 512×512 animated GIF from a text prompt.",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "stability-ai/stable-diffusion-3.5-large": {
         aliases: ["sd3.5-large"],
         provider: "aws",

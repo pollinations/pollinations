@@ -4,13 +4,13 @@ import { AudioInput } from "./AudioInput.tsx";
 
 const clip = new File(["sample"], "sample.wav", { type: "audio/wav" });
 
-it("keeps replacement available in a single-clip field", () => {
+it("shows only the removable clip when the single slot is full", () => {
     const html = renderToStaticMarkup(
         <AudioInput value={[clip]} onChange={() => {}} maxSizeBytes={1024} />,
     );
-    expect(html).toContain("Replace file");
+    expect(html).not.toContain('type="file"');
+    expect(html.match(/<button\b/g)).toHaveLength(1);
     expect(html).toContain('aria-label="Remove sample.wav"');
-    expect(html).not.toContain("multiple");
 });
 
 it("offers additional imports only while the multi-clip field has room", () => {

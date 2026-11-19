@@ -203,8 +203,8 @@ Cancel and the alternative payment-method link on the line below.
   `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
   `StatCard`.
   `AudioInput` accepts imported files and microphone recordings. Pass `value`,
-  `onChange`, and `maxSizeBytes`. With the default `maxFiles={1}`, a new
-  clip replaces the selection. Larger limits allow both sources in one list.
+  `onChange`, and `maxSizeBytes`. Record and Import appear while there is room
+  for another clip. At the limit (one clip by default), remove a clip to add another.
   Clips stay local until the app submits them.
   `CopyButton` shows the one copy feedback (a check and "Copied"); a spot that
   draws its own icon uses `CopyStateIcon`, a clipboard that turns into a check.

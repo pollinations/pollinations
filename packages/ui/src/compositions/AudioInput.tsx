@@ -92,17 +92,15 @@ export function AudioInput({
         [onBusyChange],
     );
     useEffect(() => acquireDocumentFileDropGuard(document), []);
-    const replace = maxFiles === 1 && value.length > 0;
-    const canAdd = replace || value.length < maxFiles;
+    const canAdd = value.length < maxFiles;
     function add(files: File[]) {
         if (disabled || !files.length) return;
-        const previous = maxFiles === 1 ? [] : value;
-        const { accepted, rejected } = partitionFiles(files, previous, {
+        const { accepted, rejected } = partitionFiles(files, value, {
             accept,
             maxFiles,
             maxSizeBytes,
         });
-        if (accepted.length) onChange([...previous, ...accepted]);
+        if (accepted.length) onChange([...value, ...accepted]);
         setError("");
         if (rejected.length) {
             if (onReject) onReject(rejected);
@@ -132,22 +130,20 @@ export function AudioInput({
             }}
         >
             <div className="polli:flex polli:flex-wrap polli:items-start polli:gap-3">
-                {(!replace || !busy) &&
-                    value.map((file, i) => (
-                        <Clip
-                            key={`${file.name}-${file.lastModified}-${i}`}
-                            file={file}
-                            onClipDuration={onClipDuration}
-                            disabled={disabled || busy}
-                            onRemove={() =>
-                                onChange(value.filter((_, n) => n !== i))
-                            }
-                        />
-                    ))}
+                {value.map((file, i) => (
+                    <Clip
+                        key={`${file.name}-${file.lastModified}-${i}`}
+                        file={file}
+                        onClipDuration={onClipDuration}
+                        disabled={disabled || busy}
+                        onRemove={() =>
+                            onChange(value.filter((_, n) => n !== i))
+                        }
+                    />
+                ))}
                 {canAdd && (
                     <>
                         <AudioRecorder
-                            label={replace ? "Record again" : "Record audio"}
                             disabled={disabled}
                             maxBytes={maxSizeBytes}
                             onBusyChange={changeBusy}
@@ -174,9 +170,7 @@ export function AudioInput({
                                 onClick={() => picker.current?.click()}
                             >
                                 <CloudUploadIcon />
-                                <span>
-                                    {replace ? "Replace file" : importLabel}
-                                </span>
+                                <span>{importLabel}</span>
                             </button>
                         )}
                     </>

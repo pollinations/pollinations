@@ -94,11 +94,19 @@ function RecordingIndicator({
             <span
                 className={
                     video
-                        ? "polli:relative polli:rounded polli:bg-[rgb(0_0_0/0.65)] polli:px-1 polli:text-[#fff] polli:tabular-nums"
+                        ? "polli:pointer-events-none polli:absolute polli:bottom-1.5 polli:left-1.5 polli:inline-flex polli:items-center polli:gap-1 polli:rounded polli:bg-[rgb(0_0_0/0.65)] polli:px-1 polli:text-[#fff] polli:tabular-nums"
                         : "polli:whitespace-nowrap polli:tabular-nums"
                 }
             >
-                Stop {audioTime(seconds)}
+                {video ? (
+                    <span
+                        aria-hidden="true"
+                        className="polli:size-2 polli:rounded-[1px] polli:bg-current"
+                    />
+                ) : (
+                    "Stop "
+                )}
+                {audioTime(seconds)}
             </span>
         </>
     );

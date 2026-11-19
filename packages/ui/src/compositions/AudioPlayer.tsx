@@ -161,10 +161,10 @@ export function MediaPlayer({
                         {video ? (
                             <span
                                 aria-hidden="true"
-                                className="polli:grid polli:size-8 polli:place-items-center polli:rounded-full polli:bg-[rgb(0_0_0/0.65)] polli:text-[#fff]"
+                                className="polli:pointer-events-none polli:absolute polli:bottom-1.5 polli:left-1.5 polli:grid polli:size-5 polli:place-items-center polli:rounded-full polli:bg-[rgb(0_0_0/0.65)] polli:text-[#fff]"
                             >
                                 {playing ? (
-                                    <span className="polli:size-3 polli:rounded-sm polli:bg-current" />
+                                    <span className="polli:size-2 polli:rounded-[1px] polli:bg-current" />
                                 ) : (
                                     <PlayIcon className="polli:size-4" />
                                 )}

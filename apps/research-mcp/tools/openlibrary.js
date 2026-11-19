@@ -84,8 +84,11 @@ export const openLibraryTools = [
                           large: book.cover.large ?? null,
                       }
                     : null,
-                openLibraryUrl:
-                    book.url ?? `https://openlibrary.org/isbn/${normalized}`,
+                // The catalogue answers with http:// links; keep the result https so a
+                // caller can follow it without a downgrade.
+                openLibraryUrl: (
+                    book.url ?? `https://openlibrary.org/isbn/${normalized}`
+                ).replace(/^http:/, "https:"),
                 // The other ISBN the book was published under, which is how a caller
                 // crosses between the ten- and thirteen-digit forms.
                 identifiers: book.identifiers ?? null,

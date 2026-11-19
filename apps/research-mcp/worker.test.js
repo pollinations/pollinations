@@ -60,7 +60,7 @@ test("lookup_isbn verifies the check digit before the catalogue and returns the 
                     small: "https://covers.openlibrary.org/b/id/1-S.jpg",
                     large: null,
                 },
-                url: "https://openlibrary.org/books/OL1M/Fantastic_Mr_Fox",
+                url: "http://openlibrary.org/books/OL1M/Fantastic_Mr_Fox",
                 identifiers: { isbn_10: ["0140328726"] },
             },
         });
@@ -76,6 +76,11 @@ test("lookup_isbn verifies the check digit before the catalogue and returns the 
     assert.equal(book.numberOfPages, 96);
     // The subject list is capped, so a well-indexed book cannot flood the response.
     assert.equal(book.subjects.length, 12);
+    // The catalogue answers with http:// links; the result must not.
+    assert.equal(
+        book.openLibraryUrl,
+        "https://openlibrary.org/books/OL1M/Fantastic_Mr_Fox",
+    );
     assert.deepEqual(book.identifiers.isbn_10, ["0140328726"]);
     // One request per lookup, and no caller headers reach the public catalogue.
     assert.equal(seen.length, 1);

@@ -102,21 +102,13 @@ type PlaygroundModel = MediaModelMetadata & {
     audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
 
-// Groups the audio model list; the first group holds the default model.
-const AUDIO_TASK_ORDER = [
-    "speech-generation",
-    "music-and-sound-effects",
-    "audio-processing",
-    "transcription",
-] as const;
-type AudioTask = (typeof AUDIO_TASK_ORDER)[number];
-// Speech and music are distinguished by title/description; other tasks use endpoints.
-const AUDIO_GROUP_LABEL: Record<AudioTask, string> = {
+const AUDIO_GROUP_LABEL = {
     "speech-generation": "Speech",
-    "music-and-sound-effects": "Music & sound effects",
-    "audio-processing": "Voice & cleanup",
-    transcription: "Transcription",
-};
+    "music-and-sound-effects": "Music & effects",
+    transcription: "Transcribe",
+    "audio-processing": "Edit audio",
+} as const;
+type AudioTask = keyof typeof AUDIO_GROUP_LABEL;
 
 function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
@@ -291,30 +283,6 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     return "speech-generation";
 }
 
-/**
- * One alphabetical model list per tab. Audio models are grouped by
- * what they do, then sorted within each group.
- */
-function modelsInCategory(
-    models: PlaygroundModel[],
-    category: PlaygroundCategory,
-): PlaygroundModel[] {
-    const group = (model: PlaygroundModel) =>
-        category === "audio"
-            ? AUDIO_TASK_ORDER.indexOf(audioTaskForModel(model))
-            : 0;
-    return models
-        .filter((model) => model.category === category)
-        .sort(
-            (a, b) =>
-                group(a) - group(b) ||
-                a.title.localeCompare(b.title, "en", {
-                    numeric: true,
-                    sensitivity: "base",
-                }),
-        );
-}
-
 /** The catalog lists each tab's configured default model first. */
 function defaultModelId(
     models: PlaygroundModel[],
@@ -450,16 +418,24 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
-    groupOf,
 }: {
     models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
-    /** Heading for a run of models; models arrive sorted by it. */
-    groupOf?: (model: PlaygroundModel) => string;
 }) {
     const selected = models.find((model) => model.id === selectedModel);
+
+    const sorted = useMemo(
+        () =>
+            [...models].sort((a, b) =>
+                a.title.localeCompare(b.title, "en", {
+                    numeric: true,
+                    sensitivity: "base",
+                }),
+            ),
+        [models],
+    );
 
     return (
         <div className="w-fit min-w-0 max-w-full">
@@ -487,44 +463,21 @@ function ModelPicker({
                 {(close) => (
                     <ScrollArea className="max-h-80 pr-2">
                         <div className="flex flex-col gap-1">
-                            {models.map((model, index) => {
-                                const group = groupOf?.(model);
-                                const startsGroup =
-                                    group &&
-                                    (index === 0 ||
-                                        group !== groupOf?.(models[index - 1]));
-                                return (
-                                    <Fragment key={model.id}>
-                                        {startsGroup && (
-                                            <h3
-                                                className={cn(
-                                                    "mx-3 mb-1 self-start",
-                                                    index > 0 ? "mt-4" : "mt-2",
-                                                )}
-                                            >
-                                                <Chip
-                                                    intent="neutral"
-                                                    size="sm"
-                                                >
-                                                    {group}
-                                                </Chip>
-                                            </h3>
-                                        )}
-                                        <TabButton
-                                            active={model.id === selectedModel}
-                                            size="sm"
-                                            variant="ghost"
-                                            className="w-full justify-start text-left"
-                                            onClick={() => {
-                                                onSelectModel(model.id);
-                                                close();
-                                            }}
-                                        >
-                                            <MediaModelOption model={model} />
-                                        </TabButton>
-                                    </Fragment>
-                                );
-                            })}
+                            {sorted.map((model) => (
+                                <TabButton
+                                    key={model.id}
+                                    active={model.id === selectedModel}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start text-left"
+                                    onClick={() => {
+                                        onSelectModel(model.id);
+                                        close();
+                                    }}
+                                >
+                                    <MediaModelOption model={model} />
+                                </TabButton>
+                            ))}
                         </div>
                     </ScrollArea>
                 )}
@@ -881,9 +834,28 @@ export function Playground() {
             : undefined;
 
     const categoryModels = useMemo(
-        () => modelsInCategory(visibleModels, activeCategory),
+        () =>
+            visibleModels.filter((model) => model.category === activeCategory),
         [activeCategory, visibleModels],
     );
+
+    const modelGroups = useMemo(
+        () =>
+            activeCategory === "audio"
+                ? Object.entries(AUDIO_GROUP_LABEL)
+                      .map(([key, label]) => ({
+                          key,
+                          label,
+                          models: categoryModels.filter(
+                              (model) => audioTaskForModel(model) === key,
+                          ),
+                      }))
+                      .filter((group) => group.models.length > 0)
+                : [],
+        [activeCategory, categoryModels],
+    );
+    const activeGroup = modelGroups.find((group) => group.key === audioTask);
+    const lastGroupModel = useRef(new Map<string, string>());
 
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that
@@ -1499,20 +1471,47 @@ export function Playground() {
                     </div>
                 )}
                 <div className="flex flex-col gap-4 pt-6">
+                    {modelGroups.length > 1 && (
+                        <ButtonGroup
+                            aria-label={`${categoryLabel(activeCategory)} model filters`}
+                        >
+                            {modelGroups.map((group) => (
+                                <TabButton
+                                    key={group.key}
+                                    size="sm"
+                                    active={group === activeGroup}
+                                    onClick={() => {
+                                        if (group === activeGroup) return;
+                                        if (activeGroup)
+                                            lastGroupModel.current.set(
+                                                activeGroup.key,
+                                                selectedModel,
+                                            );
+                                        const saved =
+                                            lastGroupModel.current.get(
+                                                group.key,
+                                            );
+                                        selectModel(
+                                            (
+                                                group.models.find(
+                                                    (model) =>
+                                                        model.id === saved,
+                                                ) ?? group.models[0]
+                                            ).id,
+                                        );
+                                    }}
+                                >
+                                    {group.label}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
+                    )}
                     <div className="grid items-end gap-2 sm:grid-cols-[fit-content(45%)_minmax(0,1fr)] sm:gap-x-4">
                         <ModelPicker
-                            models={categoryModels}
+                            models={activeGroup?.models ?? categoryModels}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
-                            groupOf={
-                                activeCategory === "audio"
-                                    ? (model) =>
-                                          AUDIO_GROUP_LABEL[
-                                              audioTaskForModel(model)
-                                          ]
-                                    : undefined
-                            }
                         />
                         {(currentModel?.description || statsLine) && (
                             <div className="flex min-w-0 flex-col gap-1">

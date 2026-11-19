@@ -404,6 +404,9 @@ export class Pollinations {
             image: options.referenceImage,
             transparent: options.transparent,
             guidance_scale: options.guidanceScale,
+            output_format: options.outputFormat,
+            frame_count: options.frameCount,
+            frame_duration_ms: options.frameDurationMs,
             reasoning: options.reasoning,
         };
 

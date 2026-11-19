@@ -51,6 +51,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     safe?: boolean;
     /** Output quality (default: 'medium') */
     quality?: ImageQuality;
+    /** Output format on models that accept an explicit format */
+    outputFormat?: "png" | "webp" | "gif";
+    /** Number of frames for animated GIF output */
+    frameCount?: number;
+    /** Display time for each GIF frame in milliseconds */
+    frameDurationMs?: number;
     /** Reference image URL(s) for image-to-image generation */
     referenceImage?: string | string[];
     /** Enable transparent background - outputs PNG (default: false) */

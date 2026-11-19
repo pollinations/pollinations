@@ -28,6 +28,7 @@ import {
     InfoTip,
     InlineLink,
     Input,
+    LayersIcon,
     MediaPlaceholder,
     MicIcon,
     ScrollArea,
@@ -123,6 +124,12 @@ const WORKSPACES = [
         icon: VideoIcon,
         category: "video",
         operations: [{ id: "video", label: "Video" }],
+    },
+    {
+        label: "GIF",
+        icon: LayersIcon,
+        category: "image",
+        operations: [{ id: "gif", label: "GIF" }],
     },
     {
         label: "Speech",
@@ -224,6 +231,7 @@ function promptPlaceholder(task: Task, editsImage: boolean): string {
         id,
         workspace: { category },
     } = task;
+    if (id === "gif") return "Describe the animation you want…";
     if (editsImage) return "Describe the changes you want…";
     if (category === "image") return "Describe the image you want…";
     if (category === "video") return "Describe the video you want…";
@@ -303,8 +311,20 @@ function audioTaskForModel(model: PlaygroundModel) {
     return "speech-generation";
 }
 
+// Hotshot always returns a GIF. The GPT models require an explicit format.
+const NATIVE_GIF_MODEL = "hotshotco/hotshot-xl";
+const OPTIONAL_GIF_MODELS = new Set([
+    "openai/gpt-image-2.6-flare",
+    "openai/gpt-image-2.6-sunburst",
+]);
+
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
+    if (task.id === "gif")
+        return (
+            model.id === NATIVE_GIF_MODEL || OPTIONAL_GIF_MODELS.has(model.id)
+        );
+    if (model.id === NATIVE_GIF_MODEL) return false;
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
     return true;
 }
@@ -721,7 +741,10 @@ function ResultDownloadButton({
     result: PlaygroundResult;
     className?: string;
 }) {
-    const label = `Download ${result.type}`;
+    const label =
+        result.type === "image" && result.filename.endsWith(".gif")
+            ? "Download GIF"
+            : `Download ${result.type}`;
     return (
         <Button
             as="a"
@@ -969,9 +992,11 @@ export function Playground({
         TASKS.find((item) => item.workspace.category === params.tab) ??
         TASKS[0];
     const activeCategory = task.workspace.category;
+    const isGif = task.id === "gif";
     const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
-    const savedDraft = drafts[params.task ?? task.id] ?? drafts[activeCategory];
+    const savedDraft =
+        drafts[task.id] ?? (isGif ? undefined : drafts[activeCategory]);
     const restored =
         savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {
@@ -1179,7 +1204,7 @@ export function Playground({
         currentModel?.videoCapabilities ?? [],
     );
     const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
-    const maxReferenceImages = referenceImageLimit(currentModel);
+    const maxReferenceImages = isGif ? 0 : referenceImageLimit(currentModel);
     const supportsReferenceImages = maxReferenceImages > 0;
     const supportsFrames =
         currentModel?.category === "video" &&
@@ -1334,7 +1359,16 @@ export function Playground({
         currentModel?.category === "video";
     // Few image models declare resolutions, but /image accepts width and
     // height for all of them. Blank keeps the model's default size.
+    const gifOptions =
+        isGif && OPTIONAL_GIF_MODELS.has(currentModel?.id ?? "")
+            ? {
+                  outputFormat: "gif" as const,
+                  frameCount: 8,
+                  frameDurationMs: 120,
+              }
+            : undefined;
     const customSize =
+        !isGif &&
         currentModel?.category === "image" &&
         currentModel.resolutions.length === 0;
     const imageSize = customSize
@@ -1398,6 +1432,9 @@ export function Playground({
                       ...(isVisualModel
                           ? {
                                 ...imageSize,
+                                output_format: gifOptions?.outputFormat,
+                                frame_count: gifOptions?.frameCount,
+                                frame_duration_ms: gifOptions?.frameDurationMs,
                                 resolution: mediaSettings.resolution,
                                 aspectRatio: videoAspectRatio,
                                 duration: videoDuration?.value,
@@ -1580,11 +1617,19 @@ export function Playground({
                 const response = await client.image(trimmedPrompt, {
                     model: currentModel.id,
                     ...imageSize,
+                    ...gifOptions,
                     resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
+                if (
+                    isGif &&
+                    response.contentType.split(";")[0].trim() !== "image/gif"
+                )
+                    throw new Error(
+                        "The model returned a still image. Try another GIF model.",
+                    );
                 runStore.set({ result: mediaResult("image", response) });
                 return;
             }
@@ -1636,25 +1681,28 @@ export function Playground({
     const editsImage =
         currentModel?.category === "image" &&
         (requiresImage || referenceImages.length > 0);
-    const generateLabel =
-        currentModel?.category === "video"
-            ? "Generate video"
-            : currentModel?.category === "audio"
-              ? isAudioTranscription
-                  ? "Transcribe audio"
-                  : currentAudioEndpoint === "/v1/audio/voice-changer"
-                    ? "Change voice"
-                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
-                      ? "Isolate speech"
-                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
-                        ? "Separate stems"
-                        : "Generate audio"
-              : editsImage
-                ? "Edit image"
-                : "Generate image";
-    const GenerateIcon = isAudioTranscription
-        ? MicIcon
-        : CATEGORY_ICON[activeCategory];
+    const generateLabel = isGif
+        ? "Generate GIF"
+        : currentModel?.category === "video"
+          ? "Generate video"
+          : currentModel?.category === "audio"
+            ? isAudioTranscription
+                ? "Transcribe audio"
+                : currentAudioEndpoint === "/v1/audio/voice-changer"
+                  ? "Change voice"
+                  : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                    ? "Isolate speech"
+                    : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                      ? "Separate stems"
+                      : "Generate audio"
+            : editsImage
+              ? "Edit image"
+              : "Generate image";
+    const GenerateIcon = isGif
+        ? LayersIcon
+        : isAudioTranscription
+          ? MicIcon
+          : CATEGORY_ICON[activeCategory];
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
     // The placeholder belongs to the tab whose run is in flight; audio has none.
     const busyVisual =
@@ -1671,7 +1719,7 @@ export function Playground({
             options={[generateLabel, againLabel, busyLabel]}
         />
     );
-    const connectLabel = `Connect to ${generateLabel.toLowerCase()}`;
+    const connectLabel = `Connect to ${generateLabel[0].toLowerCase()}${generateLabel.slice(1)}`;
 
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
@@ -1877,7 +1925,7 @@ export function Playground({
             <div className="@container">
                 <fieldset
                     aria-label="Playground task"
-                    className="m-0 grid min-w-0 grid-cols-2 gap-2 border-0 p-0 @min-[36rem]:flex"
+                    className="m-0 grid min-w-0 grid-cols-2 gap-2 border-0 p-0 @min-[36rem]:flex @min-[36rem]:flex-wrap"
                 >
                     {WORKSPACES.map((item) => (
                         <ModalityTab

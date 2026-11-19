@@ -832,6 +832,29 @@ describe("Pollinations video reference media", () => {
         },
     );
 
+    it("sends animation parameters only when requested", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const client = newClient();
+        await client.image("a loop", {
+            outputFormat: "gif",
+            frameCount: 8,
+            frameDurationMs: 120,
+        });
+        await client.image("a loop");
+
+        const queries = fetchMock.mock.calls.map(
+            ([url]) => new URL(url as string).searchParams,
+        );
+        for (const [key, value] of Object.entries({
+            output_format: "gif",
+            frame_count: "8",
+            frame_duration_ms: "120",
+        })) {
+            expect(queries[0].get(key)).toBe(value);
+            expect(queries[1].has(key)).toBe(false);
+        }
+    });
+
     it("serializes multiple reference images using pipe delimiter for image generation", async () => {
         fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
         const references = [

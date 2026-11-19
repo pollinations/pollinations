@@ -6,6 +6,7 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ### Added
 
+- Image requests accept `outputFormat`, `frameCount`, and `frameDurationMs` for models with selectable GIF output.
 - `ModelInfo.health` types the existing model catalog health status, success rate, and request count.
 - `ModelInfo.max_reference_audios` exposes the model’s maximum number of reference audio clips per request.
 - `ModelInfo.audio_input_constraints` describes audio duration limits, required visual references, and supported transcription inputs (`language` and `prompt`).

@@ -2324,6 +2324,8 @@ async function parseSpeechRequest(
             input: typeof input === "string" ? input : "",
             safe: (formData.get("safe") as string | undefined) || undefined,
             voice: (formData.get("voice") as string | null) || "alloy",
+            stream_format:
+                (formData.get("stream_format") as "audio" | null) ?? undefined,
             response_format:
                 (formData.get("response_format") as
                     | "wav"

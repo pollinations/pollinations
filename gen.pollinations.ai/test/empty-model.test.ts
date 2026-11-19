@@ -75,6 +75,35 @@ it("rejects unsupported speech stream formats", () => {
     expect(CreateSpeechRequestSchema.safeParse(speechBody).success).toBe(true);
 });
 
+test("rejects multipart speech SSE before calling a provider", async ({
+    paidApiKey,
+}) => {
+    const mocks = createFetchMock({ tinybird: createMockTinybird() });
+    await mocks.enable("tinybird");
+    const form = new FormData();
+    form.set("model", "openai/tts-1");
+    form.set("input", "hello");
+    form.set("stream_format", "sse");
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: { authorization: `Bearer ${paidApiKey}` },
+            body: form,
+        }),
+        env,
+        ctx,
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+        error: { message: expect.stringContaining("stream_format") },
+    });
+    await waitOnExecutionContext(ctx);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(0);
+});
+
 const speech = { input: "hello", voice: "alloy", model: "" };
 
 test.for([

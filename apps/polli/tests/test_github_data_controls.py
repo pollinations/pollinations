@@ -244,6 +244,23 @@ class NativeQueryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(execute.await_args.args[1]["after"], "prior")
         self.assertEqual(result["next_cursor"], "next")
 
+    async def test_subscribe_to_a_missing_issue_is_refused(self):
+        from src.integrations.github.handlers import tool_github_issue
+
+        subscribe = AsyncMock(return_value=True)
+        with (
+            patch(
+                "src.integrations.github.handlers.github_graphql._execute",
+                AsyncMock(return_value={"data": {"repository": {"issue": None}}}),
+            ),
+            patch("src.integrations.subscriptions.subscription_manager.is_subscribed", AsyncMock(return_value=False)),
+            patch("src.integrations.subscriptions.subscription_manager.subscribe", subscribe),
+        ):
+            result = await tool_github_issue(action="subscribe", issue_number=99999, user_id=1)
+
+        self.assertFalse(result["success"])
+        subscribe.assert_not_awaited()
+
     async def test_issue_handler_query_preserves_closed_state_and_cursor(self):
         from src.integrations.github.handlers import tool_github_issue
 

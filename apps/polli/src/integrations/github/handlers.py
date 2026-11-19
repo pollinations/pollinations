@@ -284,7 +284,7 @@ async def tool_github_issue(
         from ..subscriptions import subscription_manager
 
         issue = await github_graphql.get_issue_full(issue_number)
-        if not issue:
+        if not issue or "error" in issue:
             return {"success": False, "error": f"Issue #{issue_number} not found"}
         if await subscription_manager.is_subscribed(user_id, issue_number):
             return {

@@ -43,13 +43,15 @@ export const CHAT_PARAMETERS = {
     ],
     // Chat-to-Responses conversion does not forward top-level verbosity.
     azureResponses: [...TOOL_CHAT, "reasoning_effort", "parallel_tool_calls"],
+    // OVH rejects `stop` (reasoning runs in a separate channel) and
+    // `parallel_tool_calls: false`, so neither is listed.
     ovhGptOss: [
-        ...SAMPLED_CHAT,
+        ...TOOL_CHAT,
+        ...SAMPLING,
         ...PENALTIES,
         ...LOGPROBS,
         "seed",
         "reasoning_effort",
-        "parallel_tool_calls",
         "logit_bias",
         "n",
     ],

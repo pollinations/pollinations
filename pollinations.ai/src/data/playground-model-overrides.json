@@ -58,7 +58,7 @@
         "defaultRatio": "16:9"
     },
     "bytedance/seedance-2.0": {
-        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Production returned provider error E006 for a first frame plus a reference image on 2026-11-19. The provider disallows mixing reference media with first or last frames.",
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
@@ -77,7 +77,7 @@
         "soundToggleDefault": true
     },
     "bytedance/seedance-2.5": {
-        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Production returned provider error E006 for a first frame plus a reference image on 2026-11-19. The provider disallows mixing reference media with first or last frames.",
         "source": "gen.pollinations.ai/src/image/models/seedance25VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
@@ -147,6 +147,11 @@
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "defaultRatio": "16:9"
     },
+    "hotshotco/hotshot-xl": {
+        "reason": "Preview text-only native GIF until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/hotshotXLModel.ts",
+        "imageFormats": { "gif": { "mode": "native", "input_modalities": ["text"] } }
+    },
     "jaredpalmer/kev-4b": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
         "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
@@ -208,14 +213,14 @@
         "ratios": []
     },
     "openai/gpt-image-2.6-flare": {
-        "reason": "Preview the default PNG output and selectable WebP for image generation and edits.",
+        "reason": "Preview ordinary PNG and selectable WebP, plus the verified text-only GIF mode until the catalog publishes it.",
         "source": "gen.pollinations.ai/src/image/createAndReturnImages.ts",
-        "imageFormats": { "png": "default", "webp": "selectable" }
+        "imageFormats": { "png": { "mode": "default" }, "webp": { "mode": "selectable" }, "gif": { "mode": "selectable", "input_modalities": ["text"], "frame_defaults": { "frame_count": 8, "frame_duration_ms": 120 } } }
     },
     "openai/gpt-image-2.6-sunburst": {
-        "reason": "Preview the JPEG returned by ordinary opaque still-image requests.",
+        "reason": "Preview ordinary opaque JPEG output and the verified text-only GIF mode until the catalog publishes it.",
         "source": "gen.pollinations.ai/test/image/gptImageRouting.test.ts",
-        "imageFormats": { "jpeg": "default" }
+        "imageFormats": { "jpeg": { "mode": "default" }, "gif": { "mode": "selectable", "input_modalities": ["text"], "frame_defaults": { "frame_count": 8, "frame_duration_ms": 120 } } }
     },
     "openai/gpt-6-luna-decisions": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
@@ -237,6 +242,11 @@
         "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
         "defaultRatio": "16:9"
+    },
+    "recraft/recraft-v4.1-vector": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/recraftFalModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
     },
     "respan/span-01-lite": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",

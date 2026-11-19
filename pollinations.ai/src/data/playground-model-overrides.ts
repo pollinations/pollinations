@@ -1,10 +1,11 @@
+import type { PreviewFormats } from "../ui/play/image-output";
 import inventory from "./playground-model-overrides.json";
 
 type PlaygroundModelOverride = {
     reason: string;
     source: string;
     supports4K?: boolean;
-    imageFormats?: Record<string, string>;
+    imageFormats?: PreviewFormats;
     decisionQuestionTypes?: string[];
     audioTask?: string;
     audioGroup?: string;

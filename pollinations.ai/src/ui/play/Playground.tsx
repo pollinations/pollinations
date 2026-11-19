@@ -1157,10 +1157,7 @@ export function Playground({
     const activeCategory = task.workspace.category;
     const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
-    const savedDraft =
-        (legacyGif ? drafts.gif : undefined) ??
-        drafts[task.id] ??
-        drafts[activeCategory];
+    const savedDraft = drafts[task.id];
     const restored =
         savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {

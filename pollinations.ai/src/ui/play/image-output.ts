@@ -1,23 +1,34 @@
 import type { ModelInfo } from "@pollinations/sdk";
 
-type FormatInfo = NonNullable<ModelInfo["output_formats"]>[string];
+// Play also reads this optional metadata from catalogs ahead of its installed SDK.
+type PreviewFormat = {
+    mode: string;
+    input_modalities?: string[];
+    frame_defaults?: { frame_count: number; frame_duration_ms: number };
+};
+export type PreviewFormats = Record<string, PreviewFormat>;
 export type ImageFormats = Record<
     string,
-    Omit<FormatInfo, "mode"> & { mode: FormatInfo["mode"] | "default" }
+    PreviewFormat & {
+        mode: "default" | "native" | "selectable";
+        input_modalities: string[];
+    }
 >;
 
-// Overlay catalog entries last so published metadata always wins.
 export function previewImageFormats(
-    model: ModelInfo,
-    preview?: Record<string, string>,
+    model: ModelInfo & { output_formats?: ImageFormats },
+    preview?: PreviewFormats,
 ): ImageFormats | undefined {
     if (!preview) return model.output_formats;
     const formats: ImageFormats = {};
-    for (const [key, mode] of Object.entries(preview)) {
-        if (mode === "default" || mode === "selectable")
+    for (const [key, entry] of Object.entries(preview)) {
+        const { mode } = entry;
+        if (mode === "default" || mode === "selectable" || mode === "native")
             formats[key] = {
+                ...entry,
                 mode,
-                input_modalities: model.input_modalities ?? [],
+                input_modalities:
+                    entry.input_modalities ?? model.input_modalities ?? [],
             };
     }
     return { ...formats, ...model.output_formats };

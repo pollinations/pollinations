@@ -1,15 +1,35 @@
-import type { ModelInfo } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
-import { imageOutput } from "./image-output";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
+import {
+    type ImageFormats,
+    imageOutput,
+    previewImageFormats,
+} from "./image-output";
 
 describe("image output selection", () => {
-    const catalog: ModelInfo["output_formats"] = {
+    const catalog: ImageFormats = {
         gif: {
             mode: "selectable",
             input_modalities: ["text"],
             frame_defaults: { frame_count: 6, frame_duration_ms: 150 },
         },
     };
+    it("uses the local GIF metadata until the catalog publishes its own entry", () => {
+        const model = { name: "openai/gpt-image-2.6-flare", paid_only: true };
+        const preview = playgroundModelOverride(model.name)?.imageFormats;
+        const local = previewImageFormats(model, preview);
+        expect(imageOutput(local, "gif").request).toEqual({
+            outputFormat: "gif",
+            frameCount: 8,
+            frameDurationMs: 120,
+        });
+        const published = previewImageFormats(
+            { ...model, output_formats: catalog },
+            preview,
+        );
+        expect(published?.gif).toEqual(catalog.gif);
+        expect(published?.png.mode).toBe("default");
+    });
     it("keeps the normal image request until an advertised format is selected", () => {
         const still = imageOutput(catalog);
         expect(still.options).toEqual(["still", "gif"]);

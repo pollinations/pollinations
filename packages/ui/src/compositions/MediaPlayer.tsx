@@ -14,18 +14,15 @@ import {
 } from "../lib/media-action-tile.ts";
 import { PlayIcon } from "../primitives/icons/index.tsx";
 
-type AudioPlayerProps = {
+type MediaPlayerProps = {
     src: string;
     label: string;
     disabled?: boolean;
     tileModality?: TileModality;
     onDuration?: (seconds: number | null) => void;
     children?: ReactNode;
+    video?: boolean;
 };
-
-export function AudioPlayer(props: AudioPlayerProps) {
-    return <MediaPlayer {...props} />;
-}
 
 export function MediaPlayer({
     src,
@@ -35,7 +32,7 @@ export function MediaPlayer({
     onDuration,
     children,
     video = false,
-}: AudioPlayerProps & { video?: boolean }) {
+}: MediaPlayerProps) {
     const media = useRef<HTMLMediaElement | null>(null);
     const Element = video ? "video" : "audio";
     const [playing, setPlaying] = useState(false);

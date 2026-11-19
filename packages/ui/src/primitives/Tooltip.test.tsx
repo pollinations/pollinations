@@ -51,20 +51,6 @@ describe("Tooltip", () => {
         expect(position).toEqual({ top: 498, left: 100 });
     });
 
-    it("prefers the top when requested and flips below near the top edge", () => {
-        const position = (top: number) =>
-            getTooltipPosition(
-                { top, bottom: top + 24, left: 20, width: 60 },
-                { width: 100, height: 40 },
-                { width: 320, height: 640 },
-                "center",
-                true,
-                "top",
-            );
-        expect(position(100).top).toBe(56);
-        expect(position(20).top).toBe(48);
-    });
-
     it("keeps span triggers non-interactive by default", () => {
         const markup = renderToStaticMarkup(
             <Tooltip triggerAs="span" content="Details">

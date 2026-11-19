@@ -1,5 +1,4 @@
 import type { PlaySearch } from "../../routes/-play-search";
-import { videoOptions } from "./video-options";
 
 type Category = "image" | "video" | "audio";
 export type VideoReference<T = File> = { id: string; media: Category; file: T };
@@ -117,33 +116,6 @@ export async function takeConnectDraft(): Promise<ConnectDrafts | undefined> {
     });
     sessionStorage.removeItem(key);
     if (!draft) return;
-    // Older drafts could retain uploads behind both positions of the mode switch.
-    for (const saved of Object.values(draft)) {
-        if (!Array.isArray(saved.videoReferences)) {
-            const grouped: Record<Category, StoredFile[]> =
-                saved.videoReferences;
-            saved.videoReferences = (
-                ["image", "video", "audio"] as const
-            ).flatMap((media) =>
-                grouped[media].map((file) => ({
-                    id: crypto.randomUUID(),
-                    media,
-                    file,
-                })),
-            );
-        }
-        if (
-            saved.referenceImages.length &&
-            saved.videoReferences.length &&
-            videoOptions(saved.params.model ?? "", []).exclusiveReferences
-        ) {
-            const { guidance } = saved.params as PlaySearch & {
-                guidance?: string;
-            };
-            if (guidance === "references") saved.referenceImages = [];
-            else saved.videoReferences = [];
-        }
-    }
     return mapFiles(
         draft,
         (file) =>

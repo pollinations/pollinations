@@ -197,7 +197,7 @@ Cancel and the alternative payment-method link on the line below.
   `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
-- **Design compositions** — `Alert`, `AudioInput`, `AudioPlayer`, `AudioRecorder`, `CodeBlock`, `Collapsible`,
+- **Design compositions** — `Alert`, `AudioInput`, `AudioRecorder`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `CopyStateIcon`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
   `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,

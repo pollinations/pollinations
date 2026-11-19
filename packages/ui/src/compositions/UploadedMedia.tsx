@@ -13,7 +13,7 @@ import {
 } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, XIcon } from "../primitives/icons/index.tsx";
-import { MediaPlayer } from "./AudioPlayer.tsx";
+import { MediaPlayer } from "./MediaPlayer.tsx";
 
 type MediaKind = Exclude<TileModality, "mixed">;
 

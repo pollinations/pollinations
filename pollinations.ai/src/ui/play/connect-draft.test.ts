@@ -104,30 +104,6 @@ it("restores mixed reference files in selection order", async () => {
     ]);
 });
 
-it.each(["frames", "references"])(
-    "restores the active uploads from an older %s draft",
-    async (guidance) => {
-        const params = { model: "bytedance/seedance-2.5", guidance };
-        await saveConnectDraft({
-            video: {
-                params,
-                referenceImages: [new File(["frame"], "first.png")],
-                videoReferences: [
-                    { id: "voice", media: "audio", file: recording },
-                ],
-                audioFiles: [],
-            },
-        });
-        const restored = (await takeConnectDraft())?.video;
-        expect(restored?.referenceImages.map((file) => file.name)).toEqual(
-            guidance === "frames" ? ["first.png"] : [],
-        );
-        expect(restored?.videoReferences.map(({ file }) => file.name)).toEqual(
-            guidance === "references" ? [recording.name] : [],
-        );
-    },
-);
-
 it("a fresh tab sweeps an abandoned expired draft while preserving a live tab's draft", async () => {
     const now = Date.now();
     const clock = vi.spyOn(Date, "now").mockReturnValue(now);

@@ -924,6 +924,23 @@ test("modular_power keeps huge exponents exact and rejects bad moduli", async (t
         }),
         { result: "652541198" },
     );
+    // Anything modulo 1 is 0, including the empty product of exponent 0.
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "5",
+            exponent: "0",
+            modulus: "1",
+        }),
+        { result: "0" },
+    );
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "5",
+            exponent: "0",
+            modulus: "7",
+        }),
+        { result: "1" },
+    );
     // A negative base is reduced into 0..modulus-1, so -8 modulo 5 is 2, not -3.
     assert.deepEqual(
         await call(client, "modular_power", {

@@ -20,7 +20,8 @@ function parseInteger(value, label) {
 // first and reducing afterwards is not an option — 123456789 to the 987654321 has more
 // digits than there are atoms in the room.
 function modularPower(base, exponent, modulus) {
-    let result = 1n;
+    // 1 % modulus, so modulus 1 with exponent 0 is 0 rather than 1.
+    let result = 1n % modulus;
     let factor = base % modulus;
     if (factor < 0n) factor += modulus;
     let power = exponent;

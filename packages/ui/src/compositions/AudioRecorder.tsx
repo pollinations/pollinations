@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { audioTime } from "../lib/audio-time.ts";
-import { mediaActionTileClass } from "../lib/media-action-tile.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+} from "../lib/media-action-tile.ts";
 import { RECORDING_SAMPLE_RATE, recordedWav } from "../lib/recorded-wav.ts";
 import { MicIcon } from "../primitives/icons/index.tsx";
 import { Text } from "../primitives/Typography.tsx";
@@ -200,6 +203,9 @@ export function AudioRecorder({
                 className={mediaActionTileClass(
                     disabled || waiting,
                     typeof state === "object",
+                )}
+                {...mediaTileTint(
+                    typeof state === "object" ? undefined : "audio",
                 )}
                 aria-label={
                     typeof state === "object" ? "Stop recording" : undefined

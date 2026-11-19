@@ -1,4 +1,26 @@
+import type { CSSProperties } from "react";
+import {
+    modalityBgVar,
+    modalityColorVar,
+    modalityTextColor,
+} from "../modules/gen/themes.ts";
 import { cn } from "./cn.ts";
+
+export type TileModality = "image" | "video" | "audio" | "mixed";
+
+export function mediaTileTint(modality?: TileModality) {
+    if (modality === "mixed") return { "data-theme": "neutral" };
+    if (!modality) return undefined;
+    const color = modalityColorVar(modality);
+    return {
+        style: {
+            "--polli-color-bg-pale": modalityBgVar(modality),
+            "--polli-color-text-soft": modalityTextColor(modality),
+            "--polli-color-border": `color-mix(in oklab, ${color} 45%, var(--polli-color-divider))`,
+            "--polli-color-fill-wash": `color-mix(in oklab, ${color} 18%, var(--polli-color-surface-opaque))`,
+        } as CSSProperties,
+    };
+}
 
 /** Shared square for a native file-picker label or a microphone button. */
 export function mediaActionTileClass(disabled: boolean, recording = false) {

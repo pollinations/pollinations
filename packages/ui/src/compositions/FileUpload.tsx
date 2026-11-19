@@ -8,7 +8,11 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
-import { mediaActionTileClass } from "../lib/media-action-tile.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+    type TileModality,
+} from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
@@ -128,6 +132,7 @@ export type FileUploadProps = {
     icon?: ReactNode;
     label?: ReactNode;
     previewIcon?: ReactNode;
+    tileModality?: TileModality;
     /** Fully locks the field: no add, no remove, drops ignored. */
     disabled?: boolean;
     className?: string;
@@ -140,6 +145,7 @@ export function FileUpload({
     maxFiles = 4,
     maxSizeBytes = 10 * 1024 * 1024,
     accept = "image/*",
+    tileModality,
     icon = <ImageIcon className="polli:h-6 polli:w-6" />,
     label = (
         <>
@@ -224,6 +230,7 @@ export function FileUpload({
                         <label
                             htmlFor={inputId}
                             className={mediaActionTileClass(!canAdd)}
+                            {...mediaTileTint(tileModality)}
                         >
                             {value.length ? (
                                 <PlusIcon className="polli:h-6 polli:w-6" />

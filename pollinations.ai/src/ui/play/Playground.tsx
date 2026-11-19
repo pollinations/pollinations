@@ -830,6 +830,7 @@ export function Playground() {
         const onReject: FileUploadProps["onReject"] = (rejected) =>
             runStore.set({ error: messages[rejected[0].reason] });
         return {
+            tileModality: media.length === 1 ? media[0] : ("mixed" as const),
             accept: media.map((item) => UPLOAD_ACCEPT[item]).join(","),
             maxSizeBytes: maxMb * 1024 * 1024,
             onReject,

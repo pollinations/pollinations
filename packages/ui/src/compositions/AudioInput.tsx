@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
-import { mediaActionTileClass } from "../lib/media-action-tile.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+    type TileModality,
+} from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { CloudUploadIcon, XIcon } from "../primitives/icons/index.tsx";
@@ -17,6 +21,7 @@ export type AudioInputProps = {
     onReject?: (files: RejectedFile[]) => void;
     accept?: string;
     importLabel?: string;
+    tileModality?: TileModality;
     maxFiles?: number;
     maxSizeBytes: number;
     disabled?: boolean;
@@ -77,6 +82,7 @@ export function AudioInput({
     onReject,
     accept = "audio/*",
     importLabel = "Import audio",
+    tileModality = "audio",
     maxFiles = 1,
     maxSizeBytes,
     disabled = false,
@@ -166,6 +172,7 @@ export function AudioInput({
                             <button
                                 type="button"
                                 className={mediaActionTileClass(disabled)}
+                                {...mediaTileTint(tileModality)}
                                 disabled={disabled}
                                 onClick={() => picker.current?.click()}
                             >

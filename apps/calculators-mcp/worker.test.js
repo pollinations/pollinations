@@ -956,7 +956,10 @@ test("list_discovery_endpoints returns structured discovery data", async (t) => 
     const client = await clientFor(t);
     const result = await call(client, "list_discovery_endpoints");
     assert.ok(Array.isArray(result.endpoints), "endpoints must be array");
-    assert.ok(result.endpoints.length > 0, "endpoints must not be empty");
+    // llms.txt lists sixteen start-here links; fewer means the snapshot went stale.
+    assert.ok(result.endpoints.length >= 16, "endpoints must not be empty");
+    const hrefs = result.endpoints.map((ep) => ep.href);
+    assert.equal(new Set(hrefs).size, hrefs.length, "hrefs must be unique");
     assert.equal(typeof result.count, "number", "count must be number");
     assert.equal(
         result.endpoints.length,

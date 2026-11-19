@@ -5,6 +5,7 @@ import { audioEndpoint } from "./audio-endpoint";
 import {
     audioConstraintError,
     audioInputError,
+    audioTaskForModel,
     generatePlaygroundAudio,
     type ReferenceUploads,
     supportsAudioLength,
@@ -52,6 +53,34 @@ describe("catalog-driven audio requests", () => {
         expect(audioEndpoint(model("/future/audio"))).toBeUndefined();
     });
 
+    it("uses the catalog endpoint before a workspace override", () => {
+        expect(
+            audioTaskForModel({
+                id: "google/lyria-3.5",
+                supportedEndpoints: ["/v1/audio/transcriptions"],
+            }),
+        ).toBe("transcription");
+        expect(
+            audioTaskForModel({
+                id: "google/lyria-3.5",
+                supportedEndpoints: ["/v1/audio/speech"],
+            }),
+        ).toBe("music-and-sound-effects");
+        expect(
+            audioTaskForModel({
+                id: "google/lyria-future",
+                supportedEndpoints: ["/v1/audio/speech"],
+            }),
+        ).toBe("speech-generation");
+    });
+    it("prefers duration choices published by the catalog", () => {
+        expect(
+            supportsAudioLength({
+                id: "google/lyria-3.5",
+                allowedDurations: [5, 10],
+            }),
+        ).toBe(true);
+    });
     it("offers length only for music models with adjustable duration", () => {
         expect(
             supportsAudioLength({

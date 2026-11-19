@@ -4,6 +4,7 @@ import type {
     Pollinations,
     StemSeparationOptions,
 } from "@pollinations/sdk";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
 import { audioEndpoint } from "./audio-endpoint";
 
 type AudioModel = {
@@ -12,6 +13,19 @@ type AudioModel = {
     supportedEndpoints: string[];
     audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
+
+export function audioTaskForModel(
+    model: Pick<AudioModel, "id" | "supportedEndpoints">,
+) {
+    const endpoint = audioEndpoint(model);
+    if (endpoint === "/v1/audio/transcriptions") return "transcription";
+    if (endpoint === "/v1/audio/voice-changer") return "voice-changer";
+    if (endpoint === "/v1/audio/voice-isolator") return "voice-isolator";
+    if (endpoint === "/alpha/audio/stem-separation") return "stem-separation";
+    return playgroundModelOverride(model.id)?.musicAndSounds
+        ? "music-and-sound-effects"
+        : "speech-generation";
+}
 
 export function transcriptionControls(model: AudioModel) {
     const options = model.audioInputConstraints?.transcription_options;
@@ -25,13 +39,8 @@ export function supportsAudioLength(model: {
     id: string;
     allowedDurations: number[];
 }) {
-    // Lyria 3.5 takes approximate length in the prompt and Sonilo follows its
-    // video. Fixed-length models choose their only duration when omitted.
-    return (
-        model.id !== "google/lyria-3.5" &&
-        model.id !== "sonilo/sonilo-1.1-sfx" &&
-        model.allowedDurations.length !== 1
-    );
+    if (model.allowedDurations.length) return model.allowedDurations.length > 1;
+    return !playgroundModelOverride(model.id)?.durationFromInput;
 }
 
 export const VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".mkv"];

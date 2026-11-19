@@ -7,6 +7,12 @@ describe("video controls", () => {
             "1:1",
         );
     });
+    it("requires catalog sound support and only applies defaults to the exact model", () => {
+        expect(videoOptions("google/veo-3.1-fast", []).sound).toBe("off");
+        expect(videoOptions("google/veo-future", ["audio_output"]).sound).toBe(
+            "on",
+        );
+    });
     it("matches optional sound defaults and fixed sound capabilities", () => {
         expect(
             videoOptions("google/veo-3.1-fast", ["audio_output"]),

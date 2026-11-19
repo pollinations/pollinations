@@ -1,0 +1,189 @@
+{
+    "alibaba/happyhorse-1.1": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"],
+        "defaultRatio": "16:9"
+    },
+    "alibaba/wan-2.2-fast": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1"]
+    },
+    "alibaba/wan-2.7": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Frames and reference media use separate generation modes. Reference mode stops at ten seconds.",
+        "source": "gen.pollinations.ai/src/image/models/wanVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "exclusiveReferences": true,
+        "maxDurationWithReference": 10
+    },
+    "alibaba/wan-3.0": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/alibabaVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": true,
+        "exclusiveReferences": true
+    },
+    "black-forest-labs/flux-3-max": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/fluxMaxVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-1-pro-fast": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
+    "bytedance/seedance-2.0": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true
+    },
+    "bytedance/seedance-2.0-fast": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-2.0-mini": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-2.5": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/seedance25VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true
+    },
+    "elevenlabs/eleven-text-to-sound-v2": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "elevenlabs/eleven-text-to-sound-v3": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "elevenlabs/music-v2": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "elevenlabs/music-v2.5": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "google/lyria-3-clip-preview": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "google/lyria-3.5": {
+        "reason": "Music length is guided by the prompt.",
+        "source": "gen.pollinations.ai/src/audio/lyria.ts",
+        "musicAndSounds": true,
+        "durationFromInput": true
+    },
+    "google/veo-3.1-fast": {
+        "reason": "Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/veoVideoModel.ts",
+        "soundToggleDefault": false
+    },
+    "heygen/heygen-video-1": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
+    "kandinskylab/kandinsky-6.0-lite": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": true
+    },
+    "kwaivgi/kling-v3.0-std": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Leave the optional soundtrack off by default because it costs extra.",
+        "source": "gen.pollinations.ai/src/image/models/klingVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": false
+    },
+    "minimax/minimax-h3": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["16:9"]
+    },
+    "minimax/minimax-h3-max": {
+        "reason": "Match the video adapter’s aspect ratios. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "exclusiveReferences": true
+    },
+    "minimax/minimax-h3-max-turbo": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"]
+    },
+    "mirelo/sfx-2.0": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": []
+    },
+    "prunaai/p-image-edit": {
+        "reason": "Editing requires a source image on the shared image route.",
+        "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
+        "requiresImage": true
+    },
+    "prunaai/p-video": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "sonilo/sonilo-1.1-sfx": {
+        "reason": "Sound effects follow the input video’s length.",
+        "source": "gen.pollinations.ai/src/audio/sonilo.ts",
+        "musicAndSounds": true,
+        "durationFromInput": true
+    },
+    "stability-ai/stable-audio-3": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "stability-ai/stable-audio-3-medium": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "musicAndSounds": true
+    },
+    "x-ai/grok-imagine-video": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "x-ai/grok-imagine-video-1.5": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/xaiVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    }
+}

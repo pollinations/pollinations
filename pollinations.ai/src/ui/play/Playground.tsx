@@ -62,6 +62,7 @@ import {
     useSyncExternalStore,
 } from "react";
 import { API_BASE_URL, ENTER_URL } from "../../config";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint } from "./audio-endpoint";
@@ -78,6 +79,7 @@ import {
 import {
     audioConstraintError,
     audioInputError,
+    audioTaskForModel,
     generatePlaygroundAudio,
     isVideo,
     type ReferenceUploads,
@@ -289,23 +291,6 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
                 `YOUR_UPLOADED_${media.toUpperCase()}_URL_${index + 1}`,
         )
         .join("|");
-}
-
-function audioTaskForModel(model: PlaygroundModel) {
-    const endpoint = audioEndpoint(model);
-    if (endpoint === "/v1/audio/transcriptions") return "transcription";
-    if (endpoint === "/v1/audio/voice-changer") return "voice-changer";
-    if (endpoint === "/v1/audio/voice-isolator") return "voice-isolator";
-    if (endpoint === "/alpha/audio/stem-separation") return "stem-separation";
-    const audioPurpose = `${model.title} ${model.description}`.toLowerCase();
-    if (
-        audioPurpose.includes("music") ||
-        audioPurpose.includes("song") ||
-        audioPurpose.includes("sound effect") ||
-        audioPurpose.includes("soundscape")
-    )
-        return "music-and-sound-effects";
-    return "speech-generation";
 }
 
 function supportsTask(model: PlaygroundModel, task: Task) {
@@ -1296,15 +1281,14 @@ export function Playground({
         videoConfig.exclusiveReferences &&
         supportsFrames &&
         referenceImages.length > 0;
-    const mediaSettings = mediaModelSettings(
-        currentModel?.id === "alibaba/wan-2.7" && hasReferenceMedia
-            ? { ...currentModel, maxDuration: 10 }
-            : currentModel,
-        {
-            resolution: selectedResolution,
-            duration,
-        },
-    );
+    const modelOverride = playgroundModelOverride(currentModel?.id ?? "");
+    const mediaSettings = mediaModelSettings(currentModel, {
+        resolution: selectedResolution,
+        duration,
+        durationLimit: hasReferenceMedia
+            ? modelOverride?.maxDurationWithReference
+            : undefined,
+    });
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
     const selectedAudioClips =
@@ -1687,7 +1671,7 @@ export function Playground({
     const requiresImage =
         !isGif &&
         currentModel?.category === "image" &&
-        (currentModel.id === "prunaai/p-image-edit" ||
+        ((modelOverride?.requiresImage && inputModalities?.includes("image")) ||
             (currentModel.supportedEndpoints.includes("/v1/images/edits") &&
                 !currentModel.supportedEndpoints.includes(
                     "/v1/images/generations",

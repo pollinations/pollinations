@@ -54,7 +54,7 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`).",
+                "Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `|` or `,`. Required for image-only models (e.g. `microsoft/trellis-2`, `nvidia/asset-harvester`).",
         }),
     seed: z.coerce.number().int().optional().meta({
         description:

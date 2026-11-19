@@ -715,6 +715,22 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "ideogram-ai/ideogram-vector-1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Ideogram",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.01 }, // fal reports integer cents as billable units.
+        title: "Ideogram Vector 1",
+        description:
+            "Create editable SVG artwork from a prompt and up to five reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5,
+    },
     "ideogram-ai/ideogram-v4-balanced": {
         aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
@@ -1870,6 +1886,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
+    "quiverai/arrow-2": {
+        aliases: [],
+        provider: "quiverai",
+        publisher: "QuiverAI",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Arrow 2",
+        description:
+            "Generate editable SVG illustrations, icons, and diagrams from text and reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14,
+    },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
         provider: "fal",
@@ -2123,6 +2158,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,
+        billedSecondsFollowReference: true,
     },
     "alibaba/happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
@@ -2146,6 +2182,8 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+        // OpenRouter bills at least 5 seconds per clip.
+        minBilledSeconds: 5,
     },
     "kwaivgi/kling-v3.0-std": {
         aliases: [],
@@ -2683,6 +2721,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 120,
         defaultDuration: 120,
+        billedSecondsFollowReference: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

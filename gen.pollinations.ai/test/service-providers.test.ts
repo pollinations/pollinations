@@ -25,6 +25,7 @@ const PROVIDER_NAMES: Record<string, string> = {
     openrouter: "OpenRouter",
     ovhcloud: "OVHcloud",
     perplexity: "Perplexity",
+    quiverai: "QuiverAI",
     replicate: "Replicate",
     stability: "Stability AI",
     vast: "Vast.ai",

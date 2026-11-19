@@ -1060,7 +1060,7 @@ const ImageDataSchema = z.object({
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
         description:
-            "MIME type, included for URL responses and non-raster output",
+            "MIME type of the returned media, included in both URL and base64 responses.",
     }),
     revised_prompt: z.string().optional(),
 });

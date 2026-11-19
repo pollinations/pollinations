@@ -23,7 +23,11 @@ import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
-import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    generateImageOrVideoResponse,
+    parseImageParams,
+} from "@/image/handler.ts";
+import { quoteMediaRequest } from "@/image/quote.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
@@ -334,6 +338,46 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
     },
 );
 
+/**
+ * Prices an image or video request for the balance check. Where the options
+ * set the price (duration, resolution, sound, references), the check uses that
+ * price instead of the model's average. Each model of a caller's list is
+ * priced on its own definition. Runs before the entry check and again in the
+ * durable execution, which re-checks each model it tries.
+ */
+export const mediaRequestPrice = createMiddleware<Env>(async (c, next) => {
+    c.var.balance.requestPrice = ({ resolved, definition }) => {
+        try {
+            const json =
+                c.req.method === "POST"
+                    ? (c.req.valid("json" as never) as Record<string, unknown>)
+                    : undefined;
+            return quoteMediaRequest(
+                resolved,
+                definition,
+                parseImageParams(
+                    c,
+                    json ? { ...json, ...resolveParams(json) } : {},
+                    {
+                        ...c.var.model,
+                        resolved,
+                        definition,
+                        communityEndpoint:
+                            resolved === c.var.model.resolved
+                                ? c.var.model.communityEndpoint
+                                : undefined,
+                    },
+                ),
+            );
+        } catch {
+            // Invalid options are the generator's to report, as before;
+            // the check then uses the model's average.
+            return undefined;
+        }
+    };
+    await next();
+});
+
 /** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
@@ -431,11 +475,6 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
         if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
-        const mediaData =
-            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
-            mediaType.startsWith("video/")
-                ? { media_type: mediaType }
-                : {};
 
         if (body.response_format === "url") {
             // Media emits one enclosure link for the stored file.
@@ -463,7 +502,10 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
             c,
             c.json(
                 imageResponse(
-                    { b64_json: base64, ...mediaData },
+                    // Base64 bytes carry no Content-Type, so declare the type
+                    // for every media type; without it the SDK falls back to
+                    // image/png and mislabels JPEG output.
+                    { b64_json: base64, media_type: mediaType },
                     body.prompt,
                     usage,
                 ),

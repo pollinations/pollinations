@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "uniprot_search",
             ].sort(),
         );
     });
@@ -644,4 +645,78 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("UniProt search scopes organism and review status and keeps curated function text", async (t) => {
+    const urls = [];
+    mock.method(globalThis, "fetch", async (input, init) => {
+        urls.push(new URL(input));
+        assert.equal(new Headers(init.headers).get("authorization"), null);
+        return Response.json({
+            results: [
+                {
+                    entryType: "UniProtKB reviewed (Swiss-Prot)",
+                    primaryAccession: "P04637",
+                    organism: { scientificName: "Homo sapiens", taxonId: 9606 },
+                    proteinDescription: {
+                        recommendedName: {
+                            fullName: { value: "Cellular tumor antigen p53" },
+                        },
+                    },
+                    genes: [{ geneName: { value: "TP53" } }],
+                    comments: [
+                        {
+                            commentType: "FUNCTION",
+                            texts: [{ value: "Acts as a tumor suppressor." }],
+                        },
+                    ],
+                    sequence: { length: 393 },
+                },
+                {
+                    entryType: "UniProtKB unreviewed (TrEMBL)",
+                    primaryAccession: "A0A000",
+                    proteinDescription: {
+                        submissionNames: [
+                            { fullName: { value: "p53 fragment" } },
+                        ],
+                    },
+                },
+            ],
+        });
+    });
+    const c = await client(t);
+    let result = await call(c, "uniprot_search", {
+        query: "gene_exact:TP53",
+        organism: 9606,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const [p53, fragment] = value(result).proteins;
+    assert.deepEqual(p53, {
+        accession: "P04637",
+        reviewed: true,
+        name: "Cellular tumor antigen p53",
+        genes: ["TP53"],
+        organism: "Homo sapiens",
+        taxonId: 9606,
+        length: 393,
+        function: "Acts as a tumor suppressor.",
+        functionTruncated: false,
+        url: "https://www.uniprot.org/uniprotkb/P04637",
+    });
+    assert.equal(fragment.name, "p53 fragment");
+    assert.equal(fragment.reviewed, false);
+    assert.equal(fragment.function, null);
+    result = await call(c, "uniprot_search", {
+        query: "insulin",
+        reviewed: false,
+        limit: 2,
+    });
+    assert.equal(urls[0].hostname, "rest.uniprot.org");
+    assert.equal(
+        urls[0].searchParams.get("query"),
+        "(gene_exact:TP53) AND organism_id:9606 AND reviewed:true",
+    );
+    assert.equal(urls[0].searchParams.get("size"), "5");
+    assert.equal(urls[1].searchParams.get("query"), "(insulin)");
+    assert.equal(urls[1].searchParams.get("size"), "2");
 });

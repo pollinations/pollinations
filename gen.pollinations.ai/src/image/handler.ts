@@ -100,6 +100,7 @@ const IMAGE_ENV_KEYS = [
     "AI_GATEWAY_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
+    "STABILITY_API_KEY",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 

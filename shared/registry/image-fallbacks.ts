@@ -9,6 +9,18 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "stability-ai/stable-diffusion-3.5-large": {
+        "stability-ai/stable-diffusion-3.5-large:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.065 },
+        },
+    },
+    "stability-ai/stable-image-core": {
+        "stability-ai/stable-image-core:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.03 },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",

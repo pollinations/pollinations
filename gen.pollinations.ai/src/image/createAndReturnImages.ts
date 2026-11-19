@@ -664,7 +664,7 @@ const callGPTImageWithEndpoint = async (
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
     // PNG remains the default; Flare may request lossless WebP or an animated GIF.
-    const outputFormat = safeParams.output_format ?? "png";
+    const outputFormat = (safeParams.transparent || safeParams.background === "transparent") ? "png" : (safeParams.output_format ?? "png");
     const requestBody = {
         ...(config.provider === "openai" ? { model: config.modelName } : {}),
         prompt: sanitizeString(prompt),

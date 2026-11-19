@@ -68,6 +68,25 @@ it("restores the recording bytes, file metadata and prompt once", async () => {
     expect(await takeConnectDraft()).toBeUndefined();
 });
 
+it("preserves separate drafts for tasks with the same media type", async () => {
+    await saveConnectDraft({
+        transcription: {
+            ...selection.audio,
+            params: { task: "transcription", language: "fr" },
+        },
+        "audio-processing": {
+            ...selection.audio,
+            params: { task: "audio-processing", stems: "2" },
+            audioFiles: [],
+        },
+    });
+    const drafts = await takeConnectDraft();
+    expect(drafts?.transcription.params.language).toBe("fr");
+    expect(drafts?.transcription.audioFiles[0].name).toBe(recording.name);
+    expect(drafts?.["audio-processing"].params.stems).toBe("2");
+    expect(drafts?.["audio-processing"].audioFiles).toEqual([]);
+});
+
 it("a fresh tab sweeps an abandoned expired draft while preserving a live tab's draft", async () => {
     const now = Date.now();
     const clock = vi.spyOn(Date, "now").mockReturnValue(now);

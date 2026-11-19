@@ -7,7 +7,7 @@ type TabDraft<T> = {
     videoReferences: Record<Category, T[]>;
     audioFiles: T[];
 };
-export type ConnectDrafts<T = File> = Partial<Record<Category, TabDraft<T>>>;
+export type ConnectDrafts<T = File> = Record<string, TabDraft<T>>;
 
 type StoredFile = {
     bytes: ArrayBuffer;
@@ -23,10 +23,8 @@ async function mapFiles<T, R>(
 ): Promise<ConnectDrafts<R>> {
     const result: ConnectDrafts<R> = {};
     const map = (files: T[]) => Promise.all(files.map(convert));
-    for (const category of ["image", "video", "audio"] as const) {
-        const draft = drafts[category];
-        if (!draft) continue;
-        result[category] = {
+    for (const [task, draft] of Object.entries(drafts)) {
+        result[task] = {
             params: draft.params,
             referenceImages: await map(draft.referenceImages),
             videoReferences: {

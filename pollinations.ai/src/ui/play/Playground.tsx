@@ -42,7 +42,6 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import {
-    categoryLabel,
     ModalityTab,
     modalityBgVar,
     modalityTextColor,
@@ -107,13 +106,27 @@ type PlaygroundModel = MediaModelMetadata & {
     audioInputConstraints?: ModelInfo["audio_input_constraints"];
 };
 
-const AUDIO_GROUP_LABEL = {
-    "speech-generation": "Speech",
-    "music-and-sound-effects": "Music & effects",
-    transcription: "Transcribe",
-    "audio-processing": "Edit audio",
-} as const;
-type AudioTask = keyof typeof AUDIO_GROUP_LABEL;
+const TASKS = (
+    [
+        { id: "image", label: "Create image", category: "image" },
+        { id: "edit-image", label: "Edit image", category: "image" },
+        { id: "video", label: "Create video", category: "video" },
+        {
+            id: "speech-generation",
+            label: "Generate speech",
+            category: "audio",
+        },
+        {
+            id: "music-and-sound-effects",
+            label: "Music & effects",
+            category: "audio",
+        },
+        { id: "transcription", label: "Transcribe", category: "audio" },
+        { id: "audio-processing", label: "Edit audio", category: "audio" },
+    ] as const
+).map((task) => ({ ...task, runStore: createRunStore<PlaygroundResult>() }));
+type Task = (typeof TASKS)[number];
+type AudioTask = Extract<Task, { category: "audio" }>["id"];
 
 function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
@@ -145,12 +158,6 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     };
 }
 
-const CATEGORY_ORDER = [
-    "image",
-    "video",
-    "audio",
-] as const satisfies readonly ModelCategory[];
-type PlaygroundCategory = (typeof CATEGORY_ORDER)[number];
 const CATEGORY_ICON = {
     image: ImageIcon,
     video: VideoIcon,
@@ -190,17 +197,15 @@ type PlaygroundResult =
           text: string;
       };
 
-function promptPlaceholder(
-    category: PlaygroundCategory,
-    audioTask?: AudioTask,
-): string {
+function promptPlaceholder(task: Task): string {
+    const { category, id } = task;
+    if (id === "edit-image") return "Describe the changes you want…";
     if (category === "image") return "Describe the image you want…";
     if (category === "video") return "Describe the video you want…";
-    if (audioTask === "transcription")
+    if (id === "transcription")
         return "Vocabulary, names, or context for the transcript";
-    if (audioTask === "speech-generation")
-        return "Enter the words you want spoken…";
-    if (audioTask === "music-and-sound-effects")
+    if (id === "speech-generation") return "Enter the words you want spoken…";
+    if (id === "music-and-sound-effects")
         return "Describe the music or sound you want…";
     return "Describe what you want…";
 }
@@ -229,11 +234,6 @@ function mediaResult(
 // Kept in memory so leaving /play and coming back restores the last inputs,
 // result and any run still in flight. Connect saves selected files for the redirect.
 let lastInputs: PlaySearch | undefined;
-const tabRuns = {
-    image: createRunStore<PlaygroundResult>(),
-    video: createRunStore<PlaygroundResult>(),
-    audio: createRunStore<PlaygroundResult>(),
-};
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
@@ -281,57 +281,48 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     return "speech-generation";
 }
 
-const VIDEO_FILTER_LABELS = {
-    start_frame: "Start from an image",
-    reference_videos: "Use a video",
-    reference_audios: "Use audio",
-} as const;
-
-function modelFilterGroups(
-    category: PlaygroundCategory,
-    models: PlaygroundModel[],
-) {
-    const all = { key: "all", label: "All", models };
-    if (category === "audio") {
-        const tasks = Object.entries(AUDIO_GROUP_LABEL).map(([key, label]) => ({
-            key,
-            label,
-            models: models.filter((model) => audioTaskForModel(model) === key),
-        }));
-        return [all, ...tasks.filter((group) => group.models.length > 0)];
-    }
-    if (category === "image") {
-        const editable = models.filter(
-            (model) =>
-                referenceImageLimit(model) > 0 &&
-                model.supportedEndpoints.includes("/v1/images/edits"),
+function supportsTask(model: PlaygroundModel, task: Task) {
+    if (model.category !== task.category) return false;
+    if (task.category === "audio") return audioTaskForModel(model) === task.id;
+    if (task.id === "edit-image")
+        return (
+            referenceImageLimit(model) > 0 &&
+            model.supportedEndpoints.includes("/v1/images/edits")
         );
-        const filters = [
-            { key: "edit", label: "Edit an image", models: editable },
-            {
-                key: "multiple-images",
-                label: "Use multiple images",
-                models: editable.filter(
-                    (model) => referenceImageLimit(model) > 1,
-                ),
-            },
-        ];
-        return [all, ...filters.filter((group) => group.models.length > 0)];
-    }
-    const filters = Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
-        key,
-        label,
-        models: models.filter((model) => model.videoCapabilities.includes(key)),
-    }));
-    return [all, ...filters.filter((group) => group.models.length > 0)];
+    return true;
 }
 
-/** The catalog lists each tab's configured default model first. */
-function defaultModelId(
-    models: PlaygroundModel[],
-    category: PlaygroundCategory,
-): string {
-    return models.find((model) => model.category === category)?.id ?? "";
+const VIDEO_FILTER_LABELS = {
+    start_frame: "From an image",
+    reference_videos: "With video",
+    reference_audios: "With audio",
+} as const;
+
+function modelFilterGroups(task: Task, models: PlaygroundModel[]) {
+    const filters =
+        task.id === "video"
+            ? Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
+                  key,
+                  label,
+                  models: models.filter((model) =>
+                      model.videoCapabilities.includes(key),
+                  ),
+              }))
+            : task.id === "edit-image"
+              ? [
+                    {
+                        key: "multiple-images",
+                        label: "Use multiple images",
+                        models: models.filter(
+                            (model) => referenceImageLimit(model) > 1,
+                        ),
+                    },
+                ]
+              : [];
+    return [
+        { key: "all", label: "All", models },
+        ...filters.filter((group) => group.models.length > 0),
+    ];
 }
 
 /** A setting's choices as tabs, or its one fixed value as a chip. */
@@ -867,14 +858,15 @@ export function Playground({
               )
             : (lastInputs ?? {}),
     );
-    const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
-        () => CATEGORY_ORDER.find((value) => value === params.tab) ?? "image",
-    );
-    const tabDrafts = useRef(drafts);
+    const task =
+        TASKS.find((item) => item.id === params.task) ??
+        TASKS.find((item) => item.category === params.tab) ??
+        TASKS[0];
+    const activeCategory = task.category;
+    const taskDrafts = useRef(drafts);
+    const savedDraft = drafts[task.id] ?? drafts[activeCategory];
     const restored =
-        drafts[activeCategory]?.params.model === params.model
-            ? drafts[activeCategory]
-            : undefined;
+        savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {
         model: selectedModel = "",
         prompt = "",
@@ -903,7 +895,7 @@ export function Playground({
         restored?.audioFiles ?? [],
     );
     const linkedModelRef = useRef(selectedModel);
-    const runStore = tabRuns[activeCategory];
+    const { runStore } = task;
     const { result, running, error } = useSyncExternalStore(
         runStore.subscribe,
         runStore.get,
@@ -980,24 +972,18 @@ export function Playground({
             ? audioTaskForModel(currentModel)
             : undefined;
 
-    const categoryModels = useMemo(
-        () =>
-            visibleModels.filter((model) => model.category === activeCategory),
-        [activeCategory, visibleModels],
+    const taskModels = useMemo(
+        () => visibleModels.filter((model) => supportsTask(model, task)),
+        [task, visibleModels],
     );
-
     const modelGroups = useMemo(
-        () => modelFilterGroups(activeCategory, categoryModels),
-        [activeCategory, categoryModels],
+        () => modelFilterGroups(task, taskModels),
+        [task, taskModels],
     );
-    const [modelFilters, setModelFilters] = useState({
-        image: "all",
-        video: "all",
-        audio: "all",
-    });
-    const groupKey = modelFilters[activeCategory];
     const activeGroup =
-        modelGroups.find((group) => group.key === groupKey) ?? modelGroups[0];
+        modelGroups.find((group) => group.key === params.filter) ??
+        modelGroups[0];
+    const groupKey = activeGroup.key;
     const lastGroupModel = useRef(new Map<string, string>());
 
     // Picks the model for the open tab. One effect, so a linked ?model= and
@@ -1013,26 +999,30 @@ export function Playground({
                 !!linked &&
                 (model.id === linked || model.aliases.includes(linked)),
         );
-        const linkedCategory = CATEGORY_ORDER.find(
-            (value) => value === linkedModel?.category,
-        );
-        if (linkedModel && linkedCategory) {
-            setParams((previous) => ({ ...previous, model: linkedModel.id }));
-            setActiveCategory(linkedCategory);
-            return;
+        if (linkedModel) {
+            const linkedTask = supportsTask(linkedModel, task)
+                ? task
+                : TASKS.find((item) => supportsTask(linkedModel, item));
+            if (linkedTask) {
+                setParams((previous) => ({
+                    ...previous,
+                    task: linkedTask.id,
+                    model: linkedModel.id,
+                    filter:
+                        linkedTask === task &&
+                        activeGroup.models.includes(linkedModel)
+                            ? previous.filter
+                            : undefined,
+                }));
+                return;
+            }
         }
-        // Keep a restored selection while discovery loads, or until the user
-        // explicitly replaces a model that has left the catalog.
-        if (selectedModel && !currentModel) return;
-        if (currentModel?.category === activeCategory) return;
-        setParams((previous) => ({
-            ...previous,
-            model: defaultModelId(visibleModels, activeCategory),
-        }));
-        setAudioFiles([]);
+        if (selectedModel) return;
+        const first = activeGroup.models[0];
+        if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
-        activeCategory,
-        currentModel,
+        task,
+        activeGroup,
         selectedModel,
         visibleModels,
         isHydrated,
@@ -1333,20 +1323,24 @@ export function Playground({
         });
     }, [maxReferenceImages, currentModel]);
 
-    function selectCategory(category: PlaygroundCategory) {
-        if (category === activeCategory) return;
-        tabDrafts.current[activeCategory] = {
+    function selectTask(next: Task) {
+        if (next === task) return;
+        taskDrafts.current[task.id] = {
             params,
             referenceImages,
             videoReferences,
             audioFiles,
         };
-        const saved = tabDrafts.current[category];
+        const saved = taskDrafts.current[next.id];
         linkedModelRef.current = "";
-        setActiveCategory(category);
-        setParams(
-            saved?.params ?? { model: defaultModelId(visibleModels, category) },
-        );
+        setParams({
+            ...(saved?.params ?? {
+                model: visibleModels.find((model) => supportsTask(model, next))
+                    ?.id,
+            }),
+            task: next.id,
+            tab: next.category,
+        });
         setReferenceImages(saved?.referenceImages ?? []);
         setVideoReferences(
             saved?.videoReferences ?? { image: [], video: [], audio: [] },
@@ -1356,15 +1350,11 @@ export function Playground({
 
     function selectGroup(group: (typeof modelGroups)[number]) {
         if (group === activeGroup) return;
-        if (activeGroup)
-            lastGroupModel.current.set(
-                `${activeCategory}/${activeGroup.key}`,
-                selectedModel,
-            );
-        setModelFilters((previous) => ({
-            ...previous,
-            [activeCategory]: group.key,
-        }));
+        lastGroupModel.current.set(
+            `${task.id}/${activeGroup.key}`,
+            selectedModel,
+        );
+        setParam("filter", group.key);
         if (group.models.some((model) => model.id === selectedModel)) {
             if (activeCategory === "video" && group.key !== "all") {
                 setParam(
@@ -1374,9 +1364,7 @@ export function Playground({
             }
             return;
         }
-        const saved = lastGroupModel.current.get(
-            `${activeCategory}/${group.key}`,
-        );
+        const saved = lastGroupModel.current.get(`${task.id}/${group.key}`);
         selectModel(
             (
                 group.models.find((model) => model.id === saved) ??
@@ -1526,7 +1514,9 @@ export function Playground({
                       : currentAudioEndpoint === "/alpha/audio/stem-separation"
                         ? "Separate stems"
                         : "Generate audio"
-              : "Generate image";
+              : task.id === "edit-image"
+                ? "Edit image"
+                : "Generate image";
     const GenerateIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[activeCategory];
@@ -1546,8 +1536,11 @@ export function Playground({
             options={[generateLabel, againLabel, busyLabel]}
         />
     );
-    const connectLabel =
-        currentModel?.category === "video"
+    const connectLabel = isStemSeparation
+        ? "Connect to separate stems"
+        : task.id === "edit-image"
+          ? "Connect to edit image"
+          : currentModel?.category === "video"
             ? "Connect to create video"
             : currentModel?.category === "audio"
               ? isAudioTranscription
@@ -1557,6 +1550,8 @@ export function Playground({
 
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
+    const needsEditImage =
+        task.id === "edit-image" && referenceImages.length === 0;
     const missingInput = requiresMediaUpload
         ? audioFiles.length === 0
         : !prompt.trim();
@@ -1568,19 +1563,21 @@ export function Playground({
           ? null
           : audioError
             ? audioError
-            : missingInput
-              ? requiresMediaUpload
-                  ? `Upload ${mediaUploadLabel} first`
-                  : `Add ${promptLabel.toLowerCase()} first`
-              : !selectedModelAllowed
-                ? isLoading
-                    ? "Models are loading"
-                    : catalogError
-                      ? "Models failed to load"
-                      : !currentModel
-                        ? "Choose an available model"
-                        : "This key cannot use the selected model"
-                : null;
+            : needsEditImage
+              ? "Add an image to edit"
+              : missingInput
+                ? requiresMediaUpload
+                    ? `Upload ${mediaUploadLabel} first`
+                    : `Add ${promptLabel.toLowerCase()} first`
+                : !selectedModelAllowed
+                  ? isLoading
+                      ? "Models are loading"
+                      : catalogError
+                        ? "Models failed to load"
+                        : !currentModel
+                          ? "Choose an available model"
+                          : "This key cannot use the selected model"
+                  : null;
 
     // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
     async function connect() {
@@ -1589,8 +1586,8 @@ export function Playground({
             return;
         }
         const saved = {
-            ...tabDrafts.current,
-            [activeCategory]: {
+            ...taskDrafts.current,
+            [task.id]: {
                 params,
                 referenceImages,
                 videoReferences,
@@ -1699,25 +1696,20 @@ export function Playground({
         ));
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            {/* Phones: one row of three equal tabs instead of wrapping "Audio". */}
-            <fieldset
-                aria-label="Modality"
-                className="m-0 grid min-w-0 grid-cols-3 gap-2 border-0 p-0 sm:flex sm:flex-wrap"
-            >
-                {CATEGORY_ORDER.map((category) => (
+            <ButtonGroup aria-label="Playground task">
+                {TASKS.map((item) => (
                     <ModalityTab
-                        key={category}
-                        active={category === activeCategory}
-                        size="lg"
-                        modality={category}
-                        icon={CATEGORY_ICON[category]}
-                        className="max-sm:px-2"
-                        onClick={() => selectCategory(category)}
+                        key={item.id}
+                        active={item === task}
+                        size="sm"
+                        modality={item.category}
+                        icon={CATEGORY_ICON[item.category]}
+                        onClick={() => selectTask(item)}
                     >
-                        {categoryLabel(category)}
+                        {item.label}
                     </ModalityTab>
                 ))}
-            </fieldset>
+            </ButtonGroup>
 
             <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (
@@ -1728,28 +1720,6 @@ export function Playground({
                     </div>
                 )}
                 <div className="flex flex-col gap-4 pt-6">
-                    {modelGroups.length > 1 && (
-                        <ButtonGroup
-                            aria-label={`${categoryLabel(activeCategory)} model filters`}
-                        >
-                            {modelGroups.map((group) => (
-                                <TabButton
-                                    key={group.key}
-                                    size="sm"
-                                    active={group === activeGroup}
-                                    onClick={() => selectGroup(group)}
-                                >
-                                    {group.label}
-                                </TabButton>
-                            ))}
-                        </ButtonGroup>
-                    )}
-                    <ModelPicker
-                        models={activeGroup?.models ?? categoryModels}
-                        selectedModel={selectedModel}
-                        isLoading={isLoading || !isHydrated}
-                        onSelectModel={selectModel}
-                    />
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&
@@ -1766,65 +1736,89 @@ export function Playground({
                         aria-label="Generation inputs"
                         className="flex flex-col gap-5"
                     >
-                        {currentModel && (
-                            <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
-                                {currentModel.description && (
-                                    <Text>{currentModel.description}</Text>
-                                )}
-                                <div className="flex flex-wrap items-center gap-2 text-xs">
-                                    {[
-                                        {
-                                            label: "Cost",
-                                            value: cost,
-                                            detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
-                                        },
-                                        {
-                                            label: "Time",
-                                            value: time,
-                                            detail: "Average response time for successful requests over the last 7 days.",
-                                        },
-                                    ].map(
-                                        ({ label, value, detail }) =>
-                                            value && (
-                                                <Tooltip
-                                                    key={label}
-                                                    ariaLabel={`${label} ${value}`}
-                                                    content={detail}
-                                                    side="top"
-                                                    align="center"
-                                                    tapEnabled
-                                                >
-                                                    <Chip
-                                                        size="md"
-                                                        data-theme="neutral"
-                                                        className="tabular-nums"
-                                                    >
-                                                        <span className="text-theme-text-muted">
-                                                            {label}
-                                                        </span>{" "}
-                                                        {value}
-                                                    </Chip>
-                                                </Tooltip>
-                                            ),
+                        <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
+                            {modelGroups.length > 1 && (
+                                <ButtonGroup
+                                    aria-label={`${task.label} model filters`}
+                                >
+                                    {modelGroups.map((group) => (
+                                        <TabButton
+                                            key={group.key}
+                                            size="sm"
+                                            active={group === activeGroup}
+                                            onClick={() => selectGroup(group)}
+                                        >
+                                            {group.label}
+                                        </TabButton>
+                                    ))}
+                                </ButtonGroup>
+                            )}
+                            <ModelPicker
+                                models={activeGroup.models}
+                                selectedModel={selectedModel}
+                                isLoading={isLoading || !isHydrated}
+                                onSelectModel={selectModel}
+                            />
+                            {currentModel && (
+                                <>
+                                    {currentModel.description && (
+                                        <Text>{currentModel.description}</Text>
                                     )}
-                                    <InlineLink
-                                        href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                        aria-label={`Pricing for ${currentModel.title} on Enter`}
-                                        tone="quiet"
-                                        style={{ fontWeight: "inherit" }}
-                                    >
-                                        Pricing
-                                    </InlineLink>
-                                    <InlineLink
-                                        href="https://model-monitor.pollinations.ai"
-                                        tone="quiet"
-                                        style={{ fontWeight: "inherit" }}
-                                    >
-                                        Model Monitor
-                                    </InlineLink>
-                                </div>
-                            </header>
-                        )}
+                                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                                        {[
+                                            {
+                                                label: "Cost",
+                                                value: cost,
+                                                detail: "Median charge per successful paid request over the last 7 days. Your settings can affect the price.",
+                                            },
+                                            {
+                                                label: "Time",
+                                                value: time,
+                                                detail: "Average response time for successful requests over the last 7 days.",
+                                            },
+                                        ].map(
+                                            ({ label, value, detail }) =>
+                                                value && (
+                                                    <Tooltip
+                                                        key={label}
+                                                        ariaLabel={`${label} ${value}`}
+                                                        content={detail}
+                                                        side="top"
+                                                        align="center"
+                                                        tapEnabled
+                                                    >
+                                                        <Chip
+                                                            size="md"
+                                                            data-theme="neutral"
+                                                            className="tabular-nums"
+                                                        >
+                                                            <span className="text-theme-text-muted">
+                                                                {label}
+                                                            </span>{" "}
+                                                            {value}
+                                                        </Chip>
+                                                    </Tooltip>
+                                                ),
+                                        )}
+                                        <InlineLink
+                                            href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                            aria-label={`Pricing for ${currentModel.title} on Enter`}
+                                            tone="quiet"
+                                            style={{ fontWeight: "inherit" }}
+                                        >
+                                            Pricing
+                                        </InlineLink>
+                                        <InlineLink
+                                            href="https://model-monitor.pollinations.ai"
+                                            tone="quiet"
+                                            style={{ fontWeight: "inherit" }}
+                                        >
+                                            Model Monitor
+                                        </InlineLink>
+                                    </div>
+                                </>
+                            )}
+                        </header>
                         {showPromptInput && (
                             <FieldStack
                                 label={
@@ -1854,10 +1848,7 @@ export function Playground({
                                             run();
                                         }
                                     }}
-                                    placeholder={promptPlaceholder(
-                                        activeCategory,
-                                        audioTask,
-                                    )}
+                                    placeholder={promptPlaceholder(task)}
                                     className={cn(
                                         "lg:min-h-56",
                                         isAudioTranscription
@@ -2392,51 +2383,53 @@ export function Playground({
                                 </div>
                             )}
                         </div>
-                    </Surface>
 
-                    {/* Not connected is not a broken state, so the button
+                        {/* Not connected is not a broken state, so the button
                             becomes the connect action. When it genuinely
                             cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <Button
-                            size="lg"
-                            intent="brand"
-                            // The page's main action: nectar whether it signs
-                            // in or generates. Busy fills with honey and shows
-                            // Polli. aria-disabled, not disabled, so focus
-                            // stays on the button; generate() ignores repeats.
-                            disabled={!!blockedReason}
-                            aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
-                            aria-describedby={
-                                clipError && blockedReason === clipError
-                                    ? clipStatusId
-                                    : statusId
-                            }
-                            icon={needsSignIn ? undefined : <GenerateIcon />}
-                            onClick={run}
-                            className={cn(
-                                needsSignIn && "h-12 gap-2 px-5 py-0",
-                            )}
-                        >
-                            {needsSignIn ? (
-                                <>
-                                    <BrandMark className="h-6 w-6" />
-                                    {connectLabel}
-                                </>
-                            ) : (
-                                generateText
-                            )}
-                        </Button>
-                        <Text
-                            id={statusId}
-                            size="xs"
-                            tone="muted"
-                            className="empty:hidden max-sm:w-full"
-                        >
-                            {blockedReason !== clipError && blockedReason}
-                        </Text>
-                    </div>
+                        <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-theme-text-strong/10 pt-4">
+                            <Button
+                                size="lg"
+                                intent="brand"
+                                // The page's main action: nectar whether it signs
+                                // in or generates. Busy fills with honey and shows
+                                // Polli. aria-disabled, not disabled, so focus
+                                // stays on the button; generate() ignores repeats.
+                                disabled={!!blockedReason}
+                                aria-disabled={isGenerating || undefined}
+                                aria-busy={isGenerating}
+                                aria-describedby={
+                                    clipError && blockedReason === clipError
+                                        ? clipStatusId
+                                        : statusId
+                                }
+                                icon={
+                                    needsSignIn ? undefined : <GenerateIcon />
+                                }
+                                onClick={run}
+                                className={cn(
+                                    needsSignIn && "h-12 gap-2 px-5 py-0",
+                                )}
+                            >
+                                {needsSignIn ? (
+                                    <>
+                                        <BrandMark className="h-6 w-6" />
+                                        {connectLabel}
+                                    </>
+                                ) : (
+                                    generateText
+                                )}
+                            </Button>
+                            <Text
+                                id={statusId}
+                                size="xs"
+                                tone="muted"
+                                className="empty:hidden max-sm:w-full"
+                            >
+                                {blockedReason !== clipError && blockedReason}
+                            </Text>
+                        </footer>
+                    </Surface>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

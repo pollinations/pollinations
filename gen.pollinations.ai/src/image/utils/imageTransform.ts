@@ -22,8 +22,9 @@ export function setImagesBinding(binding: ImagesBinding | undefined): void {
 export async function transformImage(
     inputBuffer: ArrayBuffer | Buffer,
     options: TransformOptions = {},
+    binding = imagesBinding,
 ): Promise<Buffer> {
-    if (!imagesBinding) {
+    if (!binding) {
         return inputBuffer instanceof ArrayBuffer
             ? Buffer.from(inputBuffer)
             : inputBuffer;
@@ -57,7 +58,7 @@ export async function transformImage(
 
     let stage = "input";
     try {
-        let pipeline = imagesBinding.input(stream);
+        let pipeline = binding.input(stream);
         if (width || height || maxWidth || maxHeight) {
             pipeline = pipeline.transform({
                 width: width || maxWidth,

@@ -300,6 +300,7 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
+        c.env.IMAGES,
     );
 }
 

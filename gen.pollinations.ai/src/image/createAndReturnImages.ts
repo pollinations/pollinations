@@ -80,6 +80,7 @@ import {
 } from "./utils/imageDownload.ts";
 import {
     resizeForGptImage,
+    transformImage,
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
@@ -1318,10 +1319,33 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
+    images: ImagesBinding | undefined,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
         const result = await generateImage(prompt, safeParams, userInfo);
+
+        if (
+            safeParams.output_format === "png" &&
+            (safeParams.model === "black-forest-labs/flux.1-schnell" ||
+                safeParams.model ===
+                    "black-forest-labs/flux.1-schnell:deepinfra")
+        ) {
+            const buffer =
+                detectImageMimeType(result.buffer) === "image/png"
+                    ? result.buffer
+                    : await transformImage(
+                          result.buffer,
+                          { format: "image/png" },
+                          images,
+                      );
+            if (detectImageMimeType(buffer) !== "image/png") {
+                throw new UpstreamError(502, {
+                    message: "FLUX PNG encoding failed",
+                });
+            }
+            return { ...result, buffer, mimeType: "image/png" };
+        }
 
         // Prepare metadata
         const { buffer: _buffer, ...resultMetadata } = result;

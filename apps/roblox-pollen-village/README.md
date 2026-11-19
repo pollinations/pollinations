@@ -35,8 +35,8 @@ next to the spawn. HTTP requests are already allowed.
 
 ## Add it to your game
 
-1. **Key.** Players in a public game spend this key's Pollen, so limit it to
-   text models and give it a budget, either on
+1. **Key.** Player requests in a public game are billed to the key owner's balance.
+   Limit the key to text models and give it a budget, either on
    [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys) or with the
    [CLI](https://www.npmjs.com/package/@pollinations/cli):
    `polli keys create --name roblox-npc --models text --budget 1`.

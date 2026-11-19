@@ -291,43 +291,39 @@ function modelFilterGroups(
     category: PlaygroundCategory,
     models: PlaygroundModel[],
 ) {
+    const all = { key: "all", label: "All", models };
     if (category === "audio") {
-        return Object.entries(AUDIO_GROUP_LABEL)
-            .map(([key, label]) => ({
-                key,
-                label,
-                models: models.filter(
-                    (model) => audioTaskForModel(model) === key,
-                ),
-            }))
-            .filter((group) => group.models.length > 0);
+        const tasks = Object.entries(AUDIO_GROUP_LABEL).map(([key, label]) => ({
+            key,
+            label,
+            models: models.filter((model) => audioTaskForModel(model) === key),
+        }));
+        return [all, ...tasks.filter((group) => group.models.length > 0)];
     }
-    const filters =
-        category === "image"
-            ? [
-                  {
-                      key: "edit",
-                      label: "Edit an image",
-                      models: models.filter(
-                          (model) =>
-                              referenceImageLimit(model) > 0 &&
-                              model.supportedEndpoints.includes(
-                                  "/v1/images/edits",
-                              ),
-                      ),
-                  },
-              ]
-            : Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
-                  key,
-                  label,
-                  models: models.filter((model) =>
-                      model.videoCapabilities.includes(key),
-                  ),
-              }));
-    return [
-        { key: "all", label: "All", models },
-        ...filters.filter((group) => group.models.length > 0),
-    ];
+    if (category === "image") {
+        const editable = models.filter(
+            (model) =>
+                referenceImageLimit(model) > 0 &&
+                model.supportedEndpoints.includes("/v1/images/edits"),
+        );
+        const filters = [
+            { key: "edit", label: "Edit an image", models: editable },
+            {
+                key: "multiple-images",
+                label: "Use multiple images",
+                models: editable.filter(
+                    (model) => referenceImageLimit(model) > 1,
+                ),
+            },
+        ];
+        return [all, ...filters.filter((group) => group.models.length > 0)];
+    }
+    const filters = Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
+        key,
+        label,
+        models: models.filter((model) => model.videoCapabilities.includes(key)),
+    }));
+    return [all, ...filters.filter((group) => group.models.length > 0)];
 }
 
 /** The catalog lists each tab's configured default model first. */
@@ -985,15 +981,14 @@ export function Playground({
         () => modelFilterGroups(activeCategory, categoryModels),
         [activeCategory, categoryModels],
     );
-    const [visualFilters, setVisualFilters] = useState({
+    const [modelFilters, setModelFilters] = useState({
         image: "all",
         video: "all",
+        audio: "all",
     });
-    const groupKey =
-        activeCategory === "audio" ? audioTask : visualFilters[activeCategory];
+    const groupKey = modelFilters[activeCategory];
     const activeGroup =
-        modelGroups.find((group) => group.key === groupKey) ??
-        (activeCategory !== "audio" ? modelGroups[0] : undefined);
+        modelGroups.find((group) => group.key === groupKey) ?? modelGroups[0];
     const lastGroupModel = useRef(new Map<string, string>());
 
     // Picks the model for the open tab. One effect, so a linked ?model= and
@@ -1357,12 +1352,10 @@ export function Playground({
                 `${activeCategory}/${activeGroup.key}`,
                 selectedModel,
             );
-        if (activeCategory !== "audio") {
-            setVisualFilters((previous) => ({
-                ...previous,
-                [activeCategory]: group.key,
-            }));
-        }
+        setModelFilters((previous) => ({
+            ...previous,
+            [activeCategory]: group.key,
+        }));
         if (group.models.some((model) => model.id === selectedModel)) {
             if (activeCategory === "video" && group.key !== "all") {
                 setParam(

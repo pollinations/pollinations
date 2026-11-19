@@ -25,6 +25,7 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callIdeogramVectorAPI } from "./models/ideogramVectorModel.ts";
 import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
 import {
@@ -1151,6 +1152,9 @@ const generateImage = async (
 
         case "bytedance/seedream-4.5":
             return await callOpenRouterSeedreamProAPI(prompt, safeParams);
+
+        case "ideogram-ai/ideogram-vector-1":
+            return await callIdeogramVectorAPI(prompt, safeParams);
 
         case "ideogram-ai/ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);

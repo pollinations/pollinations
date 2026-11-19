@@ -715,6 +715,22 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "ideogram-ai/ideogram-vector-1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Ideogram",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.01 }, // fal reports integer cents as billable units.
+        title: "Ideogram Vector 1",
+        description:
+            "Create editable SVG artwork from a prompt and up to five reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5,
+    },
     "ideogram-ai/ideogram-v4-balanced": {
         aliases: ["ideogram-v4-balanced"],
         provider: "replicate",

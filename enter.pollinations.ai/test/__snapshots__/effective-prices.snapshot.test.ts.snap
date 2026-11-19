@@ -1975,6 +1975,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "ideogram-ai/ideogram-vector-1": {
+    "cost": {
+      "completionImageTokens": 0.01,
+    },
+    "price": {
+      "completionImageTokens": 0.01,
+    },
+  },
   "inception/mercury-2": {
     "cost": {
       "completionTextTokens": 0.00000079125,

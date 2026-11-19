@@ -978,6 +978,15 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-neon:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-4-neon:openrouter:ai-studio"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-argon",
         config: portkeyConfig["google/gemini-4-argon"],
         transform: pipe(

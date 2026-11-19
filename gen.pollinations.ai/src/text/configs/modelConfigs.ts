@@ -1385,10 +1385,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "google/gemini-4-carbon",
         "google-ai-studio",
     ),
-    "google/gemini-4-neon": createVertexGeminiConfig(
-        "gemini-4-neon",
-        "global",
-    ),
+    "google/gemini-4-neon": createVertexGeminiConfig("gemini-4-neon", "global"),
+    "google/gemini-4-neon:openrouter:ai-studio": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemini-4-neon",
+            defaultOptions: {
+                provider: {
+                    only: ["google-ai-studio"],
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "google/gemini-4-argon": createVertexGeminiConfig(
         "gemini-4-argon",
         "global",

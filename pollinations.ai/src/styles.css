@@ -307,10 +307,11 @@ main > * {
     color: inherit;
 }
 
-/* Parameter rows (FieldStack orientation="inline"): one column, two from lg. */
+/* Allow room in each column for the shared label track and two media tiles. */
 .play-parameter-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    align-items: baseline;
     gap: 1.5rem 2rem;
 }
 .play-parameter-grid:empty {
@@ -319,12 +320,6 @@ main > * {
 /* Keep a label level with the first option when its buttons wrap. */
 .play-parameter-grid [data-scope="field"][data-part="root"]:has(> [role="group"]) {
     align-items: baseline;
-}
-@media (min-width: 64rem) {
-    .play-parameter-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: baseline;
-    }
 }
 
 .play-media-lightbox {

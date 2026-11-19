@@ -109,16 +109,19 @@ type PlaygroundModel = MediaModelMetadata & {
 const WORKSPACES = [
     {
         label: "Image",
+        icon: ImageIcon,
         category: "image",
         operations: [{ id: "image", label: "Image" }],
     },
     {
         label: "Video",
+        icon: VideoIcon,
         category: "video",
         operations: [{ id: "video", label: "Video" }],
     },
     {
         label: "Speech",
+        icon: MicIcon,
         category: "audio",
         operations: [
             { id: "speech-generation", label: "Generate speech" },
@@ -128,7 +131,8 @@ const WORKSPACES = [
         ],
     },
     {
-        label: "Music & sounds",
+        label: "Music & Sounds",
+        icon: AudioIcon,
         category: "audio",
         operations: [
             { id: "music-and-sound-effects", label: "Generate music & sounds" },
@@ -312,22 +316,16 @@ function OptionField({
     value,
     onChange,
     format = (option) => option,
-    className,
 }: {
     label: string;
     options: readonly string[];
     value: string | undefined;
     onChange: (option: string) => void;
     format?: (option: string) => string;
-    className?: string;
 }) {
     if (options.length === 0) return null;
     return (
-        <FieldStack
-            label={label}
-            orientation="inline"
-            className={cn("min-w-0", className)}
-        >
+        <FieldStack label={label} orientation="inline" className="min-w-0">
             {options.length === 1 ? (
                 <Chip
                     data-theme="neutral"
@@ -428,11 +426,6 @@ function VoicePicker({
                 label="Voice"
                 options={voices}
                 format={voiceLabel}
-                className={
-                    voices.length > 1
-                        ? "col-span-full max-sm:flex max-sm:flex-col max-sm:items-stretch"
-                        : undefined
-                }
                 value={value}
                 onChange={onChange}
             />
@@ -1738,7 +1731,7 @@ export function Playground({
                             size="lg"
                             className="max-sm:px-2"
                             modality={item.category}
-                            icon={CATEGORY_ICON[item.category]}
+                            icon={item.icon}
                             onClick={() => {
                                 if (item === task.workspace) return;
                                 const next =

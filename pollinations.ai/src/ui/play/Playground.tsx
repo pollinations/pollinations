@@ -190,11 +190,6 @@ const REFERENCE_CAPABILITY = {
     video: "reference_videos",
     audio: "reference_audios",
 } as const;
-const MEDIA_PLURAL = {
-    image: "images",
-    video: "videos",
-    audio: "audio",
-} as const;
 type UploadMedia = (typeof UPLOAD_MEDIA_ORDER)[number];
 const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     image: "image/*",
@@ -2038,7 +2033,7 @@ export function Playground({
                                                 ["image"],
                                                 `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
                                             )}
-                                            label="Add images"
+                                            label="Add image"
                                         />
                                         {referenceImages.length > 0 && (
                                             <UploadPrivacyNote />
@@ -2173,7 +2168,7 @@ export function Playground({
                                                                             ? `Use up to ${maxVideos === 1 ? "1 video" : `${maxVideos} videos`}.`
                                                                             : "Too many files.",
                                                                     )}
-                                                                    label={`Add ${MEDIA_PLURAL[media]}`}
+                                                                    label={`Add ${media}`}
                                                                     icon={
                                                                         <Icon className="h-6 w-6 shrink-0" />
                                                                     }

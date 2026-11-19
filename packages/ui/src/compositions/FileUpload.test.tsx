@@ -12,9 +12,10 @@ describe("FileUpload", () => {
                 onChange={() => {}}
                 maxFiles={2}
                 accept="audio/*"
+                label="Import audio"
             />,
         );
-        expect(html).toContain("Add files");
+        expect(html).toContain("Import audio");
         expect(html).toContain('accept="audio/*"');
         expect(html).toContain("multiple");
         expect(html).toContain("Remove recording.mp3");

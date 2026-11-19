@@ -15,7 +15,7 @@ import {
 } from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
-import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
+import { ImageIcon, XIcon } from "../primitives/icons/index.tsx";
 
 const PREVIEWABLE_IMAGE_TYPES = new Set([
     "image/gif",
@@ -149,7 +149,7 @@ export function FileUpload({
     icon = <ImageIcon className="polli:h-6 polli:w-6" />,
     label = (
         <>
-            Drag images here or <span className="polli:underline">browse</span>
+            Drag here or <span className="polli:underline">browse</span>
         </>
     ),
     previewIcon = <ImageIcon className="polli:h-5 polli:w-5" />,
@@ -232,12 +232,8 @@ export function FileUpload({
                             className={mediaActionTileClass(!canAdd)}
                             {...mediaTileTint(tileModality)}
                         >
-                            {value.length ? (
-                                <PlusIcon className="polli:h-6 polli:w-6" />
-                            ) : (
-                                icon
-                            )}
-                            <span>{value.length ? "Add files" : label}</span>
+                            {icon}
+                            <span>{label}</span>
                             <input
                                 id={inputId}
                                 type="file"

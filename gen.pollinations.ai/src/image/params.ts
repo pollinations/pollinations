@@ -96,7 +96,7 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
-        // GPT Image 2.6 Flare output controls. Keep PNG as the legacy default.
+        // GPT Image 2.6 output controls.
         output_format: z.enum(["png", "webp", "gif"]).optional(),
         frame_count: z.coerce.number().int().min(2).max(16).optional(),
         frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
@@ -154,15 +154,26 @@ export const ImageParamsSchema = z
         const isFlare =
             data.model === "openai/gpt-image-2.6-flare" ||
             data.model === "openai/gpt-image-2.6-flare:fal";
-        if (data.output_format && data.output_format !== "png" && !isFlare) {
+        const isSunburst =
+            data.model === "openai/gpt-image-2.6-sunburst" ||
+            data.model === "openai/gpt-image-2.6-sunburst:fal";
+        if (data.output_format === "webp" && !isFlare) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["output_format"],
                 message:
-                    "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
+                    "WebP output is supported only by GPT Image 2.6 Flare.",
             });
         }
         if (data.output_format === "gif") {
+            if (!isFlare && !isSunburst) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "GIF output is supported only by GPT Image 2.6 Flare and Sunburst.",
+                });
+            }
             if (
                 data.frame_count === undefined ||
                 data.frame_duration_ms === undefined

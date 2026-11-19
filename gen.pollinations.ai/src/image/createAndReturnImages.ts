@@ -608,10 +608,7 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (
-        config.modelName === "gpt-image-2.6-flare" &&
-        safeParams.output_format === "gif"
-    ) {
+    if (safeParams.output_format === "gif") {
         // GIF frames are tiled into a shared provider pixel budget. Using the
         // still-image minimum (655,360 pixels) would make many GIFs impossible.
         // Keep each frame within 896x512 (or rotated) so up to 16 frames fit.
@@ -664,7 +661,7 @@ const callGPTImageWithEndpoint = async (
     // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
-    // PNG remains the default; Flare may request lossless WebP or an animated GIF.
+    // GPT Image 2.6 uses the same GIF settings on OpenAI and fal.
     const outputFormat = safeParams.output_format ?? "png";
     const requestBody = {
         ...(config.provider === "openai" ? { model: config.modelName } : {}),
@@ -871,7 +868,7 @@ const callGPTImageWithEndpoint = async (
         buffer: imageBuffer,
         // Return the requested format without forcing it through the JPEG converter.
         mimeType:
-            config.modelName === "gpt-image-2.6-flare"
+            outputFormat === "gif" || config.modelName === "gpt-image-2.6-flare"
                 ? `image/${outputFormat}`
                 : undefined,
         trackingData: {
@@ -1326,14 +1323,14 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...resultMetadata } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // GIF frames and WebP/PNG output must not pass through JPEG/EXIF conversion.
-        // Other models retain their existing JPEG metadata behavior.
         const resultFormat = result.mimeType ?? detectMimeType(result.buffer);
         const preserveFlareFormat =
             safeParams.model.startsWith("openai/gpt-image-2.6-flare") &&
-            ["image/gif", "image/webp", "image/png"].includes(resultFormat);
+            ["image/webp", "image/png"].includes(resultFormat);
         const processedBuffer =
             result.mimeType === "image/svg+xml" ||
+            (safeParams.output_format === "gif" &&
+                resultFormat === "image/gif") ||
             preserveFlareFormat ||
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")

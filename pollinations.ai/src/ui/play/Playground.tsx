@@ -192,7 +192,7 @@ function promptPlaceholder(
     if (category === "image") return "Describe the image you want…";
     if (category === "video") return "Describe the video you want…";
     if (audioTask === "transcription")
-        return "Optional vocabulary, names, or context for the transcript";
+        return "Vocabulary, names, or context for the transcript";
     if (audioTask === "speech-generation")
         return "Enter the words you want spoken…";
     if (audioTask === "music-and-sound-effects")
@@ -1027,9 +1027,7 @@ export function Playground() {
         currentModel?.category !== "audio" ||
         (transcription?.prompt ??
             currentModel.inputModalities.includes("text"));
-    const promptLabel = isAudioTranscription
-        ? "Instructions (optional)"
-        : "Description";
+    const promptLabel = isAudioTranscription ? "Instructions" : "Description";
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
@@ -1646,7 +1644,19 @@ export function Playground() {
                         className="flex flex-col gap-5"
                     >
                         {showPromptInput && (
-                            <FieldStack label={promptLabel}>
+                            <FieldStack
+                                label={
+                                    <>
+                                        {promptLabel}
+                                        {isAudioTranscription && (
+                                            <span className="font-normal text-theme-text-muted">
+                                                {" "}
+                                                (optional)
+                                            </span>
+                                        )}
+                                    </>
+                                }
+                            >
                                 <Textarea
                                     value={prompt}
                                     rows={isAudioTranscription ? 3 : 7}
@@ -1710,25 +1720,43 @@ export function Playground() {
 
                             {showsAudioLength && (
                                 <FieldStack
-                                    label="Length (seconds)"
+                                    label={
+                                        <span className="font-normal">
+                                            Duration
+                                        </span>
+                                    }
                                     orientation="inline"
                                     className="min-w-0"
                                 >
-                                    <Input
-                                        className="max-w-40"
-                                        type="number"
-                                        hideNumberSteppers
-                                        min={0}
-                                        step="any"
-                                        placeholder="Model default"
-                                        value={audioLength}
-                                        onChange={(event) =>
-                                            setParam(
-                                                "length",
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <Input
+                                            className="w-24 min-w-0"
+                                            aria-label="Duration in seconds"
+                                            type="number"
+                                            hideNumberSteppers
+                                            min={0}
+                                            step="any"
+                                            placeholder={
+                                                currentModel.defaultDuration?.toString() ??
+                                                "Auto"
+                                            }
+                                            value={audioLength}
+                                            onChange={(event) =>
+                                                setParam(
+                                                    "length",
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <Text
+                                            as="span"
+                                            size="sm"
+                                            tone="muted"
+                                            aria-hidden="true"
+                                        >
+                                            seconds
+                                        </Text>
+                                    </div>
                                 </FieldStack>
                             )}
 

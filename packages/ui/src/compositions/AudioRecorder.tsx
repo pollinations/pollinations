@@ -204,9 +204,7 @@ export function AudioRecorder({
                     disabled || waiting,
                     typeof state === "object",
                 )}
-                {...mediaTileTint(
-                    typeof state === "object" ? undefined : "audio",
-                )}
+                {...mediaTileTint("audio")}
                 aria-label={
                     typeof state === "object" ? "Stop recording" : undefined
                 }

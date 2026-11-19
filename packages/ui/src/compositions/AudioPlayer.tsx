@@ -7,19 +7,25 @@ import {
 } from "react";
 import { audioTime } from "../lib/audio-time.ts";
 import { cn } from "../lib/cn.ts";
-import { mediaActionTileClass } from "../lib/media-action-tile.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+    type TileModality,
+} from "../lib/media-action-tile.ts";
 import { PlayIcon } from "../primitives/icons/index.tsx";
 
 export function AudioPlayer({
     src,
     label,
     disabled = false,
+    tileModality = "audio",
     onDuration,
     children,
 }: {
     src: string;
     label: string;
     disabled?: boolean;
+    tileModality?: TileModality;
     onDuration?: (seconds: number | null) => void;
     children?: ReactNode;
 }) {
@@ -79,6 +85,7 @@ export function AudioPlayer({
                     mediaActionTileClass(disabled || error),
                     "polli:isolate polli:border-solid",
                 )}
+                {...mediaTileTint(tileModality)}
                 title={label}
                 aria-label={
                     error

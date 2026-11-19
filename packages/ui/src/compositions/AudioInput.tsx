@@ -62,6 +62,7 @@ function Clip({
                 <AudioPlayer
                     src={url}
                     label={file.name}
+                    tileModality={kind}
                     disabled={disabled}
                     onDuration={onClipDuration && reportDuration}
                 >

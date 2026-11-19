@@ -122,7 +122,9 @@ const TASKS = (
             category: "audio",
         },
         { id: "transcription", label: "Transcribe", category: "audio" },
-        { id: "audio-processing", label: "Edit audio", category: "audio" },
+        { id: "voice-changer", label: "Change voice", category: "audio" },
+        { id: "voice-isolator", label: "Isolate speech", category: "audio" },
+        { id: "stem-separation", label: "Separate stems", category: "audio" },
     ] as const
 ).map((task) => ({ ...task, runStore: createRunStore<PlaygroundResult>() }));
 type Task = (typeof TASKS)[number];
@@ -264,12 +266,9 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
 function audioTaskForModel(model: PlaygroundModel): AudioTask {
     const endpoint = audioEndpoint(model);
     if (endpoint === "/v1/audio/transcriptions") return "transcription";
-    if (
-        endpoint === "/v1/audio/voice-changer" ||
-        endpoint === "/v1/audio/voice-isolator" ||
-        endpoint === "/alpha/audio/stem-separation"
-    )
-        return "audio-processing";
+    if (endpoint === "/v1/audio/voice-changer") return "voice-changer";
+    if (endpoint === "/v1/audio/voice-isolator") return "voice-isolator";
+    if (endpoint === "/alpha/audio/stem-separation") return "stem-separation";
     const audioPurpose = `${model.title} ${model.description}`.toLowerCase();
     if (
         audioPurpose.includes("music") ||
@@ -290,39 +289,6 @@ function supportsTask(model: PlaygroundModel, task: Task) {
             model.supportedEndpoints.includes("/v1/images/edits")
         );
     return true;
-}
-
-const VIDEO_FILTER_LABELS = {
-    start_frame: "From an image",
-    reference_videos: "With video",
-    reference_audios: "With audio",
-} as const;
-
-function modelFilterGroups(task: Task, models: PlaygroundModel[]) {
-    const filters =
-        task.id === "video"
-            ? Object.entries(VIDEO_FILTER_LABELS).map(([key, label]) => ({
-                  key,
-                  label,
-                  models: models.filter((model) =>
-                      model.videoCapabilities.includes(key),
-                  ),
-              }))
-            : task.id === "edit-image"
-              ? [
-                    {
-                        key: "multiple-images",
-                        label: "Use multiple images",
-                        models: models.filter(
-                            (model) => referenceImageLimit(model) > 1,
-                        ),
-                    },
-                ]
-              : [];
-    return [
-        { key: "all", label: "All", models },
-        ...filters.filter((group) => group.models.length > 0),
-    ];
 }
 
 /** A setting's choices as tabs, or its one fixed value as a chip. */
@@ -864,7 +830,7 @@ export function Playground({
         TASKS[0];
     const activeCategory = task.category;
     const taskDrafts = useRef(drafts);
-    const savedDraft = drafts[task.id] ?? drafts[activeCategory];
+    const savedDraft = drafts[params.task ?? task.id] ?? drafts[activeCategory];
     const restored =
         savedDraft?.params.model === params.model ? savedDraft : undefined;
     const {
@@ -976,16 +942,6 @@ export function Playground({
         () => visibleModels.filter((model) => supportsTask(model, task)),
         [task, visibleModels],
     );
-    const modelGroups = useMemo(
-        () => modelFilterGroups(task, taskModels),
-        [task, taskModels],
-    );
-    const activeGroup =
-        modelGroups.find((group) => group.key === params.filter) ??
-        modelGroups[0];
-    const groupKey = activeGroup.key;
-    const lastGroupModel = useRef(new Map<string, string>());
-
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that
     // model's tab; older links use an alias, such as ?model=flux.
@@ -1008,21 +964,16 @@ export function Playground({
                     ...previous,
                     task: linkedTask.id,
                     model: linkedModel.id,
-                    filter:
-                        linkedTask === task &&
-                        activeGroup.models.includes(linkedModel)
-                            ? previous.filter
-                            : undefined,
                 }));
                 return;
             }
         }
         if (selectedModel) return;
-        const first = activeGroup.models[0];
+        const first = taskModels[0];
         if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
         task,
-        activeGroup,
+        taskModels,
         selectedModel,
         visibleModels,
         isHydrated,
@@ -1348,44 +1299,14 @@ export function Playground({
         setAudioFiles(saved?.audioFiles ?? []);
     }
 
-    function selectGroup(group: (typeof modelGroups)[number]) {
-        if (group === activeGroup) return;
-        lastGroupModel.current.set(
-            `${task.id}/${activeGroup.key}`,
-            selectedModel,
-        );
-        setParam("filter", group.key);
-        if (group.models.some((model) => model.id === selectedModel)) {
-            if (activeCategory === "video" && group.key !== "all") {
-                setParam(
-                    "guidance",
-                    group.key === "start_frame" ? "frames" : "references",
-                );
-            }
-            return;
-        }
-        const saved = lastGroupModel.current.get(`${task.id}/${group.key}`);
-        selectModel(
-            (
-                group.models.find((model) => model.id === saved) ??
-                group.models[0]
-            ).id,
-            group.key,
-        );
-    }
-
-    function selectModel(modelId: string, filter = groupKey) {
+    function selectModel(modelId: string) {
         if (modelId === selectedModel) return;
         setParams((previous) => ({
             ...previous,
             model: modelId,
             size: undefined,
             duration: undefined,
-            guidance:
-                activeCategory === "video" &&
-                (filter === "reference_audios" || filter === "reference_videos")
-                    ? "references"
-                    : undefined,
+            guidance: undefined,
             sound: undefined,
         }));
         setAudioFiles([]);
@@ -1536,17 +1457,7 @@ export function Playground({
             options={[generateLabel, againLabel, busyLabel]}
         />
     );
-    const connectLabel = isStemSeparation
-        ? "Connect to separate stems"
-        : task.id === "edit-image"
-          ? "Connect to edit image"
-          : currentModel?.category === "video"
-            ? "Connect to create video"
-            : currentModel?.category === "audio"
-              ? isAudioTranscription
-                  ? "Connect to transcribe audio"
-                  : "Connect to create audio"
-              : "Connect to generate image";
+    const connectLabel = `Connect to ${generateLabel.toLowerCase()}`;
 
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
@@ -1737,24 +1648,8 @@ export function Playground({
                         className="flex flex-col gap-5"
                     >
                         <header className="flex min-w-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4">
-                            {modelGroups.length > 1 && (
-                                <ButtonGroup
-                                    aria-label={`${task.label} model filters`}
-                                >
-                                    {modelGroups.map((group) => (
-                                        <TabButton
-                                            key={group.key}
-                                            size="sm"
-                                            active={group === activeGroup}
-                                            onClick={() => selectGroup(group)}
-                                        >
-                                            {group.label}
-                                        </TabButton>
-                                    ))}
-                                </ButtonGroup>
-                            )}
                             <ModelPicker
-                                models={activeGroup.models}
+                                models={taskModels}
                                 selectedModel={selectedModel}
                                 isLoading={isLoading || !isHydrated}
                                 onSelectModel={selectModel}

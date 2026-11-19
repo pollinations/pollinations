@@ -74,17 +74,17 @@ it("preserves separate drafts for tasks with the same media type", async () => {
             ...selection.audio,
             params: { task: "transcription", language: "fr" },
         },
-        "audio-processing": {
+        "stem-separation": {
             ...selection.audio,
-            params: { task: "audio-processing", stems: "2" },
+            params: { task: "stem-separation", stems: "2" },
             audioFiles: [],
         },
     });
     const drafts = await takeConnectDraft();
     expect(drafts?.transcription.params.language).toBe("fr");
     expect(drafts?.transcription.audioFiles[0].name).toBe(recording.name);
-    expect(drafts?.["audio-processing"].params.stems).toBe("2");
-    expect(drafts?.["audio-processing"].audioFiles).toEqual([]);
+    expect(drafts?.["stem-separation"].params.stems).toBe("2");
+    expect(drafts?.["stem-separation"].audioFiles).toEqual([]);
 });
 
 it("a fresh tab sweeps an abandoned expired draft while preserving a live tab's draft", async () => {

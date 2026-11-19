@@ -232,7 +232,18 @@ function mediaResult(
 // Kept in memory so leaving /play and coming back restores the last inputs,
 // result and any run still in flight. Nothing is written to disk.
 let lastInputs: PlaySearch | undefined;
-const runStore = createRunStore<PlaygroundResult>();
+const tabRuns = {
+    image: createRunStore<PlaygroundResult>(),
+    video: createRunStore<PlaygroundResult>(),
+    audio: createRunStore<PlaygroundResult>(),
+};
+
+type TabDraft = {
+    params: PlaySearch;
+    referenceImages: File[];
+    videoReferences: Record<UploadMedia, File[]>;
+    audioFiles: File[];
+};
 
 function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
@@ -733,39 +744,44 @@ export function Playground() {
     const urlSearch = useSearch({ from: "/play" });
     const navigate = useNavigate({ from: "/play" });
     // A URL with Play keys wins; a bare /play restores the last inputs.
-    const [search] = useState<PlaySearch>(() =>
+    const [params, setParams] = useState<PlaySearch>(() =>
         PLAY_SEARCH_KEYS.some((key) => urlSearch[key] !== undefined)
-            ? urlSearch
-            : (lastInputs ?? urlSearch),
+            ? Object.fromEntries(
+                  PLAY_SEARCH_KEYS.map((key) => [key, urlSearch[key]]),
+              )
+            : (lastInputs ?? {}),
     );
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
-        CATEGORY_ORDER.find((value) => value === search.tab) ?? "image",
+        () => CATEGORY_ORDER.find((value) => value === params.tab) ?? "image",
     );
-    const [selectedModel, setSelectedModel] = useState(search.model ?? "");
-    const [prompt, setPrompt] = useState(search.prompt ?? "");
-    const [selectedResolution, setSelectedResolution] = useState(
-        search.size ?? "",
-    );
-    const [width, setWidth] = useState(search.width ?? "");
-    const [height, setHeight] = useState(search.height ?? "");
-    const [duration, setDuration] = useState(Number(search.duration) || 0);
-    const [aspectRatio, setAspectRatio] = useState(search.aspect ?? "");
-    const [audioLength, setAudioLength] = useState(search.length ?? "");
-    const [language, setLanguage] = useState(search.language ?? "");
-    const [seed, setSeed] = useState(search.seed ?? "");
+    const tabDrafts = useRef<Partial<Record<PlaygroundCategory, TabDraft>>>({});
+    const {
+        model: selectedModel = "",
+        prompt = "",
+        size: selectedResolution = "",
+        width = "",
+        height = "",
+        aspect: aspectRatio = "",
+        length: audioLength = "",
+        language = "",
+        seed = "",
+        voice = "",
+        sound = "",
+    } = params;
+    const duration = Number(params.duration) || 0;
+    const referenceMode =
+        params.guidance === "references" ? "references" : "frames";
+    function setParam(key: keyof PlaySearch, value: string) {
+        setParams((previous) => ({ ...previous, [key]: value }));
+    }
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [videoReferences, setVideoReferences] = useState<
         Record<UploadMedia, File[]>
     >({ image: [], video: [], audio: [] });
-    const [referenceMode, setReferenceMode] = useState(
-        search.guidance === "references" ? "references" : "frames",
-    );
-    const [sound, setSound] = useState(search.sound ?? "");
     const [recording, setRecording] = useState(false);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
-    const [voice, setVoice] = useState(search.voice ?? "");
-    const configuredModelRef = useRef(search.model ?? "");
-    const linkedModelRef = useRef(search.model ?? "");
+    const linkedModelRef = useRef(selectedModel);
+    const runStore = tabRuns[activeCategory];
     const { result, running, error } = useSyncExternalStore(
         runStore.subscribe,
         runStore.get,
@@ -859,8 +875,7 @@ export function Playground() {
             (value) => value === linkedModel?.category,
         );
         if (linkedModel && linkedCategory) {
-            configuredModelRef.current = linkedModel.id;
-            setSelectedModel(linkedModel.id);
+            setParams((previous) => ({ ...previous, model: linkedModel.id }));
             setActiveCategory(linkedCategory);
             return;
         }
@@ -868,7 +883,10 @@ export function Playground() {
         // explicitly replaces a model that has left the catalog.
         if (selectedModel && !currentModel) return;
         if (currentModel?.category === activeCategory) return;
-        setSelectedModel(defaultModelId(visibleModels, activeCategory));
+        setParams((previous) => ({
+            ...previous,
+            model: defaultModelId(visibleModels, activeCategory),
+        }));
         setAudioFiles([]);
     }, [
         activeCategory,
@@ -887,50 +905,9 @@ export function Playground() {
             : (currentModel.voices[0] ?? "");
 
     useEffect(() => {
-        lastInputs = {
-            tab: activeCategory,
-            model: selectedModel,
-            prompt,
-            size: selectedResolution,
-            width,
-            height,
-            aspect: aspectRatio,
-            duration: duration ? String(duration) : undefined,
-            length: audioLength,
-            seed,
-            voice: selectedVoice,
-            language,
-            sound,
-            guidance:
-                referenceMode === "references" ? referenceMode : undefined,
-        };
+        lastInputs = { ...params, tab: activeCategory, voice: selectedVoice };
         showInUrl(lastInputs);
-    }, [
-        showInUrl,
-        activeCategory,
-        selectedModel,
-        prompt,
-        selectedResolution,
-        width,
-        height,
-        aspectRatio,
-        duration,
-        audioLength,
-        seed,
-        selectedVoice,
-        language,
-        sound,
-        referenceMode,
-    ]);
-
-    useEffect(() => {
-        if (!currentModel) return;
-        if (configuredModelRef.current === currentModel.id) return;
-        configuredModelRef.current = currentModel.id;
-        // "" and 0 mean the model default; mediaModelSettings resolves them.
-        setSelectedResolution("");
-        setDuration(0);
-    }, [currentModel]);
+    }, [showInUrl, params, activeCategory, selectedVoice]);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/models/stats`)
@@ -1204,16 +1181,36 @@ export function Playground() {
 
     function selectCategory(category: PlaygroundCategory) {
         if (category === activeCategory) return;
+        tabDrafts.current[activeCategory] = {
+            params,
+            referenceImages,
+            videoReferences,
+            audioFiles,
+        };
+        const saved = tabDrafts.current[category];
+        linkedModelRef.current = "";
         setActiveCategory(category);
-        selectModel(defaultModelId(visibleModels, category));
+        setParams(
+            saved?.params ?? { model: defaultModelId(visibleModels, category) },
+        );
+        setReferenceImages(saved?.referenceImages ?? []);
+        setVideoReferences(
+            saved?.videoReferences ?? { image: [], video: [], audio: [] },
+        );
+        setAudioFiles(saved?.audioFiles ?? []);
     }
 
     function selectModel(modelId: string) {
-        setSelectedModel(modelId);
+        setParams((previous) => ({
+            ...previous,
+            model: modelId,
+            size: undefined,
+            duration: undefined,
+            guidance: undefined,
+            sound: undefined,
+        }));
         setAudioFiles([]);
         setVideoReferences({ image: [], video: [], audio: [] });
-        setReferenceMode("frames");
-        setSound("");
     }
 
     function setFrameImage(index: number, files: File[]) {
@@ -1343,21 +1340,14 @@ export function Playground() {
     // The placeholder belongs to the tab whose run is in flight; audio has none.
     const busyVisual =
         running === "image" || running === "video" ? running : null;
-    const hasResult =
-        result &&
-        (["text", "stems"].includes(result.type) ? "audio" : result.type) ===
-            activeCategory;
+
     const againLabel = generateLabel.startsWith("Generate ")
         ? "Generate again"
         : generateLabel;
     const generateText = (
         <StableLabel
             text={
-                isGenerating
-                    ? busyLabel
-                    : hasResult
-                      ? againLabel
-                      : generateLabel
+                isGenerating ? busyLabel : result ? againLabel : generateLabel
             }
             options={[generateLabel, againLabel, busyLabel]}
         />
@@ -1531,7 +1521,7 @@ export function Playground() {
                                     value={prompt}
                                     rows={isAudioTranscription ? 3 : 7}
                                     onChange={(event) =>
-                                        setPrompt(event.target.value)
+                                        setParam("prompt", event.target.value)
                                     }
                                     onKeyDown={(event) => {
                                         if (
@@ -1561,7 +1551,9 @@ export function Playground() {
                                     key={currentModel.id}
                                     voices={currentModel.voices}
                                     value={selectedVoice}
-                                    onChange={setVoice}
+                                    onChange={(value) =>
+                                        setParam("voice", value)
+                                    }
                                 />
                             )}
                             {audioInput}
@@ -1577,7 +1569,10 @@ export function Playground() {
                                         placeholder="Auto (e.g. en)"
                                         value={language}
                                         onChange={(event) =>
-                                            setLanguage(event.target.value)
+                                            setParam(
+                                                "language",
+                                                event.target.value,
+                                            )
                                         }
                                     />
                                 </FieldStack>
@@ -1598,7 +1593,10 @@ export function Playground() {
                                         placeholder="Model default"
                                         value={audioLength}
                                         onChange={(event) =>
-                                            setAudioLength(event.target.value)
+                                            setParam(
+                                                "length",
+                                                event.target.value,
+                                            )
                                         }
                                     />
                                 </FieldStack>
@@ -1652,7 +1650,14 @@ export function Playground() {
                                         label="Guidance"
                                         options={["frames", "references"]}
                                         value={referenceMode}
-                                        onChange={setReferenceMode}
+                                        onChange={(value) =>
+                                            setParam(
+                                                "guidance",
+                                                value === "references"
+                                                    ? value
+                                                    : "",
+                                            )
+                                        }
                                         format={(mode) =>
                                             mode === "frames"
                                                 ? "Frames"
@@ -1805,7 +1810,9 @@ export function Playground() {
                                         label="Resolution"
                                         options={currentModel.resolutions}
                                         value={mediaSettings.resolution}
-                                        onChange={setSelectedResolution}
+                                        onChange={(value) =>
+                                            setParam("size", value)
+                                        }
                                         format={(resolution) =>
                                             resolution.toUpperCase()
                                         }
@@ -1818,7 +1825,8 @@ export function Playground() {
                                                 options={videoConfig.ratios}
                                                 value={videoAspectRatio}
                                                 onChange={(ratio) =>
-                                                    setAspectRatio(
+                                                    setParam(
+                                                        "aspect",
                                                         ratio || "auto",
                                                     )
                                                 }
@@ -1837,7 +1845,9 @@ export function Playground() {
                                                 value={
                                                     videoSound ? "on" : "off"
                                                 }
-                                                onChange={setSound}
+                                                onChange={(value) =>
+                                                    setParam("sound", value)
+                                                }
                                                 format={(value) =>
                                                     value === "on"
                                                         ? "On"
@@ -1892,14 +1902,18 @@ export function Playground() {
                                                         const value = Number(
                                                             event.target.value,
                                                         );
-                                                        setDuration(
-                                                            videoDuration
-                                                                .options.length
-                                                                ? videoDuration
-                                                                      .options[
-                                                                      value
-                                                                  ]
-                                                                : value,
+                                                        setParam(
+                                                            "duration",
+                                                            String(
+                                                                videoDuration
+                                                                    .options
+                                                                    .length
+                                                                    ? videoDuration
+                                                                          .options[
+                                                                          value
+                                                                      ]
+                                                                    : value,
+                                                            ),
                                                         );
                                                     }}
                                                 />
@@ -1934,21 +1948,17 @@ export function Playground() {
                                                         [
                                                             "Width",
                                                             width,
-                                                            setWidth,
+                                                            "width",
                                                         ],
                                                         [
                                                             "Height",
                                                             height,
-                                                            setHeight,
+                                                            "height",
                                                         ],
                                                     ] as const
                                                 ).map(
                                                     (
-                                                        [
-                                                            label,
-                                                            value,
-                                                            setValue,
-                                                        ],
+                                                        [label, value, key],
                                                         index,
                                                     ) => (
                                                         <Fragment key={label}>
@@ -1972,7 +1982,8 @@ export function Playground() {
                                                                 onChange={(
                                                                     event,
                                                                 ) =>
-                                                                    setValue(
+                                                                    setParam(
+                                                                        key,
                                                                         event
                                                                             .target
                                                                             .value,
@@ -2017,7 +2028,10 @@ export function Playground() {
                                             placeholder="Random"
                                             value={seed}
                                             onChange={(event) =>
-                                                setSeed(event.target.value)
+                                                setParam(
+                                                    "seed",
+                                                    event.target.value,
+                                                )
                                             }
                                         />
                                     </FieldStack>
@@ -2083,7 +2097,7 @@ export function Playground() {
                         twice. Audio keeps just the button's cue. */}
                     {(error ||
                         authError ||
-                        hasResult ||
+                        result ||
                         busyVisual === activeCategory) && (
                         <div ref={responseRef} className="flex flex-col gap-4">
                             {error && <Alert intent="danger">{error}</Alert>}
@@ -2096,8 +2110,11 @@ export function Playground() {
                             {busyVisual === activeCategory && (
                                 <BusyPlaceholder category={busyVisual} />
                             )}
-                            {result && hasResult && (
-                                <ResultPanel result={result} />
+                            {result && (
+                                <ResultPanel
+                                    key={activeCategory}
+                                    result={result}
+                                />
                             )}
                         </div>
                     )}

@@ -423,7 +423,7 @@ function VoicePicker({
         <FieldStack label="Voice" orientation="inline" className="min-w-0">
             <Dropdown
                 portalled={false}
-                className="w-80 max-w-[calc(100vw-2rem)] p-2"
+                className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
                 trigger={(open) => (
                     <Button
                         type="button"
@@ -437,7 +437,7 @@ function VoicePicker({
                 )}
             >
                 {(close) => (
-                    <ScrollArea className="max-h-80 pr-2">
+                    <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
                         <div className="flex flex-col gap-1">
                             {voices.map((voice) => (
                                 <TabButton
@@ -490,7 +490,7 @@ function ModelPicker({
         <div className="w-fit min-w-0 max-w-full">
             <Dropdown
                 portalled={false}
-                className="w-80 max-w-[calc(100vw-2rem)] p-2"
+                className="w-80 max-w-[calc(100vw-2rem)] overscroll-y-contain p-2"
                 trigger={(open) => (
                     <Button
                         type="button"
@@ -510,7 +510,7 @@ function ModelPicker({
                 )}
             >
                 {(close) => (
-                    <ScrollArea className="max-h-80 pr-2">
+                    <ScrollArea className="max-h-80 overscroll-y-contain pr-2">
                         <div className="flex flex-col gap-1">
                             {sorted.map((model) => (
                                 <TabButton

@@ -4,14 +4,12 @@ import { runStatsLine } from "./run-stats";
 const line = (cost?: number, ms?: number) =>
     runStatsLine({ model: "m", avg_cost_usd: cost, avg_response_ms: ms });
 
-const COST = "Average cost per request: ";
-
 describe("runStatsLine", () => {
     it("shows dollars to two significant digits", () => {
-        expect(line(0.004)).toBe(`${COST}$0.004`);
-        expect(line(0.0473)).toBe(`${COST}$0.047`);
-        expect(line(0.4199)).toBe(`${COST}$0.42`);
-        expect(line(1.2)).toBe(`${COST}$1.2`);
+        expect(line(0.004)).toBe("7-day median of $0.004 per request");
+        expect(line(0.0473)).toBe("7-day median of $0.047 per request");
+        expect(line(0.4199)).toBe("7-day median of $0.42 per request");
+        expect(line(1.2)).toBe("7-day median of $1.2 per request");
     });
 
     it("shows whole seconds under a minute", () => {
@@ -28,12 +26,16 @@ describe("runStatsLine", () => {
     });
 
     it("joins both numbers and skips missing or zero ones", () => {
-        expect(line(0.004, 3000)).toBe(`${COST}$0.004 · about 3 seconds`);
+        expect(line(0.004, 3000)).toBe(
+            "7-day median of $0.004 per request · about 3 seconds",
+        );
         expect(line(0.42, 100000)).toBe(
-            `${COST}$0.42 · about 1 minute 40 seconds`,
+            "7-day median of $0.42 per request · about 1 minute 40 seconds",
         );
         expect(line(0, 3000)).toBe("About 3 seconds");
-        expect(line(0.5, null as unknown as undefined)).toBe(`${COST}$0.5`);
+        expect(line(0.5, null as unknown as undefined)).toBe(
+            "7-day median of $0.5 per request",
+        );
         expect(line(0, 0)).toBe("");
         expect(runStatsLine(undefined)).toBe("");
     });

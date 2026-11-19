@@ -20,11 +20,10 @@ function formatDuration(ms: number): string {
     return rest ? `${minutes} ${plural(rest, "second")}` : minutes;
 }
 
-/** "Average cost per request: $0.42 · about 1 minute 40 seconds", the cost or time alone, or "". */
 export function runStatsLine(stat: ModelRunStat | undefined): string {
     const cost =
         stat?.avg_cost_usd && stat.avg_cost_usd > 0
-            ? `Average cost per request: ${formatCost(stat.avg_cost_usd)}`
+            ? `7-day median of ${formatCost(stat.avg_cost_usd)} per request`
             : "";
     const time =
         stat?.avg_response_ms && stat.avg_response_ms > 0

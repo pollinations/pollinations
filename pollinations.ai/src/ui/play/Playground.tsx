@@ -1390,9 +1390,8 @@ export function Playground() {
 
     // The button's action; Cmd/Ctrl+Enter in the prompt does the same.
     const run = needsSignIn ? () => login() : generate;
-    const statsLine = runStatsLine(
-        stats.find((stat) => stat.model === currentModel?.id),
-    );
+    const modelStats = stats.find((stat) => stat.model === currentModel?.id);
+    const statsLine = runStatsLine(modelStats);
 
     const audioInputHint =
         [
@@ -1485,20 +1484,34 @@ export function Playground() {
                     </div>
                 )}
                 <div className="flex flex-col gap-4 pt-6">
-                    <ModelPicker
-                        models={categoryModels}
-                        selectedModel={selectedModel}
-                        isLoading={isLoading || !isHydrated}
-                        onSelectModel={selectModel}
-                        groupOf={
-                            activeCategory === "audio"
-                                ? (model) =>
-                                      AUDIO_GROUP_LABEL[
-                                          audioTaskForModel(model)
-                                      ]
-                                : undefined
-                        }
-                    />
+                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
+                        <ModelPicker
+                            models={categoryModels}
+                            selectedModel={selectedModel}
+                            isLoading={isLoading || !isHydrated}
+                            onSelectModel={selectModel}
+                            groupOf={
+                                activeCategory === "audio"
+                                    ? (model) =>
+                                          AUDIO_GROUP_LABEL[
+                                              audioTaskForModel(model)
+                                          ]
+                                    : undefined
+                            }
+                        />
+                        {statsLine && (
+                            <Text size="xs" tone="muted" className="sm:pb-2">
+                                {statsLine}
+                                {(modelStats?.avg_cost_usd ?? 0) > 0 && (
+                                    <InfoTip
+                                        label="About this cost"
+                                        tapEnabled
+                                        content="Median charge for successful paid requests to this model over the last 7 days. Your cost can vary with your settings and usage."
+                                    />
+                                )}
+                            </Text>
+                        )}
+                    </div>
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&
@@ -2038,17 +2051,6 @@ export function Playground() {
                                 </div>
                             )}
                         </div>
-                        {/* One line stays reserved, so switching models moves nothing. */}
-                        <Text size="xs" tone="muted" className="min-h-5">
-                            {statsLine}
-                            {statsLine.startsWith("Average") && (
-                                <InfoTip
-                                    label="About this cost"
-                                    tapEnabled
-                                    content="From paid requests over the last 7 days. Yours depends on your settings."
-                                />
-                            )}
-                        </Text>
                     </Surface>
 
                     {/* Not connected is not a broken state, so the button

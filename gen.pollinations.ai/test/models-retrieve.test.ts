@@ -505,7 +505,7 @@ test("model listings expose reference media limits on /v1/models", async () => {
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
 });
 
-test("lists and retrieves the same GIF generation contract", async () => {
+test("lists and retrieves the same GIF and SVG generation contracts", async () => {
     const native = { mode: "native", input_modalities: ["text"] };
     const selectable = {
         mode: "selectable",
@@ -513,9 +513,13 @@ test("lists and retrieves the same GIF generation contract", async () => {
         frame_defaults: { frame_count: 8, frame_duration_ms: 120 },
     };
     const expected = [
-        ["hotshotco/hotshot-xl", native],
-        ["openai/gpt-image-2.6-flare", selectable],
-        ["openai/gpt-image-2.6-sunburst", selectable],
+        [
+            "recraft/recraft-v4.1-vector",
+            { svg: { mode: "native", input_modalities: ["text", "image"] } },
+        ],
+        ["hotshotco/hotshot-xl", { gif: native }],
+        ["openai/gpt-image-2.6-flare", { gif: selectable }],
+        ["openai/gpt-image-2.6-sunburst", { gif: selectable }],
     ] as const;
     for (const path of ["/models", "/image/models", "/v1/models"]) {
         const response = await fetchWorker(path);
@@ -524,22 +528,22 @@ test("lists and retrieves the same GIF generation contract", async () => {
             | ModelInfo[]
             | { data: (ModelInfo & { id: string })[] };
         const entries = Array.isArray(body) ? body : body.data;
-        for (const [id, gif] of expected) {
+        for (const [id, formats] of expected) {
             expect(
                 entries.find((m) => ("id" in m ? m.id : m.name) === id)
-                    ?.output_formats?.gif,
+                    ?.output_formats,
                 path,
-            ).toEqual(gif);
+            ).toEqual(formats);
         }
     }
-    for (const [id, gif] of expected) {
+    for (const [id, formats] of expected) {
         const response = await fetchWorker(
             `/v1/models/${encodeURIComponent(id)}`,
         );
         expect(response.status).toBe(200);
-        expect(
-            ((await response.json()) as ModelInfo).output_formats?.gif,
-        ).toEqual(gif);
+        expect(((await response.json()) as ModelInfo).output_formats).toEqual(
+            formats,
+        );
     }
 });
 

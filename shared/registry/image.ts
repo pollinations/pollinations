@@ -1880,6 +1880,9 @@ const IMAGE_BASE_SERVICES = {
         description:
             "Turn text or a reference picture into an editable SVG that stays sharp at any size.",
         inputModalities: ["text", "image"],
+        outputFormats: {
+            svg: { mode: "native", input_modalities: ["text", "image"] },
+        },
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },

@@ -25,21 +25,13 @@
       "merge_sha": "290708929c6a99e302294ba499c0b9d5a3b2c68a",
       "merged_at": "2026-11-19T13:21:53Z",
       "required": [
-        "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-infra_watch",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
     },
     "20342": {
       "merge_sha": "95323bdf643f429618195aa2c680a23f773574d1",
       "merged_at": "2026-11-19T15:30:48Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     }
   },
   "production": "416b6c8cd1c64afe893aa15309ef520ae8439f6b",

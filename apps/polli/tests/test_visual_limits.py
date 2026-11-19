@@ -1,6 +1,6 @@
 import unittest
 
-from src.discord.media import OUTPUT_DPI, PALETTE
+from src.discord.media import OUTPUT_DPI, PALETTE, replace_latex_with_unicode
 from src.integrations.chart_renderer import PALETTE as CHART_PALETTE
 from src.integrations.chart_renderer import _output_dpi
 from src.integrations.charts import _aggregate_chart_data, _paginate_table
@@ -44,6 +44,12 @@ class VisualLimitTests(unittest.TestCase):
             CHART_PALETTE["series"],
             ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"],
         )
+
+    def test_inline_latex_is_converted_but_code_is_left_alone(self):
+        code = "Use `${first} and ${second}` or:\n```sh\necho \"${NAME}\" > $FILE\n```"
+
+        self.assertEqual(replace_latex_with_unicode(code), code)
+        self.assertEqual(replace_latex_with_unicode(r"so $\alpha_{1}$ wins"), "so α_1 wins")
 
 
 if __name__ == "__main__":

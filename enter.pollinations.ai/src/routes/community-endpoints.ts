@@ -36,6 +36,7 @@ import { deleteCodeAgent } from "../services/code-agent.ts";
 import {
     type CommunityEndpointTestResult,
     listCommunityEndpointModels,
+    testCommunityDecisionEndpoint,
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
@@ -262,7 +263,9 @@ async function runEndpointTest(input: TestEndpointInput) {
                       ? await testCommunityTranscriptionEndpoint(modelInput)
                       : input.modality === "speech"
                         ? await testCommunitySpeechEndpoint(modelInput)
-                        : await testCommunityEmbeddingEndpoint(modelInput);
+                        : input.modality === "decision"
+                          ? await testCommunityDecisionEndpoint(modelInput)
+                          : await testCommunityEmbeddingEndpoint(modelInput);
         }
         return {
             ok: true,
@@ -279,9 +282,11 @@ async function runEndpointTest(input: TestEndpointInput) {
                           ? "Endpoint responded with audio data"
                           : input.modality === "embedding"
                             ? "Endpoint responded with embedding data"
-                            : result.streaming === false
-                              ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
-                              : "JSON and streaming requests returned valid token usage",
+                            : input.modality === "decision"
+                              ? "Endpoint responded with valid decision answers and token usage"
+                              : result.streaming === false
+                                ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
+                                : "JSON and streaming requests returned valid token usage",
             ...result,
         };
     } catch (error) {
@@ -676,7 +681,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, speech, embedding, or decision model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",

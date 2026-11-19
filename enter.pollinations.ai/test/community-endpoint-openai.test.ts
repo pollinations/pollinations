@@ -7,6 +7,7 @@ import {
 } from "../src/routes/community-endpoints/schemas.ts";
 import {
     listCommunityEndpointModels,
+    testCommunityDecisionEndpoint,
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
@@ -1170,6 +1171,59 @@ describe("community endpoint OpenAI service", () => {
             }),
         ).rejects.toThrow(
             "Endpoint did not return billable OpenAI token usage",
+        );
+    });
+
+    it("probes decision endpoints and returns billable prompt tokens", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    model: "custom-decision-model",
+                    answers: {
+                        ok: {
+                            type: "noul",
+                            decision: true,
+                            confidence: 0.99,
+                        },
+                    },
+                    usage: { input_tokens: 42, output_tokens: 0 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityDecisionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "custom-decision-model",
+            }),
+        ).resolves.toEqual({
+            usage: { input_tokens: 42, output_tokens: 0 },
+            billableUsage: { promptTextTokens: 42 },
+        });
+    });
+
+    it("rejects decision upstreams that omit billable token usage or answers", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    model: "custom-decision-model",
+                    answers: {},
+                    usage: { input_tokens: 0, output_tokens: 0 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityDecisionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "custom-decision-model",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return valid decision answers with billable token usage",
         );
     });
 });

@@ -67,6 +67,10 @@ export function communityEmbeddingsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/embeddings");
 }
 
+export function communityDecisionsUrl(baseUrl: string): string {
+    return communityOpenAIEndpointUrl(baseUrl, "/alpha/decisions");
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const validated = validateCommunityEndpointUrl(baseUrl);
     const url = new URL(validated);
@@ -85,6 +89,7 @@ const COMMUNITY_OPENAI_ENDPOINT_SUFFIXES = [
     "/audio/speech",
     "/embeddings",
     "/responses",
+    "/alpha/decisions",
 ] as const;
 
 function configuredCommunityEndpointSuffix(url: URL): string | undefined {

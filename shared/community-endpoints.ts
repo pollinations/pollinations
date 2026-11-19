@@ -37,6 +37,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "transcription",
     "speech",
     "embedding",
+    "decision",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -403,6 +404,19 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/embeddings"],
         priceFields: COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS,
     },
+    // Decision models answer JSON structured choices/scores/nouls over the
+    // /alpha/decisions route. The OpenRouter decisions wire format is used:
+    // POST { state, questions, model } → { model, answers, usage }. Billing
+    // is by input tokens, identical to text models. Output tokens are always
+    // zero for most decision providers but are still stored for completeness.
+    decision: {
+        category: "decision",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/alpha/decisions"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_TEXT_PRICE_FIELDS,
+    },
 } as const satisfies Record<CommunityEndpointModality, CommunityModalitySpec>;
 
 export function communityEndpointPriceFieldsForModality(
@@ -594,6 +608,7 @@ export function normalizeCommunityEndpointModality(
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
+    if (value === "decision") return "decision";
     return "text";
 }
 

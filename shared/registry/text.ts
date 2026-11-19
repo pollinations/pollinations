@@ -1346,6 +1346,7 @@ const TEXT_BASE_SERVICES = {
         maxReferenceVideos: 10,
         tools: true,
         search: true,
+        reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
     },

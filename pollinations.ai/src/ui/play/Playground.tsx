@@ -1608,6 +1608,8 @@ export function Playground() {
                                     <InlineLink
                                         href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
                                         aria-label={`${hasMedianCost ? "Cost" : "Pricing"} for ${currentModel.title} on Enter`}
+                                        tone="quiet"
+                                        style={{ fontWeight: "inherit" }}
                                         showIcon={false}
                                     >
                                         {hasMedianCost ? "cost" : "Pricing"}

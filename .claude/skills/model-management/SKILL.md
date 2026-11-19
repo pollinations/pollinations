@@ -279,7 +279,7 @@ Decision first, at most ~150 words, no narrative:
 | | Before | After |
 | --- | --- | --- |
 | Access | | |
-| Price (pollen/<unit>) | | |
+| Price (USD per unit) | | |
 | Primary · cost | | |
 | Fallback · cost | | |
 | Promo | | |

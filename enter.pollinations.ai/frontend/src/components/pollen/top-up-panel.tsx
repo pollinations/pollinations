@@ -306,7 +306,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     <div className="inline-flex flex-row-reverse items-center gap-2 text-sm font-semibold text-theme-text-strong sm:flex-row">
                         <span className="flex flex-col items-start leading-tight sm:items-end">
                             <span>Auto top-up</span>
-                            {/* It buys paid Pollen: the Paid card's icon and
+                            {/* It buys paid balance: the Paid card's icon and
                                 colour while on, greyed while off. Same weight
                                 and icon both ways, so nothing moves. */}
                             <span className="text-xs font-semibold tabular-nums">

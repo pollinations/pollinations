@@ -204,6 +204,14 @@ export const CHAT_PARAMETERS = {
         "logit_bias",
         "prediction",
     ],
+    // Azure's Fireworks deployments and GLM-5.3-Flash answer `prediction` with a 400
+    // ("prompt speculation is not supported with --session-aware-prompt-cache").
+    fireworksReasoningNoPrediction: [
+        ...EXTENDED_CHAT,
+        "reasoning_effort",
+        "parallel_tool_calls",
+        "logit_bias",
+    ],
     // InferencePort Lightning routers: /v1/models lists temperature, stop and
     // max_tokens as the sampling controls, plus tools and JSON mode.
     inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],

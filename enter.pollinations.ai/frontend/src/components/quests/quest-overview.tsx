@@ -301,7 +301,7 @@ async function loadQuestData(): Promise<QuestData> {
 
 // ── Card model ──────────────────────────────────────────────────────────────
 // A single quest row. Open shows the possible reward; claimable means the reward
-// exists but has not moved into the balance; claimed means pollen was deposited.
+// exists but has not moved into the balance; claimed means credit was added to the balance.
 export type QuestCardStatus = "open" | "claimable" | "claimed";
 
 export type QuestCard = {

@@ -9,7 +9,7 @@ import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
@@ -594,6 +594,26 @@ describe("text cache", () => {
 
         expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(body).toBe("hit:1:cache-test-prompt");
+        expect(cache.originHits).toBe(1);
+    });
+
+    it("reuses buffered text after a transient R2 failure", async () => {
+        const cache = createTextCacheApp();
+        const bucket = createTestR2Bucket();
+        const put = vi
+            .spyOn(bucket, "put")
+            .mockRejectedValueOnce(new Error("put: Internal error (10001)"))
+            .mockRejectedValueOnce(new Error("put: Too many requests (10058)"));
+        const bindings = createTextCacheEnv(bucket);
+        const path = "/text/retry-storage?model=openai-fast";
+        const first = await dispatch(cache.app, path, undefined, bindings);
+        const body = await consumeAndWait(first);
+        expect(put).toHaveBeenCalledTimes(3);
+        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
+        expect(put.mock.calls[2]).toEqual(put.mock.calls[0]);
+        const replay = await dispatch(cache.app, path, undefined, bindings);
+        expect(await consumeAndWait(replay)).toBe(body);
+        expect(replay.response.headers.get("x-cache")).toBe("HIT");
         expect(cache.originHits).toBe(1);
     });
 

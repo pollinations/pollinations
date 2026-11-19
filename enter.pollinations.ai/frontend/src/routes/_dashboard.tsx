@@ -321,7 +321,7 @@ function BalanceOutage() {
  * shows the warning then. */
 function WalletLoadError({ onRetry }: { onRetry: () => unknown }) {
     const outage = useOutage([BALANCE_PATH]);
-    // The same resource as the Pollen page's balance: one retry for both.
+    // The same resource as the Credits page's balance: one retry for both.
     useOutageRetry(outage, BALANCE_PATH, onRetry);
     return outage ? null : (
         <LoadError onRetry={onRetry} paths={[BALANCE_PATH]}>

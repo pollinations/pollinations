@@ -21,7 +21,7 @@ export const SERVICE_FEE_LINE_TYPE = "service_fee";
 export const POLLEN_PACK_LINE_TYPE = "pollen_pack";
 export const SERVICE_FEE_TAX_CODE = POLLEN_TAX_CODE;
 
-// USD is the canonical reference: 1 pollen ≈ $1. You get what you buy.
+// Top-up amounts are in USD.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     packKey: PollenPackKey;
     amountUsd: number;

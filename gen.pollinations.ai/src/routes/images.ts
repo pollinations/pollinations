@@ -5,6 +5,7 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
+import { HOTSHOT_XL_MODEL } from "@shared/registry/image.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -339,9 +340,23 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
+        if (c.var.model.resolved === HOTSHOT_XL_MODEL) {
+            if (body.stream === true || body.aspect_ratio !== undefined) {
+                throw new UpstreamError(400, {
+                    message:
+                        "Hotshot-XL does not support streaming or aspect_ratio.",
+                });
+            }
+            // Use the model's fixed size when the client omits the schema's
+            // generic 1024x1024 default. Keep explicitly requested sizes.
+            if ((await c.req.json<CreateImageRequest>()).size === undefined) {
+                body.size = "auto";
+            }
+        }
+
         // OpenAI-style aspect_ratio is an optional convenience when no custom
         // size was specified. Explicit non-default size remains authoritative.
-        const flareAspectSizes: Record<string, string> = {
+        const aspectSizes: Record<string, string> = {
             "16:9": "1536x864",
             "9:16": "864x1536",
             "1:1": "1024x1024",
@@ -350,12 +365,15 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             "3:2": "1536x1024",
             "2:3": "1024x1536",
         };
+        const model = c.var.model.resolved;
         const ratio = body.aspect_ratio;
         const ratioSize =
-            c.var.model.resolved === "openai/gpt-image-2.6-flare" &&
+            (model === "openai/gpt-image-2.6-flare" ||
+                (model === "openai/gpt-image-2.6-sunburst" &&
+                    body.output_format === "gif")) &&
             typeof ratio === "string" &&
             body.size === "1024x1024"
-                ? flareAspectSizes[ratio]
+                ? aspectSizes[ratio]
                 : undefined;
         // The generation handler resolves size again after the cache middleware,
         // so persist the effective size instead of only changing this local copy.
@@ -413,11 +431,6 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
         if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
-        const mediaData =
-            ["image/svg+xml", "image/gif", "image/webp"].includes(mediaType) ||
-            mediaType.startsWith("video/")
-                ? { media_type: mediaType }
-                : {};
 
         if (body.response_format === "url") {
             // Media emits one enclosure link for the stored file.
@@ -445,7 +458,10 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
             c,
             c.json(
                 imageResponse(
-                    { b64_json: base64, ...mediaData },
+                    // Base64 bytes carry no Content-Type, so declare the type
+                    // for every media type; without it the SDK falls back to
+                    // image/png and mislabels JPEG output.
+                    { b64_json: base64, media_type: mediaType },
                     body.prompt,
                     usage,
                 ),

@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "BYOM community-model traffic, consumers, Pollen consumption, BYOP overlap, and public model-owner rewards. All BYOM traffic is visible for ecosystem monitoring; direct and BYOP consumption remain separate product paths.",
+  "description": "BYOM community-model traffic, consumers, usage spend, BYOP overlap, and public model-owner rewards. All BYOM traffic is visible for ecosystem monitoring; direct and BYOP consumption remain separate product paths.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -122,7 +122,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -142,7 +142,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -527,7 +527,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily successful billed consumption for all community-model traffic, including direct and BYOP calls. 75% of it is credited to model owners in the payer's bucket (see BYOM owner rewards), so Paid is consumed value, not Pollinations revenue; Quest is free Pollen.",
+      "description": "Daily successful billed consumption for all community-model traffic, including direct and BYOP calls. 75% of it is credited to model owners in the payer's bucket (see BYOM owner rewards), so Paid is consumed value, not Pollinations revenue; Quest is subsidized usage.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -545,7 +545,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -659,7 +659,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -773,7 +773,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -903,7 +903,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -923,7 +923,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -963,7 +963,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -983,7 +983,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",

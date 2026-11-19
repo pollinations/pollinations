@@ -160,6 +160,13 @@ describe("getGenerationModelRegistry", () => {
             ["openai/gpt-oss-20b", "parallel_tool_calls", false],
             ["openai/gpt-oss-20b", "temperature", true],
             ["openai/gpt-oss-20b", "logprobs", true],
+            // Azure's Fireworks deployments and GLM-5.3-Flash reject prediction;
+            // GLM-5.3 and MiniMax M3.1 Flash on Fireworks honor it.
+            ["nvidia/nemotron-3-ultra", "prediction", false],
+            ["nvidia/nemotron-3.5-lightning", "prediction", false],
+            ["z-ai/glm-5.3-flash", "prediction", false],
+            ["z-ai/glm-5.3", "prediction", true],
+            ["minimax/minimax-m3.1-flash", "prediction", true],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

@@ -1293,6 +1293,16 @@ export interface ModelInfo {
     agent?: boolean;
     base_model?: string;
     input_modalities?: ModelInputModality[];
+    /** Verified output formats. Omission means unspecified. */
+    output_formats?: Record<
+        string,
+        {
+            /** Native is the model's only output. Selectable formats require output_format. */
+            mode: "native" | "selectable";
+            input_modalities: ModelInputModality[];
+            frame_defaults?: { frame_count: number; frame_duration_ms: number };
+        }
+    >;
     output_modalities?: ModelOutputModality[];
     /** Safety checks the gateway always applies to text input; callers cannot disable them. */
     required_safety?: string[];

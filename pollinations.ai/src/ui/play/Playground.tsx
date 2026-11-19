@@ -103,6 +103,7 @@ type PlaygroundModel = MediaModelMetadata & {
     description: string;
     category: ModelCategory;
     inputModalities: string[];
+    outputFormats?: ModelInfo["output_formats"];
     supportedEndpoints: string[];
     voices: string[];
     paidOnly: boolean;
@@ -173,6 +174,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         description: model.description ?? "",
         category: model.category,
         inputModalities: model.input_modalities ?? [],
+        outputFormats: model.output_formats,
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
         resolutions: model.resolutions ?? [],
@@ -274,11 +276,6 @@ function randomGenerationSeed(): number {
     return value[0] & 0x7fffffff;
 }
 
-function referenceImageLimit(model: PlaygroundModel | undefined): number {
-    if (!model?.inputModalities.includes("image")) return 0;
-    return model.maxReferenceImages ?? 0;
-}
-
 function uploadMediaForModel(model: PlaygroundModel): UploadMedia[] {
     return model.inputModalities.filter((modality): modality is UploadMedia =>
         UPLOAD_MEDIA_ORDER.includes(modality as UploadMedia),
@@ -311,20 +308,10 @@ function audioTaskForModel(model: PlaygroundModel) {
     return "speech-generation";
 }
 
-// Hotshot always returns a GIF. The GPT models require an explicit format.
-const NATIVE_GIF_MODEL = "hotshotco/hotshot-xl";
-const OPTIONAL_GIF_MODELS = new Set([
-    "openai/gpt-image-2.6-flare",
-    "openai/gpt-image-2.6-sunburst",
-]);
-
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
-    if (task.id === "gif")
-        return (
-            model.id === NATIVE_GIF_MODEL || OPTIONAL_GIF_MODELS.has(model.id)
-        );
-    if (model.id === NATIVE_GIF_MODEL) return false;
+    if (task.id === "gif") return !!model.outputFormats?.gif;
+    if (model.outputFormats?.gif?.mode === "native") return false;
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
     return true;
 }
@@ -1112,8 +1099,12 @@ export function Playground({
     );
 
     const currentModel = useMemo(
-        () => visibleModels.find((model) => model.id === selectedModel),
-        [visibleModels, selectedModel],
+        () =>
+            visibleModels.find(
+                (model) =>
+                    model.id === selectedModel && supportsTask(model, task),
+            ),
+        [visibleModels, selectedModel, task],
     );
     const audioTask =
         currentModel?.category === "audio"
@@ -1150,7 +1141,7 @@ export function Playground({
                 !!linked &&
                 (model.id === linked || model.aliases.includes(linked)),
         );
-        if (linkedModel) {
+        if (linkedModel && (!isGif || supportsTask(linkedModel, task))) {
             const linkedTask = supportsTask(linkedModel, task)
                 ? task
                 : TASKS.find((item) => supportsTask(linkedModel, item));
@@ -1163,11 +1154,13 @@ export function Playground({
                 return;
             }
         }
-        if (selectedModel) return;
+        if (selectedModel && (!isGif || currentModel)) return;
         const first = visibleModels.find((model) => supportsTask(model, task));
         if (first) setParams((previous) => ({ ...previous, model: first.id }));
     }, [
         task,
+        isGif,
+        currentModel,
         selectedModel,
         visibleModels,
         isHydrated,
@@ -1204,7 +1197,12 @@ export function Playground({
         currentModel?.videoCapabilities ?? [],
     );
     const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
-    const maxReferenceImages = isGif ? 0 : referenceImageLimit(currentModel);
+    const gifFormat = isGif ? currentModel?.outputFormats?.gif : undefined;
+    const inputModalities =
+        gifFormat?.input_modalities ?? currentModel?.inputModalities;
+    const maxReferenceImages = inputModalities?.includes("image")
+        ? (currentModel?.maxReferenceImages ?? 0)
+        : 0;
     const supportsReferenceImages = maxReferenceImages > 0;
     const supportsFrames =
         currentModel?.category === "video" &&
@@ -1255,10 +1253,11 @@ export function Playground({
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
-    const showPromptInput =
-        currentModel?.category !== "audio" ||
-        (transcription?.prompt ??
-            currentModel.inputModalities.includes("text"));
+    const showPromptInput = isGif
+        ? !!gifFormat?.input_modalities.includes("text")
+        : currentModel?.category !== "audio" ||
+          (transcription?.prompt ??
+              currentModel.inputModalities.includes("text"));
     const promptLabel = isAudioTranscription ? "Instructions" : "Description";
     const selectedModelAllowed =
         !!currentModel &&
@@ -1357,16 +1356,14 @@ export function Playground({
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
+    const gifOptions = gifFormat && {
+        outputFormat:
+            gifFormat.mode === "selectable" ? ("gif" as const) : undefined,
+        frameCount: gifFormat.frame_defaults?.frame_count,
+        frameDurationMs: gifFormat.frame_defaults?.frame_duration_ms,
+    };
     // Few image models declare resolutions, but /image accepts width and
     // height for all of them. Blank keeps the model's default size.
-    const gifOptions =
-        isGif && OPTIONAL_GIF_MODELS.has(currentModel?.id ?? "")
-            ? {
-                  outputFormat: "gif" as const,
-                  frameCount: 8,
-                  frameDurationMs: 120,
-              }
-            : undefined;
     const customSize =
         !isGif &&
         currentModel?.category === "image" &&
@@ -1672,6 +1669,7 @@ export function Playground({
     }
 
     const requiresImage =
+        !isGif &&
         currentModel?.category === "image" &&
         (currentModel.id === "prunaai/p-image-edit" ||
             (currentModel.supportedEndpoints.includes("/v1/images/edits") &&

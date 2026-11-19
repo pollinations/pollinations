@@ -527,7 +527,7 @@ function ModelPicker({
             <Button
                 size="icon"
                 intent="neutral"
-                className="shrink-0"
+                className="hidden shrink-0 @min-[28rem]:inline-flex"
                 aria-label={label}
                 title={label}
                 onClick={() => step(direction)}
@@ -542,10 +542,10 @@ function ModelPicker({
     return (
         <div className="flex min-w-0 items-center gap-2">
             {stepButton(-1)}
-            <div className="w-80 min-w-0">
+            <div className="w-full min-w-0 @min-[28rem]:w-80">
                 <Dropdown
                     portalled={false}
-                    className="w-[var(--reference-width)] overscroll-y-contain p-2 max-sm:w-[min(calc(100vw-2.5rem),24rem)]"
+                    className="w-[var(--reference-width)] overscroll-y-contain p-2"
                     trigger={(open) => (
                         <Button
                             type="button"
@@ -1967,7 +1967,7 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
-                    <div className="flex min-w-0 flex-col gap-2">
+                    <div className="@container flex min-w-0 flex-col gap-2">
                         <ModelPicker
                             groups={groups}
                             selectedModel={selectedModel}

@@ -6,6 +6,11 @@ export {
     type ModelAccessIconProps,
 } from "./ModelAccessIcon.tsx";
 export {
+    getCommunityModelIcon,
+    getModelBrandLogoPath,
+    ModelBrandIcon,
+} from "./ModelBrandIcon.tsx";
+export {
     categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,

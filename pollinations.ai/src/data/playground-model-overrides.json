@@ -188,6 +188,11 @@
         "source": "gen.pollinations.ai/src/image/models/hotshotXLModel.ts",
         "imageFormats": { "gif": { "mode": "native", "input_modalities": ["text"] } }
     },
+    "ideogram-ai/ideogram-vector-1": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/ideogramVectorModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
+    },
     "jaredpalmer/kev-4b": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
         "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
@@ -286,6 +291,11 @@
         "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
         "defaultRatio": "16:9"
+    },
+    "quiverai/arrow-2": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/quiverSvgModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
     },
     "recraft/recraft-v4.1-vector": {
         "reason": "Preview native SVG with optional image input until the catalog publishes the format.",

@@ -2382,6 +2382,29 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(1.5),
             completionImageTokens: perMillion(3.8),
         },
+        // Resolution changes the token count. Each route keeps its own base rates.
+        ...defineCostVariants(
+            { "2k": {}, "4k": {} },
+            matchResolution("2k", "4k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "2K output at the base token rates.",
+                },
+                "4k": {
+                    label: "4K",
+                    description: "4K output at the base token rates.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K", "4k": "4K" },
+                },
+            ],
+        ),
         // Both adapters report the base USD charge before gateway fees.
         billing: {
             resolveTotalCost: (_output, input) => input?.providerBilling?.units,

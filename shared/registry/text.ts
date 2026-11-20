@@ -2248,6 +2248,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: true,
     },
+    "google/gemini-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "decision",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // All input modalities share the same rate.
+            promptAudioTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Gemini Decision 1",
+        description:
+            "Score yes/no, multiple-choice, and ordered-scale questions about text, images, audio, and video in one request.",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        maxReferenceImages: 3600,
+        maxReferenceVideos: 10,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

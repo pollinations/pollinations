@@ -62,11 +62,13 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
+    google: "google",
     openrouter: "openrouter",
     "vllm-sr": "vllm-sr",
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
+    "generativelanguage.googleapis.com": "google",
     "bedrock-runtime.us-east-1.amazonaws.com": "aws",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",

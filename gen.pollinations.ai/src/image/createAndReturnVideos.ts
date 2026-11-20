@@ -13,6 +13,7 @@ import {
 import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
+import { callHeygenAvatar6Turbo } from "./models/heygenAvatar6TurboModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import { callLtxVideo } from "./models/ltxVideoModel.ts";
 import {
@@ -26,7 +27,6 @@ import {
     callOpenRouterGrokVideoAPI,
     callOpenRouterSeedance25FlashAPI,
 } from "./models/openRouterVideoModel.ts";
-import { callHeygenAvatar6Turbo } from "./models/heygenAvatar6TurboModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedance25API } from "./models/seedance25VideoModel.ts";
 import { callVercelSeedance25FlashAPI } from "./models/seedanceFlashVercelModel.ts";

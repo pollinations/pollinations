@@ -14,6 +14,7 @@ import {
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
+    callOpenRouterRecraftProVectorAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedream55API,
     callOpenRouterSeedreamFlashAPI,
@@ -1481,6 +1482,40 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
                 aspectRatio: "9:21",
             }),
         ).rejects.toMatchObject({ status: 400 });
+    });
+});
+
+describe("OpenRouter Recraft Pro Vector fallback", () => {
+    it("pins Recraft, preserves SVG output, and uses the exact Pro Vector model ID", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const calls: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (String(url) !== OPENROUTER_IMAGE_URL) {
+                return new Response("unexpected URL", { status: 404 });
+            }
+            calls.push(JSON.parse(init?.body as string));
+            return Response.json({
+                data: [{ b64_json: Buffer.from("<svg/>").toString("base64"), media_type: "image/svg+xml" }],
+                usage: { cost: 0.3 },
+            });
+        });
+        const result = await callOpenRouterRecraftProVectorAPI("logo", {
+            ...baseParams,
+            model: "recraft/recraft-v4.1-pro-vector:openrouter",
+        });
+        expect(calls[0]).toMatchObject({
+            model: "recraft/recraft-v4.1-pro-vector",
+            provider: { only: ["recraft"], allow_fallbacks: false },
+        });
+        expect(result.mimeType).toBe("image/svg+xml");
+        expect(result.buffer.toString()).toBe("<svg/>");
+        expect(result.trackingData).toMatchObject({
+            actualModel: "recraft/recraft-v4.1-pro-vector:openrouter",
+            usage: { completionImageTokens: 1 },
+        });
     });
 });
 

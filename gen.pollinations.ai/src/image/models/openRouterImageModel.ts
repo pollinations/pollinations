@@ -33,6 +33,7 @@ const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const RECRAFT_PRO_VECTOR_MODEL = "recraft/recraft-v4.1-pro-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
 // Docs show PNG, but the live endpoint returned WebP (2026-09-23).
 // Both Recraft V4.1 models accept these (and "auto"); 3:2 is rejected.
@@ -1210,11 +1211,12 @@ export async function callOpenRouterRecraftFlashAPI(
 export async function callOpenRouterRecraftVectorAPI(
     prompt: string,
     safeParams: ImageParams,
+    upstreamModel = RECRAFT_VECTOR_MODEL,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
-        model: RECRAFT_VECTOR_MODEL,
+        model: upstreamModel,
         prompt,
         n: 1,
         aspect_ratio: resolveRecraftAspectRatio(safeParams),
@@ -1278,9 +1280,20 @@ export async function callOpenRouterRecraftVectorAPI(
         buffer: base64ToBuffer(generatedImage.b64_json),
         mimeType: SVG_MEDIA_TYPE,
         trackingData: {
-            actualModel: "recraft/recraft-v4.1-vector",
-            // OpenRouter bills this endpoint a fixed $0.08 per output image.
+            actualModel: safeParams.model,
+            // Each Recraft vector model bills a fixed rate per SVG.
             usage: { completionImageTokens: 1 },
         },
     };
+}
+
+export async function callOpenRouterRecraftProVectorAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterRecraftVectorAPI(
+        prompt,
+        safeParams,
+        RECRAFT_PRO_VECTOR_MODEL,
+    );
 }

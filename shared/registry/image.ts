@@ -1990,6 +1990,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
+    "recraft/recraft-v4.1-pro-vector": {
+        aliases: ["recraft-v4.1-pro-vector"],
+        provider: "fal",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: Date.parse("2026-11-20"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Native, editable SVG; fal bills $0.30 per output vector.
+        cost: { completionImageTokens: 0.3 },
+        title: "Recraft V4.1 Pro Vector",
+        description:
+            "Create detailed, high-resolution, editable SVG illustrations from a text prompt.",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        maxReferenceImages: 0,
+    },
     "recraft/recraft-v4.1-vector": {
         aliases: [
             "recraft-vector",

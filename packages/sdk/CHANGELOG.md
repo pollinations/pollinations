@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.34] - 2026-11-20
+
+### Added
+- Realtime voice session helper `connectRealtime()` and React hook `useRealtime()`.
+  Supports `openai/gpt-realtime-2.1`, audio converters (`pcm16ToBase64`, `base64ToPcm16`),
+  and live event streaming over WebSockets. Fixes #20024.
+
 ## [5.1.0-alpha.33] - 2026-11-18
 
 ### Changed

@@ -200,4 +200,31 @@ describe("keys update", () => {
             .join("");
         expect(output).toContain("permissions: models:text|flux");
     });
+
+    it("clears the model restriction with --all-models", async () => {
+        const { fetch } = prepare(null);
+        await keysCommand.parseAsync(["update", "key-1", "--all-models"], {
+            from: "user",
+        });
+
+        const [, init] = fetch.mock.calls[0];
+        expect(init.method).toBe("PATCH");
+        expect(JSON.parse(String(init.body))).toEqual({
+            allowedModels: null,
+        });
+    });
+
+    it.each([
+        ["without a model option", ["update", "key-1"]],
+        [
+            "with both model options",
+            ["update", "key-1", "--models", "text", "--all-models"],
+        ],
+    ])("requires exactly one model option %s", async (_label, args) => {
+        const { fetch } = prepare(null);
+        await expect(
+            keysCommand.parseAsync(args, { from: "user" }),
+        ).rejects.toThrow();
+        expect(fetch).not.toHaveBeenCalled();
+    });
 });

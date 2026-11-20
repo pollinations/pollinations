@@ -9,6 +9,20 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "kwaivgi/kling-v3.0-pro": {
+        "kwaivgi/kling-v3.0-pro:azure": {
+            provider: "azure",
+            cost: {
+                completionVideoSeconds: 0.1232,
+                completionAudioSeconds: 0.0616,
+            },
+        },
+    },
+    "lightricks/ltx-2.5-pro": {
+        "lightricks/ltx-2.5-pro:azure": {
+            provider: "azure",
+        },
+    },
     "stability-ai/stable-diffusion-3.5-large": {
         "stability-ai/stable-diffusion-3.5-large:stability": {
             provider: "stability",

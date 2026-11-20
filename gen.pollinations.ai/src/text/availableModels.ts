@@ -969,6 +969,44 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-hydrogen",
+        config: portkeyConfig["google/gemini-4-hydrogen"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen:openrouter:vertex-global",
+        config: portkeyConfig[
+            "google/gemini-4-hydrogen:openrouter:vertex-global"
+        ],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon",
+        config: portkeyConfig["google/gemini-4-neon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon:openrouter:vertex-global",
+        config: portkeyConfig["google/gemini-4-neon:openrouter:vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-argon",
         config: portkeyConfig["google/gemini-4-argon"],
         transform: pipe(
@@ -1456,6 +1494,14 @@ const models: ModelDefinition[] = [
         name: "meta/muse-glimmer-30b:openrouter:together",
         config: portkeyConfig["muse-glimmer-openrouter-together"],
         transform: mandatoryReasoning,
+    },
+    {
+        name: "meta/muse-ember",
+        config: portkeyConfig["meta/muse-ember"],
+    },
+    {
+        name: "meta/muse-ember:openrouter",
+        config: portkeyConfig["meta/muse-ember:openrouter"],
     },
     {
         name: "meta/muse-spark-1.2",

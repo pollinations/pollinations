@@ -1725,6 +1725,86 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000211,
     },
   },
+  "google/gemini-4-hydrogen": {
+    "cost": {
+      "completionTextTokens": 0.0000075,
+      "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000075,
+      "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+      "promptVideoTokens": 0.0000015,
+    },
+  },
+  "google/gemini-4-hydrogen:openrouter:vertex-global": {
+    "cost": {
+      "completionTextTokens": 0.0000079125,
+      "promptAudioTokens": 0.0000015825,
+      "promptCacheWriteTokens": 0.0000015825,
+      "promptCachedTokens": 0.000000079125,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000015825,
+      "promptVideoTokens": 0.0000015825,
+    },
+    "price": {
+      "completionTextTokens": 0.0000079125,
+      "promptAudioTokens": 0.0000015825,
+      "promptCacheWriteTokens": 0.0000015825,
+      "promptCachedTokens": 0.000000079125,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000015825,
+      "promptVideoTokens": 0.0000015825,
+    },
+  },
+  "google/gemini-4-neon": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptAudioTokens": 0.000003,
+      "promptCacheWriteTokens": 0.000003,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.000003,
+      "promptTextTokens": 0.000003,
+      "promptVideoTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptAudioTokens": 0.000003,
+      "promptCacheWriteTokens": 0.000003,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.000003,
+      "promptTextTokens": 0.000003,
+      "promptVideoTokens": 0.000003,
+    },
+  },
+  "google/gemini-4-neon:openrouter:vertex-global": {
+    "cost": {
+      "completionTextTokens": 0.000015825,
+      "promptAudioTokens": 0.000003165,
+      "promptCacheWriteTokens": 0.000003165,
+      "promptCachedTokens": 0.00000015825,
+      "promptImageTokens": 0.000003165,
+      "promptTextTokens": 0.000003165,
+      "promptVideoTokens": 0.000003165,
+    },
+    "price": {
+      "completionTextTokens": 0.000015825,
+      "promptAudioTokens": 0.000003165,
+      "promptCacheWriteTokens": 0.000003165,
+      "promptCachedTokens": 0.00000015825,
+      "promptImageTokens": 0.000003165,
+      "promptTextTokens": 0.000003165,
+      "promptVideoTokens": 0.000003165,
+    },
+  },
   "google/gemini-embedding-2": {
     "cost": {
       "promptAudioTokens": 0.0000065,
@@ -1975,6 +2055,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "ideogram-ai/ideogram-vector-1": {
+    "cost": {
+      "completionImageTokens": 0.01,
+    },
+    "price": {
+      "completionImageTokens": 0.01,
+    },
+  },
   "inception/mercury-2": {
     "cost": {
       "completionTextTokens": 0.00000079125,
@@ -2118,6 +2206,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "kwaivgi/kling-v3.0-pro": {
+    "cost": {
+      "completionAudioSeconds": 0.056,
+      "completionVideoSeconds": 0.112,
+    },
+    "price": {
+      "completionAudioSeconds": 0.056,
+      "completionVideoSeconds": 0.112,
+    },
+  },
+  "kwaivgi/kling-v3.0-pro:azure": {
+    "cost": {
+      "completionAudioSeconds": 0.0616,
+      "completionVideoSeconds": 0.1232,
+    },
+    "price": {
+      "completionAudioSeconds": 0.0616,
+      "completionVideoSeconds": 0.1232,
+    },
+  },
   "kwaivgi/kling-v3.0-std": {
     "cost": {
       "completionAudioSeconds": 0.042,
@@ -2126,6 +2234,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionAudioSeconds": 0.042,
       "completionVideoSeconds": 0.084,
+    },
+  },
+  "lightricks/ltx-2.5-pro": {
+    "cost": {
+      "completionVideoSeconds": 0.12,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.17,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.12,
+    },
+  },
+  "lightricks/ltx-2.5-pro:azure": {
+    "cost": {
+      "completionVideoSeconds": 0.12,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.17,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.12,
     },
   },
   "liquid/d1": {
@@ -2234,6 +2368,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000045,
       "promptImageTokens": 0.00000015,
       "promptTextTokens": 0.00000015,
+    },
+  },
+  "meta/muse-ember": {
+    "cost": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "meta/muse-ember:openrouter": {
+    "cost": {
+      "completionTextTokens": 0.0000005275,
+      "promptCacheWriteTokens": 0.000000131875,
+      "promptCachedTokens": 0.00000000422,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005275,
+      "promptCacheWriteTokens": 0.000000131875,
+      "promptCachedTokens": 0.00000000422,
+      "promptTextTokens": 0.0000001055,
     },
   },
   "meta/muse-glimmer-30b": {
@@ -4182,6 +4344,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.02,
+    },
+  },
+  "quiverai/arrow-2": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptTextTokens": 0.000004,
     },
   },
   "qwen/qwen-audio-3.0-tts-flash": {

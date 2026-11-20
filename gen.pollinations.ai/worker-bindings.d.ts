@@ -27,6 +27,7 @@ interface CloudflareBindings {
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
+    QUIVER_API_KEY?: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;

@@ -23,6 +23,7 @@ import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
+    mediaRequestPrice,
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
@@ -210,7 +211,7 @@ const imageResponseHeaders = {
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageCache,
-    generationAccess,
+    every(mediaRequestPrice, generationAccess),
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateImageVideo,
@@ -411,6 +412,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.alpha && { alpha: entry.info.alpha }),
         ...(entry.info.supports_streaming === false && {
             supports_streaming: false,
         }),
@@ -1301,7 +1303,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        generationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         every(apiKeyBudgetReservation, handleImageGeneration),
     )
@@ -1360,7 +1362,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        generationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         apiKeyBudgetReservation,
         handleImageGeneration,

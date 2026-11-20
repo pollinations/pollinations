@@ -62,6 +62,20 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     ),
                 );
             }
+            // Older explicit PNG requests for FLUX stored JPEG bytes under this key.
+            if (
+                variables.model?.resolved ===
+                    "black-forest-labs/flux.1-schnell" &&
+                (c.req.method === "POST"
+                    ? (
+                          c.req.valid("json" as never) as
+                              | { output_format?: string }
+                              | undefined
+                      )?.output_format
+                    : cacheUrl.searchParams.get("output_format")) === "png"
+            ) {
+                cacheUrl.searchParams.append("__flux_png", "1");
+            }
             return generateCacheKey(
                 cacheUrl,
                 c.req.header(SAFETY_HEADER_NAME),

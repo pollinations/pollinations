@@ -715,6 +715,22 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
+    "ideogram-ai/ideogram-vector-1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Ideogram",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.01 }, // fal reports integer cents as billable units.
+        title: "Ideogram Vector 1",
+        description:
+            "Create editable SVG artwork from a prompt and up to five reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5,
+    },
     "ideogram-ai/ideogram-v4-balanced": {
         aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
@@ -1870,6 +1886,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
+    "quiverai/arrow-2": {
+        aliases: [],
+        provider: "quiverai",
+        publisher: "QuiverAI",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Arrow 2",
+        description:
+            "Generate editable SVG illustrations, icons, and diagrams from text and reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14,
+    },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
         provider: "fal",
@@ -2123,6 +2158,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,
+        billedSecondsFollowReference: true,
     },
     "alibaba/happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
@@ -2146,6 +2182,8 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+        // OpenRouter bills at least 5 seconds per clip.
+        minBilledSeconds: 5,
     },
     "kwaivgi/kling-v3.0-std": {
         aliases: [],
@@ -2175,6 +2213,65 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+    },
+    "kwaivgi/kling-v3.0-pro": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-11-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.112,
+            completionAudioSeconds: 0.056,
+        },
+        resolutions: ["1080p"],
+        title: "Kling 3.0 Pro",
+        description:
+            "1080p video from text or start and end frames with optional synchronized audio",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "lightricks/ltx-2.5-pro": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Lightricks",
+        category: "video",
+        addedDate: new Date("2026-11-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionVideoSeconds: 0.12 },
+        ...defineCostVariants(
+            { "1080p": { completionVideoSeconds: 0.17 } },
+            matchResolution("1080p"),
+            { "1080p": { label: "1080p", description: "Output at 1080p." } },
+            "720p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "720p", "1080p": "1080p" },
+                },
+            ],
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "LTX 2.5 Pro",
+        description:
+            "High-fidelity video at 720p or 1080p with synchronized audio and optional start and end frames",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 6,
+        maxDuration: 10,
+        defaultDuration: 6,
+        allowedDurations: [6, 8, 10],
     },
     "black-forest-labs/flux-3-max": {
         aliases: [],
@@ -2683,6 +2780,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 120,
         defaultDuration: 120,
+        billedSecondsFollowReference: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

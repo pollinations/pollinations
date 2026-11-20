@@ -27,66 +27,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
-    },
-    "19425": {
-      "merge_sha": "718d0b5a9c33407914f27466883175909316726e",
-      "merged_at": "2026-11-20T00:13:19Z",
-      "required": []
-    },
-    "19595": {
-      "merge_sha": "9ce486d874907daa49e1df1df82df5eb8f7f62f3",
-      "merged_at": "2026-11-19T23:32:07Z",
-      "required": []
-    },
-    "19605": {
-      "merge_sha": "a71f642fb96ce13439d35ba224235e31e0bcfd74",
-      "merged_at": "2026-11-20T00:20:30Z",
-      "required": []
-    },
-    "19611": {
-      "merge_sha": "162b4e272c14ee3fc678af9297932d48aeaa82a7",
-      "merged_at": "2026-11-20T02:14:38Z",
-      "required": []
-    },
-    "19671": {
-      "merge_sha": "f2b83e9b22c26fe3eeba26336f48f1c6e0118561",
-      "merged_at": "2026-11-19T23:52:56Z",
-      "required": []
-    },
-    "19672": {
-      "merge_sha": "bb096a8f6f54fe69195e4ade1d6e67bbff647e4c",
-      "merged_at": "2026-11-20T00:41:37Z",
-      "required": []
-    },
-    "20066": {
-      "merge_sha": "9cd854f87ac726edaa46fb343522c6a25d9444ec",
-      "merged_at": "2026-11-20T01:19:12Z",
-      "required": []
-    },
-    "20067": {
-      "merge_sha": "4f538c3e6da14a3d2cca9d7449c89259818b7d7e",
-      "merged_at": "2026-11-20T01:36:38Z",
-      "required": []
-    },
-    "20068": {
-      "merge_sha": "2c305ab959be30134084836f11ed9f4edd462a6f",
-      "merged_at": "2026-11-20T02:32:38Z",
-      "required": []
-    },
-    "20298": {
-      "merge_sha": "cea818eacb6565138b1812fe518517feb6cd01f3",
-      "merged_at": "2026-11-20T00:04:37Z",
-      "required": []
-    },
-    "20368": {
-      "merge_sha": "702932cd1e7ed3a890348d410975997ad05855e0",
-      "merged_at": "2026-11-20T00:48:32Z",
-      "required": []
-    },
-    "20373": {
-      "merge_sha": "485453baba7e24bfc5bdb0d3460594d4293852fc",
-      "merged_at": "2026-11-20T01:34:02Z",
-      "required": []
     }
   },
   "production": "c1705347cb9b6b7394c8fa6cfedea34343499773",

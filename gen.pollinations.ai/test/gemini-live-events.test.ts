@@ -219,7 +219,7 @@ describe("Gemini Live realtime events", () => {
             },
         ]);
     });
-    it("connects on the first server VAD audio chunk", () => {
+    it("rejects automatic turn detection and buffers audio until committed", () => {
         const s = session();
         s.client({
             type: "session.update",
@@ -227,20 +227,89 @@ describe("Gemini Live realtime events", () => {
                 audio: { input: { turn_detection: { type: "server_vad" } } },
             },
         });
+        expect(s.events().at(-1)).toMatchObject({ type: "error" });
         s.client({ type: "input_audio_buffer.append", audio: "AQI=" });
-        expect(s.requestSetup).toHaveBeenCalledOnce();
-        expect(s.sendGoogle).toHaveBeenCalledWith({
-            realtimeInput: {
-                audio: { data: "AQI=", mimeType: "audio/pcm;rate=24000" },
-            },
+        expect(s.requestSetup).not.toHaveBeenCalled();
+        expect(s.sendGoogle).not.toHaveBeenCalled();
+        expect(
+            s.setup("gemini").setup.realtimeInputConfig
+                .automaticActivityDetection.disabled,
+        ).toBe(true);
+    });
+
+    it.each(["typed", "audio"])(
+        "continues with %s input after a Vertex interruption",
+        (kind) => {
+            const s = session();
+            s.client(textItem);
+            s.client({ type: "response.create" });
+            s.sendGoogle.mockClear();
+            s.client({ type: "response.cancel" });
+            s.client({ type: "response.cancel" });
+            expect(s.sendGoogle.mock.calls).toEqual([
+                [{ realtimeInput: { activityStart: {} } }],
+            ]);
+            s.google({ serverContent: { interrupted: true } });
+            expect(s.onUsage).not.toHaveBeenCalled();
+            s.google(terminal);
+            s.sendGoogle.mockClear();
+            if (kind === "typed") {
+                s.client(textItem);
+                s.client({ type: "response.create" });
+                expect(s.sendGoogle.mock.calls).toEqual([
+                    [
+                        {
+                            realtimeInput: {
+                                audio: {
+                                    data: btoa("\0".repeat(960)),
+                                    mimeType: "audio/pcm;rate=24000",
+                                },
+                            },
+                        },
+                    ],
+                    [{ realtimeInput: { text: "Hello" } }],
+                    [{ realtimeInput: { activityEnd: {} } }],
+                ]);
+            } else {
+                s.client({ type: "input_audio_buffer.append", audio: "AQI=" });
+                s.client({ type: "input_audio_buffer.commit" });
+                s.client({ type: "response.create" });
+                expect(s.sendGoogle.mock.calls).toEqual([
+                    [
+                        {
+                            realtimeInput: {
+                                audio: {
+                                    data: "AQI=",
+                                    mimeType: "audio/pcm;rate=24000",
+                                },
+                            },
+                        },
+                    ],
+                    [{ realtimeInput: { activityEnd: {} } }],
+                ]);
+            }
+            s.google(terminal);
+            expect(s.onUsage).toHaveBeenCalledTimes(2);
+            expect(
+                s
+                    .events()
+                    .filter((e) => e.type === "response.done")
+                    .map((e) => e.response.status),
+            ).toEqual(["cancelled", "completed"]);
+        },
+    );
+
+    it("reports completion if generation finished before Vertex received the interrupt", () => {
+        const s = session();
+        s.client(textItem);
+        s.client({ type: "response.create" });
+        s.client({ type: "response.cancel" });
+        s.google(terminal);
+        expect(s.events().at(-1)).toMatchObject({
+            type: "response.done",
+            response: { status: "completed" },
         });
-        expect(s.setup("gemini")).toMatchObject({
-            setup: {
-                realtimeInputConfig: {
-                    automaticActivityDetection: { disabled: false },
-                },
-            },
-        });
+        expect(s.onUsage).toHaveBeenCalledOnce();
     });
 
     it("suppresses cancelled output and requires reconciled usage to complete", () => {
@@ -259,6 +328,7 @@ describe("Gemini Live realtime events", () => {
         ).toThrow(/usage/);
         expect(s.onUsage).not.toHaveBeenCalled();
         expect(s.pendingTurn()).toBe(true);
+        s.google({ serverContent: { interrupted: true } });
         s.google(terminal);
         expect(s.events().at(-1)).toMatchObject({
             type: "response.done",

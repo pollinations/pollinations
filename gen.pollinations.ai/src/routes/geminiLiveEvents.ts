@@ -34,11 +34,7 @@ const settings = z
                 input: z
                     .object({
                         format: pcm.optional(),
-                        turn_detection: z
-                            .object({ type: z.literal("server_vad") })
-                            .strict()
-                            .nullable()
-                            .optional(),
+                        turn_detection: z.null().optional(),
                     })
                     .strict()
                     .optional(),
@@ -115,8 +111,10 @@ export function createGeminiLiveEvents({
     let size = 0;
     let audioSize = 0;
     let active = false;
-    let cancelled = false;
-    let automaticAudio = false;
+    let cancelRequested = false;
+    let interrupted = false;
+    // An interrupt opens a manual input activity. Only audio can end it.
+    let activityOpen = false;
     let responseId = "";
     let output: Frame[] = [];
     let message: Frame | undefined;
@@ -248,7 +246,7 @@ export function createGeminiLiveEvents({
             input.cached_tokens;
         const outputTokens = out.text_tokens + out.audio_tokens;
         emit("response.done", {
-            response: response(cancelled ? "cancelled" : "completed", {
+            response: response(interrupted ? "cancelled" : "completed", {
                 total_tokens: inputTokens + outputTokens,
                 input_tokens: inputTokens,
                 output_tokens: outputTokens,
@@ -257,13 +255,13 @@ export function createGeminiLiveEvents({
             }),
         });
         active = false;
-        cancelled = false;
+        cancelRequested = false;
+        interrupted = false;
         responseId = "";
         output = [];
         message = undefined;
         part = undefined;
         transcript = "";
-        automaticAudio = false;
     }
     function queuedInput(frames: Frame[]) {
         const nextSize =
@@ -401,53 +399,35 @@ export function createGeminiLiveEvents({
                 const data = base64(event.audio);
                 if (atob(data).length % 2)
                     throw Error("PCM16 audio must contain whole samples.");
-                if (config.audio?.input?.turn_detection) {
-                    automaticAudio = true;
-                    active = true;
-                    requestSetup();
-                    sendGoogle({
-                        realtimeInput: {
-                            audio: { data, mimeType: "audio/pcm;rate=24000" },
-                        },
-                    });
-                } else {
-                    if (
-                        size + audioSize + data.length > maxInput ||
-                        audio.length >= 1024
-                    )
-                        throw Error("Pending audio buffer is full.");
-                    audio.push(data);
-                    audioSize += data.length;
-                }
+                if (
+                    size + audioSize + data.length > maxInput ||
+                    audio.length >= 1024
+                )
+                    throw Error("Pending audio buffer is full.");
+                audio.push(data);
+                audioSize += data.length;
                 return;
             }
             case "input_audio_buffer.clear":
-                if (automaticAudio)
-                    throw Error("Server VAD audio has already been streamed.");
                 audio = [];
                 audioSize = 0;
                 return emit("input_audio_buffer.cleared");
             case "input_audio_buffer.commit": {
-                if (!automaticAudio && !audio.length)
-                    throw Error("Audio buffer is empty.");
-                if (automaticAudio)
-                    sendGoogle({ realtimeInput: { audioStreamEnd: true } });
-                else {
-                    const frames = audio.map((data) => ({
-                        realtimeInput: {
-                            audio: { data, mimeType: "audio/pcm;rate=24000" },
-                        },
-                    }));
-                    const bytes = audioSize;
-                    audioSize = 0;
-                    try {
-                        queuedInput(frames);
-                    } catch (error) {
-                        audioSize = bytes;
-                        throw error;
-                    }
-                    audio = [];
+                if (!audio.length) throw Error("Audio buffer is empty.");
+                const frames = audio.map((data) => ({
+                    realtimeInput: {
+                        audio: { data, mimeType: "audio/pcm;rate=24000" },
+                    },
+                }));
+                const bytes = audioSize;
+                audioSize = 0;
+                try {
+                    queuedInput(frames);
+                } catch (error) {
+                    audioSize = bytes;
+                    throw error;
                 }
+                audio = [];
                 const itemId = id("item");
                 emit("input_audio_buffer.committed", { item_id: itemId });
                 return acceptItem({
@@ -463,7 +443,7 @@ export function createGeminiLiveEvents({
                         "Use session.update to configure Gemini Live responses.",
                     );
                 if (!queued.length) {
-                    if (automaticAudio || active) return;
+                    if (active) return;
                     throw Error(
                         "Create or commit an input item before requesting a response.",
                     );
@@ -472,13 +452,32 @@ export function createGeminiLiveEvents({
                     throw Error("A response is already active.");
                 active = true;
                 requestSetup();
-                const manual =
-                    !config.audio?.input?.turn_detection &&
-                    queued.some((frame) => obj(frame.realtimeInput).audio);
-                if (manual)
+                const hasAudio = queued.some(
+                    (frame) => obj(frame.realtimeInput).audio,
+                );
+                if (hasAudio && !activityOpen)
                     sendGoogle({ realtimeInput: { activityStart: {} } });
+                // Vertex requires PCM before closing an activity opened by Stop.
+                // For a typed or camera follow-up, supply one silent 20 ms packet
+                // alongside the user's real content so the next reply can also be interrupted.
+                const closeActivity =
+                    hasAudio ||
+                    (activityOpen &&
+                        queued.some((frame) => frame.realtimeInput));
+                if (closeActivity && !hasAudio)
+                    sendGoogle({
+                        realtimeInput: {
+                            audio: {
+                                data: btoa("\0".repeat(960)),
+                                mimeType: "audio/pcm;rate=24000",
+                            },
+                        },
+                    });
                 for (const frame of queued) sendGoogle(frame);
-                if (manual) sendGoogle({ realtimeInput: { activityEnd: {} } });
+                if (closeActivity) {
+                    sendGoogle({ realtimeInput: { activityEnd: {} } });
+                    activityOpen = false;
+                }
                 queued = [];
                 size = 0;
                 return;
@@ -489,8 +488,11 @@ export function createGeminiLiveEvents({
                     (event.response_id && event.response_id !== responseId)
                 )
                     throw Error("No matching active response.");
-                // Continue reading the provider through terminal usage after downstream cancellation.
-                cancelled = true;
+                if (!cancelRequested && !interrupted) {
+                    sendGoogle({ realtimeInput: { activityStart: {} } });
+                    activityOpen = true;
+                    cancelRequested = true;
+                }
                 return;
             default:
                 throw Error("Unsupported Gemini Live client event.");
@@ -518,7 +520,7 @@ export function createGeminiLiveEvents({
                     },
                     realtimeInputConfig: {
                         automaticActivityDetection: {
-                            disabled: !config.audio?.input?.turn_detection,
+                            disabled: true,
                         },
                     },
                     ...(config.instructions && {
@@ -556,8 +558,8 @@ export function createGeminiLiveEvents({
             if (event.error)
                 throw Error("Gemini Live reported a provider error.");
             const content = obj(event.serverContent);
-            if (content.interrupted) cancelled = true;
-            if (!cancelled) {
+            if (content.interrupted) interrupted = true;
+            if (!cancelRequested && !interrupted) {
                 for (const rawPart of array(obj(content.modelTurn).parts)) {
                     const p = obj(rawPart);
                     if (p.thought) continue;

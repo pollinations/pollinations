@@ -8,6 +8,12 @@ import {
 } from "react";
 import { Pollinations } from "../client.js";
 import {
+    createRealtimeSession,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+} from "../realtime.js";
+import {
     isOutageError,
     pollinationsErrorFromResponse,
 } from "../error-response.js";
@@ -493,3 +499,98 @@ export function useTranscription() {
         TranscriptionResponse
     >(transcriptionRequest);
 }
+
+// ============================================================================
+// Realtime
+// ============================================================================
+
+export type RealtimeSessionStatus =
+    | "idle"
+    | "connecting"
+    | "open"
+    | "closed"
+    | "error";
+
+export interface UseRealtimeSessionOptions {
+    /**
+     * Realtime model (default "openai/gpt-realtime-2.1"). An
+     * elevenlabs/scribe-* model starts a transcription session.
+     */
+    model?: RealtimeSessionOptions["model"];
+    /** Called with every server event while the session is open. */
+    onEvent?: (event: RealtimeEvent) => void;
+}
+
+export interface UseRealtimeSessionValue {
+    status: RealtimeSessionStatus;
+    error: Error | null;
+    /** Open a session with the provider's key. Closes any current one. */
+    connect: () => Promise<void>;
+    /** End the session; billing settles when the socket closes. */
+    disconnect: () => void;
+    /** Send a client event, e.g. `input_audio_buffer.append`. */
+    send: (event: RealtimeEvent) => void;
+}
+
+/**
+ * One realtime voice/transcription session with the provider's key.
+ * Nothing connects until `connect`; unmount or a key change closes the
+ * socket, so a stale session never bills the next user.
+ */
+export function useRealtimeSession(
+    options: UseRealtimeSessionOptions = {},
+): UseRealtimeSessionValue {
+    const { apiKey } = useRequiredAuth();
+    const [status, setStatus] = useState<RealtimeSessionStatus>("idle");
+    const [error, setError] = useState<Error | null>(null);
+    const sessionRef = useRef<RealtimeSession | null>(null);
+    const onEventRef = useRef(options.onEvent);
+    onEventRef.current = options.onEvent;
+    const model = options.model;
+
+    const disconnect = useCallback(() => {
+        sessionRef.current?.close();
+        sessionRef.current = null;
+        setStatus("idle");
+    }, []);
+
+    // Close the socket on unmount or key change.
+    useEffect(() => disconnect, [apiKey, disconnect]);
+
+    const connect = useCallback(async () => {
+        if (!apiKey) {
+            throw new Error("Log in to Pollinations to start a realtime session");
+        }
+        sessionRef.current?.close();
+        setError(null);
+        setStatus("connecting");
+        const session = createRealtimeSession({
+            apiKey,
+            model,
+            onEvent: (event) => onEventRef.current?.(event),
+            onError: (err) => {
+                setStatus("error");
+                setError(err instanceof Error ? err : new Error(String(err)));
+            },
+            onClose: () => setStatus("closed"),
+        });
+        sessionRef.current = session;
+        try {
+            await session.ready;
+            setStatus("open");
+        } catch (err) {
+            setStatus("error");
+            setError(err instanceof Error ? err : new Error(String(err)));
+        }
+    }, [apiKey, model]);
+
+    const send = useCallback(
+        (event: RealtimeEvent) => sessionRef.current?.send(event),
+        [],
+    );
+
+    return useMemo(
+        () => ({ status, error, connect, disconnect, send }),
+        [status, error, connect, disconnect, send],
+    );
+    }

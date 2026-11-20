@@ -24,8 +24,12 @@ export {
     useAuthState,
     useImageGeneration,
     useModelCatalog,
+    useRealtimeSession,
     useTextGeneration,
     useTranscription,
+    type RealtimeSessionStatus,
+    type UseRealtimeSessionOptions,
+    type UseRealtimeSessionValue,
     useVideoGeneration,
 } from "./hooks.js";
 export {

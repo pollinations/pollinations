@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pollinations realtime transcription demo</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+  button { padding: 8px 16px; font: inherit; cursor: pointer; }
+  #log { white-space: pre-wrap; background: #111; color: #9f9; padding: 12px; border-radius: 8px; min-height: 200px; }
+</style>
+</head>
+<body>
+<h1>Realtime transcription demo</h1>
+<p>Streams your microphone to a Pollinations realtime transcription session and prints what it hears.
+   Paste a secret key from <a href="https://enter.pollinations.ai/keys">enter.pollinations.ai/keys</a> -
+   the session bills its balance when the socket closes.</p>
+<p><input id="key" type="password" placeholder="sk_..." size="40">
+   <button id="start">Start</button> <button id="stop" disabled>Stop</button></p>
+<div id="log"></div>
+<script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk@alpha"></script>
+<script>
+const { createRealtimeSession } = Pollinations;
+
+const log = (m) => (document.getElementById("log").textContent += m + "\n");
+let session, audioCtx, stream;
+
+// Float32 samples -> base64 PCM16, the realtime input_audio_buffer format.
+function toBase64Pcm16(float32) {
+  const pcm = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    pcm[i] = Math.max(-1, Math.min(1, float32[i])) * 0x7fff;
+  }
+  return btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)));
+}
+
+document.getElementById("start").onclick = async () => {
+  const apiKey = document.getElementById("key").value.trim();
+  if (!apiKey) return log("paste your key first");
+  document.getElementById("start").disabled = true;
+
+  session = createRealtimeSession({
+    apiKey,
+    model: "openai/gpt-live-transcribe",
+    onEvent: (event) => {
+      if (event.type.includes("transcription") || event.type === "error") {
+        log(JSON.stringify(event));
+      }
+    },
+    onError: () => log("socket error"),
+    onClose: () => log("session closed"),
+  });
+  await session.ready;
+  log("connected");
+
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  audioCtx = new AudioContext({ sampleRate: 24000 });
+  const source = audioCtx.createMediaStreamSource(stream);
+  const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+  processor.onaudioprocess = (e) => {
+    session.send({
+      type: "input_audio_buffer.append",
+      audio: toBase64Pcm16(e.inputBuffer.getChannelData(0)),
+    });
+  };
+  source.connect(processor);
+  processor.connect(audioCtx.destination);
+  document.getElementById("stop").disabled = false;
+  log("listening - speak now");
+};
+
+document.getElementById("stop").onclick = () => {
+  stream?.getTracks().forEach((t) => t.stop());
+  audioCtx?.close();
+  session?.close();
+  document.getElementById("start").disabled = false;
+  document.getElementById("stop").disabled = true;
+};
+</script>
+</body>
+</html>

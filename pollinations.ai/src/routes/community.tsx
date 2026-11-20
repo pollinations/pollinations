@@ -19,6 +19,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { OrganizationIcon } from "@pollinations/ui/gen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
 import { LINKS, SOCIAL_LINKS } from "../copy/content/socialLinks";
@@ -385,13 +386,9 @@ function CommunityPage() {
                             showIcon={false}
                             surfaceClassName="flex-row items-center gap-2.5 px-3.5 py-2.5"
                         >
-                            <span
-                                aria-hidden="true"
-                                className="size-5 shrink-0 bg-theme-text-strong"
-                                style={{
-                                    WebkitMask: `url(${supporter.logo}) center / contain no-repeat`,
-                                    mask: `url(${supporter.logo}) center / contain no-repeat`,
-                                }}
+                            <OrganizationIcon
+                                name={supporter.name}
+                                className="size-5 shrink-0 text-theme-text-strong"
                             />
                             <span className="truncate font-body text-sm font-semibold text-theme-text-strong">
                                 {supporter.name}

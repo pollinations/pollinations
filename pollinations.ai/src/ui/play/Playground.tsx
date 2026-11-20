@@ -41,6 +41,7 @@ import {
 import {
     categoryLabel,
     ModalityTab,
+    ModelBrandIcon,
     modalityBgVar,
     modalityTextColor,
 } from "@pollinations/ui/gen";
@@ -416,8 +417,15 @@ function ModelPicker({
                         size="md"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
+                        aria-description={selected?.publisher}
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
                     >
+                        {selected && !isLoading && (
+                            <ModelBrandIcon
+                                model={selected}
+                                className="size-4 shrink-0 text-theme-text-muted"
+                            />
+                        )}
                         <span className="truncate">
                             {isLoading
                                 ? "Loading models…"
@@ -457,6 +465,7 @@ function ModelPicker({
                                             active={model.id === selectedModel}
                                             size="sm"
                                             variant="ghost"
+                                            aria-description={model.publisher}
                                             className="w-full justify-start text-left"
                                             onClick={() => {
                                                 onSelectModel(model.id);

@@ -41,6 +41,7 @@ import {
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedream55API,
     callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
@@ -58,7 +59,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
-import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callSeedreamVercelAPI } from "./models/seedreamVercelModel.ts";
 import { callStabilityImage } from "./models/stabilityImageModel.ts";
 import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
@@ -1142,11 +1143,15 @@ const generateImage = async (
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
 
+        case "bytedance-seed/seedream-5-5:openrouter":
+            return await callOpenRouterSeedream55API(prompt, safeParams);
+
         case "bytedance/seedream-5.0-flash":
             return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
+        case "bytedance-seed/seedream-5-5":
         case "bytedance/seedream-5.0-pro":
-            return await callSeedream5ProVercelAPI(prompt, safeParams);
+            return await callSeedreamVercelAPI(prompt, safeParams);
         case "bytedance/seedream-5.0-pro:replicate":
             return await callSeedream5ProAPI(prompt, safeParams);
 

@@ -708,6 +708,38 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01125,
     },
   },
+  "bytedance-seed/seedream-5-5": {
+    "cost": {
+      "completionImageTokens": 0.02,
+      "promptImageTokens": 0.008,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.035,
+        "promptImageTokens": 0.008,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.02,
+      "promptImageTokens": 0.008,
+    },
+  },
+  "bytedance-seed/seedream-5-5:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.0211,
+      "promptImageTokens": 0.00844,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.036925,
+        "promptImageTokens": 0.00844,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.0211,
+      "promptImageTokens": 0.00844,
+    },
+  },
   "bytedance/seedance-1-pro-fast": {
     "cost": {
       "completionVideoSeconds": 0.021021,

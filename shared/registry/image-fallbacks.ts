@@ -70,6 +70,21 @@ export const IMAGE_FALLBACKS = {
             cost: { completionImageTokens: 0.03 },
         },
     },
+    "bytedance-seed/seedream-5-5": {
+        "bytedance-seed/seedream-5-5:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptImageTokens: 0.008 * 1.055,
+                completionImageTokens: 0.02 * 1.055,
+            },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0.008 * 1.055,
+                    completionImageTokens: 0.035 * 1.055,
+                },
+            },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",

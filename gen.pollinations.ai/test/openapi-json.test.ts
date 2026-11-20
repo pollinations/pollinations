@@ -133,6 +133,23 @@ describe("/openapi.json", () => {
             "content",
             "text/event-stream",
         ]);
+        expect(schema.paths["/models/quote"]).toMatchObject({
+            post: {
+                security: [],
+                requestBody: {
+                    content: {
+                        "application/json": { schema: expect.any(Object) },
+                    },
+                },
+                responses: {
+                    "200": {
+                        content: {
+                            "application/json": { schema: expect.any(Object) },
+                        },
+                    },
+                },
+            },
+        });
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         // Most errors omit details, e.g. a 404 for an unknown model.
         expect(schema).toHaveProperty(

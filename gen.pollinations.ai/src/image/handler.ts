@@ -138,10 +138,19 @@ export function parseImageParams(
     model = c.var.model,
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    return parseMediaOptions({ ...queryParams, ...body }, model);
+}
+
+export function parseMediaOptions(
+    options: Record<string, unknown>,
+    model: Pick<
+        Env["Variables"]["model"],
+        "resolved" | "definition" | "communityEndpoint"
+    >,
+): RuntimeImageParams {
     const resolvedModel = model.resolved;
     const mergedParams: Record<string, unknown> = {
-        ...queryParams,
-        ...body,
+        ...options,
         model: model.communityEndpoint ? DEFAULT_IMAGE_MODEL : resolvedModel,
     };
     delete mergedParams.prompt;

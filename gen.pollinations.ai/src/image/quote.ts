@@ -6,7 +6,7 @@ import {
     type Usage,
     type UsageType,
 } from "@shared/registry/registry.ts";
-import { type ImageParams, pricingInputFromParams } from "./params.ts";
+import { type MediaPriceParams, pricingInputFromParams } from "./params.ts";
 
 /**
  * Listed price of one image or video request with these options, or undefined
@@ -19,7 +19,7 @@ import { type ImageParams, pricingInputFromParams } from "./params.ts";
 export function quoteMediaRequest(
     model: string,
     definition: ModelDefinition,
-    params: Omit<ImageParams, "model">,
+    params: MediaPriceParams,
 ): number | undefined {
     const input = pricingInputFromParams(params);
     if (definition.billedSecondsFollowReference && input.hasReferenceVideo) {

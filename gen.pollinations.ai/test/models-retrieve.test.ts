@@ -985,3 +985,107 @@ test("experimental models advertise that they are alpha", async () => {
     const retrieved = (await response.json()) as ListedModel;
     expect(retrieved.alpha, first.id).toBe(true);
 });
+
+function fetchQuote(model: string, settings: Record<string, unknown> = {}) {
+    const body = JSON.stringify({ model, ...settings });
+    return fetchWorker("/models/quote", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Content-Length": String(new TextEncoder().encode(body).length),
+        },
+        body,
+    });
+}
+
+test("public quotes price the selected settings without a generation or credentials", async () => {
+    for (const [resolution, cost] of [
+        ["480p", 0.32],
+        ["720p", 0.72],
+    ] as const) {
+        const response = await fetchQuote("seedance-2.0-mini", {
+            duration: 8,
+            resolution,
+        });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ estimated_cost_usd: cost });
+    }
+    const base = await fetchQuote("x-ai/grok-imagine-image-2.0", {
+        quality: "low",
+    });
+    const edit = await fetchQuote("x-ai/grok-imagine-image-2.0", {
+        quality: "low",
+        image_count: 2,
+    });
+    expect(base.status).toBe(200);
+    expect(edit.status).toBe(200);
+    expect(
+        (await edit.json<{ estimated_cost_usd: number }>()).estimated_cost_usd,
+    ).toBeGreaterThan(
+        (await base.json<{ estimated_cost_usd: number }>()).estimated_cost_usd,
+    );
+});
+
+test("public quotes distinguish an unknown price from an invalid request or model", async () => {
+    for (const [model, options] of [
+        ["openai/gpt-image-2", {}],
+        ["bytedance/seedance-2.5", { reference_video_count: 1 }],
+        ["openai/gpt-5-nano", {}],
+    ] as const) {
+        const response = await fetchQuote(model, options);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ estimated_cost_usd: null });
+    }
+    for (const invalid of [
+        { prompt: "ignored?" },
+        { duration: 1 },
+        { image_count: -1 },
+        { image_count: 3 },
+        { reference_video_count: 1 },
+        { resolution: "4k" },
+    ]) {
+        expect((await fetchQuote("seedance-2.0-mini", invalid)).status).toBe(
+            400,
+        );
+    }
+    expect((await fetchQuote("unknown/model")).status).toBe(404);
+    expect((await fetchQuote("openai/gpt-image-2.6-flare:fal")).status).toBe(
+        404,
+    );
+    expect((await fetchQuote("x".repeat(9000))).status).toBe(413);
+});
+
+test("free community image quotes are zero and private endpoints stay undiscoverable", async () => {
+    const owner = `quote-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values(
+            (["public", "private"] as const).map((visibility) => ({
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: visibility,
+                title: visibility,
+                type: "proxy" as const,
+                visibility,
+                baseUrl: "https://provider.example/v1/images/generations",
+                upstreamModel: "test",
+                payload: JSON.stringify({
+                    paidOnly: false,
+                    bearerTokenCiphertext: "test-placeholder",
+                    api: null,
+                    perUserRpm: null,
+                    fallbacks: [],
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["text"],
+                    prices: {},
+                }),
+            })),
+        );
+    await resetGenerationModelRegistryCache(env);
+    const free = await fetchQuote(`community/${owner}/public`);
+    expect(free.status).toBe(200);
+    expect(await free.json()).toEqual({ estimated_cost_usd: 0 });
+    expect((await fetchQuote(`community/${owner}/private`)).status).toBe(404);
+});

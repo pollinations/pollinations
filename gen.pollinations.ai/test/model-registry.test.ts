@@ -167,6 +167,9 @@ describe("getGenerationModelRegistry", () => {
             ["z-ai/glm-5.3-flash", "prediction", false],
             ["z-ai/glm-5.3", "prediction", true],
             ["minimax/minimax-m3.1-flash", "prediction", true],
+            // Vercel rejects a required or named tool_choice on Glyph Cluster.
+            ["stealth/glyph-cluster", "tools", true],
+            ["stealth/glyph-cluster", "tool_choice", false],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

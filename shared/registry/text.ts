@@ -41,13 +41,14 @@ export type TextModelName = keyof typeof TEXT_SERVICES;
 const TEXT_BASE_SERVICES = {
     "stealth/glyph-cluster": {
         aliases: [],
+        // Vercel answers a required or named tool_choice with a 400; "auto" is
+        // already the default, so "tools" is declared alone.
         supportedParameters: [
             "max_tokens",
             "stream",
             "temperature",
             "stop",
             "tools",
-            "tool_choice",
             "reasoning_effort",
             "reasoning",
             "include_reasoning",

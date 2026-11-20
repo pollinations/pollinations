@@ -89,12 +89,7 @@ import {
 } from "./connect-draft";
 import { DecisionAnswerPanel } from "./DecisionAnswerPanel";
 import { DecisionCriteriaFields } from "./DecisionCriteriaFields";
-import {
-    decisionForm,
-    decisionModelId,
-    questionTypeLabel,
-    URGENCY_EXAMPLE,
-} from "./decision";
+import { decisionForm, questionTypeLabel, URGENCY_EXAMPLE } from "./decision";
 import {
     type ImageFormats,
     imageActionLabel,
@@ -1263,7 +1258,7 @@ export function Playground({
         runStore.get,
     );
     const isGenerating = running !== null;
-    const [stats, setStats] = useState<ModelRunStat[]>([]);
+    const [stats, setStats] = useState<ModelRunStat[]>();
     const responseRef = useRef<HTMLDivElement>(null);
     const statusId = useId();
     const clipStatusId = useId();
@@ -1363,7 +1358,7 @@ export function Playground({
             : undefined;
 
     const costByModel = useMemo(
-        () => new Map(stats.map((stat) => [stat.model, stat.avg_cost_usd])),
+        () => new Map(stats?.map((stat) => [stat.model, stat.avg_cost_usd])),
         [stats],
     );
     const pickerModels = useMemo(() => {
@@ -1437,26 +1432,32 @@ export function Playground({
                 return;
             }
         }
-        const candidates = visibleModels.filter((model) =>
-            supportsTask(model, task),
+        if (selectedModel || !stats) return;
+        const first = pickerModels.find(
+            (model) =>
+                (!isLoggedIn || catalog.allowedModelIds.has(model.id)) &&
+                (!params.task || supportsTask(model, task)),
         );
-        const id = isDecide
-            ? decisionModelId(
-                  selectedModel,
-                  candidates,
-                  isLoggedIn ? catalog.allowedModelIds : undefined,
-              )
-            : selectedModel || candidates[0]?.id;
-        if (id && id !== selectedModel)
-            setParams((previous) => ({ ...previous, model: id }));
+        if (first) {
+            setParams((previous) => ({
+                ...previous,
+                model: first.id,
+                task:
+                    first.category === "audio"
+                        ? audioTaskForModel(first)
+                        : task.id,
+            }));
+        }
     }, [
         task,
+        params.task,
         legacyGif,
-        isDecide,
         isLoggedIn,
         catalog.allowedModelIds,
         selectedModel,
         visibleModels,
+        pickerModels,
+        stats,
         isHydrated,
         isLoading,
         catalogError,
@@ -1474,10 +1475,12 @@ export function Playground({
     }, [showInUrl, params, activeCategory, selectedVoice]);
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/models/stats`)
+        fetch(`${API_BASE_URL}/models/stats`, {
+            signal: AbortSignal.timeout(5000),
+        })
             .then((response) => response.json())
             .then(({ data }) => setStats(data ?? []))
-            .catch(() => {});
+            .catch(() => setStats([]));
     }, []);
 
     // A new run brings its response area into view.
@@ -1799,7 +1802,7 @@ export function Playground({
         linkedModelRef.current = "";
         setParams({
             ...(saved?.params ?? { model: modelId }),
-            task: next.id,
+            task: saved || modelId ? next.id : undefined,
             tab: next.workspace.category,
         });
         setReferenceImages(saved?.referenceImages ?? []);
@@ -2134,7 +2137,7 @@ export function Playground({
     }
     useImperativeHandle(connectRef, () => connect);
     const run = needsSignIn ? connect : generate;
-    const modelStats = stats.find((stat) => stat.model === currentModel?.id);
+    const modelStats = stats?.find((stat) => stat.model === currentModel?.id);
     const cost =
         formatRunCost(modelStats?.avg_cost_usd) ??
         (currentModel?.free ? "Free" : undefined);
@@ -2329,7 +2332,7 @@ export function Playground({
                         <ModelPicker
                             key={activeCategory}
                             models={pickerModels}
-                            stats={stats}
+                            stats={stats ?? []}
                             costByModel={costByModel}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}

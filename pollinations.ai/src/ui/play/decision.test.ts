@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { playgroundModelOverride } from "../../data/playground-model-overrides";
-import { decisionForm, decisionModelId } from "./decision";
+import { decisionForm } from "./decision";
 
 describe("Decide form", () => {
     const model = "typesafe/jev-1.14";
@@ -54,25 +54,5 @@ describe("Decide form", () => {
             ).toBeUndefined();
         }
         expect(decisionForm(model, { question: " " }).error).toBeTruthy();
-    });
-});
-
-describe("Decide model selection", () => {
-    const models = [
-        { id: "paid", paidOnly: true },
-        { id: "quest", paidOnly: false },
-        { id: "second-quest", paidOnly: false },
-    ];
-    it("preserves explicit models, including unavailable or restricted ones", () => {
-        for (const id of ["paid", "missing"])
-            expect(decisionModelId(id, models, new Set(["quest"]))).toBe(id);
-    });
-    it("prefers the first eligible Quest model on an empty selection", () => {
-        expect(decisionModelId("", models)).toBe("quest");
-        expect(
-            decisionModelId("", models, new Set(["paid", "second-quest"])),
-        ).toBe("second-quest");
-        expect(decisionModelId("", models, new Set(["paid"]))).toBe("paid");
-        expect(decisionModelId("", models, new Set())).toBeUndefined();
     });
 });

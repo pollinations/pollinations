@@ -42,6 +42,122 @@ async function call(client, name, args) {
     assert.notEqual(result.isError, true, JSON.stringify(result));
     return JSON.parse(result.content[0].text);
 }
+test("nuget_package reports both the newest and the newest stable version", async (t) => {
+    const versions = [
+        ...Array.from({ length: 24 }, (_, i) => ({
+            version: `1.0.${i}`,
+            downloads: 100 - i,
+        })),
+        { version: "2.0.0-beta.1", downloads: 7 },
+    ];
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = new URL(String(input));
+        urls.push(url);
+        assert.equal(url.hostname, "azuresearch-usnc.nuget.org");
+        // The id is sent as the caller wrote it; NuGet search folds case.
+        assert.equal(url.searchParams.get("q"), "packageid:example.package");
+        // Pre-releases only appear when they are asked for, and SemVer 2.0.0 versions
+        // are hidden without semVerLevel.
+        assert.equal(url.searchParams.get("prerelease"), "true");
+        assert.equal(url.searchParams.get("semVerLevel"), "2.0.0");
+        return Response.json({
+            totalHits: 1,
+            data: [
+                {
+                    id: "Example.Package",
+                    version: "2.0.0-beta.1",
+                    description: "An example",
+                    authors: ["A. Author"],
+                    projectUrl: "https://example.test",
+                    licenseUrl: "https://example.test/license",
+                    tags: ["example"],
+                    verified: true,
+                    totalDownloads: 1234,
+                    versions,
+                    vulnerabilities: [],
+                },
+            ],
+        });
+    });
+    const data = await call(await clientFor(t), "nuget_package", {
+        id: "example.package",
+    });
+    assert.equal(data.id, "Example.Package");
+    assert.equal(data.latestVersion, "2.0.0-beta.1");
+    assert.equal(data.isPrerelease, true);
+    assert.equal(data.latestStableVersion, "1.0.23");
+    assert.equal(data.versionCount, 25);
+    assert.equal(data.recentVersions.length, 20);
+    assert.equal(data.recentVersions[0].version, "2.0.0-beta.1");
+    assert.equal(data.recentVersions[1].version, "1.0.23");
+    assert.equal(data.requestedVersion, null);
+    assert.equal(urls.length, 1);
+});
+
+test("nuget_package confirms a requested version and rejects one that is not listed", async (t) => {
+    const versions = [
+        { version: "1.0.0" },
+        { version: "1.1.0-preview" },
+        { version: "2.0.0", downloads: 42 },
+    ];
+    t.mock.method(globalThis, "fetch", async () =>
+        Response.json({
+            totalHits: 1,
+            data: [{ id: "Example", version: "2.0.0", versions }],
+        }),
+    );
+    const c = await clientFor(t);
+    const found = await call(c, "nuget_package", {
+        id: "Example",
+        version: "2.0.0",
+    });
+    assert.deepEqual(found.requestedVersion, {
+        version: "2.0.0",
+        downloads: 42,
+        isPrerelease: false,
+    });
+    // Pre-release suffixes count as part of the version, not as noise.
+    const preview = await call(c, "nuget_package", {
+        id: "Example",
+        version: "1.1.0-PREVIEW",
+    });
+    assert.equal(preview.requestedVersion.isPrerelease, true);
+
+    const missing = await c.callTool({
+        name: "nuget_package",
+        arguments: { id: "Example", version: "9.9.9" },
+    });
+    assert.equal(missing.isError, true);
+    assert.match(missing.content[0].text, /lists 3 versions/);
+});
+
+test("nuget_package reports an unknown package and rejects an impossible id without asking", async (t) => {
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async () => {
+        requests += 1;
+        return Response.json({ totalHits: 0, data: [] });
+    });
+    const c = await clientFor(t);
+    assert.equal(
+        (
+            await c.callTool({
+                name: "nuget_package",
+                arguments: { id: "No.Such.Package" },
+            })
+        ).isError,
+        true,
+    );
+    assert.equal(requests, 1);
+    // A separator cannot start an id, so the request is never made.
+    assert.equal(
+        (await c.callTool({ name: "nuget_package", arguments: { id: "-bad" } }))
+            .isError,
+        true,
+    );
+    assert.equal(requests, 1);
+});
+
 test("private Worker in both environments", () => {
     const config = JSON.parse(
         readFileSync(new URL("./wrangler.jsonc", import.meta.url)),
@@ -85,6 +201,7 @@ for (const modern of [false, true])
                 "hf_model_info",
                 "hf_search_models",
                 "hf_space_info",
+                "nuget_package",
                 "osv_query",
                 "osv_vulnerability",
                 "package_downloads",

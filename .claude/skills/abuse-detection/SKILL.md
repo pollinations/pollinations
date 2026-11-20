@@ -246,7 +246,7 @@ credit sources: Stripe checkout `pollen_credited`, auto-top-up `amount_usd`, his
 Polar credits, and claimed rewards by bucket. No cash purchase is not an abuse signal by
 itself.
 
-Auto-top-up `amount_usd` is the Pollen principal credited, not what the customer paid (fees
+Auto-top-up `amount_usd` is the USD amount added to the paid balance, not what the customer paid (fees
 and tax sit on top). It proves a funding event happened; the exact dollars are on the Stripe
 invoice (`stripe_invoice_id`, `amount_paid`) — rarely needed for an abuse verdict.
 

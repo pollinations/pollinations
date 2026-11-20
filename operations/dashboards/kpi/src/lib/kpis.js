@@ -71,13 +71,13 @@ export const KPIS = [
             {
                 name: "WAU",
                 tooltip:
-                    "Unique users we served this week — at least one request that was not rejected for insufficient Pollen. A 402 never reaches a provider and is never billed, so it does not make someone an active user. Source: Tinybird (weekly_active_users).",
+                    "Unique users we served this week — at least one request that was not rejected for insufficient balance. A 402 never reaches a provider and is never billed, so it does not make someone an active user. Source: Tinybird (weekly_active_users).",
             },
             {
                 key: "wauAll",
                 name: "WAU · incl. rejected",
                 tooltip:
-                    "Every unique user who sent a request, including those whose only requests came back 402 for insufficient Pollen. This is the figure the dashboard showed before; it runs roughly twice the served count and has stayed flat while the served base halved.",
+                    "Every unique user who sent a request, including those whose only requests came back 402 for insufficient balance. This is the figure the dashboard showed before; it runs roughly twice the served count and has stayed flat while the served base halved.",
             },
         ],
     },
@@ -87,7 +87,7 @@ export const KPIS = [
         category: "Usage",
         calc: (w) => w.wauAll - w.wau,
         tooltip:
-            "Users whose every request this week was rejected for insufficient Pollen (WAU incl. rejected − WAU). Demand that reached the Pollen wall and got nothing.",
+            "Users whose every request this week was rejected for insufficient balance (WAU incl. rejected − WAU).",
     },
     {
         key: "tokens",
@@ -115,13 +115,13 @@ export const KPIS = [
             {
                 name: "Revenue",
                 tooltip:
-                    "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
+                    "Gross USD from balance top-ups. Source: Stripe checkout events in Tinybird.",
             },
             {
                 key: "pollenRevenue",
-                name: "Pollen spent",
+                name: "Balance spent",
                 tooltip:
-                    "USD value of Pollen consumed by generation requests this week, across Paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
+                    "US dollars spent on generation requests this week across paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
             },
             {
                 name: "ARPA",
@@ -148,9 +148,9 @@ export const KPIS = [
         ].map(([key, label]) => ({
             key,
             label,
-            name: `Pollen spent · ${label}`,
+            name: `Spend · ${label}`,
             tooltip:
-                "USD value of Paid + Quest Pollen consumed by successful billed final requests. Whole-request spend, not Stripe cash revenue or provider cost. Categories use recorded output usage and endpoint: video takes priority over audio, then image, then text; realtime, embeddings and 3D are separate. Community-served requests are in Community only. Tools / other includes MCP. Source: Tinybird (weekly_usage_stats).",
+                "US dollars spent from paid and Quest balances on successful billed final requests. Whole-request spend, not Stripe cash revenue or provider cost. Categories use recorded output usage and endpoint: video takes priority over audio, then image, then text; realtime, embeddings and 3D are separate. Community-served requests are in Community only. Tools / other includes MCP. Source: Tinybird (weekly_usage_stats).",
         })),
     },
     {
@@ -188,7 +188,7 @@ export const KPIS = [
             {
                 name: "Pack purchases",
                 tooltip:
-                    "Completed Pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
+                    "Completed balance top-ups this week. Source: Stripe checkout events in Tinybird.",
             },
             {
                 name: "Purchase rate",
@@ -201,11 +201,11 @@ export const KPIS = [
     },
     {
         key: "paidPollenPct",
-        name: "Paid Pollen share",
+        name: "Paid share of spend",
         category: "Revenue",
         format: "percentPrecise",
         tooltip:
-            "Paid Pollen spent / (Paid + Quest Pollen spent) × 100. Tracks how much generation consumption is funded by purchased credit. Source: Tinybird (weekly_usage_stats).",
+            "Paid balance spent / total balance spent × 100. Tracks how much generation consumption is funded by purchased credit. Source: Tinybird (weekly_usage_stats).",
     },
     {
         key: "grossMargin",
@@ -214,7 +214,7 @@ export const KPIS = [
         format: "percent",
         calc: margin,
         tooltip:
-            "(Pollen revenue − compute cost) / Pollen revenue × 100. Pollen revenue is the USD value of Pollen actually spent this week — Quest and Paid buckets alike — so it covers the same traffic the cost does. Cost is modelled from the registry rate cards, not from invoices, and vendor credits are ignored: a provider we are billed for in grant dollars still counts at list price. Self-hosted GPU is charged per request, so idle fleet capacity is not in it.",
+            "(Balance spent − compute cost) / balance spent × 100. Balance spent covers the same traffic as compute cost and includes both paid and Quest balances. Cost is modelled from the registry rate cards, not from invoices, and vendor credits are ignored: a provider we are billed for in grant dollars still counts at list price. Self-hosted GPU is charged per request, so idle fleet capacity is not in it.",
     },
     {
         key: "cashCoverage",
@@ -260,23 +260,22 @@ export const KPIS = [
             {
                 name: "BYOP user %",
                 tooltip:
-                    "Share of served users on BYOP keys. Users whose only requests were rejected for insufficient Pollen are excluded from both sides.",
+                    "Share of served users on BYOP keys. Users whose only requests were rejected for insufficient balance are excluded from both sides.",
             },
             {
                 key: "byopUserPctAll",
                 name: "BYOP user % · incl. rejected",
                 tooltip:
-                    "The same share counting users whose every request came back 402. BYOP keys hit the Pollen wall more often than others, so this reads several points higher.",
+                    "The same share counting users whose every request came back 402. Requests on BYOP keys are rejected for insufficient balance more often, so this reads several points higher.",
             },
         ],
     },
     {
         key: "byopPollenPct",
-        name: "BYOP Pollen %",
+        name: "BYOP share of spend",
         category: "Segments",
         format: "percent",
-        tooltip:
-            "Share of Pollen consumed by apps that bring their own Pollen.",
+        tooltip: "Share of balance spent through Pollinations Pay.",
     },
     {
         key: "communityModels",
@@ -287,7 +286,7 @@ export const KPIS = [
                 key: "communityUserPct",
                 name: "Community models · users",
                 tooltip:
-                    "Unique users making at least one final community-model request / WAU × 100. Both sides exclude users rejected for insufficient Pollen, so this is a share of people we served. Other 4xx and 5xx still count on the numerator. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
+                    "Unique users making at least one final community-model request / WAU × 100. Both sides exclude users rejected for insufficient balance, so this is a share of people we served. Other 4xx and 5xx still count on the numerator. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
             },
             {
                 key: "communityRequestPct",

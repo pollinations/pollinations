@@ -74,10 +74,10 @@ function PlayHero() {
                 external
                 onClick={() => login()}
             >
-                Connect your account
+                Connect your Pollinations account
             </InlineLink>
         ) : (
-            "Connect your account"
+            "Connect your Pollinations account"
         );
 
     return (

@@ -19,7 +19,7 @@ export function appOrigin(
     }
 }
 
-/** A Pollen amount in dollars (1 Pollen is worth $1), never below zero. */
+/** A USD amount, never below zero. */
 const usd = (pollen: number) => `$${Math.max(0, pollen).toFixed(4)}`;
 
 /**
@@ -49,7 +49,7 @@ export async function requireFunds(
         );
     }
     const balance = await loadBalance();
-    // A Quest Pollen only key can never draw on the paid balance.
+    // A Quest-balance-only key can never draw on the paid balance.
     const questPollenOnly = apiKey?.questPollenOnly ?? false;
     const spendable = questPollenOnly
         ? { ...balance, packBalance: 0 }

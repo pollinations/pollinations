@@ -680,7 +680,9 @@ export async function callOpenRouterMiniMaxH3ImageAPI(
     const completionImage = data.usage?.completion_tokens_details?.image_tokens;
     const completionTotal = data.usage?.completion_tokens;
     const usage: Usage = {
-        ...(isTokenCount(promptTotal)
+        // On edits, some receipts combine text and reference tokens without a split.
+        ...(isTokenCount(promptTotal) &&
+        (!references.length || isTokenCount(promptImage))
             ? {
                   promptTextTokens: Math.max(
                       0,
@@ -701,7 +703,7 @@ export async function callOpenRouterMiniMaxH3ImageAPI(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "minimax/minimax-h3-image",
+            actualModel: "minimax/minimax-h3-image:openrouter",
             usage,
             providerBilling: { units: providerCost, unitCost: 1.055 },
         },

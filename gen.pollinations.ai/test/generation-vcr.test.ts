@@ -29,9 +29,9 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
-// GPU backends return JPEG; keep the existing complete 1x1 fixture dimensions.
+// Decodable 1x1 JPEG from the simulated GPU pool.
 const gpuJpeg1x1Base64 =
-    "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH8AP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Af//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Af//Z";
+    "/9j/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABgf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCPAHFof//Z";
 const imageBackendHost = "image-backend.test";
 const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
@@ -3932,7 +3932,10 @@ test("OpenAI image generation returns token usage and preserves produced dimensi
     expect(registerResponse.status).toBe(200);
     await mocks.enable("tinybird", "imageBackend");
 
-    const generate = (response_format: "b64_json" | "url") =>
+    const generate = (
+        response_format: "b64_json" | "url",
+        output_format?: "png",
+    ) =>
         fetchWorker("/v1/images/generations", {
             method: "POST",
             headers: {
@@ -3945,6 +3948,7 @@ test("OpenAI image generation returns token usage and preserves produced dimensi
                 size: "1280x720",
                 seed: 42,
                 response_format,
+                output_format,
             }),
         });
     const { response, wait } = await generate("b64_json");
@@ -3954,7 +3958,7 @@ test("OpenAI image generation returns token usage and preserves produced dimensi
     expect(response.headers.get("x-cache-type")).toBeNull();
     expect(response.headers.get("x-image-dimensions")).toBe("1x1");
     await expect(response.json()).resolves.toMatchObject({
-        data: [{ b64_json: expect.any(String) }],
+        data: [{ b64_json: expect.any(String), media_type: "image/jpeg" }],
         usage: {
             input_tokens: 0,
             output_tokens: 1,
@@ -3975,6 +3979,25 @@ test("OpenAI image generation returns token usage and preserves produced dimensi
         data: [{ url: expect.any(String) }],
     });
     await cached.wait();
+
+    const png = await generate("b64_json", "png");
+    expect(png.response.status).toBe(200);
+    expect(png.response.headers.get("x-cache")).toBe("MISS");
+    const {
+        data: [item],
+    } = await png.response.json<{
+        data: { b64_json: string; media_type: string }[];
+    }>();
+    expect(item.media_type).toBe("image/png");
+    const bytes = Buffer.from(item.b64_json, "base64");
+    expect(bytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    await png.wait();
+    const repeat = await generate("b64_json", "png");
+    expect(repeat.response.headers.get("x-cache")).toBe("HIT");
+    await expect(repeat.response.json()).resolves.toMatchObject({
+        data: [item],
+    });
+    await repeat.wait();
 });
 
 test.for(

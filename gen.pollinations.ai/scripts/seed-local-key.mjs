@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Seed a known API key into the LOCAL D1 that Enter and gen share, and give
- * every local user (including GitHub sign-ins to local Enter) Quest Pollen.
+ * every local user (including GitHub sign-ins to local Enter) Quest balance.
  *
  * Why this exists
  * ---------------
@@ -142,7 +142,7 @@ sql(
         '${USER_ID}', 1, 0, 0, strftime('%s','now'), strftime('%s','now'));`,
 );
 
-// Quest Pollen for every local account, e.g. one signed in through GitHub.
+// Quest balance for every local account, e.g. one signed in through GitHub.
 const users = sql(
     db,
     "UPDATE user SET tier_balance = MAX(COALESCE(tier_balance, 0), 1000000); SELECT changes();",

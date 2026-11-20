@@ -4,10 +4,61 @@ import { GenerateTextRequestQueryParamsSchema } from "../../src/schemas/text.js"
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    requestsAudioOutput,
+    withoutAudioParams,
+    withoutCallerMetadata,
 } from "../../src/text/requestUtils.js";
 import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
 
 afterEach(() => vi.restoreAllMocks());
+
+describe("audio request params", () => {
+    it("detects explicit audio output", () => {
+        expect(requestsAudioOutput({ modalities: ["text", "audio"] })).toBe(
+            true,
+        );
+        expect(requestsAudioOutput({ audio: { voice: "alloy" } })).toBe(true);
+        expect(requestsAudioOutput({ modalities: ["text"] })).toBe(false);
+        expect(requestsAudioOutput({})).toBe(false);
+    });
+
+    it("strips audio fields for text-only models", () => {
+        const request = {
+            model: "openai",
+            messages: [],
+            modalities: ["text"],
+            audio: { voice: "alloy", format: "mp3" },
+            temperature: 0.2,
+        };
+        expect(withoutAudioParams(request)).toEqual({
+            model: "openai",
+            messages: [],
+            temperature: 0.2,
+        });
+    });
+
+    it("keeps objects without audio fields unchanged", () => {
+        const request = { model: "openai", messages: [] };
+        expect(withoutAudioParams(request)).toBe(request);
+    });
+});
+
+describe("caller metadata", () => {
+    it("strips metadata before a non-agent provider call", () => {
+        expect(
+            withoutCallerMetadata({
+                model: "openai",
+                metadata: { user_id: "probe" },
+                temperature: 0.2,
+            }),
+        ).toEqual({ model: "openai", temperature: 0.2 });
+    });
+
+    it("keeps objects without metadata unchanged", () => {
+        const request = { model: "openai" };
+        expect(withoutCallerMetadata(request)).toBe(request);
+    });
+});
 
 describe("getChatRequestData", () => {
     it("randomizes seed -1 without changing the caller's request", () => {

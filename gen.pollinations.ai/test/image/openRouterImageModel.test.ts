@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
@@ -108,7 +110,7 @@ describe("OpenRouter MiniMax H3 Image", () => {
             "edit this image",
             {
                 ...baseParams,
-                model: "minimax/minimax-h3-image",
+                model: "minimax/minimax-h3-image:openrouter",
                 resolution: "2k",
                 aspectRatio: "9:16",
                 image: [REFERENCE_IMAGE_URL],
@@ -127,7 +129,7 @@ describe("OpenRouter MiniMax H3 Image", () => {
             ],
         });
         expect(result.trackingData).toEqual({
-            actualModel: "minimax/minimax-h3-image",
+            actualModel: "minimax/minimax-h3-image:openrouter",
             usage: {
                 promptTextTokens: 40,
                 promptImageTokens: 80,
@@ -135,6 +137,74 @@ describe("OpenRouter MiniMax H3 Image", () => {
             },
             providerBilling: { units: 0.07, unitCost: 1.055 },
         });
+    });
+    it("keeps the provider fee off the wallet even when no token breakdown is returned", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        mockOpenRouterFetch([]);
+        const model = "minimax/minimax-h3-image";
+        const fallback = "minimax/minimax-h3-image:openrouter";
+        const { trackingData } = await callOpenRouterMiniMaxH3ImageAPI(
+            "a woven basket",
+            { ...baseParams, model: fallback },
+        );
+        expect(trackingData?.usage).toEqual({});
+        const billing = calculateUsageBilling({
+            model,
+            usage: trackingData?.usage ?? {},
+            input: { providerBilling: trackingData?.providerBilling },
+            servedBy: IMAGE_SERVICES[fallback],
+            quotedBy: IMAGE_SERVICES[model],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.05275, 8);
+        expect(billing.price.totalPrice).toBe(0.05);
+    });
+
+    it("keeps an unsplit reference edit prompt out of text-only usage", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: {
+                    cost: 0.024,
+                    prompt_tokens: 4387,
+                    completion_tokens: 4096,
+                },
+            }),
+        );
+        const { trackingData } = await callOpenRouterMiniMaxH3ImageAPI(
+            "edit the reference",
+            {
+                ...baseParams,
+                model: "minimax/minimax-h3-image:openrouter",
+                image: [PNG_DATA_URI],
+            },
+        );
+        expect(trackingData?.usage).toEqual({ completionImageTokens: 4096 });
+    });
+
+    it("rejects an image whose provider receipt is missing", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: { completion_tokens: 10 },
+            }),
+        );
+        await expect(
+            callOpenRouterMiniMaxH3ImageAPI("a woven basket", {
+                ...baseParams,
+                model: "minimax/minimax-h3-image:openrouter",
+            }),
+        ).rejects.toThrow("OpenRouter returned invalid image billing usage");
     });
 });
 

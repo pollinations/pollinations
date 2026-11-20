@@ -333,6 +333,34 @@ export const ImageParamsSchema = z
                 });
             }
         }
+        if (
+            data.model === "heygen/heygen-avatar-6-turbo" ||
+            data.model === "heygen/heygen-avatar-6-turbo:openrouter"
+        ) {
+            const photos =
+                data.image.length + (data.reference_images?.length ?? 0);
+            const videos = data.reference_videos?.length ?? 0;
+            if (
+                photos > 1 ||
+                videos > 1 ||
+                photos + videos === 0 ||
+                (data.reference_audios?.length ?? 0) !== 1
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "Avatar 6 Turbo requires exactly one speech audio reference and a photo or reference video (at most one of each).",
+                });
+            }
+            if (data.duration !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message:
+                        "Avatar 6 Turbo duration is determined by the supplied audio.",
+                });
+            }
+        }
         const durationIssue =
             data.duration === undefined
                 ? undefined

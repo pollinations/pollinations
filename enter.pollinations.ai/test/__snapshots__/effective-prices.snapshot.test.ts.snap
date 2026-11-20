@@ -2129,6 +2129,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.00000099,
     },
   },
+  "heygen/heygen-avatar-6-turbo": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.0875,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
+    },
+  },
+  "heygen/heygen-avatar-6-turbo:openrouter": {
+    "cost": {
+      "completionVideoSeconds": 0.05275,
+    },
+    "costVariants": {
+      "2k": {
+        "completionVideoSeconds": 0.0923125,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05275,
+    },
+  },
   "heygen/heygen-video-1": {
     "cost": {
       "completionVideoSeconds": 0.01,

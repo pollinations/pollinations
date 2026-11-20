@@ -1,4 +1,10 @@
-import { CopyButton, CopyStateIcon, Eyebrow, Heading } from "@pollinations/ui";
+import {
+    Button,
+    CopyButton,
+    CopyStateIcon,
+    Eyebrow,
+    Heading,
+} from "@pollinations/ui";
 import { Fragment } from "react";
 
 function shellQuote(value: string): string {
@@ -78,16 +84,19 @@ export function ApiUrlCard({
                         <code className="block whitespace-pre-wrap font-mono text-sm leading-7 text-theme-text-strong [overflow-wrap:anywhere]">
                             {withBreaks(example)}
                         </code>
-                        <span
+                        <Button
+                            as="span"
+                            intent="neutral"
+                            size="icon"
                             aria-hidden="true"
-                            className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-fill text-theme-on-fill"
+                            className="absolute top-3 right-3 polli:h-10 polli:w-10"
                         >
                             <CopyStateIcon
                                 copied={copied}
                                 className="h-4 w-4"
                                 style={{ color: "inherit" }}
                             />
-                        </span>
+                        </Button>
                     </>
                 )}
             </CopyButton>

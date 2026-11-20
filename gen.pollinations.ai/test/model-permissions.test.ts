@@ -348,6 +348,27 @@ test("media routes own their endpoint-specific model defaults", async () => {
     expect(videoResponse.status).toBe(403);
 });
 
+test("quest-only keys get a clean refusal for paid video models", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: ["alibaba/wan-2.2-fast"],
+        user: { tierBalance: 100, packBalance: 0 },
+        questPollenOnly: true,
+    });
+
+    const response = await fetchWorker(
+        "/video/a%20lighthouse?model=alibaba/wan-2.2-fast&duration=4",
+        { headers: { Authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(402);
+    const body = (await response.json()) as {
+        error: { code: string; message: string };
+    };
+    expect(body.error.code).toBe("QUEST_POLLEN_ONLY");
+    expect(body.error.message).toContain("paid balance");
+    expect(JSON.stringify(body)).not.toContain("TypeError");
+});
+
 test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     apiKey,
     paidApiKey,

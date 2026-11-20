@@ -339,3 +339,60 @@ describe("markdown for agents", () => {
         expect(response.headers.get("content-type")).toContain("text/html");
     });
 });
+
+describe("llms.txt advertises the machine surface", () => {
+    test.each(["GET", "HEAD"])(
+        "%s /llms.txt keeps the asset body and adds the discovery links",
+        async (method) => {
+            const fetchAsset = vi.fn(
+                async () =>
+                    new Response(
+                        method === "HEAD" ? null : "# Pollinations\n",
+                        {
+                            headers: { "content-type": "text/plain" },
+                        },
+                    ),
+            );
+            const response = await worker.fetch(
+                new Request("https://pollinations.ai/llms.txt", { method }),
+                { ASSETS: { fetch: fetchAsset } },
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain(
+                "text/plain",
+            );
+            expect(response.headers.get("Link")).toContain("service-desc");
+            expect(response.headers.get("Link")).toContain("api-catalog");
+            if (method === "GET") {
+                expect(await response.text()).toContain("# Pollinations");
+            } else {
+                expect(await response.text()).toBe("");
+            }
+        },
+    );
+
+    test("leaves every other static asset untouched", async () => {
+        const fetchAsset = vi.fn(
+            async () =>
+                new Response("", { headers: { "content-type": "image/png" } }),
+        );
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/art/star.png"),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+        expect(response.headers.has("Link")).toBe(false);
+    });
+
+    test("does not add links to a missing llms.txt", async () => {
+        const fetchAsset = vi.fn(
+            async () => new Response("missing", { status: 404 }),
+        );
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/llms.txt"),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+        expect(response.status).toBe(404);
+        expect(response.headers.has("Link")).toBe(false);
+    });
+});

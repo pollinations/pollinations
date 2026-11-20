@@ -113,6 +113,24 @@ export default {
             );
         }
 
+        // A static asset, but the machine entry point agents land on first.
+        // Point it at the same surface the HTML pages advertise, so an agent
+        // that reads llms.txt and nothing else still finds the schema, docs and
+        // catalogs instead of guessing their paths.
+        if (
+            (request.method === "GET" || request.method === "HEAD") &&
+            (url.pathname === "/llms.txt" || url.pathname === "/llms.txt/")
+        ) {
+            const asset = await env.ASSETS.fetch(request);
+            if (asset.status !== 200) return asset;
+            const described = new Response(
+                request.method === "HEAD" ? null : asset.body,
+                asset,
+            );
+            described.headers.set("Link", AGENT_LINKS);
+            return described;
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         let response = await env.ASSETS.fetch(request);
         if (

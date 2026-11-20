@@ -23,7 +23,7 @@ test("warns 2 days before the sign-in ends and when its budget is under a day of
     assert.equal(budgetWarning(signIn(null, 0), 0), undefined);
     assert.match(
         budgetWarning(signIn(null, 1), 2) ?? "",
-        /1\.00 Pollen left, about 12 hours.*\/signin/,
+        /\$1\.00 left, about 12 hours.*\/signin/,
     );
 });
 
@@ -77,7 +77,7 @@ test("checkSignIns sends each warning once, and nothing more when gen fails", as
     boxFails = false;
     await checkSignIns();
     assert.equal(sent.length, 2);
-    assert.match(sent[1], /0\.50 Pollen left, about 15 hours/);
+    assert.match(sent[1], /\$0\.50 left, about 15 hours/);
 
     // Neither goes again, nor after failed reads.
     await checkSignIns();
@@ -229,10 +229,10 @@ test("a new Barbara needs a sign-in whose budget covers hers", async (t) => {
         await newBot();
         assert.match(
             sent.at(-1) ?? "",
-            /It pays for the 10 Pollen she can spend and her computer, about 2\.0 Pollen a day.*Send \/signin and clear the budget/,
+            /It pays for the \$10 she can spend and her computer, about \$2\.0 a day.*Send \/signin and clear the budget/,
         );
         assert.ok(
-            sent.at(-1)?.includes(`budget of ${pollenBudget.toFixed(2)}`),
+            sent.at(-1)?.includes(`budget of $${pollenBudget.toFixed(2)}`),
         );
     }
     assert.ok(!calls.some((call) => call.startsWith("POST /alpha/e2b")));

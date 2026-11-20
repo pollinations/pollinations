@@ -789,11 +789,13 @@ describe("OpenAI image cache", () => {
             expect(response.headers.has("X-Media-URL")).toBe(false);
             if (response_format === "url") {
                 expect(result.data[0]?.url).toBe(url);
-                expect(result.data[0]?.media_type).toBe("image/jpeg");
             } else {
                 expect(result.data[0]?.b64_json).toBe(btoa("legacy-image"));
                 expect(result.data[0]?.url).toBeUndefined();
             }
+            // Base64 bytes arrive without a Content-Type, so the declared type
+            // is how a caller names the file; it must be present for JPEG too.
+            expect(result.data[0]?.media_type).toBe("image/jpeg");
             expect(result.usage.total_tokens).toBe(0);
         },
     );

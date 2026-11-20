@@ -276,7 +276,7 @@ export async function select(
     return {
         model: picked.m.id,
         tier: wantTier,
-        reason: `${wantTier}: estimated ${inputTokens}+${outputTokensFor(wantTier)} tokens ≈ ${picked.base.toFixed(10)} pollen ×${penalty.toFixed(2)} health (${picked.adj.toFixed(10)}) — cheapest of ${slice.length}`,
+        reason: `${wantTier}: estimated ${inputTokens}+${outputTokensFor(wantTier)} tokens ≈ $${picked.base.toFixed(10)} ×${penalty.toFixed(2)} health ($${picked.adj.toFixed(10)}) — cheapest of ${slice.length}`,
     };
 }
 

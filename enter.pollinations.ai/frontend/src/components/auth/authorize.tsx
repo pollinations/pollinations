@@ -124,8 +124,8 @@ export function Authorize() {
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
-        // The code flow only runs for registered clients with a validated
-        // redirect — no hostname-only fallback like the legacy flow.
+        // A code flow with a client_id waits for its redirect check; without
+        // one it names the app by the redirect hostname, like the legacy flow.
         (!isCodeFlow || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
@@ -209,16 +209,10 @@ export function Authorize() {
                 return;
             }
 
-            // Code-flow front door (OAuth 2.1): PKCE and a registered client
-            // are mandatory. Errors render locally — error params are never
-            // redirected to a redirect_uri that hasn't been validated.
+            // Code-flow front door (OAuth 2.1): PKCE is mandatory. Errors
+            // render locally — error params are never redirected to a
+            // redirect_uri that hasn't been validated.
             if (isCodeFlow) {
-                if (!app_key) {
-                    setError(
-                        "client_id is required for the authorization code flow",
-                    );
-                    return;
-                }
                 if (!code_challenge) {
                     setError(
                         "PKCE code_challenge is required for the authorization code flow",
@@ -394,10 +388,8 @@ export function Authorize() {
                 }
                 const url = new URL(parsedRedirectUrl.href);
                 if (isCodeFlow) {
-                    if (!app_key || !code_challenge || !redirect_url) {
-                        throw new Error(
-                            "Missing client_id or PKCE code_challenge",
-                        );
+                    if (!code_challenge || !redirect_url) {
+                        throw new Error("Missing PKCE code_challenge");
                     }
                     const res = await apiClient.oauth.code
                         .$post({

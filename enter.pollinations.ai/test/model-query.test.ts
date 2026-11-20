@@ -89,13 +89,15 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official models of every status without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe("source:official status:all");
+    it("preselects official models that are not down without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe(
+            "source:official status:available",
+        );
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:all capability:reasoning",
+            "source:official status:available capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:all source:community",
+            "status:available source:community",
         );
         expect(ensureModelQueryDefaults("status:reliable")).toBe(
             "source:official status:reliable",
@@ -136,9 +138,10 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             "status:reliable",
         ),
     ).toBe(false);
-    // Official models without recent traffic stay listed by default (#15377).
+    // Official models without recent traffic stay listed by default (#15377),
+    // but an explicit down status is hidden until the caller asks for it.
     expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
-    expect(matches(official, ensureModelQueryDefaults(""))).toBe(true);
+    expect(matches(official, ensureModelQueryDefaults(""))).toBe(false);
     expect(
         matches(
             model({
@@ -147,9 +150,25 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             ensureModelQueryDefaults(""),
         ),
     ).toBe(true);
+    expect(matches(model(), "status:available")).toBe(true);
+    expect(matches(official, "status:available")).toBe(false);
+    expect(matches(official, "status:all")).toBe(true);
+    expect(
+        matches(
+            model({
+                health: {
+                    status: "degraded",
+                    requests: 50,
+                    success_rate: 90,
+                },
+            }),
+            "status:available",
+        ),
+    ).toBe(true);
     expect(matches(model(), "status:healthy")).toBe(false);
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",
+        "status:available ",
         "status:healthy ",
         "status:reliable ",
     ]);

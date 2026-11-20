@@ -82,7 +82,7 @@ afterEach(() => {
 });
 
 describe("OpenRouter Seedance 2.5 Flash", () => {
-    it("routes first/last frames, references and audio and settles on provider cost", async () => {
+    it("routes multimodal references and audio and settles on provider cost", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockHappyHorseSuccess(requests, 0.5);
@@ -90,15 +90,11 @@ describe("OpenRouter Seedance 2.5 Flash", () => {
             "animate the scene",
             {
                 ...baseParams,
-                model: "bytedance/seedance-2.5-flash",
+                model: "bytedance/seedance-2.5-flash:openrouter",
                 duration: 8,
                 resolution: "720p",
                 aspectRatio: "9:16",
                 audio: true,
-                image: [
-                    "https://example.com/start.png",
-                    "https://example.com/end.png",
-                ],
                 reference_images: ["https://example.com/reference.png"],
                 reference_videos: ["https://example.com/reference.mp4"],
                 reference_audios: ["https://example.com/reference.mp3"],
@@ -113,18 +109,6 @@ describe("OpenRouter Seedance 2.5 Flash", () => {
             seed: 42,
             aspect_ratio: "9:16",
             provider: { only: ["seed"], allow_fallbacks: false },
-            frame_images: [
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/start.png" },
-                    frame_type: "first_frame",
-                },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/end.png" },
-                    frame_type: "last_frame",
-                },
-            ],
             input_references: [
                 {
                     type: "image_url",
@@ -142,7 +126,7 @@ describe("OpenRouter Seedance 2.5 Flash", () => {
         });
         expect(result.durationSeconds).toBe(8);
         expect(result.trackingData).toEqual({
-            actualModel: "bytedance/seedance-2.5-flash",
+            actualModel: "bytedance/seedance-2.5-flash:openrouter",
             usage: { completionVideoSeconds: 8 },
             providerBilling: { units: 0.5, unitCost: 1.055 },
         });

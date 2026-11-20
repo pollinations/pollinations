@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -64,7 +65,7 @@ interface OpenRouterVideoResponse {
         | "expired";
     error?: string;
     unsigned_urls?: string[];
-    usage?: { cost?: number | null };
+    usage?: { cost?: number | null; completion_tokens?: number };
 }
 
 function resolveDuration(duration?: number): number {
@@ -137,8 +138,17 @@ export async function callHappyHorseAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
-            usage: { completionVideoSeconds: duration },
-            // OpenRouter bills at least 5 seconds per clip.
+            // Without OpenRouter's cost, bill its per-clip minimum.
+            usage: {
+                completionVideoSeconds:
+                    providerCost != null
+                        ? duration
+                        : Math.max(
+                              duration,
+                              IMAGE_SERVICES["alibaba/happyhorse-1.1"]
+                                  .minBilledSeconds ?? 0,
+                          ),
+            },
             ...(providerCost != null && {
                 providerBilling: { units: providerCost, unitCost: 1.055 },
             }),
@@ -203,6 +213,19 @@ export async function callHeyGenVideoAPI(
     };
 }
 
+export function seedanceFlashAspectRatio(params: ImageParams) {
+    return (
+        params.aspectRatio ??
+        (params.dimensionsExplicit
+            ? closestRatioLogSpace(
+                  params.width,
+                  params.height,
+                  SEEDANCE25_FLASH_ASPECT_RATIOS,
+              )
+            : "16:9")
+    );
+}
+
 export async function callOpenRouterSeedance25FlashAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -219,17 +242,7 @@ export async function callOpenRouterSeedance25FlashAPI(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         requestBody.seed = safeParams.seed;
     }
-    if (safeParams.aspectRatio !== "adaptive") {
-        requestBody.aspect_ratio =
-            safeParams.aspectRatio ??
-            (safeParams.dimensionsExplicit
-                ? closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      SEEDANCE25_FLASH_ASPECT_RATIOS,
-                  )
-                : "16:9");
-    }
+    requestBody.aspect_ratio = seedanceFlashAspectRatio(safeParams);
     if (safeParams.image.length > 0) {
         requestBody.frame_images = safeParams.image.map((url, index) => ({
             type: "image_url",
@@ -255,10 +268,11 @@ export async function callOpenRouterSeedance25FlashAPI(
         requestBody.input_references = references;
     }
 
-    const { buffer, providerCost } = await generateOpenRouterVideo(
-        requestBody,
-        SEEDANCE25_FLASH_POLL_TIMEOUT_MS,
-    );
+    const { buffer, providerCost, completionTokens } =
+        await generateOpenRouterVideo(
+            requestBody,
+            SEEDANCE25_FLASH_POLL_TIMEOUT_MS,
+        );
     if (
         typeof providerCost !== "number" ||
         !Number.isFinite(providerCost) ||
@@ -275,7 +289,14 @@ export async function callOpenRouterSeedance25FlashAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: safeParams.model,
-            usage: { completionVideoSeconds: duration },
+            usage: {
+                completionVideoSeconds: duration,
+                ...(typeof completionTokens === "number" &&
+                    completionTokens >= 0 &&
+                    Number.isSafeInteger(completionTokens) && {
+                        completionVideoTokens: completionTokens,
+                    }),
+            },
             providerBilling: { units: providerCost, unitCost: 1.055 },
         },
     };
@@ -348,7 +369,11 @@ export async function callOpenRouterGrokVideoAPI(
 async function generateOpenRouterVideo(
     requestBody: Record<string, unknown>,
     pollTimeoutMs: number,
-): Promise<{ buffer: Buffer; providerCost?: number | null }> {
+): Promise<{
+    buffer: Buffer;
+    providerCost?: number | null;
+    completionTokens?: number;
+}> {
     const apiKey = getImageEnv("OPENROUTER_API_KEY");
     if (!apiKey) {
         throw UpstreamError.fromProvider(500, {
@@ -401,6 +426,7 @@ async function generateOpenRouterVideo(
     return {
         buffer,
         providerCost: completed.usage?.cost,
+        completionTokens: completed.usage?.completion_tokens,
     };
 }
 

@@ -1498,7 +1498,12 @@ describe("OpenRouter Recraft Pro Vector fallback", () => {
             }
             calls.push(JSON.parse(init?.body as string));
             return Response.json({
-                data: [{ b64_json: Buffer.from("<svg/>").toString("base64"), media_type: "image/svg+xml" }],
+                data: [
+                    {
+                        b64_json: Buffer.from("<svg/>").toString("base64"),
+                        media_type: "image/svg+xml",
+                    },
+                ],
                 usage: { cost: 0.3 },
             });
         });

@@ -225,6 +225,11 @@ describe("catalog-driven audio requests", () => {
             audioInputConstraints: { min_seconds: 1.8 },
         });
         expect(
+            playgroundAudioMetadata("bytedance/seedance-2.0", {
+                audio_input_constraints: { max_seconds: 8 },
+            }).audioInputConstraints,
+        ).toEqual({ max_seconds: 8 });
+        expect(
             playgroundAudioMetadata("openai/gpt-transcribe", {
                 transcription_options: [],
             }).transcriptionOptions,

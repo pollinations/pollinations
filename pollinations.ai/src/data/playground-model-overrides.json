@@ -124,7 +124,7 @@
     },
     "elevenlabs/music-v2": {
         "reason": "The speech endpoint also serves music and sound generation.",
-        "source": "shared/registry/audio.ts",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioTask": "music-and-sound-effects",
         "audioCatalog": {
             "max_reference_audios": 1,
@@ -136,7 +136,7 @@
     },
     "elevenlabs/music-v2.5": {
         "reason": "The speech endpoint also serves music and sound generation.",
-        "source": "shared/registry/audio.ts",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioTask": "music-and-sound-effects",
         "audioCatalog": {
             "max_reference_audios": 1,
@@ -261,7 +261,7 @@
     },
     "stability-ai/stable-audio-3": {
         "reason": "The speech endpoint also serves music and sound generation.",
-        "source": "shared/registry/audio.ts",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioTask": "music-and-sound-effects",
         "audioCatalog": {
             "max_reference_audios": 1
@@ -269,7 +269,7 @@
     },
     "stability-ai/stable-audio-3-medium": {
         "reason": "The speech endpoint also serves music and sound generation.",
-        "source": "shared/registry/audio.ts",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioTask": "music-and-sound-effects",
         "audioCatalog": {
             "max_reference_audios": 1
@@ -294,15 +294,15 @@
         "defaultRatio": "16:9"
     },
     "microsoft/mai-transcribe-2": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": []
         }
     },
     "elevenlabs/eleven-multilingual-sts-v2": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "audio_input_constraints": {
                 "max_seconds": 300
@@ -310,8 +310,8 @@
         }
     },
     "elevenlabs/voice-isolator": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "audio_input_constraints": {
                 "min_seconds": 4.6
@@ -319,8 +319,8 @@
         }
     },
     "openai/whisper-large-v3": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language",
@@ -329,8 +329,8 @@
         }
     },
     "openai/gpt-transcribe": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language",
@@ -339,8 +339,8 @@
         }
     },
     "elevenlabs/scribe-v3": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language"
@@ -348,8 +348,8 @@
         }
     },
     "elevenlabs/scribe-v2": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language"
@@ -357,8 +357,8 @@
         }
     },
     "x-ai/grok-transcribe": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language"
@@ -366,8 +366,8 @@
         }
     },
     "google/gemini-3.5-transcribe": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language"
@@ -375,8 +375,8 @@
         }
     },
     "assemblyai/universal-2": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language"
@@ -384,8 +384,8 @@
         }
     },
     "assemblyai/universal-3.5-pro": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "transcription_options": [
                 "language",
@@ -394,8 +394,8 @@
         }
     },
     "zyphra/zonos3-mini": {
-        "reason": "Preview the model’s published audio capability metadata before release.",
-        "source": "shared/registry/audio.ts",
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
         "audioCatalog": {
             "max_reference_audios": 1
         }

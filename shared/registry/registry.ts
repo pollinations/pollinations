@@ -17,6 +17,7 @@ export {
 
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import type { ModelInfo } from "./model-info.ts";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
 import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
@@ -216,6 +217,7 @@ export type ModelDefinition = {
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
+    outputFormats?: ModelInfo["output_formats"];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
     /** Controls honored by this model through `/v1/chat/completions`. */

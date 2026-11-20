@@ -11,6 +11,16 @@ export const HOTSHOT_XL_SIDE_LENGTH = 512;
 export const HOTSHOT_XL_GPU_SECOND_COST = 0.000975;
 const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
+const GPT_IMAGE_26_OUTPUT_FORMATS: NonNullable<
+    ModelDefinition["outputFormats"]
+> = {
+    gif: {
+        mode: "selectable",
+        input_modalities: ["text"],
+        frame_defaults: { frame_count: 8, frame_duration_ms: 120 },
+    },
+};
+
 // The fal fallback reports its complete USD charge, without token counts.
 const GPT_IMAGE_26_BILLING: BillingRules = {
     adjustments: [
@@ -103,6 +113,7 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         },
+        outputFormats: { gif: { mode: "native", input_modalities: ["text"] } },
         title: "Hotshot-XL",
         description:
             "Generate a short 512×512 animated GIF from a text prompt.",
@@ -945,6 +956,7 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: perMillion(30),
         },
         billing: GPT_IMAGE_26_BILLING,
+        outputFormats: GPT_IMAGE_26_OUTPUT_FORMATS,
         title: "GPT Image 2.6 Flare",
         description:
             "Quickly generate or edit an image while keeping details from your reference pictures.",
@@ -969,6 +981,7 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: perMillion(30),
         },
         billing: GPT_IMAGE_26_BILLING,
+        outputFormats: GPT_IMAGE_26_OUTPUT_FORMATS,
         title: "GPT Image 2.6 Sunburst",
         description:
             "Arrange a detailed scene and refine individual elements while preserving details from your references.",
@@ -1923,6 +1936,9 @@ const IMAGE_BASE_SERVICES = {
         description:
             "Turn text or a reference picture into an editable SVG that stays sharp at any size.",
         inputModalities: ["text", "image"],
+        outputFormats: {
+            svg: { mode: "native", input_modalities: ["text", "image"] },
+        },
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },

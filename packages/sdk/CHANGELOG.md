@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-19
+
+### Added
+
+- `ModelInfo.output_formats` describes native and selectable outputs, their input modalities, and suggested animation parameters.
+
 ## [5.1.0-alpha.33] - 2026-11-18
 
 ### Changed

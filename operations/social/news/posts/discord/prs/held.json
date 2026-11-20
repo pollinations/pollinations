@@ -41,8 +41,6 @@
       "merge_sha": "178b7deff18981c9c2ec090c77535bacd5e51ac0",
       "merged_at": "2026-11-20T17:38:24Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
@@ -52,8 +50,6 @@
       "merge_sha": "2ab32c3ce14a051aff744e332288a001f17ff327",
       "merged_at": "2026-11-20T15:12:50Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/economics",
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

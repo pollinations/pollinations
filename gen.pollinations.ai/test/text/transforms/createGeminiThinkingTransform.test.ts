@@ -22,6 +22,16 @@ describe("createGeminiThinkingTransform", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
+    it("gives reasoning_effort=max the same Gemini 2.5 budget as xhigh", async () => {
+        const transform = createGeminiThinkingTransform("v2.5");
+        const { options } = await transform([], { reasoning_effort: "max" });
+
+        expect(options.thinking).toEqual({
+            type: "enabled",
+            budget_tokens: 8192,
+        });
+    });
+
     it("passes reasoning_effort=none through for Gemini 3 Flash", async () => {
         const transform = createGeminiThinkingTransform("v3-flash");
         const { options } = await transform([], { reasoning_effort: "none" });

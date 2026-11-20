@@ -50,8 +50,8 @@ describe("createReasoningEffortTransform — mandatory", () => {
         expect(options.reasoning_effort).toBe("medium");
     });
 
-    it("normalizes xhigh to high", async () => {
-        const { options } = await mandatory([], { reasoning_effort: "xhigh" });
+    it.each(["xhigh", "max"])("normalizes %s to high", async (effort) => {
+        const { options } = await mandatory([], { reasoning_effort: effort });
         expect(options.reasoning_effort).toBe("high");
     });
 });

@@ -26,6 +26,7 @@ const EFFORT_TO_BUDGET: Record<string, number> = {
     medium: 2048,
     high: 4096,
     xhigh: 8192,
+    max: 8192,
 };
 
 // reasoning_effort -> output_config.effort for adaptive-mode models.
@@ -37,6 +38,7 @@ const EFFORT_TO_OUTPUT_EFFORT: Record<string, string> = {
     medium: "medium",
     high: "high",
     xhigh: "high",
+    max: "high",
 };
 
 function normalizeEffort(value: unknown): string | undefined {

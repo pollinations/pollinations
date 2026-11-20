@@ -47,7 +47,7 @@ export function proxyGeminiLive(
     let started = false;
     let disconnected = false;
     let drainTimer: ReturnType<typeof setTimeout> | undefined;
-    const queue: string[] = [];
+    let queue: { payload: string; turnInput: boolean }[] = [];
     let queuedSize = 0;
     const sendClient = (event: object) => {
         if (!disconnected && downstream.readyState === WebSocket.OPEN)
@@ -82,6 +82,15 @@ export function proxyGeminiLive(
         model: GEMINI_LIVE,
         sendClient,
         onUsage: billing.usage,
+        cancelUnsentTurn() {
+            if (selected) return false;
+            queue = queue.filter((frame) => !frame.turnInput);
+            queuedSize = queue.reduce(
+                (size, frame) => size + frame.payload.length,
+                0,
+            );
+            return true;
+        },
         sendGoogle(event) {
             if (lifetime.signal.aborted) return;
             const frame = JSON.stringify(event);
@@ -93,7 +102,7 @@ export function proxyGeminiLive(
             ) {
                 finish("Gemini Live setup input buffer exceeded");
             } else {
-                queue.push(frame);
+                queue.push({ payload: frame, turnInput: !event.contextUpdate });
                 queuedSize += frame.length;
             }
         },
@@ -193,7 +202,7 @@ export function proxyGeminiLive(
                         ready = true;
                         signal.removeEventListener("abort", failSetup);
                         resolve();
-                        for (const payload of queue) socket.send(payload);
+                        for (const { payload } of queue) socket.send(payload);
                         queue.length = 0;
                     } else {
                         events.google(frame);

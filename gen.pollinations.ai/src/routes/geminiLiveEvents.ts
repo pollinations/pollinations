@@ -82,12 +82,14 @@ export function createGeminiLiveEvents({
     sendClient,
     sendGoogle,
     requestSetup,
+    cancelUnsentTurn,
     onUsage,
 }: {
     model: string;
     sendClient: (event: Frame) => void;
     sendGoogle: (event: Frame) => void;
     requestSetup: () => void;
+    cancelUnsentTurn: () => boolean;
     onUsage: (usage: Usage) => void;
 }) {
     const sessionId = id("sess");
@@ -141,6 +143,10 @@ export function createGeminiLiveEvents({
         if (responseId) return;
         responseId = id("resp");
         emit("response.created", { response: response("in_progress") });
+    }
+    function interruptGeneration() {
+        sendGoogle({ realtimeInput: { activityStart: {} } });
+        activityOpen = true;
     }
     function addItem(item: Frame) {
         output.push(item);
@@ -488,11 +494,16 @@ export function createGeminiLiveEvents({
                     (event.response_id && event.response_id !== responseId)
                 )
                     throw Error("No matching active response.");
-                if (!cancelRequested && !interrupted) {
-                    sendGoogle({ realtimeInput: { activityStart: {} } });
-                    activityOpen = true;
-                    cancelRequested = true;
+                if (cancelRequested || interrupted) return;
+                if (cancelUnsentTurn()) {
+                    begin();
+                    emit("response.done", { response: response("cancelled") });
+                    responseId = "";
+                    active = false;
+                    return;
                 }
+                cancelRequested = true;
+                if (responseId) interruptGeneration();
                 return;
             default:
                 throw Error("Unsupported Gemini Live client event.");
@@ -559,6 +570,19 @@ export function createGeminiLiveEvents({
                 throw Error("Gemini Live reported a provider error.");
             const content = obj(event.serverContent);
             if (content.interrupted) interrupted = true;
+            // Vertex ignores activityStart before it begins generating. An early
+            // cancel after dispatch interrupts on the first provider output frame.
+            if (
+                cancelRequested &&
+                !interrupted &&
+                !responseId &&
+                (content.modelTurn ||
+                    content.outputTranscription ||
+                    event.toolCall)
+            ) {
+                begin();
+                interruptGeneration();
+            }
             if (!cancelRequested && !interrupted) {
                 for (const rawPart of array(obj(content.modelTurn).parts)) {
                     const p = obj(rawPart);

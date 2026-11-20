@@ -6,16 +6,19 @@ function session() {
     const sendGoogle = vi.fn();
     const onUsage = vi.fn();
     const requestSetup = vi.fn();
+    const cancelUnsentTurn = vi.fn(() => false);
     const adapter = createGeminiLiveEvents({
         model: "google/gemini-3.8-live",
         sendClient,
         sendGoogle,
         requestSetup,
+        cancelUnsentTurn,
         onUsage,
     });
     return {
         ...adapter,
         requestSetup,
+        cancelUnsentTurn,
         sendClient,
         sendGoogle,
         onUsage,
@@ -243,6 +246,9 @@ describe("Gemini Live realtime events", () => {
             const s = session();
             s.client(textItem);
             s.client({ type: "response.create" });
+            s.google({
+                serverContent: { outputTranscription: { text: "Hello" } },
+            });
             s.sendGoogle.mockClear();
             s.client({ type: "response.cancel" });
             s.client({ type: "response.cancel" });
@@ -299,6 +305,20 @@ describe("Gemini Live realtime events", () => {
         },
     );
 
+    it("cancels a queued turn without sending input or recording provider usage", () => {
+        const s = session();
+        s.cancelUnsentTurn.mockReturnValue(true);
+        s.client(textItem);
+        s.client({ type: "response.create" });
+        s.client({ type: "response.cancel" });
+        expect(s.pendingTurn()).toBe(false);
+        expect(s.events().at(-1)).toMatchObject({
+            type: "response.done",
+            response: { status: "cancelled", usage: null },
+        });
+        expect(s.onUsage).not.toHaveBeenCalled();
+    });
+
     it("reports completion if generation finished before Vertex received the interrupt", () => {
         const s = session();
         s.client(textItem);
@@ -316,9 +336,14 @@ describe("Gemini Live realtime events", () => {
         const s = session();
         s.client(textItem);
         s.client({ type: "response.create" });
+        s.sendGoogle.mockClear();
         s.client({ type: "response.cancel" });
+        expect(s.sendGoogle).not.toHaveBeenCalled();
         s.google({
             serverContent: { modelTurn: { parts: [{ text: "late" }] } },
+        });
+        expect(s.sendGoogle).toHaveBeenCalledExactlyOnceWith({
+            realtimeInput: { activityStart: {} },
         });
         expect(
             s.events().some((e) => e.type === "response.output_text.delta"),

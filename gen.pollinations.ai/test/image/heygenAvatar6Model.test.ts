@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { buildHeygenAvatarRequest } from "../../src/image/models/heygenAvatar6TurboModel.ts";
+import { buildHeygenAvatarRequest } from "../../src/image/models/heygenAvatar6Model.ts";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 
 const photo = "https://example.com/photo.png";
 const audio = "https://example.com/audio.mp3";
 const video = "https://example.com/character.mp4";
-describe("HeyGen Avatar 6 Turbo", () => {
+describe.each([
+    ["heygen/heygen-avatar-6", "heygen/avatar-6"],
+    ["heygen/heygen-avatar-6-turbo", "heygen/avatar-6/turbo"],
+] as const)("%s", (model, endpoint) => {
     it("maps an image and speech audio to fal and OpenRouter", () => {
         const params = ImageParamsSchema.parse({
-            model: "heygen/heygen-avatar-6-turbo",
+            model,
             image: [photo],
             reference_audios: [audio],
             resolution: "2k",
         });
         const request = buildHeygenAvatarRequest("subtle nods", params);
-        expect(request.endpoint).toBe("heygen/avatar-6/turbo/image-to-video");
+        expect(request.endpoint).toBe(`${endpoint}/image-to-video`);
         expect(request.input).toMatchObject({
             image_url: photo,
             audio_url: audio,
@@ -22,7 +25,7 @@ describe("HeyGen Avatar 6 Turbo", () => {
             resolution: "2k",
         });
         expect(request.openrouter).toMatchObject({
-            model: "heygen/heygen-avatar-6-turbo",
+            model,
             resolution: "2K",
             provider: { only: ["heygen"], allow_fallbacks: false },
         });
@@ -30,15 +33,13 @@ describe("HeyGen Avatar 6 Turbo", () => {
     });
     it("maps a reference video and optional photo", () => {
         const params = ImageParamsSchema.parse({
-            model: "heygen/heygen-avatar-6-turbo:openrouter",
+            model: `${model}:openrouter`,
             reference_videos: [video],
             reference_images: [photo],
             reference_audios: [audio],
         });
         const request = buildHeygenAvatarRequest("gesture", params);
-        expect(request.endpoint).toBe(
-            "heygen/avatar-6/turbo/ref-video-to-video",
-        );
+        expect(request.endpoint).toBe(`${endpoint}/ref-video-to-video`);
         expect(request.input).toMatchObject({
             video_url: video,
             image_url: photo,
@@ -55,7 +56,7 @@ describe("HeyGen Avatar 6 Turbo", () => {
         ]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "heygen/heygen-avatar-6-turbo",
+                    model,
                     ...bad,
                 }).success,
             ).toBe(false);

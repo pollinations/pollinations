@@ -8,16 +8,20 @@ import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { generateOpenRouterVideo } from "./openRouterVideoModel.ts";
 
-const MODEL = "heygen/heygen-avatar-6-turbo";
-const ENDPOINT = "heygen/avatar-6/turbo";
+const STANDARD = "heygen/heygen-avatar-6";
+const TURBO = "heygen/heygen-avatar-6-turbo";
 
 export function buildHeygenAvatarRequest(prompt: string, params: ImageParams) {
+    const turbo =
+        params.model === TURBO || params.model === `${TURBO}:openrouter`;
+    const model: typeof STANDARD | typeof TURBO = turbo ? TURBO : STANDARD;
+    const endpoint = turbo ? "heygen/avatar-6/turbo" : "heygen/avatar-6";
     const photo = params.image[0] ?? params.reference_images?.[0];
     const video = params.reference_videos?.[0];
     const audio = params.reference_audios?.[0];
     const resolution = params.resolution === "2k" ? "2k" : "1080p";
     return {
-        endpoint: `${ENDPOINT}/${video ? "ref-video-to-video" : "image-to-video"}`,
+        endpoint: `${endpoint}/${video ? "ref-video-to-video" : "image-to-video"}`,
         resolution,
         input: {
             resolution,
@@ -28,7 +32,7 @@ export function buildHeygenAvatarRequest(prompt: string, params: ImageParams) {
             ...(video ? { video_url: video } : {}),
         },
         openrouter: {
-            model: MODEL,
+            model,
             prompt,
             resolution: resolution === "2k" ? "2K" : resolution,
             input_references: [
@@ -45,18 +49,18 @@ export function buildHeygenAvatarRequest(prompt: string, params: ImageParams) {
     };
 }
 
-export async function callHeygenAvatar6Turbo(
+export async function callHeygenAvatar6(
     prompt: string,
     params: ImageParams,
 ): Promise<VideoGenerationResult> {
     const request = buildHeygenAvatarRequest(prompt, params);
-    const model = IMAGE_SERVICES[MODEL];
+    const model = IMAGE_SERVICES[request.openrouter.model];
     const rate =
         request.resolution === "2k"
             ? model.costVariants?.["2k"]?.completionVideoSeconds
             : model.cost.completionVideoSeconds;
-    if (!rate) throw new Error("Missing Avatar 6 Turbo rate");
-    if (params.model === `${MODEL}:openrouter`) {
+    if (!rate) throw new Error("Missing Avatar 6 rate");
+    if (params.model === `${request.openrouter.model}:openrouter`) {
         const { buffer, providerCost } = await generateOpenRouterVideo(
             request.openrouter,
             25 * 60 * 1000,
@@ -68,7 +72,7 @@ export async function callHeygenAvatar6Turbo(
         ) {
             throw UpstreamError.fromProvider(502, {
                 message:
-                    "OpenRouter Avatar 6 Turbo cost receipt is missing or invalid",
+                    "OpenRouter Avatar 6 cost receipt is missing or invalid",
             });
         }
         const seconds = providerCost / rate;
@@ -100,10 +104,10 @@ export async function callHeygenAvatar6Turbo(
         };
         if (!payload.video?.url)
             throw UpstreamError.fromProvider(502, {
-                message: "Fal Avatar 6 Turbo returned no video URL",
+                message: "Fal Avatar 6 returned no video URL",
             });
         const downloaded = await fetchUpstream(payload.video.url, {
-            errorLabel: "Fal Avatar 6 Turbo download failed",
+            errorLabel: "Fal Avatar 6 download failed",
         });
         const seconds =
             payload.video.duration &&
@@ -135,7 +139,7 @@ export async function callHeygenAvatar6Turbo(
             message:
                 error instanceof Error
                     ? error.message
-                    : "Fal Avatar 6 Turbo request failed",
+                    : "Fal Avatar 6 request failed",
         });
     }
 }

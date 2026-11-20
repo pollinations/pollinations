@@ -334,6 +334,8 @@ export const ImageParamsSchema = z
             }
         }
         if (
+            data.model === "heygen/heygen-avatar-6" ||
+            data.model === "heygen/heygen-avatar-6:openrouter" ||
             data.model === "heygen/heygen-avatar-6-turbo" ||
             data.model === "heygen/heygen-avatar-6-turbo:openrouter"
         ) {
@@ -349,7 +351,7 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     message:
-                        "Avatar 6 Turbo requires exactly one speech audio reference and a photo or reference video (at most one of each).",
+                        "Avatar 6 requires exactly one speech audio reference and a photo or reference video (at most one of each).",
                 });
             }
             if (data.duration !== undefined) {
@@ -357,7 +359,7 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["duration"],
                     message:
-                        "Avatar 6 Turbo duration is determined by the supplied audio.",
+                        "Avatar 6 duration is determined by the supplied audio.",
                 });
             }
         }

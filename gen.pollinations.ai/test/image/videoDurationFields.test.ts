@@ -11,6 +11,8 @@ const videoModelIds = getVideoModelIds() as ImageModelName[];
 const nonVideoModelIds = getImageModelIds() as ImageModelName[];
 
 const audioDrivenModels = [
+    "heygen/heygen-avatar-6",
+    "heygen/heygen-avatar-6:openrouter",
     "heygen/heygen-avatar-6-turbo",
     "heygen/heygen-avatar-6-turbo:openrouter",
 ] as const satisfies readonly ImageModelName[];

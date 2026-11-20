@@ -13,7 +13,7 @@ import {
 import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
-import { callHeygenAvatar6Turbo } from "./models/heygenAvatar6TurboModel.ts";
+import { callHeygenAvatar6 } from "./models/heygenAvatar6Model.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import { callLtxVideo } from "./models/ltxVideoModel.ts";
 import {
@@ -81,9 +81,11 @@ export async function createAndReturnVideo(
         case "heygen/heygen-video-1":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
+        case "heygen/heygen-avatar-6":
+        case "heygen/heygen-avatar-6:openrouter":
         case "heygen/heygen-avatar-6-turbo":
         case "heygen/heygen-avatar-6-turbo:openrouter":
-            result = await callHeygenAvatar6Turbo(prompt, safeParams);
+            result = await callHeygenAvatar6(prompt, safeParams);
             break;
         case "mirelo/sfx-2.0":
             result = await callMireloSfxAPI(prompt, safeParams);

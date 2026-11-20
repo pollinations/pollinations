@@ -226,6 +226,8 @@ describe("ImageParamsSchema", () => {
         (model) => {
             // Avatar 6 Turbo derives length from supplied speech audio.
             if (
+                model === "heygen/heygen-avatar-6" ||
+                model === "heygen/heygen-avatar-6:openrouter" ||
                 model === "heygen/heygen-avatar-6-turbo" ||
                 model === "heygen/heygen-avatar-6-turbo:openrouter"
             )

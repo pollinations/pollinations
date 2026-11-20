@@ -358,6 +358,13 @@ export const IMAGE_FALLBACKS = {
             maxReferenceImages: 10,
         },
     },
+    "heygen/heygen-avatar-6": {
+        "heygen/heygen-avatar-6:openrouter": {
+            provider: "openrouter",
+            cost: { completionVideoSeconds: 0.1 * 1.055 },
+            costVariants: { "2k": { completionVideoSeconds: 0.145 * 1.055 } },
+        },
+    },
     "heygen/heygen-avatar-6-turbo": {
         "heygen/heygen-avatar-6-turbo:openrouter": {
             provider: "openrouter",

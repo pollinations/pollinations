@@ -1,4 +1,8 @@
+import { OrganizationIcon } from "@pollinations/ui/gen";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { SUPPORTERS } from "./community";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -38,4 +42,12 @@ describe("community polls", () => {
         expect(request.searchParams.get("order")).toBe("desc");
         expect(request.searchParams.get("per_page")).toBe("3");
     });
+});
+
+it("has a shared organization logo for every supporter", () => {
+    const missing = SUPPORTERS.filter(
+        ({ name }) =>
+            !renderToStaticMarkup(createElement(OrganizationIcon, { name })),
+    );
+    expect(missing.map(({ name }) => name)).toEqual([]);
 });

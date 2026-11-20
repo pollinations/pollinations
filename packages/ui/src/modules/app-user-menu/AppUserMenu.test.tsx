@@ -63,7 +63,7 @@ describe("AppUserMenu", () => {
 
         const html = renderMenu();
 
-        expect(html).toContain("Pollinations Connect");
+        expect(html).toContain("Connect your Pollinations account");
         expect(html).toContain("mask:url(");
         expect(html.match(/mask:url\(/g)).toHaveLength(2);
         expect(html).toContain('data-intent="brand"');

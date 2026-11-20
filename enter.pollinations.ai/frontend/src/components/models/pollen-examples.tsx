@@ -1,5 +1,5 @@
 /**
- * Dynamic Pollen Examples component for FAQ
+ * Dynamic balance examples component for FAQ
  * Shows 2 examples each from video, image, and text models
  */
 

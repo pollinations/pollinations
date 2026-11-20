@@ -43,7 +43,7 @@ async function validateAgainstRegistry(modelName, fetcher, kind, context) {
     if (model) return { valid: true, model };
 
     // The keyed list leaves out models the key can't pay for, such as paid-only
-    // models for Quest Pollen. If the public list has it, let Gen give the reason.
+    // models for Quest balance. If the public list has it, let Gen give the reason.
     const publicModel = context && (await fetcher()).find(matches);
     if (publicModel) return { valid: true, model: publicModel };
 

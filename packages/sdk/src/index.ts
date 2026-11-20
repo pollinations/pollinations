@@ -185,6 +185,7 @@ export type {
     SitesResponse,
     SpeechAlignment,
     SpeechWordTiming,
+    StemSeparationOptions,
     TextContentPart,
     TextGenerateOptions,
     // Text

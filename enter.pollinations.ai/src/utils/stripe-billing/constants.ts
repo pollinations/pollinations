@@ -12,7 +12,7 @@ export const AUTO_TOP_UP_PENDING_TTL_MS = 24 * 60 * 60 * 1000;
  *
  *   `claimed`  → attempt row reserved, invoice not yet created/linked.
  *   `pending`  → invoice created, awaiting payment (webhook or reconciliation).
- *   `paid`     → invoice paid and Pollen credited exactly once.
+ *   `paid`     → invoice paid and balance credited exactly once.
  *   `failed`   → terminal failure; may disable auto top-up.
  *
  * Transitions are enforced by `WHERE status IN (...)` guards in the

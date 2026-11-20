@@ -8,7 +8,7 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
+The optional Quest field names an open community quest issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
 New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
 
@@ -38,7 +38,7 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
 - Auth: `sk_` keys authenticate requests; `pk_` App Keys only identify an app (OAuth `client_id`) and get `401` as a key. Keys: https://enter.pollinations.ai/keys
-- Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
+- Billing: prepaid API credit in US dollars. API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
@@ -51,7 +51,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Successful billable text responses must contain valid provider usage. Reject
   non-stream responses without it; streamed protocols must contain terminal
   usage and fail the stream otherwise.
-- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
+- Wallet: users earn Quest credit by completing Quests. Balances live in the `tier_balance` (Quest balance) and `pack_balance` (paid balance) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
 ### Local Development
@@ -267,7 +267,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/infrastructure/project-manager/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`, and the reward labels `reward-1`, `reward-3`, `reward-5`, `reward-10`, `reward-15`, `reward-25`, `reward-50`, which set a PR's or a quest's Pollen reward) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/infrastructure/project-manager/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, the community quest label, `DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`, and the reward labels `reward-1`, `reward-3`, `reward-5`, `reward-10`, `reward-15`, `reward-25`, `reward-50`, which set a PR's or a quest's reward) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

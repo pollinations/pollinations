@@ -30,6 +30,12 @@ const OPENAI_CHAT_AUDIO_VOICES = [
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "stealth/glyph-cluster": {
+        "stealth/glyph-cluster:kilo": {
+            provider: "kilo",
+            fallbackOnStatuses: [429],
+        },
+    },
     "openai/gpt-5.5": {
         // Global rates are inferred by removing AWS's documented 10% regional
         // premium; using them before confirmation is a maintainer-approved risk.
@@ -140,6 +146,18 @@ export const TEXT_FALLBACKS = {
         "anthropic/claude-opus-5:anthropic": {
             provider: "anthropic",
             addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
+    "google/gemini-decision-1": {
+        "google/gemini-decision-1:openrouter:ai-studio": {
+            provider: "openrouter",
+            cost: {
+                promptAudioTokens: perMillion(0.1) * 1.055,
+                promptImageTokens: perMillion(0.1) * 1.055,
+                promptVideoTokens: perMillion(0.1) * 1.055,
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
         },
     },
     "openai/gpt-6-luna-decisions": {
@@ -973,6 +991,19 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-ember": {
+        "meta/muse-ember:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-09").getTime(),
+            // OpenRouter list rates (2026-11-09) with the 5.5% credit fee applied.
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                promptCachedTokens: perMillion(0.004) * 1.055,
+                promptCacheWriteTokens: perMillion(0.125) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5.2": {
         "anthropic/claude-fable-5.2:anthropic": {
             provider: "anthropic",
@@ -1074,6 +1105,58 @@ export const TEXT_FALLBACKS = {
                 ...openRouterGeminiBilling({
                     searchCostPerThousandRequests: 7 * 1.055,
                     storageCostPerMillionTokenHours: 2.25 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
+        },
+    },
+    "google/gemini-4-hydrogen": {
+        "google/gemini-4-hydrogen:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-11-12").getTime(),
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
+            // Keep the direct Vertex quote; bill actual provider receipts if available.
+            cost: {
+                promptTextTokens: perMillion(1.5) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                promptCacheWriteTokens: perMillion(1.5) * 1.055,
+                promptAudioTokens: perMillion(1.5) * 1.055,
+                promptImageTokens: perMillion(1.5) * 1.055,
+                promptVideoTokens: perMillion(1.5) * 1.055,
+                completionTextTokens: perMillion(7.5) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 14 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
+        },
+    },
+    "google/gemini-4-neon": {
+        "google/gemini-4-neon:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-11-18").getTime(),
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
+            // Keep the direct Vertex quote; bill actual provider receipts if available.
+            cost: {
+                promptTextTokens: perMillion(3) * 1.055,
+                promptCachedTokens: perMillion(0.15) * 1.055,
+                promptCacheWriteTokens: perMillion(3) * 1.055,
+                promptAudioTokens: perMillion(3) * 1.055,
+                promptImageTokens: perMillion(3) * 1.055,
+                promptVideoTokens: perMillion(3) * 1.055,
+                completionTextTokens: perMillion(15) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 14 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
                 }),
                 resolveTotalCost: reportedTextCost(1.055),
             },

@@ -2,15 +2,36 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.32] - 2026-11-18
+## [5.1.0-alpha.35] - 2026-11-20
 
 ### Added
-- `connectRealtime()` and the `RealtimeSession` class open an OpenAI-compatible
+- `connectRealtime()` and the `RealtimeSession` class open an [OI]-compatible
   realtime session on `wss://gen.pollinations.ai/v1/realtime` and pass events
   through in both directions, so a web app can talk with
   `openai/gpt-realtime-2.1` or stream live transcription in a few lines.
 - `useRealtimeSession()` runs a realtime session on the signed-in user's key and
   exposes the session, the latest events and the connection status.
+
+## [5.1.0-alpha.34] - 2026-11-19
+
+### Added
+
+- Image requests accept `outputFormat`, `frameCount`, and `frameDurationMs` for models with selectable GIF output.
+- `ModelInfo.health` types the existing model catalog health status, success rate, and request count.
+- `separateStems()` submits an audio file for stem separation and returns the ZIP archive.
+
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Changed
+- `PolliProvider`'s `appKey` is optional. Without an App Key, sign-in still
+  works: the consent screen names the app by its hostname. Dev warnings now
+  appear only for an `appKey` that isn't a `pk_` key.
+
+## [5.1.0-alpha.32] - 2026-11-18
+
+### Changed
+
+- Use Pollinations Pay terminology in the README.
 
 ## [5.1.0-alpha.31] - 2026-11-17
 

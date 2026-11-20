@@ -151,9 +151,13 @@ describe("quoteMediaRequest", () => {
 
     it("never quotes a listed model at zero", () => {
         for (const model of getVisibleImageModels()) {
-            const options = model === "heygen/heygen-avatar-6-turbo"
-                ? { image: [referenceImage], reference_audios: ["https://example.com/speech.mp3"] }
-                : {};
+            const options =
+                model === "heygen/heygen-avatar-6-turbo"
+                    ? {
+                          image: [referenceImage],
+                          reference_audios: ["https://example.com/speech.mp3"],
+                      }
+                    : {};
             expect(quote(model, options) ?? 1, model).toBeGreaterThan(0);
         }
     });

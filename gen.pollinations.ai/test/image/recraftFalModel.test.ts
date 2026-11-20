@@ -54,12 +54,24 @@ afterEach(() => {
 describe("callRecraftProVectorFalAPI", () => {
     it("requests editable SVG at the requested aspect ratio and meters fal units", async () => {
         const requests: Record<string, unknown>[] = [];
-        syncImageEnv({ FAL_KEY: "fal-test-key" } as CloudflareBindings, ["FAL_KEY"]);
+        syncImageEnv({ FAL_KEY: "fal-test-key" } as CloudflareBindings, [
+            "FAL_KEY",
+        ]);
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
-            if (String(url) === "https://fal.run/fal-ai/recraft/v4.1/pro/text-to-vector") {
+            if (
+                String(url) ===
+                "https://fal.run/fal-ai/recraft/v4.1/pro/text-to-vector"
+            ) {
                 requests.push(JSON.parse(init?.body as string));
                 return Response.json(
-                    { images: [{ url: "https://example.com/vector.svg", content_type: "image/svg+xml" }] },
+                    {
+                        images: [
+                            {
+                                url: "https://example.com/vector.svg",
+                                content_type: "image/svg+xml",
+                            },
+                        ],
+                    },
                     { headers: { "x-fal-billable-units": "1" } },
                 );
             }
@@ -71,11 +83,13 @@ describe("callRecraftProVectorFalAPI", () => {
             ...params,
             model: "recraft/recraft-v4.1-pro-vector",
         });
-        expect(requests).toEqual([{
-            prompt: "an icon",
-            image_size: "landscape_16_9",
-            enable_safety_checker: true,
-        }]);
+        expect(requests).toEqual([
+            {
+                prompt: "an icon",
+                image_size: "landscape_16_9",
+                enable_safety_checker: true,
+            },
+        ]);
         expect(result.buffer.toString()).toBe("<svg/>");
         expect(result.mimeType).toBe("image/svg+xml");
         expect(result.trackingData).toMatchObject({
@@ -84,11 +98,13 @@ describe("callRecraftProVectorFalAPI", () => {
         });
     });
     it("rejects image references, which the fal primary does not accept", async () => {
-        await expect(callRecraftProVectorFalAPI("an icon", {
-            ...params,
-            model: "recraft/recraft-v4.1-pro-vector",
-            image: ["https://example.com/seed.png"],
-        })).rejects.toMatchObject({ status: 400 });
+        await expect(
+            callRecraftProVectorFalAPI("an icon", {
+                ...params,
+                model: "recraft/recraft-v4.1-pro-vector",
+                image: ["https://example.com/seed.png"],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
     });
 });
 

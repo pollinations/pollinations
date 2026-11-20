@@ -351,7 +351,12 @@ export const IMAGE_FALLBACKS = {
             ...defineCostVariants(
                 { "2k": { completionVideoSeconds: 0.145 * 1.055 } },
                 matchResolution("2k"),
-                { "2k": { label: "2K", description: "Applies at 2K resolution." } },
+                {
+                    "2k": {
+                        label: "2K",
+                        description: "Applies at 2K resolution.",
+                    },
+                },
                 "1080p",
             ),
         },

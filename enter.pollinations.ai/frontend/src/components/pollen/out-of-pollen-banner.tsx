@@ -9,9 +9,9 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
     packBalance,
     questPollenRestricted,
 }) => {
-    // Locked Quest pollen cannot be spent, and quests would only add to it.
+    // Locked Quest balance cannot be spent, and quests would only add to it.
     const spendable = (questPollenRestricted ? 0 : tierBalance) + packBalance;
-    // The API lets a request through while any spendable pollen is left.
+    // The API lets a request through while any spendable balance is left.
     if (spendable > 0) return null;
     return (
         // Folded, it shares the menu button's row (top-3, h-10) instead of
@@ -21,7 +21,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
         // edge too.
         <Alert
             intent="advisory"
-            title="Out of pollen"
+            title="Your balance is empty"
             className="max-lg:first:-mt-[3.25rem] max-lg:first:ml-14 max-sm:mr-3"
         >
             API requests fail until you add more.{" "}
@@ -31,7 +31,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
                 hash="buy-pollen"
                 external={false}
             >
-                Buy pollen
+                Top up
             </InlineLink>
             {!questPollenRestricted && (
                 <>

@@ -20,7 +20,7 @@ const TAB_ICONS = { [TABS[0]]: TrendUpIcon, [TABS[1]]: ClockIcon };
 
 /**
  * A compact shelf of community apps: the busiest ones over the last 7 days
- * (counting only users who pay with their own Pollen), or the newest
+ * (counting only users who pay from their own balance), or the newest
  * listings. Missing screenshots use the shared Polli fallback, so the shelf
  * remains visual without pretending generated art is the real app.
  */

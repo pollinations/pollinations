@@ -14,6 +14,7 @@ import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
+import { callLtxVideo } from "./models/ltxVideoModel.ts";
 import {
     callMinimaxH3API,
     callMinimaxH3MaxAPI,
@@ -23,9 +24,11 @@ import {
     callHappyHorseAPI,
     callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterSeedance25FlashAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedance25API } from "./models/seedance25VideoModel.ts";
+import { callVercelSeedance25FlashAPI } from "./models/seedanceFlashVercelModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
@@ -113,7 +116,17 @@ export async function createAndReturnVideo(
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "kwaivgi/kling-v3.0-std":
-            result = await callKlingVideoAPI(prompt, safeParams);
+        case "kwaivgi/kling-v3.0-pro":
+        case "kwaivgi/kling-v3.0-pro:azure":
+            result = await callKlingVideoAPI(
+                prompt,
+                safeParams,
+                safeParams.model,
+            );
+            break;
+        case "lightricks/ltx-2.5-pro":
+        case "lightricks/ltx-2.5-pro:azure":
+            result = await callLtxVideo(prompt, safeParams);
             break;
         case "black-forest-labs/flux-3-max":
             result = await callFluxMaxVideoAPI(prompt, safeParams);
@@ -131,6 +144,12 @@ export async function createAndReturnVideo(
                 safeParams,
                 "grok-imagine-video-1.5-lite",
             );
+            break;
+        case "bytedance/seedance-2.5-flash":
+            result = await callVercelSeedance25FlashAPI(prompt, safeParams);
+            break;
+        case "bytedance/seedance-2.5-flash:openrouter":
+            result = await callOpenRouterSeedance25FlashAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

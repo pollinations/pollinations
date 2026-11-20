@@ -254,7 +254,7 @@ function Dashboard({ accountUser }) {
                             Weekly active paying customers
                         </Heading>
                         <Text as="p" size="sm" tone="muted">
-                            Users who bought a Pollen pack that week.
+                            Users who topped up their balance that week.
                         </Text>
                     </div>
                     <div className="flex flex-col items-end gap-1">

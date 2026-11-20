@@ -32,9 +32,9 @@ describe("budgetHint", () => {
         expect(hint).toContain("Top up: https://enter.pollinations.ai/pollen");
         expect(hint).toContain("Balance: https://enter.pollinations.ai/pollen");
         expect(hint).toContain(
-            "Earn Quest Pollen: https://enter.pollinations.ai/quests",
+            "Complete Quests to add to your balance: https://enter.pollinations.ai/quests",
         );
-        expect(hint).toContain("Account balance: 0 pollen");
+        expect(hint).toContain("Account balance: $0.00");
         expect(hint).not.toContain("Manage key budget:");
     });
 
@@ -48,7 +48,7 @@ describe("budgetHint", () => {
             JSON.stringify({ error: { code: "INSUFFICIENT_BALANCE" } }),
         );
         expect(hint).not.toContain("Account balance:");
-        expect(hint).toContain("Insufficient pollen balance");
+        expect(hint).toContain("Balance too low");
     });
 
     it("keeps reporting the visible wallet for an unbudgeted key", async () => {
@@ -60,14 +60,14 @@ describe("budgetHint", () => {
             }),
         );
         const hint = await budgetHint(402, "Payment required");
-        expect(hint).toContain("Account balance: 2.5 pollen");
+        expect(hint).toContain("Account balance: $2.50");
     });
 
     it("does not assume an unknown 402 is a wallet failure", async () => {
         setKeyOverride("test-only");
         vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
         const hint = await budgetHint(402, "Payment required");
-        expect(hint).toContain("Check your pollen balance and API key budget");
+        expect(hint).toContain("Check your balance and API key budget");
         expect(hint).toContain("https://enter.pollinations.ai/keys");
     });
 

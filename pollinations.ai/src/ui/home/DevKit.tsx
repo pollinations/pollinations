@@ -179,7 +179,7 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users connect through Pollinations Connect and set a
+                With Pollinations Pay, users connect their accounts and set a
                 spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
@@ -263,7 +263,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: (
             <>
                 Connect your endpoint and <Em>set your price</Em>. Each call
-                adds pollen to your balance.
+                adds to your balance.
             </>
         ),
         links: [

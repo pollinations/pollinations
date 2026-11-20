@@ -1,3 +1,4 @@
+import { ModelBrandIcon } from "@pollinations/ui/gen";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 
 export function MediaModelOption({
@@ -7,23 +8,22 @@ export function MediaModelOption({
 }) {
     return (
         <span className="inline-flex min-w-0 w-full items-center gap-2">
+            <ModelBrandIcon
+                model={model}
+                className="size-4 shrink-0 text-theme-text-muted"
+            />
             <span className="truncate">{model.title}</span>
             <span
                 role="img"
                 aria-label={
                     model.paidOnly
-                        ? "Paid pollen required"
-                        : "Works with Paid or Quest pollen"
+                        ? "Uses paid balance only"
+                        : "Works with any balance"
                 }
                 className="inline-flex shrink-0"
             >
                 <WalletKindIcon kind={model.paidOnly ? "paid" : "tier"} />
             </span>
-            {model.publisher && (
-                <span className="ml-auto max-w-[40%] truncate text-xs font-normal text-theme-text-muted">
-                    {model.publisher}
-                </span>
-            )}
         </span>
     );
 }

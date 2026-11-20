@@ -4,18 +4,24 @@ import { MediaModelOption } from "./MediaModelOption";
 
 describe("model dropdown option", () => {
     it.each([
-        [true, "Paid pollen required", "polli-wallet-text-paid"],
-        [false, "Works with Paid or Quest pollen", "polli-wallet-text-tier"],
+        [true, "Uses paid balance only", "polli-wallet-text-paid"],
+        [false, "Works with any balance", "polli-wallet-text-tier"],
     ] as const)(
         "keeps %s access colored beside the name",
         (paidOnly, label, color) => {
             const html = renderToStaticMarkup(
                 <MediaModelOption
-                    model={{ title: "Example model", paidOnly }}
+                    model={{
+                        title: "Example model",
+                        publisher: "OpenAI",
+                        paidOnly,
+                    }}
                 />,
             );
             expect(html).toContain(`aria-label="${label}"`);
             expect(html).toContain(color);
+            expect(html).toContain("mask:");
+            expect(html).not.toContain(">OpenAI<");
         },
     );
 });

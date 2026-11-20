@@ -50,7 +50,7 @@ const TABS = [
 ] as const;
 
 const METRICS = [
-    { value: "pollen", label: "Pollen" },
+    { value: "pollen", label: "USD" },
     { value: "requests", label: "Requests" },
 ] as const;
 
@@ -78,8 +78,8 @@ const EMPTY_STATES: Record<ActivityTab, ReactNode> = {
     ),
     earnings: (
         <>
-            No earnings in this period. Once users spend Pollen through your
-            apps or community models, earnings will appear here.{" "}
+            No earnings in this period. Once users spend through your apps or
+            community models, earnings will appear here.{" "}
             <InlineLink href="/keys?tab=app">Create an App key</InlineLink>.
         </>
     ),
@@ -369,7 +369,11 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({
                                 align="right"
                                 className="px-2 py-1 font-normal"
                             >
-                                {metric === "pollen" ? "Pollen" : "Requests"}
+                                {
+                                    METRICS.find(
+                                        (option) => option.value === metric,
+                                    )?.label
+                                }
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

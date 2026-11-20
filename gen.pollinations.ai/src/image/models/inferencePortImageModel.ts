@@ -13,7 +13,6 @@ import {
 } from "../utils/azureContentSafety.ts";
 import { logGptImageError } from "../utils/gptImageLogger.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
-import { resolveRecraftAspectRatio } from "./openRouterImageModel.ts";
 
 const logCloudflare = debug("pollinations:cloudflare");
 
@@ -54,9 +53,8 @@ export async function callInferencePortImage(
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    upstreamModel = INFERENCEPORT_UPSTREAM_MODEL,
 ): Promise<ImageGenerationResult> {
-    // Lightning Image Turbo only outputs 1024x1024; Recraft supports aspect ratios.
+    // Lightning Image Turbo only outputs 1024x1024; other sizes are ignored.
     const apiKey = getImageEnv("INFERENCEPORT_API_KEY");
     if (!apiKey) {
         throw new Error(
@@ -85,10 +83,7 @@ export async function callInferencePortImage(
             Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-            model: upstreamModel,
-            ...(upstreamModel === "recraft-v4.1-flash-v2"
-                ? { aspect_ratio: resolveRecraftAspectRatio(safeParams) }
-                : {}),
+            model: INFERENCEPORT_UPSTREAM_MODEL,
             prompt: sanitizeString(prompt),
             n: 1,
             ...(imageUrls.length ? { image_urls: imageUrls } : {}),

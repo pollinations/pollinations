@@ -56,6 +56,19 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+          if ! git diff --quiet HEAD^1 HEAD -- operations/infrastructure/gpu/zonos .github/workflows/ci-pull-request-checks.yml; then
+            echo "zonos=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test ZONOS reference decoder
+        if: steps.changes.outputs.zonos == 'true'
+        run: |
+          if [ ! -x /usr/bin/ffmpeg ]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+          timeout 30 sh operations/infrastructure/gpu/zonos/test-decode-reference.sh
+
       - name: Check GPU setup shell syntax
         if: steps.changes.outputs.changed == 'true'
         run: |

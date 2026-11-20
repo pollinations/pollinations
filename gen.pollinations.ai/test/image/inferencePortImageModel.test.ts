@@ -4,6 +4,8 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import { callInferencePortImage } from "../../src/image/models/inferencePortImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
+import { mockImageProviderFetch } from "./mockImageProviderFetch.ts";
+
 const GENERATIONS_ENDPOINT =
     "https://api.inferenceport.ai/v1/images/generations";
 const INPUT_IMAGE_URL = "https://example.com/reference.png";
@@ -37,9 +39,6 @@ function successResponse(): Response {
 }
 
 beforeEach(() => {
-    // The Workers env fills process.env as in production. These tests cover
-    // the provider call alone, so Content Safety stays unconfigured.
-    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         { INFERENCEPORT_API_KEY: "test-ip-key" } as CloudflareBindings,
         ["INFERENCEPORT_API_KEY"],
@@ -48,15 +47,14 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
 });
 
 describe("callInferencePortImage", () => {
     it("generates through the generations endpoint with Bearer auth", async () => {
         let requestBody: Record<string, unknown> | undefined;
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (url, init) => {
+        const fetchSpy = mockImageProviderFetch().mockImplementation(
+            async (url, init) => {
                 expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
                 expect(init?.headers).toMatchObject({
                     Authorization: "Bearer test-ip-key",
@@ -64,7 +62,8 @@ describe("callInferencePortImage", () => {
                 });
                 requestBody = JSON.parse(init?.body as string);
                 return successResponse();
-            });
+            },
+        );
 
         const result = await callInferencePortImage(
             "a red bicycle",
@@ -88,42 +87,9 @@ describe("callInferencePortImage", () => {
         });
     });
 
-    it("routes Recraft V4.1 Flash V2 without reference inputs", async () => {
-        let requestBody: Record<string, unknown> | undefined;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
-            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
-            expect(new Headers(init?.headers).get("authorization")).toBe(
-                "Bearer test-ip-key",
-            );
-            requestBody = JSON.parse(String(init?.body));
-            return successResponse();
-        });
-        const result = await callInferencePortImage(
-            "a wide landscape",
-            {
-                ...baseParams,
-                model: "recraft/recraft-v4.1-flash-v2",
-                width: 1536,
-                height: 1024,
-            },
-            USER_INFO,
-            "recraft-v4.1-flash-v2",
-        );
-        expect(requestBody).toEqual({
-            model: "recraft-v4.1-flash-v2",
-            prompt: "a wide landscape",
-            n: 1,
-            aspect_ratio: "4:3",
-        });
-        expect(result.trackingData).toEqual({
-            actualModel: "recraft/recraft-v4.1-flash-v2",
-            usage: { completionImageTokens: 1, totalTokenCount: 1 },
-        });
-    });
-
     it("conditions generation on a safety-checked reference image", async () => {
         let editInit: RequestInit | undefined;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+        mockImageProviderFetch().mockImplementation(async (url, init) => {
             if (url.toString() === INPUT_IMAGE_URL) {
                 return new Response(INPUT_IMAGE, {
                     headers: { "Content-Type": "image/png" },
@@ -160,7 +126,7 @@ describe("callInferencePortImage", () => {
     it("sends both reference images", async () => {
         const urls = ["https://example.com/a.png", "https://example.com/b.png"];
         let editInit: RequestInit | undefined;
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+        mockImageProviderFetch().mockImplementation(async (url, init) => {
             if (urls.includes(url.toString())) {
                 return new Response(INPUT_IMAGE, {
                     headers: { "Content-Type": "image/png" },
@@ -190,9 +156,7 @@ describe("callInferencePortImage", () => {
     });
 
     it("fails clearly when upstream returns no image", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({ data: [] }),
-        );
+        mockImageProviderFetch().mockResolvedValue(Response.json({ data: [] }));
 
         await expect(
             callInferencePortImage("a lighthouse", baseParams, USER_INFO),
@@ -202,7 +166,7 @@ describe("callInferencePortImage", () => {
     it.each([undefined, 0, -1, 1.5])(
         "rejects invalid reported image usage %s",
         async (imageCount) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            mockImageProviderFetch().mockResolvedValue(
                 Response.json({
                     data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                     usage: { image_count: imageCount },
@@ -215,7 +179,7 @@ describe("callInferencePortImage", () => {
     );
 
     it("bills the image count reported by the provider", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json({
                 data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                 usage: { image_count: 2, payg_credits_charged: 0.04 },
@@ -233,7 +197,7 @@ describe("callInferencePortImage", () => {
     });
 
     it("preserves upstream 4xx errors", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 { error: { message: "Invalid model parameter" } },
                 { status: 400 },
@@ -249,7 +213,7 @@ describe("callInferencePortImage", () => {
     });
 
     it("preserves upstream 5xx errors", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        mockImageProviderFetch().mockResolvedValue(
             Response.json(
                 { error: { message: "Internal server error" } },
                 { status: 500 },
@@ -265,7 +229,7 @@ describe("callInferencePortImage", () => {
     });
 
     it("downloads and uses image from URL when b64_json is absent", async () => {
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+        mockImageProviderFetch().mockImplementation(async (url) => {
             if (url.toString() === GENERATIONS_ENDPOINT) {
                 return Response.json({
                     data: [{ url: INPUT_IMAGE_URL }],

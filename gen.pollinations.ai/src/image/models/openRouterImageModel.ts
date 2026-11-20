@@ -24,6 +24,8 @@ import { writeExifMetadata } from "../writeExifMetadata.ts";
 import { checkMaiInputs } from "./azureMaiImageModel.ts";
 import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
+import { resolveSeedreamGatewayRatio } from "./seedreamReplicateModel.ts";
+
 const logOps = debug("pollinations:openrouter-image:ops");
 const logError = debug("pollinations:openrouter-image:error");
 
@@ -57,25 +59,6 @@ const FLUX3_ASPECT_RATIOS = [
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const QWEN_IMAGE_3_PRO_MODEL = "qwen/qwen-image-3-pro";
 const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
-const SEEDREAM_FLASH_ASPECT_RATIOS = [
-    "1:1",
-    "1:2",
-    "2:1",
-    "2:3",
-    "3:2",
-    "3:4",
-    "4:3",
-    "4:5",
-    "5:4",
-    "9:16",
-    "16:9",
-    "9:19.5",
-    "19.5:9",
-    "9:20",
-    "20:9",
-    "9:21",
-    "21:9",
-] as const;
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
     "1:1",
@@ -449,6 +432,7 @@ async function callOpenRouterSeedreamImageAPI(
     upstreamModel: string,
     actualModel: string,
 ): Promise<ImageGenerationResult> {
+    const is55 = upstreamModel === "bytedance-seed/seedream-5-5";
     const apiKey = requireOpenRouterImageApiKey();
     const downloadedImages = await Promise.all(
         safeParams.image.map((image) => downloadUserImage(image)),
@@ -465,15 +449,7 @@ async function callOpenRouterSeedreamImageAPI(
         n: 1,
         seed: safeParams.seed,
         resolution: safeParams.resolution === "2k" ? "2K" : "1K",
-        aspect_ratio:
-            safeParams.aspectRatio === "adaptive"
-                ? "auto"
-                : (safeParams.aspectRatio ??
-                  closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      SEEDREAM_FLASH_ASPECT_RATIOS,
-                  )),
+        aspect_ratio: resolveSeedreamGatewayRatio(safeParams, is55),
         provider: {
             only: ["seed"],
             allow_fallbacks: false,
@@ -512,7 +488,13 @@ async function callOpenRouterSeedreamImageAPI(
         trackingData: {
             actualModel,
             providerBilling: { units: providerCost, unitCost: 1.055 },
-            usage: { completionImageTokens: 1 },
+            usage: {
+                ...(is55 &&
+                    inputReferences.length > 0 && {
+                        promptImageTokens: inputReferences.length,
+                    }),
+                completionImageTokens: 1,
+            },
         },
     };
 }
@@ -537,7 +519,7 @@ export function callOpenRouterSeedream55API(
         prompt,
         safeParams,
         "bytedance-seed/seedream-5-5",
-        "bytedance-seed/seedream-5-5",
+        "bytedance-seed/seedream-5-5:openrouter",
     );
 }
 
@@ -646,6 +628,94 @@ export function callOpenRouterQwenImage21ProAPI(
         safeParams,
         QWEN_IMAGE_2_1_PRO_ROUTE,
     );
+}
+
+export async function callOpenRouterMiniMaxH3ImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const references = await Promise.all(safeParams.image.map(toDataUri));
+    const requestBody: Record<string, unknown> = {
+        model: safeParams.model.split(":")[0],
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        resolution: (safeParams.resolution ?? "1k").toUpperCase(),
+        provider: { only: ["minimax"], allow_fallbacks: false },
+    };
+    if (safeParams.aspectRatio !== "adaptive") {
+        requestBody.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(safeParams.width, safeParams.height, [
+                "1:1",
+                "1:2",
+                "1:3",
+                "2:1",
+                "2:3",
+                "3:1",
+                "3:2",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16",
+                "21:9",
+            ]);
+    }
+    if (references.length > 0) {
+        requestBody.input_references = references.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        }));
+    }
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter MiniMax H3 Image request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) throw buildOpenRouterNoImageError(data);
+    const providerCost = data.usage?.cost;
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+    const promptTotal = data.usage?.prompt_tokens;
+    const promptImage = data.usage?.prompt_tokens_details?.image_tokens;
+    const completionImage = data.usage?.completion_tokens_details?.image_tokens;
+    const completionTotal = data.usage?.completion_tokens;
+    const usage: Usage = {
+        // On edits, some receipts combine text and reference tokens without a split.
+        ...(isTokenCount(promptTotal) &&
+        (!references.length || isTokenCount(promptImage))
+            ? {
+                  promptTextTokens: Math.max(
+                      0,
+                      promptTotal -
+                          (isTokenCount(promptImage) ? promptImage : 0),
+                  ),
+              }
+            : {}),
+        ...(isTokenCount(promptImage)
+            ? { promptImageTokens: promptImage }
+            : {}),
+        ...(isTokenCount(completionImage)
+            ? { completionImageTokens: completionImage }
+            : isTokenCount(completionTotal)
+              ? { completionImageTokens: completionTotal }
+              : {}),
+    };
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: safeParams.model,
+            usage,
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+        },
+    };
 }
 
 export async function callOpenRouterGrokImagineProAPI(
@@ -1018,7 +1088,7 @@ export async function callOpenRouterGeminiImageAPI(
 
 // A requested ratio goes through as-is (Recraft rejects unsupported ones and
 // lists the accepted values); width/height snap to a ratio Recraft accepts.
-export function resolveRecraftAspectRatio(safeParams: ImageParams): string {
+function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     const requested = safeParams.aspectRatio;
     if (requested === "adaptive") return "auto";
     return (

@@ -74,10 +74,10 @@ function PlayHero() {
                 external
                 onClick={() => login()}
             >
-                Connect your account
+                Connect your Pollinations account
             </InlineLink>
         ) : (
-            "Connect your account"
+            "Connect your Pollinations account"
         );
 
     return (
@@ -89,7 +89,7 @@ function PlayHero() {
                 subtitle={
                     <>
                         Create images, video and audio. {connect} to use your
-                        own pollen.
+                        own balance.
                     </>
                 }
                 variant="page"

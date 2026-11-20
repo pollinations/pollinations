@@ -93,6 +93,13 @@
             }
         }
     },
+    "bytedance/seedance-2.5-flash": {
+        "reason": "The adapter accepts six aspect ratios and optional sound, enabled by default. Gen rejects keyframes combined with reference media.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceFlashVercelModel.ts, gen.pollinations.ai/src/image/models/openRouterVideoModel.ts, gen.pollinations.ai/src/image/params.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true
+    },
     "bytedance/seedream-4.0": {
         "reason": "The Replicate adapter supports custom dimensions up to 4096 pixels.",
         "source": "gen.pollinations.ai/src/image/models/seedreamReplicateModel.ts",

@@ -7,6 +7,17 @@ describe("video controls", () => {
             "1:1",
         );
     });
+    it("exposes Seedance 2.5 Flash ratios and optional sound", () => {
+        expect(
+            videoOptions("bytedance/seedance-2.5-flash", ["audio_output"]),
+        ).toEqual({
+            ratios: ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+            defaultRatio: "",
+            sound: "optional",
+            defaultSound: true,
+            exclusiveReferences: true,
+        });
+    });
     it("requires catalog sound support and only applies defaults to the exact model", () => {
         expect(videoOptions("google/veo-3.1-fast", []).sound).toBe("off");
         expect(videoOptions("google/veo-future", ["audio_output"]).sound).toBe(

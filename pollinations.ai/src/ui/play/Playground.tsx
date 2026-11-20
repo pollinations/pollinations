@@ -801,7 +801,8 @@ function ModelPicker({
                                         onClick={() => {
                                             onSelectModel(
                                                 model,
-                                                activeFilter !== "Fast" &&
+                                                activeFilter !== "All" &&
+                                                    activeFilter !== "Fast" &&
                                                     (imageModels ||
                                                         category === "video")
                                                     ? activeFilter
@@ -1053,7 +1054,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     src={result.url}
                     controls
                     controlsList="nodownload noplaybackrate"
-                    autoPlay
                     className="play-audio min-w-0 flex-1"
                 />
                 <ResultDownloadButton result={result} />
@@ -1791,6 +1791,8 @@ export function Playground({
         setParams((previous) => ({
             ...previous,
             model: modelId,
+            width: undefined,
+            height: undefined,
             size: undefined,
             duration: undefined,
             sound: undefined,

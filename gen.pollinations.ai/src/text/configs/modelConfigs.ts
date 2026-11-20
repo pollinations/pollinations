@@ -1385,6 +1385,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         "google/gemini-4-carbon",
         "google-ai-studio",
     ),
+    "google/gemini-4-hydrogen": createVertexGeminiConfig(
+        "gemini-4-hydrogen",
+        "global",
+    ),
+    "google/gemini-4-hydrogen:openrouter:vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-4-hydrogen",
+            "google-vertex/global",
+        ),
     "google/gemini-4-neon": createVertexGeminiConfig("gemini-4-neon", "global"),
     "google/gemini-4-neon:openrouter:vertex-global":
         createPinnedOpenRouterGeminiConfig(

@@ -4,6 +4,22 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const messages = [{ role: "user" as const, content: "Hello" }];
 
+describe("Gemini 4 Hydrogen Vertex route", () => {
+    it("uses the global Vertex model ID and keeps Gemini tool transforms", async () => {
+        const model = findModelByName("google/gemini-4-hydrogen");
+        expect(model).toBeDefined();
+        const resolved = resolveModelConfig(messages, {
+            model: "google/gemini-4-hydrogen",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": "gemini-4-hydrogen",
+        });
+        expect(model?.transform).toBeTypeOf("function");
+    });
+});
+
 describe("Gemini 4 Neon Vertex route", () => {
     it("uses the global Vertex model ID and keeps Gemini tool transforms", async () => {
         const model = findModelByName("google/gemini-4-neon");

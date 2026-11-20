@@ -969,6 +969,26 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-hydrogen",
+        config: portkeyConfig["google/gemini-4-hydrogen"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen:openrouter:vertex-global",
+        config: portkeyConfig[
+            "google/gemini-4-hydrogen:openrouter:vertex-global"
+        ],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-neon",
         config: portkeyConfig["google/gemini-4-neon"],
         transform: pipe(

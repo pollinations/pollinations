@@ -79,6 +79,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
         "google/gemini-4-neon:openrouter:vertex-global",
         "google/gemini-4-neon",
         "google-vertex/global",
@@ -1869,6 +1874,39 @@ describe("static provider fallbacks", () => {
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.019 * 1.055, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
+    });
+
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
     });
 
     it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {

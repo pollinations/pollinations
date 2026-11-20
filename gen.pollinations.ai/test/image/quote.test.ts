@@ -149,6 +149,20 @@ describe("quoteMediaRequest", () => {
         expect(quote("alibaba/wan-3.0")).toBeGreaterThan(0);
     });
 
+    it("defers the avatar price until the provider measures the supplied speech", () => {
+        for (const refs of [
+            { image: [referenceImage] },
+            { reference_videos: [referenceVideo] },
+        ]) {
+            expect(
+                quote("heygen/heygen-avatar-6-turbo", {
+                    ...refs,
+                    reference_audios: ["https://example.com/speech.mp3"],
+                }),
+            ).toBeUndefined();
+        }
+    });
+
     it("never quotes a listed model at zero", () => {
         for (const model of getVisibleImageModels()) {
             const options =

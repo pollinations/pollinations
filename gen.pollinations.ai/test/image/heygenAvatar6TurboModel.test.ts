@@ -23,6 +23,7 @@ describe("HeyGen Avatar 6 Turbo", () => {
         });
         expect(request.openrouter).toMatchObject({
             model: "heygen/heygen-avatar-6-turbo",
+            resolution: "2K",
             provider: { only: ["heygen"], allow_fallbacks: false },
         });
         expect(request.openrouter.input_references).toHaveLength(2);

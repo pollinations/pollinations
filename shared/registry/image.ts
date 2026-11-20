@@ -2533,10 +2533,6 @@ const IMAGE_BASE_SERVICES = {
         ],
         maxReferenceImages: 1,
         maxReferenceVideos: 1,
-        minDuration: 1,
-        maxDuration: 120,
-        defaultDuration: 5,
-        billedSecondsFollowReference: true,
     },
     "heygen/heygen-video-1": {
         aliases: [],

@@ -7,9 +7,10 @@ import {
 import { resolveModelName } from "@shared/registry/registry.ts";
 import { z } from "zod";
 
-const REALTIME_MODEL_IDS = Object.entries(REALTIME_SERVICES).flatMap(
-    ([name, definition]) => [name, ...(definition.aliases ?? [])],
-);
+const REALTIME_MODEL_IDS = REALTIME_MODEL_NAMES.flatMap((name) => [
+    name,
+    ...(REALTIME_SERVICES[name].aliases ?? []),
+]);
 
 export const RealtimeRequestQueryParamsSchema = z
     .object({

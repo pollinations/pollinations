@@ -1288,6 +1288,16 @@ export interface ModelInfo {
     duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
+    /** Declared clip-count limit. The endpoint input shape still applies when omitted. */
+    max_reference_audios?: number;
+    audio_input_constraints?: {
+        min_seconds?: number;
+        max_seconds?: number;
+        max_total_seconds?: number;
+        requires_reference_visual?: boolean;
+    };
+    /** Omitted means unspecified. An empty array means neither input is supported. */
+    transcription_options?: ("language" | "prompt")[];
     capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;

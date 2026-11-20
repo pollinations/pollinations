@@ -431,6 +431,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         voices: entry.info.voices,
         max_reference_images: entry.info.max_reference_images,
         max_reference_videos: entry.info.max_reference_videos,
+        max_reference_audios: entry.info.max_reference_audios,
+        audio_input_constraints: entry.info.audio_input_constraints,
+        transcription_options: entry.info.transcription_options,
         ...(entry.info.health && { health: entry.info.health }),
     };
 }

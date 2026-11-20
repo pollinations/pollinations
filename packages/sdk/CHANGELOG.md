@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.36] - 2026-11-20
+
+### Added
+
+- Model catalog types include optional `max_reference_audios`, `audio_input_constraints`, and top-level `transcription_options`.
+
 ## [5.1.0-alpha.33] - 2026-11-18
 
 ### Changed

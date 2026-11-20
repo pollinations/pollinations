@@ -28,7 +28,7 @@ describe("catalog filter dropdowns", () => {
             "status",
             "all",
             "status:all source:community llama",
-            ["all", "available", "healthy", "reliable"],
+            ["all", "healthy", "reliable"],
         ],
     ])(
         "changes %s without editing its other tokens",

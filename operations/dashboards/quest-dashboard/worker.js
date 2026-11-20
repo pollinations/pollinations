@@ -141,7 +141,7 @@ const HTML = `<!doctype html>
       background:"var(--polli-color-bg-subtle)", fontWeight:700, fontSize:size*0.45 }) }, initial);
   }
   const num = (n) => (n==null?0:n).toLocaleString();
-  const pollen = (n) => (Math.round((n||0)*100)/100) + " 🌸";
+  const dollars = (n) => "$" + (Math.round((n||0)*100)/100);
 
   function view(data) {
     const feed = data.feed||[], agg = data.agg||[], top = data.top||[], tot = data.totals||{};
@@ -152,7 +152,7 @@ const HTML = `<!doctype html>
       tile("Quests completed", num(tot.total_earned)),
       tile("Rewards claimed", num(tot.total_claimed)),
       tile("Claim rate", claimRate + "%"),
-      tile("Pollen awarded", pollen(tot.total_pollen)),
+      tile("Total earned", dollars(tot.total_pollen)),
       tile("Participants", num(tot.users)));
 
     const feedRows = feed.length ? feed.map((r) => {
@@ -169,7 +169,7 @@ const HTML = `<!doctype html>
             h("b", { style:{ color:"var(--polli-color-text-strong)" } }, r.title)),
           h("div", { style:{ marginTop:1, display:"flex", gap:8, alignItems:"center" } },
             h(Text, { as:"span", size:"xs", tone:"muted" }, rel(r.earned_ms)),
-            h(Text, { as:"span", size:"xs", tone:"base" }, "+" + r.pollen_amount + " 🌸"),
+            h(Text, { as:"span", size:"xs", tone:"base" }, "+$" + r.pollen_amount),
             h(Chip, { intent: claimed ? "news" : "alpha", size:"sm" }, claimed ? "claimed" : "earned"))));
     }) : [h(Text, { key:"e", tone:"muted", className:"polli:p-4" }, "No completions yet…")];
     const feedCard = h(Surface, { variant:"card", className:"polli:p-4" },
@@ -182,13 +182,13 @@ const HTML = `<!doctype html>
       return h("div", { key:a.quest_id, style:{ marginBottom:13 } },
         h("div", { style:{ display:"flex", justifyContent:"space-between", marginBottom:5 } },
           h(Text, { as:"span", size:"sm", tone:"base" }, a.title || a.quest_id),
-          h(Text, { as:"span", size:"sm", tone:"soft" }, pollen(claimedPollen))),
+          h(Text, { as:"span", size:"sm", tone:"soft" }, dollars(claimedPollen))),
         h("div", { style:{ height:9, background:"var(--polli-color-bg-subtle)", borderRadius:6, overflow:"hidden" } },
           h("div", { style:{ width:pct+"%", height:"100%", borderRadius:6,
               background:"var(--polli-color-success-bright, #36d399)" } })));
     }) : [h(Text, { key:"e", tone:"muted" }, "—")];
     const questCard = h(Surface, { variant:"card", className:"polli:p-4", style:{ marginBottom:18 } },
-      h(Section, { title:"Claimed pollen by quest" }, questBars));
+      h(Section, { title:"Claimed by quest" }, questBars));
 
     const lbRows = top.length ? top.map((r, i) =>
       h("div", { key:i, style:{ display:"flex", alignItems:"center", gap:10, padding:"6px 4px",
@@ -197,7 +197,7 @@ const HTML = `<!doctype html>
         avatar(r, 28),
         h(Text, { as:"span", size:"sm", tone:"base", style:{ flex:1, minWidth:0, overflow:"hidden",
           textOverflow:"ellipsis", whiteSpace:"nowrap" } }, who(r)),
-        h(Text, { as:"span", size:"xs", tone:"soft" }, (r.quests||0) + " quests · " + pollen(r.pollen)))
+        h(Text, { as:"span", size:"xs", tone:"soft" }, (r.quests||0) + " quests · " + dollars(r.pollen)))
     ) : [h(Text, { key:"e", tone:"muted" }, "—")];
     const lbCard = h(Surface, { variant:"card", className:"polli:p-4" },
       h(Section, { title:"Top earners" }, lbRows));
@@ -205,7 +205,7 @@ const HTML = `<!doctype html>
     const stale = (Date.now() - lastOk) > 45000;
     const header = h("div", null,
       h("div", { style:{ display:"flex", alignItems:"baseline", gap:12, marginBottom:2 } },
-        h(Heading, { as:"h1", size:"title" }, "🌸 Quests — Live"),
+        h(Heading, { as:"h1", size:"title" }, "🌱 Quests — Live"),
         h(Chip, { intent:"news", size:"sm" }, "production")),
       h(Text, { tone:"muted", size:"sm", style:{ display:"block", marginBottom:18 } },
         h("span", { className:"dot" + (stale ? " stale" : "") }),

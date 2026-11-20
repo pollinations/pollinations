@@ -422,7 +422,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily outcome of every regular request from generation_usage_hourly; the three bars add up to all calls. Served: successful calls. Rejected for lack of Pollen: requests with no meter (almost all HTTP 402, a few 403). Failed after the balance check: funded requests that did not succeed; the hourly table has no status column, so 4xx and 5xx are counted together. Users with an unfunded request (right axis): approximate unique users per day with a request that had no meter. Per-model 5xx health is in Model Monitor.",
+      "description": "Daily outcome of every regular request from generation_usage_hourly; the three bars add up to all calls. Served: successful calls. Rejected for insufficient balance: requests with no meter (almost all HTTP 402, a few 403). Failed after the balance check: funded requests that did not succeed; the hourly table has no status column, so 4xx and 5xx are counted together. Users with an unfunded request (right axis): approximate unique users per day with a request that had no meter. Per-model 5xx health is in Model Monitor.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -469,7 +469,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Rejected for lack of Pollen"
+                "value": "Rejected for insufficient balance"
               },
               {
                 "id": "color",
@@ -687,7 +687,7 @@
       },
       "id": 13,
       "panels": [],
-      "title": "Pollen Consumption Streams",
+      "title": "Usage Spend Streams",
       "type": "row"
     },
     {
@@ -695,7 +695,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly. Values are successful billed consumption, not cash collected or Pollinations revenue: BYOP markup and 75% of BYOM spend are credited to app and model owners. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
+      "description": "Daily spend from the paid balance across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly. Values are successful billed consumption, not cash collected or Pollinations revenue: BYOP markup and 75% of BYOM spend are credited to app and model owners. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -713,7 +713,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -851,7 +851,7 @@
           "refId": "A"
         }
       ],
-      "title": "Paid Pollen consumption by product path",
+      "title": "Paid balance spend by product path",
       "transformations": [
         {
           "id": "partitionByValues",
@@ -884,7 +884,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily Quest Pollen consumed across the same four mutually exclusive product paths. Quest Pollen is subsidized usage and is not revenue. Reuses the Paid panel query without another Tinybird request.",
+      "description": "Daily spend from the Quest balance across the same four mutually exclusive product paths. Spend from the Quest balance is subsidized and is not revenue. Reuses the Paid panel query without another Tinybird request.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -902,7 +902,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -1039,7 +1039,7 @@
           "withTransforms": false
         }
       ],
-      "title": "Quest Pollen consumption by product path",
+      "title": "Quest balance spend by product path",
       "transformations": [
         {
           "id": "partitionByValues",
@@ -1072,7 +1072,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily successful requests across the four mutually exclusive product paths. Compare this with Pollen consumption to separate traffic growth from changes in usage value. Reuses the Paid panel query.",
+      "description": "Daily successful requests across the four mutually exclusive product paths. Compare this with usage spend to separate traffic growth from changes in usage value. Reuses the Paid panel query.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1296,7 +1296,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.*Pollen/"
+              "options": "/^(Paid|Quest)$/"
             },
             "properties": [
               {
@@ -1305,7 +1305,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               }
             ]
           }
@@ -1332,7 +1332,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Paid Pollen"
+            "displayName": "Paid"
           }
         ]
       },
@@ -1394,9 +1394,9 @@
               "requests (sum)": 1
             },
             "renameByName": {
-              "paid_pollen (sum)": "Paid Pollen",
+              "paid_pollen (sum)": "Paid",
               "product_path": "Product path",
-              "quest_pollen (sum)": "Quest Pollen",
+              "quest_pollen (sum)": "Quest",
               "requests (sum)": "Requests"
             }
           }
@@ -1488,7 +1488,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Models ranked over the selected range. Paid and Quest are gross Pollen consumption; apps use clean api_key_client_id attribution.",
+      "description": "Models ranked over the selected range. Paid and Quest are gross usage spend; apps use clean api_key_client_id attribution.",
       "fieldConfig": {
         "defaults": {
           "custom": {

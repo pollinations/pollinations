@@ -9,7 +9,7 @@ game (`games/nomic/`).
 
 1. Read the proposal text from the request (chat or responses shape).
 2. Call Jev (`POST /alpha/decisions`, `choice` yes/no) — one real
-   decision per run, with probabilities. The caller pays Jev's Pollen.
+   decision per run, with probabilities. The caller covers Jev’s usage from their balance.
 3. Call a cheap text model to write a 2-3 sentence argument defending
    Jev's verdict. The agent never overrides Jev.
 4. Return `[nomic-player: jev voted <choice> {...}]` + argument.

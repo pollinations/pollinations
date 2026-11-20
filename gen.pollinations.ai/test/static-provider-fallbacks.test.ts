@@ -79,6 +79,16 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-neon:openrouter:vertex-global",
+        "google/gemini-4-neon",
+        "google-vertex/global",
+    ],
+    [
         "google/gemini-4-argon:openrouter:ai-studio",
         "google/gemini-4-argon",
         "google-ai-studio",
@@ -1866,6 +1876,72 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
+    });
+
+    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-neon";
+        const route = "google/gemini-4-neon:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (3 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
+            completionTextTokens: (15 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.018 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.018 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.018, 12);
+    });
+
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =
@@ -2118,6 +2194,24 @@ describe("static provider fallbacks", () => {
         ]) {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
+    });
+
+    it("rejects audio output on text-only models but allows audio models", () => {
+        const text = TEXT_SERVICES["openai/gpt-5.4-nano"];
+        expect(
+            textCapabilityError(text, { modalities: ["text"] }),
+        ).toBeUndefined();
+        expect(
+            textCapabilityError(text, { modalities: ["text", "audio"] }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(text, { audio: { voice: "alloy" } }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-audio-mini"], {
+                modalities: ["text", "audio"],
+            }),
+        ).toBeUndefined();
     });
 
     it.each([

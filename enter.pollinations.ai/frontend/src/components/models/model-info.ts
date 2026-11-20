@@ -15,6 +15,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Google: "google",
     Hexgrad: "hexgrad",
     HeyGen: "heygen",
+    Hotshot: "hotshot",
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
@@ -24,6 +25,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Kandinsky Lab": "kandinsky",
     Krea: "krea",
     Kuaishou: "kling",
+    Lightricks: "lightricks",
     "Liquid AI": "liquid-ai",
     "Mirelo AI": "mirelo",
     Lykon: "lykon",
@@ -41,6 +43,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Poolside: "poolside",
     Pruna: "pruna",
     Qwen: "qwen",
+    QuiverAI: "quiverai",
     Recraft: "recraft",
     Respan: "respan",
     Sesame: "sesame",
@@ -179,7 +182,7 @@ export const isNewModel = (model: ModelPrice): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only, not Quest Pollen.
+ * Check if a model requires paid balance only, not Quest balance.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

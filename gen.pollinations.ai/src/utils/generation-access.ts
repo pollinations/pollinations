@@ -44,11 +44,12 @@ export async function checkBalance(
 
     const isPaidOnly = model.definition.paidOnly;
     const estimatedCost = withByopMarkup(
-        getEstimatedPrice(
-            await getModelStats(env.KV, log),
-            model.resolved,
-            model.definition,
-        ),
+        balance.requestPrice?.(model) ??
+            getEstimatedPrice(
+                await getModelStats(env.KV, log),
+                model.resolved,
+                model.definition,
+            ),
         Boolean(auth.apiKey?.byopMarkupApplies),
     );
     const userId = auth.user.id;

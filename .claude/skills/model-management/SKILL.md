@@ -128,7 +128,7 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
-Check the [website’s Playground overrides](../../../pollinations.ai/src/data/playground-model-overrides.json) on every model change. Play reads the public catalog first. Put verified model-specific UI rules that the catalog cannot express in this JSON under the exact canonical ID, with a short reason and source. Update affected entries on changes or renames and delete obsolete entries on removal. Models that work from catalog data alone need no entry. Review recurring rules monthly for possible registry fields. Discuss any public API addition before promoting it, then remove the duplicate rule.
+Check the [website’s Playground overrides](../../../pollinations.ai/src/data/playground-model-overrides.json) on every model change. Play reads the public catalog first. Put verified model-specific UI rules that the catalog cannot express in this JSON under the exact canonical ID, with a short reason and source. Add missing entries in the same model PR, update affected entries on changes or renames, and delete obsolete entries on removal. Models that work from catalog data alone need no entry. Review recurring rules monthly for possible registry fields. Discuss any public API addition before promoting it, then remove the duplicate rule.
 
 - Canonical public IDs use `<publisher-slug>/<official-model-slug>`. Keep both
   components lowercase, preserve the publisher's model family and version,
@@ -240,7 +240,7 @@ Check the [website’s Playground overrides](../../../pollinations.ai/src/data/p
 - Run the relevant rows in [change-and-test-matrix.md](references/change-and-test-matrix.md).
 - For new models and provider/model-ID changes, run the full declared-modality matrix and [billing-verification.md](references/billing-verification.md).
 - Test aliases, permissions, errors, caching, capacity, and `/models` metadata.
-- Check the affected model on the Pollinations website. For models offered in Play, verify discovery, inputs and defaults, then submit through Play and inspect the result using the same sample as the API check. For renames or removals, check saved links, picker fallback and stale overrides. For pricing changes, check the displayed rates and distinguish them from historical request costs. For models outside Play, verify the relevant website listing. Record the website checks in the PR.
+- Check the affected model on the Pollinations website. For models offered in Play, verify the model appears in each applicable picker filter (for example, Image → SVG for native SVG output), then check inputs and defaults. Submit through Play and inspect the result using the same sample as the API check. For renames or removals, check saved links, picker fallback and stale overrides. For pricing changes, check the displayed rates and distinguish them from historical request costs. For models outside Play, verify the relevant website listing. Record the website checks in the PR.
 - When a fallback is configured, probe it directly and run the same applicable E2E matrix through a forced fallback, including capabilities, parameters, permissions, cache behavior, billing, provider attribution, errors, and expected burst. When no fallback is approved, record the researched candidate and rejection reason.
 - Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
 - Record exact evidence and uncertainty in the PR.

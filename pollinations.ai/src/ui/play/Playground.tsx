@@ -48,11 +48,13 @@ import {
     modalityBgVar,
     modalityTextColor,
 } from "@pollinations/ui/gen";
-import { WalletKindIcon } from "@pollinations/ui/wallet";
+import {
+    WalletKindIcon,
+    type WalletKindIconProps,
+} from "@pollinations/ui/wallet";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
-    type ReactNode,
     type RefObject,
     useCallback,
     useEffect,
@@ -66,6 +68,7 @@ import {
 import {
     calculatePerPollen,
     hasFreePricing,
+    typicalRequestCost,
 } from "../../../../shared/model-price-display";
 import { isNewModel } from "../../../../shared/model-recency";
 import { API_BASE_URL, ENTER_URL } from "../../config";
@@ -553,12 +556,14 @@ function estimatePerDollar(model: PlaygroundModel, medianCost?: number | null) {
 function ModelPicker({
     models,
     stats,
+    costByModel,
     selectedModel,
     isLoading,
     onSelectModel,
 }: {
     models: PlaygroundModel[];
     stats: ModelRunStat[];
+    costByModel: ReadonlyMap<string, number | null | undefined>;
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (model: PlaygroundModel, filter?: string) => void;
@@ -567,10 +572,6 @@ function ModelPicker({
     const modelMenu = useRef<HTMLDivElement>(null);
     const category = models[0]?.category;
     const imageModels = category === "image";
-    const costByModel = useMemo(
-        () => new Map(stats.map((stat) => [stat.model, stat.avg_cost_usd])),
-        [stats],
-    );
     const fastModels = useMemo(() => {
         const ids = new Set(models.map((model) => model.id));
         const measured = stats.filter((stat) => ids.has(stat.model));
@@ -831,14 +832,14 @@ function ModelPicker({
 function RunStatBadge({
     label,
     value,
-    afterValue,
+    walletKind,
     detail,
     href,
     linkLabel,
 }: {
     label: string;
     value?: string;
-    afterValue?: ReactNode;
+    walletKind?: WalletKindIconProps["kind"];
     detail: string;
     href: string;
     linkLabel: string;
@@ -871,8 +872,22 @@ function RunStatBadge({
             >
                 <Chip size="md" data-theme="neutral" className="tabular-nums">
                     <span className="text-theme-text-muted">{label}</span>{" "}
-                    {value ?? "—"}
-                    {afterValue}
+                    {walletKind ? (
+                        <>
+                            <span
+                                className={
+                                    walletKind === "paid"
+                                        ? "polli-wallet-text-paid"
+                                        : "polli-wallet-text-tier"
+                                }
+                            >
+                                {value ?? "—"}
+                            </span>
+                            <WalletKindIcon kind={walletKind} />
+                        </>
+                    ) : (
+                        (value ?? "—")
+                    )}
                 </Chip>
             </button>
             <div
@@ -1296,22 +1311,31 @@ export function Playground({
             ? audioTaskForModel(currentModel)
             : undefined;
 
+    const costByModel = useMemo(
+        () => new Map(stats.map((stat) => [stat.model, stat.avg_cost_usd])),
+        [stats],
+    );
     const pickerModels = useMemo(() => {
         const tasks = TASKS.filter((item) => item.workspace === task.workspace);
+        const price = (model: PlaygroundModel) =>
+            typicalRequestCost({
+                realAvgCost: costByModel.get(model.id),
+                free: model.free,
+            }) ?? -1;
         return visibleModels
             .filter((model) => tasks.some((item) => supportsTask(model, item)))
             .sort((a, b) => {
                 const aNew = isNewModel(a.addedDate);
                 const bNew = isNewModel(b.addedDate);
                 if (aNew !== bNew) return aNew ? -1 : 1;
-                if (aNew && a.addedDate !== b.addedDate)
-                    return (b.addedDate ?? 0) - (a.addedDate ?? 0);
+                const priceOrder = price(b) - price(a);
+                if (priceOrder) return priceOrder;
                 return a.title.localeCompare(b.title, "en", {
                     numeric: true,
                     sensitivity: "base",
                 });
             });
-    }, [task.workspace, visibleModels]);
+    }, [task.workspace, visibleModels, costByModel]);
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that
     // model's tab; older links use an alias, such as ?model=flux.
@@ -2218,6 +2242,7 @@ export function Playground({
                             key={activeCategory}
                             models={pickerModels}
                             stats={stats}
+                            costByModel={costByModel}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
@@ -2233,14 +2258,10 @@ export function Playground({
                                     <RunStatBadge
                                         label="Typical cost"
                                         value={cost}
-                                        afterValue={
-                                            <WalletKindIcon
-                                                kind={
-                                                    currentModel.paidOnly
-                                                        ? "paid"
-                                                        : "tier"
-                                                }
-                                            />
+                                        walletKind={
+                                            currentModel.paidOnly
+                                                ? "paid"
+                                                : "tier"
                                         }
                                         detail={
                                             cost === "Free"

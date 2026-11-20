@@ -43,13 +43,16 @@ function formatEstimate(num: number): string {
 // tools it calls — "∞" would be a lie. A genuinely free model never clears the
 // stats pipe's priced-request floor, so it has no measured cost and still
 // reads "∞".
-export function calculatePerPollen(model: {
-    realAvgCost?: number | null;
-    free?: boolean;
-}): string {
-    if (model.realAvgCost != null && model.realAvgCost > 0) {
-        return formatEstimate(1 / model.realAvgCost);
-    }
-    if (model.free) return "∞";
-    return "—";
+type ModelCost = { realAvgCost?: number | null; free?: boolean };
+
+export function typicalRequestCost(model: ModelCost): number | undefined {
+    if (model.realAvgCost != null && model.realAvgCost > 0)
+        return model.realAvgCost;
+    return model.free ? 0 : undefined;
+}
+
+export function calculatePerPollen(model: ModelCost): string {
+    const cost = typicalRequestCost(model);
+    if (cost === undefined) return "—";
+    return cost === 0 ? "∞" : formatEstimate(1 / cost);
 }

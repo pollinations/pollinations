@@ -182,6 +182,11 @@ binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
 remote = true
 
+[[env.production.vpc_networks]]
+binding = "ZONOS3_VPC"
+tunnel_id = "0eb4c30b-3f12-453f-ad43-f0c6e810ee72"
+remote = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"

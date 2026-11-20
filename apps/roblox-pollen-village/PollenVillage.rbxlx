@@ -43,7 +43,7 @@ Keep everything family friendly.]]
 -- What the NPC says when a request fails. The reason goes to the server log.
 local FAILURE_LINES = {
 	[401] = "My scrolls are sealed. Ask the keeper of this place to check the village key.",
-	[402] = "My purse is out of pollen. The keeper of this place can refill it.",
+	[402] = "My balance is too low. The keeper of this place can refill it.",
 	[429] = "Too many questions at once. Give me a breath and ask again.",
 }
 local FAILURE_LINE = "My thoughts are cloudy. Ask me again in a moment."

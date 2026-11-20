@@ -643,6 +643,7 @@ export function TrendsTab({
                 />
                 <TrendChart
                     title="Cost funding"
+                    note="Includes Stripe fee credits; cash Stripe fees are deducted from sales"
                     series={FUNDING_SERIES}
                     kind="stacked"
                     creditKey="credits"

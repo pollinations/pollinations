@@ -76,27 +76,59 @@ const healthNumber = new Intl.NumberFormat("en", {
 export function ModelHealthIndicator({
     health,
     communityProxy,
+    showLabel = false,
 }: {
     health: ModelHealth;
     communityProxy: boolean;
+    /** The state's name beside the bars, in its colour, where there is room
+     * for it. */
+    showLabel?: boolean;
 }) {
     const { className, label } = healthStyles[health.status];
     const sample = communityProxy
         ? `last ${health.requests} eligible requests · up to 7 days`
         : "last 24 hours";
-    const detail =
+    // The label already names the state; the tooltip then adds only the rest.
+    const facts =
         health.status === "unknown" || health.success_rate == null
-            ? `No data · ${communityProxy ? "last 7 days" : "last 24 hours"}`
-            : `${label} · ${healthNumber.format(health.success_rate)}% success · ${sample}`;
+            ? communityProxy
+                ? "last 7 days"
+                : "last 24 hours"
+            : `${healthNumber.format(health.success_rate)}% success · ${sample}`;
+    const shownLabel =
+        health.status === "unknown" || health.success_rate == null
+            ? "No data"
+            : label;
+    const detail = showLabel ? facts : `${shownLabel} · ${facts}`;
 
     return (
-        <Tooltip content={detail} ariaLabel={detail} tapEnabled displayContents>
-            <span
-                aria-hidden="true"
-                className={`inline-flex h-5 w-5 items-center justify-center ${className}`}
-            >
-                <ModelHealthIcon status={health.status} />
-            </span>
+        <Tooltip
+            content={detail}
+            ariaLabel={`${shownLabel} · ${facts}`}
+            tapEnabled
+            displayContents
+        >
+            {showLabel ? (
+                // A reading, not a tag: no badge behind it, the bars (lit by
+                // state) and the state's name in its colour.
+                <span
+                    aria-hidden="true"
+                    className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${className}`}
+                >
+                    <ModelHealthIcon
+                        status={health.status}
+                        className="h-4 w-4 shrink-0"
+                    />
+                    {shownLabel}
+                </span>
+            ) : (
+                <span
+                    aria-hidden="true"
+                    className={`inline-flex h-5 w-5 items-center justify-center ${className}`}
+                >
+                    <ModelHealthIcon status={health.status} />
+                </span>
+            )}
         </Tooltip>
     );
 }
@@ -216,8 +248,8 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
         access === "free"
             ? "This model is free to use."
             : access === "paid"
-              ? "Paid pollen only."
-              : "Uses Quest pollen first, then Paid pollen if needed.";
+              ? "Uses paid balance only."
+              : "Uses Quest balance first, then paid balance if needed.";
     const tooltipContent =
         access === "free" ? (
             <span>
@@ -231,7 +263,7 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             <span className="inline-flex flex-wrap items-center gap-1">
                 <WalletKindIcon kind="paid" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Paid pollen
+                    Paid balance
                 </strong>{" "}
                 only.
             </span>
@@ -239,11 +271,11 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             <span className="inline-flex flex-wrap items-center gap-1">
                 Uses <WalletKindIcon kind="tier" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Quest pollen
+                    Quest balance
                 </strong>{" "}
                 first, then <WalletKindIcon kind="paid" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Paid pollen
+                    paid balance
                 </strong>{" "}
                 if needed.
             </span>

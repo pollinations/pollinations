@@ -57,7 +57,7 @@ Generation targets the current selection if there is one, otherwise the whole
 canvas, and the result is scaled to fit those bounds exactly. Editing sends
 that same region from the active layer (must be a paint layer) and requires
 an 8-bit RGBA document (**Image > Convert Image Color Space**). Expired
-authorization prompts reconnection; insufficient Pollen and network errors
+authorization prompts reconnection; a low balance and network errors
 each show a message that says what to do. Generation has no fixed client
 timeout since a durable request may legitimately take minutes; catalog and
 account requests keep a 30-second timeout.
@@ -68,9 +68,8 @@ account requests keep a 30-second timeout.
 python -m unittest -v test_pollinations
 ```
 
-These 11 tests use real localhost HTTP requests, no external credentials or
-Pollen: catalog filtering, generation/edit JSON, device polling/backoff,
-denial/cancellation/expiry, error redaction, and persistent token storage.
+These 11 tests use localhost HTTP requests to check catalog filtering, generation and edit
+payloads, device authorization, error redaction, and persistent token storage.
 
 ```sh
 pip install PyQt5

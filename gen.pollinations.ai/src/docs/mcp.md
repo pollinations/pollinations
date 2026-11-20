@@ -23,7 +23,7 @@ then choose a server:
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 | Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, SHA text hashes, exact arithmetic, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
 | Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
-| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
+| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 | Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
 
@@ -95,7 +95,7 @@ are left untouched.
 ### Use with hosted agents
 
 Add MCP servers to an agent in
-[My Models](https://enter.pollinations.ai/my-models).
+[My listings](https://enter.pollinations.ai/my-models).
 
 ### Connect a client
 
@@ -155,10 +155,10 @@ model health, usage, earnings, quests, and API keys.
 | `transcribeAudio` | Transcribe audio from a public HTTPS URL |
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
-| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getBalance` | Check the remaining balance; requires `account:usage` permission |
 | `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
 | `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
-| `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
+| `listQuests` | List quests with their amount and claim state; requires `account:usage` permission |
 | `listKeys` | List API keys; requires `account:keys` permission |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
@@ -251,10 +251,10 @@ Before a long command, extend the paid lease with `connect_sandbox`; a command's
 
 ### Billing and permissions
 
-Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
+Calls use the same wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
 selected model's listed rate. A `tools/call` on a server with its own rate
-needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+needs a positive balance and returns 402 otherwise; `initialize` and
 `tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's

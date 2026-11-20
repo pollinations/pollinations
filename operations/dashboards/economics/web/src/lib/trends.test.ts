@@ -28,6 +28,8 @@ const sale = (
     refunds: 100,
     reversals: 20,
     stripe_fees: 80,
+    stripe_fees_credit: 0,
+    fee_credit_funding: 0,
     dispute_fees: 0,
     net_sales: 880,
     net_after_fees: 800,
@@ -84,6 +86,29 @@ const find = (
 };
 
 describe("monthly sales-based trends", () => {
+    it("includes consumed Stripe credits in the full-cost result without changing sales or cash-funded results", () => {
+        const data: Data = {
+            stripeSales: [
+                sale("2026-09", {
+                    stripe_fees_credit: 45,
+                    fee_credit_funding: 20000,
+                }),
+            ],
+            vendorLedger: [cost("2026-09")],
+        };
+        for (const scope of ["product", "company"] as const) {
+            expect(find(data, scope)).toMatchObject({
+                gross: 1000,
+                deductions: 200,
+                revenue: 800,
+                paidCost: 200,
+                credits: 345,
+                fullCost: 545,
+                result: 600,
+                fullResult: 255,
+            });
+        }
+    });
     it("separates gross sales, deductions and consumed credits, excluding payouts and refundable deposits", () => {
         const data: Data = {
             stripeSales: [sale("2026-09")],
@@ -176,7 +201,7 @@ describe("monthly sales-based trends", () => {
             compute: 500,
             infrastructure: 150,
             revenue_share: null,
-            development: null,
+            operations: null,
             payroll: null,
             paidCost: 250,
             credits: 400,
@@ -186,11 +211,10 @@ describe("monthly sales-based trends", () => {
         });
         expect(company).toMatchObject({
             revenue_share: 25,
-            development: 40,
             payroll: 400,
             compute: 500,
             infrastructure: 150,
-            operations: 30,
+            operations: 70,
             office: 60,
             admin: 70,
             paidCost: 875,

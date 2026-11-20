@@ -19,7 +19,7 @@ describe("Button appearances", () => {
         );
 
         expect(html).toContain("polli:bg-surface-opaque");
-        expect(html).not.toContain("polli:bg-theme-bg-active");
+        expect(html).not.toContain("polli:bg-theme-fill");
     });
 
     test("preserves an explicit submit type", () => {
@@ -81,8 +81,45 @@ describe("Button appearances", () => {
 
         expect(footer).toContain(standalone);
         expect(standalone).toContain("polli:rounded-full");
-        expect(standalone).toContain("polli:border-theme-text-soft");
+        expect(standalone).toContain("polli-nectar");
         expect(standalone).toContain('type="submit"');
+    });
+
+    test("shows Polli in the icon slot of any busy button", () => {
+        for (const intent of ["commit", "neutral", undefined] as const) {
+            const busy = renderToStaticMarkup(
+                <Button intent={intent} icon={<span>i</span>} aria-busy>
+                    Working
+                </Button>,
+            );
+            expect(busy).toContain("polli-bee");
+            expect(busy).not.toContain("polli:animate-spin");
+        }
+    });
+
+    test("shows a done action with a pollen puff and keeps it undimmed", () => {
+        const done = renderToStaticMarkup(
+            <Button intent="commit" done disabled>
+                Create
+            </Button>,
+        );
+        expect(done).toContain('data-done="true"');
+        expect(done).toContain("polli-burst");
+        expect(done).not.toContain("polli:opacity-50");
+
+        // The check shows even when the button has no icon of its own.
+        const noIcon = renderToStaticMarkup(
+            <Button intent="commit" done disabled>
+                Paid
+            </Button>,
+        );
+        expect(noIcon).toContain("<svg");
+
+        const idle = renderToStaticMarkup(
+            <Button intent="commit">Create</Button>,
+        );
+        expect(idle).not.toContain("data-done");
+        expect(idle).not.toContain("polli-burst");
     });
 
     test("makes disabled polymorphic links inert", () => {

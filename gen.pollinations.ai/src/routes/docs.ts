@@ -343,6 +343,8 @@ const REALTIME_DOCS = [
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` or `elevenlabs/scribe-v3-live` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
+    "With `google/gemini-3.8-live`, send text, base64 JPEG frames, or mono 24 kHz PCM16 audio. Responses stream audio and a transcript. Manual audio turns use `input_audio_buffer.commit` followed by `response.create`. Only manual turn detection is supported. Configure instructions and function tools with `session.update` before the first `response.create`. Later changes return a client error and the socket stays open. Send `response.cancel` to interrupt generation. Cancelling before input reaches Vertex incurs no charge for that turn. After dispatch, the response includes usage incurred through the interruption. A response that finished first reports completion. Output arriving after cancellation is suppressed, so the client may receive only part of a completed response. Continue on the same socket. A text or camera turn immediately following an interruption includes 20 ms of silence in the provider input.",
+    "",
     "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",
     "```js",
@@ -1124,9 +1126,9 @@ const SCALAR_CDN =
 const SCALAR_INTEGRITY =
     "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
 const CONNECT_CDN =
-    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.41/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-9e0ucXSJrvLUvlRtPQ2N/j41OJx/5ob+9qk9CaJK9PaY477QIQiQFWE+l/RofoSi";
+    "sha384-0AH5BRM416sdgU5dUihJpBjwgIUEqFKvDMZ4KPjtjVIuARqp5FRw6TrucZOqk+bR";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()

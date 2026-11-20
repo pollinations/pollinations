@@ -34,9 +34,8 @@ export const CodeBlock: FC<CodeBlockProps> = ({
                 </span>
                 <CopyButton
                     value={code}
-                    tooltip={null}
                     aria-label="Copy code"
-                    className="polli:flex polli:items-center polli:gap-1.5 polli:rounded-md polli:px-2 polli:py-1 polli:text-xs polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover"
+                    className="polli:flex polli:items-center polli:gap-1.5 polli:rounded-md polli:px-2 polli:py-1 polli:text-xs polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-fill-wash polli:hover:text-theme-text-strong"
                 >
                     {(copied) => (
                         <>
@@ -44,7 +43,7 @@ export const CodeBlock: FC<CodeBlockProps> = ({
                                 copied={copied}
                                 className="polli:size-3.5"
                             />
-                            <span>{copied ? "Copied" : "Copy"}</span>
+                            <span>Copy</span>
                         </>
                     )}
                 </CopyButton>

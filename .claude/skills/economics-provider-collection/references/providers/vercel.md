@@ -2,7 +2,7 @@
 
 Canonical vendor: `vercel`
 
-## Verified — 2026-08-21
+## Verified — 2026-11-03
 
 - Status: the official AI Gateway Custom Reporting API works with the existing
   production gateway key.
@@ -16,6 +16,8 @@ Canonical vendor: `vercel`
 Primary evidence sources:
 
 - API: `GET https://ai-gateway.vercel.sh/v1/report`.
+- API balance: `GET https://ai-gateway.vercel.sh/v1/credits` returns `balance`
+  and lifetime `total_used`, but no lot allocation or expiry.
 - Dashboard: remaining prepaid credit, top-ups, and invoices.
 - Verified billing route (2026-09-05):
   `https://vercel.com/pollinations/~/settings/billing` → AI Gateway Credit.
@@ -26,11 +28,13 @@ Primary evidence sources:
 Collection steps:
 
 1. Query the exact closed month with `start_date`, `end_date`,
-   `group_by=model`, and `api_key_id=self`.
+   `group_by=model`. Omit `api_key_id` for full-team coverage;
+   `api_key_id=self` covers only the current key.
 2. Store `total_cost`, `market_cost`, `request_count`, and token totals for each
    model as raw evidence.
-3. Record provider burn as credit-funded while a dated dashboard balance proves
-   prepaid credit remains.
+3. Purchased prepaid balance funds paid usage. Classify usage as credit-funded
+   only when a promotional grant is evidenced. The provider label “Credits”
+   does not establish funding identity.
 4. Reconcile the official report against OP Pollen and keep any meter difference
    visible rather than replacing the provider total with the internal estimate.
 5. Save the raw response in `<collection-dir>/evidence/vercel/` and Google Drive.
@@ -45,6 +49,9 @@ Known traps:
 - The local Vercel CLI can be authenticated to an unrelated team and is not
   evidence for this account.
 - A report proves usage, not remaining prepaid balance or invoice tax.
+- Preserve original funding and expiry terms; inspect terms again for a new or
+  changed lot or contradictory evidence. Keep Pro/seat subscriptions, metered
+  infrastructure, Gateway purchases and payment fees separate.
 - AI Gateway credit is separate from Pro-plan included infrastructure credit
   and Vercel Agent credit. The billing page states one-year expiry after
   purchase; derive each purchased lot's expiry from its paid invoice date.
@@ -55,3 +62,9 @@ Known traps:
   verify both against the team invoice page and archive them by issue date.
 - Record auto-reload status, threshold, and target without changing them.
   A credit balance is not necessarily a promotional grant.
+- Verify recurring Pro and seat charges in the upcoming invoice. Keep the
+  subscription forecast separate from Gateway usage and metered infrastructure.
+- Inspect the usage CSV's actual interval even after selecting exact UTC dates:
+  daily buckets can extend the export into an adjacent local day. Subscription
+  allocations in that export are not additional expenses or replacements for
+  the original billing-cycle invoice.

@@ -17,7 +17,7 @@ npm install @pollinations/sdk@5.0.0
 
 Get a key at https://enter.pollinations.ai/keys and set
 `POLLINATIONS_API_KEY` in the process environment. Never print it or commit it.
-Requests spend Pollen: confirm the intended model and budget before running.
+Requests spend from the user's balance: confirm the intended model and budget before running.
 
 Save this as `example.mjs` and run `node example.mjs`:
 
@@ -40,7 +40,7 @@ single result by default; `n` requests multiple results. `saveToFile` is Node-on
 
 - For current model IDs, query https://gen.pollinations.ai/models. Pass a chosen
   ID through the helper's `{ model }` option; do not invent model names.
-- For browser apps, use a publishable app key and user-paid Pollinations Connect rather than
+- For browser apps, use a publishable app key and Pollinations Pay rather than
   embedding a secret key. See the [BYOP guide](https://gen.pollinations.ai/docs/llm.txt?section=byop).
 - For device authorization, React, streaming, editing, and other media, consult the
   [5.0.0 package docs](https://www.npmjs.com/package/@pollinations/sdk/v/5.0.0)

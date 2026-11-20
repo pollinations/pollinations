@@ -47,6 +47,7 @@ import {
     reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { GEMINI_LIVE, proxyGeminiLive } from "./geminiLiveSocket.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -103,6 +104,7 @@ type RealtimeCacheUsage = {
     imageTokens: number;
 };
 type RealtimeBillingContext = {
+    servingRoute?: { id: string; definition: ModelDefinition };
     // Spread verbatim into the event, so an identity column added to UserData
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
@@ -796,6 +798,8 @@ function createRealtimeTrackingEvent(args: {
     payerBucket: "tier" | "pack" | null;
     balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
+    const modelUsed =
+        args.tracking.servingRoute?.id ?? args.tracking.resolvedModelRequested;
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
@@ -813,8 +817,12 @@ function createRealtimeTrackingEvent(args: {
         referrerDomain: args.tracking.referrerDomain,
         modelRequested: args.tracking.modelRequested,
         resolvedModelRequested: args.tracking.resolvedModelRequested,
-        modelUsed: args.tracking.resolvedModelRequested,
-        modelProviderUsed: args.tracking.modelDefinition.provider,
+        modelUsed,
+        fallbackUsed: modelUsed !== args.tracking.resolvedModelRequested,
+        modelProviderUsed: (
+            args.tracking.servingRoute?.definition ??
+            args.tracking.modelDefinition
+        ).provider,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
@@ -855,7 +863,8 @@ async function settleRealtimeSession(
     const { cost, price, adjustments } = calculateUsageBilling({
         model: tracking.resolvedModelRequested,
         usage,
-        servedBy: tracking.modelDefinition,
+        servedBy: tracking.servingRoute?.definition ?? tracking.modelDefinition,
+        quotedBy: tracking.modelDefinition,
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
@@ -1579,23 +1588,44 @@ export async function handleRealtimeWebSocket(
         communityEndpoint: c.var.model.communityEndpoint,
     });
     const tracking = await createRealtimeBillingContext(c);
-    if (
-        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
-        c.var.model.resolved === "elevenlabs/scribe-v3-live"
-    ) {
-        if (!c.env.ELEVENLABS_API_KEY) {
-            throw new HTTPException(503, {
-                message: "ElevenLabs realtime provider is not configured.",
-            });
-        }
+    async function startAdapter(connect: () => Response) {
         await reserveApiKeyBudget(c.var, c.env);
         tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
         try {
-            return proxyScribeOpenAIRealtime(c, tracking);
+            return connect();
         } catch (error) {
             await releaseApiKeyBudgetReservation(c.var, c.env);
             throw error;
         }
+    }
+
+    if (c.var.model.resolved === GEMINI_LIVE) {
+        if (!c.env.GOOGLE_PROJECT_ID) {
+            throw new HTTPException(503, {
+                message: "Google Vertex realtime provider is not configured.",
+            });
+        }
+        return startAdapter(() =>
+            proxyGeminiLive(c, {
+                select({ id, definition }) {
+                    if (!definition)
+                        throw new Error("Missing Gemini Live route pricing");
+                    tracking.servingRoute = { id, definition };
+                },
+                usage: (usage) => addUsage(tracking.usage, usage),
+                settle: () => scheduleRealtimeSettlement(c, tracking),
+            }),
+        );
+    }
+    if (
+        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
+        c.var.model.resolved === "elevenlabs/scribe-v3-live"
+    ) {
+        if (!c.env.ELEVENLABS_API_KEY)
+            throw new HTTPException(503, {
+                message: "ElevenLabs realtime provider is not configured.",
+            });
+        return startAdapter(() => proxyScribeOpenAIRealtime(c, tracking));
     }
 
     const upstream = await connectAzureRealtime(

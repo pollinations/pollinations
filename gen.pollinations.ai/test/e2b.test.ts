@@ -992,7 +992,7 @@ test("a caller with a budget logs the box in with its own permissions and a budg
         pollenBudget: 0,
     });
     expect(notice).toMatch(
-        /^This sandbox's polli login has a budget of 0 Pollen, because the key that created the sandbox has a budget\. Give the login a budget at https:\/\/\S+\/edit-key\?id=enter-stub-key&ref=sandbox_key_budget\.$/,
+        /^This sandbox's polli login has a budget of \$0, because the key that created the sandbox has a budget\. Give the login a budget at https:\/\/\S+\/edit-key\?id=enter-stub-key&ref=sandbox_key_budget\.$/,
     );
 });
 

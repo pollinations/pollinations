@@ -16,7 +16,7 @@ export interface AuthorizeRequest {
     permissions?: AccountPermission[];
     /** Allowed models. Pass [] for all models. */
     models?: string[];
-    /** Pollen budget for the key. */
+    /** Budget for the key, in US dollars. */
     budget?: number;
     /** Key lifetime in days. */
     expiry?: number;

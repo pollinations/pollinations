@@ -52,6 +52,24 @@ interface SingleKeyInfo {
 const MODELS_HELP =
     "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime, decision) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
 
+const EXCLUDE_AGENTS_HELP =
+    "Replace the text category with explicit non-agent text model IDs, so the key cannot call agents";
+
+async function expandTextWithoutAgents(models: string[]): Promise<string[]> {
+    if (!models.includes("text")) {
+        fail("--exclude-agents requires the text category in --models");
+    }
+    const { data } = await gen<{ data: { id: string }[] }>(
+        "/v1/models?category=text&agent=false&reliability=all",
+    );
+    return [
+        ...new Set([
+            ...models.filter((model) => model !== "text"),
+            ...data.map((model) => model.id),
+        ]),
+    ];
+}
+
 const formatPerms = (p: KeyInfo["permissions"]) => {
     if (!p) return "-";
     const parts: string[] = [];
@@ -164,6 +182,7 @@ const create = new Command("create")
     )
     .option("--expires-in <seconds>", "Expiry in seconds")
     .option("--models <models...>", MODELS_HELP)
+    .option("--exclude-agents", EXCLUDE_AGENTS_HELP)
     .option("--budget <dollars>", "Budget cap in US dollars")
     .option(
         "--quest-pollen-only",
@@ -210,7 +229,14 @@ Examples:
                 }
                 body.expiresIn = expiresIn;
             }
-            if (opts.models) body.allowedModels = opts.models;
+            if (opts.excludeAgents) {
+                if (!opts.models) {
+                    fail("--exclude-agents requires --models");
+                }
+                body.allowedModels = await expandTextWithoutAgents(opts.models);
+            } else if (opts.models) {
+                body.allowedModels = opts.models;
+            }
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);
                 if (!Number.isFinite(budget) || budget < 0) {
@@ -259,6 +285,7 @@ const update = new Command("update")
     .description("Change which models an API key can use")
     .argument("<id>", "Key ID to update (see `polli keys list`)")
     .requiredOption("--models <models...>", MODELS_HELP)
+    .option("--exclude-agents", EXCLUDE_AGENTS_HELP)
     .addHelpText(
         "after",
         `
@@ -271,10 +298,13 @@ Examples:
         const key = requireKey();
 
         try {
+            const allowedModels = opts.excludeAgents
+                ? await expandTextWithoutAgents(opts.models)
+                : opts.models;
             const updated = await gen<KeyInfo>(`/account/keys/${id}`, {
                 apiKey: key,
                 method: "PATCH",
-                body: { allowedModels: opts.models },
+                body: { allowedModels },
             });
 
             printSuccess(`Key ${id} updated.`);

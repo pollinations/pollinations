@@ -49,6 +49,22 @@ function prepare(permissions: unknown) {
     return { fetch, stdout };
 }
 
+function withCatalog(fetch: ReturnType<typeof prepare>["fetch"]) {
+    const original = fetch.getMockImplementation();
+    fetch.mockImplementation(async (url: string, init: RequestInit) => {
+        if (String(url).includes("/v1/models?")) {
+            return Response.json({
+                data: [
+                    { id: "openai/gpt-5.4-nano" },
+                    { id: "moonshotai/kimi-k3" },
+                ],
+            });
+        }
+        return original!(url, init);
+    });
+    return fetch;
+}
+
 describe("keys create permissions output", () => {
     it.each(cases)(
         "formats human permissions $permissions",
@@ -86,6 +102,52 @@ describe("keys create permissions output", () => {
             expect(JSON.parse(output).permissions).toEqual(permissions);
         },
     );
+
+    it("requires text with --exclude-agents", async () => {
+        const { fetch } = prepare(null);
+        await expect(
+            keysCommand.parseAsync(
+                [
+                    "create",
+                    "--name",
+                    "agent-free",
+                    "--models",
+                    "image",
+                    "--exclude-agents",
+                ],
+                { from: "user" },
+            ),
+        ).rejects.toThrow();
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("expands text to non-agent models with --exclude-agents", async () => {
+        const { fetch } = prepare(null);
+        withCatalog(fetch);
+        await keysCommand.parseAsync(
+            [
+                "create",
+                "--name",
+                "agent-free",
+                "--models",
+                "text",
+                "image",
+                "--exclude-agents",
+            ],
+            { from: "user" },
+        );
+
+        const createCall = fetch.mock.calls.find(([url]) =>
+            String(url).endsWith("/account/keys"),
+        );
+        expect(createCall).toBeTruthy();
+        const body = JSON.parse(String(createCall?.[1]?.body));
+        expect(body.allowedModels).toEqual([
+            "image",
+            "openai/gpt-5.4-nano",
+            "moonshotai/kimi-k3",
+        ]);
+    });
 });
 
 describe("keys list permissions output", () => {
@@ -199,5 +261,24 @@ describe("keys update", () => {
             .map(([chunk]) => String(chunk))
             .join("");
         expect(output).toContain("permissions: models:text|flux");
+    });
+
+    it("expands text to non-agent models with --exclude-agents", async () => {
+        const { fetch } = prepare(null);
+        withCatalog(fetch);
+        await keysCommand.parseAsync(
+            ["update", "key-1", "--models", "text", "--exclude-agents"],
+            { from: "user" },
+        );
+
+        const patchCall = fetch.mock.calls.find(
+            ([url, init]) =>
+                String(url).endsWith("/account/keys/key-1") &&
+                init?.method === "PATCH",
+        );
+        expect(patchCall).toBeTruthy();
+        expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({
+            allowedModels: ["openai/gpt-5.4-nano", "moonshotai/kimi-k3"],
+        });
     });
 });

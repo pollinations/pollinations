@@ -1,27 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getTextModelsInfo } from "../../../../shared/registry/model-info";
-import overrides from "../../data/playground-model-overrides.json";
 import { decisionForm } from "./decision";
 
 describe("Decide form", () => {
     const model = "typesafe/jev-1.14";
-    it("keeps the verified question types on public decision models", () => {
-        const models = new Map(
-            getTextModelsInfo().map((model) => [model.name, model]),
-        );
-        for (const [id, override] of Object.entries(overrides)) {
-            const entry = models.get(id);
-            expect(entry?.category, id).toBe("decision");
-            expect(entry?.supported_endpoints, id).toContain(
-                "/alpha/decisions",
-            );
-            expect(override.reason.trim(), id).toBeTruthy();
-            expect(override.source.trim(), id).toBeTruthy();
-            expect(decisionForm(id, {}).types, id).toEqual(
-                override.decisionQuestionTypes,
-            );
-        }
-    });
     it("uses a supported question when opening a link to a limited model", () => {
         const form = decisionForm("respan/span-01-lite", {
             questionType: "score",

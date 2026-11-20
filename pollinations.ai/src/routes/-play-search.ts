@@ -9,6 +9,7 @@ export const PLAY_SEARCH_KEYS = [
     "tab",
     "task",
     "model",
+    "format",
     "prompt",
     "questionType",
     "question",
@@ -23,8 +24,8 @@ export const PLAY_SEARCH_KEYS = [
     "seed",
     "voice",
     "language",
+    "stems",
     "sound",
-    "guidance",
 ] as const;
 
 export type PlaySearch = Partial<

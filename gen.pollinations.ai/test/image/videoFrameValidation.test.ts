@@ -5,6 +5,7 @@ import {
 } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+import { ImageParamsSchema } from "../../src/image/params.ts";
 
 const VIDEO_FRAME_LIMITS = [
     ["google/gemini-omni-1.1-flash", 2],
@@ -31,9 +32,17 @@ const VIDEO_FRAME_LIMITS = [
     ["x-ai/grok-imagine-video-1.5-lite", 1],
     ["x-ai/grok-imagine-video-1.5-lite:openrouter", 1],
     ["bytedance/seedance-2.5", 2],
+    ["bytedance/seedance-2.5-flash", 2],
+    ["bytedance/seedance-2.5-flash:openrouter", 2],
     ["alibaba/happyhorse-1.1", 1],
     ["kwaivgi/kling-v3.0-std", 2],
+    ["kwaivgi/kling-v3.0-pro", 2],
+    ["kwaivgi/kling-v3.0-pro:azure", 2],
+    ["lightricks/ltx-2.5-pro", 2],
+    ["lightricks/ltx-2.5-pro:azure", 2],
     ["black-forest-labs/flux-3-max", 2],
+    ["heygen/heygen-avatar-6-turbo", 1],
+    ["heygen/heygen-avatar-6-turbo:openrouter", 1],
     ["heygen/heygen-video-1", 1],
     ["heygen/heygen-video-1:openrouter", 1],
     ["minimax/minimax-h3", 0],
@@ -45,6 +54,22 @@ const VIDEO_FRAME_LIMITS = [
 ] as const satisfies readonly (readonly [ImageModelName, number])[];
 
 describe("video frame capabilities", () => {
+    it.each(["reference_images", "reference_videos", "reference_audios"])(
+        "rejects Seedance Flash frames combined with %s before dispatch",
+        (field) => {
+            const result = ImageParamsSchema.safeParse({
+                model: "bytedance/seedance-2.5-flash",
+                image: ["https://example.com/frame.png"],
+                [field]: ["https://example.com/reference"],
+            });
+            expect(
+                result.error?.issues.map((issue) => issue.message),
+            ).toContain(
+                "Seedance Flash keyframes cannot be combined with reference images, videos or audio.",
+            );
+        },
+    );
+
     it("keeps the explicit test matrix in sync with every deployed video model", () => {
         expect(getVideoModelIds().sort()).toEqual(
             VIDEO_FRAME_LIMITS.map(([model]) => model).sort(),

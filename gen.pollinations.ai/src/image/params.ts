@@ -311,6 +311,18 @@ export const ImageParamsSchema = z
                 capability: "reference_audios" as const,
             },
         ];
+        if (
+            data.model === "bytedance/seedance-2.5-flash" &&
+            data.image?.length &&
+            references.some(({ values }) => values.length > 0)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message:
+                    "Seedance Flash keyframes cannot be combined with reference images, videos or audio.",
+            });
+        }
         for (const { field, values, capability } of references) {
             if (values.length === 0) continue;
             if (!definition.videoCapabilities?.includes(capability)) {
@@ -318,6 +330,34 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: [field],
                     message: `${data.model} does not support ${field}.`,
+                });
+            }
+        }
+        if (
+            data.model === "heygen/heygen-avatar-6-turbo" ||
+            data.model === "heygen/heygen-avatar-6-turbo:openrouter"
+        ) {
+            const photos =
+                data.image.length + (data.reference_images?.length ?? 0);
+            const videos = data.reference_videos?.length ?? 0;
+            if (
+                photos > 1 ||
+                videos > 1 ||
+                photos + videos === 0 ||
+                (data.reference_audios?.length ?? 0) !== 1
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "Avatar 6 Turbo requires exactly one speech audio reference and a photo or reference video (at most one of each).",
+                });
+            }
+            if (data.duration !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message:
+                        "Avatar 6 Turbo duration is determined by the supplied audio.",
                 });
             }
         }

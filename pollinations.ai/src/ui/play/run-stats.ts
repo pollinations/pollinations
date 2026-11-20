@@ -4,32 +4,46 @@ export type ModelRunStat = {
     avg_response_ms?: number | null;
 };
 
-function formatCost(usd: number): string {
+export function formatRunCost(usd?: number | null): string | undefined {
+    if (usd == null || usd <= 0) return;
     return `$${Number(usd.toPrecision(2))}`;
 }
 
-function plural(n: number, unit: string): string {
-    return `${n} ${unit}${n === 1 ? "" : "s"}`;
-}
-
-function formatDuration(ms: number): string {
+export function formatRunTime(ms?: number | null): string | undefined {
+    if (ms == null || ms <= 0) return;
     const seconds = Math.max(1, Math.round(ms / 1000));
-    if (seconds < 60) return plural(seconds, "second");
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
     const rest = seconds % 60;
-    const minutes = plural(Math.floor(seconds / 60), "minute");
-    return rest ? `${minutes} ${plural(rest, "second")}` : minutes;
+    return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
 }
 
-/** "Average cost per request: $0.42 · about 1 minute 40 seconds", the cost or time alone, or "". */
-export function runStatsLine(stat: ModelRunStat | undefined): string {
-    const cost =
-        stat?.avg_cost_usd && stat.avg_cost_usd > 0
-            ? `Average cost per request: ${formatCost(stat.avg_cost_usd)}`
-            : "";
-    const time =
-        stat?.avg_response_ms && stat.avg_response_ms > 0
-            ? formatDuration(stat.avg_response_ms)
-            : "";
-    if (cost && time) return `${cost} · about ${time}`;
-    return cost || (time && `About ${time}`);
+export function fastModelsByTime(stats: ModelRunStat[]) {
+    const measured = stats
+        .flatMap((stat) => {
+            const value = stat.avg_response_ms;
+            return typeof value === "number" &&
+                Number.isFinite(value) &&
+                value > 0
+                ? [{ id: stat.model, value }]
+                : [];
+        })
+        .sort((a, b) => a.value - b.value);
+    const minimumModels = 4;
+    const fraction = 0.25;
+    const maximumMedianRatio = 0.75;
+    if (measured.length < minimumModels) return new Set<string>();
+    const cutoff = measured[Math.ceil(measured.length * fraction) - 1].value;
+    const middle = (measured.length - 1) / 2;
+    const median =
+        (measured[Math.floor(middle)].value +
+            measured[Math.ceil(middle)].value) /
+        2;
+    return new Set(
+        cutoff <= median * maximumMedianRatio
+            ? measured
+                  .filter((item) => item.value <= cutoff)
+                  .map((item) => item.id)
+            : [],
+    );
 }

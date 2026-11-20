@@ -143,7 +143,10 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
     /** Complete provider charge, including tools, when token details cannot reproduce it. */
-    resolveTotalCost?: (output: unknown) => number | undefined;
+    resolveTotalCost?: (
+        output: unknown,
+        input?: PricingInput,
+    ) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -499,7 +502,7 @@ function rateAgainst(
     };
 
     // Opt-in provider totals include search; adjustments remain an informational breakdown.
-    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+    const reportedCost = svc.billing?.resolveTotalCost?.(output, input);
 
     return {
         cost: reportedCost === undefined ? cost : { totalCost: reportedCost },

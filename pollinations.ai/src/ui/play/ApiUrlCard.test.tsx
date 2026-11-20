@@ -29,6 +29,15 @@ describe("API URL card", () => {
         expect(example).not.toContain("?key=");
     });
 
+    it("downloads separated tracks into a ZIP", () => {
+        const example = apiExample(
+            "https://gen.pollinations.ai/alpha/audio/stem-separation",
+            { file: "clip.wav" },
+        );
+        expect(example).toContain("-F 'file=@clip.wav'");
+        expect(example).toContain("-o stems.zip");
+    });
+
     it("copies a JSON speech request", () => {
         const example = apiExample(
             "https://gen.pollinations.ai/v1/audio/speech",

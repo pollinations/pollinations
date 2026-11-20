@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { BrandMark } from "../../primitives/BrandMark.tsx";
+import { Button } from "../../primitives/Button.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     AppIcon,
@@ -20,7 +21,6 @@ import {
     PowerIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
-import { LoginButton } from "../auth/sdk.ts";
 import {
     AccountPollen,
     type AccountPollenSource,
@@ -45,6 +45,8 @@ export type AppUserMenuProps = {
     dashboardHref?: string;
     /** Larger logged-out action for prominent placements such as a page hero. */
     connectSize?: keyof typeof CONNECT_SIZES;
+    /** Override Connect to save local work before starting SDK login. */
+    onConnect?: () => void;
     labels?: Partial<AppUserMenuLabels>;
     /** Class for the dropdown panel, which renders in a portal outside the menu. */
     menuClassName?: string;
@@ -78,6 +80,7 @@ const CONNECT_SIZES = {
 export function AppUserMenu({
     dashboardHref,
     connectSize = "md",
+    onConnect,
     labels: labelOverrides,
     menuClassName,
     menuLinks = [],
@@ -85,7 +88,7 @@ export function AppUserMenu({
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const size = CONNECT_SIZES[connectSize];
-    const { logout, enterUrl } = useAuthActions();
+    const { login, logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
@@ -143,7 +146,8 @@ export function AppUserMenu({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton
+                <Button
+                    onClick={onConnect ?? (() => login())}
                     intent="brand"
                     className={cn(
                         "polli:gap-2 polli:py-0 polli:whitespace-nowrap",
@@ -152,7 +156,7 @@ export function AppUserMenu({
                 >
                     <BrandMark className={size.mark} />
                     {labels.authorize}
-                </LoginButton>
+                </Button>
             ) : (
                 <AccountMenu
                     name={

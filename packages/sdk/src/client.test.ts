@@ -512,6 +512,23 @@ describe("audio inputs", () => {
         });
     });
 
+    it("sends the selected stem variation as multipart and returns a ZIP", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(new Blob(["archive"], { type: "application/zip" })),
+        );
+        const zip = await newClient().separateStems(
+            new File(["music"], "music.wav"),
+            { model: "catalog-model", stemVariationId: "two_stems_v1" },
+        );
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/alpha/audio/stem-separation");
+        expect(init.body.get("file").name).toBe("music.wav");
+        expect(init.body.get("stem_variation_id")).toBe("two_stems_v1");
+        expect(init.body.get("model")).toBe("catalog-model");
+        expect(zip.type).toBe("application/zip");
+        expect(await zip.text()).toBe("archive");
+    });
+
     it.each(["voice-changer", "voice-isolator"] as const)(
         "posts the original file to %s without a text prompt",
         async (operation) => {
@@ -814,6 +831,29 @@ describe("Pollinations video reference media", () => {
             }
         },
     );
+
+    it("sends animation parameters only when requested", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const client = newClient();
+        await client.image("a loop", {
+            outputFormat: "gif",
+            frameCount: 8,
+            frameDurationMs: 120,
+        });
+        await client.image("a loop");
+
+        const queries = fetchMock.mock.calls.map(
+            ([url]) => new URL(url as string).searchParams,
+        );
+        for (const [key, value] of Object.entries({
+            output_format: "gif",
+            frame_count: "8",
+            frame_duration_ms: "120",
+        })) {
+            expect(queries[0].get(key)).toBe(value);
+            expect(queries[1].has(key)).toBe(false);
+        }
+    });
 
     it("serializes multiple reference images using pipe delimiter for image generation", async () => {
         fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));

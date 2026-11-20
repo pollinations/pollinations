@@ -47,7 +47,11 @@ import {
     reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
-import { GEMINI_LIVE, proxyGeminiLive } from "./geminiLiveSocket.ts";
+import {
+    GEMINI_LIVE,
+    GEMINI_TRANSCRIBE,
+    proxyGeminiLive,
+} from "./geminiLiveSocket.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -1599,7 +1603,10 @@ export async function handleRealtimeWebSocket(
         }
     }
 
-    if (c.var.model.resolved === GEMINI_LIVE) {
+    if (
+        c.var.model.resolved === GEMINI_LIVE ||
+        c.var.model.resolved === GEMINI_TRANSCRIBE
+    ) {
         if (!c.env.GOOGLE_PROJECT_ID) {
             throw new HTTPException(503, {
                 message: "Google Vertex realtime provider is not configured.",

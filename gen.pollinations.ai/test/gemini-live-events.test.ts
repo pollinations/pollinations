@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGeminiLiveEvents } from "../src/routes/geminiLiveEvents.ts";
 
+import { createGeminiTranscribeEvents } from "../src/routes/geminiTranscribeEvents.ts";
+
 function session() {
     const sendClient = vi.fn();
     const sendGoogle = vi.fn();
@@ -398,5 +400,66 @@ describe("Gemini Live realtime events", () => {
             type: "response.done",
             response: { status: "cancelled" },
         });
+    });
+});
+
+describe("Gemini streaming transcription", () => {
+    it("recovers from silence and requires a provider receipt for final text", () => {
+        const sendClient = vi.fn(),
+            onUsage = vi.fn();
+        const s = createGeminiTranscribeEvents({
+            model: "google/gemini-3.5-transcribe-live",
+            sendClient,
+            onUsage,
+            sendGoogle: vi.fn(),
+            requestSetup: vi.fn(),
+            cancelUnsentTurn: () => false,
+        });
+        expect(s.setup("vertex-model").setup.inputAudioTranscription).toEqual({
+            mode: "VERBATIM",
+            languageCodes: ["en-US"],
+        });
+        const append = { type: "input_audio_buffer.append", audio: "AAA=" };
+        const end = { voiceActivity: { type: "ACTIVITY_END" } };
+        s.client(append);
+        s.google({ voiceActivity: { type: "ACTIVITY_START" } });
+        s.client({ type: "input_audio_buffer.commit" });
+        s.google(end);
+        expect(sendClient).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                type: "conversation.item.input_audio_transcription.failed",
+            }),
+        );
+        expect(s.pendingTurn()).toBe(false);
+        s.client(append);
+        s.client({ type: "input_audio_buffer.commit" });
+        s.google(end);
+        expect(s.pendingTurn()).toBe(true);
+        const final = {
+            serverContent: { inputTranscription: { text: "Hello" } },
+        };
+        expect(() => s.google(final)).toThrow();
+        expect(onUsage).not.toHaveBeenCalled();
+        s.google({
+            ...final,
+            usageMetadata: {
+                promptTokenCount: 77,
+                candidatesTokenCount: 1,
+                totalTokenCount: 78,
+                promptTokensDetails: [{ modality: "AUDIO", tokenCount: 77 }],
+                candidatesTokensDetails: [{ modality: "TEXT", tokenCount: 1 }],
+            },
+        });
+        expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+            promptAudioTokens: 77,
+            completionTextTokens: 1,
+        });
+        expect(sendClient).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                type: "conversation.item.input_audio_transcription.completed",
+                transcript: "Hello",
+            }),
+        );
+        expect(s.pendingTurn()).toBe(false);
     });
 });

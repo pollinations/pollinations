@@ -1,64 +1,15 @@
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { FalError, runFalJobResponse } from "../../model3d/models/falClient.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
-import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { fetchFalVideo, runAzureFalVideo } from "../utils/azureFalVideo.ts";
 import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
-import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const AZURE_MODEL = "lightricks/ltx-2.5-pro:azure";
-const AZURE_DEPLOYMENT = "Fal-LTX-2.5-Pro";
-const AZURE_BASE =
-    "https://myceli-prod-img-2-eastus2.services.ai.azure.com/providers/falai/v1/lightricks/ltx-2.5";
 type LtxResult = { video?: { url?: string; duration?: number } };
-
-async function generateAzure(
-    operation: string,
-    input: Record<string, unknown>,
-): Promise<LtxResult> {
-    const key = getImageEnv("AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY");
-    if (!key)
-        throw UpstreamError.fromProvider(500, {
-            message: "Azure LTX Pro is not configured",
-        });
-    const headers = { "api-key": key, "Content-Type": "application/json" };
-    const submission = await fetchUpstream(`${AZURE_BASE}/${operation}/pro`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ ...input, model: AZURE_DEPLOYMENT }),
-        errorLabel: "Azure LTX Pro submission failed",
-    });
-    const { request_id: id } = (await submission.json()) as {
-        request_id?: string;
-    };
-    if (!id)
-        throw UpstreamError.fromProvider(502, {
-            message: "Azure LTX Pro returned no request ID",
-        });
-    const resultUrl = `${AZURE_BASE}/requests/${encodeURIComponent(id)}`;
-    while (true) {
-        const poll = await fetchUpstream(`${resultUrl}/status`, {
-            headers,
-            errorLabel: "Azure LTX Pro status check failed",
-        });
-        const { status } = (await poll.json()) as { status?: string };
-        if (status === "COMPLETED") break;
-        if (status !== "IN_PROGRESS" && status !== "IN_QUEUE") {
-            throw UpstreamError.fromProvider(502, {
-                message: "Azure LTX Pro did not complete",
-            });
-        }
-        await sleep(3000);
-    }
-    const result = await fetchUpstream(resultUrl, {
-        headers,
-        errorLabel: "Azure LTX Pro result fetch failed",
-    });
-    return (await result.json()) as LtxResult;
-}
 
 export async function callLtxVideo(
     prompt: string,
@@ -96,7 +47,13 @@ export async function callLtxVideo(
     if (params.model === AZURE_MODEL) {
         // Azure bills the requested duration. The tested six-second meter
         // reported six units and the queue response carried no billing header.
-        result = await generateAzure(operation, input);
+        const response = await runAzureFalVideo(
+            "Fal-LTX-2.5-Pro",
+            "lightricks/ltx-2.5",
+            `${operation}/pro`,
+            input,
+        );
+        result = (await response.json()) as LtxResult;
     } else {
         const apiKey = getImageEnv("FAL_KEY");
         if (!apiKey)
@@ -132,24 +89,10 @@ export async function callLtxVideo(
         throw UpstreamError.fromProvider(502, {
             message: "LTX Pro returned no video",
         });
-    const url = new URL(result.video.url);
-    const video =
-        url.origin === new URL(AZURE_BASE).origin
-            ? await ensureUpstreamOk(
-                  await fetch(url, {
-                      headers: {
-                          "api-key":
-                              getImageEnv(
-                                  "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
-                              ) ?? "",
-                      },
-                      redirect: "manual",
-                  }),
-                  url.href,
-              )
-            : await fetchUpstream(url.href, {
-                  errorLabel: "Failed to download LTX Pro video",
-              });
+    const video = await fetchFalVideo(
+        result.video.url,
+        "Failed to download LTX Pro video",
+    );
     return {
         buffer: Buffer.from(await video.arrayBuffer()),
         mimeType: "video/mp4",

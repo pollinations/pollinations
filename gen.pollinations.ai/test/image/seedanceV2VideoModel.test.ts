@@ -143,6 +143,7 @@ describe("Seedance 2.0 family via Replicate", () => {
                         id: "pred",
                         status: "succeeded",
                         output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 6 },
                     }),
                     { status: 201 },
                 );
@@ -161,10 +162,15 @@ describe("Seedance 2.0 family via Replicate", () => {
             ...baseParams,
             model: "bytedance/seedance-2.0",
             image: [],
+            aspectRatio: undefined,
             ...REFERENCE_MEDIA,
         });
 
-        expect(inputs[0]).toMatchObject(REFERENCE_MEDIA);
+        expect(inputs[0]).toMatchObject({
+            ...REFERENCE_MEDIA,
+            aspect_ratio: "adaptive",
+            duration: -1,
+        });
     });
 
     it("takes the aspect ratio from an explicit width and height", async () => {
@@ -192,6 +198,7 @@ describe("Seedance 2.0 family via Replicate", () => {
                     id: "pred",
                     status: "succeeded",
                     output: VIDEO_URL,
+                    metrics: { video_output_duration_seconds: 4 },
                 }),
                 { status: 201 },
             );
@@ -223,8 +230,9 @@ describe("Seedance 2.0 family via Replicate", () => {
         expect(inputs.map((input) => input.aspect_ratio)).toEqual([
             "9:16",
             "16:9",
-            "16:9",
+            "adaptive",
             "4:3",
         ]);
+        expect(inputs.map((input) => input.duration)).toEqual([4, 4, -1, 4]);
     });
 });

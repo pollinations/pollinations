@@ -69,6 +69,7 @@ for (const modern of [false, true])
                 "to_fraction",
                 "convert_number_base",
                 "check_digit",
+                "factor_integer",
                 "integer_math",
                 "diff_text",
                 "create_qr",
@@ -852,6 +853,62 @@ test("check_digit rejects values that are not the shape of their scheme", async 
             JSON.stringify(args),
         );
     }
+});
+
+test("factor_integer factors exactly and rejects non-integers", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(await call(client, "factor_integer", { value: "360" }), {
+        factors: [
+            { prime: "2", exponent: 3 },
+            { prime: "3", exponent: 2 },
+            { prime: "5", exponent: 1 },
+        ],
+    });
+    assert.deepEqual(await call(client, "factor_integer", { value: "97" }), {
+        factors: [{ prime: "97", exponent: 1 }],
+    });
+    // Fermat's fifth number is prime to a trial division of small primes but splits
+    // into two large ones, so it is the case a sieve alone would get wrong.
+    assert.deepEqual(
+        await call(client, "factor_integer", { value: "4294967297" }),
+        {
+            factors: [
+                { prime: "641", exponent: 1 },
+                { prime: "6700417", exponent: 1 },
+            ],
+        },
+    );
+    // A 23-digit input: the factors have to multiply back to it, or a digit was lost.
+    const large = await call(client, "factor_integer", {
+        value: "12345678901234567890123",
+    });
+    assert.equal(
+        large.factors.reduce(
+            (total, { prime, exponent }) =>
+                total * BigInt(prime) ** BigInt(exponent),
+            1n,
+        ),
+        12345678901234567890123n,
+    );
+    // Twelve Miller-Rabin bases stop being exact past 23 digits, so 24 are refused.
+    for (const value of [
+        "1",
+        "0",
+        "abc",
+        "-5",
+        "+7",
+        "123456789012345678901234",
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "factor_integer",
+                    arguments: { value },
+                })
+            ).isError,
+            true,
+            `${value} should be rejected`,
+        );
 });
 
 test("integer_math is exact past the range of a JSON number", async (t) => {

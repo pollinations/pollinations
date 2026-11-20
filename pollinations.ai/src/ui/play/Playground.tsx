@@ -89,7 +89,12 @@ import {
 } from "./connect-draft";
 import { DecisionAnswerPanel } from "./DecisionAnswerPanel";
 import { DecisionCriteriaFields } from "./DecisionCriteriaFields";
-import { decisionForm, questionTypeLabel, URGENCY_EXAMPLE } from "./decision";
+import {
+    decisionForm,
+    decisionModelId,
+    questionTypeLabel,
+    URGENCY_EXAMPLE,
+} from "./decision";
 import {
     type ImageFormats,
     imageActionLabel,
@@ -1432,14 +1437,24 @@ export function Playground({
                 return;
             }
         }
-        if (selectedModel && (!isDecide || currentModel)) return;
-        const first = visibleModels.find((model) => supportsTask(model, task));
-        if (first) setParams((previous) => ({ ...previous, model: first.id }));
+        const candidates = visibleModels.filter((model) =>
+            supportsTask(model, task),
+        );
+        const id = isDecide
+            ? decisionModelId(
+                  selectedModel,
+                  candidates,
+                  isLoggedIn ? catalog.allowedModelIds : undefined,
+              )
+            : selectedModel || candidates[0]?.id;
+        if (id && id !== selectedModel)
+            setParams((previous) => ({ ...previous, model: id }));
     }, [
         task,
         legacyGif,
         isDecide,
-        currentModel,
+        isLoggedIn,
+        catalog.allowedModelIds,
         selectedModel,
         visibleModels,
         isHydrated,
@@ -1783,12 +1798,7 @@ export function Playground({
             !modelId || draft?.params.model === modelId ? draft : undefined;
         linkedModelRef.current = "";
         setParams({
-            ...(saved?.params ?? {
-                model:
-                    modelId ??
-                    visibleModels.find((model) => supportsTask(model, next))
-                        ?.id,
-            }),
+            ...(saved?.params ?? { model: modelId }),
             task: next.id,
             tab: next.workspace.category,
         });

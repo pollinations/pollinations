@@ -156,6 +156,11 @@
         "source": "gen.pollinations.ai/src/image/models/vertexAIGeminiImageModel.ts",
         "supports4K": true
     },
+    "google/gemini-decision-1": {
+        "reason": "All three question types verified with text context on the production decisions endpoint (2026-11-20).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
     "google/lyria-3-clip-preview": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",

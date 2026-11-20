@@ -16,6 +16,18 @@ export function questionTypeLabel(type: string) {
     return labels[type as QuestionType];
 }
 
+export function decisionModelId(
+    selected: string,
+    models: readonly { id: string; paidOnly: boolean }[],
+    allowed?: ReadonlySet<string>,
+) {
+    if (selected) return selected;
+    const available = allowed
+        ? models.filter((model) => allowed.has(model.id))
+        : models;
+    return (available.find((model) => !model.paidOnly) ?? available[0])?.id;
+}
+
 function decisionQuestionTypes(model: string) {
     const verified = playgroundModelOverride(model)?.decisionQuestionTypes;
     return verified

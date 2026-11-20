@@ -1,15 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { decisionForm } from "./decision";
+import { playgroundModelOverride } from "../../data/playground-model-overrides";
+import { decisionForm, decisionModelId } from "./decision";
 
 describe("Decide form", () => {
     const model = "typesafe/jev-1.14";
     it("uses a supported question when opening a link to a limited model", () => {
+        expect(
+            playgroundModelOverride("respan/span-01-lite")
+                ?.decisionQuestionTypes,
+        ).toEqual(["noul"]);
         const form = decisionForm("respan/span-01-lite", {
             questionType: "score",
         });
         expect(form.types).toEqual(["noul"]);
         expect(form.question?.type).toBe("noul");
     });
+    it.each(["noul", "choice", "score"])(
+        "builds a Gemini %s question",
+        (type) => {
+            expect(
+                decisionForm("google/gemini-decision-1", { questionType: type })
+                    .question?.type,
+            ).toBe(type);
+        },
+    );
     it("starts a newly listed decision model with a yes-or-no question", () => {
         const form = decisionForm("unknown", { questionType: "score" });
         expect(form.types).toEqual(["noul"]);
@@ -40,5 +54,25 @@ describe("Decide form", () => {
             ).toBeUndefined();
         }
         expect(decisionForm(model, { question: " " }).error).toBeTruthy();
+    });
+});
+
+describe("Decide model selection", () => {
+    const models = [
+        { id: "paid", paidOnly: true },
+        { id: "quest", paidOnly: false },
+        { id: "second-quest", paidOnly: false },
+    ];
+    it("preserves explicit models, including unavailable or restricted ones", () => {
+        for (const id of ["paid", "missing"])
+            expect(decisionModelId(id, models, new Set(["quest"]))).toBe(id);
+    });
+    it("prefers the first eligible Quest model on an empty selection", () => {
+        expect(decisionModelId("", models)).toBe("quest");
+        expect(
+            decisionModelId("", models, new Set(["paid", "second-quest"])),
+        ).toBe("second-quest");
+        expect(decisionModelId("", models, new Set(["paid"]))).toBe("paid");
+        expect(decisionModelId("", models, new Set())).toBeUndefined();
     });
 });

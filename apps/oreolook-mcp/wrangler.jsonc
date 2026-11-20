@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-oreolook-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "entrypoint.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": { "OREOLOOK_API_URL": "https://search.elixpo.com" },
+  "env": {
+    "staging": {
+      "name": "pollinations-oreolook-mcp-staging",
+      "workers_dev": false,
+      "observability": { "enabled": true },
+      "vars": { "OREOLOOK_API_URL": "https://search.elixpo.com" }
+    }
+  }
+}

@@ -41,6 +41,8 @@ const VIDEO_FRAME_LIMITS = [
     ["lightricks/ltx-2.5-pro", 2],
     ["lightricks/ltx-2.5-pro:azure", 2],
     ["black-forest-labs/flux-3-max", 2],
+    ["heygen/heygen-avatar-6", 1],
+    ["heygen/heygen-avatar-6:openrouter", 1],
     ["heygen/heygen-video-1", 1],
     ["heygen/heygen-video-1:openrouter", 1],
     ["minimax/minimax-h3", 0],

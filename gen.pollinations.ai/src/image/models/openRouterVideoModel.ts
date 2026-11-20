@@ -366,7 +366,7 @@ export async function callOpenRouterGrokVideoAPI(
     };
 }
 
-async function generateOpenRouterVideo(
+export async function generateOpenRouterVideo(
     requestBody: Record<string, unknown>,
     pollTimeoutMs: number,
 ): Promise<{

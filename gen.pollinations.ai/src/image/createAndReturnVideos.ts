@@ -26,6 +26,7 @@ import {
     callOpenRouterGrokVideoAPI,
     callOpenRouterSeedance25FlashAPI,
 } from "./models/openRouterVideoModel.ts";
+import { callHeygenAvatar6 } from "./models/heygenAvatar6Model.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedance25API } from "./models/seedance25VideoModel.ts";
 import { callVercelSeedance25FlashAPI } from "./models/seedanceFlashVercelModel.ts";
@@ -77,6 +78,10 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video:fal":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
+        case "heygen/heygen-avatar-6":
+        case "heygen/heygen-avatar-6:openrouter":
+            result = await callHeygenAvatar6(prompt, safeParams);
+            break;
         case "heygen/heygen-video-1":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;

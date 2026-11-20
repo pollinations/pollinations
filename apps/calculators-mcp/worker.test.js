@@ -77,6 +77,7 @@ for (const modern of [false, true])
                 "next_cron_runs",
                 "rank_palette",
                 "time_convert",
+                "combinatorics",
                 "time_math",
             ].sort(),
         );
@@ -677,6 +678,89 @@ test("diff_text rejects input past the line cap", async (t) => {
         arguments: { before: tooMany, after: "x" },
     });
     assert.equal(result.isError, true);
+});
+
+test("combinatorics is exact past the range of a double", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "combinatorics", { operation: "factorial", n: "0" }),
+        { result: "1" },
+    );
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "factorial",
+            n: "20",
+        }),
+        { result: "2432902008176640000" },
+    );
+    // 100! is carried to the last digit; a double loses everything past the 16th.
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "factorial",
+            n: "100",
+        }),
+        {
+            result: "93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000",
+        },
+    );
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "combinations",
+            n: "52",
+            k: "5",
+        }),
+        { result: "2598960" },
+    );
+    // The symmetry C(n, k) = C(n, n-k) has to give the same number both ways.
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "combinations",
+            n: "100",
+            k: "50",
+        }),
+        { result: "100891344545564193334812497256" },
+    );
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "combinations",
+            n: "100",
+            k: "50",
+        }),
+        await call(client, "combinatorics", {
+            operation: "combinations",
+            n: "100",
+            k: "50",
+        }),
+    );
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "permutations",
+            n: "10",
+            k: "3",
+        }),
+        { result: "720" },
+    );
+    // Selecting more than there is returns 0 rather than an error.
+    assert.deepEqual(
+        await call(client, "combinatorics", {
+            operation: "combinations",
+            n: "5",
+            k: "9",
+        }),
+        { result: "0" },
+    );
+    for (const args of [
+        { operation: "combinations", n: "5" },
+        { operation: "factorial", n: "10001" },
+        { operation: "factorial", n: "-1" },
+        { operation: "permutations", n: "5", k: "2.5" },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "combinatorics", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
 });
 
 test("convert_number_base is exact past the safe integer range", async (t) => {

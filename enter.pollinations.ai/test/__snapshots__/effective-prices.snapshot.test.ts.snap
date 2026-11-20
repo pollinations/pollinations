@@ -5169,6 +5169,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.007385,
     },
   },
+  "recraft/recraft-v4.1-pro-vector": {
+    "cost": {
+      "completionImageTokens": 0.3,
+    },
+    "price": {
+      "completionImageTokens": 0.3,
+    },
+  },
+  "recraft/recraft-v4.1-pro-vector:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.3165,
+    },
+    "price": {
+      "completionImageTokens": 0.3165,
+    },
+  },
   "recraft/recraft-v4.1-vector": {
     "cost": {
       "completionImageTokens": 0.0844,

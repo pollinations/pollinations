@@ -449,6 +449,12 @@
             height: max(100%, 44px);
             translate: -50% -50%;
         }
+
+        /* Grow the corner target outward so a tap on the tile center plays the clip. */
+        .polli-upload-remove::after {
+            inset: auto auto 0 0;
+            translate: none;
+        }
     }
 }
 

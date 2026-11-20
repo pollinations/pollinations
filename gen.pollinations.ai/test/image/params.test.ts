@@ -225,7 +225,11 @@ describe("ImageParamsSchema", () => {
         "accepts only the registry durations for %s",
         (model) => {
             // Avatar 6 derives length from supplied speech audio, not duration.
-            if (model === "heygen/heygen-avatar-6" || model === "heygen/heygen-avatar-6:openrouter") return;
+            if (
+                model === "heygen/heygen-avatar-6" ||
+                model === "heygen/heygen-avatar-6:openrouter"
+            )
+                return;
             const {
                 minDuration,
                 maxDuration,

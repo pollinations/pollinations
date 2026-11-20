@@ -243,6 +243,34 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         expect(input.height).toBe(1024);
     });
 
+    it.each([
+        [512, 512, "1K"],
+        [8192, 8192, "4K"],
+        [512, 1024, "1K"],
+    ])(
+        "falls back to the preset path for explicit %ix%i dimensions",
+        async (width, height, size) => {
+            const requests: ReplicateRequest[] = [];
+            mockReplicateFetch(requests);
+
+            await callSeedreamAPI("test", {
+                ...baseParams,
+                width,
+                height,
+                dimensionsExplicit: true,
+            });
+
+            const input = (
+                requests[0].body as {
+                    input: Record<string, unknown>;
+                }
+            ).input;
+            expect(input.size).toBe(size);
+            expect(input.width).toBeUndefined();
+            expect(input.height).toBeUndefined();
+        },
+    );
+
     it("falls back to match_input_image for I2I without explicit dimensions", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);

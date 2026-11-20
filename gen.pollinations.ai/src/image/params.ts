@@ -335,7 +335,9 @@ export const ImageParamsSchema = z
         }
         if (
             data.model === "heygen/heygen-avatar-6" ||
-            data.model === "heygen/heygen-avatar-6:openrouter"
+            data.model === "heygen/heygen-avatar-6:openrouter" ||
+            data.model === "heygen/heygen-avatar-6-turbo" ||
+            data.model === "heygen/heygen-avatar-6-turbo:openrouter"
         ) {
             const photos =
                 data.image.length + (data.reference_images?.length ?? 0);

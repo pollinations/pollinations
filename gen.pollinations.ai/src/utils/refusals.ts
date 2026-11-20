@@ -34,8 +34,10 @@ export async function requireFunds(
     free = false,
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
-    // A cost that would print as $0.0000 says nothing: name the bound instead.
-    const charge = `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
+    const charge =
+        cost === 0 && !free
+            ? "The final price depends on usage"
+            : `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
     // A cost of 0 can mean "not known until billed" (no price history, or a
     // receipt), so a key with nothing left only makes calls known to be free.

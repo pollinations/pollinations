@@ -5,16 +5,19 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 const photo = "https://example.com/photo.png";
 const audio = "https://example.com/audio.mp3";
 const video = "https://example.com/character.mp4";
-describe("HeyGen Avatar 6", () => {
+describe.each([
+    ["heygen/heygen-avatar-6", "heygen/avatar-6"],
+    ["heygen/heygen-avatar-6-turbo", "heygen/avatar-6/turbo"],
+] as const)("%s", (model, endpoint) => {
     it("maps an image and speech audio to fal and OpenRouter", () => {
         const params = ImageParamsSchema.parse({
-            model: "heygen/heygen-avatar-6",
+            model,
             image: [photo],
             reference_audios: [audio],
             resolution: "2k",
         });
         const request = buildHeygenAvatarRequest("subtle nods", params);
-        expect(request.endpoint).toBe("heygen/avatar-6/image-to-video");
+        expect(request.endpoint).toBe(`${endpoint}/image-to-video`);
         expect(request.input).toMatchObject({
             image_url: photo,
             audio_url: audio,
@@ -22,20 +25,21 @@ describe("HeyGen Avatar 6", () => {
             resolution: "2k",
         });
         expect(request.openrouter).toMatchObject({
-            model: "heygen/heygen-avatar-6",
+            model,
+            resolution: "2K",
             provider: { only: ["heygen"], allow_fallbacks: false },
         });
         expect(request.openrouter.input_references).toHaveLength(2);
     });
     it("maps a reference video and optional photo", () => {
         const params = ImageParamsSchema.parse({
-            model: "heygen/heygen-avatar-6:openrouter",
+            model: `${model}:openrouter`,
             reference_videos: [video],
             reference_images: [photo],
             reference_audios: [audio],
         });
         const request = buildHeygenAvatarRequest("gesture", params);
-        expect(request.endpoint).toBe("heygen/avatar-6/ref-video-to-video");
+        expect(request.endpoint).toBe(`${endpoint}/ref-video-to-video`);
         expect(request.input).toMatchObject({
             video_url: video,
             image_url: photo,
@@ -52,7 +56,7 @@ describe("HeyGen Avatar 6", () => {
         ]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "heygen/heygen-avatar-6",
+                    model,
                     ...bad,
                 }).success,
             ).toBe(false);

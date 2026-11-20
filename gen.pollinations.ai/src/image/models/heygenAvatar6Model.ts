@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { FalError, runFalJobResponse } from "../../model3d/models/falClient.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -7,30 +8,20 @@ import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { generateOpenRouterVideo } from "./openRouterVideoModel.ts";
 
-const MODEL = "heygen/heygen-avatar-6";
-const ENDPOINT = "heygen/avatar-6";
-const RATES = { "1080p": 0.1, "2k": 0.145 } as const;
+const STANDARD = "heygen/heygen-avatar-6";
+const TURBO = "heygen/heygen-avatar-6-turbo";
 
 export function buildHeygenAvatarRequest(prompt: string, params: ImageParams) {
+    const turbo =
+        params.model === TURBO || params.model === `${TURBO}:openrouter`;
+    const model: typeof STANDARD | typeof TURBO = turbo ? TURBO : STANDARD;
+    const endpoint = turbo ? "heygen/avatar-6/turbo" : "heygen/avatar-6";
     const photo = params.image[0] ?? params.reference_images?.[0];
     const video = params.reference_videos?.[0];
     const audio = params.reference_audios?.[0];
-    if (
-        !audio ||
-        (!photo && !video) ||
-        params.image.length + (params.reference_images?.length ?? 0) > 1 ||
-        (params.reference_videos?.length ?? 0) > 1 ||
-        (params.reference_audios?.length ?? 0) !== 1 ||
-        params.duration !== undefined
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Avatar 6 requires one audio URL and a photo or reference video; audio controls duration.",
-        });
-    }
     const resolution = params.resolution === "2k" ? "2k" : "1080p";
     return {
-        endpoint: `${ENDPOINT}/${video ? "ref-video-to-video" : "image-to-video"}`,
+        endpoint: `${endpoint}/${video ? "ref-video-to-video" : "image-to-video"}`,
         resolution,
         input: {
             resolution,
@@ -41,9 +32,9 @@ export function buildHeygenAvatarRequest(prompt: string, params: ImageParams) {
             ...(video ? { video_url: video } : {}),
         },
         openrouter: {
-            model: MODEL,
+            model,
             prompt,
-            resolution,
+            resolution: resolution === "2k" ? "2K" : resolution,
             input_references: [
                 ...(photo
                     ? [{ type: "image_url", image_url: { url: photo } }]
@@ -63,8 +54,13 @@ export async function callHeygenAvatar6(
     params: ImageParams,
 ): Promise<VideoGenerationResult> {
     const request = buildHeygenAvatarRequest(prompt, params);
-    const rate = request.resolution === "2k" ? RATES["2k"] : RATES["1080p"];
-    if (params.model === `${MODEL}:openrouter`) {
+    const model = IMAGE_SERVICES[request.openrouter.model];
+    const rate =
+        request.resolution === "2k"
+            ? model.costVariants?.["2k"]?.completionVideoSeconds
+            : model.cost.completionVideoSeconds;
+    if (!rate) throw new Error("Missing Avatar 6 rate");
+    if (params.model === `${request.openrouter.model}:openrouter`) {
         const { buffer, providerCost } = await generateOpenRouterVideo(
             request.openrouter,
             25 * 60 * 1000,
@@ -72,7 +68,7 @@ export async function callHeygenAvatar6(
         if (
             providerCost == null ||
             !Number.isFinite(providerCost) ||
-            providerCost < 0
+            providerCost <= 0
         ) {
             throw UpstreamError.fromProvider(502, {
                 message:

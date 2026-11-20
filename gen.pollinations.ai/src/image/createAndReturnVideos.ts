@@ -83,6 +83,8 @@ export async function createAndReturnVideo(
             break;
         case "heygen/heygen-avatar-6":
         case "heygen/heygen-avatar-6:openrouter":
+        case "heygen/heygen-avatar-6-turbo":
+        case "heygen/heygen-avatar-6-turbo:openrouter":
             result = await callHeygenAvatar6(prompt, safeParams);
             break;
         case "mirelo/sfx-2.0":

@@ -43,6 +43,8 @@ const VIDEO_FRAME_LIMITS = [
     ["black-forest-labs/flux-3-max", 2],
     ["heygen/heygen-avatar-6", 1],
     ["heygen/heygen-avatar-6:openrouter", 1],
+    ["heygen/heygen-avatar-6-turbo", 1],
+    ["heygen/heygen-avatar-6-turbo:openrouter", 1],
     ["heygen/heygen-video-1", 1],
     ["heygen/heygen-video-1:openrouter", 1],
     ["minimax/minimax-h3", 0],

@@ -9,6 +9,11 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "lightricks/ltx-2.5-pro": {
+        "lightricks/ltx-2.5-pro:azure": {
+            provider: "azure",
+        },
+    },
     "stability-ai/stable-diffusion-3.5-large": {
         "stability-ai/stable-diffusion-3.5-large:stability": {
             provider: "stability",

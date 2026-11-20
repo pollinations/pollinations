@@ -20,6 +20,7 @@ export const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
     access: "Access",
     source: "Source",
     status: "Status",
+    success: "Success rate",
     publisher: "Publisher",
     id: "ID",
     type: "Type",

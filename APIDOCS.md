@@ -1994,7 +1994,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].pricing` | `object` | Rates in US dollars per billed unit; `currency` is always `"pollen"`, the API's name for US dollars. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is $0.02 per megapixel. |
 | `data[].pricing_adjustments` | `object`[] | Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges. |
-| `data[].top_provider` * | `object` | — |
+| `data[].top_provider` * | `object` | Details about the primary provider serving the model. |
 | `data[].capabilities` | `string`[] | Supported features beyond modalities. |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | `true` if the model supports function or tool calling. |

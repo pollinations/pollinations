@@ -113,7 +113,7 @@ export async function preparePurchase(
     userId: string,
     packKey: string,
 ): Promise<{ id: string; key: string }> {
-    // A pending key cannot spend Pollen. It becomes usable only after Weft
+    // A pending key cannot spend from its budget. It becomes usable only after Weft
     // settles and creditPurchase atomically funds the wallet and key budget.
     const created = await createApiKeyForUser({
         authClient: createAuth(env, ctx),

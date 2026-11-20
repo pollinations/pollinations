@@ -68,7 +68,7 @@ export function ModelListingFields({
     const isPublic = form.visibility === "public";
     const visibilityHelp = isPublic
         ? isAgent
-            ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
+            ? "Listed in /models and callable by anyone. Calls use the caller’s balance and key permissions."
             : "Callable by anyone. Listed in /models while recent request success stays above 80% (or before any requests). Set prices below, or leave them at 0 for free."
         : canPublish
           ? "Only you can use it, for free. Your public prices and fallbacks are saved. It appears in /models only with your key."

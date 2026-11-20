@@ -1,8 +1,8 @@
 # Live runs (2026-10-13)
 
-The agent's real `review()` ran through `demos/run-live.mjs` against live GitHub and `gen.pollinations.ai`. Costs are the agent's own figures from live catalog prices; the four runs together cost 0.0083 Pollen.
+The agent's real `review()` ran through `demos/run-live.mjs` against live GitHub and `gen.pollinations.ai`. Costs are the agent's own figures from live catalog prices; the four runs together cost $0.0083.
 
-| PR | Model | Tokens in / out | Cost (Pollen) | Verdict | Pushed |
+| PR | Model | Tokens in / out | Cost (USD) | Verdict | Pushed |
 | --- | --- | --- | --- | --- | --- |
 | [Drjacky/pollinations#2](https://github.com/Drjacky/pollinations/pull/2) (planted off-by-one) | `openai/gpt-6.1-sol` | 474 / 132 | 0.0023 | problems found | [`bc46d60`](https://github.com/Drjacky/pollinations/commit/bc46d608d13b99d2796485752b8b5c20bb835126) on `pr-fixer/Drjacky-pollinations-2-bc46d60` |
 | [#17197](https://github.com/pollinations/pollinations/pull/17197) retry empty news answers | `openai/gpt-6-luna` | 5766 / 1283 | 0.0012 | nothing wrong | no (nothing to fix) |
@@ -27,7 +27,7 @@ Pushed `pr-fixer/Drjacky-pollinations-2-bc46d60` (bc46d60): https://github.com/D
 -    const start = page * size;
 +    const start = (page - 1) * size;
 
-Model `openai/gpt-6.1-sol`, 474 in / 132 out tokens, about 0.0023 Pollen.
+Model `openai/gpt-6.1-sol`, 474 in / 132 out tokens, about $0.0023.
 ```
 
 The GitHub API confirms that the commit's only parent is the PR head `8c1b0fd`, so the branch reads as "the PR plus one fix commit".

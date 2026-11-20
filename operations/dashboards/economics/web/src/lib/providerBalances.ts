@@ -597,15 +597,14 @@ export function balanceCreditTerms(row: VendorLedgerRow): {
 } {
     const date = row.end.slice(0, 10);
     const expiry = isDateKey(date) ? date : null;
+    const assumed = row.resource_sku === "current-balance-expiry-assumed";
     return {
         known:
             row.credit <= 0 ||
-            expiry != null ||
+            (expiry != null && !assumed) ||
             row.resource_sku === "current-balance-no-expiry",
         expiry,
-        assumed:
-            expiry == null &&
-            row.resource_sku === "current-balance-expiry-assumed",
+        assumed,
     };
 }
 
@@ -1221,7 +1220,9 @@ export function providerAccountBalanceRows(
                 balanceAsOf,
                 balanceStatus,
                 balanceNote: snapshot?.expiryAssumed
-                    ? "Expiry ignored for this snapshot by user-approved planning assumption; provider non-expiry is not verified"
+                    ? snapshot.end
+                        ? `Expiry ${snapshot.end.slice(0, 10)} is a user-approved planning assumption; provider terms are not verified for the full balance`
+                        : "Expiry ignored for this snapshot by user-approved planning assumption; provider non-expiry is not verified"
                     : (snapshot?.fundingLots.length ?? 0) > 1
                       ? "Separate credit lots retain their own expiry dates; the earliest expiry applies only to that lot"
                       : snapshot?.resource_sku === "usage-quota"

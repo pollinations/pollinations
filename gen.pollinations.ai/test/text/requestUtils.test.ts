@@ -4,13 +4,76 @@ import { GenerateTextRequestQueryParamsSchema } from "../../src/schemas/text.js"
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    requestsAudioOutput,
+    withoutAudioParams,
+    withoutCallerMetadata,
 } from "../../src/text/requestUtils.js";
 import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
-import { SENTINEL_SEED } from "../../src/util.js";
 
 afterEach(() => vi.restoreAllMocks());
 
+describe("audio request params", () => {
+    it("detects explicit audio output", () => {
+        expect(requestsAudioOutput({ modalities: ["text", "audio"] })).toBe(
+            true,
+        );
+        expect(requestsAudioOutput({ audio: { voice: "alloy" } })).toBe(true);
+        expect(requestsAudioOutput({ modalities: ["text"] })).toBe(false);
+        expect(requestsAudioOutput({})).toBe(false);
+    });
+
+    it("strips audio fields for text-only models", () => {
+        const request = {
+            model: "openai",
+            messages: [],
+            modalities: ["text"],
+            audio: { voice: "alloy", format: "mp3" },
+            temperature: 0.2,
+        };
+        expect(withoutAudioParams(request)).toEqual({
+            model: "openai",
+            messages: [],
+            temperature: 0.2,
+        });
+    });
+
+    it("keeps objects without audio fields unchanged", () => {
+        const request = { model: "openai", messages: [] };
+        expect(withoutAudioParams(request)).toBe(request);
+    });
+});
+
+describe("caller metadata", () => {
+    it("strips metadata before a non-agent provider call", () => {
+        expect(
+            withoutCallerMetadata({
+                model: "openai",
+                metadata: { user_id: "probe" },
+                temperature: 0.2,
+            }),
+        ).toEqual({ model: "openai", temperature: 0.2 });
+    });
+
+    it("keeps objects without metadata unchanged", () => {
+        const request = { model: "openai" };
+        expect(withoutCallerMetadata(request)).toBe(request);
+    });
+});
+
 describe("getChatRequestData", () => {
+    it("randomizes seed -1 without changing the caller's request", () => {
+        vi.spyOn(Math, "random")
+            .mockReturnValueOnce(0.25)
+            .mockReturnValueOnce(0.75);
+        const body = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            seed: -1,
+        });
+        expect(getChatRequestData(body).seed).toBe(536870912);
+        expect(getChatRequestData(body).seed).toBe(1610612736);
+        expect(body.seed).toBe(-1);
+    });
+
     it.each([undefined, false, true])(
         "does not invent parallel_tool_calls (%s)",
         (parallel_tool_calls) => {
@@ -74,7 +137,7 @@ describe("getChatRequestData", () => {
                 safe: "privacy",
                 system: "Be concise",
                 json: true,
-                seed: -1,
+                seed: 12,
                 thinking: { type: "enabled", budget_tokens: 1024 },
                 thinking_budget: 1024,
                 reasoning_effort: "medium",
@@ -86,7 +149,7 @@ describe("getChatRequestData", () => {
             { role: "user", content: "hello" },
         ]);
         expect(request.response_format).toEqual({ type: "json_object" });
-        expect(request.seed).toBe(SENTINEL_SEED);
+        expect(request.seed).toBe(12);
         expect(request.reasoning_effort).toBe("medium");
         for (const field of [
             "safe",
@@ -113,6 +176,14 @@ describe("getChatRequestData", () => {
 });
 
 describe("getSimpleTextRequestData", () => {
+    it("replaces seed -1 with a supported random seed", () => {
+        vi.spyOn(Math, "random").mockReturnValue(0.5);
+        const query = GenerateTextRequestQueryParamsSchema.parse({ seed: -1 });
+        expect(getSimpleTextRequestData("hello", "openai", query).seed).toBe(
+            1073741824,
+        );
+    });
+
     it("uses the validated GET query without reparsing it", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
             model: "openai/gpt-5-nano",
@@ -153,10 +224,10 @@ describe("getSimpleTextRequestData", () => {
         });
     });
 
-    it.each([0, 12, -1])("preserves an explicit seed %s", (seed) => {
+    it.each([0, 12])("preserves an explicit seed %s", (seed) => {
         const query = GenerateTextRequestQueryParamsSchema.parse({ seed });
         expect(getSimpleTextRequestData("hello", "openai", query).seed).toBe(
-            seed === -1 ? SENTINEL_SEED : seed,
+            seed,
         );
     });
 

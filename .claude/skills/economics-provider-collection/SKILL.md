@@ -318,7 +318,12 @@ balance snapshot is current state, not historical burn.
   cycle dates with calendar-month boundaries or use collection time as coverage.
 - Credit snapshot `end`: verified expiry. Blank means unknown, not unlimited.
   Use `resource_sku: current-balance-no-expiry` only with verified non-expiring
-  terms. Recheck omitted/changed terms; never silently extend old credits.
+  terms. Carry forward funding and expiry terms recorded when the grant or
+  prepaid balance was established. Monthly collection refreshes usage and the
+  remaining balance; recheck terms only for a new lot, a change, or contradictory
+  evidence. Record missing original terms once with the existing evidence and
+  next action, rather than repeatedly requesting the same verification. Never
+  silently extend old credits or turn an unknown expiry into no expiry.
   A user-approved forecast exception uses `current-balance-expiry-assumed`,
   empty `end`, and the scoped approval in evidence; it is not verified terms.
 - Stripe: record `coverage_end` and `expected_accounts` for each account-month;
@@ -393,7 +398,7 @@ name or an undocumented ratio.
   Unjoined cost stays visible as needs mapping, shared upstream, or missing
   breakdown. Never spread it across models.
 - D1 `user` is authoritative for creator GitHub usernames and current balances.
-  Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full
+  Paid and Quest balances are non-cashable usage exposure; Paid serves the full
   catalog, Quest only the eligible catalog. Never classify either as Revenue
   Share or subtract face value from cash runway.
   A staging snapshot includes positive-balance users plus all Revenue Share

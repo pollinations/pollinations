@@ -27,8 +27,12 @@ const BYOP_DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
 export interface PolliProviderProps {
-    /** Publishable key (`pk_...`): the app identifier, not a user's API key. */
-    appKey: string;
+    /**
+     * Publishable key (`pk_...`): the app identifier, not a user's API key.
+     * Optional: without one, the consent screen shows the page's hostname
+     * and usage isn't attributed to an app.
+     */
+    appKey?: string;
     children: ReactNode;
     /**
      * Saves the API key and OAuth state. Defaults to `"localStorage"`.
@@ -42,7 +46,7 @@ export interface PolliProviderProps {
      * `login({ models })` overrides this default.
      */
     models?: string[];
-    /** Pollen budget for the key. `login({ budget })` overrides this default. */
+    /** Budget for the key, in US dollars. `login({ budget })` overrides this default. */
     budget?: number;
     /** Key lifetime in days. `login({ expiry })` overrides this default. */
     expiry?: number;
@@ -168,7 +172,6 @@ function isLoopbackHttpUrl(value: string): boolean {
 }
 
 function describeAppKey(appKey: string): string {
-    if (!appKey) return "<empty>";
     if (appKey.length <= 8) return `${appKey.slice(0, 3)}...`;
     return `${appKey.slice(0, 3)}...${appKey.slice(-4)}`;
 }
@@ -176,7 +179,7 @@ function describeAppKey(appKey: string): string {
 function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
     if (isProductionRuntime()) return;
 
-    if (!appKey || !appKey.startsWith("pk_")) {
+    if (appKey && !appKey.startsWith("pk_")) {
         console.warn(
             `[PolliProvider] appKey should be a publishable pk_ App Key. Received ${describeAppKey(
                 appKey,
@@ -184,7 +187,7 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
         );
     }
 
-    if (redirectUrl && isLoopbackHttpUrl(redirectUrl)) {
+    if (appKey && redirectUrl && isLoopbackHttpUrl(redirectUrl)) {
         console.info(
             `[PolliProvider] Local auth redirect URI: ${redirectUrl}\nAdd this URI to your App Key redirectUris in Enter. ${BYOP_DOCS_URL}`,
         );
@@ -195,7 +198,7 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
  * Wrap your app to share login state. Account hooks fetch data separately.
  */
 export function PolliProvider({
-    appKey,
+    appKey = "",
     children,
     storage: storageOption,
     permissions,

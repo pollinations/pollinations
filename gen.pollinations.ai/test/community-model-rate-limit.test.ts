@@ -15,14 +15,26 @@ const QUOTA_BOUND_MODELS = new Set([
     "inclusionai/ling-3.1-flash",
     ...TEXT_SERVICES["inclusionai/ling-3.1-flash"].fallbacks,
     "stealth/glyph-cluster",
+    ...TEXT_SERVICES["stealth/glyph-cluster"].fallbacks,
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     ...IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].fallbacks,
     "microsoft/mai-image-2.6",
+    // Azure Global Standard currently allows 36 requests per minute per deployment.
+    "microsoft/mai-image-2.7",
+    "microsoft/mai-image-2.7-flash",
     "vllm-sr/d3",
 ]);
 
 describe("model rate limiting", () => {
+    it("caps both Glyph Cluster routes at 8 RPM", () => {
+        const definition = TEXT_SERVICES["stealth/glyph-cluster"];
+        const fallback = "stealth/glyph-cluster:kilo";
+        expect(definition.perUserRpm).toBe(8);
+        expect(definition.fallbacks).toContain(fallback);
+        expect(TEXT_SERVICES[fallback].perUserRpm).toBe(8);
+    });
+
     it("caps Ling at 8 RPM and publishes its limit", async () => {
         const definition = TEXT_SERVICES["inclusionai/ling-3.1-flash"];
         expect(definition.perUserRpm).toBe(8);
@@ -47,7 +59,7 @@ describe("model rate limiting", () => {
             allowed: false,
         });
     });
-    it("limits the self-hosted image models", () => {
+    it("limits self-hosted and capacity-constrained image models", () => {
         expect(
             IMAGE_SERVICES["black-forest-labs/flux.1-schnell"].perUserRpm,
         ).toBe(60);
@@ -60,6 +72,10 @@ describe("model rate limiting", () => {
             12,
         );
         expect(IMAGE_SERVICES["microsoft/mai-image-2.6"].perUserRpm).toBe(12);
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.7"].perUserRpm).toBe(12);
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.7-flash"].perUserRpm).toBe(
+            12,
+        );
     });
 
     it("keeps other configured catalog model limits at 60 RPM or higher", () => {

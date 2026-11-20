@@ -42,7 +42,7 @@ async function getBalance(_params, context) {
             {
                 pollen: data.balance,
                 accountBalance: data.accountBalance,
-                note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
+                note: "Balance in US dollars for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,
         ),
@@ -122,7 +122,7 @@ const siteName = z
 export const accountTools = [
     [
         "getBalance",
-        "Get the current Pollen balance for the authenticated API key. " +
+        "Get the current balance for the authenticated API key. " +
             "Returns key-scoped balance if the key has its own budget, otherwise account-wide. " +
             "Requires an API key with 'account:usage' permission.",
         {},
@@ -217,7 +217,7 @@ export const accountTools = [
                 .number()
                 .min(0)
                 .optional()
-                .describe("Pollen budget cap for a secret key"),
+                .describe("Budget cap in US dollars for a secret key"),
             permissions: z
                 .array(z.string())
                 .optional()
@@ -228,7 +228,7 @@ export const accountTools = [
                 .boolean()
                 .optional()
                 .describe(
-                    "Never spend paid Pollen; requests stop when Quest Pollen runs out",
+                    "Never spend the paid balance; requests stop when the Quest balance runs out",
                 ),
             redirectUri: z
                 .array(z.string())

@@ -294,5 +294,10 @@ describe("usage command output", () => {
             pollen: 0,
             key_budget: 4.5,
         });
+        const human = await run([], "human");
+        expect(human).toContain("balance: $0.00");
+        expect(human).toContain("key_budget: $4.50");
+        balanceBody = { balance: 0.004, accountBalance: { total: 0.004 } };
+        expect(await run([], "human")).toContain("balance: $0.004");
     });
 });

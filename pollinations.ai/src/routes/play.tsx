@@ -40,11 +40,21 @@ function PlayPage() {
         >
             <PlayHero />
             <div className={postHeroSpacingClassName}>
-                <Playground />
+                <HydratedPlayground />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
     );
+}
+
+/**
+ * The playground reads its inputs from the URL once, on mount. Returning from
+ * Connect, the provider first puts back the URL saved before sign-in, so the
+ * playground mounts only after that.
+ */
+function HydratedPlayground() {
+    const { isHydrated } = useAuthState();
+    return isHydrated ? <Playground /> : null;
 }
 
 /**
@@ -64,10 +74,10 @@ function PlayHero() {
                 external
                 onClick={() => login()}
             >
-                Connect your account
+                Connect your Pollinations account
             </InlineLink>
         ) : (
-            "Connect your account"
+            "Connect your Pollinations account"
         );
 
     return (
@@ -79,7 +89,7 @@ function PlayHero() {
                 subtitle={
                     <>
                         Create images, video and audio. {connect} to use your
-                        own pollen.
+                        own balance.
                     </>
                 }
                 variant="page"

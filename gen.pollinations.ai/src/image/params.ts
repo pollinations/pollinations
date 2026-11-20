@@ -1,7 +1,13 @@
-import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import {
+    HOTSHOT_XL_MODEL,
+    HOTSHOT_XL_SIDE_LENGTH,
+    IMAGE_SERVICES,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
 import {
     durationError,
     type ModelDefinition,
+    type PricingInput,
 } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
@@ -96,7 +102,7 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
-        // GPT Image 2.6 Flare output controls. Keep PNG as the legacy default.
+        // GPT Image 2.6 output controls.
         output_format: z.enum(["png", "webp", "gif"]).optional(),
         frame_count: z.coerce.number().int().min(2).max(16).optional(),
         frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
@@ -151,18 +157,50 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        if (data.model === HOTSHOT_XL_MODEL) {
+            if (data.output_format !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "Hotshot-XL always returns a GIF. Omit output_format.",
+                });
+            }
+            if (
+                (data.width !== undefined &&
+                    data.width !== HOTSHOT_XL_SIDE_LENGTH) ||
+                (data.height !== undefined &&
+                    data.height !== HOTSHOT_XL_SIDE_LENGTH)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Hotshot-XL only supports 512x512 output.",
+                });
+            }
+        }
         const isFlare =
             data.model === "openai/gpt-image-2.6-flare" ||
             data.model === "openai/gpt-image-2.6-flare:fal";
-        if (data.output_format && data.output_format !== "png" && !isFlare) {
+        const isSunburst =
+            data.model === "openai/gpt-image-2.6-sunburst" ||
+            data.model === "openai/gpt-image-2.6-sunburst:fal";
+        if (data.output_format === "webp" && !isFlare) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["output_format"],
                 message:
-                    "WebP and GIF output are currently supported only by openai/gpt-image-2.6-flare.",
+                    "WebP output is supported only by GPT Image 2.6 Flare.",
             });
         }
         if (data.output_format === "gif") {
+            if (!isFlare && !isSunburst) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "GIF output is supported only by GPT Image 2.6 Flare and Sunburst.",
+                });
+            }
             if (
                 data.frame_count === undefined ||
                 data.frame_duration_ms === undefined
@@ -383,7 +421,33 @@ export const ImageParamsSchema = z
             ? (data.quality as (typeof validQualities)[number])
             : "medium";
 
-        return { ...data, quality, width, height, dimensionsExplicit };
+        // OpenAI clients ask for transparency with `background`; the
+        // support check and PNG preservation read `transparent`.
+        const transparent =
+            data.transparent || data.background === "transparent";
+
+        return {
+            ...data,
+            quality,
+            width,
+            height,
+            dimensionsExplicit,
+            transparent,
+        };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
+
+/** Request facts that select a model's rate sheet. Billing and price quotes share them. */
+export function pricingInputFromParams(
+    params: Omit<ImageParams, "model">,
+): PricingInput {
+    return {
+        resolution: params.resolution,
+        quality: params.quality,
+        hasImage: (params.image?.length ?? 0) > 0,
+        hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+        maxImageDimension: Math.max(params.width, params.height),
+        megapixels: (params.width * params.height) / 1_000_000,
+    };
+}

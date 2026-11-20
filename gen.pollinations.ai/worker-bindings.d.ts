@@ -15,6 +15,7 @@ interface CloudflareBindings {
     RESEARCH_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
+    ZONOS3_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
@@ -26,6 +27,7 @@ interface CloudflareBindings {
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
+    QUIVER_API_KEY?: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;
@@ -61,6 +63,7 @@ interface CloudflareBindings {
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
+    KILO_API_KEY?: string;
     ANTHROPIC_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;

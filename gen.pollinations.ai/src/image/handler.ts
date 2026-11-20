@@ -44,6 +44,7 @@ import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
+    pricingInputFromParams,
 } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import {
@@ -73,8 +74,6 @@ const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
     "AWS_REGION",
     "AWS_SECRET_ACCESS_KEY",
-    "AZURE_CONTENT_SAFETY_API_KEY",
-    "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
@@ -101,7 +100,9 @@ const IMAGE_ENV_KEYS = [
     "OPENROUTER_API_KEY",
     "AI_GATEWAY_API_KEY",
     "PLN_GPU_TOKEN",
+    "QUIVER_API_KEY",
     "REPLICATE_API_TOKEN",
+    "STABILITY_API_KEY",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
@@ -131,7 +132,7 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
     }
 }
 
-function parseImageParams(
+export function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
     model = c.var.model,
@@ -301,6 +302,7 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
+        c.env.IMAGES,
     );
 }
 
@@ -347,14 +349,7 @@ async function generateMediaWithFallback(
                         ? await resolveEditDimensionsForImage(parsed)
                         : parsed;
             }
-            c.var.track.setPricingInput({
-                resolution: params.resolution,
-                quality: params.quality,
-                hasImage: (params.image?.length ?? 0) > 0,
-                hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
-                maxImageDimension: Math.max(params.width, params.height),
-                megapixels: (params.width * params.height) / 1_000_000,
-            });
+            c.var.track.setPricingInput(pricingInputFromParams(params));
             if (attempt.communityEndpoint) {
                 const isVideo = attempt.communityEndpoint.modality === "video";
                 const generated = isVideo

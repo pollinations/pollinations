@@ -30,6 +30,12 @@ const OPENAI_CHAT_AUDIO_VOICES = [
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "stealth/glyph-cluster": {
+        "stealth/glyph-cluster:kilo": {
+            provider: "kilo",
+            fallbackOnStatuses: [429],
+        },
+    },
     "openai/gpt-5.5": {
         // Global rates are inferred by removing AWS's documented 10% regional
         // premium; using them before confirmation is a maintainer-approved risk.
@@ -105,6 +111,27 @@ export const TEXT_FALLBACKS = {
             },
         },
         "microsoft/microsoft-decision-1:openrouter": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
+    "microsoft/microsoft-decision-1.1": {
+        // Same Azure backend; covers gateway failures, not Microsoft outages.
+        "microsoft/microsoft-decision-1.1:vercel": {
+            provider: "vercel",
+            priceMultiplier: 1,
+            // Vercel AI Gateway list price, the cheapest route.
+            cost: {
+                promptTextTokens: perMillion(0.042),
+                completionTextTokens: perMillion(0),
+            },
+        },
+        "microsoft/microsoft-decision-1.1:openrouter": {
             provider: "openrouter",
             priceMultiplier: 1,
             // OpenRouter list price plus its 5.5% credit fee.
@@ -234,6 +261,20 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
+    "qwen/qwen4-max": {
+        // Vercel AI Gateway lists the same Alibaba rates, with no gateway fee.
+        "qwen/qwen4-max:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelQwen4Max,
+            provider: "vercel",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.875),
+                completionTextTokens: perMillion(4.5),
+            },
+        },
+    },
     "qwen/qwen3.8-max": {
         "qwen/qwen3.8-max:openrouter:alibaba": {
             provider: "openrouter",
@@ -283,6 +324,12 @@ export const TEXT_FALLBACKS = {
     },
     "openai/gpt-6.1-sol": {
         "openai/gpt-6.1-sol:aws": { provider: "aws", priceMultiplier: 1 },
+    },
+    "openai/gpt-6.2-astra": {
+        "openai/gpt-6.2-astra:aws": { provider: "aws" },
+    },
+    "openai/gpt-6.2-sol": {
+        "openai/gpt-6.2-sol:aws": { provider: "aws" },
     },
     "openai/gpt-6-luna": {
         "openai/gpt-6-luna:aws": { provider: "aws", priceMultiplier: 1 },
@@ -398,15 +445,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-10-18").getTime(),
+        // Fireworks standard serverless rates (2026-10-18).
+        "deepseek/deepseek-v4.1-flash-1017:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            addedDate: new Date("2026-11-16").getTime(),
             cost: {
-                // DeepInfra current 51% promotion (2026-10-24), no announced end.
-                promptTextTokens: perMillion(0.2) * 0.49,
-                promptCachedTokens: perMillion(0.006) * 0.49,
-                completionTextTokens: perMillion(0.6) * 0.49,
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },
@@ -595,13 +642,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "mistralai/mistral-large-3": {
-        "mistralai/mistral-large-3:mistral": {
+        "mistralai/mistral-large-3:aws": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,
-            provider: "mistral",
-            addedDate: new Date("2026-09-22").getTime(),
+            provider: "aws",
+            // Bedrock US Standard reports image input in the prompt total.
             cost: {
                 promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
         },
@@ -628,6 +674,18 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
             provider: "vercel",
             addedDate: new Date("2026-10-06").getTime(),
+        },
+    },
+    "tencent/hy4-flash": {
+        // OpenRouter's route for the same model, with its 5.5% credit fee.
+        "tencent/hy4-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.035) * 1.055,
+                promptCachedTokens: perMillion(0.0015) * 1.055,
+                completionTextTokens: perMillion(0.1405) * 1.055,
+            },
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -929,6 +987,7 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.004) * 1.055,
+                promptCacheWriteTokens: perMillion(0.125) * 1.055,
                 completionTextTokens: perMillion(0.5) * 1.055,
             },
         },

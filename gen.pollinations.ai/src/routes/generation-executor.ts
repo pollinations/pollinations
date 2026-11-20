@@ -57,6 +57,7 @@ import {
 } from "./generation-handlers.ts";
 import {
     handleImageGeneration,
+    mediaRequestPrice,
     prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
@@ -66,6 +67,7 @@ const factory = createFactory<Env>();
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageExecutionCache,
+    mediaRequestPrice,
     apiKeyBudgetReservation,
     generateImageVideo,
 );
@@ -230,6 +232,7 @@ generationExecutorRoutes.post(
     prepareOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
+    mediaRequestPrice,
     apiKeyBudgetReservation,
     handleImageGeneration,
 );
@@ -241,6 +244,7 @@ generationExecutorRoutes.post(
     prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
     imageExecutionCache,
+    mediaRequestPrice,
     apiKeyBudgetReservation,
     handleImageGeneration,
 );

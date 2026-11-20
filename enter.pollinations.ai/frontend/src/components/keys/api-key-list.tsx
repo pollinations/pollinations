@@ -266,7 +266,7 @@ export const ApiKeyList: FC<
                             />
                             {apiKey.questPollenOnly && (
                                 <span className="text-theme-text-muted">
-                                    Quest pollen only
+                                    Quest balance only
                                 </span>
                             )}
                             <span className="flex items-center gap-1">
@@ -395,15 +395,15 @@ export const ApiKeyList: FC<
                                 <span>
                                     For apps where users sign in with their own
                                     Pollinations account and spend their own
-                                    pollen. Connect your app with the
+                                    balance. Connect your app with the
                                     Pollinations SDK.
                                 </span>
                             </p>
                             <p className="flex items-start gap-1.5">
                                 <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                                 <span>
-                                    Turn on earnings to receive 20% of the
-                                    pollen users spend in your app.
+                                    Turn on earnings to receive 20% of what
+                                    users spend in your app.
                                 </span>
                             </p>
                         </>

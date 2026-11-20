@@ -74,6 +74,47 @@ const MINIMAX_H3_IMAGE = {
     maxReferenceImages: 16,
 } as const satisfies Partial<ModelDefinition>;
 
+function heygenAvatar6(title: string, baseRate: number, rate2k: number) {
+    return {
+        aliases: [],
+        provider: "fal",
+        publisher: "HeyGen",
+        category: "video",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionVideoSeconds: baseRate },
+        ...defineCostVariants(
+            { "2k": { completionVideoSeconds: rate2k } },
+            matchResolution("2k"),
+            { "2k": { label: "2K", description: "Applies at 2K resolution." } },
+            "1080p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1080p", "2k": "2K" },
+                },
+            ],
+        ),
+        resolutions: ["1080p", "2k"],
+        title,
+        description:
+            "Animate a photo or an illustrated character reference video with a speech audio track.",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: [
+            "start_frame",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+            "audio_output",
+        ],
+        maxReferenceImages: 1,
+        maxReferenceVideos: 1,
+    } as const satisfies ModelDefinition;
+}
+
 const IMAGE_BASE_SERVICES = {
     [HOTSHOT_XL_MODEL]: {
         aliases: [],
@@ -632,6 +673,52 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "bytedance-seed/seedream-5-5": {
+        aliases: ["seedream-5.5", "bytedance/seedream-5.5"],
+        provider: "vercel",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        cost: {
+            promptImageTokens: 0.008,
+            completionImageTokens: 0.02,
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.008,
+                    completionImageTokens: 0.035,
+                },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "High-resolution output.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K" },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.5",
+        description:
+            "ByteDance image generation and editing with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "bytedance/seedream-5.0-flash": {
         aliases: [],
@@ -2450,6 +2537,12 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 20,
         defaultDuration: 5,
     },
+    "heygen/heygen-avatar-6": heygenAvatar6("HeyGen Avatar 6", 0.1, 0.145),
+    "heygen/heygen-avatar-6-turbo": heygenAvatar6(
+        "HeyGen Avatar 6 Turbo",
+        0.05,
+        0.0875,
+    ),
     "heygen/heygen-video-1": {
         aliases: [],
         provider: "fal",

@@ -149,9 +149,37 @@ describe("quoteMediaRequest", () => {
         expect(quote("alibaba/wan-3.0")).toBeGreaterThan(0);
     });
 
+    it.each([
+        "heygen/heygen-avatar-6",
+        "heygen/heygen-avatar-6-turbo",
+    ] as const)(
+        "defers the %s price until the provider measures the supplied speech",
+        (model) => {
+            for (const refs of [
+                { image: [referenceImage] },
+                { reference_videos: [referenceVideo] },
+            ]) {
+                expect(
+                    quote(model, {
+                        ...refs,
+                        reference_audios: ["https://example.com/speech.mp3"],
+                    }),
+                ).toBeUndefined();
+            }
+        },
+    );
+
     it("never quotes a listed model at zero", () => {
         for (const model of getVisibleImageModels()) {
-            expect(quote(model) ?? 1, model).toBeGreaterThan(0);
+            const options =
+                model === "heygen/heygen-avatar-6" ||
+                model === "heygen/heygen-avatar-6-turbo"
+                    ? {
+                          image: [referenceImage],
+                          reference_audios: ["https://example.com/speech.mp3"],
+                      }
+                    : {};
+            expect(quote(model, options) ?? 1, model).toBeGreaterThan(0);
         }
     });
 });

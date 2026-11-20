@@ -1,0 +1,458 @@
+{
+    "alibaba/happyhorse-1.1": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"],
+        "defaultRatio": "16:9"
+    },
+    "alibaba/wan-2.2-fast": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1"]
+    },
+    "alibaba/wan-2.7": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Frames and reference media use separate generation modes. Reference mode stops at ten seconds.",
+        "source": "gen.pollinations.ai/src/image/models/wanVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "exclusiveReferences": true,
+        "maxDurationWithReference": 10
+    },
+    "alibaba/wan-3.0": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/alibabaVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": true,
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 5,
+            "audio_input_constraints": {
+                "min_seconds": 1,
+                "max_seconds": 15,
+                "max_total_seconds": 15
+            }
+        }
+    },
+    "black-forest-labs/flux-3-image-klein": {
+        "reason": "The Klein route accepts explicit dimensions up to its 4K tier.",
+        "source": "gen.pollinations.ai/src/image/models/falQwenImageModel.ts",
+        "supports4K": true
+    },
+    "black-forest-labs/flux-3-max": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/fluxMaxVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-1-pro-fast": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
+    "bytedance/seedance-2.0": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Production returned provider error E006 for a first frame plus a reference image on 2026-11-19. The provider disallows mixing reference media with first or last frames.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 3,
+            "audio_input_constraints": {
+                "min_seconds": 1.8,
+                "max_total_seconds": 15,
+                "requires_reference_visual": true
+            }
+        }
+    },
+    "bytedance/seedance-2.0-fast": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-2.0-mini": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true
+    },
+    "bytedance/seedance-2.5": {
+        "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Production returned provider error E006 for a first frame plus a reference image on 2026-11-19. The provider disallows mixing reference media with first or last frames.",
+        "source": "gen.pollinations.ai/src/image/models/seedance25VideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 10,
+            "audio_input_constraints": {
+                "min_seconds": 1.8,
+                "max_total_seconds": 30,
+                "requires_reference_visual": true
+            }
+        }
+    },
+    "bytedance/seedance-2.5-flash": {
+        "reason": "The adapter accepts six aspect ratios and optional sound, enabled by default. Gen rejects keyframes combined with reference media.",
+        "source": "gen.pollinations.ai/src/image/models/seedanceFlashVercelModel.ts, gen.pollinations.ai/src/image/models/openRouterVideoModel.ts, gen.pollinations.ai/src/image/params.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "soundToggleDefault": true,
+        "exclusiveReferences": true
+    },
+    "bytedance/seedream-4.0": {
+        "reason": "The Replicate adapter supports custom dimensions up to 4096 pixels.",
+        "source": "gen.pollinations.ai/src/image/models/seedreamReplicateModel.ts",
+        "supports4K": true
+    },
+    "bytedance/seedream-4.5": {
+        "reason": "The OpenRouter adapter requests 4K when the longer side exceeds 2048 pixels.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterImageModel.ts",
+        "supports4K": true
+    },
+    "elevenlabs/eleven-text-to-sound-v2": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "audioGroup": "Tools",
+        "audioTask": "music-and-sound-effects"
+    },
+    "elevenlabs/eleven-text-to-sound-v3": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "audioGroup": "Tools",
+        "audioTask": "music-and-sound-effects"
+    },
+    "elevenlabs/music-v2": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1,
+            "audio_input_constraints": {
+                "min_seconds": 10,
+                "max_seconds": 600
+            }
+        }
+    },
+    "elevenlabs/music-v2.5": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1,
+            "audio_input_constraints": {
+                "min_seconds": 10,
+                "max_seconds": 600
+            }
+        }
+    },
+    "google/gemini-3-pro-image": {
+        "reason": "The Vertex adapter maps large dimensions to its 4K image tier.",
+        "source": "gen.pollinations.ai/src/image/models/vertexAIGeminiImageModel.ts",
+        "supports4K": true
+    },
+    "google/gemini-3.1-flash-image": {
+        "reason": "The Vertex adapter maps large dimensions to its 4K image tier.",
+        "source": "gen.pollinations.ai/src/image/models/vertexAIGeminiImageModel.ts",
+        "supports4K": true
+    },
+    "google/gemini-decision-1": {
+        "reason": "All three question types verified with text context on the production decisions endpoint (2026-11-20).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "google/lyria-3-clip-preview": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "shared/registry/audio.ts",
+        "audioTask": "music-and-sound-effects"
+    },
+    "google/lyria-3.5": {
+        "reason": "Music length is guided by the prompt.",
+        "source": "gen.pollinations.ai/src/audio/lyria.ts",
+        "audioTask": "music-and-sound-effects",
+        "durationFromInput": true
+    },
+    "google/veo-3.1-fast": {
+        "reason": "Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/veoVideoModel.ts",
+        "soundToggleDefault": false
+    },
+    "heygen/heygen-video-1": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
+    "hotshotco/hotshot-xl": {
+        "reason": "Preview text-only native GIF until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/hotshotXLModel.ts",
+        "imageFormats": { "gif": { "mode": "native", "input_modalities": ["text"] } }
+    },
+    "jaredpalmer/kev-4b": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "kandinskylab/kandinsky-6.0-lite": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": true
+    },
+    "kwaivgi/kling-v3.0-std": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Leave the optional soundtrack off by default because it costs extra.",
+        "source": "gen.pollinations.ai/src/image/models/klingVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1"],
+        "defaultRatio": "16:9",
+        "soundToggleDefault": false
+    },
+    "liquid/d1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "liquid/d1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "microsoft/microsoft-decision-1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "microsoft/microsoft-decision-1.1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "minimax/minimax-h3": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["16:9"]
+    },
+    "minimax/minimax-h3-max": {
+        "reason": "Match the video adapter’s aspect ratios. Frames and reference media use separate generation modes.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "exclusiveReferences": true,
+        "audioCatalog": {
+            "max_reference_audios": 3,
+            "audio_input_constraints": {
+                "min_seconds": 2,
+                "max_seconds": 15,
+                "max_total_seconds": 15
+            }
+        }
+    },
+    "minimax/minimax-h3-max-turbo": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/minimaxH3Model.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"]
+    },
+    "mirelo/sfx-2.0": {
+        "reason": "Match the video adapter’s aspect ratios.",
+        "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
+        "ratios": []
+    },
+    "openai/gpt-image-2.6-flare": {
+        "reason": "Preview ordinary PNG and selectable WebP, plus the verified text-only GIF mode until the catalog publishes it.",
+        "source": "gen.pollinations.ai/src/image/createAndReturnImages.ts",
+        "imageFormats": { "png": { "mode": "default" }, "webp": { "mode": "selectable" }, "gif": { "mode": "selectable", "input_modalities": ["text"], "frame_defaults": { "frame_count": 8, "frame_duration_ms": 120 } } }
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        "reason": "Preview ordinary opaque JPEG output and the verified text-only GIF mode until the catalog publishes it.",
+        "source": "gen.pollinations.ai/test/image/gptImageRouting.test.ts",
+        "imageFormats": { "jpeg": { "mode": "default" }, "gif": { "mode": "selectable", "input_modalities": ["text"], "frame_defaults": { "frame_count": 8, "frame_duration_ms": 120 } } }
+    },
+    "openai/gpt-6-luna-decisions": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "perplexity/pplx-decider-v1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "prunaai/p-image-edit": {
+        "reason": "Editing requires a source image on the shared image route.",
+        "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
+        "requiresImage": true
+    },
+    "prunaai/p-video": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "recraft/recraft-v4.1-vector": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/recraftFalModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
+    },
+    "respan/span-01-lite": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul"]
+    },
+    "sonilo/sonilo-1.1-sfx": {
+        "reason": "Sound effects follow the input video’s length.",
+        "source": "gen.pollinations.ai/src/audio/sonilo.ts",
+        "audioGroup": "Tools",
+        "audioTask": "music-and-sound-effects",
+        "durationFromInput": true
+    },
+    "stability-ai/stable-audio-3": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
+    },
+    "stability-ai/stable-audio-3-medium": {
+        "reason": "The speech endpoint also serves music and sound generation.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioTask": "music-and-sound-effects",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
+    },
+    "typesafe/jev-1.14": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "vllm-sr/d3": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "x-ai/grok-imagine-video": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "x-ai/grok-imagine-video-1.5": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/xaiVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/openRouterVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
+        "defaultRatio": "16:9"
+    },
+    "microsoft/mai-transcribe-2": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": []
+        }
+    },
+    "elevenlabs/eleven-multilingual-sts-v2": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "audio_input_constraints": {
+                "max_seconds": 300
+            }
+        }
+    },
+    "elevenlabs/voice-isolator": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "audio_input_constraints": {
+                "min_seconds": 4.6
+            }
+        }
+    },
+    "openai/whisper-large-v3": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "openai/gpt-transcribe": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "elevenlabs/scribe-v3": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "elevenlabs/scribe-v2": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "x-ai/grok-transcribe": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "google/gemini-3.5-transcribe": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "assemblyai/universal-2": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language"
+            ]
+        }
+    },
+    "assemblyai/universal-3.5-pro": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "transcription_options": [
+                "language",
+                "prompt"
+            ]
+        }
+    },
+    "zyphra/zonos3-mini": {
+        "reason": "Preview the audio input metadata proposed in #20367.",
+        "source": "PR #20367, shared/registry/audio.ts",
+        "audioCatalog": {
+            "max_reference_audios": 1
+        }
+    }
+}

@@ -70,6 +70,21 @@ export const IMAGE_FALLBACKS = {
             cost: { completionImageTokens: 0.03 },
         },
     },
+    "bytedance-seed/seedream-5-5": {
+        "bytedance-seed/seedream-5-5:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptImageTokens: 0.008 * 1.055,
+                completionImageTokens: 0.02 * 1.055,
+            },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0.008 * 1.055,
+                    completionImageTokens: 0.035 * 1.055,
+                },
+            },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",
@@ -341,6 +356,31 @@ export const IMAGE_FALLBACKS = {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             maxReferenceImages: 10,
+        },
+    },
+    "heygen/heygen-avatar-6": {
+        "heygen/heygen-avatar-6:openrouter": {
+            provider: "openrouter",
+            cost: { completionVideoSeconds: 0.1 * 1.055 },
+            costVariants: { "2k": { completionVideoSeconds: 0.145 * 1.055 } },
+        },
+    },
+    "heygen/heygen-avatar-6-turbo": {
+        "heygen/heygen-avatar-6-turbo:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-20").getTime(),
+            cost: { completionVideoSeconds: 0.05 * 1.055 },
+            ...defineCostVariants(
+                { "2k": { completionVideoSeconds: 0.0875 * 1.055 } },
+                matchResolution("2k"),
+                {
+                    "2k": {
+                        label: "2K",
+                        description: "Applies at 2K resolution.",
+                    },
+                },
+                "1080p",
+            ),
         },
     },
     "heygen/heygen-video-1": {

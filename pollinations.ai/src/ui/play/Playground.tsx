@@ -93,9 +93,6 @@ type PlaygroundModel = MediaModelMetadata & {
     voices: string[];
     paidOnly: boolean;
     publisher?: string;
-    community?: boolean;
-    agent?: boolean;
-    brand_icon_url?: string;
     maxReferenceVideos?: number;
 };
 
@@ -115,9 +112,7 @@ const AUDIO_GROUP_LABEL: Record<AudioTask, string> = {
     transcription: "Transcription",
 };
 
-function playgroundModel(
-    model: ModelInfo & { brand_icon_url?: string },
-): PlaygroundModel | null {
+function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
     if (!id || !model.category) return null;
 
@@ -141,9 +136,6 @@ function playgroundModel(
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
-        community: model.community,
-        agent: model.agent,
-        brand_icon_url: model.brand_icon_url,
         maxReferenceVideos: model.max_reference_videos,
     };
 }

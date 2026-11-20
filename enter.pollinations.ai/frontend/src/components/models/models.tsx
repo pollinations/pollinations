@@ -42,7 +42,7 @@ import {
     getModelQueryFilterTokens,
     getModelQuerySuggestions,
     getModelQueryVisibleSearch,
-    MODEL_QUERY_FILTER_KEYS,
+    MODEL_PAGE_QUERY_FILTER_KEYS,
     type ModelQueryDraftFilter,
     type ModelQueryFilterKey,
     type ModelQueryFilterToken,
@@ -83,7 +83,7 @@ const QUERY_FILTER_KEYS_BY_KIND: Record<
     CatalogKind,
     readonly ModelQueryFilterKey[]
 > = {
-    models: MODEL_QUERY_FILTER_KEYS,
+    models: MODEL_PAGE_QUERY_FILTER_KEYS,
     agent: AGENT_QUERY_FILTER_KEYS,
     mcp: [],
 };

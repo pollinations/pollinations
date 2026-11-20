@@ -51,6 +51,19 @@ export const MODEL_QUERY_FILTER_KEYS = [
     "capability",
 ] as const;
 
+/**
+ * The model catalog already has category tabs, so its search box does not
+ * offer a second `type:` selector that could contradict the selected tab.
+ */
+export const MODEL_PAGE_QUERY_FILTER_KEYS = [
+    "access",
+    "source",
+    "status",
+    "publisher",
+    "id",
+    "capability",
+] as const satisfies readonly ModelQueryFilterKey[];
+
 const isModelAccess = (value: string): value is ModelAccess =>
     ACCESS_VALUES.includes(value as ModelAccess);
 

@@ -333,21 +333,31 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "heygen/heygen-avatar-6" || data.model === "heygen/heygen-avatar-6:openrouter") {
-            const photos = data.image.length + (data.reference_images?.length ?? 0);
+        if (
+            data.model === "heygen/heygen-avatar-6" ||
+            data.model === "heygen/heygen-avatar-6:openrouter"
+        ) {
+            const photos =
+                data.image.length + (data.reference_images?.length ?? 0);
             const videos = data.reference_videos?.length ?? 0;
-            if (photos > 1 || videos > 1 || photos + videos === 0 ||
-                (data.reference_audios?.length ?? 0) !== 1) {
+            if (
+                photos > 1 ||
+                videos > 1 ||
+                photos + videos === 0 ||
+                (data.reference_audios?.length ?? 0) !== 1
+            ) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "Avatar 6 requires exactly one speech audio reference and a photo or reference video (at most one of each).",
+                    message:
+                        "Avatar 6 requires exactly one speech audio reference and a photo or reference video (at most one of each).",
                 });
             }
             if (data.duration !== undefined) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["duration"],
-                    message: "Avatar 6 duration is determined by the supplied audio.",
+                    message:
+                        "Avatar 6 duration is determined by the supplied audio.",
                 });
             }
         }

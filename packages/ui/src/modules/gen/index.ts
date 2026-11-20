@@ -15,6 +15,7 @@ export {
     ModelSelector,
     type ModelSelectorCategory,
 } from "./ModelSelector.tsx";
+export { OrganizationIcon } from "./OrganizationIcon.tsx";
 export {
     getModalityKey,
     modalityBgVar,

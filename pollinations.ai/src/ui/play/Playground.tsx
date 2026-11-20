@@ -41,6 +41,7 @@ import {
 import {
     categoryLabel,
     ModalityTab,
+    ModelBrandIcon,
     modalityBgVar,
     modalityTextColor,
 } from "@pollinations/ui/gen";
@@ -92,6 +93,9 @@ type PlaygroundModel = MediaModelMetadata & {
     voices: string[];
     paidOnly: boolean;
     publisher?: string;
+    community?: boolean;
+    agent?: boolean;
+    brand_icon_url?: string;
     maxReferenceVideos?: number;
 };
 
@@ -111,7 +115,9 @@ const AUDIO_GROUP_LABEL: Record<AudioTask, string> = {
     transcription: "Transcription",
 };
 
-function playgroundModel(model: ModelInfo): PlaygroundModel | null {
+function playgroundModel(
+    model: ModelInfo & { brand_icon_url?: string },
+): PlaygroundModel | null {
     const id = model.id ?? model.name;
     if (!id || !model.category) return null;
 
@@ -135,6 +141,9 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         publisher: model.publisher,
+        community: model.community,
+        agent: model.agent,
+        brand_icon_url: model.brand_icon_url,
         maxReferenceVideos: model.max_reference_videos,
     };
 }
@@ -416,8 +425,15 @@ function ModelPicker({
                         size="md"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
+                        aria-description={selected?.publisher}
                         aria-label={`Model: ${selected?.title ?? "Unavailable"}`}
                     >
+                        {selected && !isLoading && (
+                            <ModelBrandIcon
+                                model={selected}
+                                className="size-4 shrink-0 text-theme-text-muted"
+                            />
+                        )}
                         <span className="truncate">
                             {isLoading
                                 ? "Loading models…"
@@ -457,6 +473,7 @@ function ModelPicker({
                                             active={model.id === selectedModel}
                                             size="sm"
                                             variant="ghost"
+                                            aria-description={model.publisher}
                                             className="w-full justify-start text-left"
                                             onClick={() => {
                                                 onSelectModel(model.id);

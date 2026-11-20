@@ -1,5 +1,5 @@
 import { Button, ClockIcon, TerminalIcon, WalletIcon } from "@pollinations/ui";
-import { ModelBrandIcon } from "@pollinations/ui/gen";
+import { OrganizationIcon } from "@pollinations/ui/gen";
 import {
     SANDBOX_PROVIDERS,
     SANDBOX_TEMPLATES,
@@ -17,16 +17,11 @@ const shares = Object.values(SANDBOX_PROVIDERS).map(({ share }) => share);
 // The launch promo's discount, from the provider that discounts least.
 export const LAUNCH_DISCOUNT = Math.round((1 - Math.max(...shares)) * 100);
 
-const PUBLISHERS: Record<SandboxProvider, string> = {
-    e2b: "E2B",
-    azure: "Microsoft",
-};
-
 const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => (
     <span title={SANDBOX_PROVIDERS[provider].name} className="flex">
         <span className="sr-only">{SANDBOX_PROVIDERS[provider].name}</span>
-        <ModelBrandIcon
-            model={{ publisher: PUBLISHERS[provider] }}
+        <OrganizationIcon
+            name={SANDBOX_PROVIDERS[provider].name}
             className="h-full w-full shrink-0 text-ink-900 opacity-55"
         />
     </span>

@@ -19,6 +19,16 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "minimax/minimax-h3-image-highspeed": {
+        "minimax/minimax-h3-image-highspeed:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.3 * 1.055),
+                promptImageTokens: perMillion(3 * 1.055),
+                completionImageTokens: perMillion(7.6 * 1.055),
+            },
+        },
+    },
     "kwaivgi/kling-v3.0-pro": {
         "kwaivgi/kling-v3.0-pro:azure": {
             provider: "azure",

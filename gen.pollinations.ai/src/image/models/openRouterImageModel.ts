@@ -629,7 +629,7 @@ export async function callOpenRouterMiniMaxH3ImageAPI(
     const apiKey = requireOpenRouterImageApiKey();
     const references = await Promise.all(safeParams.image.map(toDataUri));
     const requestBody: Record<string, unknown> = {
-        model: "minimax/minimax-h3-image",
+        model: safeParams.model.split(":")[0],
         prompt,
         n: 1,
         seed: safeParams.seed,
@@ -703,7 +703,7 @@ export async function callOpenRouterMiniMaxH3ImageAPI(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "minimax/minimax-h3-image:openrouter",
+            actualModel: safeParams.model,
             usage,
             providerBilling: { units: providerCost, unitCost: 1.055 },
         },

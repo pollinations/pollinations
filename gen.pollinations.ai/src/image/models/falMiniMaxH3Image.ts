@@ -47,8 +47,12 @@ export async function callFalMiniMaxH3Image(
         });
     const references = await Promise.all(params.image.map(toDataUri));
     const operation = references.length ? "edit" : "text-to-image";
+    const endpoint =
+        params.model === "minimax/minimax-h3-image-highspeed"
+            ? "minimax/h3-image/highspeed"
+            : "minimax/h3-image";
     const response = await fetchUpstream(
-        `https://fal.run/minimax/h3-image/${operation}`,
+        `https://fal.run/${endpoint}/${operation}`,
         {
             method: "POST",
             headers: {
@@ -65,7 +69,7 @@ export async function callFalMiniMaxH3Image(
             errorLabel: "fal H3 Image request failed",
         },
     );
-    // Both fal endpoints meter weighted units at $0.001 per unit.
+    // The standard and Highspeed endpoints meter weighted units at $0.001 per unit.
     const cost = falBillableUnits(response) * 0.001;
     const data = (await response.json()) as { images?: { url?: string }[] };
     const usage = getOpenAIImageUsage(data);

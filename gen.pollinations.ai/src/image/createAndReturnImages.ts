@@ -1185,9 +1185,11 @@ const generateImage = async (
             );
 
         case "minimax/minimax-h3-image":
+        case "minimax/minimax-h3-image-highspeed":
             return await callFalMiniMaxH3Image(prompt, safeParams);
 
         case "minimax/minimax-h3-image:openrouter":
+        case "minimax/minimax-h3-image-highspeed:openrouter":
             return await callOpenRouterMiniMaxH3ImageAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-quality":

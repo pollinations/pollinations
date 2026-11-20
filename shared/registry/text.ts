@@ -3771,6 +3771,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "meta/muse-ember": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-11-09").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // The Vercel quote has no separate charge for fallback cache writes.
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.004),
+            promptCacheWriteTokens: 0,
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "Muse Ember",
+        description:
+            "Multimodal agent model with a 1M-token context, implicit prompt caching and tool use",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-glimmer-30b": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],

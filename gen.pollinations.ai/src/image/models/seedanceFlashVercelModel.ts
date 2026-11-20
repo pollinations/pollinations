@@ -3,7 +3,34 @@ import { createGateway, experimental_generateVideo as generateVideo } from "ai";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
+import { sleep } from "../util.ts";
 import { seedanceFlashAspectRatio } from "./openRouterVideoModel.ts";
+
+// Both Gateway operations use POST. Only the status operation can safely be
+// repeated after a timeout: its body identifies the already-paid job.
+const fetchGateway: typeof fetch = async (input, init) => {
+    if (
+        String(input) !==
+            "https://ai-gateway.vercel.sh/v4/ai/video-model/status" ||
+        typeof init?.body !== "string"
+    )
+        return fetch(input, init);
+
+    for (let attempt = 0; ; attempt++) {
+        try {
+            const response = await fetch(input, init);
+            const transient =
+                response.status === 408 ||
+                response.status === 429 ||
+                response.status >= 500;
+            if (!transient || attempt >= 2) return response;
+            await response.body?.cancel();
+        } catch (error) {
+            if (init.signal?.aborted || attempt >= 2) throw error;
+        }
+        await sleep(3000);
+    }
+};
 
 export async function callVercelSeedance25FlashAPI(
     prompt: string,
@@ -14,7 +41,7 @@ export async function callVercelSeedance25FlashAPI(
         throw UpstreamError.fromProvider(500, {
             message: "Vercel AI Gateway is not configured",
         });
-    const gateway = createGateway({ apiKey });
+    const gateway = createGateway({ apiKey, fetch: fetchGateway });
     const duration = params.duration ?? 5;
     const references = [
         ...(params.reference_images ?? []).map((data) => ({

@@ -69,7 +69,9 @@ describe("Vercel Seedance Flash input modes", () => {
                     operation: { gatewayJobId: "test-job" },
                 });
             }
-            expect(String(url)).toMatch(/\/video-model\/status$/);
+            expect(new Request(url, init).url).toMatch(
+                /\/video-model\/status$/,
+            );
             return Response.json({
                 status: "completed",
                 videos: [
@@ -101,5 +103,56 @@ describe("Vercel Seedance Flash input modes", () => {
             10,
         );
         expect(result.trackingData.usage.completionVideoTokens).toBe(24500);
+    });
+    it("retries a transient status failure on the same accepted job", async () => {
+        syncImageEnv({ AI_GATEWAY_API_KEY: "test" } as CloudflareBindings, [
+            "AI_GATEWAY_API_KEY",
+        ]);
+        let starts = 0;
+        const operation = { gatewayJobId: "one-paid-job" };
+        const polled: (typeof operation)[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const request = new Request(url, init);
+            if (request.url.endsWith("/video-model/start")) {
+                starts++;
+                return Response.json({ operation });
+            }
+            const body = (await request.json()) as {
+                operation: typeof operation;
+            };
+            polled.push(body.operation);
+            if (polled.length === 1)
+                return new Response("timeout", { status: 500 });
+            return Response.json({
+                status: "completed",
+                videos: [
+                    { type: "base64", data: "AAAA", mediaType: "video/mp4" },
+                ],
+                providerMetadata: {
+                    bytedance: { usage: { completion_tokens: 24500 } },
+                },
+            });
+        });
+        const result = await callVercelSeedance25FlashAPI("a boat", params);
+        expect(starts).toBe(1);
+        expect(polled).toEqual([operation, operation]);
+        expect(result.trackingData.usage.completionVideoTokens).toBe(24500);
+    }, 10000);
+    it("does not retry a failed submission", async () => {
+        syncImageEnv({ AI_GATEWAY_API_KEY: "test" } as CloudflareBindings, [
+            "AI_GATEWAY_API_KEY",
+        ]);
+        const submit = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(
+                Response.json(
+                    { error: { message: "gateway unavailable" } },
+                    { status: 503 },
+                ),
+            );
+        await expect(
+            callVercelSeedance25FlashAPI("a boat", params),
+        ).rejects.toThrow();
+        expect(submit).toHaveBeenCalledTimes(1);
     });
 });

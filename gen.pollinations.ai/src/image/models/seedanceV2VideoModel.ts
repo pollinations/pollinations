@@ -6,6 +6,7 @@
  * Replicate's native multimodal input fields and remains URL-based.
  */
 
+import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
@@ -46,7 +47,24 @@ export async function callSeedanceV2API(
         definition.resolutions?.[0] ??
         "720p") as SeedanceV2Input["resolution"];
 
-    const duration = safeParams.duration ?? 5;
+    const aspectRatio =
+        safeParams.aspectRatio ??
+        (safeParams.reference_videos?.length
+            ? "adaptive"
+            : safeParams.dimensionsExplicit
+              ? closestRatioLogSpace(safeParams.width, safeParams.height, [
+                    "16:9",
+                    "4:3",
+                    "1:1",
+                    "3:4",
+                    "9:16",
+                    "21:9",
+                ])
+              : "16:9");
+    // Replicate's Seedance edit/extension mode needs duration -1.
+    const autoDuration =
+        aspectRatio === "adaptive" && !!safeParams.reference_videos?.length;
+    const duration = autoDuration ? -1 : (safeParams.duration ?? 5);
 
     const images = safeParams.image ?? [];
 
@@ -54,18 +72,7 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio:
-            safeParams.aspectRatio ??
-            (safeParams.dimensionsExplicit
-                ? closestRatioLogSpace(safeParams.width, safeParams.height, [
-                      "16:9",
-                      "4:3",
-                      "1:1",
-                      "3:4",
-                      "9:16",
-                      "21:9",
-                  ])
-                : "16:9"),
+        aspect_ratio: aspectRatio,
         generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {
@@ -106,6 +113,11 @@ export async function callSeedanceV2API(
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
+        if (autoDuration && actualDurationSeconds === undefined) {
+            throw UpstreamError.fromProvider(502, {
+                message: `${definition.title} response is missing output video duration`,
+            });
+        }
         logOps(`${definition.title} prediction succeeded:`, {
             id: result.id,
             predict_time: result.predictTimeSeconds,

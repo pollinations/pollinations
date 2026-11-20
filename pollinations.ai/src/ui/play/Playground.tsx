@@ -1261,9 +1261,7 @@ export function Playground({
             catalog.models
                 .filter(
                     (model) =>
-                        !model.community &&
-                        model.health?.status !== "degraded" &&
-                        model.health?.status !== "down",
+                        !model.community && model.health?.status !== "down",
                 )
                 .map(playgroundModel)
                 .filter((model): model is PlaygroundModel => model !== null)

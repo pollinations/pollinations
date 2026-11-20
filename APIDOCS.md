@@ -110,7 +110,7 @@ Third-party apps can obtain a secret key on behalf of a Pollinations user. Use t
 
 Endpoints are discoverable via RFC 8414 metadata. Resolve them from there:
 
-```
+```http
 GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
 ```
 
@@ -1972,22 +1972,22 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 
 | Field | Type | Description |
 |---|---|---|
-| `object` * | `"list"` | — |
-| `data` * | `object`[] | — |
-| `data[].id` * | `string` | — |
-| `data[].object` * | `"model"` | — |
-| `data[].created` * | `number` | — |
-| `data[].owned_by` * | `string` | — |
-| `data[].aliases` * | `string`[] | — |
-| `data[].category` * | enum (8) — `"text"`, `"image"`, `"audio"`, … | — |
-| `data[].community` * | `boolean` | — |
+| `object` * | `"list"` | Always "list" for this endpoint. |
+| `data` * | `object`[] | OpenAI-compatible model object with capability metadata. |
+| `data[].id` * | `string` | The model identifier. |
+| `data[].object` * | `"model"` | Always "model". |
+| `data[].created` * | `number` | Unix timestamp (seconds, UTC) of when the model was created. |
+| `data[].owned_by` * | `string` | The organization or provider that hosts the model. |
+| `data[].aliases` * | `string`[] | Alternative identifiers that also resolve to this model. |
+| `data[].category` * | enum (8) — `"text"`, `"image"`, `"audio"`, … | The model's primary type. |
+| `data[].community` * | `boolean` | `true` if the model is a community-contributed model rather than one from a first-party provider. |
 | `data[].tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
-| `data[].title` * | `string` | — |
-| `data[].description` | `string` | — |
-| `data[].input_modalities` | `string`[] | — |
-| `data[].output_modalities` | `string`[] | — |
+| `data[].title` * | `string` | Human-readable display name. |
+| `data[].description` | `string` | Short summary of the model's purpose and strengths. |
+| `data[].input_modalities` | `string`[] | Input types the model accepts, such as "text" or "image". |
+| `data[].output_modalities` | `string`[] | Output types the model produces. |
 | `data[].required_safety` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Safety checks the gateway always applies to text input for this model; callers cannot disable them. |
-| `data[].supported_endpoints` | `string`[] | — |
+| `data[].supported_endpoints` | `string`[] | API endpoints the model works with, such as chat completions. |
 | `data[].agent` | `boolean` | True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models. |
 | `data[].base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs the paid balance; the Quest balance can't pay for it. Same field as on `/models`. |
@@ -1995,19 +1995,19 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].pricing_units` | `object` | Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is $0.02 per megapixel. |
 | `data[].pricing_adjustments` | `object`[] | Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges. |
 | `data[].top_provider` * | `object` | — |
-| `data[].capabilities` | `string`[] | — |
+| `data[].capabilities` | `string`[] | Supported features beyond modalities. |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
-| `data[].tools` | `boolean` | — |
-| `data[].reasoning` | `boolean` | — |
+| `data[].tools` | `boolean` | `true` if the model supports function or tool calling. |
+| `data[].reasoning` | `boolean` | `true` if the model performs extended reasoning before responding. |
 | `data[].supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
-| `data[].context_length` | `number` | — |
+| `data[].context_length` | `number` | Maximum context size in tokens. |
 | `data[].video_capabilities` | enum (7) — `"start_frame"`, `"end_frame"`, `"keyframes"`, …[] | Video controls the model accepts, such as `start_frame`, `end_frame` or `audio_output`. Omitted for models that generate no video. |
 | `data[].min_duration` | `number` | Shortest accepted video or audio `duration` in seconds. |
 | `data[].max_duration` | `number` | Longest accepted video or audio `duration` in seconds. |
 | `data[].default_duration` | `number` | Video length in seconds when the request omits `duration`. |
 | `data[].allowed_durations` | `number`[] | Exact `duration` values in seconds when the model accepts a fixed set instead of a range. |
 | `data[].resolutions` | `string`[] | Output resolutions the model accepts for the `resolution` parameter, such as `1k`, `2k` or `1080p`. The first entry is the default. Omitted when the model declares none. |
-| `data[].per_user_rpm` | `number` \| `null` | — |
+| `data[].per_user_rpm` | `number` \| `null` | Requests per minute allowed per user. `null` means no per-user limit is set. |
 | `data[].max_reference_images` | `integer` | Most reference or input images one request accepts. Omitted when the model declares none. |
 | `data[].max_reference_videos` | `integer` | Most reference or input videos one request accepts. Omitted when the model declares none. |
 | `data[].health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |

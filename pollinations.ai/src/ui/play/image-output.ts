@@ -63,9 +63,16 @@ export function imageResult(
 ) {
     const mime = contentType.split(";")[0].trim().toLowerCase();
     if (!mime.startsWith("image/") || !mime.slice(6)) {
-        throw new Error(
-            `Expected an image, but the model returned ${contentType}.`,
-        );
+        return {
+            type: "file" as const,
+            url: URL.createObjectURL(
+                new Blob([buffer], { type: "application/octet-stream" }),
+            ),
+            filename: "pollinations-playground.bin",
+            notice: mime
+                ? `Preview unavailable. The model returned ${mime}.`
+                : "Preview unavailable. The response has no media type.",
+        };
     }
     const actual = formats.find((key) => imageMime[key] === mime);
     const label = actual && imageFormatLabel(actual);

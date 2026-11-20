@@ -118,9 +118,22 @@ describe("returned image", () => {
             }
         },
     );
-    it("rejects a non-image response", () => {
-        expect(() =>
-            imageResult({ buffer, contentType: "text/html" }, "gif"),
-        ).toThrow("Expected an image");
-    });
+    it.each(["text/html; charset=utf-8", "application/octet-stream", ""])(
+        "preserves a successful %j response as a download",
+        async (contentType) => {
+            const result = imageResult({ buffer, contentType }, "gif");
+            try {
+                expect(result.type).toBe("file");
+                expect(result.filename).toBe("pollinations-playground.bin");
+                expect(result.notice).toContain("Preview unavailable.");
+                const download = await fetch(result.url);
+                expect(download.headers.get("Content-Type")).toBe(
+                    "application/octet-stream",
+                );
+                expect(await download.arrayBuffer()).toEqual(buffer);
+            } finally {
+                URL.revokeObjectURL(result.url);
+            }
+        },
+    );
 });

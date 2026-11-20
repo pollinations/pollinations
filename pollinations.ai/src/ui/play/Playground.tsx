@@ -1002,6 +1002,16 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     const zoomButtonClass =
         "block w-full cursor-zoom-in border-0 bg-transparent p-0";
 
+    if (result.type === "file") {
+        return (
+            <Alert intent="advisory">
+                {result.notice}{" "}
+                <InlineLink href={result.url} download={result.filename}>
+                    Download original file
+                </InlineLink>
+            </Alert>
+        );
+    }
     if (result.type === "stems") {
         return (
             <Surface

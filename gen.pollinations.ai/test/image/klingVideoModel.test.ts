@@ -192,7 +192,7 @@ describe("callKlingVideoAPI", () => {
                 end_image_url: frames[1],
             });
             for (const [url, init] of calls) {
-                if (String(url).startsWith(origin)) {
+                if (new URL(String(url)).origin === origin) {
                     expect(init?.redirect).toBe("manual");
                     expect(new Headers(init?.headers).get("api-key")).toBe(
                         "test-key",

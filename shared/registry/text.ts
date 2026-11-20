@@ -3747,11 +3747,11 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-11-09").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vercel AI Gateway Meta route (2026-11-09). Vercel lists a cache-read
-        // rate but no cache-write rate.
+        // The Vercel quote has no separate charge for fallback cache writes.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.004),
+            promptCacheWriteTokens: 0,
             completionTextTokens: perMillion(0.5),
         },
         title: "Muse Ember",

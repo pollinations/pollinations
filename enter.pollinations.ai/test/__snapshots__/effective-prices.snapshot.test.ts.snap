@@ -2273,11 +2273,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "meta/muse-ember": {
     "cost": {
       "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0,
       "promptCachedTokens": 0.000000004,
       "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0,
       "promptCachedTokens": 0.000000004,
       "promptTextTokens": 0.0000001,
     },

@@ -2369,6 +2369,54 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "minimax/minimax-h3-image": {
+        aliases: ["minimax-h3-image"],
+        provider: "fal",
+        publisher: "MiniMax",
+        category: "image",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(2.3),
+            promptImageTokens: perMillion(1.5),
+            completionImageTokens: perMillion(3.8),
+        },
+        // Resolution changes the token count. Each route keeps its own base rates.
+        ...defineCostVariants(
+            { "2k": {}, "4k": {} },
+            matchResolution("2k", "4k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "2K output at the base token rates.",
+                },
+                "4k": {
+                    label: "4K",
+                    description: "4K output at the base token rates.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K", "4k": "4K" },
+                },
+            ],
+        ),
+        // Both adapters report the base USD charge before gateway fees.
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        resolutions: ["1k", "2k", "4k"],
+        title: "MiniMax H3 Image",
+        description:
+            "Generate images up to 4K and combine up to 16 references in a single edit",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
     "minimax/minimax-h3": {
         aliases: ["minimax-h3"],
         provider: "fal",

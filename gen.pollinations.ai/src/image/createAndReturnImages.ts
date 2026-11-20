@@ -17,6 +17,7 @@ import {
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFalMiniMaxH3Image } from "./models/falMiniMaxH3Image.ts";
 import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callHotshotXL } from "./models/hotshotXLModel.ts";
@@ -35,6 +36,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
+    callOpenRouterMiniMaxH3ImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -1181,6 +1183,12 @@ const generateImage = async (
                 safeParams,
                 "grok-imagine-image",
             );
+
+        case "minimax/minimax-h3-image":
+            return await callFalMiniMaxH3Image(prompt, safeParams);
+
+        case "minimax/minimax-h3-image:openrouter":
+            return await callOpenRouterMiniMaxH3ImageAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-quality":
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);

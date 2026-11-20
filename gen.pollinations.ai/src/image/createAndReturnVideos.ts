@@ -78,12 +78,12 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video:fal":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
+        case "heygen/heygen-video-1":
+            result = await callFalFallbackVideo(prompt, safeParams);
+            break;
         case "heygen/heygen-avatar-6":
         case "heygen/heygen-avatar-6:openrouter":
             result = await callHeygenAvatar6(prompt, safeParams);
-            break;
-        case "heygen/heygen-video-1":
-            result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "mirelo/sfx-2.0":
             result = await callMireloSfxAPI(prompt, safeParams);

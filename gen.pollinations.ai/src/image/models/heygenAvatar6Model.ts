@@ -63,7 +63,7 @@ export async function callHeygenAvatar6(
     params: ImageParams,
 ): Promise<VideoGenerationResult> {
     const request = buildHeygenAvatarRequest(prompt, params);
-    const rate = RATES[request.resolution];
+    const rate = request.resolution === "2k" ? RATES["2k"] : RATES["1080p"];
     if (params.model === `${MODEL}:openrouter`) {
         const { buffer, providerCost } = await generateOpenRouterVideo(
             request.openrouter,

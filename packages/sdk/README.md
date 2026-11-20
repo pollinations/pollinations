@@ -687,6 +687,93 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice sessions
+
+`connectRealtime` opens an OpenAI-compatible realtime WebSocket
+(`wss://gen.pollinations.ai/v1/realtime`) and passes events through in both
+directions, so a browser can hold a spoken conversation with
+`openai/gpt-realtime-2.1` or stream live transcription.
+
+```javascript
+import { connectRealtime } from '@pollinations/sdk';
+
+const session = await connectRealtime({ model: 'openai/gpt-realtime-2.1' });
+
+session.on('response.audio_transcript.delta', (event) => {
+  process.stdout.write(event.delta ?? '');
+});
+session.on('response.audio.delta', (event) => {
+  // event.delta is base64 PCM16 at 24 kHz; queue it for playback.
+});
+
+session.updateSession({ voice: 'coral' });
+session.sendText('Say hello in one short sentence.');
+```
+
+The model, API key and base URL come from the options; `apiKey` falls back to
+`POLLINATIONS_API_KEY`, and the key travels in the query string because a
+browser cannot set an `Authorization` header on a WebSocket.
+
+### Session methods
+
+| Method | Sends |
+|---|---|
+| `send(event)` | Any client event, verbatim. Events sent before the socket opens are queued. |
+| `sendText(text)` | A user text turn plus `response.create`. |
+| `appendAudio(base64)` | `input_audio_buffer.append` for microphone PCM16. |
+| `commitAudio()` | Ends the input item so the model can answer it. |
+| `updateSession(session)` | `session.update`, e.g. `{ instructions, voice, turn_detection }`. |
+| `on(type, handler)` | Calls `handler` for one event type; returns an unsubscribe function. |
+| `onEvent(handler)` | Calls `handler` for every event type. |
+| `onClose(handler)` | Called when the socket closes. |
+| `close()` | Closes the session. |
+
+For a transcription session, pick a transcription model and read the transcript
+events. Turn detection runs server-side, so `commitAudio()` is only needed when
+you turn VAD off:
+
+```javascript
+const transcription = await connectRealtime({ model: 'openai/gpt-live-transcribe' });
+transcription.on('conversation.item.input_audio_transcription.completed', (event) => {
+  console.log(event.transcript);
+});
+```
+
+A full browser page with microphone capture and playback is in
+[`examples/realtime.html`](./examples/realtime.html).
+
+### React realtime hook
+
+`useRealtimeSession` runs a session on the signed-in user's key and keeps the
+connection status, the latest event and a bounded event history. A logout, a key
+change, or unmounting closes the socket.
+
+```tsx
+import { useRealtimeSession } from '@pollinations/sdk/react';
+
+function TalkButton() {
+  const { connect, disconnect, status, events } = useRealtimeSession({
+    model: 'openai/gpt-realtime-2.1',
+  });
+  const transcript = events
+    .filter((e) => e.type === 'response.audio_transcript.delta')
+    .map((e) => e.delta)
+    .join('');
+  return (
+    <>
+      <button onClick={() => (status === 'connected' ? disconnect() : connect())}>
+        {status}
+      </button>
+      <p>{transcript}</p>
+    </>
+  );
+}
+```
+
+`events` keeps the last 100 events; pass `onEvent` for every event as it
+arrives. Read `lastEvent` for only the newest one, and call
+`session.sendText(...)` / `session.appendAudio(...)` for the outgoing direction.
+
 ## Vision (Image Input)
 
 ```javascript
@@ -860,6 +947,7 @@ import type {
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
+| `connectRealtime(options?)` | Open a realtime voice or transcription WebSocket session |
 | `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
 

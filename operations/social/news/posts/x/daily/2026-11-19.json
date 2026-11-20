@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-19",
+  "period_start": "2026-11-19",
+  "period_end": "2026-11-19",
+  "generated_at": "2026-11-20T06:08:38.317318+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/5dbe2072f16c4675e3169305995b4cbc53b24d1cdedafd8fdd190b67441c672c"
+    }
+  ],
+  "text": "Added animated GIF requests to GPT Image 2.6 Sunburst, with frame count and duration controls. Converted Sunburst stills now report JPEG correctly. The pictures move; the format labels keep up."
+}

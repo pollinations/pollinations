@@ -1,0 +1,207 @@
+{
+  "date": "2026-11-19",
+  "period_start": "2026-11-19",
+  "period_end": "2026-11-19",
+  "title": "More ways to make images and editable vectors",
+  "summary": "A creative-tools day: new video, image, GIF, and SVG options, with clearer model discovery and steadier generation responses.\n\nStable Diffusion 3.5 Large and Stable Image Core were added for PNG generation. Ideogram Vector 1 and Quiver Arrow 2 were added for editable SVGs, including reference-image edits. All four require a paid balance. The image docs were updated to list the new models.\n\nGPT Image 2.6 Sunburst now accepts animated GIF requests with frame count and duration controls. The new paid model Hotshot-XL makes short, eight-frame GIFs through the existing image routes. Its model listing was added to the API docs.\n\nPaid-only LTX 2.5 Pro was added for video with synchronized audio, optional start and end frames, and 720p or 1080p output. Image and video balance checks now estimate the requested options when rates allow it, rather than relying only on a recent average. The 3D docs also clarify that every 3D model requires a paid balance.",
+  "pr_count": 28,
+  "prs": [
+    {
+      "number": 19555,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19588,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19595,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19671,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19764,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19828,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19829,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19841,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 19976,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20312,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20314,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20315,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20318,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20321,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20328,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20336,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20339,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20341,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20342,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20351,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20352,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20353,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20356,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20363,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20364,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20365,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20366,
+      "date": "2026-11-19"
+    },
+    {
+      "number": 20369,
+      "date": "2026-11-19"
+    }
+  ],
+  "generated_at": "2026-11-20T06:08:38.317318+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Stable Diffusion 3.5 Large",
+      "text": "Generate PNG images in nine aspect ratios, or edit with one reference image. This model requires a paid balance. [View the model](https://enter.pollinations.ai/models?q=stability-ai%2Fstable-diffusion-3.5-large).",
+      "prs": [
+        20336
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Stable Image Core",
+      "text": "Generate PNG images in nine aspect ratios with this new paid-only model. [View the model](https://enter.pollinations.ai/models?q=stability-ai%2Fstable-image-core).",
+      "prs": [
+        20336
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Sunburst makes animated GIFs",
+      "text": "Request a GIF from GPT Image 2.6 Sunburst with `frame_count` from 2 to 16 and `frame_duration_ms` from 20 to 2000. It works through the image URL and `/v1/images/generations`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        20351
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Hotshot-XL makes short GIFs",
+      "text": "Turn a prompt into an eight-frame, 512×512 GIF with `hotshotco/hotshot-xl` through the image API. It requires a paid balance. [View the model](https://enter.pollinations.ai/models?q=hotshotco%2Fhotshot-xl).",
+      "prs": [
+        20352
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Ideogram makes editable SVGs",
+      "text": "Use `ideogram-ai/ideogram-vector-1` to make editable SVG artwork from a prompt or up to five reference images. It requires a paid balance and supports `low`, `medium`, and `high` quality. [View the model](https://enter.pollinations.ai/models?q=ideogram-ai%2Fideogram-vector-1).",
+      "prs": [
+        20363
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Arrow 2 makes editable SVGs",
+      "text": "Use `quiverai/arrow-2` for editable SVG illustrations, icons, and diagrams. Edits accept up to 14 reference images, and access requires a paid balance. [View the model](https://enter.pollinations.ai/models?q=quiverai%2Farrow-2).",
+      "prs": [
+        20364
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "LTX 2.5 Pro video",
+      "text": "Generate video with synchronized audio from text, with optional start and end frames. This paid-only model supports 720p or 1080p and clips of 6, 8, or 10 seconds. [View the model](https://enter.pollinations.ai/models?q=LTX%202.5%20Pro).",
+      "prs": [
+        19671
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Spot experimental models",
+      "text": "Experimental models now report `alpha: true` on `/v1/models` and `/v1/models/:model`. Stable models omit the field, so agents can check either endpoint without a second catalog request. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        19595
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Show down models when needed",
+      "text": "Enter’s model catalog now hides models marked down by default. Use the status link to show them when you need the full list; direct model IDs and the API catalog are unchanged. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        20341
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

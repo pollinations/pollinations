@@ -4,12 +4,30 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
+import {
+    base64ToBuffer,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
 let kleinVpc: Fetcher | undefined;
+
+const PNG_IEND = Buffer.from("0000000049454e44ae426082", "hex");
+
+// A body cut off mid-stream still decodes as base64, so check the signature,
+// dimensions and end marker before it is cached and billed as a success.
+function isCompleteImage(buffer: Buffer): boolean {
+    const mimeType = detectMimeType(buffer);
+    if (!readImageDimensions(buffer, mimeType)) return false;
+    if (mimeType === "image/png") return buffer.subarray(-12).equals(PNG_IEND);
+    if (mimeType === "image/jpeg")
+        return buffer.at(-2) === 0xff && buffer.at(-1) === 0xd9;
+    return false;
+}
 
 export function setKleinVpcBinding(binding: Fetcher | undefined): void {
     kleinVpc = binding;
@@ -94,6 +112,12 @@ export const callFluxKleinAPI = async (
         }
 
         const imageBuffer = base64ToBuffer(item.image);
+        if (!isCompleteImage(imageBuffer)) {
+            throw UpstreamError.fromProvider(502, {
+                message: "Klein API returned an invalid or incomplete image",
+                requestUrl: new URL(kleinUrl),
+            });
+        }
         logOps(
             "Klein generation complete, buffer size:",
             imageBuffer.length,

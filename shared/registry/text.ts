@@ -1559,7 +1559,7 @@ const TEXT_BASE_SERVICES = {
     "deepseek/deepseek-v4.1-flash-1017": {
         // Azure accepts none, high and max for reasoning_effort.
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-        aliases: [],
+        aliases: ["deepseek-1017", "deepseek-v4.1-flash-1017"],
         provider: "azure",
         publisher: "DeepSeek",
         category: "text",

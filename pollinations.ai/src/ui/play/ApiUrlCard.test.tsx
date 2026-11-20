@@ -14,6 +14,17 @@ describe("API URL card", () => {
         },
     );
 
+    it("copies a JSON request for an agent", () => {
+        const example = apiExample("https://gen.pollinations.ai/v1/responses", {
+            model: "community/pollinations-ai/floret",
+            input: "Hello",
+            stream: true,
+        });
+        expect(example).toContain("Content-Type: application/json");
+        expect(example).toContain('"input":"Hello"');
+        expect(example).not.toContain("-o output.mp3");
+    });
+
     it("copies a multipart transcription request", () => {
         const example = apiExample(
             "https://gen.pollinations.ai/v1/audio/transcriptions",

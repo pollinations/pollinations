@@ -31,8 +31,10 @@ import {
     InfoTip,
     InlineLink,
     Input,
+    LoadingStatus,
     MediaPlaceholder,
     MicIcon,
+    RobotIcon,
     ScrollArea,
     Slider,
     StableLabel,
@@ -80,6 +82,7 @@ import {
     playgroundModelOverride,
 } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
+import { AgentChat, useAgentChat } from "./AgentChat";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint, audioTaskGroups, audioTaskIds } from "./audio-endpoint";
 import {
@@ -144,6 +147,8 @@ type PlaygroundModel = MediaModelMetadata & {
     paidOnly: boolean;
     free: boolean;
     publisher?: string;
+    /** Listed on the Agent tab; reached through /v1/responses. */
+    agent: boolean;
     addedDate?: number;
     maxReferenceVideos?: number;
     maxReferenceAudios?: number;
@@ -176,7 +181,15 @@ const WORKSPACES = [
         category: "decision",
         operations: ["decide"],
     },
+    {
+        label: "Agent",
+        icon: RobotIcon,
+        category: "text",
+        operations: ["agent"],
+    },
 ] as const;
+/** Agents publish no image limit; this keeps a message to a few attachments. */
+const AGENT_MAX_IMAGES = 4;
 type Workspace = (typeof WORKSPACES)[number];
 const TASKS = WORKSPACES.flatMap((workspace) =>
     workspace.operations.map((id) => ({
@@ -210,11 +223,14 @@ function playgroundModel(
         defaultDuration: model.default_duration,
         allowedDurations: model.allowed_durations ?? [],
         durationStep: model.duration_step,
-        maxReferenceImages: model.max_reference_images,
+        maxReferenceImages:
+            model.max_reference_images ??
+            (model.agent ? AGENT_MAX_IMAGES : undefined),
         voices: model.voices ?? [],
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         free: hasFreePricing(model),
+        agent: !!model.agent,
         addedDate: model.added_date,
         publisher: model.publisher,
         maxReferenceVideos: model.max_reference_videos,
@@ -299,6 +315,46 @@ function mediaResult(
     };
 }
 
+/**
+ * One media link from an agent's reply, fetched like any other result so it
+ * gets the same panel. A link that cannot load stays a plain link.
+ */
+function AgentMedia({ url }: { url: string }) {
+    const [result, setResult] = useState<PlaygroundResult | null>();
+    useEffect(() => {
+        let objectUrl: string | undefined;
+        let active = true;
+        fetch(url, { credentials: "omit", referrerPolicy: "no-referrer" })
+            .then(async (response) => {
+                if (!response.ok) throw new Error(response.statusText);
+                const media = {
+                    buffer: await response.arrayBuffer(),
+                    contentType: response.headers.get("content-type") ?? "",
+                };
+                const kind = (["audio", "video"] as const).find((type) =>
+                    media.contentType.startsWith(`${type}/`),
+                );
+                const next = kind
+                    ? mediaResult(kind, media)
+                    : imageResult(media);
+                if ("url" in next) objectUrl = next.url;
+                if (active) setResult(next);
+                else if (objectUrl) URL.revokeObjectURL(objectUrl);
+            })
+            .catch(() => {
+                if (active) setResult(null);
+            });
+        return () => {
+            active = false;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [url]);
+    if (result === undefined)
+        return <LoadingStatus>Loading media…</LoadingStatus>;
+    if (result === null) return <InlineLink href={url}>{url}</InlineLink>;
+    return <ResultPanel result={result} />;
+}
+
 // Kept in memory so leaving /play and coming back restores the last inputs,
 // result and any run still in flight. Connect saves selected files for the redirect.
 let lastInputs: PlaySearch | undefined;
@@ -326,6 +382,10 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
 
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
+    if (task.id === "agent")
+        return (
+            model.agent && model.supportedEndpoints.includes("/v1/responses")
+        );
     if (task.id === "decide")
         return model.supportedEndpoints.includes("/alpha/decisions");
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
@@ -1204,9 +1264,14 @@ export function Playground({
         params.task === "gif" || (!params.task && params.tab === "gif");
     const task =
         TASKS.find((item) => item.id === (legacyGif ? "image" : params.task)) ??
-        TASKS.find((item) => item.workspace.category === params.tab) ??
+        TASKS.find(
+            (item) =>
+                item.workspace.category === params.tab ||
+                item.id === params.tab,
+        ) ??
         TASKS[0];
     const isDecide = task.id === "decide";
+    const isAgent = task.id === "agent";
     const activeCategory = task.workspace.category;
     const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
@@ -1315,12 +1380,14 @@ export function Playground({
     // Community models stay off the playground menu: this page pitches the
     // official catalog, and owner/model entries would double the list. Every
     // pick below goes through this so state never lands on a hidden model.
+    // Agents are the exception: they are all community models.
     const visibleModels = useMemo(
         () =>
             catalog.models
                 .filter(
                     (model) =>
-                        !model.community && model.health?.status !== "down",
+                        (!model.community || model.agent) &&
+                        model.health?.status !== "down",
                 )
                 .map(playgroundModel)
                 .filter((model): model is PlaygroundModel => model !== null)
@@ -1558,16 +1625,27 @@ export function Playground({
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
-    const showPromptInput = formatInfo
-        ? formatInfo.input_modalities.includes("text")
-        : currentModel?.category !== "audio" ||
-          (transcription?.prompt ??
-              currentModel.inputModalities.includes("text"));
-    const promptLabel = isDecide
-        ? "Context"
-        : isAudioTranscription
-          ? "Instructions"
-          : "Description";
+    const showPromptInput =
+        !isAgent &&
+        (formatInfo
+            ? formatInfo.input_modalities.includes("text")
+            : currentModel?.category !== "audio" ||
+              (transcription?.prompt ??
+                  currentModel.inputModalities.includes("text")));
+    const agentChat = useAgentChat(
+        isAgent ? currentModel?.id : undefined,
+        async (file) => {
+            if (!session) throw new Error("Connect to attach images.");
+            return uploadReference(session.client, file, session.referenceUrls);
+        },
+    );
+    const promptLabel = isAgent
+        ? "Message"
+        : isDecide
+          ? "Context"
+          : isAudioTranscription
+            ? "Instructions"
+            : "Description";
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
@@ -1719,12 +1797,20 @@ export function Playground({
                             : { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
                         : {}),
               }
-            : decisionRequest;
-    const postEndpoint = isDecide
-        ? "/alpha/decisions"
-        : currentAudioEndpoint === "/audio/{text}"
-          ? "/v1/audio/speech"
-          : currentAudioEndpoint;
+            : isAgent && currentModel
+              ? {
+                    model: currentModel.id,
+                    input: prompt.trim() || "your-message-here",
+                    stream: true,
+                }
+              : decisionRequest;
+    const postEndpoint = isAgent
+        ? "/v1/responses"
+        : isDecide
+          ? "/alpha/decisions"
+          : currentAudioEndpoint === "/audio/{text}"
+            ? "/v1/audio/speech"
+            : currentAudioEndpoint;
     const apiUrl = currentModel
         ? apiMethod === "POST"
             ? `${API_BASE_URL}${postEndpoint}`
@@ -2034,22 +2120,25 @@ export function Playground({
     const editsImage =
         currentModel?.category === "image" &&
         (requiresImage || (acceptsImageParam && referenceImages.length > 0));
-    const generateLabel = isDecide
-        ? "Evaluate"
-        : currentModel?.category === "video"
-          ? "Generate video"
-          : currentModel?.category === "audio"
-            ? isAudioTranscription
-                ? "Transcribe audio"
-                : currentAudioEndpoint === "/v1/audio/voice-changer"
-                  ? "Change voice"
-                  : currentAudioEndpoint === "/v1/audio/voice-isolator"
-                    ? "Isolate speech"
-                    : currentAudioEndpoint === "/alpha/audio/stem-separation"
-                      ? "Separate stems"
-                      : "Generate audio"
-            : imageActionLabel(editsImage, format);
-    const GenerateIcon = task.workspace.icon;
+    const generateLabel = isAgent
+        ? "Send"
+        : isDecide
+          ? "Evaluate"
+          : currentModel?.category === "video"
+            ? "Generate video"
+            : currentModel?.category === "audio"
+              ? isAudioTranscription
+                  ? "Transcribe audio"
+                  : currentAudioEndpoint === "/v1/audio/voice-changer"
+                    ? "Change voice"
+                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                      ? "Isolate speech"
+                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                        ? "Separate stems"
+                        : "Generate audio"
+              : imageActionLabel(editsImage, format);
+    const GenerateIcon =
+        isAgent && agentChat.busy ? XIcon : task.workspace.icon;
     const busyLabel = isDecide
         ? "Evaluating…"
         : isAudioTranscription
@@ -2062,7 +2151,12 @@ export function Playground({
     const againLabel = generateLabel.startsWith("Generate ")
         ? "Generate again"
         : generateLabel;
-    const generateText = (
+    const generateText = isAgent ? (
+        <StableLabel
+            text={agentChat.busy ? "Stop" : "Send"}
+            options={["Send", "Stop"]}
+        />
+    ) : (
         <StableLabel
             text={
                 isGenerating ? busyLabel : result ? againLabel : generateLabel
@@ -2075,9 +2169,11 @@ export function Playground({
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
     const needsEditImage = requiresImage && referenceImages.length === 0;
-    const missingInput = requiresMediaUpload
-        ? audioFiles.length === 0
-        : !prompt.trim();
+    const missingInput = isAgent
+        ? !agentChat.busy && !prompt.trim() && referenceImages.length === 0
+        : requiresMediaUpload
+          ? audioFiles.length === 0
+          : !prompt.trim();
 
     /** Why the button cannot fire, or null when it can. Shown beside the button. */
     const blockedReason = recording
@@ -2136,7 +2232,13 @@ export function Playground({
         }
     }
     useImperativeHandle(connectRef, () => connect);
-    const run = needsSignIn ? connect : generate;
+    function sendToAgent() {
+        if (agentChat.busy) return agentChat.stop();
+        agentChat.send(prompt.trim(), referenceImages);
+        setParam("prompt", "");
+        setReferenceImages([]);
+    }
+    const run = needsSignIn ? connect : isAgent ? sendToAgent : generate;
     const modelStats = stats?.find((stat) => stat.model === currentModel?.id);
     const cost =
         formatRunCost(modelStats?.avg_cost_usd) ??
@@ -2383,6 +2485,49 @@ export function Playground({
                             aria-label="Model input"
                             className="flex min-w-0 flex-col gap-3"
                         >
+                            {isAgent && currentModel && (
+                                <AgentChat
+                                    agentTitle={currentModel.title}
+                                    turns={agentChat.turns}
+                                    busy={agentChat.busy}
+                                    draft={prompt}
+                                    onDraftChange={(value) =>
+                                        setParam("prompt", value)
+                                    }
+                                    onSubmit={() => {
+                                        if (!blockedReason && !agentChat.busy)
+                                            run();
+                                    }}
+                                    onRetry={agentChat.retry}
+                                    onClear={agentChat.clear}
+                                    renderMedia={(url) => (
+                                        <AgentMedia url={url} />
+                                    )}
+                                    attachments={
+                                        supportsReferenceImages && (
+                                            <div className="flex flex-col gap-2">
+                                                <FileUpload
+                                                    value={referenceImages}
+                                                    onChange={
+                                                        setReferenceImages
+                                                    }
+                                                    maxFiles={
+                                                        maxReferenceImages
+                                                    }
+                                                    {...uploadProps(
+                                                        ["image"],
+                                                        `Use up to ${maxReferenceImages} images.`,
+                                                    )}
+                                                    label="Image"
+                                                />
+                                                {referenceImages.length > 0 && (
+                                                    <UploadPrivacyNote />
+                                                )}
+                                            </div>
+                                        )
+                                    }
+                                />
+                            )}
                             {showPromptInput && (
                                 <FieldStack
                                     label={isDecide ? "Context" : undefined}

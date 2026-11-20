@@ -23,7 +23,8 @@ export function apiExample(
         `  -H ${shellQuote("Authorization: Bearer YOUR_API_KEY")}`,
     ];
     const decision = url.endsWith("/alpha/decisions");
-    if (decision || url.endsWith("/v1/audio/speech")) {
+    const responses = url.endsWith("/v1/responses");
+    if (decision || responses || url.endsWith("/v1/audio/speech")) {
         command.push(
             `  -H ${shellQuote("Content-Type: application/json")}`,
             `  -d ${shellQuote(JSON.stringify(fields))}`,
@@ -38,7 +39,11 @@ export function apiExample(
     }
     if (url.endsWith("/alpha/audio/stem-separation")) {
         command.push("  -o stems.zip");
-    } else if (!decision && !url.endsWith("/v1/audio/transcriptions")) {
+    } else if (
+        !decision &&
+        !responses &&
+        !url.endsWith("/v1/audio/transcriptions")
+    ) {
         command.push("  -o output.mp3");
     }
     return command.join(" \\\n");

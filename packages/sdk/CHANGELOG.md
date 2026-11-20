@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-20
+
+### Changed
+
+- The Responses chat transport reports every server-run tool call, not only `mcp__` ones, and emits `tool-input-start` as soon as a call begins. Calls to the caller's own `tools` are still ignored.
+- The Responses chat transport sends `file` parts with an image media type as `input_image` links.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

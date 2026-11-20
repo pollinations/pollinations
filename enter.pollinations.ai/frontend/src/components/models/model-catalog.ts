@@ -1,4 +1,5 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
+import { hasFreePricing } from "@shared/model-price-display.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import { trackedFetch } from "../../lib/outage.ts";
 import { formatPriceFlat, formatPricePer1M } from "./formatters.ts";
@@ -195,20 +196,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         supportedEndpoints: model.supported_endpoints,
         capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
-        // Agents may incur downstream charges even when their wrapper is free.
-        free:
-            !model.agent &&
-            model.pricing !== undefined &&
-            inputSortPrice === undefined &&
-            outputSortPrice === undefined &&
-            !model.pricing_adjustments?.some(
-                ({ price }) => Number(price) > 0,
-            ) &&
-            !model.pricing_variants?.some(({ pricing }) =>
-                [...INPUT_PRICE_FIELDS, ...OUTPUT_PRICE_FIELDS].some(
-                    (field) => priceNumber(pricing, field) !== undefined,
-                ),
-            ),
+        free: hasFreePricing(model),
         alpha: model.alpha,
         addedDate: model.added_date,
         inputSortPrice,

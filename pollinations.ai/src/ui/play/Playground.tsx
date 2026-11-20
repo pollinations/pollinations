@@ -63,6 +63,10 @@ import {
     useState,
     useSyncExternalStore,
 } from "react";
+import {
+    calculatePerPollen,
+    hasFreePricing,
+} from "../../../../shared/model-price-display";
 import { API_BASE_URL, ENTER_URL } from "../../config";
 import {
     type AudioCatalogMetadata,
@@ -127,6 +131,7 @@ type PlaygroundModel = MediaModelMetadata & {
     supportedEndpoints: string[];
     voices: string[];
     paidOnly: boolean;
+    free: boolean;
     publisher?: string;
     maxReferenceVideos?: number;
     maxReferenceAudios?: number;
@@ -191,6 +196,7 @@ function playgroundModel(
         voices: model.voices ?? [],
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
+        free: hasFreePricing(model),
         publisher: model.publisher,
         maxReferenceVideos: model.max_reference_videos,
         ...playgroundAudioMetadata(id, model),
@@ -530,22 +536,14 @@ function matchesModelFilter(model: PlaygroundModel, filter: string) {
     }
 }
 
-function modelHighlights(model: PlaygroundModel) {
-    if (model.category === "video")
-        return [videoFilters.reference_videos, videoFilters["4k"]].filter(
-            (filter) => matchesModelFilter(model, filter),
-        );
-    if (model.category === "audio") {
-        const group = audioGroupForModel(model);
-        return group ? [group] : undefined;
-    }
-    if (model.category === "image")
-        return imageFilterOptions.filter(
-            (value) =>
-                value !== "All" &&
-                value !== imageFilters.edit &&
-                matchesModelFilter(model, value),
-        );
+function estimatePerDollar(model: PlaygroundModel, medianCost?: number | null) {
+    const count = calculatePerPollen({
+        realAvgCost: medianCost,
+        free: model.free,
+    });
+    if (count === "—") return undefined;
+    if (count === "∞") return "Free";
+    return `${count === "<1" ? "" : "≈"}${count} gen/$1`;
 }
 
 function ModelPicker({
@@ -562,16 +560,11 @@ function ModelPicker({
     onSelectModel: (model: PlaygroundModel, filter?: string) => void;
 }) {
     const [filter, setFilter] = useState("All");
+    const modelMenu = useRef<HTMLDivElement>(null);
     const category = models[0]?.category;
     const imageModels = category === "image";
     const costByModel = useMemo(
-        () =>
-            new Map(
-                stats.map((stat) => [
-                    stat.model,
-                    formatRunCost(stat.avg_cost_usd),
-                ]),
-            ),
+        () => new Map(stats.map((stat) => [stat.model, stat.avg_cost_usd])),
         [stats],
     );
     const fastModels = useMemo(() => {
@@ -726,11 +719,14 @@ function ModelPicker({
                     )}
                 >
                     {(close) => (
-                        <>
+                        <ScrollArea
+                            ref={modelMenu}
+                            className="max-h-[min(26rem,60dvh)] overscroll-y-contain"
+                        >
                             {filters.length > 1 && (
                                 <fieldset
                                     aria-label={`Filter ${category} models`}
-                                    className="mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 px-1 pt-1 pb-2"
+                                    className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-surface-menu pt-1 pr-px pb-2 pl-1"
                                 >
                                     {filters.map((value) => (
                                         <TabButton
@@ -749,7 +745,13 @@ function ModelPicker({
                                                     matches(model, value),
                                                 )
                                             }
-                                            onClick={() => setFilter(value)}
+                                            onClick={() => {
+                                                setFilter(value);
+                                                modelMenu.current?.scrollTo(
+                                                    0,
+                                                    0,
+                                                );
+                                            }}
                                         >
                                             {value}
                                         </TabButton>
@@ -767,7 +769,10 @@ function ModelPicker({
                                                 (model) => !model.paidOnly,
                                             )
                                         }
-                                        onClick={() => setQuestOnly(!questOnly)}
+                                        onClick={() => {
+                                            setQuestOnly(!questOnly);
+                                            modelMenu.current?.scrollTo(0, 0);
+                                        }}
                                     >
                                         <WalletKindIcon
                                             kind="tier"
@@ -776,45 +781,37 @@ function ModelPicker({
                                     </TabButton>
                                 </fieldset>
                             )}
-                            <ScrollArea
-                                key={filter + questOnly}
-                                className="max-h-[min(20rem,45dvh)] overscroll-y-contain pr-2"
-                            >
-                                <div className="flex flex-col gap-1">
-                                    {visible.map((model) => (
-                                        <TabButton
-                                            key={model.id}
-                                            active={model.id === selectedModel}
-                                            size="sm"
-                                            variant="ghost"
-                                            className="play-model-option w-full justify-start text-left"
-                                            onClick={() => {
-                                                onSelectModel(
-                                                    model,
-                                                    activeFilter !== "Fast" &&
-                                                        (imageModels ||
-                                                            category ===
-                                                                "video")
-                                                        ? activeFilter
-                                                        : undefined,
-                                                );
-                                                close();
-                                            }}
-                                        >
-                                            <MediaModelOption
-                                                model={model}
-                                                cost={costByModel.get(model.id)}
-                                                highlights={
-                                                    filter === "All"
-                                                        ? modelHighlights(model)
-                                                        : undefined
-                                                }
-                                            />
-                                        </TabButton>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </>
+                            <div className="flex flex-col gap-1">
+                                {visible.map((model) => (
+                                    <TabButton
+                                        key={model.id}
+                                        active={model.id === selectedModel}
+                                        size="sm"
+                                        variant="ghost"
+                                        className="play-model-option w-full justify-start pr-0 text-left"
+                                        onClick={() => {
+                                            onSelectModel(
+                                                model,
+                                                activeFilter !== "Fast" &&
+                                                    (imageModels ||
+                                                        category === "video")
+                                                    ? activeFilter
+                                                    : undefined,
+                                            );
+                                            close();
+                                        }}
+                                    >
+                                        <MediaModelOption
+                                            model={model}
+                                            perDollar={estimatePerDollar(
+                                                model,
+                                                costByModel.get(model.id),
+                                            )}
+                                        />
+                                    </TabButton>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     )}
                 </Dropdown>
             </div>
@@ -2019,7 +2016,9 @@ export function Playground({
     useImperativeHandle(connectRef, () => connect);
     const run = needsSignIn ? connect : generate;
     const modelStats = stats.find((stat) => stat.model === currentModel?.id);
-    const cost = formatRunCost(modelStats?.avg_cost_usd);
+    const cost =
+        formatRunCost(modelStats?.avg_cost_usd) ??
+        (currentModel?.free ? "Free" : undefined);
     const time = formatRunTime(modelStats?.avg_response_ms);
 
     const clipStatus = clipError && <span id={clipStatusId}>{clipError}</span>;
@@ -2221,7 +2220,7 @@ export function Playground({
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <RunStatBadge
-                                        label="Cost"
+                                        label="Typical cost"
                                         value={cost}
                                         afterValue={
                                             <WalletKindIcon
@@ -2232,14 +2231,18 @@ export function Playground({
                                                 }
                                             />
                                         }
-                                        detail="Median charge per successful paid request over the last 7 days. Your settings can affect the price."
+                                        detail={
+                                            cost === "Free"
+                                                ? "This model is free to use."
+                                                : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                        }
                                         href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
                                         linkLabel="Pricing"
                                     />
                                     <RunStatBadge
-                                        label="Time"
+                                        label="Average time"
                                         value={time}
-                                        detail="Average response time for successful requests over the last 7 days."
+                                        detail="Average time to complete a successful request over the last 7 days."
                                         href="https://model-monitor.pollinations.ai"
                                         linkLabel="Model Monitor"
                                     />

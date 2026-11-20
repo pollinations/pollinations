@@ -16,13 +16,13 @@ describe("model dropdown option", () => {
                         publisher: "Example publisher",
                         paidOnly,
                     }}
-                    cost="$0.12"
+                    perDollar="8 gen/$1"
                 />,
             );
             expect(html).toContain(`aria-label="${label}"`);
             expect(html).toContain(color);
             expect(html).toMatch(
-                /Example model.*Example publisher.*\$0\.12.*role="img"/s,
+                /Example model.*Example publisher.*8 gen\/\$1.*role="img"/s,
             );
         },
     );

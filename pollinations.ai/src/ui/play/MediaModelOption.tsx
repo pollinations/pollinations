@@ -3,12 +3,10 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 export function MediaModelOption({
     model,
     showPricing = true,
-    cost,
-    highlights,
+    perDollar,
 }: {
     showPricing?: boolean;
-    cost?: string;
-    highlights?: string[];
+    perDollar?: string;
     model: { title: string; paidOnly: boolean; publisher?: string };
 }) {
     return (
@@ -20,29 +18,22 @@ export function MediaModelOption({
                         {model.publisher}
                     </span>
                 )}
-                {highlights && highlights.length > 0 && (
-                    <span className="hidden flex-wrap gap-1 sm:inline-flex">
-                        {highlights.map((highlight) => (
-                            <span
-                                key={highlight}
-                                className="rounded border border-current/20 px-1 text-[0.625rem] leading-4 font-medium tracking-wide text-theme-text-muted"
-                            >
-                                {highlight}
-                            </span>
-                        ))}
-                    </span>
-                )}
             </span>
             {showPricing && (
-                <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-normal tabular-nums text-theme-text-muted">
-                    <span title="7-day median cost per successful paid request">
-                        <span className="sr-only">
-                            7-day median cost per paid request{" "}
-                        </span>
-                        {cost ?? (
+                <span className="inline-flex shrink-0 items-center text-xs font-normal tabular-nums text-theme-text-muted">
+                    <span
+                        title={
+                            perDollar && perDollar !== "Free"
+                                ? "Estimated requests per $1, based on the median cost of successful paid requests over the last 7 days."
+                                : undefined
+                        }
+                    >
+                        {perDollar ?? (
                             <>
                                 <span aria-hidden="true">—</span>
-                                <span className="sr-only">unavailable</span>
+                                <span className="sr-only">
+                                    Estimate unavailable
+                                </span>
                             </>
                         )}
                     </span>
@@ -53,7 +44,7 @@ export function MediaModelOption({
                                 ? "Uses paid balance only"
                                 : "Works with any balance"
                         }
-                        className="inline-flex"
+                        className="inline-flex w-9 justify-center"
                     >
                         <WalletKindIcon
                             kind={model.paidOnly ? "paid" : "tier"}

@@ -9,23 +9,31 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { createGeminiLiveEvents } from "./geminiLiveEvents.ts";
+import { createGeminiTranscribeEvents } from "./geminiTranscribeEvents.ts";
 
 export const GEMINI_LIVE = "google/gemini-3.8-live";
-const GEMINI_US = "google/gemini-3.8-live:google:us";
+export const GEMINI_TRANSCRIBE = "google/gemini-3.5-transcribe-live";
 
 async function route(c: Context<Env>, id: string) {
-    const us = id === GEMINI_US;
-    const location = us ? "us" : "us-central1";
+    const us = id.endsWith(":google:us");
+    const model = id.split(":")[0].slice("google/".length);
+    const location = us
+        ? "us"
+        : id === GEMINI_TRANSCRIBE
+          ? "global"
+          : "us-central1";
     const host = us
         ? "aiplatform.us.rep.googleapis.com"
-        : "us-central1-aiplatform.googleapis.com";
+        : location === "global"
+          ? "aiplatform.googleapis.com"
+          : "us-central1-aiplatform.googleapis.com";
     syncTextEnvironment(c.env);
     const token = await googleCloudAuth.getAccessToken();
     if (!token) throw new Error("Gemini Live route unavailable");
     return {
         url: `https://${host}/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`,
         headers: new Headers({ Authorization: `Bearer ${token}` }),
-        model: `projects/${c.env.GOOGLE_PROJECT_ID}/locations/${location}/publishers/google/models/gemini-3.8-live`,
+        model: `projects/${c.env.GOOGLE_PROJECT_ID}/locations/${location}/publishers/google/models/${model}`,
     };
 }
 
@@ -77,8 +85,14 @@ export function proxyGeminiLive(
         billing.settle();
     };
 
-    const events = createGeminiLiveEvents({
-        model: GEMINI_LIVE,
+    const model = c.var.model.resolved;
+    const transcribing = model === GEMINI_TRANSCRIBE;
+    const createEvents = transcribing
+        ? createGeminiTranscribeEvents
+        : createGeminiLiveEvents;
+    let queuedBytes = 0;
+    const events = createEvents({
+        model,
         sendClient,
         onUsage: billing.usage,
         cancelUnsentTurn() {
@@ -90,13 +104,22 @@ export function proxyGeminiLive(
             if (lifetime.signal.aborted) return;
             const frame = JSON.stringify(event);
             if (selected) selected.send(frame);
-            else queue.push(frame);
+            else {
+                if (
+                    transcribing &&
+                    (queue.length >= 1024 ||
+                        queuedBytes + frame.length > 8 * 1024 * 1024)
+                )
+                    throw Error("Gemini transcription setup buffer exceeded");
+                queue.push(frame);
+                if (transcribing) queuedBytes += frame.length;
+            }
         },
         requestSetup() {
             if (started) return;
             started = true;
             const candidates = fallbackCandidates(c.var.model).filter(
-                ({ id }) => id === GEMINI_LIVE || id === GEMINI_US,
+                ({ id }) => id === model || id === `${model}:google:us`,
             );
             c.executionCtx.waitUntil(
                 withModelFallback(
@@ -215,6 +238,7 @@ export function proxyGeminiLive(
     const disconnect = () => {
         if (disconnected || lifetime.signal.aborted) return;
         disconnected = true;
+        if (selected && "disconnect" in events) events.disconnect();
         if (selected && events.pendingTurn()) {
             // Give Google a bounded opportunity to send usage for an in-flight turn.
             c.executionCtx.waitUntil(

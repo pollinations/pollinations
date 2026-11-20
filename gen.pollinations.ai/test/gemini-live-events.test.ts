@@ -2,18 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import { createGeminiLiveEvents } from "../src/routes/geminiLiveEvents.ts";
 
 function session() {
-    const sendClient = vi.fn(),
-        sendGoogle = vi.fn(),
-        onUsage = vi.fn();
+    const sendClient = vi.fn();
+    const sendGoogle = vi.fn();
+    const onUsage = vi.fn();
+    const requestSetup = vi.fn();
     const adapter = createGeminiLiveEvents({
         model: "google/gemini-3.8-live",
         sendClient,
         sendGoogle,
-        requestSetup: vi.fn(),
+        requestSetup,
         onUsage,
     });
     return {
         ...adapter,
+        requestSetup,
         sendClient,
         sendGoogle,
         onUsage,
@@ -217,6 +219,30 @@ describe("Gemini Live realtime events", () => {
             },
         ]);
     });
+    it("connects on the first server VAD audio chunk", () => {
+        const s = session();
+        s.client({
+            type: "session.update",
+            session: {
+                audio: { input: { turn_detection: { type: "server_vad" } } },
+            },
+        });
+        s.client({ type: "input_audio_buffer.append", audio: "AQI=" });
+        expect(s.requestSetup).toHaveBeenCalledOnce();
+        expect(s.sendGoogle).toHaveBeenCalledWith({
+            realtimeInput: {
+                audio: { data: "AQI=", mimeType: "audio/pcm;rate=24000" },
+            },
+        });
+        expect(s.setup("gemini")).toMatchObject({
+            setup: {
+                realtimeInputConfig: {
+                    automaticActivityDetection: { disabled: false },
+                },
+            },
+        });
+    });
+
     it("suppresses cancelled output and requires reconciled usage to complete", () => {
         const s = session();
         s.client(textItem);

@@ -343,7 +343,7 @@ const REALTIME_DOCS = [
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` or `elevenlabs/scribe-v3-live` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "With `google/gemini-3.8-live`, send text, base64 JPEG frames, or mono 24 kHz PCM16 audio. Responses stream audio and a transcript. Manual audio turns use `input_audio_buffer.commit` followed by `response.create`. Configure server voice activity detection in `session.update` for hands-free conversation.",
+    "With `google/gemini-3.8-live`, send text, base64 JPEG frames, or mono 24 kHz PCM16 audio. Responses stream audio and a transcript. Manual audio turns use `input_audio_buffer.commit` followed by `response.create`. Configure server voice activity detection in `session.update` for hands-free conversation. Sending `response.cancel` stops playback events. Google can finish generating that turn, and its reported usage is billed.",
     "",
     "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",

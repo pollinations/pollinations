@@ -25,7 +25,7 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes ten tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
@@ -36,6 +36,8 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_search",
         "hn_stories",
         "wayback_snapshots",
+        "weather_alert",
+        "weather_alerts",
     ]);
     await c.close();
     assert.equal(
@@ -59,7 +61,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 10);
     await c.close();
 });
 
@@ -438,4 +440,128 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
     await c.close();
+});
+
+test("weather alerts come from NWS, stay compact and honour the cap", async (t) => {
+    const properties = {
+        id: "urn:oid:2.49.0.1.840.0.abc",
+        event: "Wind Advisory",
+        severity: "Moderate",
+        urgency: "Expected",
+        certainty: "Likely",
+        status: "Actual",
+        messageType: "Update",
+        category: "Met",
+        response: "Execute",
+        senderName: "NWS Hanford CA",
+        headline: "Wind Advisory issued November 17 at 5:33AM PST",
+        areaDesc: "Merced - Madera - Mendota",
+        sent: "2026-11-17T05:33:00-08:00",
+        onset: "2026-11-18T05:00:00-08:00",
+        ends: "2026-11-18T17:00:00-08:00",
+        expires: "2026-11-17T13:45:00-08:00",
+        description: "x".repeat(600),
+        instruction: "y".repeat(190),
+    };
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.weather.gov");
+        assert.equal(url.pathname, "/alerts/active");
+        assert.equal(new Headers(init.headers).has("authorization"), false);
+        assert.equal(new Headers(init.headers).has("cookie"), false);
+        assert.equal(init.headers.Accept, "application/json");
+        assert.ok(init.signal instanceof AbortSignal);
+        assert.equal(url.searchParams.get("area"), "CA,OR");
+        assert.equal(url.searchParams.get("severity"), "Severe");
+        assert.equal(url.searchParams.get("urgency"), "Immediate");
+        return Response.json({
+            features: [{ properties }, { properties }, { properties }],
+        });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const result = await c.callTool({
+        name: "weather_alerts",
+        arguments: {
+            area: "CA,OR",
+            severity: "Severe",
+            urgency: "Immediate",
+            limit: 2,
+        },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const alerts = JSON.parse(result.content[0].text);
+    assert.equal(alerts.length, 2);
+    const [first] = alerts;
+    assert.equal(first.event, "Wind Advisory");
+    assert.equal(first.sender_name, "NWS Hanford CA");
+    assert.equal(first.area_desc, "Merced - Madera - Mendota");
+    assert.equal(first.message_type, "Update");
+    // The long prose is what weather_alert is for, so the list leaves it out.
+    assert.equal("description" in first, false);
+    assert.equal("instruction" in first, false);
+});
+
+test("weather alert detail adds the prose and an expired id becomes a tool error", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = new URL(input);
+        assert.equal(url.hostname, "api.weather.gov");
+        assert.equal(init.headers.Accept, "application/json");
+        if (url.pathname === "/alerts/urn%3Aoid%3A2.49.0.1.840.0.live")
+            return Response.json({
+                properties: {
+                    id: "urn:oid:2.49.0.1.840.0.live",
+                    event: "Flood Warning",
+                    description: "The river is rising.",
+                    instruction: "Move to higher ground.",
+                },
+            });
+        return Response.json({ title: "Not Found" }, { status: 404 });
+    });
+    const c = await client();
+    t.after(() => c.close());
+    const detail = await c.callTool({
+        name: "weather_alert",
+        arguments: { id: "urn:oid:2.49.0.1.840.0.live" },
+    });
+    assert.notEqual(detail.isError, true, JSON.stringify(detail));
+    const parsed = JSON.parse(detail.content[0].text);
+    assert.equal(parsed.event, "Flood Warning");
+    assert.equal(parsed.description, "The river is rising.");
+    assert.equal(parsed.instruction, "Move to higher ground.");
+    const gone = await c.callTool({
+        name: "weather_alert",
+        arguments: { id: "urn:oid:2.49.0.1.840.0.gone" },
+    });
+    assert.equal(gone.isError, true);
+    assert.match(gone.content[0].text, /expired/);
+});
+
+test("weather rejects a lowercase area and an out-of-range limit before any I/O", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async () => {
+        throw new Error("no request expected");
+    });
+    const c = await client();
+    t.after(() => c.close());
+    for (const arguments_ of [
+        { area: "ca" },
+        { area: "C" },
+        { area: "CA," },
+        { area: "CA", limit: 0 },
+        { area: "CA", limit: 51 },
+        { area: "CA", severity: "severe" },
+        { area: "CA", urgency: "Later" },
+    ]) {
+        assert.equal(
+            (
+                await c.callTool({
+                    name: "weather_alerts",
+                    arguments: arguments_,
+                })
+            ).isError,
+            true,
+            JSON.stringify(arguments_),
+        );
+    }
+    assert.equal(stub.mock.callCount(), 0);
 });

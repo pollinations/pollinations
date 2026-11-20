@@ -37,20 +37,18 @@ function uuidFacts(hex) {
             facts,
             timestamps(Number(ticks / 10000n) - UUID_EPOCH_MS),
         );
-    } else if (version === 6)
+    } else if (version === 6) {
+        // v6 reorders the v1 fields so the timestamp sorts first: 48 ticks in the
+        // leading 12 hex digits, with the version nibble sitting between them.
+        const ticks =
+            (BigInt(`0x${hex.slice(0, 8)}`) << 28n) |
+            (BigInt(`0x${hex.slice(8, 12)}`) << 12n) |
+            BigInt(`0x${hex.slice(13, 16)}`);
         Object.assign(
             facts,
-            timestamps(
-                Number(
-                    (BigInt(`0x${hex.slice(0, 8)}`) << 28n) |
-                        (BigInt(`0x${hex.slice(8, 12)}`) << 12n) |
-                        BigInt(`0x${hex.slice(13, 16)}`),
-                ) /
-                    10000n -
-                    BigInt(UUID_EPOCH_MS),
-            ),
+            timestamps(Number(ticks / 10000n - BigInt(UUID_EPOCH_MS))),
         );
-    else if (version === 7)
+    } else if (version === 7)
         Object.assign(facts, timestamps(Number.parseInt(hex.slice(0, 12), 16)));
     if (version === 3 || version === 5)
         facts.note =

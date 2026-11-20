@@ -380,6 +380,14 @@ test("id_inspect reads UUID versions, embedded timestamps and ULIDs", async (t) 
     assert.equal(v1.uuid.version, 1);
     assert.equal(new Date(v1.uuid.timestamp_ms).getUTCFullYear(), 1997);
 
+    // RFC 9562's v6 example: the same instant as v1, reordered so it sorts.
+    const rfcV6 = await call(client, "id_inspect", {
+        id: "1EC9414C-232A-6B00-B3C8-9E6BDECED846",
+    });
+    assert.equal(rfcV6.uuid.version, 6);
+    assert.equal(rfcV6.uuid.variant, "RFC 9562");
+    assert.equal(rfcV6.uuid.timestamp, "2022-02-22T19:22:22.000Z");
+
     const nil = await call(client, "id_inspect", {
         id: "00000000-0000-0000-0000-000000000000",
     });
@@ -394,6 +402,24 @@ test("id_inspect reads UUID versions, embedded timestamps and ULIDs", async (t) 
     assert.equal(v7.uuid.version, 7);
     assert.equal(v7.uuid.timestamp_ms, milliseconds);
     assert.equal(v7.uuid.timestamp, "2026-11-11T00:00:00.000Z");
+
+    const v6Ticks = (BigInt(milliseconds) + 12219292800000n) * 10000n;
+    const v6Hex =
+        ((v6Ticks >> 28n) & 0xffffffffn).toString(16).padStart(8, "0") +
+        ((v6Ticks >> 12n) & 0xffffn).toString(16).padStart(4, "0") +
+        "6" +
+        (v6Ticks & 0xfffn).toString(16).padStart(3, "0") +
+        "abc8def012345678";
+    assert.equal(v6Hex.length, 32);
+    const v6 = await call(client, "id_inspect", {
+        id: v6Hex.replace(
+            /^(.{8})(.{4})(.{4})(.{4})(.{12})$/,
+            "$1-$2-$3-$4-$5",
+        ),
+    });
+    assert.equal(v6.uuid.version, 6);
+    assert.equal(v6.uuid.timestamp_ms, milliseconds);
+    assert.equal(v6.uuid.timestamp, "2026-11-11T00:00:00.000Z");
 
     const crockford = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     let encoded = "";

@@ -5,7 +5,7 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 const photo = "https://example.com/photo.png";
 const audio = "https://example.com/audio.mp3";
 const video = "https://example.com/character.mp4";
-describe("HeyGen Avatar 6 Turbo Turbo", () => {
+describe("HeyGen Avatar 6 Turbo", () => {
     it("maps an image and speech audio to fal and OpenRouter", () => {
         const params = ImageParamsSchema.parse({
             model: "heygen/heygen-avatar-6-turbo",

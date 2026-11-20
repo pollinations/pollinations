@@ -12,6 +12,7 @@ import {
     getModelBrandLogoPath,
     ModelBrandIcon,
 } from "@pollinations/ui/gen";
+import { isNewModel } from "@shared/model-recency.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { type FC, Fragment } from "react";
 import { CatalogCard } from "../catalog-card.tsx";
@@ -27,7 +28,6 @@ import {
     getModelModalityLabel,
     hasPollinationsTools,
     isAlpha,
-    isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
 import {
@@ -160,7 +160,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
-    const showNew = isNewModel(model);
+    const showNew = isNewModel(model.addedDate);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
     const balanceAccess: BalanceAccess = model.free

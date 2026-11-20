@@ -100,16 +100,6 @@ export const hasPollinationsTools = (model: ModelPrice): boolean =>
     hasCapability(model, "pollinations_models");
 
 /**
- * Check if a model is "new" (added within the last 7 days).
- * Uses the `addedDate` field, which is set once on creation and never updated.
- */
-export const isNewModel = (model: ModelPrice): boolean => {
-    if (!model.addedDate) return false;
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return model.addedDate > sevenDaysAgo;
-};
-
-/**
  * Check if a model requires paid balance only, not Quest balance.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>

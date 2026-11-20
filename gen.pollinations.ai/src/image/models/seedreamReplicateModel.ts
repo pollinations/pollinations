@@ -28,6 +28,9 @@ import {
 
 const logOps = debug("pollinations:seedream-legacy:ops");
 const logError = debug("pollinations:seedream-legacy:error");
+// Replicate's bytedance/seedream-4 custom mode accepts these sides only.
+const SEEDREAM4_CUSTOM_MIN = 1024;
+const SEEDREAM4_CUSTOM_MAX = 4096;
 
 const SEEDREAM_ASPECT_RATIOS = [
     "match_input_image",
@@ -199,6 +202,15 @@ function buildCustomInput(
     };
 }
 
+function canUseCustomSize(safeParams: ImageParams): boolean {
+    return (
+        safeParams.width >= SEEDREAM4_CUSTOM_MIN &&
+        safeParams.width <= SEEDREAM4_CUSTOM_MAX &&
+        safeParams.height >= SEEDREAM4_CUSTOM_MIN &&
+        safeParams.height <= SEEDREAM4_CUSTOM_MAX
+    );
+}
+
 async function callSeedreamReplicateAPI(
     variantKey: SeedreamVariantKey,
     prompt: string,
@@ -216,9 +228,12 @@ async function callSeedreamReplicateAPI(
     // height instead of a preset+aspect_ratio pair. When the caller actually
     // passed dimensions (OpenAI `size:"1792x1024"`, GET `?width=…&height=…`),
     // use that mode so we produce exact pixels instead of rounding to the
-    // nearest preset.
+    // nearest preset. Outside Replicate's 1024-4096 range, fall back to the
+    // preset path instead of forwarding values that deterministically 422.
     const input: SeedreamReplicateInput =
-        variant.supportsCustom && safeParams.dimensionsExplicit
+        variant.supportsCustom &&
+        safeParams.dimensionsExplicit &&
+        canUseCustomSize(safeParams)
             ? buildCustomInput(prompt, safeParams, imageInput)
             : buildPresetInput(prompt, safeParams, imageInput, variant);
 

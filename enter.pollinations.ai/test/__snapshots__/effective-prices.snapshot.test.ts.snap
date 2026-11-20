@@ -1645,6 +1645,42 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000079125,
     },
   },
+  "google/gemini-3.8-live": {
+    "cost": {
+      "completionAudioTokens": 0.000012,
+      "completionTextTokens": 0.0000045,
+      "promptAudioTokens": 0.000003,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.000001,
+    },
+    "price": {
+      "completionAudioTokens": 0.000012,
+      "completionTextTokens": 0.0000045,
+      "promptAudioTokens": 0.000003,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.000001,
+    },
+  },
+  "google/gemini-3.8-live:google:us": {
+    "cost": {
+      "completionAudioTokens": 0.000012,
+      "completionTextTokens": 0.0000045,
+      "promptAudioTokens": 0.000003,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.000001,
+    },
+    "price": {
+      "completionAudioTokens": 0.000012,
+      "completionTextTokens": 0.0000045,
+      "promptAudioTokens": 0.000003,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.000001,
+    },
+  },
   "google/gemini-4-argon": {
     "cost": {
       "completionTextTokens": 0.00002,

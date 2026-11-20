@@ -158,7 +158,7 @@ export function ToolCallDetails({
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
-                className="polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:px-3 polli:py-2.5 polli:text-left polli:hover:bg-theme-bg-hover/50"
+                className="polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:px-3 polli:py-2.5 polli:text-left polli:hover:bg-theme-fill-wash"
             >
                 <span className="polli:flex polli:size-7 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-active polli:text-theme-text-strong">
                     <ToolIcon className="polli:size-3.5" />

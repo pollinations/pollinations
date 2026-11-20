@@ -590,7 +590,14 @@ export const agentsRoutes = new Hono<Env>()
             }
             const data = parsed.data;
             // Only a changed baseModel is checked, so other edits still save.
-            if ("baseModel" in data && input.baseModel !== undefined) {
+            if (
+                "baseModel" in data &&
+                input.baseModel !== undefined &&
+                !(
+                    "baseModel" in current &&
+                    current.baseModel === data.baseModel
+                )
+            ) {
                 await requireValidBaseModel(db, user.id, data.baseModel);
             }
             const update: Partial<

@@ -2,6 +2,7 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
@@ -30,6 +31,7 @@ const CACHED_HEADERS = new Set([
     "x-elevenlabs-reference-song-id",
     "x-elevenlabs-song-id",
     "x-generation-id",
+    IMAGE_DIMENSIONS_HEADER.toLowerCase(),
     "x-fallback-target",
     "x-model-used",
     "x-tts-voice",
@@ -59,6 +61,20 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                         c.var.generationCacheBody,
                     ),
                 );
+            }
+            // Older explicit PNG requests for FLUX stored JPEG bytes under this key.
+            if (
+                variables.model?.resolved ===
+                    "black-forest-labs/flux.1-schnell" &&
+                (c.req.method === "POST"
+                    ? (
+                          c.req.valid("json" as never) as
+                              | { output_format?: string }
+                              | undefined
+                      )?.output_format
+                    : cacheUrl.searchParams.get("output_format")) === "png"
+            ) {
+                cacheUrl.searchParams.append("__flux_png", "1");
             }
             return generateCacheKey(
                 cacheUrl,
@@ -105,7 +121,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             }
             return {
                 response: captured,
-                write: c.env.MEDIA.put(cacheKey, stored),
+                write: c.env.MEDIA.put(cacheKey, stored, c.var.requestId),
             };
         },
     };

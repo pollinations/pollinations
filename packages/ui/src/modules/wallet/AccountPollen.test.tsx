@@ -13,7 +13,7 @@ describe("account Pollen", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
-        expect(some).toContain("3.25 pollen");
+        expect(some).toContain("$3.25");
         expect(some).not.toContain("Limit reached");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
@@ -58,16 +58,16 @@ describe("account Pollen", () => {
         ).toBe("");
     });
 
-    it("keeps the amounts while any Pollen is left", () => {
+    it("keeps the amounts while any balance is left", () => {
         const mixed = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 5 } }}
                 topUpHref="/top-up"
             />,
         );
-        expect(mixed).toContain("Quest pollen:");
-        expect(mixed).toContain("Paid pollen:");
-        expect(mixed).not.toContain("No pollen");
+        expect(mixed).toContain("Quest balance:");
+        expect(mixed).toContain("Paid balance:");
+        expect(mixed).not.toContain("No balance");
         expect(mixed).not.toContain("/top-up");
         expect(mixed.indexOf("Quest")).toBeLessThan(mixed.indexOf("Paid"));
     });
@@ -79,15 +79,15 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(linked).toContain("No pollen");
+        expect(linked).toContain("No balance");
         expect(linked).toContain('href="/top-up"');
-        expect(linked).not.toContain("Quest pollen:");
+        expect(linked).not.toContain("Quest balance:");
         const menu = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
-        expect(menu).toContain("No pollen");
+        expect(menu).toContain("No balance");
         expect(menu).not.toContain("<a ");
     });
 

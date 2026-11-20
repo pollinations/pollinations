@@ -65,3 +65,22 @@ export function createReasoningEffortTransform(
         return { messages, options: updated };
     };
 }
+
+/**
+ * Rewrites the `reasoning_effort` values a provider rejects with a 400 to the
+ * nearest level it accepts. Values not in `map` pass through unchanged.
+ */
+export function remapReasoningEffort(map: Record<string, string>): TransformFn {
+    return (messages, options) => {
+        const effort =
+            typeof options.reasoning_effort === "string"
+                ? options.reasoning_effort.toLowerCase()
+                : undefined;
+        if (!effort || !Object.hasOwn(map, effort))
+            return { messages, options };
+        return {
+            messages,
+            options: { ...options, reasoning_effort: map[effort] },
+        };
+    };
+}

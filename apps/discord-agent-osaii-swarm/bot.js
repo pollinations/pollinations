@@ -273,7 +273,7 @@ export function createInteractionHandler({
                 }
                 if (isBudgetError(error)) {
                     await interaction.editReply(
-                        "Not enough Pollen for this request. Add Pollen at https://enter.pollinations.ai/quests or https://enter.pollinations.ai/account",
+                        "This request exceeds your balance or your key’s spending limit. [View your balance](https://enter.pollinations.ai/pollen).",
                     );
                     return;
                 }

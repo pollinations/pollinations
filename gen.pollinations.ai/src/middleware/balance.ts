@@ -3,6 +3,7 @@ import type {
     UserBalance,
 } from "@shared/billing/balance.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -20,6 +21,11 @@ export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
+        /** Listed price of this request on the given model, when its options set it; the balance check prefers it to the model's average. */
+        requestPrice?: (model: {
+            resolved: string;
+            definition: ModelDefinition;
+        }) => number | undefined;
         apiKeyBudgetEstimate?: number;
         apiKeyReservation?: ApiKeyBudgetReservation;
     };

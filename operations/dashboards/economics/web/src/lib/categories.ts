@@ -7,7 +7,7 @@ export const CATEGORY_IDS = [
     "revenue",
     "compute",
     "infrastructure",
-    "development",
+    "development", // Historical source category; reported under Operations.
     "operations",
     "revenue_share",
     "office",
@@ -22,7 +22,6 @@ export type CategoryValue = Category | "uncategorized";
 export const EXPENSE_CATEGORY_ORDER = [
     "compute",
     "infrastructure",
-    "development",
     "operations",
     "revenue_share",
     "office",
@@ -34,7 +33,7 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
     revenue: "Revenue",
     compute: "Compute",
     infrastructure: "Infrastructure",
-    development: "Development",
+    development: "Operations",
     operations: "Operations",
     revenue_share: "Revenue Share",
     office: "Office",
@@ -46,12 +45,16 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
 
 const KNOWN_CATEGORIES = new Set<string>(CATEGORY_IDS);
 
-function normalize(value: string): string {
-    return value.trim().toLowerCase();
+export function canonicalCategory(value: string): string {
+    const category = value.trim().toLowerCase();
+    return category === "development" ? "operations" : category;
 }
 
 export function categoryLabel(category: string): string {
-    return CATEGORY_LABELS[category as CategoryValue] ?? category;
+    return (
+        CATEGORY_LABELS[canonicalCategory(category) as CategoryValue] ??
+        category
+    );
 }
 
 export function isCategory(category: string): category is Category {
@@ -81,13 +84,13 @@ export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
 export function cloudCategory(
     row: Pick<VendorLedgerRow, "type">,
 ): CategoryValue {
-    const type = normalize(row.type);
+    const type = canonicalCategory(row.type);
     if (type === "gpu" || type === "inference") return "compute";
     if (type === "infra") return "infrastructure";
     return isCategory(type) ? type : "uncategorized";
 }
 
 export function forecastCategory(row: { category: string }): CategoryValue {
-    const supplied = normalize(row.category);
+    const supplied = canonicalCategory(row.category);
     return isCategory(supplied) ? supplied : "uncategorized";
 }

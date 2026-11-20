@@ -35,7 +35,7 @@ describe("SegmentedControl", () => {
             />,
         );
 
-        expect(html).toContain("polli:bg-theme-bg-active");
+        expect(html).toContain("polli:bg-theme-fill");
         expect(html).not.toMatch(/polli:(border|ring)-theme/);
     });
 });

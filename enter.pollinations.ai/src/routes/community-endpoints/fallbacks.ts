@@ -108,7 +108,7 @@ export function fallbackTargetRejection(
         return `Fallback target ${modelId} does not support image edits`;
     }
     if (!isCommunityFallbackBalanceAllowed(primary, payload)) {
-        return `Fallback target ${modelId} accepts only Paid Pollen, which this model does not require`;
+        return `Fallback target ${modelId} accepts only the paid balance, which this model does not require`;
     }
     if (!isCommunityFallbackPricingAllowed(primary.prices, payload.prices)) {
         const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(

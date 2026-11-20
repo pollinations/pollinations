@@ -85,8 +85,8 @@ export function RetentionTable({ data }) {
             </div>
             <Text as="p" size="micro" tone="muted">
                 Users grouped by the UTC week of their first request, including
-                requests rejected for lack of pollen. WN is the share who made a
-                request N weeks later; — until that week ends.
+                requests rejected for insufficient balance. WN is the share who
+                made a request N weeks later; — until that week ends.
             </Text>
         </Surface>
     );

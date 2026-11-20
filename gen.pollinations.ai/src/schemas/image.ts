@@ -3,9 +3,15 @@ import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { BooleanQueryParamSchema } from "./text.ts";
 
-const QUALITIES = ["low", "medium", "high", "hd"] as const;
+const QUALITIES = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+
+export const IMAGE_DIMENSIONS_HEADER = "X-Image-Dimensions";
+export const FLUX_SIZE_DESCRIPTION =
+    "`black-forest-labs/flux.1-schnell` (`flux`) accepts 64–8192 px per side on its primary backend. It scales oversized requests down proportionally to the backend cap (810,000 or 1,048,576 pixels), then snaps to a size within the cap with sides divisible by 8 and a pixel count divisible by 65,536. Aspect ratios within 5% of the target are treated as equally close. Among equally close ratios it chooses the smallest size at or above the target pixel count, or the largest below it if none fits. The `X-Image-Dimensions` response header reports the produced size when available.";
+
+const imageSizeConstraints = `For images, model-specific constraints apply. ${FLUX_SIZE_DESCRIPTION} \`flux-2-pro\`, \`flux-2-flex\`, and \`microsoft/mai-image-2.6-flash\` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). \`tongyi-mai/z-image-turbo\` and \`black-forest-labs/flux.2-klein-4b\` need at least 256 px per side and at most 2,359,296 total pixels. \`black-forest-labs/flux.1.1-pro\` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use \`resolution\` to select a resolution tier.`;
 
 const modelSchema = (defaultModel: string) =>
     z
@@ -21,14 +27,24 @@ const modelSchema = (defaultModel: string) =>
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
-    width: z.coerce.number().int().positive().optional().default(1024).meta({
-        description:
-            "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-    }),
-    height: z.coerce.number().int().positive().optional().default(1024).meta({
-        description:
-            "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `tongyi-mai/z-image-turbo` and `black-forest-labs/flux.2-klein-4b` need at least 256 px per side and at most 2,359,296 total pixels. `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-    }),
+    width: z.coerce
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .default(1024)
+        .meta({
+            description: `Width in pixels. ${imageSizeConstraints}`,
+        }),
+    height: z.coerce
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .default(1024)
+        .meta({
+            description: `Height in pixels. ${imageSizeConstraints}`,
+        }),
     seed: z.coerce
         .number()
         .int()
@@ -126,6 +142,28 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             "Generate an image with a transparent background. Unsupported models return 400.",
     }),
 
+    output_format: z.enum(["png", "webp", "gif"]).optional().meta({
+        description:
+            "Animated GIF generation is supported by GPT Image 2.6 Flare and Sunburst. WebP is supported by Flare.",
+    }),
+    frame_count: z.coerce.number().int().min(2).max(16).optional().meta({
+        description: "Required for GIF output; 2 to 16 frames.",
+    }),
+    frame_duration_ms: z.coerce
+        .number()
+        .int()
+        .min(20)
+        .max(2000)
+        .optional()
+        .meta({
+            description:
+                "Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit.",
+        }),
+    background: z.enum(["auto", "opaque", "transparent"]).optional().meta({
+        description:
+            "GPT Image background mode; GIF cannot have a transparent background.",
+    }),
+
     // Video-specific params
     resolution: z
         .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
@@ -136,11 +174,11 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `google/gemini-omni-1.2-flash`: 3-15s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: 2-15s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default.",
+            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `google/gemini-omni-1.2-flash`: 3-15s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s; with `reference_videos` (edit, extension or motion transfer) and `aspectRatio` unset or `adaptive`, omit `duration` or pass 4; the model picks the output length (up to 30s), and each output second is billed at the video-input rate. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: 2-15s. `black-forest-labs/flux-3-max`: 5-20s. `mirelo/sfx-2.0`: 1-120s of the source video, 120 by default.",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `google/gemini-omni-1.2-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. With `reference_videos`, `seedance-2.5` defaults to `adaptive` to edit or extend the video, and the model picks the length (see `duration`). Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. `black-forest-labs/flux-3-max` supports `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`.",
     }),
     audio: BooleanQueryParamSchema.optional().meta({
         description:

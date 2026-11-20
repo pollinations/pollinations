@@ -36,6 +36,29 @@ const testLog = {
     error() {},
 } as unknown as Logger;
 
+function generationIdentityApp() {
+    return new Hono<Env>()
+        .use("*", async (c, next) => {
+            c.set("model", {
+                requested: "flux",
+                resolved: "flux",
+                definition: {} as Env["Variables"]["model"]["definition"],
+            });
+            await next();
+        })
+        .post(
+            "/v1/images/generations",
+            validator("json", CreateImageRequestSchema),
+            prepareOpenAIImageGeneration,
+            (c) =>
+                c.json({
+                    body: c.var.generationRequestBody,
+                    identity: c.var.generationCacheBody,
+                    input: c.req.valid("json" as never),
+                }),
+        );
+}
+
 describe("OpenAI image cache", () => {
     it("preserves provider-only billing when wrapping a fallback image in JSON", async () => {
         const model = "openai/gpt-image-2.6-flare";
@@ -205,6 +228,61 @@ describe("OpenAI image cache", () => {
             width: 1024,
             height: 768,
         });
+    });
+
+    it("keeps a seed-less generation identity stable and out of the cache body", async () => {
+        const app = generationIdentityApp();
+        const results: {
+            body: string;
+            identity: string;
+            input: Record<string, unknown>;
+        }[] = [];
+        for (let i = 0; i < 2; i++) {
+            const response = await app.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/images/generations",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            prompt: "a sunflower",
+                            response_format: "url",
+                        }),
+                    },
+                ),
+                {} as CloudflareBindings,
+            );
+            expect(response.status).toBe(200);
+            results.push(await response.json());
+        }
+        // The same seed-less request must join the first generation instead of
+        // hashing a fresh random seed into every cache identity.
+        expect(results[0].identity).toBe(results[1].identity);
+        expect(JSON.parse(results[0].body)).not.toHaveProperty("seed");
+        expect(JSON.parse(results[0].identity)).not.toHaveProperty("seed");
+        expect(results[0].input).not.toHaveProperty("seed");
+    });
+
+    it("keeps an explicit seed in the generation identity", async () => {
+        const response = await generationIdentityApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "a sunflower",
+                    response_format: "url",
+                    seed: 123,
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(response.status).toBe(200);
+        const result = await response.json<{
+            body: string;
+            identity: string;
+        }>();
+        expect(JSON.parse(result.body).seed).toBe(123);
+        expect(JSON.parse(result.identity).seed).toBe(123);
     });
 
     it.each(["json", "multipart"])(
@@ -711,11 +789,13 @@ describe("OpenAI image cache", () => {
             expect(response.headers.has("X-Media-URL")).toBe(false);
             if (response_format === "url") {
                 expect(result.data[0]?.url).toBe(url);
-                expect(result.data[0]?.media_type).toBe("image/jpeg");
             } else {
                 expect(result.data[0]?.b64_json).toBe(btoa("legacy-image"));
                 expect(result.data[0]?.url).toBeUndefined();
             }
+            // Base64 bytes arrive without a Content-Type, so the declared type
+            // is how a caller names the file; it must be present for JPEG too.
+            expect(result.data[0]?.media_type).toBe("image/jpeg");
             expect(result.usage.total_tokens).toBe(0);
         },
     );

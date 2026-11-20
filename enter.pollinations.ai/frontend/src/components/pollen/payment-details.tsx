@@ -1,7 +1,7 @@
 import {
     CardIcon,
+    ExternalLinkButton,
     EyeOffIcon,
-    InlineLink,
     Surface,
     WalletIcon,
 } from "@pollinations/ui";
@@ -178,12 +178,11 @@ const PortalLink: FC<{
     useResetWhenShownAgain(() => setOpening(false));
     return (
         <span className="flex flex-col items-end gap-1">
-            {/* Same tab, and Stripe brings the buyer back: no new-tab arrow,
-                the label already says where it goes. */}
-            <InlineLink
-                as="button"
-                type="button"
+            {/* Leaves for Stripe in the same tab; the arrow says it goes
+                outside, and Stripe brings the buyer back. */}
+            <ExternalLinkButton
                 size="sm"
+                intent="neutral"
                 disabled={opening}
                 onClick={async () => {
                     setOpening(true);
@@ -195,7 +194,7 @@ const PortalLink: FC<{
                 }}
             >
                 {opening ? "Opening…" : children}
-            </InlineLink>
+            </ExternalLinkButton>
             {error && (
                 <span role="alert" className="text-xs text-intent-danger-text">
                     {error}

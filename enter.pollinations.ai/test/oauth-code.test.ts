@@ -399,6 +399,66 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         ]);
     }, 30000);
 
+    test("keyless client: code binds to its redirect and PKCE, not to a pk_", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+
+        async function createKeylessCode(): Promise<string> {
+            const res = await SELF.fetch(`${BASE}/api/oauth/code`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    apiKey: "sk_minted_by_consent",
+                    redirectUri: REDIRECT_URI,
+                    codeChallenge: await s256(VERIFIER),
+                    codeChallengeMethod: "S256",
+                }),
+            });
+            expect(res.status).toBe(200);
+            return ((await res.json()) as { code: string }).code;
+        }
+
+        // The SDK sends an empty client_id when the app has no App Key.
+        const tokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                ...validTokenParams(await createKeylessCode()),
+                client_id: "",
+            }),
+        );
+        expect(tokenRes.status).toBe(200);
+        expect(
+            ((await tokenRes.json()) as { access_token: string }).access_token,
+        ).toBe("sk_minted_by_consent");
+
+        // A keyless code can't be redeemed as some App Key's code...
+        const asKeyed = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost(validTokenParams(await createKeylessCode())),
+        );
+        expect(((await asKeyed.json()) as { error: string }).error).toBe(
+            "invalid_grant",
+        );
+
+        // ...and an App Key's code can't be redeemed without its client_id.
+        const keyedCode = crypto.randomUUID();
+        await putCode(keyedCode);
+        const { client_id: _, ...withoutClientId } =
+            validTokenParams(keyedCode);
+        const asKeyless = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost(withoutClientId),
+        );
+        expect(((await asKeyless.json()) as { error: string }).error).toBe(
+            "invalid_grant",
+        );
+    }, 30000);
+
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,

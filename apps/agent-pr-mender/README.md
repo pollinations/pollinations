@@ -18,9 +18,9 @@ says SHIP and stops.
 
 | PR | Verdict | Tool calls | Cost |
 | --- | --- | --- | --- |
-| #17123 | FIX: the SSE parser isn't flushed at end of stream; [fix branch](https://github.com/pollinations/collective-memory/tree/pr-mender/pr-17123-fix) | 11 | 0.128 Pollen |
-| #17115 | SHIP | 8 | 0.091 Pollen |
-| #16953 | SHIP | 10 | 0.090 Pollen |
+| #17123 | FIX: the SSE parser isn't flushed at end of stream; [fix branch](https://github.com/pollinations/collective-memory/tree/pr-mender/pr-17123-fix) | 11 | $0.128 |
+| #17115 | SHIP | 8 | $0.091 |
+| #16953 | SHIP | 10 | $0.090 |
 
 ## What blocked it
 

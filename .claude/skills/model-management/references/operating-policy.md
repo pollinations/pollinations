@@ -14,7 +14,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 
 ## Access and economics
 
-- `paidOnly: false` means Quest-Pollen-accessible. Do not move such a service from a funded/credit route to a route that creates cash spend merely because its posted unit price is lower.
+- `paidOnly: false` means the model accepts the Quest balance. Do not move such a service from a funded/credit route to a route that creates cash spend merely because its posted unit price is lower.
 - Provider credits are consumed by traffic volume, not catalog breadth. Prefer moving existing high-volume cash-spend traffic onto an equivalent credit-eligible route over adding low-volume models. When the public price should stay unchanged, set that route's multiplier explicitly.
 - InferencePort migrations are eligible only for existing `paidOnly: true` services. A new InferencePort model must also be proposed as `paidOnly: true`.
 - Confirm `paidOnly` and `priceMultiplier` for every model. Never infer either from the provider name.

@@ -208,7 +208,7 @@ function tokenCost(model: Model): number {
     );
 }
 
-/** Estimated pollen cost of this request on a model, at catalog prices. */
+/** Estimated USD cost of this request on a model, at catalog prices. */
 function estimateCost(
     model: Model,
     promptTokens: number,
@@ -407,7 +407,7 @@ async function loadCatalog(
 }
 
 /**
- * Read the caller's pollen balance before routing. Returns null when the
+ * Read the caller's balance before routing. Returns null when the
  * balance isn't visible (e.g. unbudgeted keys without `account:usage` get 403)
  * — routing then proceeds uncapped instead of failing.
  */

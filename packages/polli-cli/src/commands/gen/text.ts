@@ -16,7 +16,7 @@ import {
 } from "../../lib/output.js";
 import { prepareOutputPath } from "../../lib/output-file.js";
 import { readStdin } from "../../lib/stdin.js";
-import { streamSSE } from "../../lib/stream.js";
+import { streamSSE, throwIfFailed } from "../../lib/stream.js";
 
 interface ChatResponse {
     choices: Array<{
@@ -217,6 +217,7 @@ export function createTextCommand() {
                 }
 
                 const data = (await res.json()) as ChatResponse;
+                throwIfFailed(data);
                 const message = data.choices[0]?.message;
                 const content = message?.content || message?.refusal || "";
                 warnIfTruncated(data.choices[0]?.finish_reason);

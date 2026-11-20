@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
+    calculatePrice,
     getRegistryModelDefinition,
     getVisibleTextModels,
     resolveModelName,
@@ -62,6 +63,50 @@ for (const variant of ["flare", "sunburst"]) {
         expect(models.some((item) => item.name === `${model}:fal`)).toBe(false);
     });
 }
+
+test("HEAD and GET validate the same query model before generation", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const cases = [
+        [
+            "/image/head-model-check?model=openai/gpt-image-2.6-flare",
+            apiKey,
+            402,
+        ],
+        ["/image/head-model-check?model=openai/gpt-5.4-nano", paidApiKey, 400],
+        [
+            "/audio/head-model-check?model=openai/gpt-image-2.6-flare",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/text/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/image/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/audio/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+    ] as const;
+    for (const [path, key, status] of cases) {
+        for (const method of ["GET", "HEAD"]) {
+            const response = await fetchWorker(path, {
+                method,
+                headers: { Authorization: `Bearer ${key}` },
+            });
+            expect(response.status, `${method} ${path}`).toBe(status);
+            if (method === "HEAD") expect(await response.text()).toBe("");
+        }
+    }
+});
 
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
@@ -488,6 +533,52 @@ test("requires paid balance for Recraft vector", async ({
     ).toBe(true);
 
     expect(generation.status).toBe(402);
+}, 15_000);
+
+test("refuses a media request the balance cannot cover at its own price", async () => {
+    const { key } = await createTestApiKey({ user: { packBalance: 0.05 } });
+    const headers = {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+    };
+    const usd = (price: number) => `$${price.toFixed(4)}`;
+
+    const video = await fetchWorker(
+        "/video/own-price-check?model=veo&duration=8&resolution=1080p&audio=true&seed=24072511",
+        { headers },
+    );
+    expect(video.status).toBe(402);
+    expect(await video.text()).toContain(
+        `This request costs about ${usd(
+            calculatePrice(
+                "google/veo-3.1-fast",
+                { completionVideoSeconds: 8, completionAudioSeconds: 8 },
+                undefined,
+                { resolution: "1080p" },
+            ).totalPrice,
+        )}`,
+    );
+
+    const image = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            model: "x-ai/grok-imagine-image-2.0",
+            prompt: "own price check 24072511",
+            resolution: "2k",
+        }),
+    });
+    expect(image.status).toBe(402);
+    expect(await image.text()).toContain(
+        `This request costs about ${usd(
+            calculatePrice(
+                "x-ai/grok-imagine-image-2.0",
+                { completionImageTokens: 1 },
+                undefined,
+                { resolution: "2k" },
+            ).totalPrice,
+        )}`,
+    );
 }, 15_000);
 
 test("Scout catalog exposes its enforced output capabilities", async () => {

@@ -68,7 +68,7 @@ const unsubscribedAt = async (userId: string) =>
 
 test("running-low email goes out once per pack below 20% of the last pack", async () => {
     const { sent, notifyEnv } = withOutbox();
-    // Last pack of 20 Pollen, so the threshold is 4.
+    // Last pack of $20, so the threshold is 4.
     await addUser("low", { packBalance: 3.999, lastPackPollen: 20 });
     await addUser("healthy", { packBalance: 6, lastPackPollen: 20 });
     // Never bought a pack, so there is no threshold.
@@ -82,12 +82,12 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
     }
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
-    expect(sent[0].text).toMatch(/^💳 3\.99 pollen left\n/);
+    expect(sent[0].text).toMatch(/^💳 \$3\.99 left\n/);
     expect(sent[0].text).toContain("\n-- \n");
     expect(sent[0].html).toContain("turn on <strong>auto top-up</strong>");
     expect(sent[0].text).toContain("turn on auto top-up so");
     expect(sent[0].html).toMatch(
-        /\/email\/card\.png"[^>]*>3\.99 <span[^>]*>pollen left<\/span>/,
+        /\/email\/card\.png"[^>]*>\$3\.99 <span[^>]*>left<\/span>/,
     );
 
     // Crediting the next pack clears the marker, which re-arms the email.
@@ -112,11 +112,11 @@ test("auto top-up failed emails once per failure", async () => {
         reason: "auto top-up disabled",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
-    expect(sent[0].text).toContain("💳 2.00 pollen left");
-    expect(sent[0].text).toContain("for your 10 pollen auto top-up");
+    expect(sent[0].text).toContain("💳 $2.00 left");
+    expect(sent[0].text).toContain("for your $10 auto top-up");
     // The reason comes before the balance.
-    expect(sent[0].html.indexOf("for your 10 pollen")).toBeLessThan(
-        sent[0].html.indexOf("pollen left"),
+    expect(sent[0].html.indexOf("for your $10")).toBeLessThan(
+        sent[0].html.indexOf("left</span>"),
     );
 
     // The user turns it back on, and it fails again the same day.

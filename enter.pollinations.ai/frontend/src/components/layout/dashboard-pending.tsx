@@ -6,13 +6,13 @@ import { DashboardShell } from "./dashboard-shell.tsx";
 const pageTitles: Record<string, readonly string[]> = {
     "/news": ["News", "FAQ"],
     "/models": ["Models"],
-    "/my-models": ["Agents", "Models"],
-    "/my-apps": ["My Apps"],
+    "/agents": ["Agents"],
+    "/my-models": ["My listings"],
     "/sandboxes": ["Sandboxes"],
-    "/keys": ["Secrets", "Apps"],
-    "/pollen": ["Pollen", "Top-up", "Billing"],
+    "/keys": ["Keys"],
+    "/pollen": ["Balances", "Top-up", "Billing"],
     "/activity": ["Overview", "Last events"],
-    "/quests": ["Claimed"],
+    "/quests": ["Progress", "Leaderboard"],
     "/account": [
         "Profile",
         "Community",
@@ -52,6 +52,6 @@ export function DashboardPending() {
     return dashboardReady ? (
         content
     ) : (
-        <DashboardShell showFooterLinks={false}>{content}</DashboardShell>
+        <DashboardShell>{content}</DashboardShell>
     );
 }

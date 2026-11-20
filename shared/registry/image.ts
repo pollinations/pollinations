@@ -633,6 +633,52 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "bytedance-seed/seedream-5-5": {
+        aliases: ["seedream-5.5", "bytedance/seedream-5.5"],
+        provider: "vercel",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        cost: {
+            promptImageTokens: 0.008,
+            completionImageTokens: 0.02,
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.008,
+                    completionImageTokens: 0.035,
+                },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "High-resolution output.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K" },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.5",
+        description:
+            "ByteDance image generation and editing with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "bytedance/seedream-5.0-flash": {
         aliases: [],
         provider: "openrouter",

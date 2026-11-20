@@ -1588,37 +1588,44 @@ export async function handleRealtimeWebSocket(
         communityEndpoint: c.var.model.communityEndpoint,
     });
     const tracking = await createRealtimeBillingContext(c);
-    const gemini = c.var.model.resolved === GEMINI_LIVE;
-    if (
-        gemini ||
-        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
-        c.var.model.resolved === "elevenlabs/scribe-v3-live"
-    ) {
-        if (!gemini && !c.env.ELEVENLABS_API_KEY) {
-            throw new HTTPException(503, {
-                message: "ElevenLabs realtime provider is not configured.",
-            });
-        }
+    async function startAdapter(connect: () => Response) {
         await reserveApiKeyBudget(c.var, c.env);
         tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
         try {
-            if (gemini)
-                return proxyGeminiLive(c, {
-                    select({ id, definition }) {
-                        if (!definition)
-                            throw new Error(
-                                "Missing Gemini Live route pricing",
-                            );
-                        tracking.servingRoute = { id, definition };
-                    },
-                    usage: (usage) => addUsage(tracking.usage, usage),
-                    settle: () => scheduleRealtimeSettlement(c, tracking),
-                });
-            return proxyScribeOpenAIRealtime(c, tracking);
+            return connect();
         } catch (error) {
             await releaseApiKeyBudgetReservation(c.var, c.env);
             throw error;
         }
+    }
+
+    if (c.var.model.resolved === GEMINI_LIVE) {
+        if (!c.env.GOOGLE_PROJECT_ID) {
+            throw new HTTPException(503, {
+                message: "Google Vertex realtime provider is not configured.",
+            });
+        }
+        return startAdapter(() =>
+            proxyGeminiLive(c, {
+                select({ id, definition }) {
+                    if (!definition)
+                        throw new Error("Missing Gemini Live route pricing");
+                    tracking.servingRoute = { id, definition };
+                },
+                usage: (usage) => addUsage(tracking.usage, usage),
+                settle: () => scheduleRealtimeSettlement(c, tracking),
+            }),
+        );
+    }
+    if (
+        c.var.model.resolved === "elevenlabs/scribe-v2-realtime" ||
+        c.var.model.resolved === "elevenlabs/scribe-v3-live"
+    ) {
+        if (!c.env.ELEVENLABS_API_KEY)
+            throw new HTTPException(503, {
+                message: "ElevenLabs realtime provider is not configured.",
+            });
+        return startAdapter(() => proxyScribeOpenAIRealtime(c, tracking));
     }
 
     const upstream = await connectAzureRealtime(

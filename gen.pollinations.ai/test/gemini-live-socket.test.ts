@@ -19,7 +19,7 @@ const usageMetadata = {
     candidatesTokensDetails: [{ modality: "AUDIO", tokenCount: 10 }],
 };
 
-test.each(["fallback", "missing-usage", "disconnect"])(
+test.each(["fallback", "missing-usage", "disconnect", "spoken"])(
     "Gemini Live setup, routing and billing (%s)",
     async (scenario) => {
         const { key } = await createTestApiKey({
@@ -57,7 +57,10 @@ test.each(["fallback", "missing-usage", "disconnect"])(
                         if (primary && scenario === "fallback")
                             server.close(1011, "setup unavailable");
                         else server.send(JSON.stringify({ setupComplete: {} }));
-                    } else if (frame.realtimeInput?.text) {
+                    } else if (
+                        frame.realtimeInput?.text ||
+                        frame.realtimeInput?.activityEnd
+                    ) {
                         server.send(
                             JSON.stringify({
                                 serverContent: {
@@ -125,16 +128,28 @@ test.each(["fallback", "missing-usage", "disconnect"])(
             }
         });
         client.accept();
-        client.send(
-            JSON.stringify({
-                type: "conversation.item.create",
-                item: {
-                    type: "message",
-                    role: "user",
-                    content: [{ type: "input_text", text: "Say hello" }],
-                },
-            }),
-        );
+        if (scenario === "spoken") {
+            const audio = btoa("\0".repeat(960));
+            for (let i = 0; i < 150; i++)
+                client.send(
+                    JSON.stringify({
+                        type: "input_audio_buffer.append",
+                        audio,
+                    }),
+                );
+            client.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
+        } else {
+            client.send(
+                JSON.stringify({
+                    type: "conversation.item.create",
+                    item: {
+                        type: "message",
+                        role: "user",
+                        content: [{ type: "input_text", text: "Say hello" }],
+                    },
+                }),
+            );
+        }
         client.send(JSON.stringify({ type: "response.create" }));
         await closed;
         await waitOnExecutionContext(ctx);
@@ -143,10 +158,16 @@ test.each(["fallback", "missing-usage", "disconnect"])(
             const fallback = scenario === "fallback";
             expect(attempts).toHaveLength(fallback ? 2 : 1);
             if (fallback) expect(attempts[0]).toEqual(["setup"]);
-            expect(
-                attempts.at(-1)?.filter((frame) => frame === "Say hello"),
-            ).toHaveLength(1);
-            expect(received.includes("response.done")).toBe(fallback);
+            if (scenario === "spoken") {
+                expect(attempts[0]).toHaveLength(153); // Setup, start, 150 audio frames, end.
+            } else {
+                expect(
+                    attempts.at(-1)?.filter((frame) => frame === "Say hello"),
+                ).toHaveLength(1);
+            }
+            expect(received.includes("response.done")).toBe(
+                scenario !== "disconnect",
+            );
             await vi.waitFor(() => expect(telemetry).toHaveLength(1));
             expect(telemetry[0]).toMatchObject({
                 modelUsed: fallback ? `${model}:google:us` : model,
@@ -185,6 +206,29 @@ test("Gemini Live rejects a Quest Pollen balance before upgrading", async () => 
     );
     await waitOnExecutionContext(ctx);
     expect(response.status).toBe(402);
+    expect(response.webSocket).toBeNull();
+    expect(token).not.toHaveBeenCalled();
+});
+
+test("Gemini Live returns 503 before upgrade when the Vertex project is missing", async () => {
+    const { key } = await createTestApiKey({
+        name: "missing-vertex-project",
+        user: { packBalance: 1, tierBalance: 0 },
+    });
+    const token = vi.spyOn(googleCloudAuth, "getAccessToken");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({ data: [] }),
+    );
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai/realtime?model=${model}`, {
+            headers: { Authorization: `Bearer ${key}`, Upgrade: "websocket" },
+        }),
+        { ...env, GOOGLE_PROJECT_ID: "" },
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(503);
     expect(response.webSocket).toBeNull();
     expect(token).not.toHaveBeenCalled();
 });

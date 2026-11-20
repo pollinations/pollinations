@@ -21,8 +21,7 @@ async function route(c: Context<Env>, id: string) {
         : "us-central1-aiplatform.googleapis.com";
     syncTextEnvironment(c.env);
     const token = await googleCloudAuth.getAccessToken();
-    if (!token || !c.env.GOOGLE_PROJECT_ID)
-        throw new Error("Gemini Live route unavailable");
+    if (!token) throw new Error("Gemini Live route unavailable");
     return {
         url: `https://${host}/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`,
         headers: new Headers({ Authorization: `Bearer ${token}` }),
@@ -47,8 +46,8 @@ export function proxyGeminiLive(
     let started = false;
     let disconnected = false;
     let drainTimer: ReturnType<typeof setTimeout> | undefined;
-    let queue: { payload: string; turnInput: boolean }[] = [];
-    let queuedSize = 0;
+    // Only one bounded turn can await setup. Session configuration is sent in setup itself.
+    const queue: string[] = [];
     const sendClient = (event: object) => {
         if (!disconnected && downstream.readyState === WebSocket.OPEN)
             downstream.send(JSON.stringify(event));
@@ -84,27 +83,14 @@ export function proxyGeminiLive(
         onUsage: billing.usage,
         cancelUnsentTurn() {
             if (selected) return false;
-            queue = queue.filter((frame) => !frame.turnInput);
-            queuedSize = queue.reduce(
-                (size, frame) => size + frame.payload.length,
-                0,
-            );
+            queue.length = 0;
             return true;
         },
         sendGoogle(event) {
             if (lifetime.signal.aborted) return;
             const frame = JSON.stringify(event);
-            if (selected) {
-                selected.send(frame);
-            } else if (
-                queue.length >= 128 ||
-                queuedSize + frame.length > 8 * 1024 * 1024
-            ) {
-                finish("Gemini Live setup input buffer exceeded");
-            } else {
-                queue.push({ payload: frame, turnInput: !event.contextUpdate });
-                queuedSize += frame.length;
-            }
+            if (selected) selected.send(frame);
+            else queue.push(frame);
         },
         requestSetup() {
             if (started) return;
@@ -202,7 +188,7 @@ export function proxyGeminiLive(
                         ready = true;
                         signal.removeEventListener("abort", failSetup);
                         resolve();
-                        for (const { payload } of queue) socket.send(payload);
+                        for (const payload of queue) socket.send(payload);
                         queue.length = 0;
                     } else {
                         events.google(frame);

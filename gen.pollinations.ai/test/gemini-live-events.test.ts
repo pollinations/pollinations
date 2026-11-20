@@ -152,6 +152,21 @@ describe("Gemini Live realtime events", () => {
             [{ realtimeInput: { activityEnd: {} } }],
         ]);
     });
+    it("commits all audio already accepted at the pending-input limit", () => {
+        const s = session();
+        const audio = btoa("\0".repeat(6144)); // 8 KiB of encoded PCM per chunk
+        for (let i = 0; i < 1024; i++)
+            s.client({ type: "input_audio_buffer.append", audio });
+        expect(s.events()).toEqual([]);
+        s.client({ type: "input_audio_buffer.append", audio: "AAA=" });
+        expect(s.events().at(-1)).toMatchObject({ type: "error" });
+        s.client({ type: "input_audio_buffer.commit" });
+        s.client({ type: "response.create" });
+        expect(s.sendGoogle).toHaveBeenCalledTimes(1026);
+        expect(s.sendGoogle.mock.lastCall).toEqual([
+            { realtimeInput: { activityEnd: {} } },
+        ]);
+    });
     it("keeps function identifiers and submits results on the next response", () => {
         const s = session();
         s.client({
@@ -222,6 +237,30 @@ describe("Gemini Live realtime events", () => {
             },
         ]);
     });
+    it("keeps setup instructions and tools after a rejected in-flight update", () => {
+        const s = session();
+        const config = {
+            instructions: "Use lookup",
+            tools: [{ type: "function", name: "lookup" }],
+        };
+        s.client({ type: "session.update", session: config });
+        s.client(textItem);
+        s.client({ type: "response.create" });
+        const setup = s.setup("upstream");
+        s.sendGoogle.mockClear();
+        for (const change of [{ instructions: "" }, { tools: [] }]) {
+            s.client({ type: "session.update", session: change });
+            expect(s.events().at(-1)).toMatchObject({
+                type: "error",
+                error: { code: "invalid_event" },
+            });
+        }
+        expect(s.setup("upstream")).toEqual(setup);
+        expect(s.sendGoogle).not.toHaveBeenCalled();
+        s.google(terminal);
+        expect(s.events().at(-1)).toMatchObject({ type: "response.done" });
+    });
+
     it("rejects automatic turn detection and buffers audio until committed", () => {
         const s = session();
         s.client({

@@ -275,7 +275,7 @@ export function createGeminiLiveEvents({
             frames.reduce((n, frame) => n + JSON.stringify(frame).length, 0);
         if (
             nextSize + audioSize > maxInput ||
-            queued.length + frames.length > 1024
+            queued.length + audio.length + frames.length > 1024
         )
             throw Error("Pending realtime input is full.");
         size = nextSize;
@@ -364,9 +364,15 @@ export function createGeminiLiveEvents({
         const next = settings.parse(raw);
         if (next.model && next.model !== model)
             throw Error("Model is fixed for this connection.");
-        if (started && (next.audio || next.output_modalities))
+        if (
+            started &&
+            (next.audio ||
+                next.output_modalities ||
+                next.instructions !== undefined ||
+                next.tools !== undefined)
+        )
             throw Error(
-                "Set audio and output_modalities before sending input.",
+                "Set audio, output_modalities, instructions and tools before the first response.create.",
             );
         config = {
             ...config,
@@ -376,23 +382,6 @@ export function createGeminiLiveEvents({
                 output: { ...config.audio?.output, ...next.audio?.output },
             },
         };
-        if (
-            started &&
-            (next.instructions !== undefined || next.tools !== undefined)
-        ) {
-            sendGoogle({
-                contextUpdate: {
-                    ...(next.instructions !== undefined && {
-                        systemInstruction: {
-                            parts: [{ text: next.instructions }],
-                        },
-                    }),
-                    ...(next.tools !== undefined && {
-                        tools: { tools: googleTools(next.tools) },
-                    }),
-                },
-            });
-        }
         emit("session.updated", { session: session() });
     }
     function handle(event: Frame) {
@@ -407,7 +396,7 @@ export function createGeminiLiveEvents({
                     throw Error("PCM16 audio must contain whole samples.");
                 if (
                     size + audioSize + data.length > maxInput ||
-                    audio.length >= 1024
+                    queued.length + audio.length >= 1024
                 )
                     throw Error("Pending audio buffer is full.");
                 audio.push(data);
@@ -425,14 +414,9 @@ export function createGeminiLiveEvents({
                         audio: { data, mimeType: "audio/pcm;rate=24000" },
                     },
                 }));
-                const bytes = audioSize;
+                queued.push(...frames);
+                size += audioSize;
                 audioSize = 0;
-                try {
-                    queuedInput(frames);
-                } catch (error) {
-                    audioSize = bytes;
-                    throw error;
-                }
                 audio = [];
                 const itemId = id("item");
                 emit("input_audio_buffer.committed", { item_id: itemId });
@@ -457,6 +441,7 @@ export function createGeminiLiveEvents({
                 if (active && !queued.every((frame) => frame.toolResponse))
                     throw Error("A response is already active.");
                 active = true;
+                started = true;
                 requestSetup();
                 const hasAudio = queued.some(
                     (frame) => obj(frame.realtimeInput).audio,
@@ -514,7 +499,6 @@ export function createGeminiLiveEvents({
             emit("session.created", { session: session() });
         },
         setup(modelPath: string) {
-            started = true;
             const voice = config.audio?.output?.voice;
             return {
                 setup: {

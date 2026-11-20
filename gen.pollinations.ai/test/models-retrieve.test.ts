@@ -395,6 +395,20 @@ test("community reliability is discovery-only and legacy hide metadata no longer
             .map((model) => model.name)
             .sort(),
     ).toEqual([passingId, id, legacyHiddenId].sort());
+
+    const namesAt = async (min: number) => {
+        const response = await fetchWorker(
+            `/models?source=community&reliability=all&min_success_rate=${min}`,
+        );
+        expect(response.status).toBe(200);
+        return ((await response.json()) as { name: string }[])
+            .map((model) => model.name)
+            .filter((name) => name.startsWith(`community/${owner}/`));
+    };
+    expect(await namesAt(80)).toEqual(expect.arrayContaining([id, passingId]));
+    expect(await namesAt(81)).toContain(passingId);
+    expect(await namesAt(81)).not.toContain(id);
+
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);

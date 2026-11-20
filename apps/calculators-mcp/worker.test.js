@@ -71,6 +71,7 @@ for (const modern of [false, true])
                 "check_digit",
                 "integer_math",
                 "diff_text",
+                "list_discovery_endpoints",
                 "create_qr",
                 "hash_text",
                 "inspect_unicode",
@@ -947,6 +948,38 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
                 .isError,
             true,
             JSON.stringify(args),
+        );
+    }
+});
+
+test("list_discovery_endpoints returns structured discovery data", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "list_discovery_endpoints");
+    assert.ok(Array.isArray(result.endpoints), "endpoints must be array");
+    // llms.txt lists sixteen start-here links; fewer means the snapshot went stale.
+    assert.ok(result.endpoints.length >= 16, "endpoints must not be empty");
+    const hrefs = result.endpoints.map((ep) => ep.href);
+    assert.equal(new Set(hrefs).size, hrefs.length, "hrefs must be unique");
+    assert.equal(typeof result.count, "number", "count must be number");
+    assert.equal(
+        result.endpoints.length,
+        result.count,
+        "count must match array length",
+    );
+
+    // Each entry has name, href (URL), and description
+    for (const ep of result.endpoints) {
+        assert.ok(typeof ep.name === "string" && ep.name, "name");
+        // Parse rather than prefix-match: "https://gen.pollinations.ai.evil.example"
+        // also starts with the base, so startsWith is not an origin check.
+        assert.equal(
+            new URL(ep.href).origin,
+            "https://gen.pollinations.ai",
+            "href origin",
+        );
+        assert.ok(
+            typeof ep.description === "string" && ep.description,
+            "description",
         );
     }
 });

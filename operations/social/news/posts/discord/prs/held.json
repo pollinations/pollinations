@@ -33,8 +33,7 @@
       "merged_at": "2026-11-20T00:13:19Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "19595": {
@@ -42,8 +41,7 @@
       "merged_at": "2026-11-19T23:32:07Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "19605": {
@@ -51,8 +49,7 @@
       "merged_at": "2026-11-20T00:20:30Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "19611": {
@@ -60,8 +57,7 @@
       "merged_at": "2026-11-20T02:14:38Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "19671": {
@@ -69,8 +65,7 @@
       "merged_at": "2026-11-19T23:52:56Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "19672": {
@@ -78,8 +73,7 @@
       "merged_at": "2026-11-20T00:41:37Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20066": {
@@ -87,8 +81,7 @@
       "merged_at": "2026-11-20T01:19:12Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20067": {
@@ -96,8 +89,7 @@
       "merged_at": "2026-11-20T01:36:38Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20068": {
@@ -105,8 +97,7 @@
       "merged_at": "2026-11-20T02:32:38Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20298": {
@@ -114,8 +105,7 @@
       "merged_at": "2026-11-20T00:04:37Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20368": {
@@ -123,8 +113,7 @@
       "merged_at": "2026-11-20T00:48:32Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
     "20373": {
@@ -132,8 +121,7 @@
       "merged_at": "2026-11-20T01:34:02Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     }
   },

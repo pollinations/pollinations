@@ -1,4 +1,4 @@
-import googleLogoUrl from "../../assets/google.svg";
+import googleLogoUrl from "../../brand/organizations/google.svg";
 import type { TileModality } from "../../lib/media-action-tile.ts";
 import type { IconProps } from "./types.ts";
 

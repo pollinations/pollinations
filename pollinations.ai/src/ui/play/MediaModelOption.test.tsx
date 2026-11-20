@@ -11,11 +11,17 @@ describe("model dropdown option", () => {
         (paidOnly, label, color) => {
             const html = renderToStaticMarkup(
                 <MediaModelOption
-                    model={{ title: "Example model", paidOnly }}
+                    model={{
+                        title: "Example model",
+                        publisher: "OpenAI",
+                        paidOnly,
+                    }}
                 />,
             );
             expect(html).toContain(`aria-label="${label}"`);
             expect(html).toContain(color);
+            expect(html).toContain("mask:");
+            expect(html).not.toContain(">OpenAI<");
         },
     );
 });

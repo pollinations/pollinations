@@ -311,6 +311,18 @@ export const ImageParamsSchema = z
                 capability: "reference_audios" as const,
             },
         ];
+        if (
+            data.model === "bytedance/seedance-2.5-flash" &&
+            data.image?.length &&
+            references.some(({ values }) => values.length > 0)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message:
+                    "Seedance Flash keyframes cannot be combined with reference images, videos or audio.",
+            });
+        }
         for (const { field, values, capability } of references) {
             if (values.length === 0) continue;
             if (!definition.videoCapabilities?.includes(capability)) {

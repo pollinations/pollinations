@@ -9,6 +9,21 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedance-2.5-flash": {
+        "bytedance/seedance-2.5-flash:openrouter": {
+            provider: "openrouter",
+            cost: { completionVideoTokens: perMillion(7 * 1.055) },
+            costVariants: {
+                "720p": { completionVideoTokens: perMillion(7 * 1.055) },
+                video_in_480p: {
+                    completionVideoTokens: perMillion(4.3 * 1.055),
+                },
+                video_in_720p: {
+                    completionVideoTokens: perMillion(4.3 * 1.055),
+                },
+            },
+        },
+    },
     "minimax/minimax-h3-image": {
         "minimax/minimax-h3-image:openrouter": {
             provider: "openrouter",

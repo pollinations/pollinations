@@ -795,6 +795,44 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1028,
     },
   },
+  "bytedance/seedance-2.5-flash": {
+    "cost": {
+      "completionVideoTokens": 0.000007,
+    },
+    "costVariants": {
+      "720p": {
+        "completionVideoTokens": 0.000007,
+      },
+      "video_in_480p": {
+        "completionVideoTokens": 0.0000043,
+      },
+      "video_in_720p": {
+        "completionVideoTokens": 0.0000043,
+      },
+    },
+    "price": {
+      "completionVideoTokens": 0.000007,
+    },
+  },
+  "bytedance/seedance-2.5-flash:openrouter": {
+    "cost": {
+      "completionVideoTokens": 0.000007385,
+    },
+    "costVariants": {
+      "720p": {
+        "completionVideoTokens": 0.000007385,
+      },
+      "video_in_480p": {
+        "completionVideoTokens": 0.0000045365,
+      },
+      "video_in_720p": {
+        "completionVideoTokens": 0.0000045365,
+      },
+    },
+    "price": {
+      "completionVideoTokens": 0.000007385,
+    },
+  },
   "bytedance/seedream-4.0": {
     "cost": {
       "completionImageTokens": 0.03,

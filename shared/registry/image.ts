@@ -2108,6 +2108,98 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "bytedance/seedance-2.5-flash": {
+        aliases: ["seedance-2.5-flash"],
+        provider: "vercel",
+        publisher: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        cost: { completionVideoTokens: perMillion(7) },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoTokens: perMillion(7),
+                },
+                video_in_480p: {
+                    completionVideoTokens: perMillion(4.3),
+                },
+                video_in_720p: {
+                    completionVideoTokens: perMillion(4.3),
+                },
+            },
+            ({ input }) => {
+                if (!input?.hasReferenceVideo) {
+                    return input?.resolution === "720p" ? "720p" : undefined;
+                }
+                return input.resolution === "720p"
+                    ? "video_in_720p"
+                    : "video_in_480p";
+            },
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+                video_in_480p: {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 480p.",
+                },
+                video_in_720p: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 720p.",
+                },
+            },
+            "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "video_in_480p": "480p",
+                        "video_in_720p": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "720p": "No",
+                        "video_in_480p": "Yes",
+                        "video_in_720p": "Yes",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5 Flash",
+        description:
+            "Fast video generation from text, keyframes, and multimodal references with optional audio",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+            "audio_output",
+        ],
+        maxReferenceImages: 2,
+        minDuration: 4,
+        maxDuration: 30,
+        defaultDuration: 5,
+    },
     "bytedance/seedance-2.5": {
         aliases: ["seedance-2.5"],
         provider: "replicate",

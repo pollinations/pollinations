@@ -28,7 +28,7 @@ The diff is what the PR does. The title and description are the author's account
 
 ## Costs stay internal
 
-What Pollinations pays providers (costs, credit fees, margins) and how it records them are internal, even when the PR or the code says "bills" or "billing" for them. Never put them in `summary` or `image_prompt`. Mention what users pay only when the diff changes the price users are charged, and say it in their terms, e.g. "Ling 3.1 Flash now costs 0.1 pollen per 1M input tokens".
+What Pollinations pays providers (costs, credit fees, margins) and how it records them are internal, even when the PR or the code says "bills" or "billing" for them. Never put them in `summary` or `image_prompt`. Mention what users pay only when the diff changes the price users are charged, and say it in their terms, e.g. "Ling 3.1 Flash now costs $0.10 per 1M input tokens".
 
 ## Availability
 

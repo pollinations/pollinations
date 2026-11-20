@@ -9,6 +9,52 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "minimax/minimax-h3-image": {
+        "minimax/minimax-h3-image:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.3 * 1.055),
+                promptImageTokens: perMillion(1.5 * 1.055),
+                completionImageTokens: perMillion(3.8 * 1.055),
+            },
+        },
+    },
+    "minimax/minimax-h3-image-highspeed": {
+        "minimax/minimax-h3-image-highspeed:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.3 * 1.055),
+                promptImageTokens: perMillion(3 * 1.055),
+                completionImageTokens: perMillion(7.6 * 1.055),
+            },
+        },
+    },
+    "kwaivgi/kling-v3.0-pro": {
+        "kwaivgi/kling-v3.0-pro:azure": {
+            provider: "azure",
+            cost: {
+                completionVideoSeconds: 0.1232,
+                completionAudioSeconds: 0.0616,
+            },
+        },
+    },
+    "lightricks/ltx-2.5-pro": {
+        "lightricks/ltx-2.5-pro:azure": {
+            provider: "azure",
+        },
+    },
+    "stability-ai/stable-diffusion-3.5-large": {
+        "stability-ai/stable-diffusion-3.5-large:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.065 },
+        },
+    },
+    "stability-ai/stable-image-core": {
+        "stability-ai/stable-image-core:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.03 },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",

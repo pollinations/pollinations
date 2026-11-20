@@ -41,7 +41,7 @@ export const REALTIME_SERVICES = {
         cost: { promptAudioSeconds: 0.54 / 3600 },
         title: "MAI Transcribe 2 Streaming",
         description:
-            "Live multilingual transcription with incremental finalized text; manual commits and 16/24 kHz PCM audio",
+            "Transcribe multilingual speech live from 16 or 24 kHz mono PCM audio. Manually commit each segment to finalize its text.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -56,7 +56,7 @@ export const REALTIME_SERVICES = {
         billing: OPENAI_REALTIME_CACHE_BILLING,
         title: "GPT Realtime 2.1",
         description:
-            "Live voice conversations with instant replies and solid noise handling",
+            "Have a live voice conversation and show the model images as you talk.",
         contextLength: 32000,
         paidOnly: false,
     },
@@ -78,7 +78,7 @@ export const REALTIME_SERVICES = {
         billing: OPENAI_REALTIME_2_1_MINI_CACHE_BILLING,
         title: "GPT Realtime 2.1 Mini",
         description:
-            "Cost-efficient live voice conversations with fast, reasoned replies and tool use",
+            "Build a lower-cost voice assistant that can call tools during a live conversation.",
         contextLength: 128000,
         voices: [
             "alloy",
@@ -105,7 +105,7 @@ export const REALTIME_SERVICES = {
         cost: { promptAudioSeconds: 0.22 / 3600 },
         title: "Scribe v3 Live",
         description:
-            "Accurate live multilingual transcription with incremental and final results",
+            "Caption multilingual speech as it happens, with interim text that updates as the speaker continues.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -124,7 +124,7 @@ export const REALTIME_SERVICES = {
         },
         title: "Scribe v2 Realtime",
         description:
-            "Live transcription in 90+ languages with incremental and final results",
+            "Display live captions in over 90 languages as the speaker talks.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -145,7 +145,7 @@ export const REALTIME_SERVICES = {
         },
         title: "GPT Live Transcribe",
         description:
-            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
+            "Turn incoming speech into a live transcript with little delay.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],

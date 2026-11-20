@@ -63,7 +63,7 @@ def request_json(url, payload=None, token=None, timeout=30):
         if error.code == 403:
             raise ApiError("Access denied. Check the model permissions in your Pollinations account or reconnect.") from None
         if error.code == 402:
-            raise ApiError("Insufficient Pollen or authorization budget. Add Pollen or adjust the budget in your account.") from None
+            raise ApiError("Balance or API key budget too low. Top up or adjust the key budget in your account.") from None
         if error.code == 429:
             raise ApiError("Rate limit reached. Wait before trying again.") from None
         raise ApiError(f"Pollinations returned HTTP {error.code}. Check the request or try again later.") from None

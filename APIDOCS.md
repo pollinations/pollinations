@@ -45,7 +45,7 @@ curl https://gen.pollinations.ai/v1/models \
 - [🚀 Getting Started](#-getting-started)
 - [Guides](#guides)
 - [🔐 Authentication](#-authentication)
-- [🔓 Pollinations Connect (OAuth 2.1)](#-pollinations-connect-oauth-21)
+- [🔓 Pollinations Pay (OAuth 2.1)](#-pollinations-pay-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [▲ Vercel AI SDK](#-vercel-ai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
@@ -104,9 +104,11 @@ The header is preferred for everything except browser flows that can't set custo
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted. See [Error Responses](#-error-responses).
 
-## 🔓 Pollinations Connect (OAuth 2.1)
+<a name="-pollinations-connect-oauth-21"></a>
 
-Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+## 🔓 Pollinations Pay (OAuth 2.1)
+
+Third-party apps can obtain a secret key on behalf of a Pollinations user. Use the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Optionally register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret) and puts your app's name on the consent screen. Without one, omit `client_id` and the consent screen shows the redirect hostname. The issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata. Resolve them from there:
 
@@ -1033,7 +1035,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell
 ```
 
-**Available models:** krea/krea-2-medium, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux-3-image-klein, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, microsoft/mai-image-2.7, microsoft/mai-image-2.7-flash, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, openai/gpt-image-2.6-flare, openai/gpt-image-2.6-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-2.1-turbo, qwen/qwen-image-2.1-pro, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
+**Available models:** hotshotco/hotshot-xl, stability-ai/stable-diffusion-3.5-large, stability-ai/stable-image-core, krea/krea-2-medium, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux-3-image-klein, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, microsoft/mai-image-2.7, microsoft/mai-image-2.7-flash, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-vector-1, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, openai/gpt-image-2.6-flare, openai/gpt-image-2.6-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-2.1-turbo, qwen/qwen-image-2.1-pro, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, quiverai/arrow-2, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
 
 ### Community image models
 
@@ -1041,11 +1043,11 @@ Community image models use a `community/owner/model` id and support generation t
 
 #### `GET` `/image/{prompt}` — Generate Image
 
-Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
+Generate an image from a text prompt. Returns JPEG, PNG, WebP, GIF, or SVG depending on the selected model.
 
 Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.
 
-**Available models:** `krea/krea-2-medium`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux-3-image-klein`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `microsoft/mai-image-2.7`, `microsoft/mai-image-2.7-flash`, `google/gemini-2.5-flash-image`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-lite-image`, `google/gemini-nano-banana-2.1`, `google/gemini-3-pro-image`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1.5`, `openai/gpt-image-2`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.6-flare`, `openai/gpt-image-2.6-sunburst`, `black-forest-labs/flux.1-schnell`, `tongyi-mai/z-image-turbo`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-2.1-turbo`, `qwen/qwen-image-2.1-pro`, `qwen/qwen-image-3`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
+**Available models:** `hotshotco/hotshot-xl`, `stability-ai/stable-diffusion-3.5-large`, `stability-ai/stable-image-core`, `krea/krea-2-medium`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux-3-image-klein`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `microsoft/mai-image-2.7`, `microsoft/mai-image-2.7-flash`, `google/gemini-2.5-flash-image`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-lite-image`, `google/gemini-nano-banana-2.1`, `google/gemini-3-pro-image`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-vector-1`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1.5`, `openai/gpt-image-2`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.6-flare`, `openai/gpt-image-2.6-sunburst`, `black-forest-labs/flux.1-schnell`, `tongyi-mai/z-image-turbo`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-2.1-turbo`, `qwen/qwen-image-2.1-pro`, `qwen/qwen-image-3`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `quiverai/arrow-2`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1065,7 +1067,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `transparent` | `query` | `boolean` | Generate an image with a transparent background. Unsupported models return 400. |
-| `output_format` | `query` | `"png"` \| `"webp"` \| `"gif"` | Output format for openai/gpt-image-2.6-flare; defaults to PNG. |
+| `output_format` | `query` | `"png"` \| `"webp"` \| `"gif"` | Animated GIF generation is supported by GPT Image 2.6 Flare and Sunburst. WebP is supported by Flare. |
 | `frame_count` | `query` | `integer` | Required for GIF output; 2 to 16 frames. · range: `2…16` |
 | `frame_duration_ms` | `query` | `integer` | Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit. · range: `20…2000` |
 | `background` | `query` | `"auto"` \| `"opaque"` \| `"transparent"` | GPT Image background mode; GIF cannot have a transparent background. |
@@ -1089,6 +1091,7 @@ curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountain
 OpenAI-compatible image generation endpoint.
 
 Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).
+`hotshotco/hotshot-xl` returns a 512×512 animated GIF when selected. Omit `output_format` for this model.
 
 `black-forest-labs/flux.1-schnell` (`flux`) accepts 64–8192 px per side on its primary backend. It scales oversized requests down proportionally to the backend cap (810,000 or 1,048,576 pixels), then snaps to a size within the cap with sides divisible by 8 and a pixel count divisible by 65,536. Aspect ratios within 5% of the target are treated as equally close. Among equally close ratios it chooses the smallest size at or above the target pixel count, or the largest below it if none fits. The `X-Image-Dimensions` response header reports the produced size when available.
 
@@ -1102,9 +1105,9 @@ Generate images from text prompts. Supports `response_format: "url"` (returns th
 | `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default · default: `"1024x1024"` |
-| `aspect_ratio` | enum (7) — `"16:9"`, `"9:16"`, `"1:1"`, … | Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default. |
+| `aspect_ratio` | enum (7) — `"16:9"`, `"9:16"`, `"1:1"`, … | Optional aspect ratio when size is omitted or defaulted. Supported by GPT Image 2.6 Flare and by Sunburst for GIF generation. |
 | `quality` | enum (6) — `"standard"`, `"hd"`, `"low"`, … | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms. |
+| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GIF generation is supported by GPT Image 2.6 Flare and Sunburst and requires frame_count and frame_duration_ms. WebP is supported by Flare. |
 | `frame_count` | `integer` | range: `2…16` |
 | `frame_duration_ms` | `integer` | range: `20…2000` |
 | `background` | `"auto"` \| `"opaque"` \| `"transparent"` | — |
@@ -1157,7 +1160,7 @@ Community image models forward edits to the registrant's OpenAI-compatible endpo
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default |
 | `quality` | enum (6) — `"standard"`, `"hd"`, `"low"`, … | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms. |
+| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GIF generation is supported by GPT Image 2.6 Flare and Sunburst and requires frame_count and frame_duration_ms. WebP is supported by Flare. |
 | `frame_count` | `integer` | range: `2…16` |
 | `frame_duration_ms` | `integer` | range: `20…2000` |
 | `background` | `"auto"` \| `"opaque"` \| `"transparent"` | — |
@@ -1226,7 +1229,7 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `output_format` | `query` | `"png"` \| `"webp"` \| `"gif"` | Output format for openai/gpt-image-2.6-flare; defaults to PNG. |
+| `output_format` | `query` | `"png"` \| `"webp"` \| `"gif"` | Animated GIF generation is supported by GPT Image 2.6 Flare and Sunburst. WebP is supported by Flare. |
 | `frame_count` | `query` | `integer` | Required for GIF output; 2 to 16 frames. · range: `2…16` |
 | `frame_duration_ms` | `query` | `integer` | Required for GIF output; 20 to 2000 ms per frame, with a 10-second total duration limit. · range: `20…2000` |
 | `background` | `query` | `"auto"` \| `"opaque"` \| `"transparent"` | GPT Image background mode; GIF cannot have a transparent background. |
@@ -1318,6 +1321,8 @@ Generate speech, music, sound effects, or dialogue from text. Compatible with th
 
 Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3` (`strength` 0-1 sets how far the output may depart from it), or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.
 
+**`zyphra/zonos3-mini`** — Read text aloud in the Alloy voice or clone a voice from a reference recording. Pass a public HTTP(S) audio URL in `reference_audio`. Accepted formats are WAV, MP3, FLAC, Ogg, AAC, M4A/MP4 audio, and WebM audio. References can be up to 20 MiB. Only the first 60 seconds are used. Start with 5–10 seconds of clear speech from one speaker. Output is mono 24 kHz MP3 or raw signed 16-bit little-endian PCM. Output length follows the text. Reuse the same reference URL with new text for another generation.
+
 For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith, Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Vindemiatrix, Sadachbia, Sadaltager, Sulafat, cs-CZ-Grant, cs-CZ-Harper, da-DK-Grant, da-DK-Harper, de-DE-Grant, de-DE-Harper, de-DE-Klaus, de-DE-Mia, en-AU-Isla, en-GB-Emily, en-GB-Harry, en-IN-Dhruv, en-IN-Priya, en-US-Ethan, en-US-Grant, en-US-Harper, en-US-Iris, en-US-Jasper, en-US-Olivia, en-US-Sage, es-ES-Marta, es-MX-Alejo, es-MX-Grant, es-MX-Harper, es-MX-Valeria, fi-FI-Grant, fi-FI-Harper, fr-FR-Grant, fr-FR-Harper, fr-FR-Marc, fr-FR-Soleil, hi-IN-Arjun, hi-IN-Dhruv, hi-IN-Grant, hi-IN-Harper, hi-IN-Kavya, hi-IN-Priya, hu-HU-Bence, hu-HU-Grant, hu-HU-Harper, hu-HU-Levente, hu-HU-Lilla, hu-HU-Reka, id-ID-Grant, id-ID-Harper, it-IT-Grant, it-IT-Harper, it-IT-Luca, it-IT-Rosa, ko-KR-Grant, ko-KR-Haena, ko-KR-Harper, ko-KR-Junho, nb-NO-Grant, nb-NO-Harper, nl-NL-Grant, nl-NL-Harper, nl-NL-Sander, pl-PL-Grant, pl-PL-Harper, pt-BR-Caio, pt-BR-Grant, pt-BR-Harper, pt-BR-Luana, pt-BR-Pedro, pt-BR-Rafael, pt-PT-Grant, pt-PT-Harper, pt-PT-Rui, ro-RO-Andrei, ro-RO-Elena, ro-RO-Grant, ro-RO-Harper, ro-RO-Ioana, ro-RO-Radu, ru-RU-Grant, ru-RU-Harper, ru-RU-Lev, ru-RU-Masha, sv-SE-Grant, sv-SE-Harper, th-TH-Grant, th-TH-Harper, th-TH-Krit, th-TH-Nattapong, tr-TR-Aydin, tr-TR-Elif, tr-TR-Grant, tr-TR-Harper, vi-VN-Grant, vi-VN-Harper, zh-CN-Bo, zh-CN-Grant, zh-CN-Harper, zh-CN-Lan, zh-CN-Mei, zh-CN-Wei, loongeva_v3.6, loongjohn, loongmary, longanfengyue, longanyuanfei, longanlingxi, longanxiaoxin, longanhuan_v3.6, longjielidou_v3.6, longpaopao_v3.6, longhuohuo_v3.6, longchuanshu_v3.6
@@ -1339,11 +1344,11 @@ For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put 
 | `negative_prompt` | `string` | — |
 | `instrumental` | `boolean` | — |
 | `store_for_inpainting` | `boolean` | — |
-| `reference_audio` | `string · uri` | Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation. |
+| `reference_audio` | `string · uri` | Public HTTP(S) audio URL for voice cloning on zyphra/zonos3-mini, music conditioning, or audio-to-audio generation. |
 | `strength` | `number` | How much the output may depart from reference_audio: 0 keeps the input, 1 ignores it (Stable Audio 3 audio-to-audio only). Omit for the provider default. · max: `1` |
 | `conditioning_ref` | `object` | — |
 | `composition_plan` | `object` | — |
-| `seed` | `integer` | max: `4294967295` |
+| `seed` | `integer` | Same seed + params return the same cached result. -1 maps to the stable compatibility seed. · range: `-1…4294967295` |
 | `instructions` | `string` | Emotion/style instruction for Gemini TTS and Qwen instruct speech. |
 | `loop` | `boolean` | — |
 | `prompt_influence` | `number` | max: `1` |
@@ -1375,7 +1380,7 @@ Generate base64-encoded speech with character-level timing for the original and 
 | `input` * | `string` | Text to synthesize and align. · max length: `10000` |
 | `voice` | `string` | Preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | Encoding used for audio_base64. · default: `"mp3"` |
-| `seed` | `integer` | max: `4294967295` |
+| `seed` | `integer` | Same seed + params return the same cached result. -1 maps to the stable compatibility seed. · range: `-1…4294967295` |
 
 <sub>`*` = required field</sub>
 
@@ -1676,8 +1681,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/embeddings/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -1922,8 +1926,7 @@ Cached for 60 seconds per window and traffic scope.
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60"
 ```
 
 ---
@@ -1941,8 +1944,7 @@ Refreshed hourly.
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models/stats" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/models/stats"
 ```
 
 ---
@@ -2018,8 +2020,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2151,8 +2152,7 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models/openai%2Fgpt-5.4-nano" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/v1/models/openai%2Fgpt-5.4-nano"
 ```
 
 ```json
@@ -2201,8 +2201,7 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2250,8 +2249,7 @@ Returns all available 3D model generation models with pricing, capabilities, and
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/3d/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2299,8 +2297,7 @@ Returns all available image and video generation models with pricing, capabiliti
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/image/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2348,8 +2345,7 @@ Returns all available video generation models with pricing, capabilities, and me
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/video/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2397,8 +2393,7 @@ Returns all available text generation and community text models with pricing, ca
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/text/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -2446,8 +2441,7 @@ Returns all available audio models (text-to-speech, music generation, and transc
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/models?reliability=reliable&source=official" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/audio/models?reliability=reliable&source=official"
 ```
 
 ```json
@@ -3586,7 +3580,7 @@ curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-4466
 
 #### `GET` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3597,6 +3591,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -3608,7 +3604,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 
 #### `HEAD` `/{id}` — Retrieve media
 
-Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
+Get a file by its id. A GET with a single satisfiable `Range: bytes=...` header returns `206` with `Content-Range`, so media players can seek. HEAD ignores Range and returns full-file metadata. Full GETs and ranges starting at byte zero refresh its 30-day retention once the file is at least 15 days old. Nonzero seeks and HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -3619,6 +3615,8 @@ Get a file by its id. Retrieving the body refreshes its 30-day retention once th
 <sub>`*` = required parameter</sub>
 
 📤 **Response** · `200` — File content with appropriate Content-Type
+
+📤 **Response** · `206` — GET only: The requested byte range of the file
 
 💻 **Example**
 
@@ -5177,6 +5175,8 @@ Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An 
 
 📤 **Response** · `200` — Generated image, video, audio or 3D file
 
+📤 **Response** · `206` — The requested byte range of the file, so video and audio players can seek
+
 💻 **Example**
 
 ```bash
@@ -5195,8 +5195,9 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftr
 
 **Available models:** tripo3d/p2, microsoft/trellis-2, nvidia/asset-harvester, hyper3d/rodin-2.5
 
-> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require the paid balance. `microsoft/trellis-2` (the default)
-> supports `low`, `medium`, and `high` resolution and works with the Quest balance.
+> **Note:** every 3D model requires the paid balance; the Quest balance cannot
+> pay for one. `microsoft/trellis-2` (the default) supports `low`, `medium`, and
+> `high` resolution. A Quest-funded caller gets `402` on `/3d/{prompt}`.
 
 ### NVIDIA Asset Harvester
 
@@ -5222,7 +5223,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2) |
 | `model` | `query` | enum (11) — `"tripo3d/p2"`, `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
 | `resolution` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `microsoft/trellis-2`. Defaults to `low`. |
-| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
+| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `microsoft/trellis-2`, `nvidia/asset-harvester`). |
 | `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it; otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
 | `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
@@ -5413,9 +5414,9 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512), or `auto` for the model default · default: `"1024x1024"` |
-| `aspect_ratio` | enum (7) — `"16:9"`, `"9:16"`, `"1:1"`, … | Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default. |
+| `aspect_ratio` | enum (7) — `"16:9"`, `"9:16"`, `"1:1"`, … | Optional aspect ratio when size is omitted or defaulted. Supported by GPT Image 2.6 Flare and by Sunburst for GIF generation. |
 | `quality` | enum (6) — `"standard"`, `"hd"`, `"low"`, … | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms. |
+| `output_format` | `"png"` \| `"webp"` \| `"gif"` | GIF generation is supported by GPT Image 2.6 Flare and Sunburst and requires frame_count and frame_duration_ms. WebP is supported by Flare. |
 | `frame_count` | `integer` | range: `2…16` |
 | `frame_duration_ms` | `integer` | range: `20…2000` |
 | `background` | `"auto"` \| `"opaque"` \| `"transparent"` | — |
@@ -5439,7 +5440,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
-| `data[].media_type` | `string` | MIME type, included for URL responses and non-raster output |
+| `data[].media_type` | `string` | MIME type of the returned media, included in both URL and base64 responses. |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |

@@ -69,7 +69,7 @@ const WAYS_IN = [
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
             label: "Find a GitHub Quest",
-            href: `${SOCIAL_LINKS.github.url}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+            href: "https://enter.pollinations.ai/quests",
         },
     },
     {

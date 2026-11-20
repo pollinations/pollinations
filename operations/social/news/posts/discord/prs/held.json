@@ -122,7 +122,6 @@
       "merge_sha": "702932cd1e7ed3a890348d410975997ad05855e0",
       "merged_at": "2026-11-20T00:48:32Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/dashboards/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

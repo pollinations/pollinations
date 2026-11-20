@@ -83,9 +83,11 @@ import {
 } from "./connect-draft";
 import {
     type ImageFormats,
+    imageActionLabel,
     imageFormatLabel,
-    imageMime,
+    type imageMime,
     imageOutput,
+    imageResult,
     previewImageFormats,
 } from "./image-output";
 import { MediaModelOption } from "./MediaModelOption";
@@ -222,8 +224,9 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
 };
 
 type PlaygroundResult =
+    | ReturnType<typeof imageResult>
     | {
-          type: "image" | "video" | "audio" | "stems";
+          type: "video" | "audio" | "stems";
           url: string;
           filename: string;
       }
@@ -257,15 +260,13 @@ function promptPlaceholder(
 
 /** MIME subtypes that are not the usual file extension. */
 const FILE_EXTENSIONS: Record<string, string> = {
-    "image/jpeg": "jpg",
-    [imageMime.svg]: "svg",
     "audio/mpeg": "mp3",
     "audio/x-wav": "wav",
     "video/quicktime": "mov",
 };
 
 function mediaResult(
-    type: "image" | "video" | "audio",
+    type: "video" | "audio",
     { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
 ): PlaygroundResult {
     const mime = contentType.split(";")[0].trim();
@@ -899,12 +900,7 @@ function ResultDownloadButton({
     result: PlaygroundResult;
     className?: string;
 }) {
-    const format =
-        result.type === "image" &&
-        Object.keys(imageMime).find((ext) =>
-            result.filename.endsWith(`.${ext}`),
-        );
-    const label = `Download ${format ? format.toUpperCase() : result.type}`;
+    const label = `Download ${result.type === "image" ? (result.formatLabel ?? "image") : result.type}`;
     return (
         <Button
             as="a"
@@ -1853,16 +1849,12 @@ export function Playground({
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                if (
-                    format &&
-                    formatInfo?.mode !== "default" &&
-                    response.contentType.split(";")[0].trim() !==
-                        imageMime[format]
-                )
-                    throw new Error(
-                        `Expected a ${format.toUpperCase()} image, but the model returned ${response.contentType}.`,
-                    );
-                runStore.set({ result: mediaResult("image", response) });
+                runStore.set({
+                    result: imageResult(
+                        response,
+                        formatInfo?.mode === "default" ? undefined : format,
+                    ),
+                });
                 return;
             }
 
@@ -1914,23 +1906,20 @@ export function Playground({
     const editsImage =
         currentModel?.category === "image" &&
         (requiresImage || (acceptsImageParam && referenceImages.length > 0));
-    const generateLabel = format
-        ? `Generate ${format.toUpperCase()}`
-        : currentModel?.category === "video"
-          ? "Generate video"
-          : currentModel?.category === "audio"
-            ? isAudioTranscription
-                ? "Transcribe audio"
-                : currentAudioEndpoint === "/v1/audio/voice-changer"
-                  ? "Change voice"
-                  : currentAudioEndpoint === "/v1/audio/voice-isolator"
-                    ? "Isolate speech"
-                    : currentAudioEndpoint === "/alpha/audio/stem-separation"
-                      ? "Separate stems"
-                      : "Generate audio"
-            : editsImage
-              ? "Edit image"
-              : "Generate image";
+    const generateLabel =
+        currentModel?.category === "video"
+            ? "Generate video"
+            : currentModel?.category === "audio"
+              ? isAudioTranscription
+                  ? "Transcribe audio"
+                  : currentAudioEndpoint === "/v1/audio/voice-changer"
+                    ? "Change voice"
+                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                      ? "Isolate speech"
+                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                        ? "Separate stems"
+                        : "Generate audio"
+              : imageActionLabel(editsImage, format);
     const GenerateIcon = task.workspace.icon;
     const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
     // The placeholder belongs to the tab whose run is in flight; audio has none.
@@ -2743,6 +2732,9 @@ export function Playground({
                             )}
                             {busyVisual === activeCategory && (
                                 <BusyPlaceholder category={busyVisual} />
+                            )}
+                            {result?.type === "image" && result.notice && (
+                                <Alert intent="advisory">{result.notice}</Alert>
                             )}
                             {result && (
                                 <ResultPanel

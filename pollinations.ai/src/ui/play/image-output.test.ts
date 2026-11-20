@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { playgroundModelOverride } from "../../data/playground-model-overrides";
 import {
     type ImageFormats,
+    imageActionLabel,
     imageOutput,
+    imageResult,
     previewImageFormats,
 } from "./image-output";
 
@@ -14,6 +16,15 @@ describe("image output selection", () => {
             frame_defaults: { frame_count: 6, frame_duration_ms: 150 },
         },
     };
+    it.each(["png", "svg"] as const)(
+        "keeps the edit action for %s output",
+        (format) => {
+            expect(imageActionLabel(true, format)).toBe("Edit image");
+            expect(imageActionLabel(false, format)).toBe(
+                `Generate ${format.toUpperCase()}`,
+            );
+        },
+    );
     it("uses the local GIF metadata until the catalog publishes its format list", () => {
         const model = { name: "openai/gpt-image-2.6-flare", paid_only: true };
         const preview = playgroundModelOverride(model.name)?.imageFormats;
@@ -70,5 +81,46 @@ describe("image output selection", () => {
             request: undefined,
         });
         expect(imageOutput(catalog, "svg").request).toBeUndefined();
+    });
+});
+
+describe("returned image", () => {
+    const buffer = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]).buffer;
+    it("retains the bytes and labels the download using the returned format", async () => {
+        const result = imageResult(
+            { buffer, contentType: "image/JPEG; quality=90" },
+            "webp",
+        );
+        try {
+            expect(result.filename).toBe("pollinations-playground.jpg");
+            expect(result.formatLabel).toBe("JPEG");
+            expect(result.notice).toBe(
+                "Requested WebP. The model returned JPEG.",
+            );
+            const preview = await fetch(result.url);
+            expect(preview.headers.get("Content-Type")).toBe("image/jpeg");
+            expect(await preview.arrayBuffer()).toEqual(buffer);
+        } finally {
+            URL.revokeObjectURL(result.url);
+        }
+    });
+    it.each(["jpeg", undefined] as const)(
+        "omits the notice for a matching or unspecified format (%s)",
+        (expected) => {
+            const result = imageResult(
+                { buffer, contentType: "image/jpeg" },
+                expected,
+            );
+            try {
+                expect(result.notice).toBeUndefined();
+            } finally {
+                URL.revokeObjectURL(result.url);
+            }
+        },
+    );
+    it("rejects a non-image response", () => {
+        expect(() =>
+            imageResult({ buffer, contentType: "text/html" }, "gif"),
+        ).toThrow("Expected an image");
     });
 });

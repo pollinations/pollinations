@@ -51,6 +51,37 @@ type Format = keyof typeof imageMime;
 const formats = Object.keys(imageMime) as Format[];
 const requestFormats = ["png", "webp", "gif"] as const;
 
+export function imageActionLabel(editsImage: boolean, format?: Format) {
+    if (editsImage) return "Edit image";
+    return format ? `Generate ${format.toUpperCase()}` : "Generate image";
+}
+
+/** Keep the returned image and use its media type for the preview and download. */
+export function imageResult(
+    { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
+    expected?: Format,
+) {
+    const mime = contentType.split(";")[0].trim().toLowerCase();
+    if (!mime.startsWith("image/") || !mime.slice(6)) {
+        throw new Error(
+            `Expected an image, but the model returned ${contentType}.`,
+        );
+    }
+    const actual = formats.find((key) => imageMime[key] === mime);
+    const label = actual && imageFormatLabel(actual);
+    const extension = actual === "jpeg" ? "jpg" : (actual ?? mime.slice(6));
+    return {
+        type: "image" as const,
+        url: URL.createObjectURL(new Blob([buffer], { type: mime })),
+        filename: `pollinations-playground.${extension}`,
+        formatLabel: label,
+        notice:
+            expected && expected !== actual
+                ? `Requested ${imageFormatLabel(expected)}. The model returned ${label ?? mime}.`
+                : undefined,
+    };
+}
+
 // Native outputs use the ordinary image request. The SDK can explicitly
 // request GIF, PNG and WebP when the model advertises them.
 export function imageOutput(

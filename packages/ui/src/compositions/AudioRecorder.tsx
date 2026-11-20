@@ -5,6 +5,7 @@ import {
     mediaTileTint,
 } from "../lib/media-action-tile.ts";
 import {
+    maxRecordingSamples,
     nextRecordingName,
     RECORDING_SAMPLE_RATE,
     recordedWav,
@@ -196,14 +197,14 @@ function CaptureTile({
             let failed = false;
             const started = performance.now();
             const maxMilliseconds =
-                ((maxBytes - 44) * 1000) / (RECORDING_SAMPLE_RATE * 2);
+                (maxRecordingSamples(maxBytes) * 1000) / RECORDING_SAMPLE_RATE;
             active.ondataavailable = ({ data }) => {
                 size += data.size;
-                if (size <= maxBytes) chunks.push(data);
+                if (!video || size <= maxBytes) chunks.push(data);
                 if (
-                    (size > maxBytes ||
-                        (!video &&
-                            performance.now() - started >= maxMilliseconds)) &&
+                    (video
+                        ? size > maxBytes
+                        : performance.now() - started >= maxMilliseconds) &&
                     active.state === "recording"
                 )
                     active.stop();
@@ -221,7 +222,7 @@ function CaptureTile({
                         throw new Error(
                             "No usable media was recorded. Try recording again.",
                         );
-                    if (size > maxBytes)
+                    if (video && size > maxBytes)
                         throw new Error(
                             "Recording exceeded the upload limit. Try a shorter recording.",
                         );

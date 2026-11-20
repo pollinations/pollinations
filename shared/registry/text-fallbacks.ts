@@ -148,6 +148,18 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-24").getTime(),
         },
     },
+    "google/gemini-decision-1": {
+        "google/gemini-decision-1:openrouter:ai-studio": {
+            provider: "openrouter",
+            cost: {
+                promptAudioTokens: perMillion(0.1) * 1.055,
+                promptImageTokens: perMillion(0.1) * 1.055,
+                promptVideoTokens: perMillion(0.1) * 1.055,
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "openai/gpt-6-luna-decisions": {
         // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
         "openai/gpt-6-luna-decisions:openrouter": {

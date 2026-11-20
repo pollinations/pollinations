@@ -1,4 +1,7 @@
+import { Chip } from "@pollinations/ui";
+import { ModelBrandIcon } from "@pollinations/ui/gen";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
+import { isNewModel } from "../../../../shared/model-recency";
 
 export function MediaModelOption({
     model,
@@ -7,16 +10,25 @@ export function MediaModelOption({
 }: {
     showPricing?: boolean;
     perDollar?: string;
-    model: { title: string; paidOnly: boolean; publisher?: string };
+    model: {
+        title: string;
+        paidOnly: boolean;
+        publisher?: string;
+        addedDate?: number;
+    };
 }) {
     return (
         <span className="flex w-full min-w-0 items-center gap-2">
-            <span className="flex min-w-0 flex-1 items-center gap-2 max-sm:max-h-[1lh] max-sm:flex-wrap max-sm:content-start max-sm:overflow-hidden">
+            <ModelBrandIcon
+                model={model}
+                className="size-4 shrink-0 text-theme-text-muted"
+            />
+            <span className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="truncate">{model.title}</span>
-                {model.publisher && (
-                    <span className="max-w-[40%] truncate text-xs font-normal text-theme-text-muted max-sm:shrink-0">
-                        {model.publisher}
-                    </span>
+                {isNewModel(model.addedDate) && (
+                    <Chip intent="success" size="sm" className="play-model-new">
+                        New
+                    </Chip>
                 )}
             </span>
             {showPricing && (

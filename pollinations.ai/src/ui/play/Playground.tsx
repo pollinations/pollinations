@@ -67,6 +67,7 @@ import {
     calculatePerPollen,
     hasFreePricing,
 } from "../../../../shared/model-price-display";
+import { isNewModel } from "../../../../shared/model-recency";
 import { API_BASE_URL, ENTER_URL } from "../../config";
 import {
     type AudioCatalogMetadata,
@@ -135,6 +136,7 @@ type PlaygroundModel = MediaModelMetadata & {
     paidOnly: boolean;
     free: boolean;
     publisher?: string;
+    addedDate?: number;
     maxReferenceVideos?: number;
     maxReferenceAudios?: number;
     audioInputConstraints?: AudioCatalogMetadata["audio_input_constraints"];
@@ -172,7 +174,7 @@ const TASKS = WORKSPACES.flatMap((workspace) =>
 type Task = (typeof TASKS)[number];
 
 function playgroundModel(
-    model: ModelInfo & AudioCatalogMetadata,
+    model: ModelInfo & AudioCatalogMetadata & { added_date?: number },
 ): PlaygroundModel | null {
     const id = model.id ?? model.name;
     if (!id || !model.category) return null;
@@ -199,6 +201,7 @@ function playgroundModel(
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         free: hasFreePricing(model),
+        addedDate: model.added_date,
         publisher: model.publisher,
         maxReferenceVideos: model.max_reference_videos,
         ...playgroundAudioMetadata(id, model),
@@ -657,6 +660,9 @@ function ModelPicker({
                                         ? "Uses paid balance only"
                                         : "Works with any balance",
                                     selected.publisher,
+                                    isNewModel(selected.addedDate)
+                                        ? "New"
+                                        : undefined,
                                 ]
                                     .filter(Boolean)
                                     .join(", ")
@@ -789,6 +795,7 @@ function ModelPicker({
                                         active={model.id === selectedModel}
                                         size="sm"
                                         variant="ghost"
+                                        aria-description={model.publisher}
                                         className="play-model-option w-full justify-start pr-0 text-left"
                                         onClick={() => {
                                             onSelectModel(
@@ -1293,12 +1300,17 @@ export function Playground({
         const tasks = TASKS.filter((item) => item.workspace === task.workspace);
         return visibleModels
             .filter((model) => tasks.some((item) => supportsTask(model, item)))
-            .sort((a, b) =>
-                a.title.localeCompare(b.title, "en", {
+            .sort((a, b) => {
+                const aNew = isNewModel(a.addedDate);
+                const bNew = isNewModel(b.addedDate);
+                if (aNew !== bNew) return aNew ? -1 : 1;
+                if (aNew && a.addedDate !== b.addedDate)
+                    return (b.addedDate ?? 0) - (a.addedDate ?? 0);
+                return a.title.localeCompare(b.title, "en", {
                     numeric: true,
                     sensitivity: "base",
-                }),
-            );
+                });
+            });
     }, [task.workspace, visibleModels]);
     // Picks the model for the open tab. One effect, so a linked ?model= and
     // the tab default never race on the same render. A link opens that

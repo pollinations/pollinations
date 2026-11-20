@@ -303,7 +303,7 @@ main > * {
     background: var(--polli-color-surface-opaque);
 }
 
-.play-model-option[aria-pressed="true"] :is(span, svg) {
+.play-model-option[aria-pressed="true"] :is(span, svg):not(.play-model-new) {
     color: inherit;
 }
 

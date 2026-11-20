@@ -343,6 +343,19 @@ export const IMAGE_FALLBACKS = {
             maxReferenceImages: 10,
         },
     },
+    "heygen/heygen-avatar-6-turbo": {
+        "heygen/heygen-avatar-6-turbo:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-20").getTime(),
+            cost: { completionVideoSeconds: 0.05 * 1.055 },
+            ...defineCostVariants(
+                { "2k": { completionVideoSeconds: 0.0875 * 1.055 } },
+                matchResolution("2k"),
+                { "2k": { label: "2K", description: "Applies at 2K resolution." } },
+                "1080p",
+            ),
+        },
+    },
     "heygen/heygen-video-1": {
         "heygen/heygen-video-1:openrouter": {
             provider: "openrouter",

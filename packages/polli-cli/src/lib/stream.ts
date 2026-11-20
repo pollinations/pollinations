@@ -1,4 +1,25 @@
 /**
+ * Gen answers some failed completions with HTTP 200: a top-level `error`, or
+ * a choice that finished with `finish_reason: "error"`.
+ */
+export function throwIfFailed(completion: {
+    error?: { message?: string };
+    choices?: {
+        finish_reason?: string | null;
+        error?: { message?: string };
+    }[];
+}): void {
+    const failed = completion.choices?.find(
+        (choice) => choice.finish_reason === "error",
+    );
+    const error = completion.error ?? failed?.error;
+    if (!error && !failed) return;
+    throw new Error(
+        error?.message ?? (error ? JSON.stringify(error) : "Completion failed"),
+    );
+}
+
+/**
  * Zero-dependency SSE stream parser for OpenAI-compatible chat completions.
  * Yields content (or refusal) delta strings as they arrive.
  */
@@ -16,15 +37,12 @@ export async function* streamSSE(
             choices?: {
                 delta?: { content?: string; refusal?: string };
                 finish_reason?: string | null;
+                error?: { message?: string };
             }[];
             model?: string;
             usage?: { total_tokens?: number };
         };
-        if (parsed.error) {
-            throw new Error(
-                parsed.error.message ?? JSON.stringify(parsed.error),
-            );
-        }
+        throwIfFailed(parsed);
         onEvent?.(parsed);
         const delta = parsed.choices?.[0]?.delta;
         if (delta?.content) yield delta.content;

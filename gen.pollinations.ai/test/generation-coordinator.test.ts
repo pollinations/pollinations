@@ -15,6 +15,7 @@ import type {
     GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
+import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 import worker from "../src/index.ts";
 import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 
@@ -278,15 +279,19 @@ describe("GenerationCoordinator", () => {
         ["url", "in the alarm"],
         ["b64_json", "in the alarm"],
         ["url", "behind the public origin"],
+        ["url", "with exhausted handoff writes"],
     ] as const)(
-        "completes large Seedream uploads once through the real coordinator (%s, %s)",
+        "executes Seedream uploads once through the real coordinator (%s, %s)",
         async (responseFormat, execution) => {
             const { key, userId } = await createTestApiKey({
                 user: { packBalance: 100 },
             });
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
             const handoffs: ExecutionContext[] = [];
-            if (execution === "behind the public origin") {
+            const retryLog = vi.spyOn(console, "warn");
+            let handoffWriteAttempts = 0;
+            const handoffFails = execution === "with exhausted handoff writes";
+            if (execution !== "in the alarm") {
                 env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
                 onTestFinished(() => {
                     env.GENERATION_EXECUTION_ORIGIN = undefined;
@@ -303,7 +308,7 @@ describe("GenerationCoordinator", () => {
             const providerStarted = new Promise<void>((resolve) => {
                 started = resolve;
             });
-            const output = new Uint8Array(6 * 1024 * 1024);
+            const output = new Uint8Array(handoffFails ? 100 : 6 * 1024 * 1024);
             output.set(
                 Buffer.from(
                     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
@@ -346,11 +351,28 @@ describe("GenerationCoordinator", () => {
                     ) {
                         const context = createExecutionContext();
                         handoffs.push(context);
-                        return worker.fetch(
+                        const bucket = env.TEST_MEDIA_BUCKET;
+                        const put = vi.spyOn(bucket, "put");
+                        const error = new Error(
+                            "put: Service unavailable (10043)",
+                        );
+                        if (handoffFails) put.mockRejectedValue(error);
+                        else put.mockRejectedValueOnce(error);
+                        const media = new MediaUpload(context, {
+                            MEDIA_BUCKET: bucket,
+                            MAX_FILE_SIZE: "104857600",
+                        });
+                        const handoff = await worker.fetch(
                             new Request(input, init),
-                            env,
+                            {
+                                ...env,
+                                MEDIA: media as unknown as typeof env.MEDIA,
+                            },
                             context,
                         );
+                        handoffWriteAttempts = put.mock.calls.length;
+                        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
+                        return handoff;
                     }
                     if (url.pathname === "/v0/pipes/public_model_stats.json") {
                         return Response.json({ data: [] });
@@ -370,7 +392,9 @@ describe("GenerationCoordinator", () => {
                 form.set("safe", "false");
                 form.set("size", "1920x1080");
                 form.set("response_format", responseFormat);
-                for (const size of [9_992_143, 12_285_506]) {
+                for (const size of handoffFails
+                    ? [100]
+                    : [9_992_143, 12_285_506]) {
                     const bytes = new Uint8Array(size);
                     bytes.set(output.subarray(0, 8));
                     form.append(
@@ -414,12 +438,13 @@ describe("GenerationCoordinator", () => {
                     state.storage.get<{
                         bodyChunks: number;
                         started: boolean;
+                        requestId: string;
                         cache: GenerationJobHead["cache"];
                     }>("job"),
             );
             if (!stored) throw new Error("Generation job was not persisted");
             expect(stored.started).toBe(true);
-            expect(stored.bodyChunks).toBeGreaterThan(29);
+            expect(stored.bodyChunks).toBeGreaterThan(handoffFails ? 0 : 29);
             let disconnectError: Error | undefined;
             const firstSettled = first.catch((error: Error) => {
                 disconnectError = error;
@@ -447,6 +472,34 @@ describe("GenerationCoordinator", () => {
                 release();
             }
             const response = await second;
+            await Promise.all([
+                firstSettled,
+                waitOnExecutionContext(secondContext),
+                ...handoffs.map(waitOnExecutionContext),
+            ]);
+            const billed = tinybird.state.events.filter(
+                (event) => event.isBilledUsage,
+            );
+            expect(billed.map((event) => event.requestId)).toEqual([
+                stored.requestId,
+            ]);
+            if (handoffFails) {
+                expect(executions).toBe(1);
+                expect(handoffWriteAttempts).toBe(3);
+                expect(response.ok).toBe(false);
+                await response.text();
+                expect(tinybird.state.errorEvents).toContainEqual(
+                    expect.objectContaining({
+                        request_id: stored.requestId,
+                        route_path: expect.stringMatching(
+                            /^\/internal\/generation\//,
+                        ),
+                        message: "put: Service unavailable (10043)",
+                        status: 500,
+                    }),
+                );
+                return;
+            }
             expect(
                 response.status,
                 response.status === 200 ? "" : await response.text(),
@@ -463,11 +516,6 @@ describe("GenerationCoordinator", () => {
                 expect(result.b64_json?.length).toBe(
                     Math.ceil(output.length / 3) * 4,
                 );
-            await Promise.all([
-                firstSettled,
-                waitOnExecutionContext(secondContext),
-                ...handoffs.map(waitOnExecutionContext),
-            ]);
             expect(handoffs).toHaveLength(
                 execution === "behind the public origin" ? 1 : 0,
             );
@@ -477,12 +525,23 @@ describe("GenerationCoordinator", () => {
             expect(cached.headers.get("x-cache")).toBe("HIT");
             await cached.text();
             await waitOnExecutionContext(cacheContext);
-            const billed = tinybird.state.events.filter(
-                (event) => event.isBilledUsage,
-            );
+            expect(
+                tinybird.state.events.filter((event) => event.isBilledUsage),
+            ).toEqual(billed);
             expect(executions).toBe(1);
             expect(requestBytes).toBeGreaterThan(29_700_000);
-            expect(billed).toHaveLength(1);
+            if (execution === "behind the public origin") {
+                expect(handoffWriteAttempts).toBe(2);
+                expect(retryLog).toHaveBeenCalledWith(
+                    "Retrying R2 generation write",
+                    {
+                        requestId: stored.requestId,
+                        binding: "MEDIA_BUCKET",
+                        attempt: 1,
+                        code: "10043",
+                    },
+                );
+            }
             expect(billed[0].totalPrice).toBeGreaterThan(0);
             const after = await getUserBalance(drizzle(env.DB), userId);
             expect(before.packBalance - after.packBalance).toBeCloseTo(
@@ -815,6 +874,91 @@ describe("GenerationCoordinator", () => {
 
         expect(result).toEqual({ status: "cached" });
     });
+
+    it.each([
+        ["startAndWait", "text"],
+        ["submit", "text"],
+        ["startAndWait", "media"],
+        ["submit", "media"],
+    ] as const)(
+        "keeps RPC responsive during a stalled %s %s cache check and rechecks a stale miss",
+        async (method, storage) => {
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `slow-cache-${crypto.randomUUID()}`,
+            );
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = { ...testJob(key), cache: { storage, key } };
+            let lookupStarted = false;
+            let release!: () => void;
+            const blocked = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            await runInDurableObject(stub, (coordinator) => {
+                // Text caches use an R2 HEAD, media caches the storage RPC.
+                // RPC stubs cannot be spied on, so swap the binding once.
+                const coordinatorEnv = Reflect.get(coordinator, "env");
+                const binding = storage === "text" ? "TEXT_BUCKET" : "MEDIA";
+                const lookup = storage === "text" ? "head" : "has";
+                const original = coordinatorEnv[binding];
+                coordinatorEnv[binding] = {
+                    [lookup]: async (key: string) => {
+                        coordinatorEnv[binding] = original;
+                        const result = await original[lookup](key);
+                        lookupStarted = true;
+                        await blocked;
+                        return result;
+                    },
+                };
+            });
+
+            const pending = stub[method](job);
+            let responsive = false;
+            try {
+                await vi.waitFor(() => expect(lookupStarted).toBe(true));
+                responsive = await Promise.race([
+                    stub.status("user-1").then(() => true),
+                    new Promise<false>((resolve) =>
+                        setTimeout(() => resolve(false), 1000),
+                    ),
+                ]);
+                // An earlier execution can finish while this caller's cache
+                // lookup is in flight. The alarm must recheck before executing.
+                if (storage === "text") {
+                    await env.TEXT_BUCKET.put(key, "completed-result");
+                } else {
+                    await env.MEDIA.put(
+                        key,
+                        new Response("completed-result", {
+                            headers: { "content-type": "image/png" },
+                        }),
+                    );
+                }
+            } finally {
+                release();
+            }
+
+            expect(await pending).toEqual(
+                method === "submit" ? "pending" : { status: "cached" },
+            );
+            if (method === "submit") {
+                await vi.waitFor(async () =>
+                    expect(await stub.status("user-1")).toMatchObject({
+                        status: "succeeded",
+                    }),
+                );
+            }
+            await runInDurableObject(stub, async (_coordinator, state) => {
+                expect(await state.storage.get("job")).toBeUndefined();
+                await state.storage.deleteAlarm();
+            });
+            const cached =
+                storage === "text"
+                    ? await env.TEXT_BUCKET.get(key)
+                    : await env.MEDIA.get(key);
+            expect(await cached?.text()).toBe("completed-result");
+            expect(responsive).toBe(true);
+        },
+    );
 
     it("joins concurrent callers for the same cache identity", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);

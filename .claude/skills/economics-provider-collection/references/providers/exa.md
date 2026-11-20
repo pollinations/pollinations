@@ -11,7 +11,8 @@ model inference): usage rows use `type: infra`.
 - Collection method: dashboard
 - Billing currency: USD
 - The visible balance is promotional credit, not prepaid cash.
-- Usage analytics use UTC.
+- Usage Volume uses UTC; Spend uses Pacific time. Verify the displayed timezone
+  and keep these periods separate.
 
 ## Verified — 2026-09-06
 
@@ -27,11 +28,11 @@ model inference): usage rows use `type: infra`.
   not, preserve the unlisted residual as an explicit funding/expiry gap rather
   than assigning it to a displayed lot or adding an account-total row that
   would double-count credit.
-- No payment method and no invoices exist, so usage rows are credit-funded
-  (`credit` negative, `paid` 0), never cash.
-- Usage page with an explicit UTC range and spend view:
-  `https://dashboard.exa.ai/usage?tab=activity&from=YYYY-MM-DD&to=YYYY-MM-DD&displayMode=spend`
-  (Daily Spend total plus a Search and Contents breakdown).
+- With promotional credits funding the invoice and no cash due, record usage
+  as credit-funded (`credit` negative, `paid` 0). Verify final Orb invoices;
+  an earlier empty Exa invoice list is not evidence that no invoice exists.
+- Use the visible Usage date controls and verify the applied label. The
+  redesigned page ignores the old URL range and spend query parameters.
 - Evidence archive: `Exa-credit-lots-2026-09-06.json` in the Drive
   "Supporting Evidence" folder.
 
@@ -39,13 +40,12 @@ Collection steps:
 
 1. Open the billing page in the `myceli.ai` browser workspace.
 2. Record the remaining balance as provider credit and the exact check time.
-3. Open the usage page and select the complete calendar month in UTC.
-   The date picker accepts start and end dates directly. Verify the `Daily
-   Spend` heading shows the full month after applying them; its endpoint
-   breakdown is rounded and need not sum exactly to the displayed total.
+3. Select the complete calendar month in Usage Volume and verify UTC coverage.
+   Spend and Orb invoices use Pacific billing periods. For UTC costs, retain
+   the precise final invoice and all source-recorded request costs in the
+   differing boundary windows; never prorate the monthly total.
 4. Save any available usage export separately from the balance snapshot.
-5. Archive invoices when they exist; the account had no payment method or
-   invoices at verification time.
+5. Download original Orb invoices and receipts, including zero-due documents.
 
 Known traps:
 
@@ -57,6 +57,17 @@ Known traps:
   the residual.
 - Do not classify the promotional balance as prepaid cash.
 - A balance snapshot is not monthly usage evidence.
+- The Team Management API supports
+  `GET https://admin-api.exa.ai/team-management/api-keys/{publicId}/usage`
+  with ISO `start_date`/`end_date`, returning `total_cost_usd` and a breakdown.
+  It requires a service key; the existing application key returned `401`.
+  Use the dashboard when no approved service key exists. `group_by` is
+  documented as having no effect.
+- Admin responses can place a reusable secret in `api_key_id` for compatibility.
+  Remove that field from exports and output; use stable `id`/`publicId` identity.
+- Monthly free credits reset to $10 on the first without rollover; the separate
+  onboarding bonus is non-expiring. Identify the actual block before applying
+  either general rule to an unlabelled historical balance.
 - No activity was visible for August 19–26 at verification time.
 
 ## Verified — 2026-10-14
@@ -68,3 +79,16 @@ Known traps:
   future allocations from current available balances. A dash in the expiry
   column alone is not verified non-expiring terms. Preserve discrepancies
   between the Exa expiry popup and Orb's date display for clarification.
+- Inspect Orb's final invoice history after close even if Exa shows no invoices.
+  A draft's full cycle label can still contain partial usage and is not final.
+- The original PDF exposes detailed usage quantities and credit amounts that
+  the portal can group beneath a zero cash total. Use the PDF's precision.
+- Requests supports custom ranges and 50-row Load more pagination. Collect a
+  boundary superset across all keys, sources and statuses, retaining only
+  financial fields. Include rendered table rows with blank request IDs; those
+  rows are absent from the clickable-row list. Verify terminal row counts,
+  preserve blank costs and never assign guessed prices.
+- Request drawers expose GMT offsets. Verify both UTC boundaries, including
+  daylight saving changes. A UTC bridge requires every boundary cost; blank
+  interior costs may remain in the invoice aggregate but cannot be allocated
+  to individual requests.

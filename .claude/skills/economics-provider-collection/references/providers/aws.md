@@ -145,4 +145,9 @@ Known traps:
 - Preserve `service_name` in `resource_name` and the usage type in
   `resource_sku`. Write one Compute row per account/service/usage-type group,
   using `type: inference` or `infra` and the evidenced signed funding split.
+  `groupBy=usagetype` can omit `service_name`: reconcile the exact usage-type
+  subtotal to the service aggregation before assigning it. Keep shared
+  Marketplace token SKUs at service grain when they cannot identify a model.
+  `Credits Usage` is an adjustment and `Credits Remaining` is a balance;
+  neither replaces the payer's active grant-lot evidence.
 - Credits can consume invoices before cash is paid; do not force cash transaction matches for credit-funded months.

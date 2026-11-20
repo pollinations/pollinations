@@ -76,17 +76,18 @@ it.each([true, false])(
                 headers.find((header) => header.includes("September")),
             ).toContain("Provisional");
         const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g) ?? [];
-        for (const label of ["Expenses", "Compute"]) {
-            const row = rows.find((item) =>
-                item.includes(`aria-label="${label} calculation info"`),
-            );
-            const cell = row
-                ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
-                ?.find((item) => item.includes("−300"));
-            const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-            expect(shown).toBe(unknown ? "*−300" : "−300");
-            expect(cell).toContain("text-xs font-normal text-theme-text-muted");
-        }
+        const row = rows.find((item) =>
+            item.includes('aria-label="Expenses calculation info"'),
+        );
+        const cell = row
+            ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
+            ?.find((item) => item.includes("−300"));
+        expect(cell).toContain(
+            '<div class="text-xs font-normal text-theme-text-muted">−300</div>',
+        );
+        expect(
+            cell?.includes('aria-label="Provisional expense subtotal"'),
+        ).toBe(unknown);
     },
 );
 
@@ -99,5 +100,5 @@ it("withholds forecast cards and columns when planning is unavailable", () => {
     );
     expect(html).not.toContain("Cash runway");
     expect(html).not.toContain(">Plan<");
-    expect(html).toContain("Cash balance");
+    expect(html).toContain("Cash reconciliation");
 });

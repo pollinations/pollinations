@@ -248,8 +248,8 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
         access === "free"
             ? "This model is free to use."
             : access === "paid"
-              ? "Paid pollen only."
-              : "Uses Quest pollen first, then Paid pollen if needed.";
+              ? "Uses paid balance only."
+              : "Uses Quest balance first, then paid balance if needed.";
     const tooltipContent =
         access === "free" ? (
             <span>
@@ -263,7 +263,7 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             <span className="inline-flex flex-wrap items-center gap-1">
                 <WalletKindIcon kind="paid" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Paid pollen
+                    Paid balance
                 </strong>{" "}
                 only.
             </span>
@@ -271,11 +271,11 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             <span className="inline-flex flex-wrap items-center gap-1">
                 Uses <WalletKindIcon kind="tier" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Quest pollen
+                    Quest balance
                 </strong>{" "}
                 first, then <WalletKindIcon kind="paid" />
                 <strong className="font-semibold text-theme-text-strong">
-                    Paid pollen
+                    paid balance
                 </strong>{" "}
                 if needed.
             </span>

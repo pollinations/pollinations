@@ -164,6 +164,7 @@ describe("--estimate", () => {
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
         setOutputMode("human");
     });
 
@@ -185,13 +186,20 @@ describe("--estimate", () => {
     const run = async (
         command: ReturnType<typeof createImageCommand>,
         args: string[],
+        privateModels: MediaModel[] = [],
     ) => {
         const urls: string[] = [];
+        const headers: Headers[] = [];
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (url: string) => {
+            vi.fn(async (url: string, init?: RequestInit) => {
                 urls.push(String(url));
-                return new Response(JSON.stringify(models), { status: 200 });
+                const requestHeaders = new Headers(init?.headers);
+                headers.push(requestHeaders);
+                const catalog = requestHeaders.has("authorization")
+                    ? [...models, ...privateModels]
+                    : models;
+                return Response.json(catalog);
             }),
         );
         const out: string[] = [];
@@ -201,7 +209,7 @@ describe("--estimate", () => {
         });
         setOutputMode("json");
         await command.parseAsync(args, { from: "user" });
-        return { urls, result: JSON.parse(out.join("")) };
+        return { urls, headers, result: JSON.parse(out.join("")) };
     };
 
     it("only reads the model list for gen image", async () => {
@@ -224,5 +232,36 @@ describe("--estimate", () => {
         expect(urls.map((u) => new URL(u).pathname)).toEqual(["/image/models"]);
         expect(result.model).toBe("google/veo-3.1-fast");
         expect(result.pollen).toBeCloseTo(0.48);
+    });
+
+    it("reads public pricing even when a key is configured", async () => {
+        vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+        const { headers, result } = await run(createVideoCommand(), [
+            "--model",
+            "google/veo-3.1-fast",
+            "--estimate",
+            "a waterfall",
+        ]);
+        expect(headers.map((h) => h.get("authorization"))).toEqual([null]);
+        expect(result.model).toBe("google/veo-3.1-fast");
+    });
+
+    it("estimates an owner's private model using the authenticated catalog", async () => {
+        vi.stubEnv("POLLINATIONS_API_KEY", "sk_test");
+        const name = "community/lab/private-video";
+        const { urls, headers, result } = await run(
+            createVideoCommand(),
+            ["--model", name, "--duration", "3", "--estimate", "a waterfall"],
+            [{ name, pricing: { completionVideoSeconds: "0.08" } }],
+        );
+        expect(urls.map((u) => new URL(u).pathname)).toEqual([
+            "/image/models",
+            "/image/models",
+        ]);
+        expect(headers.map((h) => h.get("authorization"))).toEqual([
+            null,
+            "Bearer sk_test",
+        ]);
+        expect(result).toMatchObject({ model: name, pollen: 0.24 });
     });
 });

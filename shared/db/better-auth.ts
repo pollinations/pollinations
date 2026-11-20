@@ -63,7 +63,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_referred_by").on(table.referredBy),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
-  // Quest pollen restriction sweeps: accounts made since a sign-up burst.
+  // Quest balance restriction sweeps: accounts made since a sign-up burst.
   index("idx_user_created_at").on(table.createdAt),
   // GitHub profile lookup for quest checks and account display.
   uniqueIndex("user_github_id_unique").on(table.githubId),

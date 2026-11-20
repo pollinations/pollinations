@@ -17,8 +17,8 @@ export type BalanceBucket = "tier" | "pack";
  * negative estimates to zero, but every request still requires a positive
  * balance in at least one bucket. The write path skips non-positive charges
  * entirely; for a positive actual charge, it uses
- * Quest Pollen when that bucket covers the charge, otherwise any positive paid
- * balance, and finally Quest Pollen debt when the paid balance is non-positive.
+ * Quest balance when that bucket covers the charge, otherwise any positive paid
+ * balance, and finally debt in the Quest balance when the paid balance is non-positive.
  */
 export function canCoverEstimatedCharge(
     balances: UserBalance,

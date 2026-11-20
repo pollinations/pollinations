@@ -4,7 +4,10 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
-import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import {
+    FFMPEG_MCP_PRICE_PER_SECOND,
+    MCP_USAGE_HEADERS,
+} from "../../shared/registry/mcp.ts";
 import { runFfmpeg, runFfprobe } from "./container-runtime.js";
 import { createWorker } from "./worker.js";
 
@@ -248,6 +251,13 @@ test("serves stateless MCP without caller credentials", async () => {
         tools.map(({ name }) => name),
         ["runFfmpeg", "probeMedia"],
     );
+    for (const tool of tools) {
+        assert.ok(
+            tool.description.includes(
+                `$${FFMPEG_MCP_PRICE_PER_SECOND.toFixed(8)} per active second`,
+            ),
+        );
+    }
     assert.match(
         tools[0].inputSchema.properties.args.description,
         /exact names/,

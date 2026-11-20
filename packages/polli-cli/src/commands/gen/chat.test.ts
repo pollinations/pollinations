@@ -110,6 +110,49 @@ describe("polli gen chat session lifecycle", () => {
         );
     });
 
+    it.each(["human", "json"] as const)(
+        "does not retain a failed HTTP 200 completion in %s chat history",
+        async (mode) => {
+            const failed = {
+                choices: [
+                    {
+                        message: { content: "partial" },
+                        delta: {},
+                        finish_reason: "error",
+                        error: { message: "Provider failed" },
+                    },
+                ],
+            };
+            const fetch = prepare(async () =>
+                mode === "json"
+                    ? Response.json(failed)
+                    : new Response(
+                          `data: ${JSON.stringify(failed)}\n\ndata: [DONE]\n\n`,
+                      ),
+            );
+            setOutputMode(mode);
+            const line = await startSession();
+            await line("failed turn");
+            expect(process.exitCode).toBe(1);
+            expect(process.stderr.write).toHaveBeenCalledWith(
+                expect.stringContaining("Provider failed"),
+            );
+            await line("retry");
+            const request = fetch.mock.calls[1] as unknown as [
+                string,
+                RequestInit,
+            ];
+            expect(
+                JSON.parse(String(request[1].body)).messages,
+            ).not.toContainEqual({ role: "assistant", content: "partial" });
+            expect(
+                JSON.parse(String(request[1].body)).messages,
+            ).not.toContainEqual({ role: "user", content: "failed turn" });
+            await line("/exit");
+            expect(process.exitCode).toBe(1);
+        },
+    );
+
     it("ends on /exit without sending it and without prompting a closed interface", async () => {
         const fetch = prepare(async () => Response.json({ ok: true }));
 

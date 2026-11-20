@@ -566,7 +566,7 @@ export function staticFallbackRejection(
         return "counts usage in units this model's prices do not cover";
     }
     if (!isCommunityFallbackBalanceAllowed(primary, target)) {
-        return "accepts only Paid Pollen, which this model does not require";
+        return "accepts only the paid balance, which this model does not require";
     }
     const quoted = communityPriceDefinition(
         primary.prices,
@@ -677,7 +677,7 @@ export const ProxyListingPayloadSchema = z
         bearerTokenCiphertext: z.string().min(1),
         // Media listings have no text API and do not need a data migration.
         api: CommunityEndpointApiSchema.nullable().default(null),
-        // Owner-set: callers may only spend Paid Pollen on this model.
+        // Owner-set: callers may only spend paid balance on this model.
         paidOnly: z.boolean(),
         modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),

@@ -170,7 +170,7 @@ describe("API Key Management", () => {
             expect(response.status).toBe(400);
             await expect(response.json()).resolves.toMatchObject({
                 error: {
-                    message: "Publishable keys must have a pollen budget of 0",
+                    message: "Publishable keys must have a budget of 0",
                 },
             });
         });

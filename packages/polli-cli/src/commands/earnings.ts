@@ -58,7 +58,7 @@ export const earningsCommand = new Command("earnings")
 
             const total = totalPollenEarned(data.perEntity);
             printResult({
-                total_pollen: total.toFixed(4),
+                total_earned: `$${total.toFixed(4)}`,
                 window_days: days,
             });
             printTable(
@@ -66,7 +66,7 @@ export const earningsCommand = new Command("earnings")
                     entity: row.entity_name,
                     source: row.source,
                     requests: row.requests,
-                    pollen: row.pollen_earned.toFixed(4),
+                    earned: `$${row.pollen_earned.toFixed(4)}`,
                     volume: `$${row.cost_usd.toFixed(2)}`,
                 })),
             );

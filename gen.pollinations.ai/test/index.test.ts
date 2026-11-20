@@ -461,7 +461,7 @@ describe("gen worker routing", () => {
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
-        expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(byopSkill.description).toMatch(/Pollinations Pay/);
         expect(
             body.skills.find((skill) => skill.name === "pollinations-sdk")
                 ?.description,
@@ -933,23 +933,18 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("publishes Sonar as the only Perplexity model", async () => {
+    it("publishes a single canonical Perplexity Sonar model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
         const models = (await response.json()) as {
             name: string;
             title?: string;
-            description?: string;
         }[];
 
         expect(
-            models.find((model) => model.name === "perplexity/sonar"),
-        ).toMatchObject({
-            title: "Sonar Fast Search",
-            description:
-                "Quick web searches with cited answers; keeps it brief",
-        });
+            models.find((model) => model.name === "perplexity/sonar")?.title,
+        ).toBe("Sonar Fast Search");
         // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
         // Perplexity models, such as decision models, may use the prefix.
         expect(

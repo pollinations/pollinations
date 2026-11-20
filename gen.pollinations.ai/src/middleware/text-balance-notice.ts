@@ -39,7 +39,7 @@ function balanceNoticeMessage(
 ): string {
     if (error.errorCode === "QUEST_POLLEN_RESTRICTED") {
         return (
-            "We couldn’t verify the account behind this API key. Its Quest pollen is locked. " +
+            "We couldn’t verify the account behind this API key. Its Quest balance is locked. " +
             `Please ${mdLink("make your first purchase", error.fixUrl)} to unlock it, or ${mdLink("contact us", "mailto:hello@pollinations.ai")} if you think this is a mistake.\n\n` +
             NOT_YOUR_ACCOUNT
         );
@@ -53,20 +53,20 @@ function balanceNoticeMessage(
     }
     if (error.errorCode === "QUEST_POLLEN_ONLY") {
         const allowPaid = mdLink(
-            "allow paid Pollen for this key",
+            "allow the paid balance for this key",
             error.fixUrl,
         );
         const remedy = error.paidOnly
-            ? `This model needs paid Pollen. Please ${allowPaid}, then try again.`
+            ? `This model needs the paid balance. Please ${allowPaid}, then try again.`
             : `Please ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" }))} or ${allowPaid}, then try again.`;
         return (
-            `The API key used for this request only spends Quest Pollen${error.paidOnly ? "" : ", and there isn't enough left"}. ` +
+            `The API key used for this request only spends the Quest balance${error.paidOnly ? "" : ", and there isn't enough left"}. ` +
             `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
         );
     }
     const topUp = mdLink("top up", error.fixUrl);
     const remedy = error.paidOnly
-        ? `This model needs paid Pollen. Please ${topUp}, then try again.`
+        ? `This model needs the paid balance. Please ${topUp}, then try again.`
         : `Please ${topUp} or ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_low_balance_quests" }))}, then try again.`;
     return (
         "The account behind this API key doesn't have enough credits. " +

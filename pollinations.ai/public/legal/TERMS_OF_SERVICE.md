@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-11-17**
 
 ## About Pollinations
 
@@ -24,7 +24,7 @@ By accessing or using the Service, you agree to these Terms. If you do not agree
 
 Provide accurate registration/billing details and keep credentials secure. Secret API keys are for server-side use. Publishable App Keys identify apps on Pollinations consent screens and may be used in client-side authorization flows.
 
-When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and Pollen spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
+When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
 When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain the linked GitHub user ID with reward ledger records to prevent duplicate quest payouts. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
@@ -34,7 +34,7 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time. This includes changes to:
 
-- Wallet and reward structures and associated benefits (for example Quest Pollen grants, promotional credits, and usage limits)
+- Wallet and reward structures and associated benefits (for example Quest balance grants, promotional credits, and usage limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
 - Quest availability, eligibility criteria, reward amounts, and payout timing
@@ -51,7 +51,7 @@ Hosted access to model-powered APIs and tools per your plan, balance, and usage 
 
 **Managed agents.** Pollinations hosts these agents, and publishing one does not give its creator access to caller requests. Selected models and tools may still process those requests, and public agent instructions may be inferred or extracted. Creators must not include credentials or confidential data in agent instructions.
 
-We may change or discontinue models and features, for example when providers change or retire them. Where consumer law requires notice of a change, or lets you end the contract and get a refund of unused Paid Pollen, those rights apply.
+We may change or discontinue models and features, for example when providers change or retire them. Where consumer law requires notice of a change, or lets you end the contract and get a refund of unused paid balance, those rights apply.
 
 ## 4) Customer Data & Privacy
 
@@ -59,38 +59,38 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 
 ## 5) Acceptable Use & Safety
 
-Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
+Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse credit grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
 
 If you publish an externally hosted community model, you are responsible for the endpoint and the caller data it receives. Identify the provider accurately, keep its privacy information current, use appropriate security and retention controls, and comply with applicable law. Clearly disclose how you store, share, train on, or otherwise use caller data. Do not mislead callers about the endpoint or its data practices.
 
-## 6) Pollen, Fees, Taxes & Billing
+## 6) Balance, Fees, Taxes & Billing
 
-Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, including auto top-up charges, include a service fee shown before payment.
+Fees are per plan/order/invoice; currency is by default USD. Top-ups, including auto top-up charges, include a service fee shown before payment.
 
-**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+**Balance.** Your balance is in-service credit, counted in US dollars, used only to pay for Pollinations API usage. We previously called it "Pollen"; the API and earlier documents may still use that name. Your balance is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
 **Balances.** Your wallet may include:
 
-- **Quest Pollen balance:** Pollen earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest Pollen usage. Quest Pollen does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
-- **Paid Pollen balance:** purchased Pollen and developer earnings credited from Paid Pollen usage. Paid Pollen does not automatically refill.
+- **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest balance usage. The Quest balance does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
+- **Paid balance:** purchased credit and developer earnings credited from paid balance usage. Your paid balance refills automatically only if you enable auto top-up.
 
-**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (Quest Pollen and Paid Pollen) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
+**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining balance in your wallet (Quest balance and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or topping up counts as activity and resets the inactivity clock.
 
-**Request billing.** Pollen is consumed when API requests run. Regular models draw from Quest Pollen first; paid-only models draw from Paid Pollen only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
+**Request billing.** Your balance is consumed when API requests run. Regular models draw from the Quest balance first; paid-only models draw from the paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
 
-**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We retain minimized identity and reward records after account deletion to prevent a reward from being claimed again through a replacement account. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are Pollen and have no cash value.
+**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We retain minimized identity and reward records after account deletion to prevent a reward from being claimed again through a replacement account. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are credited to your balance and have no cash value.
 
 **Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 
-Developer earnings are credited as Pollen to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Developer earnings are credited to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
-**Taxes.** Prices for Pollen purchases are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on your billing details. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
+**Taxes.** Prices for top-ups are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on your billing details. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
+**No late payments.** All credit is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
-**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused Paid Pollen balance within 14 days.
+**Price changes.** Prices, model costs, and credit rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
 
 ## 7) Refunds & Cancellations
 

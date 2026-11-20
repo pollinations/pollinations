@@ -2,6 +2,7 @@ import type {
     EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
 } from "../types";
+import { canonicalCategory } from "./categories";
 import { hasArchivedEvidence } from "./documents";
 import { canonicalProvider } from "./providerRegistry";
 
@@ -102,6 +103,8 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
             "reversals",
             "net_sales",
             "stripe_fees",
+            "stripe_fees_credit",
+            "fee_credit_funding",
             "dispute_fees",
             "net_after_fees",
             "payments",
@@ -261,7 +264,7 @@ export function parsePrivateConfig(
         if (!vendor.trim() || !category?.trim() || extra !== undefined) {
             throw new Error(`Invalid forecast rule key: ${line}`);
         }
-        const key = `${canonicalProvider(vendor)}|${category.trim().toLowerCase()}`;
+        const key = `${canonicalProvider(vendor)}|${canonicalCategory(category)}`;
         if (Object.hasOwn(forecastRules, key)) {
             throw new Error(`Duplicate forecast rule for ${key}`);
         }

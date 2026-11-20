@@ -1,7 +1,7 @@
 {
     "name": "Dashboard | pollinations.ai",
     "short_name": "Dashboard",
-    "description": "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
+    "description": "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor your balance, and connect apps across image, text, video, and audio.",
     "icons": [
         {
             "src": "/icon-192.png",

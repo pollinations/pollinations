@@ -210,7 +210,7 @@ function AccountPage() {
                 <Surface className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
                         Permanently delete your account, profile, keys, agents
-                        and models. All remaining Pollen will be lost. This
+                        and models. Any remaining balance will be lost. This
                         cannot be undone, and deleted data cannot be recovered.
                     </Text>
                     <Button
@@ -238,14 +238,11 @@ function ContactEmail({ email }: { email: string }) {
         <CopyButton
             value={email}
             aria-label={`Copy ${email}`}
-            tooltip="Copy email address"
             className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
         >
             {(copied) => (
                 <>
-                    <span className="min-w-0 break-all" aria-live="polite">
-                        {copied ? "Copied" : email}
-                    </span>
+                    <span className="min-w-0 break-all">{email}</span>
                     <span
                         className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
                         aria-hidden="true"
@@ -315,8 +312,8 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                             Profile, sessions, connected accounts, and API keys
                         </li>
                         <li>
-                            Pollen balances, access to reward history, agents,
-                            and community models
+                            Balances, access to reward history, agents, and
+                            community models
                         </li>
                         <li>Published media listings and tags</li>
                     </ul>

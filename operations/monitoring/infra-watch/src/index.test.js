@@ -881,7 +881,9 @@ it("posts a sign-up card Discord refused, even after its burst ended", async () 
 
     const posts = world.writes.filter((w) => w.ok && w.method === "POST");
     expect(posts).toHaveLength(1);
-    expect(posts[0].text).toContain("QUEST POLLEN RESTRICTED: domain farm.com");
+    expect(posts[0].text).toContain(
+        "QUEST BALANCE RESTRICTED: domain farm.com",
+    );
     expect(edits("m1").at(-1).text).toContain("ENDED: domain farm.com");
     expect((await stored(stub, "state")).unposted).toEqual({});
 });

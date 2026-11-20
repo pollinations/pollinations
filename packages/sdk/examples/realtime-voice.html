@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pollinations Realtime Voice Example</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; width: 100%; max-width: 520px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+    h1 { font-size: 20px; margin: 0 0 16px 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .badge { background: #38bdf820; color: #38bdf8; font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+    label { display: block; font-size: 13px; color: #94a3b8; margin-top: 12px; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 14px; box-sizing: border-box; }
+    .buttons { display: flex; gap: 12px; margin-top: 20px; }
+    button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-start { background: #22c55e; color: #052e16; }
+    .btn-stop { background: #ef4444; color: #450a0a; }
+    #log { margin-top: 20px; height: 160px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #cbd5e1; }
+    .status { margin-top: 12px; font-size: 13px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Realtime Voice <span class="badge">openai/gpt-realtime-2.1</span></h1>
+    <label for="apiKey">API Key (sk_...)</label>
+    <input id="apiKey" type="password" placeholder="sk_...">
+
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="openai/gpt-realtime-2.1">openai/gpt-realtime-2.1</option>
+      <option value="openai/gpt-realtime-2.1-mini">openai/gpt-realtime-2.1-mini</option>
+      <option value="microsoft/mai-transcribe-2-streaming">microsoft/mai-transcribe-2-streaming</option>
+    </select>
+
+    <div class="buttons">
+      <button id="startBtn" class="btn-start">Start Session</button>
+      <button id="stopBtn" class="btn-stop" disabled>Stop</button>
+    </div>
+
+    <div class="status" id="status">Status: Disconnected</div>
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    import { connectRealtime, pcm16ToBase64, base64ToPcm16 } from "../dist/index.js";
+
+    let session = null;
+    let audioContext = null;
+    let micStream = null;
+    let scriptProcessor = null;
+
+    const apiKeyInput = document.getElementById("apiKey");
+    const modelSelect = document.getElementById("model");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const statusDiv = document.getElementById("status");
+    const logDiv = document.getElementById("log");
+
+    function log(msg) {
+      const line = document.createElement("div");
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    startBtn.onclick = async () => {
+      startBtn.disabled = true;
+      const key = apiKeyInput.value.trim();
+      const model = modelSelect.value;
+
+      try {
+        statusDiv.textContent = "Status: Connecting...";
+        session = connectRealtime({ apiKey: key, model });
+
+        session.on("open", () => {
+          statusDiv.textContent = "Status: Connected (Listening)";
+          stopBtn.disabled = false;
+          log("Connected to Realtime gateway");
+        });
+
+        session.on("response.audio_transcript.delta", (evt) => {
+          if (evt.delta) log(`AI: ${evt.delta}`);
+        });
+
+        session.on("error", (err) => {
+          log(`Error: ${JSON.stringify(err)}`);
+        });
+
+        session.on("close", () => {
+          statusDiv.textContent = "Status: Closed";
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContext.createMediaStreamSource(micStream);
+        scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        scriptProcessor.onaudioprocess = (e) => {
+          if (!session || session.status !== "connected") return;
+          const input = e.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+          }
+          session.sendAudio(pcm16);
+        };
+
+        source.connect(scriptProcessor);
+        scriptProcessor.connect(audioContext.destination);
+      } catch (e) {
+        log(`Failed to start: ${e.message}`);
+        startBtn.disabled = false;
+      }
+    };
+
+    stopBtn.onclick = () => {
+      if (session) session.close();
+      if (micStream) micStream.getTracks().forEach(t => t.stop());
+      if (audioContext) audioContext.close();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      statusDiv.textContent = "Status: Disconnected";
+    };
+  </script>
+</body>
+</html>

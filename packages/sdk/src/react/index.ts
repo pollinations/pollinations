@@ -34,3 +34,9 @@ export {
     type PolliProviderProps,
 } from "./PolliProvider.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
+export {
+    type RealtimeStatus,
+    type UseRealtimeOptions,
+    type UseRealtimeResult,
+    useRealtime,
+} from "./useRealtime.js";

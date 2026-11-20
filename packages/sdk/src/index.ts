@@ -72,6 +72,17 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
+// Realtime voice sessions
+export {
+    base64ToPcm16,
+    type ConnectRealtimeOptions,
+    connectRealtime,
+    DEFAULT_REALTIME_MODEL,
+    DEFAULT_REALTIME_WS_URL,
+    pcm16ToBase64,
+    type RealtimeEventHandler,
+    type RealtimeSession,
+} from "./realtime.js";
 // Export all types
 export type {
     AccountBalance,

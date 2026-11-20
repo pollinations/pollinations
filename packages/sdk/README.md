@@ -334,9 +334,10 @@ function Transcribe() {
 
 `usePollinationsChatTransport` returns a transport for the Vercel AI SDK
 `useChat`. It streams `/v1/responses` from the browser with the signed-in
-user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
-parts with their results, and `message.metadata.usage` holds the usage of the
-reply. Assistant output is kept in `message.metadata.output` and sent back on
+user's key. Text arrives as text parts, server-run tool calls arrive as tool
+parts, with their results when the agent reports them, and
+`message.metadata.usage` holds the usage of the reply. `file` parts with an
+image media type are sent as image input. Assistant output is kept in `message.metadata.output` and sent back on
 later turns, preserving server tool results. Stream failures become `error`
 chunks. A rejected request makes the send
 fail, which `useChat` reports as an error. Caller-run function tools are not

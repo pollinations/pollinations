@@ -353,10 +353,93 @@ describe("responses chat transport", () => {
         );
 
         const chunks = await collect(
-            await transportWithKey().sendMessages({ messages }),
+            await transportWithKey().sendMessages({
+                messages,
+                body: { tools: [{ type: "function", name: "get_weather" }] },
+            }),
         );
 
         expect(chunks.map((chunk) => chunk.type)).toEqual(["start", "finish"]);
+    });
+
+    it("shows a server-run call that never reports a result", async () => {
+        const call = {
+            type: "function_call",
+            call_id: "call_4",
+            name: "generate_image",
+        };
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            sseResponse(
+                sse([
+                    {
+                        type: "response.output_item.added",
+                        item: { ...call, arguments: "" },
+                    },
+                    {
+                        type: "response.output_item.done",
+                        item: { ...call, arguments: '{"model":"flux"}' },
+                    },
+                    { type: "response.completed", response: {} },
+                ]),
+            ),
+        );
+
+        const chunks = await collect(
+            await transportWithKey().sendMessages({ messages }),
+        );
+
+        const tool = {
+            toolCallId: "call_4",
+            toolName: "generate_image",
+            dynamic: true,
+            providerExecuted: true,
+        };
+        expect(chunks.slice(1, 3)).toEqual([
+            { type: "tool-input-start", ...tool },
+            { type: "tool-input-available", ...tool, input: { model: "flux" } },
+        ]);
+    });
+
+    it("sends attached images as input_image links", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(
+                sseResponse(
+                    sse([{ type: "response.completed", response: {} }]),
+                ),
+            );
+
+        await collect(
+            await transportWithKey().sendMessages({
+                messages: [
+                    {
+                        role: "user",
+                        parts: [
+                            { type: "text", text: "What is this?" },
+                            {
+                                type: "file",
+                                mediaType: "image/png",
+                                url: "https://media.example/cat",
+                            },
+                        ],
+                    },
+                ],
+            }),
+        );
+
+        const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+        expect(body.input).toEqual([
+            {
+                role: "user",
+                content: [
+                    { type: "input_text", text: "What is this?" },
+                    {
+                        type: "input_image",
+                        image_url: "https://media.example/cat",
+                    },
+                ],
+            },
+        ]);
     });
 
     it("emits one error when the stream reports both error and response.failed", async () => {

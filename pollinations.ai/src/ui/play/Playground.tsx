@@ -324,7 +324,7 @@ function AgentMedia({ url }: { url: string }) {
     useEffect(() => {
         let objectUrl: string | undefined;
         let active = true;
-        fetch(url)
+        fetch(url, { credentials: "omit", referrerPolicy: "no-referrer" })
             .then(async (response) => {
                 if (!response.ok) throw new Error(response.statusText);
                 const media = {

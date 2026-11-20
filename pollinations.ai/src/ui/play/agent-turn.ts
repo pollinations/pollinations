@@ -43,33 +43,26 @@ export function toolLabel(name: string): string {
 }
 
 const MARKDOWN_LINK = /(!?)\[[^\]]*\]\(([^)\s]+)\)/g;
+// An agent's reply is untrusted text, so only files on our own media host
+// are fetched. Other links and images stay in the Markdown.
+const MEDIA_HOST = "https://media.pollinations.ai/";
 const HOSTED_MEDIA = /https:\/\/media\.pollinations\.ai\/[\w/-]+/g;
-// An agent's reply is untrusted text: only https and same-site paths are
-// fetched or linked. Anything else stays in the Markdown, which drops it.
-const SAFE_LINK = /^(https:\/\/|\/(?!\/))/;
 
-/**
- * The links a reply shows as media, each once: embedded images, files on our
- * media host, and media links in tool results.
- */
+/** The media links a reply carries, in its text or its tool results, each once. */
 export function replyMedia(items: AgentItem[]): string[] {
     const urls = new Set<string>();
     for (const item of items) {
         if (item.type === "text") {
-            for (const [, image, url] of item.text.matchAll(MARKDOWN_LINK))
-                if (image && SAFE_LINK.test(url)) urls.add(url);
             for (const [url] of item.text.matchAll(HOSTED_MEDIA)) urls.add(url);
             continue;
         }
         const output = item.result?.output as
-            | { content?: { type?: string; uri?: string; mimeType?: string }[] }
+            | { content?: { type?: string; uri?: string }[] }
             | undefined;
         for (const part of output?.content ?? []) {
             if (
                 part.type === "resource_link" &&
-                part.uri &&
-                SAFE_LINK.test(part.uri) &&
-                /^(image|audio|video)\//.test(part.mimeType ?? "")
+                part.uri?.startsWith(MEDIA_HOST)
             )
                 urls.add(part.uri);
         }

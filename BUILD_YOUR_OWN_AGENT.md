@@ -77,7 +77,7 @@ export default async function ({ model, respond, mcp }) {
 
 `model(id)` creates an SDK language model already connected to Pollinations; select IDs from [the model catalog](https://gen.pollinations.ai/v1/models). `respond(config)` runs the SDK tool loop and returns Responses JSON or SSE, including tool results and usage. It accepts SDK agent settings such as `instructions`, `tools`, and `stopWhen`, defaults to eight steps, and does not retry model requests. `mcp.tools(server)` provides executable SDK tools, limited to sixteen calls per request.
 
-The callback also receives `request`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` for direct request and tool handling. It must return a `Response`; ordinary Worker APIs, including timers and streams, remain available. Platform model and MCP helpers use the caller's Pollen and permissions without exposing a reusable API key. `request` carries only the `Content-Type` header, so never ask callers to paste tokens into messages. `respond` does not emit the Vercel UI protocol or introduce a separate endpoint.
+The callback also receives `request`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` for direct request and tool handling. It must return a `Response`; ordinary Worker APIs, including timers and streams, remain available. Platform model and MCP helpers use the caller's permissions without exposing a reusable API key. Charges for these calls come from the caller's balance. `request` carries only the `Content-Type` header, so never ask callers to paste tokens into messages. `respond` does not emit the Vercel UI protocol or introduce a separate endpoint.
 
 Example `code-agent.json`:
 

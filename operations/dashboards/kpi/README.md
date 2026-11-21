@@ -7,7 +7,7 @@ The public app shell shows “Sign in with Pollinations.” The app uses OAuth
 with PKCE to check identity and admin access, then creates its own signed,
 HttpOnly session cookie. All Tinybird and GitHub reads require that app session;
 no provider token reaches the browser. This identity login does not grant
-access to Pollen balances or generation keys.
+access to account balances or generation keys.
 
 “Sign out” clears only KPI's session. Enter and other apps stay signed in.
 Sessions expire after 12 hours. Protected requests recheck current admin

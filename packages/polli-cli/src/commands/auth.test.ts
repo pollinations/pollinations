@@ -256,7 +256,8 @@ it("reports a revoked stored key as unauthenticated", async () => {
     const stdout = vi
         .spyOn(process.stdout, "write")
         .mockImplementation(() => true);
-    await showAuthStatus();
+    // Scripts can check `polli auth status` with its exit code alone.
+    await expect(showAuthStatus()).rejects.toEqual(new ExitSignal(1));
     expect(
         JSON.parse(stdout.mock.calls.map(([text]) => String(text)).join("")),
     ).toMatchObject({ authenticated: false });

@@ -95,6 +95,12 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["stealth"] } },
             },
         }),
+    "stealth/glyph-cluster:kilo": () => ({
+        provider: "openai",
+        authKey: textEnvironmentValue("KILO_API_KEY"),
+        model: "stealth/glyph-cluster",
+        directEndpoint: "https://ai-gateway.kilo.ai/api/v1/chat/completions",
+    }),
     "span-01-lite": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
@@ -211,6 +217,23 @@ export const portkeyConfig: PortkeyConfigMap = {
                 ignore: ["cloudflare"],
                 allow_fallbacks: false,
             },
+        },
+    }),
+    "google/gemini-decision-1": () => ({
+        provider: "google",
+        directEndpoint:
+            "https://generativelanguage.googleapis.com/v1beta/decisions",
+        authKey: textEnvironmentValue("GEMINI_API_KEY"),
+        decisionsProtocol: "gemini",
+        model: "gemini-decision-1",
+    }),
+    "google/gemini-decision-1:openrouter:ai-studio": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "google/gemini-decision-1",
+        defaultOptions: {
+            provider: { only: ["google-ai-studio"], allow_fallbacks: false },
         },
     }),
     "microsoft-decision-1.1-azure": () => ({
@@ -1379,6 +1402,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "google/gemini-4-carbon",
         "google-ai-studio",
     ),
+    "google/gemini-4-hydrogen": createVertexGeminiConfig(
+        "gemini-4-hydrogen",
+        "global",
+    ),
+    "google/gemini-4-hydrogen:openrouter:vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-4-hydrogen",
+            "google-vertex/global",
+        ),
+    "google/gemini-4-neon": createVertexGeminiConfig("gemini-4-neon", "global"),
+    "google/gemini-4-neon:openrouter:vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-4-neon",
+            "google-vertex/global",
+        ),
     "google/gemini-4-argon": createVertexGeminiConfig(
         "gemini-4-argon",
         "global",
@@ -1458,6 +1496,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "moonshotai/kimi-k3.1-pro:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "moonshotai/kimi-k3.1-pro",
+        }),
+    "meta/muse-ember": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-ember",
+        }),
+    "meta/muse-ember:openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "meta/muse-ember",
         }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({

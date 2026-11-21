@@ -1,3 +1,5 @@
+import { mergeFallbacks } from "./merge-fallbacks";
+import { perMillion } from "./price-helpers";
 import {
     OPENAI_REALTIME_2_1_MINI_CACHE_BILLING,
     OPENAI_REALTIME_CACHE_BILLING,
@@ -28,7 +30,32 @@ const OPENAI_REALTIME_COST = {
     completionAudioTokens: 0.000064,
 } satisfies ModelDefinition["cost"];
 
-export const REALTIME_SERVICES = {
+const REALTIME_BASE_SERVICES = {
+    "google/gemini-3.8-live": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "realtime",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(3),
+            promptImageTokens: perMillion(1),
+            promptVideoTokens: perMillion(1),
+            completionTextTokens: perMillion(4.5),
+            completionAudioTokens: perMillion(12),
+        },
+        title: "Gemini 3.8 Live",
+        description:
+            "Talk in real time, share camera frames, and call tools during the conversation.",
+        inputModalities: ["text", "audio", "image"],
+        outputModalities: ["audio"],
+        tools: true,
+        contextLength: 131072,
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
     "microsoft/mai-transcribe-2-streaming": {
         aliases: [],
         provider: "azure",
@@ -41,7 +68,7 @@ export const REALTIME_SERVICES = {
         cost: { promptAudioSeconds: 0.54 / 3600 },
         title: "MAI Transcribe 2 Streaming",
         description:
-            "Live multilingual transcription with incremental finalized text; manual commits and 16/24 kHz PCM audio",
+            "Transcribe multilingual speech live from 16 or 24 kHz mono PCM audio. Manually commit each segment to finalize its text.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -56,7 +83,7 @@ export const REALTIME_SERVICES = {
         billing: OPENAI_REALTIME_CACHE_BILLING,
         title: "GPT Realtime 2.1",
         description:
-            "Live voice conversations with instant replies and solid noise handling",
+            "Have a live voice conversation and show the model images as you talk.",
         contextLength: 32000,
         paidOnly: false,
     },
@@ -78,7 +105,7 @@ export const REALTIME_SERVICES = {
         billing: OPENAI_REALTIME_2_1_MINI_CACHE_BILLING,
         title: "GPT Realtime 2.1 Mini",
         description:
-            "Cost-efficient live voice conversations with fast, reasoned replies and tool use",
+            "Build a lower-cost voice assistant that can call tools during a live conversation.",
         contextLength: 128000,
         voices: [
             "alloy",
@@ -105,7 +132,7 @@ export const REALTIME_SERVICES = {
         cost: { promptAudioSeconds: 0.22 / 3600 },
         title: "Scribe v3 Live",
         description:
-            "Accurate live multilingual transcription with incremental and final results",
+            "Caption multilingual speech as it happens, with interim text that updates as the speaker continues.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -124,7 +151,7 @@ export const REALTIME_SERVICES = {
         },
         title: "Scribe v2 Realtime",
         description:
-            "Live transcription in 90+ languages with incremental and final results",
+            "Display live captions in over 90 languages as the speaker talks.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
@@ -145,13 +172,19 @@ export const REALTIME_SERVICES = {
         },
         title: "GPT Live Transcribe",
         description:
-            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
+            "Turn incoming speech into a live transcript with little delay.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
 } satisfies Record<string, ModelDefinition>;
 
+export const REALTIME_SERVICES = mergeFallbacks(REALTIME_BASE_SERVICES, {
+    "google/gemini-3.8-live": {
+        "google/gemini-3.8-live:google:us": { provider: "google" },
+    },
+});
+
 export const REALTIME_MODEL_NAMES = Object.keys(
-    REALTIME_SERVICES,
+    REALTIME_BASE_SERVICES,
 ) as RealtimeModelName[];

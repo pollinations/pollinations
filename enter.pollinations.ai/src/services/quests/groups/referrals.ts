@@ -59,7 +59,7 @@ export async function evaluateUser(
             userId: user.id,
             // Keyed on the referred account, not its GitHub or Google login,
             // which changes when the user links another one. A re-created
-            // account has to buy Pollen again before it pays again.
+            // account has to top up again before it pays again.
             idempotencyKey: `quest:${inviteFriendsQuest.id}:user:${id}`,
         })),
     };

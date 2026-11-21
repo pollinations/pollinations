@@ -51,6 +51,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     safe?: boolean;
     /** Output quality (default: 'medium') */
     quality?: ImageQuality;
+    /** Output format on models that accept an explicit format */
+    outputFormat?: "png" | "webp" | "gif";
+    /** Number of frames for animated GIF output */
+    frameCount?: number;
+    /** Display time for each GIF frame in milliseconds */
+    frameDurationMs?: number;
     /** Reference image URL(s) for image-to-image generation */
     referenceImage?: string | string[];
     /** Enable transparent background - outputs PNG (default: false) */
@@ -562,6 +568,12 @@ export interface AudioTransformOptions extends RequestOptions {
     model?: AudioModel;
     /** Target voice for voice-changer. */
     voice?: AudioVoice;
+}
+
+/** Multipart options for the stem separation endpoint. */
+export interface StemSeparationOptions extends RequestOptions {
+    model?: AudioModel;
+    stemVariationId?: "two_stems_v1" | "six_stems_v1";
 }
 
 /** Response from dedicated audio endpoints (binary audio data) */
@@ -1274,6 +1286,11 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    health?: {
+        status: "healthy" | "degraded" | "down" | "unknown";
+        success_rate: number | null;
+        requests: number;
+    };
     agent?: boolean;
     base_model?: string;
     input_modalities?: ModelInputModality[];

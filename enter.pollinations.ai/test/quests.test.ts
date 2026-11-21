@@ -70,7 +70,7 @@ type SeedQuestIssue = {
     updatedAt?: Date;
 };
 
-// Seed a POLLEN-QUEST bounty into the GitHub mock exactly as the lazy GitHub
+// Seed a QUEST bounty into the GitHub mock exactly as the lazy GitHub
 // reader sees it: issue fields plus the PRs that GitHub says closed it.
 function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const assigneeGithubId = issue.assigneeGithubId ?? null;
@@ -97,7 +97,7 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
             : [],
         labels: [
-            { name: "POLLEN-QUEST" },
+            { name: "QUEST" },
             ...(issue.reward !== null
                 ? [{ name: `reward-${issue.reward}` }]
                 : []),
@@ -1754,7 +1754,6 @@ test("quest check records model-usage rewards per modality", async ({
 
 const AGENT_QUEST_REWARDS: Record<string, number> = {
     use_agent: 0.25,
-    use_community_model: 0.25,
     create_used_community_model: 2,
 };
 const NO_AGENT_FLAGS = {
@@ -1771,18 +1770,14 @@ const ALL_AGENT_FLAGS = {
 for (const { flags, expected } of [
     { flags: {}, expected: [] },
     { flags: { usedAgent: 1 }, expected: ["use_agent"] },
-    { flags: { usedCommunityModel: 1 }, expected: ["use_community_model"] },
     {
         flags: { createdUsedCommunityModel: 1 },
         expected: ["create_used_community_model"],
     },
     {
         flags: ALL_AGENT_FLAGS,
-        expected: [
-            "create_used_community_model",
-            "use_agent",
-            "use_community_model",
-        ],
+        // The retired community model quest awards nothing new.
+        expected: ["create_used_community_model", "use_agent"],
     },
 ]) {
     test(`agent quests award each milestone once: ${expected.join("+") || "none"}`, async ({
@@ -2191,7 +2186,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(15);
 });
 
-// Regression guard: GitHub search returns at most 100 issues per page, so a
+// Regression guard: the label query reads 100 issues per page, so a
 // bounty ranked past the first page must still be loaded and rewarded.
 test("issue bounties beyond the first 100 quest issues still record", async ({
     mocks,
@@ -2393,7 +2388,7 @@ test("one GitHub request looks up the commit authors of every app-publish PR", a
         "http://localhost:3000/api/quests/catalog",
     );
     expect(response.status).toBe(200);
-    // One issue search page plus one commit-author lookup for both PRs.
+    // One label issues page plus one commit-author lookup for both PRs.
     expect(
         mocks.github.state.requests.filter(({ path }) => path === "/graphql"),
     ).toHaveLength(2);
@@ -2437,7 +2432,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, including
         },
         {
             number: 9105,
-            labels: [{ name: "POLLEN-QUEST" }],
+            labels: [{ name: "QUEST" }],
             mergedAt: afterLaunch,
         },
         { number: 9106, labels: [], mergedAt: null },

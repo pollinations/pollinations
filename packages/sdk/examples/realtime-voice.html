@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Pollinations realtime voice</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+            }
+            body {
+                margin: 0;
+                padding: 2rem;
+                background: #111;
+                color: #eee;
+            }
+            main {
+                max-width: 40rem;
+                margin: 0 auto;
+                display: grid;
+                gap: 1rem;
+            }
+            h1 {
+                font-size: 1.25rem;
+                margin: 0;
+            }
+            input,
+            button {
+                font: inherit;
+                padding: 0.6rem 0.8rem;
+                border-radius: 0.5rem;
+                border: 1px solid #333;
+                background: #1b1b1b;
+                color: inherit;
+            }
+            button:disabled {
+                opacity: 0.5;
+            }
+            .row {
+                display: flex;
+                gap: 0.5rem;
+            }
+            .row input {
+                flex: 1;
+            }
+            #status {
+                font-size: 0.85rem;
+                color: #9ae6b4;
+            }
+            #log {
+                font: 0.8rem/1.5 ui-monospace, monospace;
+                background: #1b1b1b;
+                border: 1px solid #333;
+                border-radius: 0.5rem;
+                padding: 0.8rem;
+                height: 18rem;
+                overflow: auto;
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Pollinations realtime voice</h1>
+            <p>
+                Paste a secret key (<code>sk_...</code>) and press Start. The
+                page streams your mic as PCM16 and plays the model's reply.
+            </p>
+            <div class="row">
+                <input
+                    id="key"
+                    type="password"
+                    placeholder="sk_..."
+                    autocomplete="off"
+                />
+                <button id="start" type="button">Start</button>
+                <button id="stop" type="button" disabled>Stop</button>
+            </div>
+            <div id="status">idle</div>
+            <div id="log"></div>
+        </main>
+
+        <audio id="speaker" autoplay></audio>
+
+        <!-- The published IIFE bundle. To use a local build instead, run
+             `npm run build` and point src at ../dist/index.browser.min.js. -->
+        <script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk/dist/index.browser.min.js"></script>
+        <script>
+            const { connectRealtime } = window.Pollinations;
+
+            const keyInput = document.querySelector("#key");
+            const startButton = document.querySelector("#start");
+            const stopButton = document.querySelector("#stop");
+            const statusLine = document.querySelector("#status");
+            const log = document.querySelector("#log");
+            const speaker = document.querySelector("#speaker");
+
+            const SAMPLE_RATE = 24000;
+            const logEvent = (text) => {
+                log.textContent += `${text}\n`;
+                log.scrollTop = log.scrollHeight;
+            };
+
+            let session = null;
+            let media = null;
+            let micContext = null;
+            let playContext = null;
+            let playDestination = null;
+
+            // Downsample the mic to 24 kHz and send 16-bit PCM, as the API expects.
+            function micWorklet() {
+                const code = `
+                    class MicProcessor extends AudioWorkletProcessor {
+                        process(inputs) {
+                            const channel = inputs[0] && inputs[0][0];
+                            if (channel) this.port.postMessage(channel.slice(0));
+                            return true;
+                        }
+                    }
+                    registerProcessor("mic-processor", MicProcessor);
+                `;
+                return URL.createObjectURL(
+                    new Blob([code], { type: "text/javascript" }),
+                );
+            }
+
+            function toPcm16Base64(samples, inputRate) {
+                const ratio = inputRate / SAMPLE_RATE;
+                const length = Math.floor(samples.length / ratio);
+                const pcm = new Int16Array(length);
+                for (let i = 0; i < length; i++) {
+                    const value = samples[Math.floor(i * ratio)];
+                    pcm[i] = Math.max(-1, Math.min(1, value)) * 0x7fff;
+                }
+                const bytes = new Uint8Array(pcm.buffer);
+                let binary = "";
+                for (const byte of bytes) binary += String.fromCharCode(byte);
+                return btoa(binary);
+            }
+
+            function playPcm16Base64(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const pcm = new Int16Array(bytes.buffer);
+                const buffer = playContext.createBuffer(
+                    1,
+                    pcm.length,
+                    SAMPLE_RATE,
+                );
+                const channel = buffer.getChannelData(0);
+                for (let i = 0; i < pcm.length; i++) {
+                    channel[i] = pcm[i] / 0x8000;
+                }
+                const source = playContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(playDestination);
+                source.start();
+            }
+
+            function handleEvent(event) {
+                if (event.type === "response.audio.delta" && event.delta) {
+                    playPcm16Base64(event.delta);
+                } else if (event.type === "response.audio_transcript.done") {
+                    logEvent(`assistant: ${event.transcript}`);
+                } else if (event.type === "conversation.item.input_audio_transcription.completed") {
+                    logEvent(`you: ${event.transcript}`);
+                } else if (event.type === "error") {
+                    logEvent(`error: ${event.error?.message ?? "unknown"}`);
+                }
+            }
+
+            async function start() {
+                const apiKey = keyInput.value.trim();
+                if (!apiKey) return;
+
+                playContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+                // An <audio> element as the output keeps browser echo
+                // cancellation working; without it the mic hears the model.
+                playDestination = playContext.createMediaStreamDestination();
+                speaker.srcObject = playDestination.stream;
+
+                session = connectRealtime({
+                    apiKey,
+                    model: "openai/gpt-realtime-2.1",
+                    session: {
+                        instructions:
+                            "You are a concise voice assistant. Answer in one or two sentences.",
+                        input_audio_format: "pcm16",
+                        output_audio_format: "pcm16",
+                        turn_detection: { type: "server_vad" },
+                    },
+                    onEvent: handleEvent,
+                    onStatus: (status, error) => {
+                        statusLine.textContent = error
+                            ? `${status}: ${error.message}`
+                            : status;
+                    },
+                });
+
+                media = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                });
+                micContext = new AudioContext();
+                await micContext.audioWorklet.addModule(micWorklet());
+                const source = micContext.createMediaStreamSource(media);
+                const processor = new AudioWorkletNode(
+                    micContext,
+                    "mic-processor",
+                );
+                processor.port.onmessage = (message) => {
+                    session?.send({
+                        type: "input_audio_buffer.append",
+                        audio: toPcm16Base64(
+                            message.data,
+                            micContext.sampleRate,
+                        ),
+                    });
+                };
+                source.connect(processor);
+                processor.connect(micContext.destination);
+
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                logEvent("session started");
+            }
+
+            function stop() {
+                session?.close();
+                session = null;
+                for (const track of media?.getTracks() ?? []) track.stop();
+                media = null;
+                micContext?.close();
+                playContext?.close();
+                micContext = null;
+                playContext = null;
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                logEvent("session stopped");
+            }
+
+            startButton.addEventListener("click", () => {
+                start().catch((error) => {
+                    statusLine.textContent = `error: ${error.message}`;
+                });
+            });
+            stopButton.addEventListener("click", stop);
+        </script>
+    </body>
+</html>

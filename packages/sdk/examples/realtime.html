@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Talk to openai/gpt-realtime-2.1 from the browser. This loads the SDK's browser bundle; run `npm run build`
+     in packages/sdk, serve that folder over http (for example `npx serve .`) and open /examples/realtime.html. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pollinations realtime voice</title>
+<style>body{font:16px/1.5 system-ui;max-width:36rem;margin:2rem auto;padding:0 1rem}button{font:inherit;padding:.5rem 1rem}#log{white-space:pre-wrap;margin-top:1rem}</style>
+<h1>Realtime voice</h1>
+<p id="actions"></p>
+<div id="log"></div>
+<script src="../dist/index.browser.min.js"></script>
+<script>
+const { authorizeUrl, connectRealtime, createAudioPlayer, startMicrophone } = Pollinations;
+
+const log = (text) => (document.querySelector("#log").textContent += text);
+const actions = document.querySelector("#actions");
+const button = (label, onclick) => actions.append(Object.assign(document.createElement("button"), { textContent: label, onclick }));
+
+// Sign-in returns the key in the URL fragment (#api_key=sk_...). It is kept in memory only, so a reload signs in again.
+const apiKey = new URLSearchParams(location.hash.slice(1)).get("api_key");
+history.replaceState(null, "", location.pathname);
+
+if (!apiKey) {
+    button("Sign in with Pollinations", () => (location.href = authorizeUrl({ redirectUrl: location.href, budget: 1, expiry: 1 })));
+} else {
+    button("Talk", async (event) => {
+        event.target.disabled = true;
+        const player = createAudioPlayer();
+        const session = await connectRealtime({
+            apiKey,
+            onEvent: (e) => {
+                if (e.type === "response.output_audio.delta") player.play(e.delta);
+                if (e.type === "input_audio_buffer.speech_started") player.clear();
+                if (e.type === "response.output_audio_transcript.delta") log(e.delta);
+                if (e.type === "response.output_audio_transcript.done") log("\n");
+            },
+        });
+        const stopMicrophone = await startMicrophone(session);
+        button("Stop", () => {
+            stopMicrophone();
+            session.close();
+            actions.replaceChildren();
+        });
+    });
+}
+</script>

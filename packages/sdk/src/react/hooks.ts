@@ -12,6 +12,11 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeEvent,
+    type RealtimeSession,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +497,69 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export interface UseRealtimeOptions {
+    /** Default `openai/gpt-realtime-2.1`. */
+    model?: string;
+    /** Called for every server event. The latest function is used, so it may close over state. */
+    onEvent?: (event: RealtimeEvent) => void;
+}
+
+export interface UseRealtimeValue {
+    status: "idle" | "connecting" | "open" | "closed";
+    error: Error | null;
+    /** Opens a session with the signed-in key and resolves to it, ready for `startMicrophone`. */
+    connect: () => Promise<RealtimeSession | null>;
+    disconnect: () => void;
+    send: (event: RealtimeEvent) => void;
+}
+
+/** A realtime voice or transcription session for the signed-in user. Closed when the component unmounts. */
+export function useRealtime(
+    options: UseRealtimeOptions = {},
+): UseRealtimeValue {
+    const { apiKey } = useRequiredAuth();
+    const [status, setStatus] = useState<UseRealtimeValue["status"]>("idle");
+    const [error, setError] = useState<Error | null>(null);
+    const session = useRef<RealtimeSession | null>(null);
+    const onEvent = useRef(options.onEvent);
+    onEvent.current = options.onEvent;
+
+    const disconnect = useCallback(() => {
+        session.current?.close();
+        session.current = null;
+    }, []);
+
+    const connect = useCallback(async () => {
+        if (!apiKey) {
+            setError(new Error("Sign in before starting a realtime session."));
+            return null;
+        }
+        disconnect();
+        setError(null);
+        setStatus("connecting");
+        try {
+            const opened = await connectRealtime({
+                apiKey,
+                model: options.model,
+                onEvent: (event) => onEvent.current?.(event),
+                onClose: () => setStatus("closed"),
+            });
+            session.current = opened;
+            setStatus("open");
+            return opened;
+        } catch (cause) {
+            setError(cause as Error);
+            setStatus("closed");
+            return null;
+        }
+    }, [apiKey, options.model, disconnect]);
+
+    const send = useCallback(
+        (event: RealtimeEvent) => session.current?.send(event),
+        [],
+    );
+    useEffect(() => disconnect, [disconnect]);
+    return { status, error, connect, disconnect, send };
 }

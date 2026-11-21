@@ -9,9 +9,11 @@ import {
 } from "./contexts.js";
 import {
     type UseAccountKeyValue,
+    type UseRealtimeValue,
     useAccountKey,
     useAccountKeyUsage,
     useAuthState,
+    useRealtime,
     useTextGeneration,
 } from "./hooks.js";
 
@@ -511,5 +513,114 @@ describe("generation hooks", () => {
 
         expect(logout).toHaveBeenCalledTimes(1);
         expect(gen().data).toBeNull();
+    });
+});
+
+describe("useRealtime", () => {
+    const sockets: FakeSocket[] = [];
+
+    class FakeSocket {
+        sent: string[] = [];
+        closed: number | undefined;
+        private listeners: Record<string, ((event: unknown) => void)[]> = {};
+        constructor(public url: string) {
+            sockets.push(this);
+        }
+        addEventListener(type: string, listener: (event: unknown) => void) {
+            this.listeners[type] = [...(this.listeners[type] ?? []), listener];
+        }
+        emit(type: string, event: unknown = {}) {
+            for (const listener of this.listeners[type] ?? []) listener(event);
+        }
+        send(data: string) {
+            this.sent.push(data);
+        }
+        close(code: number) {
+            this.closed = code;
+            this.emit("close", { code, reason: "" });
+        }
+    }
+
+    afterEach(() => {
+        sockets.length = 0;
+        vi.unstubAllGlobals();
+    });
+
+    it("connects to gen with the signed-in key, delivers events and closes on unmount", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const events: unknown[] = [];
+        let latest: UseRealtimeValue | null = null;
+
+        function Probe() {
+            latest = useRealtime({
+                model: "openai/gpt-realtime-2.1-mini",
+                onEvent: (event) => events.push(event),
+            });
+            return null;
+        }
+
+        let renderer: ReactTestRenderer | null = null;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        expect(read<UseRealtimeValue>(latest).status).toBe("idle");
+
+        await act(async () => {
+            const opening = read<UseRealtimeValue>(latest).connect();
+            sockets[0].emit("open");
+            await opening;
+        });
+        const url = new URL(sockets[0].url);
+        expect(url.origin + url.pathname).toBe(
+            "wss://gen.pollinations.ai/v1/realtime",
+        );
+        expect(url.searchParams.get("key")).toBe("sk_test");
+        expect(url.searchParams.get("model")).toBe(
+            "openai/gpt-realtime-2.1-mini",
+        );
+        expect(read<UseRealtimeValue>(latest).status).toBe("open");
+
+        await act(async () => {
+            sockets[0].emit("message", { data: '{"type":"session.created"}' });
+            read<UseRealtimeValue>(latest).send({ type: "response.create" });
+        });
+        expect(events).toEqual([{ type: "session.created" }]);
+        expect(sockets[0].sent).toEqual(['{"type":"response.create"}']);
+
+        await act(async () => {
+            renderer?.unmount();
+        });
+        expect(sockets[0].closed).toBe(1000);
+    });
+
+    it("does not open a socket when nobody is signed in", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider
+                    value={authValue({ apiKey: null, isLoggedIn: false })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await act(async () => {
+            await read<UseRealtimeValue>(latest).connect();
+        });
+        expect(sockets).toHaveLength(0);
+        expect(read<UseRealtimeValue>(latest).error?.message).toBe(
+            "Sign in before starting a realtime session.",
+        );
     });
 });

@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { mkdtemp, readFile, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 import { answerEmbeds, messagesFromDiscordHistory } from "../bot.js";
 import { TokenStore } from "../store.js";
+
+const execFileAsync = promisify(execFile);
 
 test("token store persists privately and disconnect removes only that user", async () => {
     const dir = await mkdtemp(join(tmpdir(), "polli-discord-"));
@@ -16,7 +20,15 @@ test("token store persists privately and disconnect removes only that user", asy
     assert.equal(await store.delete("user-a"), true);
     assert.equal(await store.get("user-a"), null);
     assert.equal((await store.get("user-b")).token, "sk_b");
-    assert.equal((await stat(path)).mode & 0o777, 0o600);
+    if (process.platform === "win32") {
+        const { stdout } = await execFileAsync("icacls", [path], {
+            windowsHide: true,
+        });
+        assert.match(stdout, new RegExp(userInfo().username, "i"));
+        assert.doesNotMatch(stdout, /BUILTIN\\Users|Everyone/i);
+    } else {
+        assert.equal((await stat(path)).mode & 0o777, 0o600);
+    }
     assert.doesNotMatch(await readFile(path, "utf8"), /user-a/);
 });
 

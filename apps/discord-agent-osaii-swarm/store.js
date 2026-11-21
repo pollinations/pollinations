@@ -1,5 +1,32 @@
+import { execFile } from "node:child_process";
 import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+
+async function windowsUser() {
+    const { stdout } = await execFileAsync("whoami", [], {
+        windowsHide: true,
+    });
+    const user = stdout.trim();
+    if (!user) throw new Error("Could not determine the Windows user");
+    return user;
+}
+
+async function restrictWindowsPath(path, inheritance) {
+    if (process.platform !== "win32") return;
+    await execFileAsync(
+        "icacls",
+        [
+            path,
+            "/inheritance:r",
+            "/grant:r",
+            `${await windowsUser()}:${inheritance}`,
+        ],
+        { windowsHide: true },
+    );
+}
 
 export class TokenStore {
     constructor(path = process.env.TOKEN_STORE_PATH || "./data/tokens.json") {
@@ -49,7 +76,9 @@ export class TokenStore {
     }
 
     async writeAll(all) {
-        await mkdir(dirname(this.path), { recursive: true, mode: 0o700 });
+        const directory = dirname(this.path);
+        await mkdir(directory, { recursive: true, mode: 0o700 });
+        await restrictWindowsPath(directory, "(OI)(CI)F");
         const tmp = `${this.path}.${process.pid}.tmp`;
         await writeFile(tmp, `${JSON.stringify(all, null, 2)}\n`, {
             mode: 0o600,
@@ -57,5 +86,6 @@ export class TokenStore {
         await chmod(tmp, 0o600);
         await rename(tmp, this.path);
         await chmod(this.path, 0o600);
+        await restrictWindowsPath(this.path, "F");
     }
 }

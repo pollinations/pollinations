@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollinations Image Studio",
+    "url": "https://palmunix.github.io/pollinations-image-studio",
+    "description": "Gere imagens com IA direto no navegador usando o seu próprio saldo Pollinations. Escolha modelo e proporção, conecte sua conta e crie imagens sem precisar colar chaves.",
+    "language": "pt",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "palmunix",
+    "githubUserId": "98686547",
+    "repositoryUrl": "https://github.com/palmunix/pollinations-image-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/20427",
+    "approvedDate": "2026-11-21",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3db4959c-363d-44b2-b093-b8dfde8cc875"
+  },
+  {
     "emoji": "🛠️",
     "name": "polli-bridge",
     "url": "https://aibridge.bot.nu",

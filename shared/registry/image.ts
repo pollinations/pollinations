@@ -1991,7 +1991,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 3,
     },
     "recraft/recraft-v4-vector": {
-        aliases: ["recraft-v4-svg", "recraft-v4-vector"],
+        aliases: [],
         provider: "fal",
         publisher: "Recraft",
         category: "image",

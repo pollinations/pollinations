@@ -1986,7 +1986,7 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "openrouter",
-        publisher: "Base Labs",
+        publisher: "Baseten",
         category: "decision",
         addedDate: new Date("2026-11-20").getTime(),
         priceMultiplier: 1,

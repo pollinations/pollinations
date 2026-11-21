@@ -2457,6 +2457,31 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "kwaivgi/kling-v4.0-flash": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-11-21").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai kling-video/v4/flash published rate (2026-11-21).
+        // Flat $0.094/s at 720p; native audio is included in base rate.
+        cost: {
+            completionVideoSeconds: 0.094,
+        },
+        resolutions: ["720p"],
+        title: "Kling 4.0 Flash",
+        description:
+            "Fast 720p video from text or a starting image with synchronized native audio.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 3,
+        maxDuration: 20,
+        defaultDuration: 5,
+    },
     "lightricks/ltx-2.5-pro": {
         aliases: [],
         provider: "fal",

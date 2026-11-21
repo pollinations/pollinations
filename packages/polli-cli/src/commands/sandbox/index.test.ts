@@ -7,7 +7,7 @@ import {
     rmSync,
     writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -30,7 +30,7 @@ let home: string;
 beforeEach(() => {
     vi.resetModules();
     // Short, so ssh's connection-sharing socket path fits.
-    home = mkdtempSync("/tmp/polli-");
+    home = mkdtempSync(join(tmpdir(), "polli-"));
     vi.mocked(homedir).mockReturnValue(home);
     mkdirSync(join(home, ".pollinations", "ssh"), { recursive: true });
     // Avoid generating an SSH key; setup only needs this file to exist.
@@ -289,9 +289,15 @@ describe("ssh connections", () => {
             join(home, ".pollinations", "ssh", "config"),
             "utf8",
         );
-        expect(config).toContain("ControlMaster auto");
-        expect(config).toContain("ControlPersist 10m");
         expect(config).toContain("ServerAliveInterval 30");
+        // SHARES_CONNECTIONS is false on win32: Windows' ssh cannot reuse one
+        // connection between ssh, scp and rsync, so the file must not offer it.
+        if (process.platform === "win32") {
+            expect(config).not.toContain("ControlMaster");
+        } else {
+            expect(config).toContain("ControlMaster auto");
+            expect(config).toContain("ControlPersist 10m");
+        }
     });
 
     it("doesn't share connections when the socket path would be too long", async () => {
@@ -367,14 +373,19 @@ describe("ssh connections", () => {
     it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {
         const tty = join(home, "tty");
         const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
-        // ssh with ControlPersist gives the proxy /dev/null as stderr.
-        vi.mocked(fstatSync).mockImplementation(((fd: number) =>
-            fd === 2
-                ? fs.statSync("/dev/null")
-                : fs.fstatSync(fd)) as typeof fstatSync);
-        vi.mocked(openSync).mockImplementation((path, ...rest) =>
-            fs.openSync(path === "/dev/tty" ? tty : path, ...rest),
-        );
+        // ssh with ControlPersist gives the proxy /dev/null as stderr, and
+        // stderrToTerminal() rewrites the refusal to /dev/tty. Both devices are
+        // POSIX-only, so on win32 the helper is a no-op and the refusal has to
+        // reach stderr instead (asserted below).
+        if (process.platform !== "win32") {
+            vi.mocked(fstatSync).mockImplementation(((fd: number) =>
+                fd === 2
+                    ? fs.statSync("/dev/null")
+                    : fs.fstatSync(fd)) as typeof fstatSync);
+            vi.mocked(openSync).mockImplementation((path, ...rest) =>
+                fs.openSync(path === "/dev/tty" ? tty : path, ...rest),
+            );
+        }
         const command = await prepare(
             Response.json(
                 {
@@ -390,11 +401,14 @@ describe("ssh connections", () => {
             command.run("proxy", "paused1.polli"),
         ).rejects.toMatchObject({ code: 1 });
 
-        const shown = readFileSync(tty, "utf8");
-        expect(shown).toContain(
-            "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list",
-        );
-        expect(command.stderr()).toBe("");
+        const sentence =
+            "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list";
+        if (process.platform === "win32") {
+            expect(command.stderr()).toContain(sentence);
+        } else {
+            expect(readFileSync(tty, "utf8")).toContain(sentence);
+            expect(command.stderr()).toBe("");
+        }
     });
 });
 

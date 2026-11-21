@@ -1,3 +1,4 @@
+import { tmpdir } from "node:os";
 import { client, type SessionUpdate } from "@agentclientprotocol/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { acpAgent } from "./acp.js";
@@ -143,7 +144,7 @@ describe("polli acp", () => {
                     clientCapabilities: {},
                 });
                 const session = await ctx.request("session/new", {
-                    cwd: "/tmp",
+                    cwd: tmpdir(),
                     mcpServers: [],
                 });
                 expect(session.configOptions?.[0]).toMatchObject({
@@ -262,7 +263,7 @@ describe("polli acp", () => {
                     clientCapabilities: {},
                 });
                 const { sessionId } = await ctx.request("session/new", {
-                    cwd: "/tmp",
+                    cwd: tmpdir(),
                     mcpServers: [
                         {
                             type: "http",
@@ -349,7 +350,7 @@ it("shows a refusal explanation and reports a refused ACP turn", async () => {
         .connectWith(app, async (ctx) => {
             await ctx.request("initialize", { protocolVersion: 1 });
             const session = await ctx.request("session/new", {
-                cwd: "/tmp",
+                cwd: tmpdir(),
                 mcpServers: [],
             });
             const turn = (text: string) =>

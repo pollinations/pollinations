@@ -22,6 +22,7 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { discordDisconnectMessage } from "../components/account/discord-connection.ts";
 import {
     CardLoading,
     LoadError,
@@ -421,7 +422,7 @@ function CommunityConnections({
                     providerId: "discord",
                 });
                 if (error) {
-                    setConnectionError("Could not disconnect Discord.");
+                    setConnectionError(discordDisconnectMessage(error));
                 } else {
                     setDiscordConnection(null);
                 }

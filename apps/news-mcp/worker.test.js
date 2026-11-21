@@ -243,11 +243,11 @@ test("search preserves upstream fields and correctly encodes query", async (t) =
 
 test("feed XML handles RSS attributes, CDATA, Atom single quotes and alternate links", () => {
     const rss = parseFeed(
-        '<rss version="2.0"><channel><title>News &amp; More</title><link>https://example.com</link><item id="one"><title><![CDATA[A < B]]></title><link>/story</link><description><![CDATA[<p>text</p>]]></description></item></channel></rss>',
+        '<rss version="2.0"><channel><title>News &amp; More&#8217;s</title><link>https://example.com</link><item id="one"><title><![CDATA[A < B]]></title><link>/story</link><description><![CDATA[<p>text</p>]]></description></item></channel></rss>',
         "https://example.com/feed",
         10,
     );
-    assert.equal(rss.title, "News & More");
+    assert.equal(rss.title, "News & More’s");
     assert.equal(rss.entries[0].title, "A < B");
     assert.equal(rss.entries[0].link, "https://example.com/story");
     assert.equal(rss.entries[0].summary, "<p>text</p>");

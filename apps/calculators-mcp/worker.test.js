@@ -72,6 +72,7 @@ for (const modern of [false, true])
                 "integer_math",
                 "diff_text",
                 "create_qr",
+                "id_inspect",
                 "hash_text",
                 "inspect_unicode",
                 "next_cron_runs",
@@ -359,6 +360,92 @@ test("time duration preserves nanoseconds", async (t) => {
         end: "2026-01-01T00:00:00.000000002Z",
     });
     assert.equal(result.totalSeconds, 1e-9);
+});
+
+test("id_inspect reads UUID versions, embedded timestamps and ULIDs", async (t) => {
+    const client = await clientFor(t);
+
+    const v4 = await call(client, "id_inspect", {
+        id: "9F1B1C2D-3A4B-4C5D-8E6F-7A8B9C0D1E2F",
+    });
+    assert.equal(v4.type, "uuid");
+    assert.equal(v4.uuid.version, 4);
+    assert.equal(v4.uuid.variant, "RFC 9562");
+    assert.equal(v4.uuid.timestamp, undefined);
+    assert.equal(v4.normalized, "9f1b1c2d-3a4b-4c5d-8e6f-7a8b9c0d1e2f");
+
+    const v1 = await call(client, "id_inspect", {
+        id: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+    });
+    assert.equal(v1.uuid.version, 1);
+    assert.equal(new Date(v1.uuid.timestamp_ms).getUTCFullYear(), 1997);
+
+    // RFC 9562's v6 example: the same instant as v1, reordered so it sorts.
+    const rfcV6 = await call(client, "id_inspect", {
+        id: "1EC9414C-232A-6B00-B3C8-9E6BDECED846",
+    });
+    assert.equal(rfcV6.uuid.version, 6);
+    assert.equal(rfcV6.uuid.variant, "RFC 9562");
+    assert.equal(rfcV6.uuid.timestamp, "2022-02-22T19:22:22.000Z");
+
+    const nil = await call(client, "id_inspect", {
+        id: "00000000-0000-0000-0000-000000000000",
+    });
+    assert.match(nil.uuid.note, /Nil UUID/);
+
+    const milliseconds = Date.parse("2026-11-11T00:00:00Z");
+    const hex =
+        milliseconds.toString(16).padStart(12, "0") + "7abc8def0123456789ab";
+    const v7 = await call(client, "id_inspect", {
+        id: hex.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5"),
+    });
+    assert.equal(v7.uuid.version, 7);
+    assert.equal(v7.uuid.timestamp_ms, milliseconds);
+    assert.equal(v7.uuid.timestamp, "2026-11-11T00:00:00.000Z");
+
+    const v6Ticks = (BigInt(milliseconds) + 12219292800000n) * 10000n;
+    const v6Hex =
+        ((v6Ticks >> 28n) & 0xffffffffn).toString(16).padStart(8, "0") +
+        ((v6Ticks >> 12n) & 0xffffn).toString(16).padStart(4, "0") +
+        "6" +
+        (v6Ticks & 0xfffn).toString(16).padStart(3, "0") +
+        "abc8def012345678";
+    assert.equal(v6Hex.length, 32);
+    const v6 = await call(client, "id_inspect", {
+        id: v6Hex.replace(
+            /^(.{8})(.{4})(.{4})(.{4})(.{12})$/,
+            "$1-$2-$3-$4-$5",
+        ),
+    });
+    assert.equal(v6.uuid.version, 6);
+    assert.equal(v6.uuid.timestamp_ms, milliseconds);
+    assert.equal(v6.uuid.timestamp, "2026-11-11T00:00:00.000Z");
+
+    const crockford = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+    let encoded = "";
+    for (
+        let rest = milliseconds;
+        encoded.length < 10;
+        rest = Math.floor(rest / 32)
+    )
+        encoded = crockford[rest % 32] + encoded;
+    const ulid = await call(client, "id_inspect", {
+        id: `${encoded}${"Z".repeat(16)}`.toLowerCase(),
+    });
+    assert.equal(ulid.type, "ulid");
+    assert.equal(ulid.ulid.timestamp_ms, milliseconds);
+    assert.equal(ulid.normalized, `${encoded}${"Z".repeat(16)}`);
+
+    assert.equal(
+        (await call(client, "id_inspect", { id: "not-an-id" })).type,
+        "unknown",
+    );
+    for (const id of ["", "a".repeat(201)])
+        assert.equal(
+            (await client.callTool({ name: "id_inspect", arguments: { id } }))
+                .isError,
+            true,
+        );
 });
 
 test("currency tools use fixed public rates without forwarding caller credentials", async (t) => {

@@ -26,6 +26,7 @@ then choose a server:
 | Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
 | News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 | Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
+| Holidays | `https://gen.pollinations.ai/mcp/holidays` | Public holidays and upcoming dates for countries worldwide, plus a working-day check | [Source](https://github.com/pollinations/pollinations/tree/main/apps/holidays-mcp) |
 
 Calculators is free but still requires a key. Time conversion rejects ambiguous or
 skipped local times: include an explicit
@@ -53,6 +54,13 @@ Research lookups are free and require a key. Public sources receive no caller
 credentials. Wikidata supports up to five selected claim properties per call;
 World Bank data requires an official indicator code. Large responses fail
 explicitly; narrow the query when asked.
+
+Holiday lookups are free and require a key. Dates come from the Nager.Date
+Community API v4, which lists country-wide and ISO 3166-2 subdivision holidays
+for 200+ countries under English names. It serves a rolling window of recent and
+upcoming years; dates outside it fail with an explanatory error. Dates are
+calendar dates without time zones, `daysUntil` counts from UTC today, and
+upstream "today" may differ from the caller's local date by one day.
 
 Send the key with every request:
 

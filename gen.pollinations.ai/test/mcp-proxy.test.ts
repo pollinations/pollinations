@@ -222,6 +222,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "holidays",
+                alpha: true,
+                name: "Holidays",
+                description:
+                    "Public holidays and upcoming dates for countries worldwide, plus a working-day check.",
+                url: "https://gen.pollinations.ai/mcp/holidays",
+                pricing: {
+                    description:
+                        "Public holiday data is free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

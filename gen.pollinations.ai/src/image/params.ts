@@ -480,10 +480,17 @@ export const ImageParamsSchema = z
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
 
+// Generation has media arrays. A quote needs only their lengths.
+export type MediaPriceParams = Pick<
+    ImageParams,
+    "width" | "height" | "quality" | "resolution" | "duration" | "audio"
+> & {
+    image: { length: number };
+    reference_videos?: { length: number };
+};
+
 /** Request facts that select a model's rate sheet. Billing and price quotes share them. */
-export function pricingInputFromParams(
-    params: Omit<ImageParams, "model">,
-): PricingInput {
+export function pricingInputFromParams(params: MediaPriceParams): PricingInput {
     return {
         resolution: params.resolution,
         quality: params.quality,

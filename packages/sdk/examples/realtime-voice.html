@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Realtime voice — Pollinations SDK</title>
+</head>
+<body>
+  <h1>Realtime voice</h1>
+  <label>
+    API key
+    <input id="key" type="password" placeholder="sk_..." />
+  </label>
+  <button id="start">Start session</button>
+  <button id="stop" disabled>Stop session</button>
+  <p id="status">Not connected</p>
+  <h2>Events</h2>
+  <pre id="log"></pre>
+
+  <script type="module">
+    import { connectRealtime } from "https://esm.sh/@pollinations/sdk";
+
+    const keyInput = document.getElementById("key");
+    const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
+    const status = document.getElementById("status");
+    const log = document.getElementById("log");
+
+    let session = null;
+
+    function print(event) {
+      const line = `${event.type} ${JSON.stringify(event).slice(0, 200)}`;
+      log.textContent = `${line}\n${log.textContent}`.trim();
+    }
+
+    startButton.onclick = () => {
+      if (!keyInput.value) return;
+      session = connectRealtime({
+        apiKey: keyInput.value,
+        onEvent: print,
+      });
+      session.socket.addEventListener("open", () => {
+        status.textContent = "Connected";
+        session.send({
+          type: "session.update",
+          session: { type: "realtime", instructions: "Be brief." },
+        });
+        startButton.disabled = true;
+        stopButton.disabled = false;
+      });
+      session.socket.addEventListener("close", () => {
+        status.textContent = "Disconnected";
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      });
+    };
+
+    stopButton.onclick = () => {
+      session?.close();
+    };
+  </script>
+</body>
+</html>

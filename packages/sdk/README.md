@@ -687,6 +687,45 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice sessions
+
+Open an OpenAI-compatible Realtime WebSocket session and send events directly:
+
+```javascript
+import { connectRealtime, pcm16ToBase64 } from '@pollinations/sdk';
+
+const session = connectRealtime({
+  apiKey: process.env.POLLINATIONS_API_KEY,
+  onEvent: (event) => console.log(event.type),
+});
+
+session.send({ type: 'session.update', session: { type: 'realtime' } });
+session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(samples) });
+session.close();
+```
+
+The session uses `openai/gpt-realtime-2.1` by default. Pass `model` to use a
+different Realtime model and `baseUrl` to point at another deployment. The
+`pcm16ToBase64()` and `base64ToPcm16()` helpers convert between Int16 PCM
+samples and the base64 audio used by the protocol.
+
+In React, `useRealtime()` uses the key from `PolliProvider`:
+
+```jsx
+import { useRealtime } from '@pollinations/sdk/react';
+
+function Voice() {
+  const { connect, send, close, isConnected } = useRealtime({
+    onEvent: (event) => console.log(event.type),
+  });
+  return <button onClick={() => (isConnected ? close() : connect())}>
+    {isConnected ? 'Stop' : 'Start'}
+  </button>;
+}
+```
+
+See `packages/sdk/examples/realtime-voice.html` for a browser example.
+
 ## Vision (Image Input)
 
 ```javascript

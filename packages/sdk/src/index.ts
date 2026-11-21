@@ -18,6 +18,16 @@
 // Main client class
 export { Pollinations } from "./client.js";
 export { isOutageError } from "./error-response.js";
+export {
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+    base64ToPcm16,
+    connectRealtime,
+    DEFAULT_REALTIME_MODEL,
+    pcm16ToBase64,
+    realtimeUrl,
+} from "./realtime.js";
 // Extra utilities
 export {
     type AudioResponseExt,

@@ -40,7 +40,9 @@ describe("Inkling 2 Mini OpenRouter route", () => {
         expect(model.supportedParameters).toContain("tools");
         expect(model.supportedParameters).toContain("response_format");
         expect(typeof model.billing?.resolveTotalCost).toBe("function");
-        expect(findModelByName("thinkingmachines/inkling-2-mini")?.config()).toMatchObject({
+        expect(
+            findModelByName("thinkingmachines/inkling-2-mini")?.config(),
+        ).toMatchObject({
             provider: "openrouter",
             model: "thinkingmachines/inkling-2-mini",
             defaultOptions: { provider: { sort: "price" } },

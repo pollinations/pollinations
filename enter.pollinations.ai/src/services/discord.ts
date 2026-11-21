@@ -1,3 +1,10 @@
+import * as schema from "@shared/db/better-auth.ts";
+import { and, eq } from "drizzle-orm";
+import type { drizzle } from "drizzle-orm/d1";
+import { HTTPException } from "hono/http-exception";
+
+type Db = ReturnType<typeof drizzle<typeof schema>>;
+
 const POLLINATIONS_DISCORD_GUILD_ID = "885844321461485618";
 const DISCORD_MEMBERSHIP_CACHE_TTL_SECONDS = 60;
 
@@ -107,4 +114,26 @@ async function fetchMemberRoles(
 
     const member = (await response.json()) as { roles: string[] };
     return member.roles;
+}
+
+export const DISCORD_REQUIRED_MESSAGE =
+    "Connect Discord on your account page to publish, so we can reach you about your models: https://enter.pollinations.ai/account";
+
+/**
+ * Publishing a community model or agent needs a connected Discord account:
+ * Community Watch reaches publishers there about their models.
+ */
+export async function requireDiscordToPublish(
+    db: Db,
+    userId: string,
+): Promise<void> {
+    const discord = await db.query.account.findFirst({
+        columns: { id: true },
+        where: and(
+            eq(schema.account.userId, userId),
+            eq(schema.account.providerId, "discord"),
+        ),
+    });
+    if (!discord)
+        throw new HTTPException(403, { message: DISCORD_REQUIRED_MESSAGE });
 }

@@ -43,6 +43,7 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { requireDiscordToPublish } from "../services/discord.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -135,6 +136,7 @@ async function requireCommunityEndpointPublishAccess(
                 "Community model publishing requires approval. Models can stay private for your own use.",
         });
     }
+    await requireDiscordToPublish(db, userId);
 }
 
 async function requireOwnerGithubUsername(

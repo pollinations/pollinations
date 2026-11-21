@@ -324,7 +324,12 @@ function AgentMedia({ url }: { url: string }) {
     useEffect(() => {
         let objectUrl: string | undefined;
         let active = true;
-        fetch(url, { credentials: "omit", referrerPolicy: "no-referrer" })
+        const request = new AbortController();
+        fetch(url, {
+            credentials: "omit",
+            referrerPolicy: "no-referrer",
+            signal: request.signal,
+        })
             .then(async (response) => {
                 if (!response.ok) throw new Error(response.statusText);
                 const media = {
@@ -346,6 +351,7 @@ function AgentMedia({ url }: { url: string }) {
             });
         return () => {
             active = false;
+            request.abort();
             if (objectUrl) URL.revokeObjectURL(objectUrl);
         };
     }, [url]);

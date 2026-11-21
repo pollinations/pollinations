@@ -42,18 +42,27 @@ export function toolLabel(name: string): string {
     return words ? words[0].toUpperCase() + words.slice(1) : name;
 }
 
-const MARKDOWN_LINK = /(!?)\[[^\]]*\]\(([^)\s]+)\)/g;
+const MARKDOWN_LINK = /(!?)\[[^\]]*\]\(<?([^)\s>]+)>?\)/g;
 // An agent's reply is untrusted text, so only files on our own media host
-// are fetched. Other links and images stay in the Markdown.
+// are fetched. Other links and images stay in the text, as links.
 const MEDIA_HOST = "https://media.pollinations.ai/";
-const HOSTED_MEDIA = /https:\/\/media\.pollinations\.ai\/[\w/-]+/g;
+const HOSTED_MEDIA = /https:\/\/media\.pollinations\.ai\/[^\s()<>[\]"'`]+/g;
 
-/** The media links a reply carries, in its text or its tool results, each once. */
-export function replyMedia(items: AgentItem[]): string[] {
+/**
+ * The media links a reply carries, each once. A tool result names its files
+ * outright; text is read only once it is complete, because a link that is
+ * still arriving is a different, wrong link.
+ */
+export function replyMedia(
+    items: AgentItem[],
+    textComplete: boolean,
+): string[] {
     const urls = new Set<string>();
     for (const item of items) {
         if (item.type === "text") {
-            for (const [url] of item.text.matchAll(HOSTED_MEDIA)) urls.add(url);
+            if (!textComplete) continue;
+            for (const [url] of item.text.matchAll(HOSTED_MEDIA))
+                urls.add(url.replace(/[.,;:!?*_]+$/, ""));
             continue;
         }
         const output = item.result?.output as

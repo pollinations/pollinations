@@ -1,4 +1,7 @@
-import { usePollinationsChatTransport } from "@pollinations/sdk/react";
+import {
+    useAuthState,
+    usePollinationsChatTransport,
+} from "@pollinations/sdk/react";
 import {
     Alert,
     Button,
@@ -85,6 +88,21 @@ export function useAgentChat(
     const transport = usePollinationsChatTransport({ model: agent });
     const [threads, setThreads] = useState<Record<string, AgentTurn[]>>({});
     const requests = useRef<Record<string, AbortController>>({});
+    // Conversations belong to the signed-in account: they go when it changes.
+    const { apiKey } = useAuthState();
+    const [owner, setOwner] = useState(apiKey);
+    if (owner !== apiKey) {
+        setOwner(apiKey);
+        setThreads({});
+    }
+    useEffect(
+        () => () => {
+            for (const request of Object.values(requests.current))
+                request.abort();
+            requests.current = {};
+        },
+        [apiKey],
+    );
 
     const turns = (agent && threads[agent]) || [];
     const busy = turns[turns.length - 1]?.status === "running";
@@ -173,9 +191,19 @@ export function useAgentChat(
                         error: chunk.errorText,
                     });
                 } else if (chunk.type === "finish") {
+                    if (chunk.finishReason === "stop")
+                        return show({
+                            status: "done",
+                            output: chunk.messageMetadata.output,
+                        });
+                    // A reply cut short keeps its text but is not replayed
+                    // item by item: it may hold a call without its result.
                     return show({
-                        status: "done",
-                        output: chunk.messageMetadata.output,
+                        status: "interrupted",
+                        error:
+                            chunk.finishReason === "length"
+                                ? "The reply reached its limit before it was complete."
+                                : "The reply was stopped by a content filter.",
                     });
                 } else continue;
                 show();
@@ -242,7 +270,8 @@ function toolStatus(
     return turn === "running" ? "running" : null;
 }
 
-function Reply({
+/** One reply: its tool calls and text in order, then its media. */
+export function Reply({
     turn,
     onRetry,
     renderMedia,
@@ -252,7 +281,7 @@ function Reply({
     renderMedia: RenderMedia;
 }) {
     const text = replyText(turn);
-    const media = replyMedia(turn.items);
+    const media = replyMedia(turn.items, turn.status !== "running");
     return (
         <ChatMessage from="assistant" className="w-full">
             {turn.items.map((item, index) =>
@@ -270,7 +299,7 @@ function Reply({
                 ) : (
                     <ChatMessageContent key={index}>
                         <Suspense fallback={item.text}>
-                            <Markdown>
+                            <Markdown media="links">
                                 {withoutMedia(item.text, media)}
                             </Markdown>
                         </Suspense>

@@ -24,6 +24,45 @@ const models = [
 ];
 const settings = { apiKey: "sk_test_key", model: "openai", models };
 
+// Windows refuses symlinks unless Developer Mode or SeCreateSymbolicLinkPrivilege
+// is enabled. Where the OS allows one the tests build a real symlink; elsewhere
+// the same bytes sit at the path as a regular file, so the configure and restore
+// paths still run, only without link metadata to restore.
+const canSymlink = (() => {
+    const dir = mkdtempSync(join(tmpdir(), "polli-symlink-"));
+    try {
+        writeFileSync(join(dir, "target"), "");
+        symlinkSync(join(dir, "target"), join(dir, "link"), "file");
+        return true;
+    } catch {
+        return false;
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+})();
+
+/** Puts `target`'s bytes at `path` the way this OS allows and reports whether the
+ * result is a real symlink. */
+function linkTo(path: string, link: string, target: string) {
+    if (canSymlink) {
+        symlinkSync(link, path, "file");
+        return true;
+    }
+    writeFileSync(path, readFileSync(target));
+    return false;
+}
+
+/** Asserts the path is still the link we put there, or a plain file where the OS
+ * has no symlinks. */
+function expectLinkOrFile(path: string, link: string, symlinked: boolean) {
+    if (symlinked) {
+        expect(lstatSync(path).isSymbolicLink()).toBe(true);
+        expect(readlinkSync(path)).toBe(link);
+        return;
+    }
+    expect(lstatSync(path).isFile()).toBe(true);
+}
+
 let home: string;
 let ctx: HarnessContext;
 
@@ -218,7 +257,7 @@ describe("opencode harness", () => {
             writeFileSync(target, original, { mode: 0o400 });
             const link =
                 kind === "absolute" ? target : "../../opencode-dotfile.jsonc";
-            symlinkSync(link, opencodeJsoncFile(), "file");
+            const symlinked = linkTo(opencodeJsoncFile(), link, target);
             const targetMode = lstatSync(target).mode;
 
             configureOpenCode(ctx, settings);
@@ -227,13 +266,16 @@ describe("opencode harness", () => {
             expect(read(target)).toBe(original);
             expect(disableOpenCode(ctx).outcome).toBe("restored");
 
-            expect(lstatSync(opencodeJsoncFile()).isSymbolicLink()).toBe(true);
-            expect(readlinkSync(opencodeJsoncFile())).toBe(link);
+            expectLinkOrFile(opencodeJsoncFile(), link, symlinked);
             expect(read(target)).toBe(original);
             expect(lstatSync(target).mode).toBe(targetMode);
-            chmodSync(target, 0o600);
-            writeFileSync(target, '{"autoupdate":false}\n');
-            expect(read(opencodeJsoncFile())).toBe('{"autoupdate":false}\n');
+            if (symlinked) {
+                chmodSync(target, 0o600);
+                writeFileSync(target, '{"autoupdate":false}\n');
+                expect(read(opencodeJsoncFile())).toBe(
+                    '{"autoupdate":false}\n',
+                );
+            }
             expect(snapshotFiles()).toHaveLength(0);
         },
     );
@@ -243,14 +285,13 @@ describe("opencode harness", () => {
         const target = join(home, "invalid-opencode.json");
         writeFileSync(target, "{");
         const link = "../../invalid-opencode.json";
-        symlinkSync(link, opencodeFile(), "file");
+        const symlinked = linkTo(opencodeFile(), link, target);
 
         expect(() => configureOpenCode(ctx, settings)).toThrow(
             "Could not parse OpenCode config",
         );
 
-        expect(lstatSync(opencodeFile()).isSymbolicLink()).toBe(true);
-        expect(readlinkSync(opencodeFile())).toBe(link);
+        expectLinkOrFile(opencodeFile(), link, symlinked);
         expect(read(target)).toBe("{");
         expect(existsSync(legacyKeyFile())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
@@ -261,7 +302,7 @@ describe("opencode harness", () => {
         const target = join(home, "opencode-dotfile.json");
         const original = '{"autoupdate":true}\n';
         writeFileSync(target, original);
-        symlinkSync(target, opencodeFile(), "file");
+        linkTo(opencodeFile(), target, target);
         configureOpenCode(ctx, settings);
         const edited = readJsonFile(opencodeFile());
         edited.autoupdate = false;
@@ -281,7 +322,7 @@ describe("opencode harness", () => {
         const target = join(home, "opencode-dotfile.json");
         const original = '{"autoupdate":true}\n';
         writeFileSync(target, original);
-        symlinkSync(target, opencodeFile(), "file");
+        linkTo(opencodeFile(), target, target);
         configureOpenCode(ctx, settings);
         const path = join(
             home,

@@ -4,13 +4,13 @@ import {
     mkdtempSync,
     readFileSync,
     rmSync,
-    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { expectOwnerOnly } from "../testing/file-mode.js";
 import { configureTgpt, disableTgpt, tgpt } from "./tgpt.js";
 import type { HarnessContext } from "./types.js";
 
@@ -39,7 +39,7 @@ describe("tgpt harness", () => {
             POLLINATIONS_API_KEY: "sk_test_key",
             POLLINATIONS_MODEL: "openai/gpt-6-sol",
         });
-        expect(statSync(configFile()).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(configFile());
     });
 
     it("preserves unrelated configuration and replaces managed values", () => {

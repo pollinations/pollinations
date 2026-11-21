@@ -2000,7 +2000,8 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: { completionImageTokens: 0.3 },
         title: "Recraft V4 Pro Vector",
-        description: "Higher-fidelity, print-ready SVG vectors with precise prompt adherence and structured layouts.",
+        description:
+            "Higher-fidelity, print-ready SVG vectors with precise prompt adherence and structured layouts.",
         inputModalities: ["text"],
         outputModalities: ["image"],
         maxReferenceImages: 0,

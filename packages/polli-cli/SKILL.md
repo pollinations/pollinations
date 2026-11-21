@@ -320,7 +320,7 @@ polli docs --open                   # open in browser
 
 - **Default (human mode):** varies by command — most emit `key: value` pairs or tab-separated tables with a header row. Exceptions: `gen text` prints the full response to stdout; `gen transcribe` prints the transcript as plain text; `gen chat` runs an interactive REPL. Status/progress messages go to stderr, so pipes stay clean.
 - **`--json`:** every command emits machine-parseable JSON to stdout; all human messages go to stderr. **Always prefer `--json` when piping into `jq` or parsing** — it's the only shape with a stable contract.
-- **Exit codes:** 0 on success, non-zero on auth failure, rate limit, network error, or invalid args. Error messages go to stderr.
+- **Exit codes:** `0` on success, `1` on failure — there is no finer mapping, so classify from the HTTP status in the error block. Two caveats: `polli whoami` exits `0` even when nothing is authenticated (check `authenticated` in its output), and a rejected key still returns text. Error messages go to stderr.
 
 ## Agent operating rules
 

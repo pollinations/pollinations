@@ -3191,6 +3191,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "thinkingmachines/inkling-2-mini": {
+        supportedParameters: CHAT_PARAMETERS.inkling2Mini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's lowest advertised provider rates plus 5.5% credit fee;
+        // reconcile with the upstream cost receipt if routing changes.
+        cost: {
+            promptTextTokens: perMillion(0.08) * 1.055,
+            promptCachedTokens: perMillion(0.016) * 1.055,
+            completionTextTokens: perMillion(0.35) * 1.055,
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "Inkling 2 Mini",
+        description:
+            "A compact 26.4B-parameter multimodal mixture-of-experts model with 3.4B active parameters and repeated transformer layers. Supports code generation, tool calling, RAG and image-grounded dialogue across a one-million-token context.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "thinkingmachines/inkling-small": {
         supportedParameters: CHAT_PARAMETERS.inklingSmall,
         aliases: ["inkling-small", "inkling-small-20260730", "inkling"],

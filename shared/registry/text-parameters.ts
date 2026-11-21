@@ -253,6 +253,8 @@ export const CHAT_PARAMETERS = {
         "stop",
         "logit_bias",
     ],
+    // Inkling 2 Mini: verified chat, sampling, JSON responses and tools.
+    inkling2Mini: [...TOOL_CHAT, ...SAMPLING],
     inklingSmall: [
         ...CHAT,
         ...SAMPLING,

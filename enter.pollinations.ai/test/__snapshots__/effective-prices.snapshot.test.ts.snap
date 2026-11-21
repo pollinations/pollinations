@@ -5399,6 +5399,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
   },
+  "thinkingmachines/inkling-2-mini": {
+    "cost": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001688,
+      "promptTextTokens": 0.0000000844,
+    },
+    "price": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001688,
+      "promptTextTokens": 0.0000000844,
+    },
+  },
   "thinkingmachines/inkling-small": {
     "cost": {
       "completionTextTokens": 0.000001266,

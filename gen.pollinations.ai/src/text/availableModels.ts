@@ -1307,6 +1307,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy4-preview"],
     },
     {
+        name: "thinkingmachines/inkling-2-mini",
+        config: portkeyConfig["thinkingmachines/inkling-2-mini"],
+    },
+    {
         name: "thinkingmachines/inkling-small",
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },

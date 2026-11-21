@@ -25,6 +25,29 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("Inkling 2 Mini OpenRouter route", () => {
+    it("registers tool-use and image inputs with canonical no-alias routing", () => {
+        const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];
+        expect(model).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            category: "text",
+            inputModalities: ["text", "image"],
+            contextLength: 1048576,
+            tools: true,
+        });
+        expect(model.supportedParameters).toContain("tools");
+        expect(model.supportedParameters).toContain("response_format");
+        expect(typeof model.billing?.resolveTotalCost).toBe("function");
+        expect(findModelByName("thinkingmachines/inkling-2-mini")?.config()).toMatchObject({
+            provider: "openrouter",
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: { provider: { sort: "price" } },
+        });
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",

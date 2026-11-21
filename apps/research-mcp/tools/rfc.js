@@ -16,8 +16,9 @@ export function extractSection(text, { section, startLine, maxLines = 120 }) {
     if (section !== undefined) {
         const normalized = section.trim().replace(/\.$/, "");
         const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // Top-level appendices are headed "Appendix A.  Title".
         const headingPattern = new RegExp(
-            `^(?:Section\\s+)?${escaped}(?:\\.|\\s)\\s*\\S`,
+            `^(?:(?:Section|Appendix)\\s+)?${escaped}\\.?\\s+\\S`,
             "i",
         );
         const topLevelDepth = normalized.split(".").length;
@@ -34,7 +35,9 @@ export function extractSection(text, { section, startLine, maxLines = 120 }) {
 
         let endIndex = Math.min(lines.length, matchIndex + maxLines);
         for (let i = matchIndex + 1; i < endIndex; i++) {
-            const m = lines[i].match(/^(\d+(?:\.\d+)*)\.?\s+\S/);
+            const m = lines[i].match(
+                /^(?:Appendix\s+)?((?:\d+|[A-Z](?=\.))(?:\.\d+)*)\.?\s+\S/,
+            );
             if (
                 m &&
                 !/\.{4,}\s*\d+\s*$/.test(lines[i]) &&

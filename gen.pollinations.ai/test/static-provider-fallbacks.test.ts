@@ -41,8 +41,13 @@ describe("HeyGen Decision 1 routes", () => {
             fallbackOnly: true,
         });
         expect(primary.supportedEndpoints).toContain("/alpha/decisions");
-        expect(findModelByName("heygen/heygen-decision-1")?.useSystemOneApi).toBe(true);
-        expect(findModelByName("heygen/heygen-decision-1:openrouter")?.useSystemOneApi).toBe(true);
+        expect(
+            findModelByName("heygen/heygen-decision-1")?.useSystemOneApi,
+        ).toBe(true);
+        expect(
+            findModelByName("heygen/heygen-decision-1:openrouter")
+                ?.useSystemOneApi,
+        ).toBe(true);
     });
 });
 

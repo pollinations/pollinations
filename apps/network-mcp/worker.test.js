@@ -278,8 +278,10 @@ test("HTTP rejects unsafe redirects without fetching the redirect target or doin
 
 test("RDAP follows registry redirects, normalizes domain and network records, and caches successful lookups", async (t) => {
     let requests = 0;
+    let lastUrl;
     t.mock.method(globalThis, "fetch", async (input, init) => {
         requests++;
+        lastUrl = input;
         const url = new URL(input);
         assert.equal(url.hostname, "rdap.org");
         assert.equal(init.redirect, "follow");
@@ -340,6 +342,9 @@ test("RDAP follows registry redirects, normalizes domain and network records, an
     assert.equal(asn.endAutnum, 15169);
     await read("asn_whois", { asn: 15169 });
     assert.equal(requests, 3);
+    // rdap.org answers 400 when the colons are percent-encoded.
+    await read("ip_whois", { ip: "2001:db8::1" });
+    assert.equal(lastUrl, "https://rdap.org/ip/2001:db8::1");
 });
 
 test("RDAP rejects invalid inputs before I/O and exposes upstream rate limits without retrying", async (t) => {

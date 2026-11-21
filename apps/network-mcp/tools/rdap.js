@@ -8,7 +8,9 @@ const cache = new Map();
 const MAX_CACHE = 200;
 const TTL_MS = 10 * 60 * 1000;
 async function lookup(kind, target) {
-    const url = `https://rdap.org/${kind}/${encodeURIComponent(target)}`;
+    // Callers validate the target first. Encoding it would turn IPv6
+    // colons into %3A, which rdap.org answers with 400.
+    const url = `https://rdap.org/${kind}/${target}`;
     const hit = cache.get(url);
     if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
     const response = await fetch(url, {

@@ -2168,7 +2168,7 @@ const TEXT_BASE_SERVICES = {
     },
     "heygen/heygen-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["heygen-decision", "heygen-decision-1"],
+        aliases: [],
         provider: "vercel",
         publisher: "HeyGen",
         category: "decision",

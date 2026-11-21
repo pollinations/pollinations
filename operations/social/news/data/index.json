@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-20T06:09:43.041243+00:00",
+  "generated_at": "2026-11-21T06:07:00.058831+00:00",
   "models": [
     {
       "id": "2026-10-23:vllm-sr/d3",
@@ -3572,6 +3572,688 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-20:google/gemini-3.8-live",
+      "model_id": "google/gemini-3.8-live",
+      "title": "Gemini 3.8 Live",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "realtime",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 131072
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "audio",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "promptAudioTokens": "0.000003",
+            "promptImageTokens": "0.000001",
+            "promptVideoTokens": "0.000001",
+            "completionTextTokens": "0.0000045",
+            "completionAudioTokens": "0.000012"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:google/gemini-4-hydrogen",
+      "model_id": "google/gemini-4-hydrogen",
+      "title": "Gemini 4 Hydrogen",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning",
+            "web_search"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3000
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.0000015",
+            "promptAudioTokens": "0.0000015",
+            "promptImageTokens": "0.0000015",
+            "promptVideoTokens": "0.0000015",
+            "completionTextTokens": "0.0000075"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:google/gemini-4-neon",
+      "model_id": "google/gemini-4-neon",
+      "title": "Gemini 4 Neon",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning",
+            "web_search"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3000
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000003",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.000003",
+            "promptAudioTokens": "0.000003",
+            "promptImageTokens": "0.000003",
+            "promptVideoTokens": "0.000003",
+            "completionTextTokens": "0.000015"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:google/gemini-decision-1",
+      "model_id": "google/gemini-decision-1",
+      "title": "Gemini Decision 1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "decision",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3600
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "promptTextTokens": "0.0000001"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:heygen/heygen-avatar-6",
+      "model_id": "heygen/heygen-avatar-6",
+      "title": "HeyGen Avatar 6",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video",
+            "audio"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.1"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:heygen/heygen-avatar-6-turbo",
+      "model_id": "heygen/heygen-avatar-6-turbo",
+      "title": "HeyGen Avatar 6 Turbo",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video",
+            "audio"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.05"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:kwaivgi/kling-v3.0-pro",
+      "model_id": "kwaivgi/kling-v3.0-pro",
+      "title": "Kling 3.0 Pro",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.112",
+            "completionAudioSeconds": "0.056"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:lightricks/ltx-2.5-pro",
+      "model_id": "lightricks/ltx-2.5-pro",
+      "title": "LTX 2.5 Pro",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.12"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:minimax/minimax-h3-image",
+      "model_id": "minimax/minimax-h3-image",
+      "title": "MiniMax H3 Image",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000023",
+            "promptImageTokens": "0.0000015",
+            "completionImageTokens": "0.0000038"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:minimax/minimax-h3-image-highspeed",
+      "model_id": "minimax/minimax-h3-image-highspeed",
+      "title": "MiniMax H3 Image Highspeed",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000023",
+            "promptImageTokens": "0.000003",
+            "completionImageTokens": "0.0000076"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:meta/muse-ember",
+      "model_id": "meta/muse-ember",
+      "title": "Muse Ember",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.000000004",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:bytedance/seedance-2.5-flash",
+      "model_id": "bytedance/seedance-2.5-flash",
+      "title": "Seedance 2.5 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video",
+            "audio"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoTokens": "0.000007"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-20:bytedance-seed/seedream-5-5",
+      "model_id": "bytedance-seed/seedream-5-5",
+      "title": "Seedream 5.5",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-11-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.008",
+            "completionImageTokens": "0.02"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -4366,6 +5048,147 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-20",
+      "emoji": "🎨",
+      "title": "Record and create in Play",
+      "text": "Record, import, and preview media in Play. Image, Video, and Audio keep their drafts when you switch tabs, and model-specific controls cover options such as GIF frames, video sound, and audio stem separation. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        20138,
+        20368
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎯",
+      "title": "Ask Play to Decide",
+      "text": "Ask a yes/no question, choose between options, or score a scale in Play’s Decide workspace. See the answer and its probabilities, then copy a JSON curl request for the decisions API. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        20370
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎨",
+      "title": "Seedream 5.5 images",
+      "text": "Generate or edit images with paid-only `bytedance-seed/seedream-5-5`. Use up to ten reference images and choose 1K or 2K output. [View the model](https://enter.pollinations.ai/models?q=bytedance-seed/seedream-5-5).",
+      "prs": [
+        19996
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎨",
+      "title": "MiniMax H3 Image",
+      "text": "Generate and edit images with paid-only `minimax/minimax-h3-image`. It accepts up to 16 reference images and supports 1K, 2K, and 4K output. [View the model](https://enter.pollinations.ai/models?q=minimax/minimax-h3-image).",
+      "prs": [
+        20066
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎨",
+      "title": "MiniMax H3 Image Highspeed",
+      "text": "Try the separate paid-only `minimax/minimax-h3-image-highspeed` model for generation and edits with up to 16 references at 1K, 2K, or 4K. [View the model](https://enter.pollinations.ai/models?q=minimax/minimax-h3-image-highspeed).",
+      "prs": [
+        20067
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎬",
+      "title": "Kling 3.0 Pro video",
+      "text": "Make paid-only 1080p video from text or images with Kling 3.0 Pro. Use up to two reference frames, choose 3 to 15 seconds, and optionally add synchronized audio. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        19672
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎬",
+      "title": "Seedance 2.5 Flash video",
+      "text": "Generate paid-only video with `bytedance/seedance-2.5-flash` from a prompt, up to two first and last keyframes, or image, video, and audio references. Keyframes and references cannot be combined in one request. [View the model](https://enter.pollinations.ai/models?q=bytedance/seedance-2.5-flash).",
+      "prs": [
+        20068
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎬",
+      "title": "HeyGen Avatar 6",
+      "text": "Animate a photo or illustrated-character reference video with paid-only `heygen/heygen-avatar-6`. Supply one speech audio reference to set the video length, then choose 1080p or 2K output. [View the model](https://enter.pollinations.ai/models?q=heygen/heygen-avatar-6).",
+      "prs": [
+        20402
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎬",
+      "title": "HeyGen Avatar 6 Turbo",
+      "text": "Use paid-only `heygen/heygen-avatar-6-turbo` to animate a photo or reference video from one speech audio track. Speech sets the duration; output supports 1080p or 2K. [View the model](https://enter.pollinations.ai/models?q=heygen/heygen-avatar-6-turbo).",
+      "prs": [
+        20403
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🤖",
+      "title": "Muse Ember text model",
+      "text": "Try paid-only `meta/muse-ember` with text or image input. It supports tools and reasoning, with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=meta/muse-ember).",
+      "prs": [
+        19425
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🤖",
+      "title": "Gemini 4 Hydrogen",
+      "text": "Send text, images, audio, or video to paid-only `google/gemini-4-hydrogen`. It returns text and supports tools, search, reasoning, and a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=google/gemini-4-hydrogen).",
+      "prs": [
+        19605
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎯",
+      "title": "Gemini Decision 1",
+      "text": "Score yes/no, multiple-choice, or ordered-scale questions with paid-only `google/gemini-decision-1` through `/alpha/decisions` or chat completions. Questions can include text, images, audio, or video. [View the model](https://enter.pollinations.ai/models?q=google/gemini-decision-1).",
+      "prs": [
+        19611
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🤖",
+      "title": "Gemini 4 Neon",
+      "text": "Use paid-only `google/gemini-4-neon` with text, image, audio, or video input. It returns text and supports reasoning, tools, native search, and a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=google/gemini-4-neon).",
+      "prs": [
+        20298
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-20",
+      "emoji": "🎵",
+      "title": "Gemini 3.8 Live",
+      "text": "Start realtime sessions with `google/gemini-3.8-live` using text, JPEG camera frames, or mono 24 kHz PCM16 audio. It streams speech, transcripts, and function calls for accounts using purchased Pollen; audio turns require an explicit commit and response request. [View the model](https://enter.pollinations.ai/models?q=google/gemini-3.8-live).",
+      "prs": [
+        20373
+      ],
+      "kind": "model"
+    },
     {
       "date": "2026-11-19",
       "emoji": "🎨",
@@ -5589,36 +6412,6 @@
       "text": "When available, choose `pollinations-azure`, `pollinations-azure-large`, or `pollinations-azure-xl` in Enter, the API, or `polli sandbox create`. Azure bills running sandboxes even when idle; its 2 vCPU, 2 GB template costs about 0.049 Pollen/hour, with usage charged through the next five-minute lease check after timeout.",
       "prs": [
         18026
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-21",
-      "emoji": "📱",
-      "title": "My Apps in Enter",
-      "text": "If your linked GitHub account has community catalog listings, you can see them in My Apps. Listings show app details and links, with last-24-hour request counts for Pollen Pay apps.",
-      "prs": [
-        17928
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-10-21",
-      "emoji": "🔗",
-      "title": "Your catalog apps by API",
-      "text": "Signed-in accounts can use `GET /account/apps` to retrieve their community catalog listings, newest approval first. It needs no extra permission and returns an empty array if the account has no linked GitHub user or listings. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17928
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-21",
-      "emoji": "🤖",
-      "title": "Polli keeps its receipts",
-      "text": "In Discord, Polli can use recent successful tool lookups when answering follow-up questions from the same person in a thread. It makes a fresh lookup before contradicting an earlier tool-supported claim.",
-      "prs": [
-        16906
       ],
       "kind": "product"
     }

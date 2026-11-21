@@ -53,8 +53,8 @@ import {
 } from "./models/prunaModel.ts";
 import { callArrowSVGAPI } from "./models/quiverSvgModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
-import { callRecraftV4VectorFalAPI } from "./models/recraftV4VectorFalModel.ts";
 import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
+import { callRecraftV4VectorFalAPI } from "./models/recraftV4VectorFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {

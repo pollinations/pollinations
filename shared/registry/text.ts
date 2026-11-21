@@ -2980,10 +2980,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
-            promptTextTokens: perMillion(0.035),
-            promptCachedTokens: perMillion(0.0015),
-            completionTextTokens: perMillion(0.1405),
+            // Vercel AI Gateway standard rates after the introductory discount.
+            promptTextTokens: perMillion(0.07),
+            promptCachedTokens: perMillion(0.003),
+            completionTextTokens: perMillion(0.281),
         },
         title: "Hy4 Flash",
         description:

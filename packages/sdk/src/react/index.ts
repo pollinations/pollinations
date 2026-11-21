@@ -6,6 +6,11 @@ export type {
     AuthStateValue,
 } from "./contexts.js";
 export {
+    type UseRealtimeOptions,
+    type UseRealtimeValue,
+    useRealtime,
+} from "./realtime.js";
+export {
     type AccountResourceValue,
     type GenerationValue,
     type UseAccountBalanceValue,

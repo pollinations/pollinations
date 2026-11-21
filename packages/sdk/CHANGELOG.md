@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-21
+
+### Added
+
+- `connectRealtime()`, `realtimeUrl()`, and the `pcm16ToBase64()` / `base64ToPcm16()` helpers for OpenAI-compatible Realtime voice sessions.
+- `useRealtime()` React hook for sessions bound to the signed-in account.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

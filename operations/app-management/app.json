@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "polli-bridge",
+    "url": "https://aibridge.bot.nu",
+    "description": "One OpenAI-compatible /v1 endpoint in front of Pollinations: text, images, speech, transcription, video. Self-hosted or try the live demo, one key per caller, MIT.",
+    "language": "en",
+    "category": "build",
+    "platform": "api",
+    "githubUsername": "BalTac",
+    "githubUserId": "1799208",
+    "repositoryUrl": "https://github.com/BalTac/polli-bridge",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-20",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/20408",
+    "approvedDate": "2026-11-21",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/6ee27db3-1ec4-4d76-b9c0-c5b63385a129"
+  },
+  {
     "emoji": "🎮",
     "name": "Decision Arena — Grid Rush",
     "url": "https://decisionarena.edgeone.cool",

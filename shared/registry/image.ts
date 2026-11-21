@@ -2000,7 +2000,8 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: { completionImageTokens: 0.08 },
         title: "Recraft V4 Vector",
-        description: "Prompt-faithful SVG vectors for clear multi-element layouts and consistent brand systems.",
+        description:
+            "Prompt-faithful SVG vectors for clear multi-element layouts and consistent brand systems.",
         inputModalities: ["text"],
         outputModalities: ["image"],
         maxReferenceImages: 0,

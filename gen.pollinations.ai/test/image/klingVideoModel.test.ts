@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import { callKlingVideoAPI } from "../../src/image/models/klingVideoModel.ts";
+import { callLtxVideo } from "../../src/image/models/ltxVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const TEXT_ENDPOINT =
@@ -127,6 +128,86 @@ describe("callKlingVideoAPI", () => {
             usage: { completionVideoSeconds: 3 },
         });
     });
+
+    it.each([
+        [
+            "kwaivgi/kling-v3.0-pro:azure",
+            "Fal-Kling-V3-Pro",
+            "kling/v3/pro",
+            "image-to-video",
+        ],
+        [
+            "lightricks/ltx-2.5-pro:azure",
+            "Fal-LTX-2.5-Pro",
+            "lightricks/ltx-2.5",
+            "image-to-video/pro",
+        ],
+    ] as const)(
+        "submits and retrieves the Azure queue for %s",
+        async (model, deployment, queue, operation) => {
+            syncImageEnv(
+                {
+                    AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "test-key",
+                } as CloudflareBindings,
+                ["AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY"],
+            );
+            const origin =
+                "https://myceli-prod-img-2-eastus2.services.ai.azure.com";
+            const base = `${origin}/providers/falai/v1/${queue}`;
+            const kling = model === "kwaivgi/kling-v3.0-pro:azure";
+            const output = kling ? VIDEO_URL : `${origin}/file/test.mp4`;
+            const inference = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(Response.json({ request_id: "test" }))
+                .mockResolvedValueOnce(Response.json({ status: "COMPLETED" }))
+                .mockResolvedValueOnce(
+                    Response.json({ video: { url: output } }),
+                )
+                .mockResolvedValueOnce(new Response(VIDEO_BYTES));
+            const frames = [
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ];
+            const params = {
+                ...baseParams,
+                model,
+                image: frames,
+                audio: true,
+                duration: 3,
+            };
+            const result = kling
+                ? await callKlingVideoAPI("animate both frames", params, model)
+                : await callLtxVideo("animate both frames", params);
+            const calls = inference.mock.calls;
+            expect(calls.map(([url]) => url)).toEqual([
+                `${base}/${operation}`,
+                `${base}/requests/test/status`,
+                `${base}/requests/test`,
+                output,
+            ]);
+            expect(JSON.parse(calls[0][1]?.body as string)).toMatchObject({
+                model: deployment,
+                generate_audio: true,
+                [kling ? "start_image_url" : "image_url"]: frames[0],
+                end_image_url: frames[1],
+            });
+            for (const [url, init] of calls) {
+                if (new URL(String(url)).origin === origin) {
+                    expect(init?.redirect).toBe("manual");
+                    expect(new Headers(init?.headers).get("api-key")).toBe(
+                        "test-key",
+                    );
+                } else
+                    expect(new Headers(init?.headers).has("api-key")).toBe(
+                        false,
+                    );
+            }
+            expect(result.trackingData?.usage).toEqual({
+                completionVideoSeconds: 3,
+                ...(kling ? { completionAudioSeconds: 3 } : {}),
+            });
+        },
+    );
 
     it("honors explicit aspectRatio when dimensions default to square", async () => {
         const requests: ProviderRequest[] = [];

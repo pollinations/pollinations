@@ -39,13 +39,13 @@ export type CreateApiKey = {
     keyType?: "publishable" | "secret";
     /** Model IDs this key can access. null = all models allowed */
     allowedModels?: string[] | null;
-    /** Pollen budget cap for this key. null = unlimited */
+    /** Budget cap in USD for this key. null = unlimited */
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
     /** Account permissions: ["profile", "usage", "keys", "machines"]. null = no permissions */
     accountPermissions?: string[] | null;
-    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    /** Never spend paid balance; requests stop when Quest balance runs out */
     questPollenOnly?: boolean;
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];

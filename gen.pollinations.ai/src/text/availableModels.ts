@@ -103,6 +103,26 @@ const omitOpenAISampling = omitParameters(
 );
 const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
+const glyphReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    return {
+        messages,
+        options: {
+            ...rest,
+            ...(reasoning_effort === undefined
+                ? {}
+                : {
+                      reasoning: {
+                          ...(rest.reasoning as
+                              | Record<string, unknown>
+                              | undefined),
+                          effort: reasoning_effort,
+                      },
+                  }),
+        },
+    };
+};
+
 interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
@@ -949,6 +969,44 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-hydrogen",
+        config: portkeyConfig["google/gemini-4-hydrogen"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen:openrouter:vertex-global",
+        config: portkeyConfig[
+            "google/gemini-4-hydrogen:openrouter:vertex-global"
+        ],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon",
+        config: portkeyConfig["google/gemini-4-neon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon:openrouter:vertex-global",
+        config: portkeyConfig["google/gemini-4-neon:openrouter:vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-argon",
         config: portkeyConfig["google/gemini-4-argon"],
         transform: pipe(
@@ -1084,25 +1142,12 @@ const models: ModelDefinition[] = [
     {
         name: "stealth/glyph-cluster",
         config: portkeyConfig["stealth/glyph-cluster"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(reasoning_effort === undefined
-                        ? {}
-                        : {
-                              reasoning: {
-                                  ...(rest.reasoning as
-                                      | Record<string, unknown>
-                                      | undefined),
-                                  effort: reasoning_effort,
-                              },
-                          }),
-                },
-            };
-        },
+        transform: glyphReasoning,
+    },
+    {
+        name: "stealth/glyph-cluster:kilo",
+        config: portkeyConfig["stealth/glyph-cluster:kilo"],
+        transform: glyphReasoning,
     },
     {
         name: "liquid/d1",
@@ -1165,6 +1210,16 @@ const models: ModelDefinition[] = [
     {
         name: "microsoft/microsoft-decision-1:openrouter",
         config: portkeyConfig["microsoft/microsoft-decision-1:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "google/gemini-decision-1",
+        config: portkeyConfig["google/gemini-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "google/gemini-decision-1:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-decision-1:openrouter:ai-studio"],
         useSystemOneApi: true,
     },
     {
@@ -1449,6 +1504,14 @@ const models: ModelDefinition[] = [
         name: "meta/muse-glimmer-30b:openrouter:together",
         config: portkeyConfig["muse-glimmer-openrouter-together"],
         transform: mandatoryReasoning,
+    },
+    {
+        name: "meta/muse-ember",
+        config: portkeyConfig["meta/muse-ember"],
+    },
+    {
+        name: "meta/muse-ember:openrouter",
+        config: portkeyConfig["meta/muse-ember:openrouter"],
     },
     {
         name: "meta/muse-spark-1.2",

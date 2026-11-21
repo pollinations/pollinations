@@ -1526,7 +1526,7 @@ export const accountRoutes = new Hono<Env>()
                 // Same helper the billing path uses, so a bucket that has gone
                 // negative is clamped here exactly as it is when spending is
                 // authorized — a raw tier + pack sum would under-report the
-                // Pollen the account can actually spend.
+                // Balance the account can actually spend.
                 const balances = await getFundedUserBalance(
                     drizzle(c.env.DB),
                     c.env.DB,

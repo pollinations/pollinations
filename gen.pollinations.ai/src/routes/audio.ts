@@ -4,6 +4,7 @@ import {
     ensureUpstreamOk,
     UpstreamError,
 } from "@shared/error.ts";
+import { pcmToWav } from "@shared/pcm-to-wav.ts";
 import {
     AUDIO_SERVICES,
     AUDIO_VOICES,
@@ -190,6 +191,11 @@ export const CreateSpeechRequestSchema = z
             description:
                 "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
             example: 1.25,
+        }),
+        stream_format: z.enum(["audio"]).optional().meta({
+            description:
+                'Only "audio" is supported. OpenAI\'s "sse" speech events are not implemented, and the response is always an audio file.',
+            example: "audio",
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -2327,6 +2333,8 @@ async function parseSpeechRequest(
             input: typeof input === "string" ? input : "",
             safe: (formData.get("safe") as string | undefined) || undefined,
             voice: (formData.get("voice") as string | null) || "alloy",
+            stream_format:
+                (formData.get("stream_format") as "audio" | null) ?? undefined,
             response_format:
                 (formData.get("response_format") as
                     | "wav"
@@ -2916,33 +2924,6 @@ export async function generateGeminiSpeech(opts: {
             "x-tts-voice": voice,
         },
     });
-}
-
-function pcmToWav(
-    pcm: Uint8Array,
-    sampleRate: number,
-): Uint8Array<ArrayBuffer> {
-    const wav = new Uint8Array(44 + pcm.byteLength);
-    const view = new DataView(wav.buffer);
-    const writeAscii = (offset: number, value: string) => {
-        for (let i = 0; i < value.length; i++) {
-            wav[offset + i] = value.charCodeAt(i);
-        }
-    };
-    writeAscii(0, "RIFF");
-    view.setUint32(4, 36 + pcm.byteLength, true);
-    writeAscii(8, "WAVEfmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeAscii(36, "data");
-    view.setUint32(40, pcm.byteLength, true);
-    wav.set(pcm, 44);
-    return wav;
 }
 
 // Speech responses carry audio only. The generation record becomes available

@@ -1,4 +1,5 @@
 import { Button, ClockIcon, TerminalIcon, WalletIcon } from "@pollinations/ui";
+import { OrganizationIcon } from "@pollinations/ui/gen";
 import {
     SANDBOX_PROVIDERS,
     SANDBOX_TEMPLATES,
@@ -16,36 +17,15 @@ const shares = Object.values(SANDBOX_PROVIDERS).map(({ share }) => share);
 // The launch promo's discount, from the provider that discounts least.
 export const LAUNCH_DISCOUNT = Math.round((1 - Math.max(...shares)) * 100);
 
-// Brand logos from /brand-logos, drawn in the text colour as on the Models
-// list. E2B's is the "E" mark from its own dashboard (Apache-2.0).
-const PROVIDER_LOGOS: Record<SandboxProvider, string> = {
-    e2b: "/brand-logos/e2b.svg",
-    azure: "/brand-logos/microsoft.svg",
-};
-
-const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => {
-    const logo = PROVIDER_LOGOS[provider];
-    const className = "h-full w-full shrink-0 text-ink-900 opacity-55";
-    return (
-        <span title={SANDBOX_PROVIDERS[provider].name} className="flex">
-            <span className="sr-only">{SANDBOX_PROVIDERS[provider].name}</span>
-            <span
-                aria-hidden="true"
-                className={`${className} bg-current`}
-                style={{
-                    maskImage: `url(${logo})`,
-                    WebkitMaskImage: `url(${logo})`,
-                    maskRepeat: "no-repeat",
-                    WebkitMaskRepeat: "no-repeat",
-                    maskPosition: "center",
-                    WebkitMaskPosition: "center",
-                    maskSize: "contain",
-                    WebkitMaskSize: "contain",
-                }}
-            />
-        </span>
-    );
-};
+const ProviderLogo: FC<{ provider: SandboxProvider }> = ({ provider }) => (
+    <span title={SANDBOX_PROVIDERS[provider].name} className="flex">
+        <span className="sr-only">{SANDBOX_PROVIDERS[provider].name}</span>
+        <OrganizationIcon
+            name={SANDBOX_PROVIDERS[provider].name}
+            className="h-full w-full shrink-0 text-ink-900 opacity-55"
+        />
+    </span>
+);
 
 // A size as three figures: cores, memory and, when known, disk.
 const SizeStats: FC<{

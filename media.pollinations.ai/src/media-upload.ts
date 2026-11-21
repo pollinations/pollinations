@@ -1,7 +1,9 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import {
     DEFAULT_R2_TTL_REFRESH_AGE_MS,
+    putGenerationResult,
     refreshR2ObjectTtl,
 } from "@shared/r2-storage.ts";
 
@@ -150,7 +152,7 @@ export async function readMedia(
     if (method === "GET" && rangeHeader) {
         const meta = await env.MEDIA_BUCKET.head(id);
         if (!meta) return null;
-        const headers = mediaHeaders(meta, id);
+        const headers = await mediaHeaders(env.MEDIA_BUCKET, meta, id);
         const range = requestedByteRange(rangeHeader, meta.size);
         if (range === "unsatisfiable") {
             headers.set("Content-Range", `bytes */${meta.size}`);
@@ -184,7 +186,7 @@ export async function readMedia(
         : env.MEDIA_BUCKET.get(id));
     if (!object) return null;
 
-    const headers = mediaHeaders(object, id);
+    const headers = await mediaHeaders(env.MEDIA_BUCKET, object, id);
     if (!("body" in object)) {
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });
@@ -231,9 +233,42 @@ function requestedByteRange(
     return { offset: start, length: Math.min(end, size - 1) - start + 1 };
 }
 
-function mediaHeaders(object: R2Object, id: string): Headers {
+export async function storedMediaContentType(
+    bucket: R2Bucket,
+    object: R2Object,
+): Promise<string> {
     const contentType =
         object.httpMetadata?.contentType || "application/octet-stream";
+    if (
+        contentType === "image/png" &&
+        object.customMetadata?.keyType === "generation" &&
+        object.customMetadata["header_x-model-used"] ===
+            "openai/gpt-image-2.6-sunburst:fal"
+    ) {
+        // Older Sunburst fallback entries kept the upstream PNG label after
+        // Gen converted the bytes to JPEG. Genuine cached PNGs share that label.
+        const prefix = await bucket.get(object.key, {
+            range: { offset: 0, length: 3 },
+            onlyIf: { etagMatches: object.etag },
+        });
+        if (
+            prefix &&
+            "body" in prefix &&
+            detectImageMimeType(new Uint8Array(await prefix.arrayBuffer())) ===
+                "image/jpeg"
+        ) {
+            return "image/jpeg";
+        }
+    }
+    return contentType;
+}
+
+async function mediaHeaders(
+    bucket: R2Bucket,
+    object: R2Object,
+    id: string,
+): Promise<Headers> {
+    const contentType = await storedMediaContentType(bucket, object);
     const disposition = opensInline(contentType) ? "inline" : "attachment";
     const originalName = object.customMetadata?.originalName;
     const headers = new Headers({
@@ -252,6 +287,18 @@ function mediaHeaders(object: R2Object, id: string): Headers {
     // put() below writes header_* metadata; uploads never do.
     for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
         if (key.startsWith("header_")) headers.set(key.slice(7), value);
+    }
+    if (
+        object.httpMetadata?.contentType === "image/png" &&
+        contentType === "image/jpeg"
+    ) {
+        const filename = headers.get("Content-Disposition");
+        if (filename) {
+            headers.set(
+                "Content-Disposition",
+                filename.replace(/\.png"$/, '.jpeg"'),
+            );
+        }
     }
     // Set last: no stored header may let a file run script.
     headers.set("X-Content-Type-Options", "nosniff");
@@ -304,7 +351,11 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
     }
 
     /** Trusted generation write; the caller selects headers safe for public replay. */
-    async put(id: string, response: Response): Promise<void> {
+    async put(
+        id: string,
+        response: Response,
+        requestId?: string,
+    ): Promise<void> {
         if (!/^[a-f0-9]{64}$/.test(id))
             throw new Error("Invalid generation ID");
         const body = await response.arrayBuffer();
@@ -319,14 +370,21 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
                 metadata[`header_${name}`] = value;
             }
         }
-        await this.env.MEDIA_BUCKET.put(id, body, {
-            httpMetadata: {
-                contentType:
-                    response.headers.get("content-type") ||
-                    "application/octet-stream",
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
+        await putGenerationResult(
+            this.env.MEDIA_BUCKET,
+            id,
+            body,
+            {
+                httpMetadata: {
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: metadata,
             },
-            customMetadata: metadata,
-        });
+            "MEDIA_BUCKET",
+            requestId,
+        );
     }
 }

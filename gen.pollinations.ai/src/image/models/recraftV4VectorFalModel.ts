@@ -29,13 +29,15 @@ export async function callRecraftV4VectorFalAPI(
     // fal's text-to-vector route has no image-edit input.
     if (params.image.length > 0) {
         throw UpstreamError.fromProvider(400, {
-            message: "Recraft V4 fal text-to-vector does not accept reference images",
+            message:
+                "Recraft V4 fal text-to-vector does not accept reference images",
         });
     }
     const requested = params.aspectRatio;
-    const ratio = requested && requested !== "adaptive"
-        ? requested
-        : closestRatioLogSpace(params.width, params.height, RATIOS);
+    const ratio =
+        requested && requested !== "adaptive"
+            ? requested
+            : closestRatioLogSpace(params.width, params.height, RATIOS);
     const size = SIZES[ratio];
     if (!size) {
         throw UpstreamError.fromProvider(400, {

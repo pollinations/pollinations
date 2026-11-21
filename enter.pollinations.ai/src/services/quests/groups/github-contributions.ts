@@ -20,14 +20,13 @@ import {
  * is no local GitHub mirror and no materialized quest table.
  *
  * Amounts come only from reward-N labels, which only maintainers can add. A PR
- * merged into main earns its own label, else the bounty of the POLLEN-QUEST
+ * merged into main earns its own label, else the bounty of the community quest
  * issue it closes, else 5. Every issue a merged PR closes earns its author 2,
  * also when they fixed it themselves.
  * Both are read from the quest issue: app submissions earn the quest's label,
  * else 5, and quest PRs merged before REWARDS_START earn the quest's label.
  */
 
-const QUEST_LABEL = "POLLEN-QUEST";
 const PR_REWARD = 5;
 const ISSUE_REPORT_REWARD = 2;
 // PRs merged before this earn the old one-time first-PR reward instead. Same
@@ -54,7 +53,7 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 // The GitHub App's GraphQL budget is 5,000 points an hour, and listing the
-// POLLEN-QUEST issues costs about 10. The catalog and every user's quest check
+// quest issues takes several queries. The catalog and every user's quest check
 // share one copy, fetched at most once per window. When GitHub fails (e.g. rate
 // limited), the last copy keeps serving and the next fetch waits a window.
 // ponytail: refreshes are not coordinated, so a burst or another location can
@@ -101,7 +100,7 @@ export const MIN_POLLEN_BOUGHT = 2;
 const mergedPrQuest: QuestDefinition = {
     id: "merged_pr",
     title: "Contribute a pull request",
-    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A reward label on the PR, or on the quest it closes, sets another amount. [Connect GitHub](/account) so we can match your pull requests.`,
+    description: `Each pull request of yours merged into the Pollinations [repository](https://github.com/${REPO}) earns $${PR_REWARD}. A label on the PR, or on the quest it closes, can set another amount. [Connect GitHub](/account) so we can match your pull requests.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     // Each merged PR is its own reward (github:merged_pr:N), kept on this card.
@@ -153,7 +152,7 @@ const honeyCensusQuest: QuestDefinition = {
     state: "completed",
 };
 
-// A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
+// A quest-shaped projection of one community quest issue, computed from GitHub.
 type DerivedQuestIssue = {
     issueNumber: number;
     title: string;
@@ -253,31 +252,33 @@ type SearchData<TNode> = {
     };
 };
 
-type PaginatedSearchData<TNode> = {
-    search: SearchData<TNode>["search"] & {
-        pageInfo: { hasNextPage: boolean; endCursor: string | null };
-    };
+type Page<T> = {
+    nodes: T[];
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
 };
 
-// Multi-winner quests can keep pending submissions open alongside merged ones.
+// Read label membership directly: GitHub search can lag behind a label rename.
+// Include closed issues because their merged PRs can still be claimed.
 const QUEST_ISSUES_QUERY = `
-query($query:String!,$after:String){
-  search(query:$query,type:ISSUE,first:100,after:$after){
-    pageInfo{ hasNextPage endCursor }
-    nodes{
-      ... on Issue{
-        number state title url body
-        labels(first:100){ nodes{ name } }
-        assignees(first:1){ nodes{ databaseId } }
-        closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt headRefName baseRefName repository{ nameWithOwner } author{ __typename login ... on User{ databaseId } } }
+query QuestIssues($after:String){
+  repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
+    label(name:"QUEST"){
+      issues(first:100,after:$after,orderBy:{field:CREATED_AT,direction:DESC}){
+        pageInfo{ hasNextPage endCursor }
+        nodes{
+          number state title url body
+          labels(first:100){ nodes{ name } }
+          assignees(first:1){ nodes{ databaseId } }
+          closedByPullRequestsReferences(first:100){
+            nodes{ number mergedAt headRefName baseRefName repository{ nameWithOwner } author{ __typename login ... on User{ databaseId } } }
+          }
         }
       }
     }
   }
 }`;
 
-// Asked only for app-publish PRs: adding commit authors to the issue search
+// Asked only for app-publish PRs: adding commit authors to the issue query
 // multiplies its rate-limit cost about 200 times. One aliased query covers
 // every app-publish PR for one point; a query per PR cost a point each.
 function commitAuthorsQuery(numbers: number[]): string {
@@ -387,10 +388,6 @@ function truncate(text: string, maxLength: number): string {
     return `${text.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function hasQuestLabel(labels: { name: string }[]): boolean {
-    return labels.some((label) => label.name === QUEST_LABEL);
-}
-
 // PRs merged into this repository's main branch; a fork's PR can close an issue too.
 function mergedClosers(issue: GitHubIssueNode) {
     return issue.closedByPullRequestsReferences.nodes.filter(
@@ -467,39 +464,49 @@ function toDerivedQuestIssue(
     };
 }
 
-// Every page of a GitHub search.
-async function searchAll<TNode>(
-    token: string,
-    query: string,
-    search: string,
-): Promise<TNode[]> {
-    const nodes: TNode[] = [];
+async function allPages<T>(
+    fetchPage: (after: string | null) => Promise<Page<T>>,
+): Promise<T[]> {
+    const nodes: T[] = [];
     let after: string | null = null;
     do {
-        const data: PaginatedSearchData<TNode> = await graphql<
-            PaginatedSearchData<TNode>
-        >(token, query, { query: search, after });
-        nodes.push(...data.search.nodes);
-        after = data.search.pageInfo.hasNextPage
-            ? data.search.pageInfo.endCursor
-            : null;
+        const page = await fetchPage(after);
+        nodes.push(...page.nodes);
+        after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
     } while (after);
     return nodes;
 }
 
+function searchAll<T>(
+    token: string,
+    query: string,
+    search: string,
+): Promise<T[]> {
+    return allPages<T>(async (after) => {
+        const data = await graphql<{ search: Page<T> }>(token, query, {
+            query: search,
+            after,
+        });
+        return data.search;
+    });
+}
+
 async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
-    const issues = await searchAll<GitHubIssueNode>(
-        token,
-        QUEST_ISSUES_QUERY,
-        `repo:${REPO} label:${QUEST_LABEL} is:issue`,
-    );
+    const issues = await allPages<GitHubIssueNode>(async (after) => {
+        const data = await graphql<{
+            repository: {
+                label: { issues: Page<GitHubIssueNode> } | null;
+            } | null;
+        }>(token, QUEST_ISSUES_QUERY, { after });
+        if (!data.repository?.label)
+            throw new Error("GitHub QUEST label unavailable");
+        return data.repository.label.issues;
+    });
 
     // Quests without a reward label stay too: their PRs then keep the quest's
     // reward id, so a label added after a payout can't pay a second time.
     const filteredIssues = issues.filter(
-        (issue) =>
-            hasQuestLabel(issue.labels.nodes) &&
-            (issue.state === "OPEN" || mergedClosers(issue).length > 0),
+        (issue) => issue.state === "OPEN" || mergedClosers(issue).length > 0,
     );
     const appPublishPrs = new Set(
         filteredIssues
@@ -552,7 +559,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
         title: issue.title.replace(QUEST_TAG, "").trim(),
-        description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
+        description: `Help close this community quest. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "perUser",
         rewardAmount: issue.rewardAmount || PR_REWARD,

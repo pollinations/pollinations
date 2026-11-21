@@ -7,17 +7,17 @@ export function PollenSpendChart({ weeks }) {
     const [selected, setSelected] = useState("top");
     return (
         <LineChart
-            title="Pollen spent by category"
+            title="Spend by category"
             data={weeks}
             series={pollenSpendSeries(weeks, selected)}
             format="currency"
             action={
                 <div className="flex flex-wrap items-center gap-3">
                     <Text tone="muted" size="xs">
-                        Completed UTC weeks · Paid + Quest Pollen (USD)
+                        Completed UTC weeks · Paid and Quest balances (USD)
                     </Text>
                     <select
-                        aria-label="Pollen spend category"
+                        aria-label="Spend category"
                         value={selected}
                         onChange={(event) => setSelected(event.target.value)}
                         className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 font-medium text-sm text-theme-text-strong hover:bg-theme-bg-hover"

@@ -1,5 +1,47 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollinations Image Studio",
+    "url": "https://palmunix.github.io/pollinations-image-studio",
+    "description": "Gere imagens com IA direto no navegador usando o seu próprio saldo Pollinations. Escolha modelo e proporção, conecte sua conta e crie imagens sem precisar colar chaves.",
+    "language": "pt",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "palmunix",
+    "githubUserId": "98686547",
+    "repositoryUrl": "https://github.com/palmunix/pollinations-image-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/20427",
+    "approvedDate": "2026-11-21",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3db4959c-363d-44b2-b093-b8dfde8cc875"
+  },
+  {
+    "emoji": "🛠️",
+    "name": "polli-bridge",
+    "url": "https://aibridge.bot.nu",
+    "description": "One OpenAI-compatible /v1 endpoint in front of Pollinations: text, images, speech, transcription, video. Self-hosted or try the live demo, one key per caller, MIT.",
+    "language": "en",
+    "category": "build",
+    "platform": "api",
+    "githubUsername": "BalTac",
+    "githubUserId": "1799208",
+    "repositoryUrl": "https://github.com/BalTac/polli-bridge",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-11-20",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/20408",
+    "approvedDate": "2026-11-21",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/6ee27db3-1ec4-4d76-b9c0-c5b63385a129"
+  },
+  {
     "emoji": "🎮",
     "name": "Decision Arena — Grid Rush",
     "url": "https://decisionarena.edgeone.cool",
@@ -17,7 +59,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19808",
     "approvedDate": "2026-11-17",
     "byop": false,
-    "requests24h": 311,
+    "requests24h": 349,
     "screenshotUrl": "https://media.pollinations.ai/ca1fe510-eaac-4859-b55d-2cfbb7022ebc"
   },
   {
@@ -38,14 +80,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19628",
     "approvedDate": "2026-11-17",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/7c3835a5-a58f-4992-83e4-4c197c64d635"
   },
   {
     "emoji": "🎮",
     "name": "Schelling Table",
     "url": "https://tomdacatto.github.io/pollinations-schelling-table",
-    "description": "A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or seat Pollinations models with your own Pollen.",
+    "description": "A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or use your balance to seat Pollinations models.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -59,14 +101,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19603",
     "approvedDate": "2026-11-17",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/afcf4a5f-70e2-4622-9b4b-b712f371a8a8"
   },
   {
     "emoji": "📚",
     "name": "Where It Slips",
     "url": "https://tomdacatto.github.io/pollinations-where-it-slips",
-    "description": "A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay with your own Pollen.",
+    "description": "A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay from your own balance.",
     "language": "en",
     "category": "learn",
     "platform": "web",
@@ -87,7 +129,7 @@
     "emoji": "🎮",
     "name": "Idle Hands",
     "url": "https://tomdacatto.github.io/pollinations-idle-hands",
-    "description": "Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay with your own Pollen.",
+    "description": "Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay from your own balance.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -101,7 +143,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19601",
     "approvedDate": "2026-11-17",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 40,
     "screenshotUrl": "https://media.pollinations.ai/72993a0a-e068-407c-b2ef-714f84818feb"
   },
   {
@@ -122,7 +164,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19618",
     "approvedDate": "2026-11-17",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/62baacc0-7478-43c1-82ef-f5f7513746b6"
   },
   {
@@ -143,14 +185,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19625",
     "approvedDate": "2026-11-17",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/3d6d7b8b-21fe-4f16-9edb-5b369298edd8"
   },
   {
     "emoji": "📚",
     "name": "Science Explainer",
     "url": "https://mhmdrizki803-boop.github.io/science-explainer",
-    "description": "Name a science topic and a Pollinations model writes rival explanations, each with a prediction. You run observations and the explanations that fail are falsified. BYOP, you pay your own Pollen.",
+    "description": "Name a science topic and a Pollinations model writes rival explanations, each with a prediction. You run observations and the explanations that fail are falsified. Pay from your own balance.",
     "language": "en",
     "category": "learn",
     "platform": "web",
@@ -164,7 +206,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19877",
     "approvedDate": "2026-11-17",
     "byop": false,
-    "requests24h": 419,
+    "requests24h": 48,
     "screenshotUrl": "https://media.pollinations.ai/e30d4e06-e577-4540-a6e9-3f675d5d657f"
   },
   {
@@ -185,7 +227,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19933",
     "approvedDate": "2026-11-17",
     "byop": true,
-    "requests24h": 10,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/735557a8-1106-4fd0-bfde-c7682fa993df"
   },
   {
@@ -213,7 +255,7 @@
     "emoji": "🎮",
     "name": "Snackbot",
     "url": "https://snackbot.pollinations.app",
-    "description": "A vending machine whose brain is a language model: it holds the stock, the credit and the change, and decides what each button press does. BYOP, you pay your own Pollen.",
+    "description": "A vending machine whose brain is a language model: it holds the stock, the credit and the change, and decides what each button press does. Pay from your own balance.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -227,7 +269,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19190",
     "approvedDate": "2026-11-16",
     "byop": true,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/159e5c08-b663-4eb3-946d-3758ac81197a"
   },
   {
@@ -318,7 +360,7 @@
     "emoji": "📚",
     "name": "Plot a Law",
     "url": "https://tomdacatto.github.io/pollinations-plot-a-law",
-    "description": "A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid with your own Pollen.",
+    "description": "A model describes a science law as data, not code. The page plots it with sliders, then checks the model's own three worked examples against its equations. Paid from your own balance.",
     "language": "en",
     "category": "learn",
     "platform": "web",
@@ -353,7 +395,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19740",
     "approvedDate": "2026-11-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 110,
     "screenshotUrl": "https://media.pollinations.ai/b67f1475-8880-4cfa-b2d7-b1af42357735"
   },
   {
@@ -381,7 +423,7 @@
     "emoji": "🎬",
     "name": "夜市對話 Night Market Talk",
     "url": "https://night-market-talk.pollinations.app",
-    "description": "Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay with their own Pollen.",
+    "description": "Two AI models play a vendor and a customer at a Taiwan night-market stall, in Taiwanese Mandarin with pinyin, English and voices. Users pay from their own balance.",
     "language": "en",
     "category": "video_audio",
     "platform": "web",
@@ -395,7 +437,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19737",
     "approvedDate": "2026-11-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 110,
     "screenshotUrl": "https://media.pollinations.ai/e57b9716-d166-42b9-81e7-82b60a8ffe22"
   },
   {
@@ -416,14 +458,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19612",
     "approvedDate": "2026-11-16",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/ead230d9-e48a-4904-8c9b-5b2bfdde1ed7"
   },
   {
     "emoji": "🎮",
     "name": "Dilemma Arena",
     "url": "https://tomdacatto.github.io/pollinations-dilemma-arena",
-    "description": "Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay with your own Pollen when you sign in.",
+    "description": "Decision models and text models play the iterated prisoner's dilemma against each other and classic strategies, scored in code. Jev, D3 and more. You pay from your own balance when you sign in.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -444,7 +486,7 @@
     "emoji": "💼",
     "name": "Receipts Tower",
     "url": "https://patbing.github.io/receipts-tower",
-    "description": "A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and Pollen spent. Replay recorded runs or sign in to run your own.",
+    "description": "A 3D tower of tiny AI-run companies. Each floor runs a job through three Pollinations agents, then shows a receipt of tokens and spending in dollars. Replay recorded runs or sign in to run your own.",
     "language": "en",
     "category": "business",
     "platform": "web",
@@ -458,7 +500,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19001",
     "approvedDate": "2026-11-16",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/855b1f4c-4694-4d0c-bd74-08237d86fd18"
   },
   {
@@ -479,7 +521,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19510",
     "approvedDate": "2026-11-16",
     "byop": true,
-    "requests24h": 2,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/e4e13721-8898-4c6d-974a-64b484f51b3e"
   },
   {
@@ -500,7 +542,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19816",
     "approvedDate": "2026-11-16",
     "byop": true,
-    "requests24h": 26,
+    "requests24h": 681,
     "screenshotUrl": "https://media.pollinations.ai/48e6a607-608a-4849-be96-900f20a4714e"
   },
   {
@@ -528,7 +570,7 @@
     "emoji": "🖼️",
     "name": "Pollen Canvas",
     "url": "https://wbapp-yw6lkbnwmqcwczvqnkfiww.app.workbuddy.host/?sharecode=NG2ZG3ZWFD",
-    "description": "Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, bring your own Pollen key, then generate and download artwork live in the browser.",
+    "description": "Turn a text prompt into an image with the Pollinations image API. Pick a style, set a seed, use your own API key, then generate and download artwork live in the browser.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -542,14 +584,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19652",
     "approvedDate": "2026-11-14",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/3f2192c5-2d7f-43fc-88c1-fb693ef1d7ba"
   },
   {
     "emoji": "✍️",
     "name": "Voiceprint",
     "url": "https://llm-voiceprint.jm716111.chatgpt.site",
-    "description": "Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a zero-Pollen local scan.",
+    "description": "Map the recognizable LLM voice in any passage, inspect six concrete style markers, and rewrite it with a more specific human cadence using Pollinations. Includes a free local scan.",
     "language": "en",
     "category": "writing",
     "platform": "web",
@@ -563,7 +605,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19204",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 100,
     "screenshotUrl": "https://media.pollinations.ai/395f2b31-b2a6-4b5a-9439-a3e7eb005e31"
   },
   {
@@ -633,7 +675,7 @@
     "emoji": "🖼️",
     "name": "Cover Story",
     "url": "https://rekty.github.io/cover-story",
-    "description": "Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Own Pollen. No build step, tested.",
+    "description": "Hides a message in a picture's pixels with a checksum, then Pollinations writes the innocent caption for posting it and reads the note back. Pay from your own balance. No build step, tested.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -654,7 +696,7 @@
     "emoji": "📚",
     "name": "Phenomena Lab",
     "url": "https://phenomena-lab.jm716111.chatgpt.site",
-    "description": "Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Bring Your Own Pollen; includes a full offline demo.",
+    "description": "Turn any science topic into a clickable systems map, four explorable scenes and a prediction quiz. Uses GPT-5.4 Nano through Pollinations Pay; includes a full offline demo.",
     "language": "en",
     "category": "learn",
     "platform": "web",
@@ -668,7 +710,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19202",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 100,
     "screenshotUrl": "https://media.pollinations.ai/cfa4f437-d369-467a-a7ed-1eb4c4af56fd"
   },
   {
@@ -689,7 +731,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19348",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/df7879cc-d408-4075-bbe0-b05a49f5de6a"
   },
   {
@@ -710,7 +752,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19337",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/2158a451-e386-425e-b3f9-5bae1ddb0211"
   },
   {
@@ -731,14 +773,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/18973",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/66e982a7-4ec1-4885-8a49-02d3563415db"
   },
   {
     "emoji": "💬",
     "name": "Crosscheck",
     "url": "https://chappoo974.github.io/model-crosscheck",
-    "description": "Ask multiple Pollinations text models the same question. Compare their answers side by side, vote before revealing identities, and pay with your own Pollen.",
+    "description": "Ask multiple Pollinations text models the same question. Compare their answers side by side, vote before revealing identities, and pay from your own balance.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -759,14 +801,14 @@
     "emoji": "💬",
     "name": "Model Table",
     "url": "https://heisenberg22077.github.io/pollinations-model-arena",
-    "description": "Compare 13 Pollinations AI models side by side with BYOP, response timing, token metrics, Pollen cost estimates and a concurrent FLUX visual answer, in an interactive pixel garden.",
+    "description": "Compare 13 Pollinations AI models side by side with BYOP, response timing, token metrics, cost estimates in dollars and a concurrent FLUX visual answer, in an interactive pixel garden.",
     "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Heisenberg22077",
     "githubUserId": "195410802",
     "repositoryUrl": "https://github.com/Heisenberg22077/pollinations-model-arena",
-    "repositoryStars": 8,
+    "repositoryStars": 9,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-11-08",
@@ -780,7 +822,7 @@
     "emoji": "💬",
     "name": "One Question",
     "url": "https://sugamdeol.github.io/one-question",
-    "description": "Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and the reader's own Pollen pays.",
+    "description": "Ask several AI models the same question at once and read the answers side by side, scored by how far each one sits from the pack. Runs on Pollinations, and readers pay from their own balance.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -794,7 +836,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19227",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/d1dfafd0-a16e-4208-a2ee-28e9a734a9ac"
   },
   {
@@ -815,14 +857,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19235",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/e6a99693-fdc9-4063-8d3f-65bc32f93fd4"
   },
   {
     "emoji": "💬",
     "name": "The Call That Never Ends",
     "url": "https://arvex-gh.github.io/the-call-that-never-ends",
-    "description": "Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect , zero-Pollen canned demo.",
+    "description": "Two Pollinations AI agents hold a job interview where each keeps trying to wrap up but never manages to hang up. BYOP via polli-connect, free canned demo.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -843,7 +885,7 @@
     "emoji": "💬",
     "name": "Two AIs Talk",
     "url": "https://two-ais-talk.pollinations.app",
-    "description": "Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. BYOP via polli-connect, you pay your own Pollen.",
+    "description": "Pick a topic and two Pollinations agents argue it out turn by turn, each reply answering the last. Connect with polli-connect and pay from your own balance.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -857,7 +899,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19185",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 367,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/20fe8b99-926e-4c49-9880-55c6e09eb7a7"
   },
   {
@@ -878,14 +920,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19352",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/ed704175-08d3-40b2-aeb2-4bc5bb21f315"
   },
   {
     "emoji": "🎮",
     "name": "Hang Up",
     "url": "https://tomdacatto.github.io/pollinations-hang-up",
-    "description": "Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay with your own Pollen when you sign in.",
+    "description": "Put two Pollinations models on a phone call and count turns, goodbyes and who hangs up first. The experiment from the viral r/ChatGPT video. You pay from your own balance when you sign in.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -920,7 +962,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19355",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/66e32ec3-1c99-4c30-96dd-afd6e27afb58"
   },
   {
@@ -948,7 +990,7 @@
     "emoji": "🎮",
     "name": "Machine Double",
     "url": "https://patbing.github.io/machine-double",
-    "description": "An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay with your own Pollen.",
+    "description": "An AI model plays a calculator, a key-value database or a shell. The real machine runs every line beside it and marks where the imitation slips. Pay from your own balance.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -962,7 +1004,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19419",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/4031e01d-d870-43d3-b148-9f2515094cd0"
   },
   {
@@ -1004,7 +1046,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19366",
     "approvedDate": "2026-11-12",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/941c4b32-7fec-4d51-ab04-cd77d48c7518"
   },
   {
@@ -1025,14 +1067,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19513",
     "approvedDate": "2026-11-12",
     "byop": true,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/82f51822-09bc-4b74-8eff-75cfba2e59a7"
   },
   {
     "emoji": "💼",
     "name": "Pollen Tower",
     "url": "https://tomdacatto.github.io/pollinations-pollen-tower",
-    "description": "3D tower of AI-run companies, each floor a public Pollinations prompt agent. Run a company's day, rent an office with your own agent, and pay with your own Pollen when you sign in.",
+    "description": "3D tower of AI-run companies, each floor a public Pollinations prompt agent. Run a company's day, rent an office with your own agent, and pay from your own balance when you sign in.",
     "language": "en",
     "category": "business",
     "platform": "web",
@@ -1053,7 +1095,7 @@
     "emoji": "✍️",
     "name": "Stretchtext for Pollinations",
     "url": "https://tomdacatto.github.io/pollinations-stretchtext",
-    "description": "Browser extension that shrinks any page to a short version with Pollinations AI. Click a phrase to grow the original sentence back in place, word for word. Readers pay with their own Pollen.",
+    "description": "Browser extension that shrinks any page to a short version with Pollinations AI. Click a phrase to grow the original sentence back in place, word for word. Readers pay from their own balance.",
     "language": "en",
     "category": "writing",
     "platform": "browser-ext",
@@ -1074,7 +1116,7 @@
     "emoji": "✍️",
     "name": "StretchText",
     "url": "https://rekty.github.io/stretchtext",
-    "description": "Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request spends the reader's own Pollen via the device flow. No build step, live model list, tested.",
+    "description": "Any page as stretchtext: skim the short version, click a phrase to grow it in place, and each request draws from the reader’s balance via the device flow. No build step, live model list, tested.",
     "language": "en",
     "category": "writing",
     "platform": "browser-ext",
@@ -1095,7 +1137,7 @@
     "emoji": "🖼️",
     "name": "Pollinations Studio",
     "url": "https://pollinations-studio-1.vercel.app",
-    "description": "AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Bring Your Own Pollen (BYOP) authentication.",
+    "description": "AI studio using gen.pollinations.ai for batch image generation (up to 10 parallel prompts), custom model selection, and multi-model AI chat with Pollinations Pay authentication.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -1109,7 +1151,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19413",
     "approvedDate": "2026-11-10",
     "byop": true,
-    "requests24h": 3,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/2136e778-7784-4d66-b55f-c595e1482a2c"
   },
   {
@@ -1137,7 +1179,7 @@
     "emoji": "💬",
     "name": "Parallel Voices",
     "url": "https://ezzelddin-abdallah.github.io/pollinations-parallel-voices",
-    "description": "Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Bring your own Pollen.",
+    "description": "Ask one question to several Pollinations text models at once and compare every answer side by side, with latency and token counts per model. Connect your Pollinations account to pay from your balance.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -1172,7 +1214,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/18959",
     "approvedDate": "2026-11-06",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/25aeb821-14f0-429a-9b13-8c88a261d0a8"
   },
   {
@@ -1263,7 +1305,7 @@
     "emoji": "🎮",
     "name": "Prompt Brawl",
     "url": "https://lotxo1.github.io/prompt-brawl",
-    "description": "Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay with their own Pollen.",
+    "description": "Describe a fighter in one line: the AI designs it (portrait, stats, moves, a weakness) and commentates the brawl. Ladder, daily boss, voice and share links. Players pay from their own balance.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -1340,7 +1382,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17891",
     "approvedDate": "2026-11-03",
     "byop": true,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/094111a8-0513-4248-a83a-288b0571306f"
   },
   {
@@ -1368,7 +1410,7 @@
     "emoji": "🛠️",
     "name": "Pollen Bomb 💣",
     "url": "https://guest453.github.io/pollen-bomb",
-    "description": "A BYOP (Bring Your Own Pollen) \"race the fuse\" coding arena: you wind a custom fuse (5s up to 24h), arm the bomb, and a Pollinations text model streams code against it live. How it uses Pollinations:",
+    "description": "A \"race the fuse\" coding arena using Pollinations Pay: you wind a custom fuse (5s up to 24h), arm the bomb, and a Pollinations text model streams code against it live. How it uses Pollinations:",
     "language": "en",
     "category": "build",
     "platform": "web",
@@ -1403,14 +1445,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17311",
     "approvedDate": "2026-11-03",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/960a62ba-b27a-4a1e-99f6-ca151bd6abae"
   },
   {
     "emoji": "🖼️",
     "name": "Meme Forge",
     "url": "https://meme-forge.pollinations.app",
-    "description": "Type an idea, get a classic Impact-style meme: a Pollinations text model writes the captions and Flux Schnell / Z-Image Turbo paints the image. Sign in and pay with your own Pollen (BYOP).",
+    "description": "Type an idea, get a classic Impact-style meme: a Pollinations text model writes the captions and Flux Schnell / Z-Image Turbo paints the image. Sign in and pay from your own balance (BYOP).",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -1424,14 +1466,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/19061",
     "approvedDate": "2026-11-03",
     "byop": true,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/25e99b04-c55f-4df2-b7c6-5428ca7e49f1"
   },
   {
     "emoji": "🎬",
     "name": "Roast My Pic",
     "url": "https://roast-my-pic.pollinations.app",
-    "description": "Upload a pic and an AI roaster (Comedian, Grandma, Chef, Shakespeare, Sports Commentator) roasts it out loud. Get a 9:16 card + video. Pollinations vision + TTS, pay with your own Pollen.",
+    "description": "Upload a pic and an AI roaster (Comedian, Grandma, Chef, Shakespeare, Sports Commentator) roasts it out loud. Get a 9:16 card + video. Pollinations vision + TTS, pay from your own balance.",
     "language": "en",
     "category": "video_audio",
     "platform": "web",
@@ -1529,14 +1571,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15110",
     "approvedDate": "2026-10-31",
     "byop": false,
-    "requests24h": 570,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/2eb4dfbf-89ed-4955-8aac-1b6ce47b8ebf"
   },
   {
     "emoji": "🛠️",
     "name": "Websim",
     "url": "https://websim.pollinations.app",
-    "description": "Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen.",
+    "description": "Generate, preview, and download single-file HTML pages using Pollinations models and your own balance.",
     "language": "en",
     "category": "build",
     "platform": "web",
@@ -1662,7 +1704,7 @@
     "emoji": "💬",
     "name": "Radio Bloom",
     "url": "https://mrunknowne09-radio-bloom.static.hf.space",
-    "description": "Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo",
+    "description": "A voice character playground you can duplicate. Connect your Pollinations account and speak or type to three AI characters using chat, transcription, and voice models.",
     "language": "en",
     "category": "chat",
     "platform": "web",
@@ -1760,7 +1802,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17942",
     "approvedDate": "2026-10-23",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/e550c155-790b-4c03-ba90-f6e0c1e1083e"
   },
   {
@@ -1809,7 +1851,7 @@
     "emoji": "🖼️",
     "name": "Pollen Postcard",
     "url": "https://pollen-postcard.jm716111.chatgpt.site",
-    "description": "Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a 1 Pollen budge",
+    "description": "Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a $1 budget.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -1956,7 +1998,7 @@
     "emoji": "🖼️",
     "name": "Pollinations Demo",
     "url": "https://huggingface.co/spaces/spitfire4794/pollinations-demo",
-    "description": "Pollinations Postcard Starter turns one prompt into a postcard: an image, a caption, and spoken narration. Visitors sign in with their own Pollen using the device flow (approve a short code, the key s",
+    "description": "Turn one prompt into a postcard with an image, a caption, and spoken narration. Connect your Pollinations account by approving a short device code.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -1991,7 +2033,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17338",
     "approvedDate": "2026-10-17",
     "byop": false,
-    "requests24h": 225,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/52ca108a-af3c-4d21-bb5b-d4d6259e89ed"
   },
   {
@@ -2061,7 +2103,7 @@
     "emoji": "🎮",
     "name": "Trolley Match",
     "url": "https://patbing.github.io/trolley-match",
-    "description": "Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in.",
+    "description": "Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Pollinations Pay sign-in.",
     "language": "en",
     "category": "games",
     "platform": "web",
@@ -2103,7 +2145,7 @@
     "emoji": "🎮",
     "name": "PollinationsCraft",
     "url": "https://github.com/rekty/pollinations-craft/releases/tag/v1.0.0",
-    "description": "A Paper plugin that adds Pollinations to a Minecraft server, paid with the owner's own Pollen: **villager NPCs with personas** that players talk to by right-clicking or /polli say , each NPC with its ",
+    "description": "A Paper plugin that adds villager NPCs with personas to Minecraft. Players talk to them by right-clicking or using /polli say. Usage draws from the server owner's balance.",
     "language": "en",
     "category": "games",
     "platform": "desktop",
@@ -2124,7 +2166,7 @@
     "emoji": "🎮",
     "name": "PolliCraft",
     "url": "https://drjacky.github.io/PolliCraft",
-    "description": "A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the",
+    "description": "Add Pollinations to a Minecraft server on Paper, Folia, or Spigot with one jar. Set an API key in plugins/PolliCraft/config.yml to use the server owner's balance.",
     "language": "en",
     "category": "games",
     "platform": "desktop",
@@ -2138,14 +2180,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17285",
     "approvedDate": "2026-10-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 329,
     "screenshotUrl": "https://media.pollinations.ai/77cc7de5-ef85-4eea-95e1-51a929ee5801"
   },
   {
     "emoji": "🎬",
     "name": "Echo Island",
     "url": "https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space",
-    "description": "Turn a character idea into an illustrated story and voice note. Duplicate this static Hugging Face Space and sign in with your own Pollen; narration falls back when timestamped voice is unavailable.",
+    "description": "Turn a character idea into an illustrated story and voice note. Duplicate the Hugging Face Space and connect your account. Narration falls back if timestamped voice is unavailable.",
     "language": "en",
     "category": "video_audio",
     "platform": "web",
@@ -2166,7 +2208,7 @@
     "emoji": "🛠️",
     "name": "Pollinations Blocks",
     "url": "https://github.com/Saauf/pollinations-blocks",
-    "description": "Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u",
+    "description": "An Android extension for MIT App Inventor and Kodular with text, images, speech, AAC/M4A recording, transcription, and image questions. Sign in with a device code to use your balance.",
     "language": "en",
     "category": "build",
     "platform": "android",
@@ -2201,7 +2243,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17293",
     "approvedDate": "2026-10-15",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 329,
     "screenshotUrl": "https://media.pollinations.ai/627d661d-0217-43d4-93a6-c0f664042600"
   },
   {
@@ -2222,7 +2264,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17312",
     "approvedDate": "2026-10-15",
     "byop": true,
-    "requests24h": 20,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/635d72f3-f47d-490f-901b-d83c1424345f"
   },
   {
@@ -2264,7 +2306,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16899",
     "approvedDate": "2026-10-14",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/e0b59a48-7971-41e8-8739-ca297df5aa2f"
   },
   {
@@ -2341,14 +2383,14 @@
     "githubUsername": "tomdacatto",
     "githubUserId": "204561696",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-09-28",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15669",
     "approvedDate": "2026-10-12",
     "byop": false,
-    "requests24h": 225,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/13b2a571-e3a7-4043-a295-5dbe475bbc74"
   },
   {
@@ -2362,7 +2404,7 @@
     "githubUsername": "xiaotian1171",
     "githubUserId": "63298614",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-09-29",
@@ -2432,7 +2474,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17053",
     "approvedDate": "2026-10-11",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 17,
     "screenshotUrl": "https://media.pollinations.ai/c2ba362d-4f6c-45b2-884f-8965a92e4572"
   },
   {
@@ -2474,7 +2516,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17015",
     "approvedDate": "2026-10-11",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 100,
     "screenshotUrl": "https://media.pollinations.ai/d6d4c0da-3be3-437e-9970-76e2830d6f29"
   },
   {
@@ -2936,7 +2978,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16155",
     "approvedDate": "2026-10-03",
     "byop": false,
-    "requests24h": 570,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/9609f959-c5b1-4054-adfe-9ecf272686c9"
   },
   {
@@ -2978,14 +3020,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15622",
     "approvedDate": "2026-10-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 577,
     "screenshotUrl": "https://media.pollinations.ai/ce9c67c3-3225-49af-9b30-4b6c2acf67a7"
   },
   {
     "emoji": "🖼️",
     "name": "Pollinations for Krita",
     "url": "https://github.com/xiaotian1171/pollinations-krita",
-    "description": "A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th",
+    "description": "A Krita plugin that generates and edits images with Pollinations inside Krita, using the user’s balance. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -3006,7 +3048,7 @@
     "emoji": "🖼️",
     "name": "Pollinations for Figma - AI Image Studio",
     "url": "https://guest453.github.io/pollinations-figma/",
-    "description": "A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi",
+    "description": "Generate and edit images with Pollinations directly on the Figma canvas. Designers connect their Pollinations account via device sign-in and pay from their own balance.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -3020,7 +3062,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15611",
     "approvedDate": "2026-10-01",
     "byop": false,
-    "requests24h": 522,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/30b171a3-6763-43a7-95d1-099a90559e42"
   },
   {
@@ -3041,7 +3083,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15585",
     "approvedDate": "2026-09-30",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/4fcdaaac-ef62-47c5-8340-48413e1dd6ef"
   },
   {
@@ -3111,7 +3153,7 @@
     "emoji": "🖼️",
     "name": "Pollinations for Figma",
     "url": "https://github.com/xiaotian1171/pollinations-figma",
-    "description": "A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an",
+    "description": "A Figma plugin that generates and edits images with Pollinations inside the canvas, using the user’s balance. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -3132,7 +3174,7 @@
     "emoji": "✍️",
     "name": "Pollinations for Obsidian",
     "url": "https://github.com/xiaotian1171/pollinations-obsidian",
-    "description": "An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for ",
+    "description": "An Obsidian plugin that generates text and images with Pollinations inside the user's notes, using the user’s balance. **What it does** - **Text from a prompt or the selection.** The command asks for ",
     "language": "en",
     "category": "writing",
     "platform": "web",
@@ -3167,7 +3209,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15666",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 225,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/28a4cba9-aa7e-453e-9181-f49277830f84"
   },
   {
@@ -3209,7 +3251,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15636",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 311,
+    "requests24h": 349,
     "screenshotUrl": "https://media.pollinations.ai/9695211e-859b-4fbc-aa81-31e9820e4be5"
   },
   {
@@ -3230,14 +3272,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15323",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 7,
     "screenshotUrl": "https://media.pollinations.ai/24de9377-3d4b-4b3f-8bcd-0c2af0356303"
   },
   {
     "emoji": "🖼️",
     "name": "Simple Image Generator",
     "url": "https://xzeyrix.github.io/Simple-Image-Generator",
-    "description": "A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own Pollen balance. The app supports",
+    "description": "A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own balance. The app supports",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -3258,7 +3300,7 @@
     "emoji": "🖼️",
     "name": "image2gpt",
     "url": "https://image2gpt.vercel.app",
-    "description": "Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three",
+    "description": "Generate images with openai/gpt-image-2. Sign in with your Pollinations account to pay from your own balance.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -3314,7 +3356,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15315",
     "approvedDate": "2026-09-23",
     "byop": true,
-    "requests24h": 54,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/080002df-2c91-4fa8-af7d-25f5f9406a37"
   },
   {
@@ -3650,7 +3692,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14867",
     "approvedDate": "2026-09-14",
     "byop": false,
-    "requests24h": 330,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/0245f8c8-4a09-4b90-b646-f91c4545c838"
   },
   {
@@ -3713,7 +3755,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14720",
     "approvedDate": "2026-09-11",
     "byop": false,
-    "requests24h": 311,
+    "requests24h": 349,
     "screenshotUrl": "https://media.pollinations.ai/a2d3e132-60b7-4d26-837c-5866a4f11398"
   },
   {
@@ -3734,7 +3776,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14721",
     "approvedDate": "2026-09-11",
     "byop": false,
-    "requests24h": 311,
+    "requests24h": 349,
     "screenshotUrl": "https://media.pollinations.ai/64eb823b-3214-4eea-9849-aeb9d1abca2e"
   },
   {
@@ -3860,7 +3902,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10973",
     "approvedDate": "2026-09-16",
     "byop": false,
-    "requests24h": 225,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/066bfce8-c4a1-45f2-ac67-b5321c43a5ce"
   },
   {
@@ -3902,7 +3944,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14416",
     "approvedDate": "2026-09-03",
     "byop": true,
-    "requests24h": 1905,
+    "requests24h": 1862,
     "screenshotUrl": "https://media.pollinations.ai/5925b12d-0349-4375-b901-a22c14a78404"
   },
   {
@@ -3965,7 +4007,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14035",
     "approvedDate": "2026-09-02",
     "byop": false,
-    "requests24h": 23,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/1a769c42-1850-4363-8610-2eaae1874cb9"
   },
   {
@@ -4112,14 +4154,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13782",
     "approvedDate": "2026-08-26",
     "byop": true,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/62707afb-bb37-4f5c-832f-e66198a43d08"
   },
   {
     "emoji": "🖼️",
     "name": "Pollinations App",
     "url": "https://sohaib7838.github.io/pollinations-app",
-    "description": "A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen.",
+    "description": "A simple web app that lets users connect their Pollinations account and generate AI images using their own balance.",
     "language": "ar",
     "category": "image",
     "platform": "web",
@@ -4154,7 +4196,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13889",
     "approvedDate": "2026-08-26",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/49dd3623-80a7-4f9f-9a6f-8415b1957123"
   },
   {
@@ -4182,7 +4224,7 @@
     "emoji": "✍️",
     "name": "StoryForge",
     "url": "https://storyforge.wiradifit-makmur-sejahtera.duckdns.org",
-    "description": "Turn an idea into an illustrated AI micro-story. Connect through Pollinations OAuth and choose your own Pollen budget.",
+    "description": "Turn an idea into an illustrated AI micro-story. Connect through Pollinations OAuth and choose your own spending budget.",
     "language": "en",
     "category": "writing",
     "platform": "web",
@@ -4217,7 +4259,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13699",
     "approvedDate": "2026-08-23",
     "byop": false,
-    "requests24h": 73,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/39af2aad-365d-4fac-9d3f-723090be9d67"
   },
   {
@@ -4300,7 +4342,7 @@
     "submittedDate": "2026-08-20",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13640",
     "approvedDate": "2026-08-21",
-    "byop": false,
+    "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/cd6fc084-7e0e-4f3a-92ae-25a85fb08eb7"
   },
@@ -4413,7 +4455,7 @@
     "emoji": "🖼️",
     "name": "DiddyDiffusion",
     "url": "https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html",
-    "description": "A browser-based image playground. Connect your Pollinations account, authorize a short-lived Pollen budget, and generate images.",
+    "description": "A browser-based image playground. Connect your Pollinations account, authorize a short-lived spending budget, and generate images.",
     "language": "en",
     "category": "image",
     "platform": "web",
@@ -4511,7 +4553,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11741",
     "approvedDate": "2026-08-14",
     "byop": false,
-    "requests24h": 62,
+    "requests24h": 64,
     "screenshotUrl": "https://media.pollinations.ai/c8cd8b9d-b1f6-4de9-a2cc-c8be8a556fbc"
   },
   {
@@ -4636,7 +4678,7 @@
     "submittedDate": "2026-08-03",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13037",
     "approvedDate": "2026-08-09",
-    "byop": true,
+    "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/2e3b778c-335d-433c-87cb-40d0ab82eb2f"
   },
@@ -4679,7 +4721,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11153",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/7c2533e0-8adf-46f4-8851-b4bf85c074b2"
   },
   {
@@ -4805,7 +4847,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13198",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 17,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/fe1f50ec-415b-48b8-b9a1-437383a7a313"
   },
   {
@@ -4847,7 +4889,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11262",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 41,
     "screenshotUrl": "https://media.pollinations.ai/0e125e5e-c227-4b45-b4d5-ccc2d6338ebb"
   },
   {
@@ -4980,7 +5022,7 @@
     "emoji": "📚",
     "name": "Pollen Scope",
     "url": "https://horoscope-beta-eight.vercel.app",
-    "description": "A daily horoscope app built on Pollinations. Connect through OAuth to pay for readings from your own Pollen balance.",
+    "description": "A daily horoscope app built on Pollinations. Connect through OAuth to pay for readings from your own balance.",
     "language": "en",
     "category": "learn",
     "platform": "web",
@@ -5015,7 +5057,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12706",
     "approvedDate": "2026-08-06",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/aee70c45-c1b6-4deb-a14b-5d1f4f8a4d8f"
   },
   {
@@ -5099,7 +5141,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11263",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 41,
     "screenshotUrl": "https://media.pollinations.ai/42c1fe61-8403-4662-862d-c2970d52b695"
   },
   {
@@ -5141,7 +5183,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11432",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/a4dd6b16-b063-4d8c-a638-7a0d18bb6e17"
   },
   {
@@ -5169,7 +5211,7 @@
     "emoji": "✍️",
     "name": "Qisas Hook Lab",
     "url": "https://q8paradise.github.io/qisas-hook-lab",
-    "description": "A bilingual Arabic/English writing workflow for developing short-form stories, with Pollinations OAuth and Bring Your Own Pollen support.",
+    "description": "A bilingual Arabic/English writing workflow for developing short-form stories, with Pollinations OAuth and Pollinations Pay support.",
     "language": "en",
     "category": "writing",
     "platform": "web",
@@ -5225,7 +5267,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12243",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 61,
+    "requests24h": 80,
     "screenshotUrl": "https://media.pollinations.ai/e1e766bd-1283-428f-9eb1-43cd9a39cea5"
   },
   {
@@ -5372,7 +5414,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12765",
     "approvedDate": "2026-07-28",
     "byop": true,
-    "requests24h": 25,
+    "requests24h": 109,
     "screenshotUrl": "https://media.pollinations.ai/82614c3c-aef8-4784-97b4-3457aedd1a38"
   },
   {
@@ -5512,7 +5554,7 @@
     "githubUsername": "falconafk31",
     "githubUserId": "41593642",
     "repositoryUrl": "https://github.com/falconafk31/affiliate-video-maker",
-    "repositoryStars": 11,
+    "repositoryStars": 12,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-06-03",
@@ -5603,7 +5645,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11727",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/f6bb040b-62ea-4763-9524-5e5906b3cfb9"
   },
   {
@@ -5750,7 +5792,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12199",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 57,
+    "requests24h": 39,
     "screenshotUrl": "https://media.pollinations.ai/bbd18580-7820-423e-b179-6225b1f05d1e"
   },
   {
@@ -5792,7 +5834,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12315",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/97a427db-a6b1-4465-947b-d3b3232c972c"
   },
   {
@@ -5869,7 +5911,7 @@
     "githubUsername": "housir2001",
     "githubUserId": "54567124",
     "repositoryUrl": "https://github.com/housir2001/pollinations-image-demo",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": "housir2001",
     "other": null,
     "submittedDate": "2026-06-16",
@@ -5898,7 +5940,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12240",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 2460
+    "requests24h": 1193
   },
   {
     "emoji": "🖼️",
@@ -5918,7 +5960,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12115",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 193,
     "screenshotUrl": "https://media.pollinations.ai/2a5a86f9-b9a7-4258-912f-5746ce5aa237"
   },
   {
@@ -6064,7 +6106,7 @@
     "submittedDate": "2026-06-22",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11947",
     "approvedDate": "2026-06-28",
-    "byop": true,
+    "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/b5d67a8f-6a02-4434-8c84-b191aed01fe9"
   },
@@ -6149,7 +6191,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12013",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 29,
+    "requests24h": 54,
     "screenshotUrl": "https://media.pollinations.ai/afd75137-5765-44da-b71c-1e3e375e16e5"
   },
   {
@@ -6275,7 +6317,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11229",
     "approvedDate": "2026-06-18",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/e2dc7bed-8c0c-4a4c-a9f2-ad48268eb795"
   },
   {
@@ -6359,7 +6401,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10234",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 20,
     "screenshotUrl": "https://media.pollinations.ai/d1d4bce8-e6d0-4b38-bd0f-c6877b321b05"
   },
   {
@@ -6548,7 +6590,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10507",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/4bc7a1b1-f075-4ae0-903a-e12527f1cbf9"
   },
   {
@@ -6590,7 +6632,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10572",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/966a4413-8c08-4caa-aa79-3a5aa7a923b0"
   },
   {
@@ -6611,14 +6653,14 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10697",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/6147ad0d-2388-4eda-b9cf-f040c39fb0dd"
   },
   {
     "emoji": "🖼️",
     "name": "EkHo Image Lab",
     "url": "https://ekho.re/html/saas/image_ai.html",
-    "description": "EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images.",
+    "description": "EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own balance to generate images.",
     "language": "fr",
     "category": "image",
     "platform": "web",
@@ -6737,7 +6779,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10101",
     "approvedDate": "2026-05-30",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/5faa4e70-a9f8-4208-b5e3-a2f6fd0fef5f"
   },
   {
@@ -7052,7 +7094,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9994",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/c3f69469-e409-4e27-bedd-764e37c42628"
   },
   {
@@ -7136,7 +7178,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9987",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 100,
     "screenshotUrl": "https://media.pollinations.ai/7f20cb3c-3c53-48d1-96c1-ef86908a77e1"
   },
   {
@@ -7178,7 +7220,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9956",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 1024,
+    "requests24h": 482,
     "screenshotUrl": "https://media.pollinations.ai/9552a085-255a-4647-b4ab-4f82c1f9b83e"
   },
   {
@@ -7220,7 +7262,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9949",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/84af02b1-1819-4c4f-a5f5-be68ea07f9db"
   },
   {
@@ -7304,7 +7346,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9196",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 311,
+    "requests24h": 349,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
@@ -7409,7 +7451,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9984",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 26,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/1143e5a9-1b62-4e9a-9414-3c3fc4345cc9"
   },
   {
@@ -7640,7 +7682,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10876",
     "approvedDate": "2026-05-12",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/599a99f4-1656-4c43-ae5a-453bee2bc0c4"
   },
   {
@@ -7745,7 +7787,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10029",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/a39b7762-b97c-4764-9dd9-30d0f5f119cd"
   },
   {
@@ -7906,14 +7948,14 @@
     "githubUsername": "ivLis-Studio",
     "githubUserId": "25863234",
     "repositoryUrl": "https://github.com/ivLis-Studio/ivLyrics",
-    "repositoryStars": 207,
+    "repositoryStars": 216,
     "discordUsername": "ivl.is",
     "other": null,
     "submittedDate": "2026-03-16",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9169",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 27,
     "screenshotUrl": "https://media.pollinations.ai/d0fa6dce-1a5e-4ae7-8fd3-3bc0af9ec46c"
   },
   {
@@ -7955,7 +7997,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10710",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/05bd9ed0-0ac9-416c-a40b-587850361039"
   },
   {
@@ -8144,7 +8186,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10609",
     "approvedDate": "2026-05-05",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/c481eca7-dfc7-4ebf-b41f-e640d9434715"
   },
   {
@@ -8186,7 +8228,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10670",
     "approvedDate": "2026-05-05",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/f66ce806-23df-4a1b-aa2b-1d0347820f8d"
   },
   {
@@ -8270,7 +8312,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10390",
     "approvedDate": "2026-04-29",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/c0ebdadc-2f46-418f-8835-042fc8c60ef8"
   },
   {
@@ -8312,7 +8354,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -8375,7 +8417,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -8522,7 +8564,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10340",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 16,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/8a1ae5e5-2740-411c-9b12-55ec869e4f78"
   },
   {
@@ -8585,7 +8627,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10332",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ae8c55a3-24f8-46bd-81ed-efe08e6098c7"
   },
   {
@@ -8648,7 +8690,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4604",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ae17f81c-17b2-4676-a291-7baad08c56b4"
   },
   {
@@ -8711,7 +8753,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10273",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 270,
+    "requests24h": 250,
     "screenshotUrl": "https://media.pollinations.ai/37f4aa10-f7b6-47ea-8f4c-34f5a128921c"
   },
   {
@@ -8774,7 +8816,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8490",
     "approvedDate": "2026-02-22",
     "byop": true,
-    "requests24h": 1,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/2816e11e-1142-4b77-8cf0-aba45562933f"
   },
   {
@@ -8963,7 +9005,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9146",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 31,
     "screenshotUrl": "https://media.pollinations.ai/433f92ee-6e0e-474e-89fe-bce87bdcc1e1"
   },
   {
@@ -9173,7 +9215,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9103",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/2e5e45c4-2eec-4dd7-aa79-1c00604207f0"
   },
   {
@@ -9236,7 +9278,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8866",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/eb82b1f2-3c9f-4916-88f6-76c431562033"
   },
   {
@@ -9299,7 +9341,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9972",
     "approvedDate": "2026-04-05",
     "byop": true,
-    "requests24h": 817,
+    "requests24h": 649,
     "screenshotUrl": "https://media.pollinations.ai/2caa7efb-bc90-4a57-85e8-b87fa67eecd1"
   },
   {
@@ -9488,7 +9530,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9791",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 43,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/ca53c551-28ae-4a00-b6e1-18789286e582"
   },
   {
@@ -9531,7 +9573,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 143
   },
   {
     "emoji": "📝",
@@ -9615,7 +9657,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 143
   },
   {
     "emoji": "📚",
@@ -9656,7 +9698,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9766",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/a5a1c06c-cb6d-48f3-b801-280b71885705"
   },
   {
@@ -9719,7 +9761,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9758",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/72f9b109-b0d8-4ecd-bd3b-42bab5707b61"
   },
   {
@@ -9782,7 +9824,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9305",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 45,
     "screenshotUrl": "https://media.pollinations.ai/a93eee25-a5ab-483e-ba35-d391e4fc1326"
   },
   {
@@ -9803,7 +9845,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9299",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 1345,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/f16fd966-b3f2-43ed-abb4-21d718ce2cdd"
   },
   {
@@ -9845,7 +9887,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9472",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e21cde7c-2e0d-4bad-a04c-d661e23a597d"
   },
   {
@@ -9971,7 +10013,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9719",
     "approvedDate": "2026-03-29",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/e5695d6e-5ee4-404e-976a-3943da4c1b95"
   },
   {
@@ -9985,7 +10027,7 @@
     "githubUsername": "moh65-debug",
     "githubUserId": "230914186",
     "repositoryUrl": "https://github.com/moh65-debug/pollinations-image-generator",
-    "repositoryStars": 6,
+    "repositoryStars": 5,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-03-28",
@@ -10265,7 +10307,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9656",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/30b85416-0921-4de1-bf3e-7479226af7ca"
   },
   {
@@ -10327,7 +10369,7 @@
     "submittedDate": "2026-03-27",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9648",
     "approvedDate": "2026-03-28",
-    "byop": true,
+    "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/eb29cd45-715c-437d-bc92-ce79aeacaca4"
   },
@@ -10370,7 +10412,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9639",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/a8d0bd73-3cd1-4b87-b0f5-1c488e93f8ac"
   },
   {
@@ -10391,7 +10433,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9631",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 40,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/33fb0bf2-db5c-4643-82f2-f2eb1783a338"
   },
   {
@@ -10538,7 +10580,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9596",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e0afc3d3-5d81-44bb-b65f-7cb0e8456d56"
   },
   {
@@ -10560,7 +10602,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9451",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 2517
+    "requests24h": 1496
   },
   {
     "emoji": "⚡",
@@ -10769,7 +10811,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9475",
     "approvedDate": "2026-03-23",
     "byop": true,
-    "requests24h": 96,
+    "requests24h": 46,
     "screenshotUrl": "https://media.pollinations.ai/bbec8cea-059c-41d7-a4b2-b4dd7c757df7"
   },
   {
@@ -10790,7 +10832,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9435",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 86,
+    "requests24h": 80,
     "screenshotUrl": "https://media.pollinations.ai/8f8396f3-c3e0-4320-97fc-8404175e4df4"
   },
   {
@@ -10937,7 +10979,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9385",
     "approvedDate": "2026-03-21",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/2bc9e758-7acf-4b2c-9e37-52e8e5e9712e"
   },
   {
@@ -10958,7 +11000,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9372",
     "approvedDate": "2026-03-21",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/075d420e-72ec-49d6-a87d-09047877a17c"
   },
   {
@@ -11021,7 +11063,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8162",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/9f94e86f-e63c-4c4a-b391-6728903b9ccb"
   },
   {
@@ -11042,7 +11084,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8136",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5cc086aa-939f-44c1-b423-a8a2ecfafbbc"
   },
   {
@@ -11105,7 +11147,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8697",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/1fe19053-a4fb-4d96-ac65-2a42685148df"
   },
   {
@@ -11210,7 +11252,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9059",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/a2575060-1cc6-4046-8707-75a95905e79f"
   },
   {
@@ -11231,7 +11273,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8924",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/0941e551-3e66-4d66-a33a-d5eb426da8fe"
   },
   {
@@ -11378,7 +11420,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9058",
     "approvedDate": "2026-03-15",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/4dbb7ac0-dbb7-48d0-b4a5-d1223c186b08"
   },
   {
@@ -11420,7 +11462,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9085",
     "approvedDate": "2026-03-13",
     "byop": false,
-    "requests24h": 41,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/c9e70534-b01b-4182-b7b0-c28bbfe13310"
   },
   {
@@ -11637,7 +11679,7 @@
     "emoji": "🐝",
     "name": "Pollinations Extension",
     "url": null,
-    "description": "Provides Pollinations Extension as a Bring Your Own Pollen (BYOP) browser extension for Pollinations.ai.",
+    "description": "Provides Pollinations Extension as a Pollinations Pay browser extension for Pollinations.ai.",
     "language": "en",
     "category": "image",
     "platform": "browser-ext",
@@ -11693,7 +11735,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8768",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/31bdc1e1-12a6-470d-817f-375733043bb3"
   },
   {
@@ -11714,7 +11756,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8780",
     "approvedDate": "2026-03-03",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/2d8b676c-c013-4e98-b1df-36269d841065"
   },
   {
@@ -11819,7 +11861,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7576",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 16,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/31cba991-8632-47b1-b6e3-8732771ca348"
   },
   {
@@ -11903,7 +11945,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8668",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/a75b3a58-c0fe-4422-b370-dcd79da5b35e"
   },
   {
@@ -11987,7 +12029,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7744",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 67,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/87884896-60a3-40bd-be88-398d9bafc162"
   },
   {
@@ -12050,7 +12092,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8665",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 500,
+    "requests24h": 427,
     "screenshotUrl": "https://media.pollinations.ai/8b5379bc-46cc-414d-9cbe-72a405e01c52"
   },
   {
@@ -12113,7 +12155,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8318",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 280,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/da615233-c6f1-46ed-ad66-7c7e77fec2df"
   },
   {
@@ -12323,7 +12365,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8285",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/8936b940-b7d6-4332-929a-afbabff8bfa5"
   },
   {
@@ -12449,7 +12491,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8475",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 29,
+    "requests24h": 54,
     "screenshotUrl": "https://media.pollinations.ai/8ca9f837-5583-4e43-a989-79c318f48704"
   },
   {
@@ -12701,7 +12743,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7273",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 32,
     "screenshotUrl": "https://media.pollinations.ai/0542a7fa-ab81-4aff-82e6-4af16ebac205"
   },
   {
@@ -12799,7 +12841,7 @@
     "githubUsername": "rodrigololr",
     "githubUserId": "124109443",
     "repositoryUrl": "https://github.com/rodrigololr/AI-Clip-Master",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": "a.rodrigolima_",
     "other": null,
     "submittedDate": "2026-02-04",
@@ -12890,7 +12932,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8415",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/ebef35e2-dc9b-4040-9de2-c8a24d1e3200"
   },
   {
@@ -13037,7 +13079,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7698",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 87,
+    "requests24h": 77,
     "screenshotUrl": "https://media.pollinations.ai/ad09128d-d596-4d78-9c5d-25b90c1a0abe"
   },
   {
@@ -13058,7 +13100,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7810",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 23,
+    "requests24h": 26,
     "screenshotUrl": "https://media.pollinations.ai/5ab17a1f-c632-4a2e-ae9f-7977a9231a92"
   },
   {
@@ -13079,7 +13121,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7848",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 14,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e501c6d0-37c0-4595-95de-826ee99e2c50"
   },
   {
@@ -13121,7 +13163,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7908",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 50,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/e278cc23-9a7f-4c76-aff7-f7554f503f21"
   },
   {
@@ -13289,7 +13331,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8468",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/5a685e5d-41dd-4422-b225-fdd1a36c1816"
   },
   {
@@ -13331,7 +13373,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7263",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/ac18cbf3-abda-421a-b769-ce5ea388777c"
   },
   {
@@ -13415,7 +13457,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7249",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 105,
     "screenshotUrl": "https://media.pollinations.ai/189d31f9-929e-4f57-abc8-b231b778b259"
   },
   {
@@ -13499,7 +13541,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7327",
     "approvedDate": "2026-02-21",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 29,
     "screenshotUrl": "https://media.pollinations.ai/44232d04-d2e0-40bf-a457-7ee92b4e150c"
   },
   {
@@ -13646,7 +13688,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8093",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 2012,
+    "requests24h": 1017,
     "screenshotUrl": "https://media.pollinations.ai/6c5c5425-9ed1-4aca-b72c-70ca0f7caf5c"
   },
   {
@@ -13667,7 +13709,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8191",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 105,
+    "requests24h": 51,
     "screenshotUrl": "https://media.pollinations.ai/a0c89634-b454-4b9b-96bf-41f222f7bcce"
   },
   {
@@ -13709,7 +13751,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7726",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 31,
+    "requests24h": 168,
     "screenshotUrl": "https://media.pollinations.ai/49af64ca-fac1-4169-a2df-839d01883248"
   },
   {
@@ -13723,7 +13765,7 @@
     "githubUsername": "sligter",
     "githubUserId": "23713984",
     "repositoryUrl": "https://github.com/sligter/LandPPT",
-    "repositoryStars": 3651,
+    "repositoryStars": 3649,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-01-17",
@@ -13877,7 +13919,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8079",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/8381114f-b026-405b-a86a-00b516ad21d6"
   },
   {
@@ -13961,7 +14003,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7732",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 10,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5014f61d-958e-4687-b5ab-8a4e9ca5d5cb"
   },
   {
@@ -14004,7 +14046,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8287",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 29643
+    "requests24h": 34596
   },
   {
     "emoji": "🛡️",
@@ -14024,7 +14066,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7977",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 52,
+    "requests24h": 55,
     "screenshotUrl": "https://media.pollinations.ai/ee1a793f-54d8-4f23-8d3d-b9c06dce2c6e"
   },
   {
@@ -14045,7 +14087,7 @@
     "issueUrl": null,
     "approvedDate": "2026-02-14",
     "byop": false,
-    "requests24h": 758190,
+    "requests24h": 751163,
     "screenshotUrl": "https://media.pollinations.ai/bb506b72-ec6e-462e-8cd7-137417410758"
   },
   {
@@ -14087,7 +14129,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7290",
     "approvedDate": null,
     "byop": false,
-    "requests24h": 174,
+    "requests24h": 571,
     "screenshotUrl": "https://media.pollinations.ai/17f87fdf-bbd9-4b07-85c9-eaabb212fcdc"
   },
   {
@@ -14171,7 +14213,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7238",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/a591227b-7d96-4a40-9d88-f5f471c5bce0"
   },
   {
@@ -14402,7 +14444,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6664",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/b125e798-60db-4f7d-81a1-0b083d1d8857"
   },
   {
@@ -14465,7 +14507,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7080",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 98,
+    "requests24h": 27,
     "screenshotUrl": "https://media.pollinations.ai/b01a84d6-0b51-4e13-87db-c3453df99b4b"
   },
   {
@@ -14549,7 +14591,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7041",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 34,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/808e0534-d4b7-48de-a1b0-2747fdad274c"
   },
   {
@@ -14696,7 +14738,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6920",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 41,
     "screenshotUrl": "https://media.pollinations.ai/36a9e3b2-ba8f-409a-9770-0df7e20ebc70"
   },
   {
@@ -14738,7 +14780,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6917",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 58,
+    "requests24h": 7,
     "screenshotUrl": "https://media.pollinations.ai/1786d822-cb1a-425f-bba5-e3ec9e030dc1"
   },
   {
@@ -14801,7 +14843,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6882",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 779,
+    "requests24h": 562,
     "screenshotUrl": "https://media.pollinations.ai/8fd0ca3d-3126-43f3-826f-a181e0f00d29"
   },
   {
@@ -14843,7 +14885,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6856",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 128,
+    "requests24h": 58,
     "screenshotUrl": "https://media.pollinations.ai/93e68642-a5a7-41cd-a819-46ac941b09e2"
   },
   {
@@ -14906,7 +14948,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7200",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/32daf485-d49f-402f-816d-3a03bbc47684"
   },
   {
@@ -14990,7 +15032,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7076",
     "approvedDate": "2026-01-10",
     "byop": false,
-    "requests24h": 26,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/c57c9033-1183-4d49-b516-fb92a686ada2"
   },
   {
@@ -15032,7 +15074,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6980",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/3eb10cc1-1020-4d80-adcc-815b5a3004a0"
   },
   {
@@ -15074,7 +15116,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6954",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/cc960a07-9f46-401a-bb08-bc994ab453b0"
   },
   {
@@ -15137,7 +15179,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6505",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 61,
+    "requests24h": 111,
     "screenshotUrl": "https://media.pollinations.ai/d3957f87-67f0-4894-8dc0-17921cdf0428"
   },
   {
@@ -15200,7 +15242,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6805",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/5bef8a36-715f-4093-bcba-dafb464721c1"
   },
   {
@@ -15221,7 +15263,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6762",
     "approvedDate": "2026-01-03",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 26,
     "screenshotUrl": "https://media.pollinations.ai/b830dd53-9dce-4300-a623-60cb334e22a7"
   },
   {
@@ -15242,7 +15284,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7595",
     "approvedDate": "2026-01-03",
     "byop": true,
-    "requests24h": 33,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/073d4e53-a0d7-4b9f-bc9d-dcd86e11d293"
   },
   {
@@ -15284,7 +15326,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6718",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/48fd22a8-9ae3-471f-9b0f-6b3a3210afe2"
   },
   {
@@ -15347,7 +15389,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6714",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/fc877222-edd8-48a7-a54d-9febd0dbea80"
   },
   {
@@ -15368,7 +15410,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6711",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 535,
+    "requests24h": 504,
     "screenshotUrl": "https://media.pollinations.ai/4288fcde-57e7-4390-b28e-33ac78229d7b"
   },
   {
@@ -15389,7 +15431,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6703",
     "approvedDate": "2026-01-01",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/baf65ff2-e596-4236-8ac7-11b0d002732d"
   },
   {
@@ -15627,7 +15669,7 @@
     "emoji": "🎬",
     "name": "PolliVision",
     "url": "https://fabioarieira.com/pollivision",
-    "description": "AI video generator with pollen credit system & prompt enhancement",
+    "description": "AI video generator with Pollinations billing and prompt enhancement",
     "language": "en",
     "category": "video_audio",
     "platform": "web",
@@ -15641,7 +15683,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5990",
     "approvedDate": "2025-12-14",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fcc84727-9bb0-4279-9003-d10f8bbde957"
   },
   {
@@ -15725,7 +15767,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6635",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 217,
+    "requests24h": 172,
     "screenshotUrl": "https://media.pollinations.ai/48e5d4ab-1426-41e1-ab76-0acdae4821ce"
   },
   {
@@ -15746,7 +15788,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6551",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 203,
+    "requests24h": 198,
     "screenshotUrl": "https://media.pollinations.ai/cb8dde72-a779-40a6-92d7-4a8afe35aa03"
   },
   {
@@ -15767,7 +15809,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6550",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/75ff9e01-299a-4d22-8b65-5abece343fe2"
   },
   {
@@ -15830,7 +15872,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6504",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 111,
+    "requests24h": 107,
     "screenshotUrl": "https://media.pollinations.ai/3713bbb7-2707-4ca5-8afb-fe12ac39470b"
   },
   {
@@ -15851,7 +15893,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6494",
     "approvedDate": "2025-12-27",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 27,
     "screenshotUrl": "https://media.pollinations.ai/fba83de0-a6f3-4eb7-9251-4ba27e803603"
   },
   {
@@ -16019,7 +16061,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6421",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/4aa41441-fc7c-4974-a70b-5601da1208ef"
   },
   {
@@ -16040,7 +16082,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6424",
     "approvedDate": "2025-12-24",
     "byop": true,
-    "requests24h": 10,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/86198728-ff3c-4157-9acb-6074c2d86178"
   },
   {
@@ -16103,7 +16145,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6367",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/16e477c7-3e23-4a2b-bd8f-fbdb12b033de"
   },
   {
@@ -16124,7 +16166,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6331",
     "approvedDate": "2025-12-22",
     "byop": true,
-    "requests24h": 10,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/f043f7fc-a465-473d-b106-5f250a1ec597"
   },
   {
@@ -16313,7 +16355,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5737",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/4b9305bd-1090-4261-92ec-60b42101427f"
   },
   {
@@ -16397,7 +16439,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4914",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 67,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/7f997220-5f6a-4eb2-96cf-c8c55bda287e"
   },
   {
@@ -16418,7 +16460,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5373",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/ea338ed0-0a86-4929-9008-989d9325a915"
   },
   {
@@ -16474,7 +16516,7 @@
     "githubUsername": "rhystic1",
     "githubUserId": "3988944",
     "repositoryUrl": "https://github.com/Nikke-db/nikke-db-vue",
-    "repositoryStars": 142,
+    "repositoryStars": 143,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-12-13",
@@ -16565,7 +16607,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4930",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/63cef618-5f05-410b-9a2a-4096aef295fd"
   },
   {
@@ -16607,7 +16649,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5760",
     "approvedDate": "2025-12-08",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/dc221887-16c9-4631-8bf4-eff073e5e48d"
   },
   {
@@ -16691,7 +16733,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5640",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/640310ef-1c69-4903-9f40-a6fbfbdaab47"
   },
   {
@@ -16733,7 +16775,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5647",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/4ec74410-fa2c-4eaa-9bc2-174a7a0f8708"
   },
   {
@@ -16775,7 +16817,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5636",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e253a9b2-af8d-4257-956e-1da225cf35bd"
   },
   {
@@ -16859,7 +16901,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5628",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 552,
+    "requests24h": 385,
     "screenshotUrl": "https://media.pollinations.ai/5fefba7e-5c52-40a7-a805-7cd4470c7792"
   },
   {
@@ -16922,7 +16964,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5490",
     "approvedDate": "2025-11-30",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 20,
     "screenshotUrl": "https://media.pollinations.ai/1056f386-9978-40d2-b914-52f0927fb2f3"
   },
   {
@@ -17048,7 +17090,7 @@
     "issueUrl": null,
     "approvedDate": "2025-10-26",
     "byop": false,
-    "requests24h": 2460,
+    "requests24h": 1193,
     "screenshotUrl": "https://media.pollinations.ai/c0a95e1b-1525-4f34-9f16-24094c73b5d1"
   },
   {
@@ -17216,7 +17258,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4678",
     "approvedDate": "2025-10-21",
     "byop": false,
-    "requests24h": 14,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/14577804-8826-4208-86f5-8c7cc05d0c0a"
   },
   {
@@ -17419,7 +17461,7 @@
     "githubUsername": "AdityaTel89",
     "githubUserId": "101270144",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/map-to-isometric",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -17440,7 +17482,7 @@
     "githubUsername": "prateekverma145",
     "githubUserId": "148776148",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -17482,7 +17524,7 @@
     "githubUsername": "anmolsah",
     "githubUserId": "113588714",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -17503,7 +17545,7 @@
     "githubUsername": "codevector-2003",
     "githubUserId": "197366900",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -17531,7 +17573,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4308",
     "approvedDate": "2025-10-03",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/a88c420e-c2f9-4fd5-9afb-95a786d37cac"
   },
   {
@@ -17552,7 +17594,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4287",
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 552,
+    "requests24h": 385,
     "screenshotUrl": "https://media.pollinations.ai/b7b24296-6c2a-4a48-ba58-615c6a723c59"
   },
   {
@@ -17909,7 +17951,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3589",
     "approvedDate": "2025-08-11",
     "byop": false,
-    "requests24h": 41,
+    "requests24h": 40,
     "screenshotUrl": "https://media.pollinations.ai/ded5e7ff-fed4-47b6-b296-d0441f5b32bf"
   },
   {
@@ -17951,7 +17993,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3466",
     "approvedDate": "2025-08-05",
     "byop": false,
-    "requests24h": 26,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/76d842cf-a19b-481c-8e0b-3d17e82c5e40"
   },
   {
@@ -18308,7 +18350,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2961",
     "approvedDate": "2025-07-12",
     "byop": false,
-    "requests24h": 29,
+    "requests24h": 54,
     "screenshotUrl": "https://media.pollinations.ai/eb0e7d0a-449c-4782-8166-c5d4b308ca14"
   },
   {
@@ -18476,7 +18518,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2362",
     "approvedDate": "2025-06-13",
     "byop": false,
-    "requests24h": 95,
+    "requests24h": 46,
     "screenshotUrl": "https://media.pollinations.ai/c94aeea7-bb91-41f4-96c6-1042eb5292ab"
   },
   {
@@ -18623,7 +18665,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2164",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/fa88ffc4-d331-4c88-b84e-3b49d680c2e0"
   },
   {
@@ -18644,7 +18686,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2146",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 87,
+    "requests24h": 77,
     "screenshotUrl": "https://media.pollinations.ai/d41c06e3-ee9b-4a72-ac24-48e60a227367"
   },
   {
@@ -18749,7 +18791,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2020",
     "approvedDate": "2025-05-20",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/295df102-d06b-422c-bfdc-1f3350742184"
   },
   {
@@ -18791,7 +18833,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1998",
     "approvedDate": "2025-05-19",
     "byop": false,
-    "requests24h": 28,
+    "requests24h": 145,
     "screenshotUrl": "https://media.pollinations.ai/804998cd-180a-46dc-a30c-516ba8118615"
   },
   {
@@ -18868,7 +18910,7 @@
     "githubUsername": "aandrew-me",
     "githubUserId": "66430340",
     "repositoryUrl": "https://github.com/aandrew-me/tgpt",
-    "repositoryStars": 3296,
+    "repositoryStars": 3299,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-12-28",
@@ -18910,7 +18952,7 @@
     "githubUsername": "harry0703",
     "githubUserId": "4928832",
     "repositoryUrl": "https://github.com/harry0703/MoneyPrinterTurbo",
-    "repositoryStars": 144254,
+    "repositoryStars": 144851,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -19148,7 +19190,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 26,
     "screenshotUrl": "https://media.pollinations.ai/21242ef2-e36b-4f85-8ade-40f2c0c191a5"
   },
   {
@@ -19169,7 +19211,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 26,
     "screenshotUrl": "https://media.pollinations.ai/3892c9ac-7e2f-4f60-aed7-d26ec9de2365"
   },
   {
@@ -19225,7 +19267,7 @@
     "githubUsername": "aidevs",
     "githubUserId": "19439409",
     "repositoryUrl": "https://github.com/vercel/ai/tree/main/examples/ai-image-generator",
-    "repositoryStars": 28054,
+    "repositoryStars": 28115,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -19316,7 +19358,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1680",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 2460,
+    "requests24h": 1193,
     "screenshotUrl": "https://media.pollinations.ai/cdf20f1c-84f7-432c-9499-44bde583dc9d"
   },
   {
@@ -19393,7 +19435,7 @@
     "githubUsername": "cmunozdev",
     "githubUserId": "34243893",
     "repositoryUrl": "https://github.com/cmunozdev/DominiSigns",
-    "repositoryStars": 6,
+    "repositoryStars": null,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -19498,7 +19540,7 @@
     "githubUsername": "Azad-sl",
     "githubUserId": "85327306",
     "repositoryUrl": "https://github.com/Azad-sl/FreeAI",
-    "repositoryStars": 148,
+    "repositoryStars": 150,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -19589,7 +19631,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3316",
     "approvedDate": "2025-03-15",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/fdce1761-169a-44f0-b86a-f623b4b22bf9"
   },
   {
@@ -19652,7 +19694,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1349",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 34,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/de0f6cf6-aaea-475b-944d-1a8149cf841d"
   },
   {
@@ -19673,7 +19715,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1356",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/277a31aa-b176-48ab-adbd-bc3da9f78e0f"
   },
   {
@@ -19757,7 +19799,7 @@
     "issueUrl": null,
     "approvedDate": "2025-03-01",
     "byop": true,
-    "requests24h": 10,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fc0bf140-28ba-4d8d-901a-cbc9f50cb72f"
   },
   {
@@ -19771,7 +19813,7 @@
     "githubUsername": "lobehub",
     "githubUserId": "131470832",
     "repositoryUrl": "https://github.com/lobehub/lobehub",
-    "repositoryStars": 85728,
+    "repositoryStars": 85931,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -19946,7 +19988,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2268",
     "approvedDate": "2024-12-18",
     "byop": false,
-    "requests24h": 601,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/d4e0f497-3b41-4ea3-8f2d-2d95eef818a7"
   },
   {
@@ -19988,7 +20030,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5710",
     "approvedDate": null,
     "byop": true,
-    "requests24h": 457,
+    "requests24h": 132,
     "screenshotUrl": "https://media.pollinations.ai/04728eed-f181-465d-a988-179ef55c164a"
   },
   {
@@ -20065,7 +20107,7 @@
     "githubUsername": "QwenLM",
     "githubUserId": "141221163",
     "repositoryUrl": "https://github.com/QwenLM/Qwen-Agent",
-    "repositoryStars": 17269,
+    "repositoryStars": 17278,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-03-25",
@@ -20086,7 +20128,7 @@
     "githubUsername": "SillyTavern",
     "githubUserId": "134869877",
     "repositoryUrl": "https://github.com/SillyTavern/SillyTavern",
-    "repositoryStars": 35766,
+    "repositoryStars": 35890,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -20135,7 +20177,7 @@
     "issueUrl": null,
     "approvedDate": null,
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 20,
     "screenshotUrl": "https://media.pollinations.ai/0691f900-175a-4775-af42-ebe16822fe7b"
   },
   {
@@ -20177,7 +20219,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6670",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/b125e798-60db-4f7d-81a1-0b083d1d8857"
   },
   {
@@ -20191,7 +20233,7 @@
     "githubUsername": "pollinations-test",
     "githubUserId": "151645294",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/sdk",
-    "repositoryStars": 5308,
+    "repositoryStars": 5320,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",

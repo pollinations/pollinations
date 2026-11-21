@@ -132,6 +132,25 @@ describe("billing deduction", () => {
         });
     });
 
+    it("explains an unknown price when a paid-only request has only Quest Pollen", async () => {
+        const userId = await createUser({ tierBalance: 1, packBalance: 0 });
+        await expect(
+            requireFunds(
+                { env, var: {} },
+                0,
+                () => getUserBalance(db, userId),
+                true,
+            ),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "INSUFFICIENT_BALANCE",
+            paidOnly: true,
+            message: expect.stringContaining(
+                "The final price depends on usage, but your available paid balance is $0.0000.",
+            ),
+        });
+    });
+
     it("names a bound instead of a cost that would print as zero", async () => {
         const userId = await createUser({ tierBalance: 0, packBalance: 0 });
         await expect(

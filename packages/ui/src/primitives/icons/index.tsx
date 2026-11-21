@@ -1,4 +1,5 @@
-import googleLogoUrl from "../../assets/google.svg";
+import googleLogoUrl from "../../brand/organizations/google.svg";
+import type { TileModality } from "../../lib/media-action-tile.ts";
 import type { IconProps } from "./types.ts";
 
 const strokeProps = {
@@ -305,6 +306,40 @@ export function GoogleIcon({ className }: IconProps) {
             aria-hidden="true"
             className={className}
         />
+    );
+}
+
+/** File-picker glyphs share a plus mark, distinct from the capture controls. */
+export function MediaFileIcon({
+    modality,
+    ...props
+}: IconProps & { modality: TileModality }) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            {modality === "image" && (
+                <>
+                    <rect x="2" y="3" width="16" height="15" rx="2" />
+                    <path d="m3 16 5-5 3 2 5-6" />
+                    <circle cx="7" cy="7" r="1" />
+                </>
+            )}
+            {modality === "video" && (
+                <>
+                    <rect x="2" y="3" width="16" height="15" rx="2" />
+                    <path d="M6 3v15m8-15v15M2 8h4m-4 5h4m8-5h4m-4 5h4" />
+                </>
+            )}
+            {modality === "audio" && (
+                <path d="M2 9v4m4-7v10m4-14v18m4-15v10m4-7v4" />
+            )}
+            {modality === "mixed" && <path d="M5 2h8l5 5v10H5zM13 2v5h5" />}
+            <path
+                d="M19 15v8m-4-4h8"
+                stroke="var(--polli-color-bg-pale, Canvas)"
+                strokeWidth="5"
+            />
+            <path d="M19 15v8m-4-4h8" />
+        </svg>
     );
 }
 

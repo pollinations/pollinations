@@ -84,7 +84,7 @@ interface DeductionParams {
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
-    /** The key never spends paid Pollen, so the charge always takes Quest Pollen. */
+    /** The key can spend only from the Quest balance. */
     questPollenOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }

@@ -62,6 +62,23 @@ function createDecisionsMock() {
             state.vercelResponse = undefined;
         },
         handlerMap: {
+            "generativelanguage.googleapis.com": async (request: Request) => {
+                const body = (await request.json()) as { model: string };
+                state.requests.push({
+                    pathname: new URL(request.url).pathname,
+                    body,
+                });
+                if (state.failModel === body.model)
+                    return new Response(null, { status: 503 });
+                return Response.json({
+                    answers,
+                    usage: {
+                        total_input_tokens: 452,
+                        total_output_tokens: 0,
+                        total_tokens: 452,
+                    },
+                });
+            },
             "api.openai.com": async (request: Request) => {
                 state.requests.push({ body: await request.json() });
                 if (!state.response)
@@ -142,6 +159,7 @@ const test = baseTest.extend<{
         env.OPENROUTER_API_KEY = "openrouter-test-key";
         env.OPENAI_API_KEY = "openai-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
+        env.GEMINI_API_KEY = "gemini-test-key";
         env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
         const decisions = createDecisionsMock();
@@ -312,6 +330,69 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
         packBalance: 0.99997997,
     });
 });
+
+test.for([false, true])(
+    "bills Gemini Decision 1 at the direct price (fallback %s)",
+    async (fallback, { mocks }) => {
+        if (fallback) mocks.decisions.state.failModel = "gemini-decision-1";
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 1 },
+        });
+        mocks.decisions.state.response = Response.json({
+            id: "dec-gemini-1",
+            model: "google/gemini-decision-1",
+            provider: "Google",
+            answers: {
+                act: { type: "noul", noul: 0.95 },
+            },
+            usage: { input_tokens: 452, output_tokens: 0 },
+        });
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model: "google/gemini-decision-1",
+            state: "Disk at 93%.",
+            questions: { act: { type: "noul", instructions: "Act now?" } },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "google/gemini-decision-1",
+            provider: "Google",
+        });
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/v1beta/decisions",
+            body: { model: "gemini-decision-1", input: "Disk at 93%." },
+        });
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(fallback ? 2 : 1);
+        if (fallback)
+            expect(mocks.decisions.state.requests[1]).toMatchObject({
+                pathname: "/api/alpha/decisions",
+                body: { provider: { only: ["google-ai-studio"] } },
+            });
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        const [event] = billed;
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            modelRequested: "google/gemini-decision-1",
+            modelProviderUsed: fallback ? "openrouter" : "google",
+            tokenCountPromptText: 452,
+            tokenCountCompletionText: 0,
+            isBilledUsage: true,
+        });
+        expect(event.totalCost).toBeCloseTo(
+            (452 * 0.1 * (fallback ? 1.055 : 1)) / 1_000_000,
+            12,
+        );
+        expect(event.totalPrice).toBe(0.0000452);
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0.9999548,
+        });
+    },
+);
 
 test("routes Span-01 Lite under its own id and bills nothing", async ({
     mocks,

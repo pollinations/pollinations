@@ -10,8 +10,18 @@ import { describe, expect, it } from "vitest";
 const videoModelIds = getVideoModelIds() as ImageModelName[];
 const nonVideoModelIds = getImageModelIds() as ImageModelName[];
 
+const audioDrivenModels = [
+    "heygen/heygen-avatar-6",
+    "heygen/heygen-avatar-6:openrouter",
+    "heygen/heygen-avatar-6-turbo",
+    "heygen/heygen-avatar-6-turbo:openrouter",
+] as const satisfies readonly ImageModelName[];
+const configurableDurationModels = videoModelIds.filter(
+    (model) => !audioDrivenModels.some((id) => id === model),
+);
+
 describe("video duration registry fields", () => {
-    it.each(videoModelIds)(
+    it.each(configurableDurationModels)(
         "%s has min_duration, max_duration, and default_duration",
         (name) => {
             const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
@@ -21,26 +31,32 @@ describe("video duration registry fields", () => {
         },
     );
 
-    it.each(videoModelIds)("%s satisfies min ≤ default ≤ max", (name) => {
-        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
-        const min = info.min_duration ?? 0;
-        const def = info.default_duration ?? 0;
-        const max = info.max_duration ?? 0;
-        expect(min).toBeLessThanOrEqual(def);
-        expect(def).toBeLessThanOrEqual(max);
-    });
+    it.each(configurableDurationModels)(
+        "%s satisfies min ≤ default ≤ max",
+        (name) => {
+            const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+            const min = info.min_duration ?? 0;
+            const def = info.default_duration ?? 0;
+            const max = info.max_duration ?? 0;
+            expect(min).toBeLessThanOrEqual(def);
+            expect(def).toBeLessThanOrEqual(max);
+        },
+    );
 
     it.each(videoModelIds)("%s declares its output resolutions", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
         expect(info.resolutions?.length).toBeGreaterThan(0);
     });
 
-    it.each(nonVideoModelIds)("%s omits duration fields", (name) => {
-        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
-        expect(info.min_duration).toBeUndefined();
-        expect(info.max_duration).toBeUndefined();
-        expect(info.default_duration).toBeUndefined();
-    });
+    it.each([...nonVideoModelIds, ...audioDrivenModels])(
+        "%s omits duration fields",
+        (name) => {
+            const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+            expect(info.min_duration).toBeUndefined();
+            expect(info.max_duration).toBeUndefined();
+            expect(info.default_duration).toBeUndefined();
+        },
+    );
 
     it("veo exposes allowed_durations", () => {
         const info = modelInfoFromDefinition(

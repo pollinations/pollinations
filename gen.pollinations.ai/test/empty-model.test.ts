@@ -50,6 +50,60 @@ it.each([
     expect(schema.safeParse(body).success).toBe(false);
 });
 
+// OpenAI defines stream_format, so asking for SSE must fail instead of
+// returning an audio file the caller cannot parse as events.
+it("rejects unsupported speech stream formats", () => {
+    const speechBody = { input: "hello", voice: "alloy" };
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "sse",
+        }).success,
+    ).toBe(false);
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "banana",
+        }).success,
+    ).toBe(false);
+    expect(
+        CreateSpeechRequestSchema.safeParse({
+            ...speechBody,
+            stream_format: "audio",
+        }).success,
+    ).toBe(true);
+    expect(CreateSpeechRequestSchema.safeParse(speechBody).success).toBe(true);
+});
+
+test("rejects multipart speech SSE before calling a provider", async ({
+    paidApiKey,
+}) => {
+    const mocks = createFetchMock({ tinybird: createMockTinybird() });
+    await mocks.enable("tinybird");
+    const form = new FormData();
+    form.set("model", "openai/tts-1");
+    form.set("input", "hello");
+    form.set("stream_format", "sse");
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/audio/speech", {
+            method: "POST",
+            headers: { authorization: `Bearer ${paidApiKey}` },
+            body: form,
+        }),
+        env,
+        ctx,
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+        error: { message: expect.stringContaining("stream_format") },
+    });
+    await waitOnExecutionContext(ctx);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(0);
+});
+
 const speech = { input: "hello", voice: "alloy", model: "" };
 
 test.for([

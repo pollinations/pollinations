@@ -1,0 +1,158 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+    type TileModality,
+} from "../lib/media-action-tile.ts";
+import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
+import { MediaFileIcon } from "../primitives/icons/index.tsx";
+import { Text } from "../primitives/Typography.tsx";
+import { AudioRecorder } from "./AudioRecorder.tsx";
+import { UploadedFileTile } from "./UploadedMedia.tsx";
+
+export type AudioInputProps = {
+    value: File[];
+    onChange: (files: File[]) => void;
+    onBusyChange?: (busy: boolean) => void;
+    /** Browser-readable duration in seconds, or null when local preview is unavailable. */
+    onClipDuration?: (file: File, seconds: number | null) => void;
+    onReject?: (files: RejectedFile[]) => void;
+    accept?: string;
+    importLabel?: string;
+    inputLabel?: string;
+    tileModality?: TileModality;
+    maxFiles?: number;
+    maxSizeBytes: number;
+    disabled?: boolean;
+    /** Render the recording and import actions inline with a shared preview queue. */
+    actionsOnly?: boolean;
+};
+
+export function AudioInput({
+    value,
+    onChange,
+    onBusyChange,
+    onClipDuration,
+    onReject,
+    accept = "audio/*",
+    importLabel,
+    inputLabel = importLabel ?? "Choose audio file",
+    tileModality = "audio",
+    maxFiles = 1,
+    maxSizeBytes,
+    disabled = false,
+    actionsOnly = false,
+}: AudioInputProps) {
+    const picker = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState("");
+    const changeBusy = useCallback(
+        (active: boolean) => {
+            setBusy(active);
+            onBusyChange?.(active);
+        },
+        [onBusyChange],
+    );
+    useEffect(() => acquireDocumentFileDropGuard(document), []);
+    const canAdd = value.length < maxFiles;
+    function add(files: File[]) {
+        if (disabled || !files.length) return;
+        const { accepted, rejected } = partitionFiles(files, value, {
+            accept,
+            maxFiles,
+            maxSizeBytes,
+        });
+        if (accepted.length) onChange([...value, ...accepted]);
+        setError("");
+        if (rejected.length) {
+            if (onReject) onReject(rejected);
+            else
+                setError(
+                    {
+                        size: "File exceeds the size limit.",
+                        count: "Too many clips.",
+                        type: "Choose a supported file type.",
+                    }[rejected[0].reason],
+                );
+        }
+    }
+    return (
+        <fieldset
+            aria-label="Audio clips"
+            className={
+                actionsOnly
+                    ? "polli:contents"
+                    : "polli:m-0 polli:w-full polli:min-w-0 polli:border-0 polli:p-0"
+            }
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+                e.preventDefault();
+                if (!busy) add(Array.from(e.dataTransfer.files));
+            }}
+        >
+            <div
+                className={
+                    actionsOnly
+                        ? "polli:contents"
+                        : "polli:flex polli:flex-wrap polli:items-start polli:gap-3"
+                }
+            >
+                {!actionsOnly &&
+                    value.map((file, i) => (
+                        <UploadedFileTile
+                            modality="audio"
+                            key={`${file.name}-${file.lastModified}-${i}`}
+                            file={file}
+                            onClipDuration={onClipDuration}
+                            disabled={disabled || busy}
+                            onRemove={() =>
+                                onChange(value.filter((_, n) => n !== i))
+                            }
+                        />
+                    ))}
+                {canAdd && (
+                    <>
+                        <input
+                            hidden
+                            ref={picker}
+                            type="file"
+                            accept={accept}
+                            multiple={maxFiles > 1}
+                            disabled={busy || disabled}
+                            aria-label={inputLabel}
+                            onChange={(e) => {
+                                add(Array.from(e.currentTarget.files ?? []));
+                                e.currentTarget.value = "";
+                            }}
+                        />
+                        {!busy && (
+                            <button
+                                type="button"
+                                aria-label={inputLabel}
+                                className={mediaActionTileClass(disabled)}
+                                {...mediaTileTint(tileModality)}
+                                disabled={disabled}
+                                onClick={() => picker.current?.click()}
+                            >
+                                <MediaFileIcon modality={tileModality} />
+                                <span>{importLabel ?? "Audio"}</span>
+                            </button>
+                        )}
+                        <AudioRecorder
+                            disabled={disabled}
+                            maxBytes={maxSizeBytes}
+                            onBusyChange={changeBusy}
+                            onRecord={(file) => add([file])}
+                        />
+                    </>
+                )}
+            </div>
+            {error && (
+                <Text role="alert" size="sm">
+                    {error}
+                </Text>
+            )}
+        </fieldset>
+    );
+}

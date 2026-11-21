@@ -62,8 +62,19 @@ const OPTIONAL_SECRET_KEYS = [
     "D3_KEY",
     "E2B_API_KEY",
     "GEMINI_API_KEY",
+    "KILO_API_KEY",
+    "QUIVER_API_KEY",
     "WEFT_SELLER_API_KEY",
 ];
+
+// Keep the existing upload contract for local development.
+const DEPLOY_UNUSED_KEYS = new Set([
+    "AIRFORCE_API_KEY",
+    "AZURE_CONTENT_SAFETY_API_KEY",
+    "AZURE_CONTENT_SAFETY_ENDPOINT",
+    "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
+    "FIREWORKS_API_KEY",
+]);
 
 const [sourcePath, environment] = process.argv.slice(2);
 
@@ -78,7 +89,13 @@ const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const filtered = {};
 const missing = [];
 
+const skipDeployKey = (key) =>
+    ((environment === "staging" || environment === "production") &&
+        DEPLOY_UNUSED_KEYS.has(key)) ||
+    (environment === "production" && key === "WEFT_SELLER_API_KEY");
+
 for (const key of REQUIRED_SECRET_KEYS) {
+    if (skipDeployKey(key)) continue;
     if (source[key] === undefined) {
         missing.push(key);
     } else {
@@ -86,6 +103,7 @@ for (const key of REQUIRED_SECRET_KEYS) {
     }
 }
 for (const key of OPTIONAL_SECRET_KEYS) {
+    if (skipDeployKey(key)) continue;
     if (source[key] !== undefined) {
         filtered[key] = source[key];
     }

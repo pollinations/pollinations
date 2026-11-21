@@ -1,5 +1,5 @@
 {
-  "version": 39,
+  "version": 40,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -3415,6 +3415,7 @@
         "fal-ai/trellis-2": "trellis-2",
         "fal-ai/triposr": null,
         "fal-ai/z-image/turbo": "zimage",
+        "ideogram/vector/text-to-vector": "ideogram-ai/ideogram-vector-1",
         "krea/v2/large/text-to-image": null,
         "krea/v2/medium/text-to-image": "krea",
         "minimax/h3-max-turbo/image-to-video": "minimax/minimax-h3-max-turbo",
@@ -5016,6 +5017,14 @@
       "aliases": []
     },
     {
+      "id": "kilo",
+      "aliases": [
+        "kilo.ai",
+        "kilo-code",
+        "kilo-gateway"
+      ]
+    },
+    {
       "id": "lambda",
       "aliases": []
     },
@@ -6159,6 +6168,13 @@
     {
       "id": "pruna",
       "aliases": []
+    },
+    {
+      "id": "quiverai",
+      "aliases": [],
+      "modelLabels": {
+        "arrow-2": "quiverai/arrow-2"
+      }
     },
     {
       "id": "regolo",

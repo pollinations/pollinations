@@ -2121,6 +2121,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1,
     },
   },
+  "baseten/groundhog-1": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000036925,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000036925,
+    },
+  },
   "hexgrad/kokoro-82m": {
     "cost": {
       "completionAudioTokens": 0.00000099,

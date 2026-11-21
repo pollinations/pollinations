@@ -1990,6 +1990,22 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
+    "recraft/recraft-v4-pro-vector": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.3 },
+        title: "Recraft V4 Pro Vector",
+        description:
+            "Higher-fidelity, print-ready SVG vectors with precise prompt adherence and structured layouts.",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        maxReferenceImages: 0,
+    },
     "recraft/recraft-v4.1-vector": {
         aliases: [
             "recraft-vector",

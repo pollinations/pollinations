@@ -1284,3 +1284,71 @@ export async function callOpenRouterRecraftVectorAPI(
         },
     };
 }
+
+export async function callOpenRouterRecraftV4ProVectorAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const requestBody: Record<string, unknown> = {
+        model: "recraft/recraft-v4-pro-vector",
+        prompt,
+        n: 1,
+        aspect_ratio: resolveRecraftAspectRatio(safeParams),
+        provider: {
+            only: ["recraft"],
+            allow_fallbacks: false,
+        },
+    };
+
+    let data: OpenRouterImageResponse;
+    try {
+        data = await postOpenRouterImage(
+            apiKey,
+            requestBody,
+            "OpenRouter vector generation request failed",
+        );
+    } catch (error) {
+        if (error instanceof UpstreamError && error.upstreamStatus === 429) {
+            throw new UpstreamError(429, {
+                ...error,
+                message:
+                    "Recraft vector generation is at capacity. Please retry shortly.",
+                requestUrl: new URL(OPENROUTER_IMAGE_URL),
+                upstreamStatus: 429,
+                cause: error,
+            });
+        }
+        throw error;
+    }
+    const generatedImage = data.data?.[0];
+    if (!generatedImage?.b64_json) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter image API returned no vector",
+            responseBody: JSON.stringify(data),
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        });
+    }
+    if (generatedImage.media_type !== SVG_MEDIA_TYPE) {
+        throw UpstreamError.fromProvider(502, {
+            message: `OpenRouter image API returned unsupported media type: ${generatedImage.media_type || "missing"}`,
+            responseBody: JSON.stringify(data),
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        });
+    }
+
+    logOps("Recraft vector generation complete", {
+        edit: false,
+        providerUsage: data.usage,
+    });
+
+    return {
+        buffer: base64ToBuffer(generatedImage.b64_json),
+        mimeType: SVG_MEDIA_TYPE,
+        trackingData: {
+            actualModel: "recraft/recraft-v4-pro-vector",
+            // OpenRouter bills this endpoint a fixed $0.3 per output SVG.
+            usage: { completionImageTokens: 1 },
+        },
+    };
+}

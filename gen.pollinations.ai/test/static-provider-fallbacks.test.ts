@@ -36,6 +36,10 @@ describe("Baseten Groundhog 1 OpenRouter decision route", () => {
             inputModalities: ["text", "image"],
             contextLength: 16384,
         });
+        expect(model.cost.promptTextTokens).toBeCloseTo(
+            (0.035 / 1_000_000) * 1.055,
+            16,
+        );
         expect(model.supportedEndpoints).toContain("/alpha/decisions");
         const resolved = findModelByName("baseten/groundhog-1");
         expect(resolved?.useSystemOneApi).toBe(true);

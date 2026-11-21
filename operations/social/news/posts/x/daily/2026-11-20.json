@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-20",
+  "period_start": "2026-11-20",
+  "period_end": "2026-11-20",
+  "generated_at": "2026-11-21T06:06:02.543062+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/c8d62ebc94a11798aa79eabc34d6201b3752526bc834fc2a7c638a6d9740479e"
+    }
+  ],
+  "text": "Play now keeps separate Image, Video, and Audio drafts. Record or import media, tune model controls, and ask yes/no, multiple-choice, or scale questions in Decide. See answer probabilities and copy a curl request. Even uncertainty gets an endpoint."
+}

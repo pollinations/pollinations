@@ -1125,6 +1125,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "baseten/bison-1",
+        config: portkeyConfig["baseten/bison-1"],
+        useSystemOneApi: true,
+    },
+    {
         name: "jaredpalmer/kev-4b",
         config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,

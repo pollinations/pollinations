@@ -25,6 +25,31 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("Baseten Bison 1 OpenRouter decision route", () => {
+    it("registers a paid-only System One model with its canonical ID and no aliases", () => {
+        const model = TEXT_SERVICES["baseten/bison-1"];
+        expect(model).toMatchObject({
+            provider: "openrouter",
+            category: "decision",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image"],
+            contextLength: 32768,
+        });
+        expect(model.supportedEndpoints).toContain("/alpha/decisions");
+        const resolved = findModelByName("baseten/bison-1");
+        expect(resolved?.useSystemOneApi).toBe(true);
+        expect(resolved?.config()).toMatchObject({
+            provider: "openrouter",
+            model: "baseten/bison-1",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["baseten"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",

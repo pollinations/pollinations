@@ -140,6 +140,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "baseten/bison-1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "baseten/bison-1",
+        defaultOptions: {
+            provider: {
+                only: ["baseten"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "kev-4b": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",

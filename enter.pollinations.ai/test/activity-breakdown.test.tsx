@@ -1,6 +1,7 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { BreakdownTable } from "../frontend/src/components/activity/activity-overview.tsx";
+import { Chart } from "../frontend/src/components/activity/chart.tsx";
 
 vi.mock("../frontend/src/api.ts", () => ({ accountClient: {} }));
 vi.mock("../frontend/src/config.ts", () => ({
@@ -84,5 +85,38 @@ it("shows 15 rows at a time, keeps paging while picking and resets for every new
     await act(async () => more()?.props.onClick());
     expect(rows()).toHaveLength(16);
     expect(more()).toBeUndefined();
+    await act(async () => renderer?.unmount());
+});
+
+it("labels a one-request chart with whole request counts", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.stubGlobal("requestAnimationFrame", () => 0);
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+    let renderer: ReactTestRenderer | undefined;
+    await act(async () => {
+        renderer = create(
+            <Chart
+                data={[
+                    {
+                        label: "Nov 1",
+                        value: 1,
+                        tierValue: 1,
+                        paidValue: 0,
+                        timestamp: new Date("2026-11-01T00:00:00Z"),
+                        fullDate: "Nov 1, 2026",
+                    },
+                ]}
+                metric="requests"
+                label="Requests"
+                period={{ granularity: "month", period: "2026-11" }}
+                onSelect={() => undefined}
+            />,
+        );
+    });
+    const axis = renderer?.root
+        .findAllByType("text")
+        .filter((text) => text.props.textAnchor === "start")
+        .map((text) => text.children.join(""));
+    expect(axis).toEqual(["0", "1"]);
     await act(async () => renderer?.unmount());
 });

@@ -50,7 +50,7 @@ export function createReasoningEffortTransform(
                 delete updated.reasoning_effort;
             } else if (effort === "minimal") {
                 updated.reasoning_effort = "low";
-            } else if (effort === "xhigh") {
+            } else if (effort === "xhigh" || effort === "max") {
                 updated.reasoning_effort = "high";
             }
             return { messages, options: updated };

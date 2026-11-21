@@ -160,6 +160,10 @@ describe("getGenerationModelRegistry", () => {
             ["openai/gpt-oss-20b", "parallel_tool_calls", false],
             ["openai/gpt-oss-20b", "temperature", true],
             ["openai/gpt-oss-20b", "logprobs", true],
+            // OVH answers top_logprobs above 1 with a 400.
+            ["openai/gpt-oss-20b", "top_logprobs", false],
+            ["qwen/qwen3guard-gen-8b", "logprobs", true],
+            ["qwen/qwen3guard-gen-8b", "top_logprobs", false],
             // Azure's Fireworks deployments and GLM-5.3-Flash reject prediction;
             // GLM-5.3 and MiniMax M3.1 Flash on Fireworks honor it.
             ["nvidia/nemotron-3-ultra", "prediction", false],

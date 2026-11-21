@@ -516,6 +516,13 @@ export const IMAGE_FALLBACKS = {
             ),
         },
     },
+    "recraft/recraft-v4-vector": {
+        "recraft/recraft-v4-vector:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-20").getTime(),
+            cost: { completionImageTokens: 0.08 * 1.055 },
+        },
+    },
     "recraft/recraft-v4.1-flash": {
         "recraft/recraft-v4.1-flash:openrouter": {
             provider: "openrouter",

@@ -21,8 +21,10 @@ export interface MediaModel {
 
 export interface MediaRequest {
     kind: "image" | "video";
-    width: number;
-    height: number;
+    // Undefined when the caller sends no size and gen picks it: the model
+    // default for text prompts, the source aspect for edits.
+    width?: number;
+    height?: number;
     references: number;
     duration?: number;
     audio?: boolean;
@@ -66,8 +68,14 @@ export function estimateMediaCost(model: MediaModel, req: MediaRequest) {
             });
         };
 
-        if (field === "completionImageTokens" && declared?.unit === "megapixel")
-            add((req.width * req.height) / 1_000_000, "megapixel");
+        if (field === "completionImageTokens" && declared?.unit === "megapixel") {
+            // Without a requested size the server decides (model default, or the
+            // source aspect for edits), so the megapixels — and the price — are
+            // only knowable after generation.
+            if (req.width != null && req.height != null)
+                add((req.width * req.height) / 1_000_000, "megapixel");
+            else unpriced.push(field);
+        }
         else if (field === "completionImageTokens" && perImage) add(1, "image");
         else if (field === "promptImageTokens" && req.references === 0)
             continue;

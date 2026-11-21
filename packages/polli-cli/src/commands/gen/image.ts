@@ -25,8 +25,8 @@ export function createImageCommand() {
         .description("Generate an image from a prompt")
         .argument("<prompt>", "Image description")
         .option("--model <model>", "Image model", "zimage")
-        .option("--width <n>", "Image width", "1024")
-        .option("--height <n>", "Image height", "1024")
+        .option("--width <n>", "Image width (default: the model's)")
+        .option("--height <n>", "Image height (default: the model's)")
         .option("--seed <n>", "Random seed")
         .option("--safe", "Enable safety filters")
         .option(
@@ -45,11 +45,12 @@ export function createImageCommand() {
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
-            const params = new URLSearchParams({
-                model: opts.model,
-                width: opts.width,
-                height: opts.height,
-            });
+            // No size is sent unless asked: gen picks the model default for text
+            // prompts and matches the source aspect for edits. Sending 1024x1024
+            // every time marked the size explicit and forced edits to square.
+            const params = new URLSearchParams({ model: opts.model });
+            if (opts.width) params.set("width", opts.width);
+            if (opts.height) params.set("height", opts.height);
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
@@ -69,8 +70,8 @@ export function createImageCommand() {
             if (opts.estimate)
                 return printEstimate(opts.model, {
                     kind: "image",
-                    width: Number(opts.width),
-                    height: Number(opts.height),
+                    width: opts.width ? Number(opts.width) : undefined,
+                    height: opts.height ? Number(opts.height) : undefined,
                     references: opts.image?.length ?? 0,
                 });
 

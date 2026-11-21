@@ -2181,6 +2181,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1055,
     },
   },
+  "heygen/heygen-decision-1": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000014,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000014,
+    },
+  },
+  "heygen/heygen-decision-1:openrouter": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000007385,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000007385,
+    },
+  },
   "heygen/heygen-video-1": {
     "cost": {
       "completionVideoSeconds": 0.01,

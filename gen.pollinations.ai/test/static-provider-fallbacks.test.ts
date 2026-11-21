@@ -25,6 +25,32 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("HeyGen Decision 1 routes", () => {
+    it("keeps the Vercel decision route primary with a paid OpenRouter fallback", () => {
+        const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
+        const fallback = TEXT_SERVICES["heygen/heygen-decision-1:openrouter"];
+        expect(primary).toMatchObject({
+            category: "decision",
+            provider: "vercel",
+            paidOnly: true,
+            fallbacks: ["heygen/heygen-decision-1:openrouter"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(primary.supportedEndpoints).toContain("/alpha/decisions");
+        expect(
+            findModelByName("heygen/heygen-decision-1")?.useSystemOneApi,
+        ).toBe(true);
+        expect(
+            findModelByName("heygen/heygen-decision-1:openrouter")
+                ?.useSystemOneApi,
+        ).toBe(true);
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",

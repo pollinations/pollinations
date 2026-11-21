@@ -53,8 +53,8 @@ import {
 } from "./models/prunaModel.ts";
 import { callArrowSVGAPI } from "./models/quiverSvgModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
-import { callRecraftV4ProVectorFalAPI } from "./models/recraftV4ProVectorFalModel.ts";
 import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
+import { callRecraftV4ProVectorFalAPI } from "./models/recraftV4ProVectorFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -1216,7 +1216,10 @@ const generateImage = async (
             return await callRecraftV4ProVectorFalAPI(prompt, safeParams);
 
         case "recraft/recraft-v4-pro-vector:openrouter":
-            return await callOpenRouterRecraftV4ProVectorAPI(prompt, safeParams);
+            return await callOpenRouterRecraftV4ProVectorAPI(
+                prompt,
+                safeParams,
+            );
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);

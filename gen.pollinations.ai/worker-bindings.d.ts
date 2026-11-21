@@ -13,6 +13,7 @@ interface CloudflareBindings {
     PACKAGES_MCP: Fetcher;
     NEWS_MCP: Fetcher;
     RESEARCH_MCP: Fetcher;
+    COMMONS_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     ZONOS3_VPC?: Fetcher;

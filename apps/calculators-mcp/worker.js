@@ -11,6 +11,7 @@ import { integerTools } from "./tools/integer.js";
 import { qrTools } from "./tools/qr.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
+import { unitTools } from "./tools/units.js";
 import { versionTools } from "./tools/versions.js";
 
 const handler = createMcpHandler(
@@ -21,6 +22,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...timeTools,
+            ...unitTools,
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,

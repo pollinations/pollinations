@@ -1,0 +1,116 @@
+<!doctype html>
+<!--
+  Realtime voice example for @pollinations/sdk.
+
+  Run `npm run build` in packages/sdk first, then serve this folder over
+  http://localhost (microphone access needs a secure context) and open the
+  page. Paste an sk_ key from https://enter.pollinations.ai/keys and talk.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Pollinations realtime voice example</title>
+    </head>
+    <body>
+        <h1>Realtime voice</h1>
+        <p>
+            <input id="key" type="password" placeholder="sk_ API key" size="40" />
+            <button id="connect">Connect</button>
+            <button id="mic" disabled>Start mic</button>
+            <span id="status">disconnected</span>
+        </p>
+        <pre id="log" style="white-space: pre-wrap"></pre>
+
+        <script type="module">
+            import { connectRealtime, base64ToPcm16 } from "../dist/index.js";
+
+            const log = (line) => {
+                document.querySelector("#log").textContent += `${line}\n`;
+            };
+            const status = document.querySelector("#status");
+            let session = null;
+            let mic = null;
+
+            // Playback: schedule each PCM16 delta right after the previous one.
+            const playback = new AudioContext({ sampleRate: 24000 });
+            let playAt = 0;
+            function playDelta(base64) {
+                const pcm = base64ToPcm16(base64);
+                const buffer = playback.createBuffer(1, pcm.length, 24000);
+                const channel = buffer.getChannelData(0);
+                for (let i = 0; i < pcm.length; i++) channel[i] = pcm[i] / 32768;
+                const source = playback.createBufferSource();
+                source.buffer = buffer;
+                source.connect(playback.destination);
+                playAt = Math.max(playAt, playback.currentTime);
+                source.start(playAt);
+                playAt += buffer.duration;
+            }
+
+            document.querySelector("#connect").onclick = () => {
+                session?.close();
+                session = connectRealtime({
+                    apiKey: document.querySelector("#key").value,
+                    model: "openai/gpt-realtime-2.1",
+                    session: { voice: "alloy" },
+                    onEvent: (event) => {
+                        if (
+                            event.type === "response.output_audio.delta" ||
+                            event.type === "response.audio.delta"
+                        ) {
+                            playDelta(event.delta);
+                        } else if (
+                            event.type ===
+                            "conversation.item.input_audio_transcription.completed"
+                        ) {
+                            log(`you: ${event.transcript}`);
+                        } else if (
+                            event.type === "response.output_audio_transcript.done" ||
+                            event.type === "response.audio_transcript.done"
+                        ) {
+                            log(`assistant: ${event.transcript}`);
+                        } else if (event.type === "error") {
+                            log(`error: ${JSON.stringify(event.error)}`);
+                        }
+                    },
+                    onError: (err) => log(`socket error: ${err.message}`),
+                    onClose: () => {
+                        status.textContent = "disconnected";
+                        document.querySelector("#mic").disabled = true;
+                    },
+                });
+                session.socket.addEventListener("open", () => {
+                    status.textContent = "connected";
+                    document.querySelector("#mic").disabled = false;
+                });
+            };
+
+            document.querySelector("#mic").onclick = async (e) => {
+                if (mic) {
+                    mic.stream.getTracks().forEach((track) => track.stop());
+                    mic.processor.disconnect();
+                    mic.context.close();
+                    mic = null;
+                    e.target.textContent = "Start mic";
+                    return;
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const context = new AudioContext({ sampleRate: 24000 });
+                const processor = context.createScriptProcessor(4096, 1, 1);
+                const source = context.createMediaStreamSource(stream);
+                processor.onaudioprocess = (event) => {
+                    const input = event.getChannelData(0);
+                    const pcm = new Int16Array(input.length);
+                    for (let i = 0; i < input.length; i++) {
+                        pcm[i] = Math.max(-32768, Math.min(32767, input[i] * 32768));
+                    }
+                    session.appendAudio(pcm);
+                };
+                source.connect(processor);
+                processor.connect(context.destination);
+                mic = { stream, processor, context };
+                e.target.textContent = "Stop mic";
+            };
+        </script>
+    </body>
+</html>

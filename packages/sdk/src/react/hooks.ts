@@ -12,6 +12,12 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionConfig,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +498,77 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export interface UseRealtimeSessionOptions {
+    /** Realtime model id. Defaults to "openai/gpt-realtime-2.1". */
+    model?: string;
+    /** Gateway base URL. Defaults to the public gateway. */
+    baseUrl?: string;
+    /** Session settings sent when the socket opens. Change them later through `session.updateSession`. */
+    session?: RealtimeSessionConfig;
+    /** Called for every event the session receives. */
+    onEvent?: (event: RealtimeEvent) => void;
+}
+
+export interface UseRealtimeSessionValue {
+    /** The live session, or null while logged out. Send events and audio through it. */
+    session: RealtimeSession | null;
+    isOpen: boolean;
+    error: Error | null;
+    /** The most recent event received, or null. */
+    lastEvent: RealtimeEvent | null;
+}
+
+/**
+ * Realtime voice or transcription session on the provider's key. Connects
+ * when a key is available; a key change or unmount closes the session, so a
+ * stale session never reaches the next user.
+ */
+export function useRealtimeSession(
+    options: UseRealtimeSessionOptions = {},
+): UseRealtimeSessionValue {
+    const { apiKey } = useRequiredAuth();
+    const { model, baseUrl } = options;
+    const [session, setSession] = useState<RealtimeSession | null>(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+    const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+
+    useEffect(() => {
+        if (!apiKey) {
+            setSession(null);
+            return;
+        }
+        const next = connectRealtime({
+            apiKey,
+            model,
+            baseUrl,
+            session: optionsRef.current.session,
+            onEvent: (event) => {
+                setLastEvent(event);
+                optionsRef.current.onEvent?.(event);
+            },
+            onError: (err) => setError(err),
+            onClose: () => setIsOpen(false),
+        });
+        const onOpen = () => setIsOpen(true);
+        next.socket.addEventListener("open", onOpen);
+        setSession(next);
+        setError(null);
+        setLastEvent(null);
+        return () => {
+            next.socket.removeEventListener("open", onOpen);
+            next.close();
+            setSession(null);
+            setIsOpen(false);
+        };
+    }, [apiKey, model, baseUrl]);
+
+    return useMemo(
+        () => ({ session, isOpen, error, lastEvent }),
+        [session, isOpen, error, lastEvent],
+    );
 }

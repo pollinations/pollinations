@@ -2779,6 +2779,60 @@ test("a merged PR pays once, whatever changes after it paid", async ({
     ]);
 });
 
+test("a later PR closing an already-paid multi-winner quest earns its own merged-PR reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const login = user.githubUsername ?? "";
+
+    // The quest paid this author once, for PR 19503, before PR 19519 merged.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19174,
+        title: "[QUEST] Extend our MCP servers or add a new one",
+        goal: "Add a new MCP server or extend one of ours.",
+        reward: 5,
+        reopened: true,
+    });
+    const questRewardKey = rewardKey("github:issue:19174", user);
+    await drizzle(env.DB, { schema })
+        .insert(schema.rewards)
+        .values({
+            id: questRewardKey,
+            idempotencyKey: questRewardKey,
+            userId: user.id,
+            questId: "github:issue:19174",
+            title: "Extend our MCP servers or add a new one",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-12T06:00:00Z"),
+        });
+    mocks.github.state.mergedPullRequests.push(
+        {
+            number: 19503,
+            authorLogin: login,
+            mergedAt: "2026-11-12T00:00:00Z",
+            closingIssues: [19174],
+        },
+        {
+            number: 19519,
+            authorLogin: login,
+            mergedAt: "2026-11-12T12:00:00Z",
+            closingIssues: [19174],
+        },
+    );
+
+    // 19503 earned the quest reward; 19519 still earns its own 5.
+    const paid = [
+        { questId: "github:issue:19174", pollenAmount: 5 },
+        { questId: "github:merged_pr:19519", pollenAmount: 5 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+    // A recheck pays neither PR again.
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+});
+
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,

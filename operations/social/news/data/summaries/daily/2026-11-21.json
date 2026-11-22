@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-21",
+  "period_start": "2026-11-21",
+  "period_end": "2026-11-21",
+  "title": "Two community apps join the catalog",
+  "summary": "Two community apps joined the catalog: a multimodal API bridge and a Portuguese-language image studio.\n\n@BalTac's polli-bridge brings Pollinations text, images, speech, transcription, and video through one OpenAI-compatible endpoint. @palmunix's Portuguese-language Pollinations Image Studio lets people choose an image model and aspect ratio, then generate images using their own balance without pasting an API key. Both apps were added to the catalog and README recent-apps list.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 20439,
+      "date": "2026-11-21"
+    },
+    {
+      "number": 20440,
+      "date": "2026-11-21"
+    }
+  ],
+  "generated_at": "2026-11-22T06:05:37.244812+00:00",
+  "daily": [],
+  "changelog": []
+}

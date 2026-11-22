@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-11-22",
+  "period_start": "2026-11-15",
+  "period_end": "2026-11-21",
+  "generated_at": "2026-11-22T06:06:18.095017+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/49740bbf5a9b11d061b9daff990f112eb0315063d3a9153d09a86141ca2b6bb8"
+    }
+  ],
+  "text": "## Weekly Update - 2026-11-22\nHey <@&1424461167883194418>, here’s what changed this week.\n\n🎨 **More things to make**\nImages gained MAI Image 2.7, Stable Diffusion 3.5 Large, Seedream 5.5, and MiniMax H3. Sunburst and Hotshot-XL make GIFs; Ideogram Vector 1 and Arrow 2 make editable SVGs. Video gained LTX 2.5 Pro, Kling 3.0 Pro, Seedance 2.5 Flash, and HeyGen Avatar 6. The new SVG and video models require paid balance. MAI Image 2.7 accepts Quest or paid balance.\n\n🛠️ **Play remembers what you were doing**\nInputs, results, and in-flight runs persist when you leave and return during the same visit. Image, Video, and Audio keep separate drafts across tabs. Recording, media imports, and model-specific controls were added. The new Decide workspace shows answers and probabilities for yes/no, multiple-choice, and scale questions, plus a copyable `curl` request.\n\n🗣️ **More models**\nText and multimodal additions include Hy4 Flash, GPT-6.2 Astra and Sol, Qwen 4 Max, Muse Ember, and Gemini 4 Hydrogen and Neon. ZONOS3-Mini generates speech and can clone a voice from a public reference-audio URL. Gemini 3.8 Live supports realtime sessions. Microsoft Decision 1.1, Liquid d1.2, and Gemini Decision 1 joined the decision catalog.\n\n🔑 **Connect and Quests**\nConnect sign-in no longer needs an App Key; PKCE is still required. An App Key still adds the app name to consent, usage attribution, and developer earnings. Repeat Quest rewards stack on one activity card and can be claimed together for one balance. Quest tabs and balance labels are clearer; rewards and claiming behavior are unchanged.\n\n🌱 **Tools and community**\nHosted MCP added server discovery, public Docker Hub tag and ASN lookups, exact integer math, and identifier checks. Model listings expose required safety checks, optional per-use pricing adjustments, and `alpha: true` for experimental models. Enter hides models marked down by default, with access through the status link. Twenty-six community apps joined the catalog, from model games to a Portuguese-language image studio. App pre-review now checks sign-in methods and default model eligibility; older apps remain in the catalog when Recent Apps rotates.\n\nCode and changes: https://github.com/pollinations/pollinations"
+}

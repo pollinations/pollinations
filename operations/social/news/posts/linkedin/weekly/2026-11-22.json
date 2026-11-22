@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-11-22",
+  "period_start": "2026-11-15",
+  "period_end": "2026-11-21",
+  "generated_at": "2026-11-22T06:06:18.095017+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/53069029a787413d05ed6738739fb41ac64b0d23a90672823f9ee4b7758855a7"
+    }
+  ],
+  "text": "GIF, editable SVG, and video options joined the catalog. Play now keeps separate drafts when you switch media tabs.\n·˚✿ POLLINATIONS WEEKLY ✿˚· vol.47\n\n1. The creative catalog gained animated GIFs, editable SVGs, and more image and video models.\n\n2. Play keeps inputs, results, and in-flight runs when you leave and return during the same visit. Image, Video, and Audio have separate drafts. Recording and media imports joined too. Tabs can finally mind their own business.\n\n3. The new Decide workspace shows answers and probabilities for yes/no, multiple-choice, and scale questions. It also gives you a curl request to copy. Gemini 3.8 Live added realtime sessions.\n\n4. Apps can use Connect sign-in without an App Key. PKCE is still required. Hosted MCP tools gained server discovery and exact integer math.\n\n5. Twenty-six community apps joined the catalog, including a narrated flipbook and a simulated 1980s computer.\n\nCode: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

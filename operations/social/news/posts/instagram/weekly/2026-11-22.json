@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-11-22",
+  "period_start": "2026-11-15",
+  "period_end": "2026-11-21",
+  "generated_at": "2026-11-22T06:06:18.095017+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/2ff9bc61795aa72fef62e163b9a2f35580b41f5311766c368fb16973c6492f5d"
+    },
+    {
+      "url": "https://media.pollinations.ai/5a0ad5834a807ddf55ad509e95f92241ea749c4a138d0a992632b47fd2b627e3"
+    },
+    {
+      "url": "https://media.pollinations.ai/3f9440d17f21b038d7ab14db0ea9b613281eff867c303146e40e85094caad6a2"
+    }
+  ],
+  "text": "This week: new image models, GIFs, editable SVGs, and video joined the catalog. Play now keeps runs and separate media drafts during the same visit. It also gained recording and a Decide workspace. New text, speech, realtime, and decision models landed too. Connect sign-in works without an App Key (PKCE is still required). Repeat Quest rewards collect on one card, MCP gained more tools, and 26 community apps joined the catalog. Browse at https://pollinations.ai 🐝\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #generativeart #svg #aivideo #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

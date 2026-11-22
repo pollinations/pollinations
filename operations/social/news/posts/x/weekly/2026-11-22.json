@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-11-22",
+  "period_start": "2026-11-15",
+  "period_end": "2026-11-21",
+  "generated_at": "2026-11-22T06:06:18.095017+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/a4a27ebd4d80b235d823af8a33e674e56831c51a24b11c174770052f32a78f81"
+    }
+  ],
+  "text": "This week: Play keeps inputs, results, and in-flight runs when you leave and return during the same visit. Image, Video, and Audio keep separate drafts across tabs. Decide shows answers and probabilities, with a curl request to copy. Tabs learned object permanence."
+}

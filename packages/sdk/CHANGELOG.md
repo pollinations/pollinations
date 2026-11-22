@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-22
+
+### Added
+
+- `connectRealtime()` opens a realtime voice or transcription session on the gateway's `/v1/realtime` WebSocket and passes OpenAI Realtime events through. Events sent before the socket opens are queued and flushed in order.
+- `useRealtimeSession()` React hook next to the other hooks, on the provider's key.
+- PCM16 base64 helpers `pcm16ToBase64()` and `base64ToPcm16()` for realtime audio buffers.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

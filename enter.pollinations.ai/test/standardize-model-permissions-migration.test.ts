@@ -200,6 +200,7 @@ const retiredPublicIds = [
 ] as const;
 // Preserve the migration's historical mappings for models removed from the live registry.
 const retiredModelAliases: Record<string, string> = {
+    "grok-imagine-pro": "x-ai/grok-imagine-image-quality",
     "mimo-v2.5-pro": "xiaomi/mimo-v2.5-pro",
     "nova-canvas": "amazon/nova-canvas-v1",
     "nova-reel": "amazon/nova-reel-v1",

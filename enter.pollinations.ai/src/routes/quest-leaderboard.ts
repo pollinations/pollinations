@@ -262,9 +262,13 @@ export async function getQuestStandings(
     let race = await env.KV.get<QuestStandingsRace>(key, "json");
     if (!race) {
         race = await buildQuestStandingsRace(env, now);
+        // Two viewers can miss together, and KV takes one write per key per
+        // second. The rejected write must not fail a finished response.
         await env.KV.put(key, JSON.stringify(race), {
             expirationTtl: STANDINGS_CACHE_TTL,
-        });
+        }).catch((error) =>
+            console.warn("Quest standings cache write failed", error),
+        );
     }
     return sliceQuestStandings(race, viewerGithubLogin);
 }

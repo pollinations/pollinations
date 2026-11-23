@@ -15,6 +15,10 @@ export function MediaModelOption({
         paidOnly: boolean;
         publisher?: string;
         addedDate?: number;
+        category?: string;
+        community?: boolean;
+        agent?: boolean;
+        brandIconUrl?: string;
     };
 }) {
     return (

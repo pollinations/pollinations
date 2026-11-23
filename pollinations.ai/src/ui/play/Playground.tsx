@@ -147,6 +147,9 @@ type PlaygroundModel = MediaModelMetadata & {
     paidOnly: boolean;
     free: boolean;
     publisher?: string;
+    /** Community listings show their owner's uploaded logo, else their type. */
+    community: boolean;
+    brandIconUrl?: string;
     /** Listed on the Agent tab; reached through /v1/responses. */
     agent: boolean;
     addedDate?: number;
@@ -233,6 +236,11 @@ function playgroundModel(
         agent: !!model.agent,
         addedDate: model.added_date,
         publisher: model.publisher,
+        community: !!model.community,
+        brandIconUrl:
+            typeof model.brand_icon_url === "string"
+                ? model.brand_icon_url
+                : undefined,
         maxReferenceVideos: model.max_reference_videos,
         ...playgroundAudioMetadata(id, model),
     };

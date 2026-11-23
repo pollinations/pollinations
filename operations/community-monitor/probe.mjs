@@ -13,7 +13,8 @@ import {
 } from "./image-probe.mjs";
 import { nextProbeAt, recordProbe } from "./probe-schedule.mjs";
 
-// Probe selected community text/image models, at most once every four hours.
+// Probe selected community text/image models, at most once every four hours
+// (once a day for an image model whose last probe passed).
 // Repeated failures back off to weekly; --model is a one-off diagnostic check.
 // Actual spend is reconciled from real `usage` tokens and recorded in state.
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
@@ -520,7 +521,7 @@ console.log(
 );
 if (skippedModels.length) {
     console.log(
-        `${skippedModels.length} models not due (4h base interval, failure backoff up to 6d)`,
+        `${skippedModels.length} models not due (4h base interval, 24h after a passing image probe, failure backoff up to 6d)`,
     );
 }
 console.log(

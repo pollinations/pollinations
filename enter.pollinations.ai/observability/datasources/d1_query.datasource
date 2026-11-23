@@ -1,0 +1,15 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+The statement text behind each `query_id` in `d1_call_event`, with
+placeholders only (batches joined by ";\n"). Each Worker isolate sends a
+statement the first time it runs it; duplicates collapse to one row.
+
+SCHEMA >
+`query_id` String                 `json:$.query_id`,
+`service`  LowCardinality(String) `json:$.service`,
+`sql`      String                 `json:$.sql`
+
+ENGINE "ReplacingMergeTree"
+ENGINE_SORTING_KEY "query_id"

@@ -1,3 +1,4 @@
+import { nameD1Caller, withD1Calls } from "@shared/d1-calls.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -48,6 +49,7 @@ const app = new Hono<Env>()
         }),
     )
     .use("*", requestId())
+    .use("*", nameD1Caller)
     .use("*", logger)
     // Prevent search engines from indexing API responses (except docs)
     .use("/api/*", async (c, next) => {
@@ -89,10 +91,23 @@ export default {
         if (env.CODE_AGENT_CONTEXT) {
             return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
         }
-        return app.fetch(request, env, ctx);
+        return withD1Calls(
+            "enter",
+            env,
+            ctx,
+            () => ({ route_path: "", method: request.method }),
+            () => app.fetch(request, env, ctx),
+        );
     },
     // Every 15 minutes (wrangler.toml).
-    async scheduled(_controller, env) {
-        await refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS);
-    },
+    scheduled: (controller, env, ctx) =>
+        withD1Calls(
+            "enter",
+            env,
+            ctx,
+            () => ({ route_path: controller.cron, method: "CRON" }),
+            async () => {
+                await refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS);
+            },
+        ),
 } satisfies ExportedHandler<Env["Bindings"]>;

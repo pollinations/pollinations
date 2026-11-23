@@ -295,6 +295,40 @@ describe("account hooks", () => {
         expect(read<AuthStateValue>(auth).apiKey).toBe("sk_test");
         expect(read<UseAccountKeyValue>(key).data).toBeNull();
     });
+
+    it("hides the previous key's data while the new key loads", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) =>
+            new Headers(init?.headers).get("Authorization") === "Bearer sk_a"
+                ? jsonResponse({ id: "a" })
+                : new Promise<Response>(() => {}),
+        );
+        let key: UseAccountKeyValue | null = null;
+        function Probe() {
+            key = useAccountKey();
+            return null;
+        }
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue({ apiKey: "sk_a" })}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await waitFor(() => !!key?.data);
+
+        await act(async () => {
+            renderer.update(
+                <AuthContext.Provider value={authValue({ apiKey: "sk_b" })}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        expect(read<UseAccountKeyValue>(key).data).toBeNull();
+        expect(read<UseAccountKeyValue>(key).isLoading).toBe(true);
+        await act(async () => renderer.unmount());
+    });
 });
 
 type TextGeneration = ReturnType<typeof useTextGeneration>;

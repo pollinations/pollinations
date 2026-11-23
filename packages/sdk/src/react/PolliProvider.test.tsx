@@ -556,6 +556,33 @@ describe("PolliProvider", () => {
             expect(auth.current?.error).toBeNull();
             expect(storage.getItem("polli:pk_test:token")).toBe("sk_new");
         });
+
+        it("does not fall back to a key this tab failed to replace", async () => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_url, init) =>
+                    new Headers(init?.headers).get("Authorization") ===
+                    "Bearer sk_old"
+                        ? new Response(JSON.stringify({ id: "key" }))
+                        : unauthorized(),
+            );
+            const auth = await mountWithKey(storage);
+            vi.spyOn(storage, "setItem").mockImplementation(() => {
+                throw new Error("Storage full");
+            });
+
+            await act(async () => {
+                auth.current?.setApiKey("sk_new");
+            });
+
+            expect(auth.current?.isLoggedIn).toBe(false);
+            expect(auth.current?.error?.message).toBe(
+                "Your Pollinations connection expired or was revoked. Connect again.",
+            );
+        });
     });
 
     it("persists keys set by the host app", async () => {

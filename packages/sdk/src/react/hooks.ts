@@ -131,7 +131,12 @@ function useAccountResource<T>(
     enabled = true,
 ): AccountResourceValue<T> {
     const { apiKey, apiBaseUrl, rejectApiKey } = useRequiredAuth();
-    const [data, setData] = useState<T | null>(null);
+    // Data belongs to the key that fetched it, so a new key never shows the
+    // previous account's data while its own request is pending.
+    const [loaded, setLoaded] = useState<{ apiKey: string; data: T } | null>(
+        null,
+    );
+    const data = loaded?.apiKey === apiKey ? loaded.data : null;
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const reqIdRef = useRef(0);
@@ -139,7 +144,7 @@ function useAccountResource<T>(
     const refresh = useCallback(async () => {
         const reqId = ++reqIdRef.current;
         if (!enabled || !apiKey) {
-            setData(null);
+            setLoaded(null);
             setIsLoading(false);
             setError(null);
             return;
@@ -150,14 +155,14 @@ function useAccountResource<T>(
         try {
             const result = await fetcher(apiBaseUrl, apiKey);
             if (reqId !== reqIdRef.current) return;
-            setData(result);
+            setLoaded({ apiKey, data: result });
         } catch (err) {
             if (reqId !== reqIdRef.current) return;
             if (err instanceof PollinationsError && err.status === 401) {
                 rejectApiKey(apiKey);
                 return;
             }
-            setData(null);
+            setLoaded(null);
             setError(err instanceof Error ? err : new Error(String(err)));
         } finally {
             if (reqId === reqIdRef.current) setIsLoading(false);

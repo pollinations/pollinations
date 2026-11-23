@@ -232,6 +232,9 @@ export function PolliProvider({
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+    // The saved key as this tab last read or wrote it. A different saved key
+    // later means another tab connected since.
+    const syncedKey = useRef<string | null>(null);
 
     useEffect(() => {
         warnAuthSetup(appKey, currentRedirectUrl());
@@ -246,6 +249,7 @@ export function PolliProvider({
                 } else {
                     storage.removeItem(storageKey);
                 }
+                syncedKey.current = nextApiKey;
             } catch (cause) {
                 storageError =
                     cause instanceof Error
@@ -267,7 +271,8 @@ export function PolliProvider({
         hydrationStarted.current = true;
 
         void (async () => {
-            setApiKey(storage.getItem(storageKey));
+            syncedKey.current = storage.getItem(storageKey);
+            setApiKey(syncedKey.current);
             const result = consumeOAuthCallback(
                 window.location,
                 storage,
@@ -418,7 +423,8 @@ export function PolliProvider({
             } catch {
                 // Unreadable storage: treat the key as gone.
             }
-            if (saved && saved !== rejected) {
+            if (saved && saved !== rejected && saved !== syncedKey.current) {
+                syncedKey.current = saved;
                 setApiKey(saved);
                 return;
             }

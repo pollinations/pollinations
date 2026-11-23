@@ -10,6 +10,8 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   connected again since: it picks up their saved key instead of deleting it.
 - Signing out after a 401 now sets `error` on the auth state, so the app can
   say why the user must connect again.
+- Account hooks return `data: null` after the key changes, until the new key's
+  request finishes, instead of the previous account's data.
 
 ## [5.1.0-alpha.34] - 2026-11-19
 

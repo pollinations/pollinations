@@ -185,10 +185,16 @@ function userContent(content: unknown): UserMessage["content"] {
                 );
             }
             const url = link.url.href;
-            const name =
-                typeof part.filename === "string" && part.filename
-                    ? ` ${part.filename}`
+            // The name is the caller's text inside our line: keep it to one
+            // short line so it cannot pass for further lines of the message.
+            const filename =
+                typeof part.filename === "string"
+                    ? part.filename
+                          .replace(/[\p{Cc}\s]+/gu, " ")
+                          .trim()
+                          .slice(0, 200)
                     : "";
+            const name = filename ? ` ${filename}` : "";
             return {
                 type: "text" as const,
                 text: `[Attached file${name}: ${url}]`,

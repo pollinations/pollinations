@@ -148,19 +148,17 @@ describe("callKlingVideoAPI", () => {
                 ...baseParams,
                 model: "kwaivgi/kling-v4.0-flash",
                 duration: 5,
+                aspectRatio: "21:9",
+                audio: false,
             },
             "kwaivgi/kling-v4.0-flash",
         );
 
-        expect(requests[0]).toMatchObject({
-            url: FLASH_TEXT_ENDPOINT,
-            body: {
-                prompt: "a drone flyover of misty mountains",
-                duration: "5",
-                aspect_ratio: "16:9",
-                generate_audio: false,
-                seed: 42,
-            },
+        expect(requests[0].url).toBe(FLASH_TEXT_ENDPOINT);
+        expect(requests[0].body).toEqual({
+            prompt: "a drone flyover of misty mountains",
+            duration: 5,
+            aspect_ratio: "21:9",
         });
         expect(result.durationSeconds).toBe(5);
         expect(result.trackingData).toEqual({
@@ -183,21 +181,17 @@ describe("callKlingVideoAPI", () => {
                     "https://example.com/second.png",
                 ],
                 duration: 4,
+                audio: true,
             },
             "kwaivgi/kling-v4.0-flash",
         );
 
-        expect(requests[0]).toMatchObject({
-            url: FLASH_IMAGE_ENDPOINT,
-            body: {
-                prompt: "bring this portrait to life",
-                start_image_url: "https://example.com/first.png",
-                duration: "4",
-                generate_audio: false,
-                seed: 42,
-            },
+        expect(requests[0].url).toBe(FLASH_IMAGE_ENDPOINT);
+        expect(requests[0].body).toEqual({
+            prompt: "bring this portrait to life",
+            start_image_url: "https://example.com/first.png",
+            duration: 4,
         });
-        expect(requests[0].body?.end_image_url).toBeUndefined();
         expect(result.durationSeconds).toBe(4);
         expect(result.trackingData).toEqual({
             actualModel: "kwaivgi/kling-v4.0-flash",

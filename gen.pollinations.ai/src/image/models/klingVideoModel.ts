@@ -27,6 +27,12 @@ const KLING_POLL_INTERVAL_MS = 3_000;
 // Text-to-video's aspect_ratio enum; image-to-video has no such field and
 // instead follows the supplied start image.
 const KLING_ASPECT_RATIOS = ["16:9", "9:16", "1:1"] as const;
+const KLING_FLASH_ASPECT_RATIOS = [
+    ...KLING_ASPECT_RATIOS,
+    "4:3",
+    "3:4",
+    "21:9",
+] as const;
 
 interface FalQueueSubmission {
     status_url?: string;
@@ -144,31 +150,33 @@ export async function callKlingVideoAPI(
         | "kwaivgi/kling-v3.0-pro:azure" = "kwaivgi/kling-v3.0-std",
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
-    const generateAudio = safeParams.audio === true;
+    const isFlash = model === "kwaivgi/kling-v4.0-flash";
+    const generateAudio = !isFlash && safeParams.audio === true;
     const [startImage, endImage] = safeParams.image ?? [];
     const isImageToVideo = Boolean(startImage);
 
     const requestBody: Record<string, unknown> = {
         prompt,
-        duration: String(duration),
-        generate_audio: generateAudio,
-        seed: safeParams.seed,
+        duration: isFlash ? duration : String(duration),
+        ...(isFlash
+            ? {}
+            : { generate_audio: generateAudio, seed: safeParams.seed }),
     };
     if (isImageToVideo) {
         requestBody.start_image_url = startImage;
-        if (endImage && model !== "kwaivgi/kling-v4.0-flash") {
+        if (endImage && !isFlash) {
             requestBody.end_image_url = endImage;
         }
     } else {
+        const aspectRatios = isFlash
+            ? KLING_FLASH_ASPECT_RATIOS
+            : KLING_ASPECT_RATIOS;
         if (
             safeParams.aspectRatio !== undefined &&
-            !KLING_ASPECT_RATIOS.some(
-                (ratio) => ratio === safeParams.aspectRatio,
-            )
+            !aspectRatios.some((ratio) => ratio === safeParams.aspectRatio)
         ) {
             throw new UpstreamError(400, {
-                message:
-                    "Kling text-to-video supports aspectRatio 16:9, 9:16, or 1:1",
+                message: `Kling text-to-video supports aspectRatio ${aspectRatios.slice(0, -1).join(", ")}, or ${aspectRatios.at(-1)}`,
             });
         }
         requestBody.aspect_ratio =
@@ -176,7 +184,7 @@ export async function callKlingVideoAPI(
             closestRatioLogSpace(
                 safeParams.width,
                 safeParams.height,
-                KLING_ASPECT_RATIOS,
+                aspectRatios,
             );
     }
 
@@ -224,7 +232,7 @@ export async function callKlingVideoAPI(
           });
     logOps("Kling generation complete", {
         duration,
-        generateAudio,
+        generateAudio: isFlash || generateAudio,
         isImageToVideo,
     });
 

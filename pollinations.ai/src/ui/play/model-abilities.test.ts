@@ -107,7 +107,7 @@ it("offers an official agent the files it declares or its tools take", () => {
     expect(agentAttachments(official)).toEqual([]);
 });
 
-it("keeps file links from community agents", () => {
+it("sends a community agent no explicit file links", () => {
     const community = {
         inputModalities: ["text", "image", "audio", "video"],
         mcpServers: ["pollinations", "ffmpeg"],

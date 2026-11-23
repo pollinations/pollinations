@@ -149,8 +149,9 @@ type AttachmentModel = Pick<AbilityModel, "inputModalities" | "mcpServers"> & {
 };
 
 /**
- * Whether an agent should get each attachment's link for its tools. Only
- * official agents do: a link lets whoever runs the agent open the file.
+ * Whether Play also sends an agent each attachment's link as a file, for its
+ * tools. Only official agents get one: a link lets whoever runs the agent open
+ * the file. An attached image still carries its URL inside the image part.
  */
 export function takesFileLinks(
     model: Pick<AttachmentModel, "mcpServers" | "verified">,

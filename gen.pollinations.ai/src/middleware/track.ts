@@ -791,8 +791,8 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        // A failure is billed only when the provider charged for it, which the
-        // handler reports on the error (an xAI video rejected after generation).
+        // Keep reported provider costs on failures. For empty text responses,
+        // Pollinations absorbs the cost because the caller got no answer.
         const usage =
             error instanceof UpstreamError ? error.billedUsage : undefined;
         if (!usage || isImplausibleProxyUsage(eventType, candidate, usage)) {
@@ -810,7 +810,11 @@ export async function trackResponse(
         return {
             responseStatus: response.status,
             cacheHit,
-            isBilledUsage: true,
+            isBilledUsage: !(
+                eventType === "generate.text" &&
+                error instanceof UpstreamError &&
+                error.errorCode === "empty_response"
+            ),
             fallbackUsed,
             ...calculateUsageBilling({
                 model: resolvedModelRequested,

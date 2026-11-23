@@ -654,18 +654,29 @@ it.each([null, "", " \n\t"])(
         });
         const prompt = `Empty completion ${crypto.randomUUID()}`;
         for (let attempt = 0; attempt < 2; attempt++) {
-            const { response, text, calls, balance } = await chatThroughHandler(
+            const result = await chatThroughHandler(
                 model,
                 "openrouter.ai",
                 wire,
                 false,
                 prompt,
             );
+            const { response, text, calls, balance, events } = result;
             expect(response.status, text).toBe(502);
             expect(JSON.parse(text).error.code).toBe("empty_response");
             expect(response.headers.get("x-cache")).not.toBe("HIT");
             expect(calls).toBe(1);
-            expect(balance.packBalance).toBeLessThan(100);
+            expect(balance.packBalance).toBe(100);
+            const generation = events.find(
+                (event) => event.eventType === "generate.text" && event.isFinal,
+            );
+            expect(generation).toMatchObject({
+                responseStatus: 502,
+                isBilledUsage: false,
+                totalPrice: 0,
+                errorResponseCode: "empty_response",
+            });
+            expect(generation?.totalCost).toBeGreaterThan(0);
         }
     },
 );
@@ -869,7 +880,7 @@ it.each([
     async ({ limit, fallbackAnswer }) => {
         const model = "openai/gpt-5-nano";
         const prompt = `Default budget ${crypto.randomUUID()}`;
-        const { response, text, calls, events } = await chatThroughHandler(
+        const result = await chatThroughHandler(
             model,
             ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
             async (request) => {
@@ -907,6 +918,7 @@ it.each([
                 },
             },
         );
+        const { response, text, calls, events, balance } = result;
         expect(response.status, text).toBe(fallbackAnswer ? 200 : 502);
         if (fallbackAnswer)
             expect(JSON.parse(text).choices[0].message.content).toBe(
@@ -928,7 +940,10 @@ it.each([
             isFinal: true,
             responseStatus: fallbackAnswer ? 200 : 502,
             fallbackUsed: true,
+            isBilledUsage: Boolean(fallbackAnswer),
         });
+        if (fallbackAnswer) expect(balance.packBalance).toBeLessThan(100);
+        else expect(balance.packBalance).toBe(100);
     },
 );
 

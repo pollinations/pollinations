@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import economicsRegistry from "../../operations/dashboards/economics/provider-registry.json";
 import type { CanonicalModelTarget } from "../../operations/dashboards/economics/web/src/lib/providerRegistry";
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
+import retireMercurySql from "../drizzle/0083_retire_mercury_permissions.sql?raw";
 
 const modelMappings = [
     ...migrationSql.matchAll(/\('([^']+)', '([^']+)'\)/g),
@@ -200,6 +201,7 @@ const retiredPublicIds = [
 ] as const;
 // Preserve the migration's historical mappings for models removed from the live registry.
 const retiredModelAliases: Record<string, string> = {
+    mercury: "inception/mercury-2",
     "mimo-v2.5-pro": "xiaomi/mimo-v2.5-pro",
     "nova-canvas": "amazon/nova-canvas-v1",
     "nova-reel": "amazon/nova-reel-v1",
@@ -253,6 +255,47 @@ async function runMigrationForTest(): Promise<void> {
         if (hasSql) await env.DB.prepare(sql).run();
     }
 }
+
+it("removes only retired Mercury grants", async () => {
+    const cases = [
+        [
+            '{"models":["text","inception/mercury-2","mercury-2","inception/mercury-3","image"],"machines":["read"]}',
+            '{"models":["text","image"],"machines":["read"]}',
+        ],
+        [
+            '{"models":["inception/mercury-2.5-preview","inception-mercury","mercury"]}',
+            '{"models":[]}',
+        ],
+        ['{"models":["inception"]}', '{"models":[]}'],
+        ['{"models":["text"],"other":["mercury"]}'],
+        ['{"models":[null,"mercury"]}'],
+        ['{"models":"mercury"}'],
+        ['{"models":null}'],
+        ["invalid mercury permissions"],
+        [null],
+    ] as const;
+    await env.DB.prepare(
+        "CREATE TABLE retire_mercury_apikey (id INTEGER PRIMARY KEY, permissions TEXT)",
+    ).run();
+    await env.DB.batch(
+        cases.map(([before], id) =>
+            env.DB.prepare(
+                "INSERT INTO retire_mercury_apikey VALUES (?, ?)",
+            ).bind(id, before),
+        ),
+    );
+    const migrate = env.DB.prepare(
+        retireMercurySql.replace(/\bapikey\b/g, "retire_mercury_apikey"),
+    );
+    expect((await migrate.run()).meta.changes).toBe(3);
+    expect((await migrate.run()).meta.changes).toBe(0);
+    const { results } = await env.DB.prepare(
+        "SELECT permissions FROM retire_mercury_apikey ORDER BY id",
+    ).all<{ permissions: string | null }>();
+    expect(results.map(({ permissions }) => permissions)).toEqual(
+        cases.map(([before, after]) => after ?? before),
+    );
+});
 
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID in one direct update", async () => {

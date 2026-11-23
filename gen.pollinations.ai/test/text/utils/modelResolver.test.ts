@@ -1,3 +1,4 @@
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
@@ -914,18 +915,6 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Mercury to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
-    });
-
     it("routes Kimi K3.1 Pro Highspeed through Vercel AI Gateway without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "moonshotai/kimi-k3.1-pro-highspeed",
@@ -939,29 +928,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-3",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-3");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2.5-preview",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2.5-preview");
-        expect(result.options.max_tokens).toBe(64000);
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
+    it.each([
+        "inception/mercury-2",
+        "inception/mercury-2.5-preview",
+        "inception/mercury-3",
+        "mercury-2",
+        "inception",
+        "inception-mercury",
+        "mercury",
+    ])("rejects retired Mercury model %s", (model) => {
+        expect(() => resolveModelName(model)).toThrow(
+            `Invalid model or alias: "${model}"`,
+        );
+        expect(findModelByName(model)).toBeNull();
     });
 
     it.each([

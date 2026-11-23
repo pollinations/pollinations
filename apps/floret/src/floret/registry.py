@@ -547,7 +547,6 @@ _IMAGE_TEXT_PRIORITY: list[str] = [
     "seedream",
     "flux",
     "qwen-image",
-    "grok-imagine-pro",
     "grok-imagine",
     "zimage",
     "p-image",

@@ -34,7 +34,6 @@ import {
     callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
-    callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
     callOpenRouterMiniMaxH3ImageAPI,
     callOpenRouterQwenImage3API,
@@ -1196,9 +1195,6 @@ const generateImage = async (
         case "minimax/minimax-h3-image:openrouter":
         case "minimax/minimax-h3-image-highspeed:openrouter":
             return await callOpenRouterMiniMaxH3ImageAPI(prompt, safeParams);
-
-        case "x-ai/grok-imagine-image-quality":
-            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
             return await callXaiImageAPI(

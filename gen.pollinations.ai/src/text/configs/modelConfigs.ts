@@ -140,6 +140,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "baseten/groundhog-1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "baseten/groundhog-1",
+        defaultOptions: {
+            provider: {
+                only: ["baseten"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "kev-4b": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",

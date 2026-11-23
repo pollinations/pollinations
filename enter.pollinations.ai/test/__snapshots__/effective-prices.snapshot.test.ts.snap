@@ -560,6 +560,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000583333333333333,
     },
   },
+  "baseten/groundhog-1": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000036925,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000036925,
+    },
+  },
   "black-forest-labs/flux-3-image": {
     "cost": {
       "completionImageTokens": 0.02532,

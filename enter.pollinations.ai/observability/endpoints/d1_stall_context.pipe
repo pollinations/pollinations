@@ -1,0 +1,38 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+What D1 was doing around a moment: per second, per service, route and query
+shape, the calls started, their summed and longest wall time, D1's own SQL
+time, rows read and failures. Pass `at` (UTC, e.g. 2026-11-23 13:02:06) and
+optionally `before_seconds` (default 60) and `after_seconds` (default 10).
+The culprit shows up before the stall; the stall shows as long durations and
+failures on the victims.
+
+NODE d1_stall_context_seconds
+SQL >
+    %
+    SELECT
+        toStartOfSecond(timestamp) AS second,
+        service,
+        route_path,
+        method,
+        cityHash64(sql) AS sql_hash,
+        any(substring(sql, 1, 300)) AS sql_sample,
+        count() AS calls,
+        sum(duration_ms) AS total_ms,
+        max(duration_ms) AS max_ms,
+        round(sum(ifNull(sql_duration_ms, 0)), 1) AS sql_ms,
+        sum(ifNull(rows_read, 0)) AS rows_read,
+        sum(ifNull(rows_written, 0)) AS rows_written,
+        countIf(error_code != '') AS failed,
+        groupUniqArrayIf(error_code, error_code != '') AS error_codes
+    FROM d1_call_event
+    WHERE environment = {{ String(environment, 'production') }}
+        AND timestamp >= toDateTime64({{ String(at, required=True) }}, 3, 'UTC')
+            - toIntervalSecond({{ UInt32(before_seconds, 60) }})
+        AND timestamp < toDateTime64({{ String(at, required=True) }}, 3, 'UTC')
+            + toIntervalSecond({{ UInt32(after_seconds, 10) }})
+    GROUP BY second, service, route_path, method, sql_hash
+    ORDER BY second, total_ms DESC
+
+TYPE endpoint

@@ -1,0 +1,29 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Every production D1 call from Gen and Enter, kept 3 days, to attribute D1
+stalls to the query shapes and routes running in the seconds before them.
+`sql` holds the statement text with placeholders only (batches joined by
+";\n"); `error_code` is empty for a successful call.
+
+SCHEMA >
+`timestamp`       DateTime64(3)          `json:$.timestamp`,
+`service`         LowCardinality(String) `json:$.service`,
+`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+`route_path`      LowCardinality(String) `json:$.route_path` DEFAULT '',
+`method`          LowCardinality(String) `json:$.method` DEFAULT '',
+`request_id`      String                 `json:$.request_id` DEFAULT '',
+`edge_colo`       LowCardinality(String) `json:$.edge_colo` DEFAULT '',
+`duration_ms`     UInt32                 `json:$.duration_ms`,
+`sql_duration_ms` Nullable(Float32)      `json:$.sql_duration_ms`,
+`rows_read`       Nullable(UInt32)       `json:$.rows_read`,
+`rows_written`    Nullable(UInt32)       `json:$.rows_written`,
+`statements`      UInt16                 `json:$.statements` DEFAULT 1,
+`error_code`      LowCardinality(String) `json:$.error_code` DEFAULT '',
+`sql`             String                 `json:$.sql` DEFAULT ''
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toDate(timestamp)"
+ENGINE_SORTING_KEY "environment, timestamp"
+ENGINE_TTL "toDateTime(timestamp) + toIntervalDay(3)"

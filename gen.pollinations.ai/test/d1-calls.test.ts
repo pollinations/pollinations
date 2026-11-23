@@ -3,30 +3,36 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { withD1Calls } from "@shared/d1-calls.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { withD1Calls } from "../src/d1-calls.ts";
 import { detachedContext } from "../src/utils/execute-generation.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function captureErrorEvents(delayMs = 0) {
-    const events: Record<string, unknown>[] = [];
+// Each D1 call ingest is one NDJSON request; returns them as row arrays.
+function captureD1Batches(delayMs = 0) {
+    const batches: Record<string, unknown>[][] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
-        if (url.searchParams.get("name") === "error_event") {
+        if (url.searchParams.get("name") === "d1_call_event") {
             await new Promise((resolve) => setTimeout(resolve, delayMs));
-            events.push(JSON.parse(String(init?.body)));
+            batches.push(
+                String(init?.body)
+                    .split("\n")
+                    .map((line) => JSON.parse(line)),
+            );
         }
         return new Response("{}");
     });
-    return events;
+    return batches;
 }
 
 async function run<T>(fn: (db: D1Database) => Promise<T>) {
     const ctx = createExecutionContext();
     const result = withD1Calls(
+        "gen",
         env,
         ctx,
         () => ({ route_path: "/image/:prompt", method: "GET" }),
@@ -38,8 +44,8 @@ async function run<T>(fn: (db: D1Database) => Promise<T>) {
 }
 
 describe("D1 call timing", () => {
-    it("passes results through, including batches of wrapped statements", async () => {
-        const events = captureErrorEvents();
+    it("passes results through and sends every call in one request", async () => {
+        const batches = captureD1Batches();
         const [first, all, raw, batch] = await run(async (db) => {
             const stmt = db.prepare("SELECT ? AS value");
             return [
@@ -55,11 +61,25 @@ describe("D1 call timing", () => {
         expect(all).toEqual([{ value: 2 }]);
         expect(raw).toEqual([[3]]);
         expect(batch).toEqual([[{ value: 4 }], [{ value: 5 }]]);
-        expect(events).toEqual([]);
+        expect(batches).toHaveLength(1);
+        expect(batches[0].map((row) => [row.sql, row.statements])).toEqual([
+            ["SELECT ? AS value", 1],
+            ["SELECT ? AS value", 1],
+            ["SELECT ? AS value", 1],
+            ["SELECT ? AS value;\nSELECT ? AS value", 2],
+        ]);
+        expect(batches[0][1]).toMatchObject({
+            service: "gen",
+            route_path: "/image/:prompt",
+            method: "GET",
+            error_code: "",
+            rows_read: expect.any(Number),
+            sql_duration_ms: expect.any(Number),
+        });
     });
 
     it("records a failed call with its SQL but no bound values", async () => {
-        const events = captureErrorEvents();
+        const batches = captureD1Batches();
         await expect(
             run((db) =>
                 db
@@ -69,26 +89,25 @@ describe("D1 call timing", () => {
             ),
         ).rejects.toThrow("missing_table");
 
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            kind: "d1_call",
-            severity: "error",
-            route_path: "/image/:prompt",
-            method: "GET",
-            status: 0,
-            error_code: "D1_FAILED",
-            error_class: "D1Call",
-            upstream_host: "d1",
-            message: "SELECT * FROM missing_table WHERE prompt = ?",
-        });
-        expect(JSON.stringify(events[0])).not.toContain("secret");
-        expect(JSON.stringify(events[0])).not.toContain("D1_ERROR");
+        expect(batches).toEqual([
+            [
+                expect.objectContaining({
+                    service: "gen",
+                    route_path: "/image/:prompt",
+                    error_code: "D1_FAILED",
+                    sql: "SELECT * FROM missing_table WHERE prompt = ?",
+                }),
+            ],
+        ]);
+        expect(JSON.stringify(batches)).not.toContain("secret");
+        expect(JSON.stringify(batches)).not.toContain("D1_ERROR");
     });
 
     it("settles a coordinator job only after telemetry from billing that fails after the response", async () => {
-        const events = captureErrorEvents(50);
+        const batches = captureD1Batches(50);
         const { ctx, settled } = detachedContext();
         withD1Calls(
+            "gen",
             env,
             ctx,
             () => ({ route_path: "generation", method: "GET" }),
@@ -104,8 +123,8 @@ describe("D1 call timing", () => {
             },
         );
         await settled();
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
+        expect(batches).toHaveLength(1);
+        expect(batches[0][0]).toMatchObject({
             route_path: "generation",
             error_code: "D1_FAILED",
         });

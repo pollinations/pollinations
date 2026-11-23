@@ -17,6 +17,7 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { nameD1Caller, withD1Calls } from "@shared/d1-calls.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -36,7 +37,6 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { refreshCommunityModelRegistryCache } from "./community-models.ts";
-import { nameD1Caller, withD1Calls } from "./d1-calls.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -362,6 +362,7 @@ app.onError(handleError);
 export default {
     fetch: (request: Request, env, ctx) =>
         withD1Calls(
+            "gen",
             env,
             ctx,
             () => ({ route_path: "", method: request.method }),
@@ -383,6 +384,7 @@ export default {
         ),
     scheduled: (controller, env, ctx) =>
         withD1Calls(
+            "gen",
             env,
             ctx,
             () => ({ route_path: controller.cron, method: "CRON" }),

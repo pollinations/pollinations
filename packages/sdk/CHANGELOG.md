@@ -2,6 +2,15 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-23
+
+### Fixed
+
+- A tab whose key the API rejects (401) no longer signs out other tabs that
+  connected again since: it picks up their saved key instead of deleting it.
+- Signing out after a 401 now sets `error` on the auth state, so the app can
+  say why the user must connect again.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

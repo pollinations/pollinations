@@ -23,6 +23,8 @@ export type { AuthorizeRequest } from "./contexts.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = "https://enter.pollinations.ai";
+const KEY_REJECTED_MESSAGE =
+    "Your Pollinations connection expired or was revoked. Connect again.";
 const BYOP_DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
@@ -406,6 +408,26 @@ export function PolliProvider({
         updateApiKey(null);
     }, [updateApiKey]);
 
+    // Tabs share the saved key. A tab still holding an older key must not
+    // delete the one another tab saved after connecting again.
+    const rejectApiKey = useCallback(
+        (rejected: string) => {
+            let saved: string | null = null;
+            try {
+                saved = storage.getItem(storageKey);
+            } catch {
+                // Unreadable storage: treat the key as gone.
+            }
+            if (saved && saved !== rejected) {
+                setApiKey(saved);
+                return;
+            }
+            updateApiKey(null);
+            setError(new Error(KEY_REJECTED_MESSAGE));
+        },
+        [storage, storageKey, updateApiKey],
+    );
+
     const authValue = useMemo<AuthContextValue>(
         () => ({
             apiKey,
@@ -414,6 +436,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            rejectApiKey,
             setApiKey: updateApiKey,
             enterUrl,
             apiBaseUrl: resolvedApiBaseUrl,
@@ -424,6 +447,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            rejectApiKey,
             updateApiKey,
             enterUrl,
             resolvedApiBaseUrl,

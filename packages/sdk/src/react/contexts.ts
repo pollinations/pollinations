@@ -32,6 +32,12 @@ export interface AuthActionsValue {
     apiBaseUrl: string;
 }
 
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue {
+    /**
+     * Signs out after the API answered 401 for `apiKey`, and sets `error`.
+     * Keeps the saved key when another tab has replaced it since.
+     */
+    rejectApiKey: (apiKey: string) => void;
+}
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

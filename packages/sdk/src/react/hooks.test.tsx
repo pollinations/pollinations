@@ -51,6 +51,7 @@ function authValue(
         error: null,
         login: vi.fn(),
         logout: vi.fn(),
+        rejectApiKey: vi.fn(),
         setApiKey: vi.fn(),
         enterUrl: "https://enter.example",
         apiBaseUrl: "https://enter.example/api",
@@ -150,8 +151,8 @@ describe("account hooks", () => {
                 ),
             )
             .mockResolvedValueOnce(jsonResponse({ pollenBudget: 5 }));
-        const logout = vi.fn();
-        const value = authValue({ logout });
+        const rejectApiKey = vi.fn();
+        const value = authValue({ rejectApiKey });
         let key: UseAccountKeyValue | null = null;
         function Probe() {
             key = useAccountKey();
@@ -167,14 +168,14 @@ describe("account hooks", () => {
         });
         await waitFor(() => !!key?.error);
         expect(read<UseAccountKeyValue>(key).data).toBeNull();
-        expect(logout).not.toHaveBeenCalled();
+        expect(rejectApiKey).not.toHaveBeenCalled();
         await act(async () => {
             await read<UseAccountKeyValue>(key).refresh();
         });
         expect(read<UseAccountKeyValue>(key).error).toBeNull();
         expect(read<UseAccountKeyValue>(key).data?.pollenBudget).toBe(5);
         expect(fetchMock).toHaveBeenCalledTimes(2);
-        expect(logout).not.toHaveBeenCalled();
+        expect(rejectApiKey).not.toHaveBeenCalled();
         await act(async () => renderer.unmount());
     });
 
@@ -231,7 +232,7 @@ describe("account hooks", () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(jsonResponse({}, { status: 403 }));
-        const logout = vi.fn();
+        const rejectApiKey = vi.fn();
         let key: UseAccountKeyValue | null = null;
         function Probe() {
             key = useAccountKey();
@@ -240,7 +241,7 @@ describe("account hooks", () => {
         let renderer: ReactTestRenderer;
         await act(async () => {
             renderer = create(
-                <AuthContext.Provider value={authValue({ logout })}>
+                <AuthContext.Provider value={authValue({ rejectApiKey })}>
                     <Probe />
                 </AuthContext.Provider>,
             );
@@ -251,12 +252,12 @@ describe("account hooks", () => {
             await vi.advanceTimersByTimeAsync(60_000);
         });
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(logout).not.toHaveBeenCalled();
+        expect(rejectApiKey).not.toHaveBeenCalled();
         await act(async () => renderer.unmount());
         vi.useRealTimers();
     });
 
-    it("logs out when an account hook receives 401", async () => {
+    it("rejects the key when an account hook receives 401", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             jsonResponse(
                 {
@@ -269,8 +270,8 @@ describe("account hooks", () => {
             ),
         );
 
-        const logout = vi.fn();
-        const value = authValue({ logout });
+        const rejectApiKey = vi.fn();
+        const value = authValue({ rejectApiKey });
         let auth: AuthStateValue | null = null;
         let key: UseAccountKeyValue | null = null;
 
@@ -288,9 +289,9 @@ describe("account hooks", () => {
             );
         });
 
-        await waitFor(() => logout.mock.calls.length > 0);
+        await waitFor(() => rejectApiKey.mock.calls.length > 0);
 
-        expect(logout).toHaveBeenCalledTimes(1);
+        expect(rejectApiKey).toHaveBeenCalledExactlyOnceWith("sk_test");
         expect(read<AuthStateValue>(auth).apiKey).toBe("sk_test");
         expect(read<UseAccountKeyValue>(key).data).toBeNull();
     });
@@ -495,21 +496,21 @@ describe("generation hooks", () => {
         expect(gen().error?.message).toBe("Log in to Pollinations to generate");
     });
 
-    it("logs out when a generation receives 401", async () => {
+    it("rejects the key when a generation receives 401", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             jsonResponse(
                 { error: { code: "UNAUTHORIZED", message: "Invalid API key" } },
                 { status: 401 },
             ),
         );
-        const logout = vi.fn();
-        const { gen } = await mountTextGeneration(authValue({ logout }));
+        const rejectApiKey = vi.fn();
+        const { gen } = await mountTextGeneration(authValue({ rejectApiKey }));
 
         await act(async () => {
             await gen().run("hi");
         });
 
-        expect(logout).toHaveBeenCalledTimes(1);
+        expect(rejectApiKey).toHaveBeenCalledExactlyOnceWith("sk_test");
         expect(gen().data).toBeNull();
     });
 });

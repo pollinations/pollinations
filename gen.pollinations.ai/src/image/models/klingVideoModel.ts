@@ -13,14 +13,26 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 const logOps = debug("pollinations:kling:ops");
 
 const KLING_MODELS = {
-    "kwaivgi/kling-v3.0-std": "standard",
-    "kwaivgi/kling-v3.0-pro": "pro",
+    "kwaivgi/kling-v3.0-std": "v3/standard",
+    "kwaivgi/kling-v3.0-pro": "v3/pro",
+    "kwaivgi/kling-v4.0-flash": "v4/flash",
 } as const;
 type KlingModel = keyof typeof KLING_MODELS;
+const KLING_UNIT_PRICES = {
+    "kwaivgi/kling-v3.0-std": 0.14,
+    "kwaivgi/kling-v3.0-pro": 0.14,
+    "kwaivgi/kling-v4.0-flash": 0.094,
+} as const;
 const KLING_POLL_INTERVAL_MS = 3_000;
 // Text-to-video's aspect_ratio enum; image-to-video has no such field and
 // instead follows the supplied start image.
 const KLING_ASPECT_RATIOS = ["16:9", "9:16", "1:1"] as const;
+const KLING_FLASH_ASPECT_RATIOS = [
+    ...KLING_ASPECT_RATIOS,
+    "4:3",
+    "3:4",
+    "21:9",
+] as const;
 
 interface FalQueueSubmission {
     status_url?: string;
@@ -81,7 +93,7 @@ async function generateFalKling(
         });
     }
 
-    const endpoint = `https://queue.fal.run/fal-ai/kling-video/v3/${KLING_MODELS[model]}/${operation}`;
+    const endpoint = `https://queue.fal.run/fal-ai/kling-video/${KLING_MODELS[model]}/${operation}`;
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const submissionResponse = await fetchUpstream(endpoint, {
@@ -138,29 +150,33 @@ export async function callKlingVideoAPI(
         | "kwaivgi/kling-v3.0-pro:azure" = "kwaivgi/kling-v3.0-std",
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
-    const generateAudio = safeParams.audio === true;
+    const isFlash = model === "kwaivgi/kling-v4.0-flash";
+    const generateAudio = !isFlash && safeParams.audio === true;
     const [startImage, endImage] = safeParams.image ?? [];
     const isImageToVideo = Boolean(startImage);
 
     const requestBody: Record<string, unknown> = {
         prompt,
-        duration: String(duration),
-        generate_audio: generateAudio,
-        seed: safeParams.seed,
+        duration: isFlash ? duration : String(duration),
+        ...(isFlash
+            ? {}
+            : { generate_audio: generateAudio, seed: safeParams.seed }),
     };
     if (isImageToVideo) {
         requestBody.start_image_url = startImage;
-        if (endImage) requestBody.end_image_url = endImage;
+        if (endImage && !isFlash) {
+            requestBody.end_image_url = endImage;
+        }
     } else {
+        const aspectRatios = isFlash
+            ? KLING_FLASH_ASPECT_RATIOS
+            : KLING_ASPECT_RATIOS;
         if (
             safeParams.aspectRatio !== undefined &&
-            !KLING_ASPECT_RATIOS.some(
-                (ratio) => ratio === safeParams.aspectRatio,
-            )
+            !aspectRatios.some((ratio) => ratio === safeParams.aspectRatio)
         ) {
             throw new UpstreamError(400, {
-                message:
-                    "Kling text-to-video supports aspectRatio 16:9, 9:16, or 1:1",
+                message: `Kling text-to-video supports aspectRatio ${aspectRatios.slice(0, -1).join(", ")}, or ${aspectRatios.at(-1)}`,
             });
         }
         requestBody.aspect_ratio =
@@ -168,7 +184,7 @@ export async function callKlingVideoAPI(
             closestRatioLogSpace(
                 safeParams.width,
                 safeParams.height,
-                KLING_ASPECT_RATIOS,
+                aspectRatios,
             );
     }
 
@@ -195,11 +211,15 @@ export async function callKlingVideoAPI(
     if (!azure || resultResponse.headers.has("x-fal-billable-units")) {
         const baseModel = azure ? "kwaivgi/kling-v3.0-pro" : model;
         const rates = IMAGE_SERVICES[baseModel].cost;
-        const rate =
-            rates.completionVideoSeconds +
-            (generateAudio ? rates.completionAudioSeconds : 0);
+        const audioRate =
+            generateAudio && "completionAudioSeconds" in rates
+                ? Number(rates.completionAudioSeconds ?? 0)
+                : 0;
+        const rate = rates.completionVideoSeconds + audioRate;
+        const unitPrice =
+            KLING_UNIT_PRICES[azure ? "kwaivgi/kling-v3.0-pro" : model];
         billedSeconds = Number(
-            ((falBillableUnits(resultResponse) * 0.14) / rate).toFixed(9),
+            ((falBillableUnits(resultResponse) * unitPrice) / rate).toFixed(9),
         );
     }
     const videoResponse = azure
@@ -212,7 +232,7 @@ export async function callKlingVideoAPI(
           });
     logOps("Kling generation complete", {
         duration,
-        generateAudio,
+        generateAudio: isFlash || generateAudio,
         isImageToVideo,
     });
 

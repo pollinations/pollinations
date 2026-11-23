@@ -212,6 +212,12 @@
         "defaultRatio": "16:9",
         "soundToggleDefault": false
     },
+    "kwaivgi/kling-v4.0-flash": {
+        "reason": "Match the text-to-video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/klingVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
     "liquid/d1": {
         "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
         "source": "gen.pollinations.ai/src/text/systemOneClient.ts",

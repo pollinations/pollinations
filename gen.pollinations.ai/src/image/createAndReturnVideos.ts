@@ -124,6 +124,7 @@ export async function createAndReturnVideo(
             break;
         case "kwaivgi/kling-v3.0-std":
         case "kwaivgi/kling-v3.0-pro":
+        case "kwaivgi/kling-v4.0-flash":
         case "kwaivgi/kling-v3.0-pro:azure":
             result = await callKlingVideoAPI(
                 prompt,

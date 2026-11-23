@@ -2414,6 +2414,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.084,
     },
   },
+  "kwaivgi/kling-v4.0-flash": {
+    "cost": {
+      "completionVideoSeconds": 0.094,
+    },
+    "price": {
+      "completionVideoSeconds": 0.094,
+    },
+  },
   "lightricks/ltx-2.5-pro": {
     "cost": {
       "completionVideoSeconds": 0.12,

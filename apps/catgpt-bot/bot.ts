@@ -16,14 +16,17 @@ const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
 const MEDIA_API = "https://media.pollinations.ai/upload";
-const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+const AUTH: Record<string, string> = API_KEY
+    ? { Authorization: `Bearer ${API_KEY}` }
+    : {};
 
 const ORIGINAL_CATGPT =
     "https://catgpt.pollinations.app/images/original-catgpt.png";
 // must be a durable URL — media.pollinations.ai uploads expire after 30 days (broke twice: #10826 + Jul 2026)
 const SELFIE_CATGPT =
     "https://catgpt.pollinations.app/images/selfie-catgpt.png";
-const MODEL = "nanobanana-2-lite";
+const IMAGE_MODEL = "openai/gpt-image-2.5-sunburst";
+const IMAGE_FILENAME = "catgpt.jpg";
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
@@ -57,7 +60,9 @@ async function generateCatReply(
     const res = await axios.post(
         TEXT_API,
         {
-            model: "claude-fast",
+            model: "openai/gpt-6.1-terra",
+            reasoning_effort: "none",
+            max_tokens: 64,
             messages: [
                 { role: "system", content: CAT_SYSTEM },
                 { role: "user", content: userContent },
@@ -84,7 +89,7 @@ function createPrompt(
 }
 
 function buildImageUrl(prompt: string, avatarUrl: string | null): string {
-    let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}&nologo=true`;
+    let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${IMAGE_MODEL}&quality=medium&nologo=true`;
 
     if (avatarUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${avatarUrl},${SELFIE_CATGPT}`)}`;
@@ -111,8 +116,8 @@ async function publishImage(image: Buffer): Promise<void> {
         const form = new FormData();
         form.append(
             "file",
-            new Blob([new Uint8Array(image)], { type: "image/png" }),
-            "catgpt.png",
+            new Blob([new Uint8Array(image)], { type: "image/jpeg" }),
+            IMAGE_FILENAME,
         );
         form.append("tags", "catgpt,catgpt-bot");
         const response = await fetch(MEDIA_API, {
@@ -164,7 +169,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
         try {
             const imageBuffer = await fetchImage(imageUrl);
             const attachment = new AttachmentBuilder(imageBuffer, {
-                name: "catgpt.png",
+                name: IMAGE_FILENAME,
             });
             await msg.reply({ files: [attachment] });
             await publishImage(imageBuffer);
@@ -234,7 +239,7 @@ async function cliAsk(
     if (!channel || !("send" in channel))
         throw new Error("channel not sendable");
     await channel.send({
-        files: [new AttachmentBuilder(imageBuffer, { name: "catgpt.png" })],
+        files: [new AttachmentBuilder(imageBuffer, { name: IMAGE_FILENAME })],
     });
     log(`CLI comic posted for "${question}" → "${catReply}"`);
 }

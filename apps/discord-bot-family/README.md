@@ -26,34 +26,42 @@ each bot gets the shared channels plus any bot-specific ones.
 
 ```bash
 ./start-all.sh         # local/launchd: spawns one process per bot
-node start-all.js      # systemd launcher used in production (same bot list)
+node start-all.js      # launcher for the legacy Family systemd unit
 ```
 
 ## deployment (production)
 
-Runs on the `monitoring-agents` EC2 box (ssh alias `community-monitor`,
-details in `operations/infrastructure/gpu/GPU_INSTANCES.md`) as three systemd
-units from `systemd/`:
+CatGPT and Opposite Prompt run on the production Pollinations Azure sandbox
+`discord-bots-azure` (2 vCPU, 2 GiB). Keep the sandbox in Fixed mode and renew
+the lease before it expires so the Discord Gateway connections stay up.
 
-| unit | app | entry |
-|------|-----|-------|
-| `discord-bots.service` | `discord-bot-family` | `node start-all.js` |
-| `catgpt-bot.service` | `../catgpt-bot` | `tsx bot.ts` |
-| `opposite-prompt-bot.service` | `../opposite-prompt-bot` | `tsx bot.ts` |
+| App | Discord token variable | Text model | Image model |
+| --- | --- | --- | --- |
+| [CatGPT](../catgpt-bot/) | `BOT_TOKEN_CATGPT` | GPT-6.1 Terra | GPT Image 2.5 Sunburst, medium |
+| [Opposite Prompt](../opposite-prompt-bot/) | `BOT_TOKEN_OPPOSITE_PROMPT` | GPT-6 Luna | GPT Image 2.5 Sunburst, medium |
 
-Checkout lives at `/home/ubuntu/discord-bots` (sparse clone of `main` with the
-three app dirs). Each app has a live-only `.env` (bot tokens,
-`TEXT_POLLINATIONS_TOKEN`) that is never committed.
+To set up either app, copy its `bot.ts`, `package.json`, and the shared
+[`run-bot.sh`](azure/run-bot.sh) into a private directory on the sandbox
+(mode `700`). Install dependencies with `npm install --omit=dev --ignore-scripts`
+on a fresh directory. Use `npm ci --omit=dev --ignore-scripts` for subsequent
+installs with that directory's lockfile. The app's `.env` (mode `600`) supplies
+its Discord token and `TEXT_POLLINATIONS_TOKEN`. CatGPT also accepts
+`CATGPT_CHANNEL_ID`.
 
-```bash
-ssh community-monitor "cd /home/ubuntu/discord-bots && git pull && \
-  for d in discord-bot-family catgpt-bot opposite-prompt-bot; do (cd apps/\$d && npm ci); done && \
-  sudo systemctl restart discord-bots catgpt-bot opposite-prompt-bot"
-ssh community-monitor "sudo journalctl -u discord-bots -f"
+Add a user crontab entry for each app directory using its absolute path.
+
+```cron
+* * * * * /bin/sh /home/user/discord-bots/catgpt-bot/run-bot.sh >/dev/null 2>&1
+* * * * * /bin/sh /home/user/discord-bots/opposite-prompt-bot/run-bot.sh >/dev/null 2>&1
 ```
 
-Unit changes: copy `systemd/*.service` to `/etc/systemd/system/`, then
-`sudo systemctl daemon-reload`.
+Create `.enabled` in the app directory and check `bot.log` for Discord Ready.
+The launcher holds a per-app lock and stores its PID in `.bot.pid`. To stop an
+app, remove `.enabled` first, then terminate the PID after verifying it belongs
+to that app. For rollback, restore the previous Azure source and restart the app.
+
+The EC2 bot deployment was removed. Discord Bot Family is off. Its next
+deployment belongs on Azure after a live Discord login test.
 
 each bot runs independently via `cli.ts`:
 ```bash

@@ -14,15 +14,15 @@ import { getTinybirdDatasourceIngestUrl } from "./events.ts";
 // pattern are sent: no URLs, prompts or error messages.
 
 const FLUSH_MS = 10_000;
-// Only the deployed Workers record. Local runs and tests send nothing: tests
-// assert on every outgoing request.
-const RECORDED = ["production", "staging"];
 // A long scope (the leaderboard cron) sends early instead of growing.
 const MAX_BUFFERED = 500;
 
 type D1Env = {
     DB: D1Database;
     ENVIRONMENT?: string;
+    // "on" in the deployed production and staging Workers only. Local runs
+    // and tests record nothing: tests assert on every outgoing request.
+    D1_CALL_TELEMETRY?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_INGEST_TOKEN: string;
 };
@@ -84,7 +84,7 @@ export function withD1Calls<T>(
     caller: () => D1Caller,
     run: () => T,
 ): T {
-    if (!RECORDED.includes(env.ENVIRONMENT ?? "")) return run();
+    if (env.D1_CALL_TELEMETRY !== "on") return run();
     timeDatabase(env.DB);
     const current: Scope = {
         service,

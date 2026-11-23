@@ -6,9 +6,9 @@ import {
 import { withD1Calls } from "@shared/d1-calls.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Only deployed environments record, in 10 s batches; the clock is ours, so
+// Only the deployed Workers record, in 10 s batches; the clock is ours, so
 // no test waits for one.
-const production = { ...env, ENVIRONMENT: "production" };
+const recording = { ...env, D1_CALL_TELEMETRY: "on" };
 const clock = Date.UTC(2026, 10, 23, 13, 2, 6);
 const second = (ms: number) =>
     new Date(ms).toISOString().slice(0, 19).replace("T", " ");
@@ -49,7 +49,7 @@ async function request<T>(
     const ctx = createExecutionContext();
     const result = withD1Calls(
         "gen",
-        production,
+        recording,
         ctx,
         () => ({ route_path, method: "GET" }),
         () => fn(env.DB),
@@ -99,7 +99,7 @@ describe("D1 call timing", () => {
                 {
                     timestamp: second(clock),
                     service: "gen",
-                    environment: "production",
+                    environment: env.ENVIRONMENT,
                     route_path: "/image/:prompt",
                     method: "GET",
                     query_id: sent.queries[0][0].query_id,
@@ -175,7 +175,7 @@ describe("D1 call timing", () => {
         const late = createExecutionContext();
         withD1Calls(
             "gen",
-            production,
+            recording,
             late,
             () => ({ route_path: "generation", method: "GET" }),
             () => late.waitUntil(query(env.DB)),
@@ -199,7 +199,7 @@ describe("D1 call timing", () => {
         ]);
     });
 
-    it("records nothing outside the deployed environments", async () => {
+    it("records nothing unless telemetry is on", async () => {
         const sent = captureIngest();
         const ctx = createExecutionContext();
         await withD1Calls(

@@ -27,7 +27,7 @@ test("records an Enter request's D1 calls named by route", async ({
         }
         return new Response("{}");
     });
-    // Only deployed environments record, in 10 s batches: skip the wait.
+    // Only the deployed Workers record, in 10 s batches: skip the wait.
     vi.useFakeTimers({ toFake: ["setTimeout"] });
 
     const ctx = createExecutionContext();
@@ -35,7 +35,7 @@ test("records an Enter request's D1 calls named by route", async ({
         new Request("http://localhost:3000/api/account/profile", {
             headers: { Authorization: `Bearer ${accountToken}` },
         }),
-        { ...env, ENVIRONMENT: "production" },
+        { ...env, D1_CALL_TELEMETRY: "on" },
         ctx,
     );
     expect(response.status).toBe(200);
@@ -47,7 +47,6 @@ test("records an Enter request's D1 calls named by route", async ({
     for (const row of rows) {
         expect(row).toMatchObject({
             service: "enter",
-            environment: "production",
             route_path: "/api/account/profile",
             method: "GET",
             error_code: "",

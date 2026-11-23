@@ -7,12 +7,16 @@ import { getTinybirdDatasourceIngestUrl } from "./events.ts";
 // Records every D1 call in d1_call_event so a D1 stall can be traced to what
 // was running in the seconds before it: the culprit starts before the stall,
 // the queued victims after. Calls are summed per second, route and query, and
-// each isolate sends its sums in one request at most every FLUSH_MS, so the
-// telemetry adds a few Tinybird requests per second, not one per request.
+// each isolate sends its sums in one request FLUSH_MS after the first of
+// them, so the telemetry adds a few Tinybird requests per second, not one
+// per request.
 // Only the SQL text (placeholders, never bound values), timings and the route
 // pattern are sent: no URLs, prompts or error messages.
 
 const FLUSH_MS = 10_000;
+// Only the deployed Workers record. Local runs and tests send nothing: tests
+// assert on every outgoing request.
+const RECORDED = ["production", "staging"];
 // A long scope (the leaderboard cron) sends early instead of growing.
 const MAX_BUFFERED = 500;
 
@@ -39,6 +43,9 @@ type D1Calls = D1Caller & {
     query_id: string;
     error_code: string;
     calls: number;
+    // The calls that came with D1's own figures (all() and run() do, first()
+    // and raw() do not): none means the three sums below were not measured.
+    measured: number;
     total_ms: number;
     max_ms: number;
     sql_ms: number;
@@ -65,7 +72,9 @@ const buffered = new Map<string, D1Calls>();
 const queryIds = new Map<string, string>();
 const sentQueryIds = new Set<string>();
 let newQueries: { query_id: string; service: string; sql: string }[] = [];
-let lastFlush = 0;
+// While a flush is on its way. A time, not a flag, so a timer that died with
+// its request cannot stop later ones.
+let flushBy = 0;
 
 /** Runs `run` in a scope whose D1 calls are recorded as `service`. */
 export function withD1Calls<T>(
@@ -75,28 +84,15 @@ export function withD1Calls<T>(
     caller: () => D1Caller,
     run: () => T,
 ): T {
-    // Envs built without a D1 binding (tests) have nothing to time.
-    if (env.DB) timeDatabase(env.DB);
+    if (!RECORDED.includes(env.ENVIRONMENT ?? "")) return run();
+    timeDatabase(env.DB);
     const current: Scope = {
         service,
         env,
         waitUntil: (promise) => ctx.waitUntil(promise),
         caller,
     };
-    // Calls made after this (post-response billing) go with the next flush.
-    const close = () => {
-        if (Date.now() - lastFlush >= FLUSH_MS) flush(current);
-    };
-    let result: T;
-    try {
-        result = scope.run(current, run);
-    } catch (error) {
-        close();
-        throw error;
-    }
-    if (result instanceof Promise) result.then(close, close);
-    else close();
-    return result;
+    return scope.run(current, run);
 }
 
 /** Names later D1 calls after the matched route pattern, never the URL:
@@ -249,6 +245,7 @@ function record(
                 query_id,
                 error_code,
                 calls: 0,
+                measured: 0,
                 total_ms: 0,
                 max_ms: 0,
                 sql_ms: 0,
@@ -259,19 +256,30 @@ function record(
         }
         const duration = Date.now() - startedAt;
         sum.calls += 1;
+        if (meta) sum.measured += 1;
         sum.total_ms += duration;
         sum.max_ms = Math.max(sum.max_ms, duration);
         sum.sql_ms += meta?.sql_duration_ms ?? 0;
         sum.rows_read += meta?.rows_read ?? 0;
         sum.rows_written += meta?.rows_written ?? 0;
         if (buffered.size >= MAX_BUFFERED) flush(current);
+        else if (Date.now() >= flushBy) {
+            // The first sum since the last flush: send them all in FLUSH_MS,
+            // whether or not another request comes.
+            flushBy = Date.now() + FLUSH_MS;
+            current.waitUntil(
+                new Promise((resolve) => setTimeout(resolve, FLUSH_MS)).then(
+                    () => flush(current),
+                ),
+            );
+        }
     } catch {
         // Telemetry must never change the call's outcome.
     }
 }
 
 function flush(current: Scope): void {
-    lastFlush = Date.now();
+    flushBy = 0;
     const calls = [...buffered.values()];
     const queries = newQueries;
     buffered.clear();
@@ -279,14 +287,19 @@ function flush(current: Scope): void {
     if (calls.length > 0)
         current.waitUntil(ingest(current, "d1_call_event", calls));
     if (queries.length > 0)
-        current.waitUntil(ingest(current, "d1_query", queries));
+        current.waitUntil(
+            // A statement Tinybird did not take goes again with the next flush.
+            ingest(current, "d1_query", queries).then((sent) => {
+                if (!sent) newQueries.push(...queries);
+            }),
+        );
 }
 
 async function ingest(
     current: Scope,
     datasource: string,
     rows: object[],
-): Promise<void> {
+): Promise<boolean> {
     const { env } = current;
     try {
         const response = await fetch(
@@ -306,10 +319,12 @@ async function ingest(
                 { datasource, status: response.status },
             );
         }
+        return response.ok;
     } catch (error) {
         getLogger([current.service, "d1"]).error(
             "{datasource} ingest failed: {error}",
             { datasource, error },
         );
+        return false;
     }
 }

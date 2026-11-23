@@ -117,10 +117,6 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
                 tinybirdRequests.push(request);
                 return new Response("", { status: 202 });
             }
-            // D1 call telemetry, sent whenever the isolate's batch is due.
-            if (request.url.includes("/v0/events?name=d1_")) {
-                return new Response("", { status: 202 });
-            }
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
                 return Response.json({

@@ -6,12 +6,14 @@ import {
 import { withD1Calls } from "@shared/d1-calls.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// The isolate sends at most every 10 s, so each test starts a minute after
-// the previous one's send.
-let clock = Date.now();
+// Only deployed environments record, in 10 s batches; the clock is ours, so
+// no test waits for one.
+const production = { ...env, ENVIRONMENT: "production" };
+const clock = Date.UTC(2026, 10, 23, 13, 2, 6);
+const second = (ms: number) =>
+    new Date(ms).toISOString().slice(0, 19).replace("T", " ");
 beforeEach(() => {
-    clock += 60_000;
-    vi.useFakeTimers({ toFake: ["Date"], now: clock });
+    vi.useFakeTimers({ now: clock });
 });
 
 afterEach(() => {
@@ -22,7 +24,7 @@ afterEach(() => {
 type Rows = Record<string, unknown>[];
 
 // Each ingest is one NDJSON request; returns the rows sent per datasource.
-function captureIngest() {
+function captureIngest(queryStatus = 200) {
     const sent = { calls: [] as Rows[], queries: [] as Rows[] };
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
@@ -31,22 +33,35 @@ function captureIngest() {
             .map((line) => JSON.parse(line));
         const name = url.searchParams.get("name");
         if (name === "d1_call_event") sent.calls.push(rows);
-        if (name === "d1_query") sent.queries.push(rows);
-        return new Response("{}");
+        if (name !== "d1_query") return new Response("{}");
+        sent.queries.push(rows);
+        const status = sent.queries.length === 1 ? queryStatus : 200;
+        return new Response("{}", { status });
     });
     return sent;
 }
 
-async function run<T>(fn: (db: D1Database) => Promise<T>) {
+// Runs `fn` as one request, without waiting for the batch to be sent.
+async function request<T>(
+    fn: (db: D1Database) => Promise<T>,
+    route_path = "/image/:prompt",
+) {
     const ctx = createExecutionContext();
     const result = withD1Calls(
         "gen",
-        env,
+        production,
         ctx,
-        () => ({ route_path: "/image/:prompt", method: "GET" }),
+        () => ({ route_path, method: "GET" }),
         () => fn(env.DB),
     );
     await result.catch(() => {});
+    return { ctx, result };
+}
+
+// The same, through the 10 s until its batch is sent.
+async function run<T>(fn: (db: D1Database) => Promise<T>) {
+    const { ctx, result } = await request(fn);
+    await vi.advanceTimersByTimeAsync(10_000);
     await waitOnExecutionContext(ctx);
     return result;
 }
@@ -82,17 +97,16 @@ describe("D1 call timing", () => {
         expect(sent.calls).toEqual([
             [
                 {
-                    timestamp: new Date(clock)
-                        .toISOString()
-                        .slice(0, 19)
-                        .replace("T", " "),
+                    timestamp: second(clock),
                     service: "gen",
-                    environment: env.ENVIRONMENT,
+                    environment: "production",
                     route_path: "/image/:prompt",
                     method: "GET",
                     query_id: sent.queries[0][0].query_id,
                     error_code: "",
                     calls: 4,
+                    // all() and batch() report D1's figures.
+                    measured: 2,
                     total_ms: 0,
                     max_ms: 0,
                     sql_ms: expect.any(Number),
@@ -141,36 +155,75 @@ describe("D1 call timing", () => {
         expect(sent.calls[0]).toEqual([expect.objectContaining({ calls: 2 })]);
     });
 
-    it("sends requests within 10 s of each other in one later request", async () => {
+    it("marks sums D1 gave no figures for, so they do not read as zero", async () => {
+        const sent = captureIngest();
+        await run((db) => db.prepare("SELECT 'unmeasured' AS value").raw());
+        expect(sent.calls[0]).toEqual([
+            expect.objectContaining({ calls: 1, measured: 0 }),
+        ]);
+    });
+
+    it("sends one batch 10 s after its first call, with no later request", async () => {
         const sent = captureIngest();
         const query = (db: D1Database) =>
             db.prepare("SELECT 'batched' AS value").all();
-        await run(query);
-        expect(sent.calls).toHaveLength(1);
+        const first = await request(query);
 
-        vi.setSystemTime(clock + 3_000);
-        await run(query);
-        // Post-response work waits for the next send too.
+        await vi.advanceTimersByTimeAsync(3_000);
+        await request(query);
+        // Post-response work rides along too.
         const late = createExecutionContext();
         withD1Calls(
             "gen",
-            env,
+            production,
             late,
             () => ({ route_path: "generation", method: "GET" }),
             () => late.waitUntil(query(env.DB)),
         );
-        await waitOnExecutionContext(late);
-        expect(sent.calls).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(6_000);
+        expect(sent.calls).toHaveLength(0);
 
-        vi.setSystemTime(clock + 13_000);
-        await run(query);
-        expect(sent.calls).toHaveLength(2);
-        expect(sent.calls[1].map((row) => [row.route_path, row.calls])).toEqual(
-            [
-                ["/image/:prompt", 1],
-                ["generation", 1],
-                ["/image/:prompt", 1],
-            ],
+        await vi.advanceTimersByTimeAsync(1_000);
+        await waitOnExecutionContext(first.ctx);
+        expect(sent.calls).toHaveLength(1);
+        expect(
+            sent.calls[0].map((row) => [
+                row.timestamp,
+                row.route_path,
+                row.calls,
+            ]),
+        ).toEqual([
+            [second(clock), "/image/:prompt", 1],
+            [second(clock + 3_000), "/image/:prompt", 1],
+            [second(clock + 3_000), "generation", 1],
+        ]);
+    });
+
+    it("records nothing outside the deployed environments", async () => {
+        const sent = captureIngest();
+        const ctx = createExecutionContext();
+        await withD1Calls(
+            "gen",
+            env,
+            ctx,
+            () => ({ route_path: "/image/:prompt", method: "GET" }),
+            () => env.DB.prepare("SELECT 'local' AS value").all(),
         );
+        await vi.advanceTimersByTimeAsync(10_000);
+        await waitOnExecutionContext(ctx);
+        expect(sent.calls).toHaveLength(0);
+    });
+
+    it("sends a statement again when Tinybird did not take it", async () => {
+        const sent = captureIngest(503);
+        const query = (db: D1Database) =>
+            db.prepare("SELECT 'retried' AS value").all();
+        await run(query);
+        await run(query);
+        expect(sent.queries).toHaveLength(2);
+        expect(sent.queries[1]).toEqual(sent.queries[0]);
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({ sql: "SELECT 'retried' AS value" }),
+        ]);
     });
 });

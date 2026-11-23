@@ -7,7 +7,9 @@ kept 3 days, to attribute D1 stalls to what ran in the seconds before them.
 Each Worker isolate sends its own sums, so one second can have several rows
 for the same route and query: always aggregate. `timestamp` is the second the
 calls started in, `query_id` names the statement in `d1_query`, and
-`error_code` is empty for successful calls.
+`error_code` is empty for successful calls. `measured` counts the calls D1
+reported its own figures for: `sql_ms`, `rows_read` and `rows_written` cover
+only those, and mean "not measured" when it is 0 (Drizzle's selects).
 
 SCHEMA >
 `timestamp`    DateTime               `json:$.timestamp`,
@@ -18,6 +20,7 @@ SCHEMA >
 `query_id`     LowCardinality(String) `json:$.query_id`,
 `error_code`   LowCardinality(String) `json:$.error_code` DEFAULT '',
 `calls`        UInt32                 `json:$.calls`,
+`measured`     UInt32                 `json:$.measured` DEFAULT 0,
 `total_ms`     UInt32                 `json:$.total_ms`,
 `max_ms`       UInt32                 `json:$.max_ms`,
 `sql_ms`       Float32                `json:$.sql_ms`,

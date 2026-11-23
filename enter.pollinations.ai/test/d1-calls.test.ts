@@ -1,5 +1,10 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { afterEach, expect, vi } from "vitest";
+import worker from "../src/index.ts";
 import { test } from "./fixtures.ts";
 
 afterEach(() => {
@@ -10,38 +15,40 @@ afterEach(() => {
 test("records an Enter request's D1 calls named by route", async ({
     accountToken,
 }) => {
-    // The isolate sends at most every 10 s: be past the fixtures' send.
-    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 60_000 });
-    const batches: Record<string, unknown>[][] = [];
+    const rows: Record<string, unknown>[] = [];
     const realFetch = globalThis.fetch;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
-        if (url.searchParams.get("name") !== "d1_call_event") {
-            return realFetch(input, init);
+        const name = url.searchParams.get("name");
+        if (name === "d1_query") return new Response("{}");
+        if (name !== "d1_call_event") return realFetch(input, init);
+        for (const line of String(init?.body).split("\n")) {
+            rows.push(JSON.parse(line));
         }
-        batches.push(
-            String(init?.body)
-                .split("\n")
-                .map((line) => JSON.parse(line)),
-        );
         return new Response("{}");
     });
+    // Only deployed environments record, in 10 s batches: skip the wait.
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
 
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/profile",
-        { headers: { Authorization: `Bearer ${accountToken}` } },
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("http://localhost:3000/api/account/profile", {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        }),
+        { ...env, ENVIRONMENT: "production" },
+        ctx,
     );
     expect(response.status).toBe(200);
+    expect(rows).toHaveLength(0);
 
-    await vi.waitFor(() => expect(batches).toHaveLength(1));
-    // The isolate's one request also carries what the fixtures left behind.
-    const profile = batches[0].filter(
-        (row) => row.route_path === "/api/account/profile",
-    );
-    expect(profile.length).toBeGreaterThan(0);
-    for (const row of profile) {
+    await vi.advanceTimersByTimeAsync(10_000);
+    await waitOnExecutionContext(ctx);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
         expect(row).toMatchObject({
             service: "enter",
+            environment: "production",
+            route_path: "/api/account/profile",
             method: "GET",
             error_code: "",
             query_id: expect.any(String),
@@ -49,5 +56,5 @@ test("records an Enter request's D1 calls named by route", async ({
         });
     }
     // Placeholders only: the caller's key never reaches telemetry.
-    expect(JSON.stringify(batches)).not.toContain(accountToken);
+    expect(JSON.stringify(rows)).not.toContain(accountToken);
 });

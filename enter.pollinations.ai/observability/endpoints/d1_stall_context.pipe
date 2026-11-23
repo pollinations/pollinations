@@ -5,7 +5,8 @@ What D1 was doing around a moment: per second, per service, route and query,
 the calls started, their summed and longest wall time, D1's own SQL time,
 rows read and failures. Pass `at` (UTC, e.g. 2026-11-23 13:02:06) and
 optionally `before_seconds` (default 60) and `after_seconds` (default 10).
-The culprit shows up before the stall; the stall shows as long durations and
+`sql_ms`, `rows_read` and `rows_written` cover the `measured` calls only and
+are null when D1 reported none. The culprit shows up before the stall; the stall shows as long durations and
 failures on the victims.
 
 NODE d1_stall_context_seconds
@@ -19,11 +20,12 @@ SQL >
         query_id,
         any(substring(q.sql, 1, 300)) AS sql,
         sum(e.calls) AS calls,
+        sum(e.measured) AS measured,
         sum(e.total_ms) AS total_ms,
         max(e.max_ms) AS max_ms,
-        round(sum(e.sql_ms), 1) AS sql_ms,
-        sum(e.rows_read) AS rows_read,
-        sum(e.rows_written) AS rows_written,
+        if(sum(e.measured) = 0, NULL, round(sum(e.sql_ms), 1)) AS sql_ms,
+        if(sum(e.measured) = 0, NULL, sum(e.rows_read)) AS rows_read,
+        if(sum(e.measured) = 0, NULL, sum(e.rows_written)) AS rows_written,
         sumIf(e.calls, error_code != '') AS failed,
         groupUniqArrayIf(error_code, error_code != '') AS error_codes
     FROM d1_call_event AS e

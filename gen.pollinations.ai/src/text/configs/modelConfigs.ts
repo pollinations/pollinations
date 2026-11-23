@@ -11,6 +11,7 @@ import {
     createBedrockResponsesConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInceptionModelConfig,
     createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
@@ -1133,27 +1134,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "streamlake",
     ),
 
-    // -- OpenRouter (Inception Labs) -----------------------------------------
-    "mercury-2": () =>
-        createOpenRouterModelConfig({
-            model: "inception/mercury-2",
-            defaultOptions: {
-                provider: {
-                    only: ["Inception"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    "inception/mercury-2.5-preview": createPinnedOpenRouterConfig(
-        "inception/mercury-2.5-preview",
-        "Inception",
-        64000,
-    ),
-    "inception/mercury-3": createPinnedOpenRouterConfig(
-        "inception/mercury-3",
-        "Inception",
-        131072,
-    ),
+    // -- Inception Labs -----------------------------------------------------
+    "inception/mercury-2": () => createInceptionModelConfig("mercury-2"),
+    "inception/mercury-3": () => createInceptionModelConfig("mercury-3"),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>

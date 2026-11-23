@@ -17,16 +17,15 @@ import {
 } from "./model-status.ts";
 
 type HealthLookup = (entry: GenerationModelEntry) => ModelHealth;
-const isCommunityProxy = (entry: GenerationModelEntry) =>
-    entry.info.community && !entry.info.agent;
+const isCommunity = (entry: GenerationModelEntry) => entry.info.community;
 
 // A missing feed must not turn discovery into a 502 or label a model
 // healthy; an empty row set makes every lookup resolve to "unknown".
 export async function getModelHealthLookup(
     entries: GenerationModelEntry[],
 ): Promise<HealthLookup> {
-    const community = entries.some(isCommunityProxy);
-    const official = entries.some((entry) => !isCommunityProxy(entry));
+    const community = entries.some(isCommunity);
+    const official = entries.some((entry) => !isCommunity(entry));
     const [catalogRows, officialRows] = await Promise.all([
         (community ? fetchCatalogHealthRows() : Promise.resolve([])).catch(
             (error) => {
@@ -44,10 +43,12 @@ export async function getModelHealthLookup(
     const communityHealth = modelHealthLookup(catalogRows);
     const officialHealth = modelHealthLookup(officialRows);
     return (entry) =>
-        (isCommunityProxy(entry) ? communityHealth : officialHealth)(
-            entry.id,
-            entry.eventType.replace("generate.", ""),
-        );
+        entry.baseModelMissing
+            ? { status: "down", requests: 0, successRate: 0 }
+            : (isCommunity(entry) ? communityHealth : officialHealth)(
+                  entry.id,
+                  entry.eventType.replace("generate.", ""),
+              );
 }
 
 // Shared by the list and single-model routes so both return identical shapes.
@@ -118,7 +119,7 @@ export async function filterCatalogEntries(
         .filter(
             (entry) =>
                 reliability === "all" ||
-                !isCommunityProxy(entry) ||
+                !isCommunity(entry) ||
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );

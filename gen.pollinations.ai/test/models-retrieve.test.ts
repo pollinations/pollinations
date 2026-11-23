@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { PROMPT_AGENT_BASE_URL_PLACEHOLDER } from "@shared/community-endpoints.ts";
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
@@ -400,6 +401,68 @@ test("community reliability is discovery-only and legacy hide metadata no longer
     ).toBe(200);
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("agents follow the community reliability rule and a missing base model counts as down", async () => {
+    const owner = `agents-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    const bases = {
+        flaky: "openai/gpt-5.4-nano",
+        orphan: "community/deleted/base-model",
+        fresh: "openai/gpt-5.4-nano",
+    };
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values(
+            Object.entries(bases).map(([name, baseModel]) => {
+                const id = crypto.randomUUID();
+                return {
+                    id,
+                    ownerUserId,
+                    name,
+                    title: name,
+                    type: "prompt_agent" as const,
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    visibility: "public" as const,
+                    payload: JSON.stringify({
+                        systemPrompt: "Test",
+                        baseModel,
+                        mcpServers: [],
+                    }),
+                };
+            }),
+        );
+    await resetGenerationModelRegistryCache(env);
+    const id = (name: string) => `community/${owner}/${name}`;
+    mockCatalogHealth([
+        {
+            model: id("flaky"),
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 25,
+            errors_5xx: 25,
+        },
+    ]);
+    const names = async (query: string) =>
+        (
+            (await (
+                await fetchWorker(`/models?agent=true${query}`)
+            ).json()) as {
+                name: string;
+            }[]
+        )
+            .map((model) => model.name)
+            .filter((name) => name.startsWith(`community/${owner}/`))
+            .sort();
+    expect(await names("")).toEqual([id("fresh")]);
+    expect(await names("&reliability=all")).toEqual(
+        [id("flaky"), id("fresh"), id("orphan")].sort(),
+    );
+    const orphan = (await (
+        await fetchWorker(`/v1/models/${encodeURIComponent(id("orphan"))}`)
+    ).json()) as { health: { status: string } };
+    expect(orphan.health.status).toBe("down");
 });
 
 test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {

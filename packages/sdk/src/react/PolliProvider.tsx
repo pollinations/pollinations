@@ -235,6 +235,9 @@ export function PolliProvider({
     // The saved key as this tab last read or wrote it. A different saved key
     // later means another tab connected since.
     const syncedKey = useRef<string | null>(null);
+    // The key in use right now, ahead of the next render: a second 401 for a
+    // key this tab already replaced or dropped must change nothing.
+    const activeKey = useRef<string | null>(null);
 
     useEffect(() => {
         warnAuthSetup(appKey, currentRedirectUrl());
@@ -260,6 +263,7 @@ export function PolliProvider({
                                   : "Could not clear app connection",
                           );
             }
+            activeKey.current = nextApiKey;
             setApiKey(nextApiKey);
             setError(storageError);
         },
@@ -272,6 +276,7 @@ export function PolliProvider({
 
         void (async () => {
             syncedKey.current = storage.getItem(storageKey);
+            activeKey.current = syncedKey.current;
             setApiKey(syncedKey.current);
             const result = consumeOAuthCallback(
                 window.location,
@@ -417,6 +422,7 @@ export function PolliProvider({
     // delete the one another tab saved after connecting again.
     const rejectApiKey = useCallback(
         (rejected: string) => {
+            if (rejected !== activeKey.current) return;
             let saved: string | null = null;
             try {
                 saved = storage.getItem(storageKey);
@@ -425,6 +431,7 @@ export function PolliProvider({
             }
             if (saved && saved !== rejected && saved !== syncedKey.current) {
                 syncedKey.current = saved;
+                activeKey.current = saved;
                 setApiKey(saved);
                 return;
             }

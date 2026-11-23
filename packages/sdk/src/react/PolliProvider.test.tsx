@@ -1,7 +1,12 @@
 import { StrictMode } from "react";
 import { act, create } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useAccountKey, useAuth, useAuthActions } from "./hooks.js";
+import {
+    useAccountKey,
+    useAccountProfile,
+    useAuth,
+    useAuthActions,
+} from "./hooks.js";
 import { PolliProvider } from "./PolliProvider.js";
 import type { StorageAdapter } from "./storage.js";
 
@@ -551,6 +556,48 @@ describe("PolliProvider", () => {
             );
 
             const auth = await mountWithKey(storage);
+
+            expect(auth.current?.apiKey).toBe("sk_new");
+            expect(auth.current?.error).toBeNull();
+            expect(storage.getItem("polli:pk_test:token")).toBe("sk_new");
+        });
+
+        it("keeps the recovered key when two requests reject the old one", async () => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+            // Another tab saves sk_new before either 401 arrives.
+            storage.setItem("polli:pk_test:token", "sk_new");
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_url, init) =>
+                    new Headers(init?.headers).get("Authorization") ===
+                    "Bearer sk_new"
+                        ? new Response(JSON.stringify({ id: "key" }))
+                        : unauthorized(),
+            );
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
+            function Probe() {
+                auth.current = useAuth();
+                useAccountKey();
+                useAccountProfile();
+                return null;
+            }
+            const stale = {
+                ...storage,
+                // This tab hydrated before the other tab saved sk_new.
+                getItem: vi.fn(storage.getItem).mockReturnValueOnce("sk_old"),
+            };
+
+            await act(async () => {
+                create(
+                    <PolliProvider appKey="pk_test" storage={stale}>
+                        <Probe />
+                    </PolliProvider>,
+                );
+            });
 
             expect(auth.current?.apiKey).toBe("sk_new");
             expect(auth.current?.error).toBeNull();

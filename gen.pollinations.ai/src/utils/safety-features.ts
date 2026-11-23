@@ -37,37 +37,61 @@ const REDACT_FEATURES = new Set<SafetyFeature>(["privacy"]);
 export function classifyTriggers(
     response: BedrockResponse,
     features: Set<SafetyFeature>,
+    options: {
+        shieldExemptInputIndexes?: ReadonlySet<number>;
+        inputCount?: number;
+    } = {},
 ): {
     blockedFeatures: Set<SafetyFeature>;
     redactedIds: string[];
 } {
-    const detected: { id: string; action: "ANONYMIZED" | "BLOCKED" }[] = [];
-    for (const assessment of response.assessments ?? []) {
+    const assessments = response.assessments ?? [];
+    // Bedrock returns one assessment per input, in request order. Only trust
+    // the indexes when the counts match; otherwise fail closed and apply every
+    // trigger.
+    const shieldExempt =
+        options.shieldExemptInputIndexes &&
+        options.inputCount !== undefined &&
+        assessments.length === options.inputCount
+            ? options.shieldExemptInputIndexes
+            : undefined;
+    const detected: {
+        id: string;
+        action: "ANONYMIZED" | "BLOCKED";
+        assessmentIndex: number;
+    }[] = [];
+    for (const [assessmentIndex, assessment] of assessments.entries()) {
         const policy = assessment.sensitiveInformationPolicy;
         const filters = assessment.contentPolicy?.filters;
         detected.push(
             ...(policy?.piiEntities ?? []).map((entity) => ({
                 id: entity.type,
                 action: entity.action,
+                assessmentIndex,
             })),
             ...(policy?.regexes ?? []).map((regex) => ({
                 id: regex.name,
                 action: "BLOCKED" as const,
+                assessmentIndex,
             })),
             ...(filters ?? [])
                 .filter((filter) => filter.action === "BLOCKED")
                 .map((filter) => ({
                     id: filter.type,
                     action: "BLOCKED" as const,
+                    assessmentIndex,
                 })),
         );
     }
 
     const blockedFeatures = new Set<SafetyFeature>();
     const redactedIds = new Set<string>();
-    for (const { id, action } of detected) {
+    for (const { id, action, assessmentIndex } of detected) {
         for (const feature of features) {
             if (!FEATURE_TRIGGERS[feature].has(id)) continue;
+            if (feature === "shield" && shieldExempt?.has(assessmentIndex)) {
+                continue;
+            }
             if (action === "ANONYMIZED" && REDACT_FEATURES.has(feature)) {
                 redactedIds.add(id);
             } else {

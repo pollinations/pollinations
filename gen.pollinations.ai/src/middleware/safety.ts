@@ -38,6 +38,14 @@ type SafetyInput = string | string[] | ChatBody;
 type PreparedSafetyInput = {
     texts: string[];
     safe?: SafeValue;
+    /**
+     * System-role texts are instructions from the caller, not untrusted user
+     * input. They still need privacy/secrets/content checks, but Bedrock's
+     * prompt-attack classifier flags ordinary instructions such as
+     * "You are a helpful assistant." as `shield`. Keep those indexes so only
+     * the shield result is ignored for them.
+     */
+    shieldExemptIndexes?: Set<number>;
     rebuild: (safeTexts: string[]) => SafetyInput;
 };
 
@@ -50,6 +58,7 @@ export function applySafetyToInput(
     c: SafetyContext,
     input: string[],
     safe?: SafeValue,
+    shieldExemptIndexes?: Set<number>,
 ): Promise<string[]>;
 export function applySafetyToInput(
     c: SafetyContext,
@@ -59,9 +68,15 @@ export async function applySafetyToInput(
     c: SafetyContext,
     input: SafetyInput,
     safe?: SafeValue,
+    shieldExemptIndexes?: Set<number>,
 ): Promise<SafetyInput> {
     const prepared = prepareSafetyInput(input, safe);
-    const safeTexts = await checkSafetyTexts(c, prepared.texts, prepared.safe);
+    const safeTexts = await checkSafetyTexts(
+        c,
+        prepared.texts,
+        prepared.safe,
+        prepared.shieldExemptIndexes ?? shieldExemptIndexes,
+    );
     return prepared.rebuild(safeTexts);
 }
 
@@ -69,6 +84,7 @@ async function checkSafetyTexts(
     c: SafetyContext,
     texts: string[],
     bodySafe?: SafeValue,
+    shieldExemptIndexes?: Set<number>,
 ): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
     const features = getRequestFeatures(safeValue);
@@ -109,9 +125,20 @@ async function checkSafetyTexts(
 
     if (response.action !== "GUARDRAIL_INTERVENED") return texts;
 
+    const shieldExemptInputIndexes = shieldExemptIndexes?.size
+        ? new Set(
+              guardrailInputs.flatMap((input, index) =>
+                  shieldExemptIndexes.has(input.originalIndex) ? [index] : [],
+              ),
+          )
+        : undefined;
     const { blockedFeatures, redactedIds } = classifyTriggers(
         response,
         features,
+        {
+            shieldExemptInputIndexes,
+            inputCount: guardrailInputs.length,
+        },
     );
     if (blockedFeatures.size > 0) {
         throw new UpstreamError(400, {
@@ -224,9 +251,20 @@ function prepareSafetyInput(
     }
 
     const targets = collectChatTextTargets(input);
+    const shieldExemptIndexes = new Set<number>();
+    for (const [index, target] of targets.entries()) {
+        const role =
+            target.kind === "system"
+                ? "system"
+                : input.messages[target.messageIndex]?.role;
+        if (role === "system" || role === "developer") {
+            shieldExemptIndexes.add(index);
+        }
+    }
     return {
         texts: targets.map((target) => target.text),
         safe: input.safe as SafeValue,
+        ...(shieldExemptIndexes.size ? { shieldExemptIndexes } : {}),
         rebuild: (safeTexts) => rebuildChatInput(input, targets, safeTexts),
     };
 }

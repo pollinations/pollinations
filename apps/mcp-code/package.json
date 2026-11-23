@@ -1,0 +1,22 @@
+{
+  "name": "pollinations-mcp-code-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test worker.test.js",
+    "check": "wrangler deploy --env staging --dry-run",
+    "deploy:staging": "wrangler deploy --env staging"
+  },
+  "dependencies": {
+    "@cloudflare/codemode": "0.5.6",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0",
+    "esbuild": "0.28.1",
+    "miniflare": "5.20261119.0-beta",
+    "wrangler": "4.166.0"
+  }
+}

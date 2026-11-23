@@ -414,6 +414,10 @@ jobs:
           if [ -z "$FILTER" ] || grep -q '^packages/mcp/' "$RUNNER_TEMP/changed.txt"; then
             echo "core=true" >> "$GITHUB_OUTPUT"
           fi
+          # The staging-only Code Mode server has no production deploy.json.
+          if [ -z "$FILTER" ] || grep -qE '^(apps/mcp-code|packages/mcp)/' "$RUNNER_TEMP/changed.txt"; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
           # apps/mcp is the hosted server built on packages/mcp.
           APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps $FILTER)
           APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(apps.filter(({ name }) => /(^|-)mcp$/.test(name)).map(({ path }) => path).join(" "))' "$APPS")
@@ -425,6 +429,13 @@ jobs:
         run: |
           npm ci --prefix packages/mcp
           npm test --prefix packages/mcp
+
+      - name: Test Code Mode with an external MCP client
+        if: steps.mcp.outputs.code == 'true'
+        run: |
+          npm ci --prefix packages/mcp --workspaces=false
+          npm ci --prefix apps/mcp-code --workspaces=false
+          npm test --prefix apps/mcp-code
 
       # Installs each server as its deploy.json `install` does.
       - name: Test changed MCP applications

@@ -48,6 +48,7 @@ export type McpPricingInfo = {
 
 export type McpBindingName =
     | "POLLINATIONS_MCP"
+    | "POLLINATIONS_CODE_MCP"
     | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
@@ -315,6 +316,30 @@ export const MCP_SERVERS = [
     },
 ] as const satisfies readonly McpServerDefinition[];
 
+const STAGING_MCP_SERVERS = [
+    ...MCP_SERVERS,
+    {
+        id: "pollinations-code",
+        alpha: true,
+        forwardAuthorization: true,
+        agents: false,
+        name: "Pollinations Code",
+        description:
+            "Run JavaScript that combines Pollinations discovery and generation tools.",
+        binding: "POLLINATIONS_CODE_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Generation uses the selected model's listed rate. No additional execution fee.",
+            rates: [],
+        },
+    },
+] as const satisfies readonly McpServerDefinition[];
+
+export function getMcpServers(environment?: string) {
+    return environment === "staging" ? STAGING_MCP_SERVERS : MCP_SERVERS;
+}
+
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];
 
 /** The servers a hosted agent can be given. */
@@ -324,8 +349,9 @@ export const AGENT_MCP_SERVER_IDS = MCP_SERVERS.filter(
 
 export function getMcpServerDefinition(
     id: string,
+    environment?: string,
 ): McpServerDefinition | undefined {
-    return MCP_SERVERS.find((server) => server.id === id);
+    return getMcpServers(environment).find((server) => server.id === id);
 }
 
 export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {

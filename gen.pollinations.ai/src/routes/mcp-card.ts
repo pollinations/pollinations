@@ -41,7 +41,10 @@ function serverCardResponse(
 
 export const mcpCardRoutes = new Hono<Env>()
     .get("/mcp/:serverId/server-card", etag(), (c) => {
-        const server = getMcpServerDefinition(c.req.param("serverId"));
+        const server = getMcpServerDefinition(
+            c.req.param("serverId"),
+            c.env.ENVIRONMENT,
+        );
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }

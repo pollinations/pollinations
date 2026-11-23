@@ -1,4 +1,9 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -10,6 +15,7 @@ import {
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import worker from "../src/index.ts";
 
 const MCP_REQUEST = {
     jsonrpc: "2.0",
@@ -20,6 +26,106 @@ const MCP_REQUEST = {
         arguments: {},
     },
 };
+
+test("publishes and routes the code pilot only in staging", async () => {
+    const fetchIn = async (
+        environment: "production" | "staging",
+        path: string,
+    ) => {
+        const ctx = createExecutionContext();
+        const res = await worker.fetch(
+            new Request(`https://staging.gen.pollinations.ai${path}`),
+            {
+                ...env,
+                ENVIRONMENT: environment,
+            },
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return res;
+    };
+    for (const path of [
+        "/mcp",
+        "/.well-known/ai-catalog.json",
+        "/.well-known/ard.json",
+    ]) {
+        expect(await (await fetchIn("staging", path)).text()).toContain(
+            "/mcp/pollinations-code",
+        );
+        expect(await (await fetchIn("production", path)).text()).not.toContain(
+            "/mcp/pollinations-code",
+        );
+    }
+    const path = "/mcp/pollinations-code";
+    expect((await fetchIn("staging", `${path}/server-card`)).status).toBe(200);
+    expect((await fetchIn("production", `${path}/server-card`)).status).toBe(
+        404,
+    );
+    expect((await fetchIn("production", path)).status).toBe(404);
+});
+
+test("requires a funded direct key and rate limits code execution per key", async () => {
+    const funded = await createTestApiKey({ user: { tierBalance: 1 } });
+    const empty = await createTestApiKey({
+        userId: funded.userId,
+        pollenBudget: 0,
+    });
+    const wallet = await createTestApiKey();
+    const other = await createTestApiKey({ userId: funded.userId });
+    const staging = {
+        ...env,
+        ENVIRONMENT: "staging" as const,
+        STAGING_ALLOWED_EMAILS: [funded, wallet]
+            .map(({ userId }) => `${userId}@test.local`)
+            .join(","),
+        POLLINATIONS_CODE_MCP: env.POLLINATIONS_MCP,
+    };
+    const call = async (key: string, method = "tools/call") => {
+        const ctx = createExecutionContext();
+        const res = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/mcp/pollinations-code",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${key}`,
+                        "content-type": "application/json",
+                    },
+                    body: JSON.stringify({ ...MCP_REQUEST, method }),
+                },
+            ),
+            staging,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return res;
+    };
+    const session = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: funded.userId,
+    });
+    const agent = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: funded.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    expect((await call("sk_invalid")).status).toBe(401);
+    expect((await call(session)).status).toBe(401);
+    expect((await call(agent)).status).toBe(403);
+    expect((await call(empty.key)).status).toBe(402);
+    expect((await call(wallet.key)).status).toBe(402);
+    expect((await call(wallet.key, "tools/list")).status).toBe(200);
+    expect((await call(funded.key)).status).toBe(200);
+    expect((await call(funded.key)).status).toBe(200);
+    const limited = await call(funded.key);
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Retry-After")).toBe("60");
+    expect((await call(other.key)).status).toBe(200);
+    expect(await getUserBalance(drizzle(env.DB), funded.userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
 
 test("lists the MCP servers exposed through Gen", async () => {
     const response = await SELF.fetch("https://gen.pollinations.ai/mcp");

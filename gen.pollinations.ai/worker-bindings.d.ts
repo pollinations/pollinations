@@ -2,6 +2,8 @@ interface CloudflareBindings {
     ASSETS: Fetcher;
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
+    POLLINATIONS_CODE_MCP?: Fetcher;
+    MCP_CODE_RATE_LIMITER?: RateLimit;
     ASK_JEV_MCP: Fetcher;
     FFMPEG_MCP: Fetcher;
     EXA_MCP: Fetcher;

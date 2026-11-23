@@ -22,7 +22,7 @@ SQL >
         count() AS n,
         max(timestamp) AS at
     FROM error_event
-    WHERE environment = 'production'
+    WHERE is_final AND environment = 'production'
         AND timestamp >= now() - INTERVAL 15 MINUTE
         AND status >= 500
         AND (route_path = '/api/webhooks/stripe' OR startsWith(route_path, '/api/stripe/checkout'))

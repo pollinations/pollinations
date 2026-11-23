@@ -2780,9 +2780,14 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(2);
+        const generationRequests = tinybirdRequests.filter(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        expect(generationRequests).toHaveLength(2);
         const [primary, fallback] = await Promise.all(
-            tinybirdRequests.map(
+            generationRequests.map(
                 async (request) => request.json() as Promise<TinybirdEvent>,
             ),
         );
@@ -2806,6 +2811,122 @@ describe("tracking observability", () => {
         ).toBeGreaterThanOrEqual(100);
         expect(fallback.tokenCountCompletionText).toBe(500);
         expect(fallback.isBilledUsage).toBe(true);
+    });
+
+    it.each([
+        ["portkey", { "x-portkey-gateway-exception": "true" }],
+        ["provider", { "apim-request-id": "azure-request-id" }],
+        ["unknown", {}],
+    ])("logs a recovered Azure 500 with %s origin", async (origin, headers) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const events: Record<string, unknown>[] = [];
+        const errors: Record<string, unknown>[] = [];
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (url.hostname === "portkey.test") {
+                    const route =
+                        request.headers.get("x-portkey-azure-deployment-id") ??
+                        request.headers.get("x-portkey-custom-host") ??
+                        "";
+                    calls.push(route);
+                    if (route === "DeepSeek-V4.1-Flash-1017") {
+                        return Response.json(
+                            { message: "Something went wrong" },
+                            {
+                                status: 500,
+                                headers: {
+                                    ...headers,
+                                    "x-portkey-trace-id": "gateway-id",
+                                } as HeadersInit,
+                            },
+                        );
+                    }
+                    return Response.json({
+                        id: "test-completion",
+                        object: "chat.completion",
+                        model,
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 8,
+                            completion_tokens: 2,
+                            total_tokens: 10,
+                        },
+                    });
+                }
+                if (url.pathname === "/v0/events") {
+                    const row = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    if (url.searchParams.get("name") === "error_event")
+                        errors.push(row);
+                    if (url.searchParams.get("name") === "generation_event_v2")
+                        events.push(row);
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: crypto.randomUUID() }],
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure",
+                FIREWORKS_NEO_API_KEY: "test-fireworks",
+            }),
+            ctx,
+        );
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+        expect(response.status, body).toBe(200);
+        expect(calls).toEqual([
+            "DeepSeek-V4.1-Flash-1017",
+            "https://api.fireworks.ai/inference/v1",
+        ]);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toMatchObject({
+            request_id: events[1].requestId,
+            is_final: false,
+            attempt_index: 0,
+            status: 500,
+            provider: "azure",
+            model_used: model,
+            error_origin: origin,
+            gateway_status: 500,
+            gateway_request_id: "gateway-id",
+        });
+        expect(errors[0].upstream_request_id).toBe(
+            origin === "provider" ? "azure-request-id" : undefined,
+        );
+        expect(errors[0]).not.toHaveProperty("upstream_body");
+        expect(events[1]).toMatchObject({
+            isFinal: true,
+            responseStatus: 200,
+            modelProviderUsed: "fireworks",
+        });
     });
 
     it.each([false, true])(

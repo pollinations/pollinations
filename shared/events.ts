@@ -12,6 +12,14 @@ export type TinybirdErrorEvent = {
     method?: string;
     status: number;
     duration_ms?: number;
+    is_final?: boolean;
+    attempt_index?: number;
+    provider?: string;
+    model_used?: string;
+    gateway_status?: number;
+    error_origin?: "provider" | "portkey" | "unknown";
+    gateway_request_id?: string;
+    upstream_request_id?: string;
     error_code?: string;
     error_class?: string;
     message?: string;

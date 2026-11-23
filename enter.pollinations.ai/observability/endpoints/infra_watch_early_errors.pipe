@@ -39,7 +39,7 @@ SQL >
             positionCaseInsensitive(concat(message, ' ', stack), 'D1_ERROR') > 0
                 OR message = 'Unable to verify balance. Please try again shortly.' AS d1
         FROM error_event
-        WHERE environment = 'production'
+        WHERE is_final AND environment = 'production'
             AND timestamp >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
     )
     AS errors

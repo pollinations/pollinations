@@ -3,7 +3,7 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
 Rolling 24-hour window of actionable server-side failures for Pollinations services.
-Contains only structured 5xx/system/upstream errors with stack traces, routing context, and request inputs.
+Contains final server errors and structured 5xx attempt events for recovered requests.
 
 SCHEMA >
 `timestamp`                DateTime               `json:$.timestamp`,
@@ -14,6 +14,14 @@ SCHEMA >
 `route_path`               String                 `json:$.route_path` DEFAULT '',
 `method`                   LowCardinality(String) `json:$.method` DEFAULT 'GET',
 `status`                   UInt16                 `json:$.status`,
+`is_final`                 Bool                   `json:$.is_final` DEFAULT true,
+`attempt_index`            Nullable(UInt16)       `json:$.attempt_index`,
+`provider`                 LowCardinality(String) `json:$.provider` DEFAULT '',
+`model_used`               String                 `json:$.model_used` DEFAULT '',
+`gateway_status`           Nullable(UInt16)       `json:$.gateway_status`,
+`error_origin`             LowCardinality(String) `json:$.error_origin` DEFAULT 'unknown',
+`gateway_request_id`       String                 `json:$.gateway_request_id` DEFAULT '',
+`upstream_request_id`      String                 `json:$.upstream_request_id` DEFAULT '',
 `duration_ms`              Nullable(UInt32)       `json:$.duration_ms`,
 `error_code`               LowCardinality(String) `json:$.error_code` DEFAULT 'UNKNOWN_ERROR',
 `error_class`              LowCardinality(String) `json:$.error_class` DEFAULT 'Error',

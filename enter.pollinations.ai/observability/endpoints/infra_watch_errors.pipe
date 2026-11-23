@@ -47,7 +47,7 @@ SQL >
                 'other'
             ) AS error_kind
         FROM error_event
-        WHERE timestamp >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
+        WHERE is_final AND timestamp >= now() - interval least(greatest({{Int32(minutes, 15)}}, 1), 60) minute
         {% if defined(model) %}
             AND (
                 resolved_model_requested = {{String(model)}}

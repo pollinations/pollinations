@@ -14,6 +14,14 @@ SQL >
         method,
         status,
         duration_ms,
+        is_final,
+        attempt_index,
+        provider,
+        model_used,
+        gateway_status,
+        error_origin,
+        gateway_request_id,
+        upstream_request_id,
         error_code,
         error_class,
         message,
@@ -31,6 +39,7 @@ SQL >
         api_key_id
     FROM error_event
     WHERE timestamp >= now() - interval {{Int32(minutes, 1440)}} minute
+    AND (is_final OR {{Int32(include_attempts, 0)}} = 1)
     ORDER BY timestamp DESC
     LIMIT {{Int32(limit, 200)}}
 

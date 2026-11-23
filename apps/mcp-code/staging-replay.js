@@ -129,11 +129,21 @@ async function checkCharges(before, previousIds, since) {
             const cost = rows.reduce((sum, row) => sum + row.cost_usd, 0);
             if (Math.abs(before - after - cost) < 1e-8)
                 return rows
-                    .map(({ model, cost_usd, cursor_event_id }) => ({
-                        model,
-                        costUsd: cost_usd,
-                        eventId: cursor_event_id,
-                    }))
+                    .map(
+                        ({
+                            model,
+                            cost_usd,
+                            cursor_event_id,
+                            timestamp,
+                            response_time_ms,
+                        }) => ({
+                            model,
+                            costUsd: cost_usd,
+                            eventId: cursor_event_id,
+                            startedAt: timestamp,
+                            durationMs: response_time_ms,
+                        }),
+                    )
                     .sort((a, b) => a.model.localeCompare(b.model));
         }
         assert.ok(
@@ -177,11 +187,22 @@ try {
         clearTimeout(timer);
     }
     disconnect = undefined;
-    console.log(
-        JSON.stringify({ runId, rejoinedAt: new Date().toISOString() }),
-    );
+    const rejoinedAt = new Date();
+    console.log(JSON.stringify({ runId, rejoinedAt }));
     const recovered = await images();
     const charges = await checkCharges(before, previousIds, since);
+    // Tinybird reports start_time at second precision. The generation must
+    // straddle the retry even at the edges of that one-second uncertainty.
+    assert.ok(
+        charges.some((event) => {
+            const start = Date.parse(`${event.startedAt.replace(" ", "T")}Z`);
+            return (
+                start + 1000 <= rejoinedAt.getTime() &&
+                start + event.durationMs >= rejoinedAt.getTime()
+            );
+        }),
+        "No billed generation demonstrably spanned the interruption; adjust INTERRUPT_AFTER_MS for a fresh run",
+    );
     const cached = await images();
     assert.deepEqual(cached, recovered);
     for (const { url } of cached) {

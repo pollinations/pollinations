@@ -33,14 +33,14 @@ before(async () => {
             name: "pollinations-code-test",
             modules: true,
             script: bundle.outputFiles[0].text,
-            compatibilityDate: "2026-08-14",
+            compatibilityDate: "2026-10-19",
             compatibilityFlags: ["nodejs_compat"],
             workerLoaders: { LOADER: {} },
             bindings: { POLLINATIONS_BASE_URL: gen },
             outboundService: async (req) => {
                 const url = new URL(req.url);
                 seen.push({
-                    path: url.pathname,
+                    query: url.searchParams.get("query"),
                     auth: req.headers.get("authorization"),
                 });
                 assert.equal(url.origin, gen);
@@ -61,6 +61,10 @@ before(async () => {
             },
         }),
     );
+    client = await connect(token);
+});
+
+async function connect(token, options) {
     const transport = new StreamableHTTPClientTransport(new URL(endpoint), {
         fetch: (input, init) =>
             mf.dispatchFetch(
@@ -69,9 +73,13 @@ before(async () => {
             ),
         requestInit: { headers: { authorization: `Bearer ${token}` } },
     });
-    client = new Client({ name: "external-agent-test", version: "1" });
-    await client.connect(transport);
-});
+    const connected = new Client(
+        { name: "external-agent-test", version: "1" },
+        options,
+    );
+    await connected.connect(transport);
+    return connected;
+}
 after(async () => {
     try {
         await client?.close();
@@ -149,7 +157,7 @@ test("sandbox cannot use direct fetch or account tools", async () => {
     const start = seen.length;
     const result = await run(`async () => {
         let blocked = false;
-        try { await fetch('${gen}/image/models'); } catch { blocked = true; }
+        try { await fetch('${gen}/image/models'); } catch (error) { blocked = error.message.includes('not permitted to access the internet'); }
         let denied = false;
         try { await pollinations.getBalance({}); } catch { denied = true; }
         return [blocked, denied];
@@ -164,4 +172,33 @@ test("refuses oversized scripts and JSON results", async () => {
     const result = await run(`async () => 'a'.repeat(32_769)`);
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /Return at most/);
+});
+
+test("isolates keys across concurrent external clients", async (t) => {
+    const second = await connect("second-test-client", {
+        versionNegotiation: { mode: "auto" },
+    });
+    t.after(() => second.close());
+    const start = seen.length;
+    await Promise.all(
+        [
+            [client, "first"],
+            [second, "second"],
+        ].map(async ([caller, query]) => {
+            const result = await caller.callTool({
+                name: "code",
+                arguments: {
+                    code: `async () => pollinations.listModels({type: 'image', query: '${query}'})`,
+                },
+            });
+            assert.ok(!result.isError, result.content[0]?.text);
+        }),
+    );
+    assert.deepEqual(
+        seen.slice(start).sort((a, b) => a.query.localeCompare(b.query)),
+        [
+            { query: "first", auth: `Bearer ${token}` },
+            { query: "second", auth: "Bearer second-test-client" },
+        ],
+    );
 });

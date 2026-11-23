@@ -3,7 +3,6 @@
 # Used by launchd to auto-start on boot
 
 set -e
-umask 077
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
@@ -14,7 +13,6 @@ set +a
 
 export DEBUG=app:*
 export PATH="/Users/thomash/.nvm/versions/node/v23.0.0/bin:$PATH"
-TSX="$DIR/node_modules/.bin/tsx"
 
 # Global channels from bots.json
 GLOBAL_CHANNELS="1370368057641533440,1123617013433110578"
@@ -37,12 +35,12 @@ for bot_def in "${BOTS[@]}"; do
   fi
   echo "Starting $model..."
   (while true; do
-    DISCORD_BOT_TOKEN="$token" "$TSX" src-functional/cli.ts "$model" \
+    tsx src-functional/cli.ts "$model" "$token" \
       --channels "$channels" \
       --global-channels "$GLOBAL_CHANNELS" \
-      >> "/tmp/discord-bot-$model.log" 2>&1 || true
-    echo "[$(date)] $model exited, restarting in 30s..." >> "/tmp/discord-bot-$model.log"
-    sleep 30
+      >> "/tmp/discord-bot-$model.log" 2>&1
+    echo "[$(date)] $model crashed, restarting in 5s..." >> "/tmp/discord-bot-$model.log"
+    sleep 5
   done) &
   echo "  PID $! → /tmp/discord-bot-$model.log"
 done
@@ -52,7 +50,7 @@ if [ -n "$BOT_TOKEN_CATGPT" ]; then
   echo "Starting catgpt..."
   (while true; do
     cd "$DIR/../catgpt-bot"
-    "$TSX" bot.ts >> /tmp/discord-bot-catgpt.log 2>&1 || true
+    tsx bot.ts >> /tmp/discord-bot-catgpt.log 2>&1
     echo "[$(date)] catgpt crashed, restarting in 5s..." >> /tmp/discord-bot-catgpt.log
     sleep 5
   done) &
@@ -64,7 +62,7 @@ if [ -n "$BOT_TOKEN_OPPOSITE_PROMPT" ]; then
   echo "Starting opposite-prompt..."
   (while true; do
     cd "$DIR/../opposite-prompt-bot"
-    "$TSX" bot.ts >> /tmp/discord-bot-opposite-prompt.log 2>&1 || true
+    tsx bot.ts >> /tmp/discord-bot-opposite-prompt.log 2>&1
     echo "[$(date)] opposite-prompt crashed, restarting in 5s..." >> /tmp/discord-bot-opposite-prompt.log
     sleep 5
   done) &

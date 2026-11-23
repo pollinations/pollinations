@@ -1,4 +1,3 @@
-import { setTimeout as delay } from "node:timers/promises";
 import debug from "debug";
 import {
     ChannelType,
@@ -7,8 +6,6 @@ import {
     GatewayIntentBits,
     type Message,
     Partials,
-    type RESTGetAPIGatewayBotResult,
-    Routes,
 } from "discord.js";
 import { FatalTokenError, handleDiscordError } from "./errors";
 import type { ApiMessage, BotConfig, GenerateTextWithHistory } from "./types";
@@ -433,24 +430,6 @@ export async function runBot(
 
     // Create client
     const client = new Client(clientOptions);
-
-    // Discord counts new Gateway sessions across process restarts.
-    client.rest.setToken(config.token);
-    for (;;) {
-        const gateway = (await client.rest.get(
-            Routes.gatewayBot(),
-        )) as RESTGetAPIGatewayBotResult;
-        const limit = gateway.session_start_limit;
-        if (limit.remaining >= gateway.shards) break;
-
-        const waitMs = Math.max(0, limit.reset_after) + 1_000;
-        console.log(
-            "[%s] Gateway quota exhausted; retrying in %ds",
-            config.name,
-            Math.ceil(waitMs / 1_000),
-        );
-        await delay(waitMs);
-    }
 
     // Set up ready event handler first
     const readyPromise = new Promise<void>((resolve) => {

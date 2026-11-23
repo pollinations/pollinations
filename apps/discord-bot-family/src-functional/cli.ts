@@ -20,15 +20,14 @@ function parseArgs(): {
     globalChannels?: string[];
 } {
     const args = process.argv.slice(2);
-    const envToken = process.env.DISCORD_BOT_TOKEN;
 
-    if (args.length < (envToken ? 1 : 2)) {
+    if (args.length < 2) {
         console.error(`
-Usage: ts-node src-functional/cli.ts <model> [token] [options]
+Usage: ts-node src-functional/cli.ts <model> <token> [options]
 
 Arguments:
   model       Bot model name (e.g., 'geminisearch', 'deepseek', 'chickytutor')
-  token       Discord bot token, or set DISCORD_BOT_TOKEN
+  token       Discord bot token
 
 Options:
   --name <name>              Bot display name (defaults to model name)
@@ -44,7 +43,7 @@ Examples:
     }
 
     const model = args[0];
-    const token = envToken || args[1];
+    const token = args[1];
 
     let name: string | undefined;
     let personality: string | undefined;
@@ -52,7 +51,7 @@ Examples:
     let globalChannels: string[] | undefined;
 
     // Parse optional arguments
-    for (let i = envToken ? 1 : 2; i < args.length; i++) {
+    for (let i = 2; i < args.length; i++) {
         const arg = args[i];
 
         if (arg === "--name" && i + 1 < args.length) {
@@ -118,6 +117,7 @@ async function main() {
 
         // Parse command line arguments
         const args = parseArgs();
+        log("Parsed arguments:", args);
 
         // Validate token
         if (!args.token || args.token.includes("YOUR_BOT_TOKEN")) {

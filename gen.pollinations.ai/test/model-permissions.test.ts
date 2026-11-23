@@ -108,6 +108,26 @@ test("HEAD and GET validate the same query model before generation", async ({
     }
 });
 
+test("rejects the retired Grok Imagine Pro ID and aliases", async ({
+    paidApiKey,
+}) => {
+    for (const model of [
+        "x-ai/grok-imagine-image-quality",
+        "grok-aurora",
+        "aurora",
+        "grok-imagine-image-quality",
+        "grok-imagine-image-pro",
+        "grok-imagine-pro",
+    ]) {
+        const response = await fetchWorker(
+            `/image/retired-model-check?model=${encodeURIComponent(model)}`,
+            { headers: { Authorization: `Bearer ${paidApiKey}` } },
+        );
+        expect(response.status, model).toBe(400);
+        expect(await response.text()).toContain(`Invalid model or alias`);
+    }
+});
+
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
     const caller = await createTestApiKey();

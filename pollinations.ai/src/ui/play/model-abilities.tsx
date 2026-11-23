@@ -143,19 +143,36 @@ const MCP_SERVER_ATTACHMENTS: Record<string, Attachment[]> = {
     ffmpeg: ["audio", "video"],
 };
 
-/** Whether an agent's tools work on file links, so it should get each attachment's. */
-export function takesFileLinks(model: Pick<AbilityModel, "mcpServers">) {
-    return (model.mcpServers ?? []).some((id) => id in MCP_SERVER_ATTACHMENTS);
+type AttachmentModel = Pick<AbilityModel, "inputModalities" | "mcpServers"> & {
+    /** Published by an official Pollinations account. */
+    verified: boolean;
+};
+
+/**
+ * Whether an agent should get each attachment's link for its tools. Only
+ * official agents do: a link lets whoever runs the agent open the file.
+ */
+export function takesFileLinks(
+    model: Pick<AttachmentModel, "mcpServers" | "verified">,
+) {
+    return (
+        model.verified &&
+        (model.mcpServers ?? []).some((id) => id in MCP_SERVER_ATTACHMENTS)
+    );
 }
 
-/** The kinds of file a hosted agent accepts: declared, or taken by its tools. */
-export function agentAttachments(
-    model: Pick<AbilityModel, "inputModalities" | "mcpServers">,
-): Attachment[] {
+/**
+ * The kinds of file a hosted agent accepts: declared, or taken by its tools.
+ * Audio and video reach an agent only as a link, so only official agents take
+ * them.
+ */
+export function agentAttachments(model: AttachmentModel): Attachment[] {
     const byTool = (model.mcpServers ?? []).flatMap(
         (id) => MCP_SERVER_ATTACHMENTS[id] ?? [],
     );
     return (["image", "audio", "video"] as const).filter(
-        (kind) => model.inputModalities.includes(kind) || byTool.includes(kind),
+        (kind) =>
+            (kind === "image" || model.verified) &&
+            (model.inputModalities.includes(kind) || byTool.includes(kind)),
     );
 }

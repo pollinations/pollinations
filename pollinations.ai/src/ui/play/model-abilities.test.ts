@@ -82,31 +82,48 @@ it("shows what an external agent declares for itself", () => {
     ]);
 });
 
-it("offers the files an agent declares or its tools take", () => {
-    const text = ["text"];
+it("offers an official agent the files it declares or its tools take", () => {
+    const official = { inputModalities: ["text"], verified: true };
     expect(
-        agentAttachments({ inputModalities: ["text", "image", "audio"] }),
+        agentAttachments({
+            ...official,
+            inputModalities: ["text", "image", "audio"],
+        }),
     ).toEqual(["image", "audio"]);
     expect(
-        agentAttachments({
-            inputModalities: text,
-            mcpServers: ["pollinations"],
-        }),
+        agentAttachments({ ...official, mcpServers: ["pollinations"] }),
     ).toEqual(["audio"]);
-    expect(
-        agentAttachments({ inputModalities: text, mcpServers: ["ffmpeg"] }),
-    ).toEqual(["audio", "video"]);
+    expect(agentAttachments({ ...official, mcpServers: ["ffmpeg"] })).toEqual([
+        "audio",
+        "video",
+    ]);
     expect(
         agentAttachments({
+            ...official,
             inputModalities: ["text", "image"],
             mcpServers: ["exa", "research"],
         }),
     ).toEqual(["image"]);
-    expect(agentAttachments({ inputModalities: text })).toEqual([]);
+    expect(agentAttachments(official)).toEqual([]);
 });
 
-it("sends file links only to agents whose tools take them", () => {
-    expect(takesFileLinks({ mcpServers: ["exa", "pollinations"] })).toBe(true);
-    expect(takesFileLinks({ mcpServers: ["exa", "research"] })).toBe(false);
-    expect(takesFileLinks({})).toBe(false);
+it("keeps file links from community agents", () => {
+    const community = {
+        inputModalities: ["text", "image", "audio", "video"],
+        mcpServers: ["pollinations", "ffmpeg"],
+        verified: false,
+    };
+    expect(agentAttachments(community)).toEqual(["image"]);
+    expect(takesFileLinks(community)).toBe(false);
+});
+
+it("sends file links only to official agents whose tools take them", () => {
+    const official = { verified: true };
+    expect(
+        takesFileLinks({ ...official, mcpServers: ["exa", "pollinations"] }),
+    ).toBe(true);
+    expect(
+        takesFileLinks({ ...official, mcpServers: ["exa", "research"] }),
+    ).toBe(false);
+    expect(takesFileLinks(official)).toBe(false);
 });

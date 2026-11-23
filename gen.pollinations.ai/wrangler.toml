@@ -246,6 +246,7 @@ deleted_classes = ["PollenRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = ".pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
@@ -398,6 +399,7 @@ deleted_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"

@@ -54,6 +54,11 @@ describe("createReasoningEffortTransform — mandatory", () => {
         const { options } = await mandatory([], { reasoning_effort: "xhigh" });
         expect(options.reasoning_effort).toBe("high");
     });
+
+    it("normalizes max to high (mandatory models top out at high)", async () => {
+        const { options } = await mandatory([], { reasoning_effort: "max" });
+        expect(options.reasoning_effort).toBe("high");
+    });
 });
 
 describe("createReasoningEffortTransform — strip", () => {
@@ -134,6 +139,32 @@ describe("reasoning_effort model wiring", () => {
         });
         expect(options.reasoning_effort).toBeUndefined();
     });
+
+    it.each([
+        "openai/gpt-5.4",
+        "openai/gpt-5-nano",
+        "pollinations/midijourney",
+    ])("remaps max to the highest accepted level on %s", async (modelName) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: "max",
+        });
+        expect(options.reasoning_effort).toBe("xhigh");
+    });
+
+    it.each(["openai/gpt-6-sol", "openai/gpt-6.2-astra", "openai/gpt-6.2-sol"])(
+        "remaps none to low on %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                { reasoning_effort: "none" },
+            );
+            expect(options.reasoning_effort).toBe("low");
+        },
+    );
 
     it.each(["mistral-large", "llama", "qwen-coder"])(
         "strips reasoning_effort on non-reasoning model %s",

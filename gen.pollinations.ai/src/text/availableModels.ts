@@ -270,7 +270,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5-nano:openai",
@@ -314,7 +314,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
     },
     {
         name: "openai/gpt-5.4-mini:openai",
@@ -401,7 +401,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-sol",
         config: portkeyConfig["gpt-6-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortNoneToLow),
         useResponsesApi: true,
     },
     {
@@ -425,7 +425,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.2-astra",
         config: portkeyConfig["gpt-6.2-astra"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortNoneToLow),
         useResponsesApi: true,
     },
     {
@@ -437,7 +437,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.2-sol",
         config: portkeyConfig["gpt-6.2-sol"],
-        transform: omitOpenAISampling,
+        transform: pipe(omitOpenAISampling, effortNoneToLow),
         useResponsesApi: true,
     },
     {
@@ -1228,6 +1228,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
+            effortMaxToXhigh,
         ),
     },
     {

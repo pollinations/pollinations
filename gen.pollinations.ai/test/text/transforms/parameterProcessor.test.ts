@@ -214,6 +214,9 @@ describe("processParameters", () => {
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
         "openai/gpt-6-astra:aws",
+        "openai/gpt-6-sol",
+        "openai/gpt-6.2-astra",
+        "openai/gpt-6.2-sol",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
@@ -226,10 +229,16 @@ describe("processParameters", () => {
                 (
                     {
                         "openai/gpt-5.4-nano": { max: "xhigh" },
+                        "openai/gpt-5.4": { max: "xhigh" },
+                        "openai/gpt-5-nano": { max: "xhigh" },
                         "openai/gpt-5.4-mini": { max: "xhigh" },
                         "openai/gpt-5.5": { max: "xhigh" },
                         "pollinations/midijourney-large": { max: "xhigh" },
+                        "pollinations/midijourney": { max: "xhigh" },
                         "openai/gpt-6-astra": { none: "low" },
+                        "openai/gpt-6-sol": { none: "low" },
+                        "openai/gpt-6.2-astra": { none: "low" },
+                        "openai/gpt-6.2-sol": { none: "low" },
                     } as Record<string, Record<string, string>>
                 )[model] ?? {};
             for (const reasoning_effort of [

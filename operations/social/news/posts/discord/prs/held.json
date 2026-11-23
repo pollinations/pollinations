@@ -41,7 +41,6 @@
       "merge_sha": "07ec5a020c671cdd36718f0f24c04e2bde16a0d8",
       "merged_at": "2026-11-23T15:32:19Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/monitoring/infra-watch",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]

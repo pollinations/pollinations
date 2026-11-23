@@ -31,9 +31,7 @@
     "20497": {
       "merge_sha": "0c0d53f984615aeabcad747fb401c6da3c69cebc",
       "merged_at": "2026-11-23T13:51:29Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter"
-      ]
+      "required": []
     }
   },
   "production": "be17bf47a671833b132ffdf704a75890850d79ce",

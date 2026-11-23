@@ -297,6 +297,11 @@
         "source": "gen.pollinations.ai/src/image/models/quiverSvgModel.ts",
         "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
     },
+    "recraft/recraft-v4.1-pro-vector": {
+        "reason": "Preview native SVG for text prompts until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/recraftFalModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text"] } }
+    },
     "recraft/recraft-v4.1-vector": {
         "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
         "source": "gen.pollinations.ai/src/image/models/recraftFalModel.ts",

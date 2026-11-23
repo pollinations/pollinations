@@ -134,16 +134,17 @@ fi
 ln -sfn "$release" "$ROOT/current"
 
 # Every deploy loads two new images; keep only the current and rollback releases
-# so the disk does not fill up.
+# so the disk does not fill up. The release is already live, so cleanup failures
+# are warnings and never fail the deployment.
 keep=" $SHA $previous_tag "
 for dir in "$ROOT"/releases/*/; do
   tag=$(basename "$dir")
-  [[ "$keep" == *" $tag "* ]] || rm -rf "$dir"
+  [[ "$keep" == *" $tag "* ]] || rm -rf "$dir" || echo "polli container deployment: warning: could not remove $dir" >&2
 done
-sudo -n docker images --format '{{.Repository}}:{{.Tag}}' |
-  while IFS=: read -r repo tag; do
-    [[ "$repo" =~ ^polli(-visual-studio)?$ && "$tag" =~ ^[0-9a-f]{40}$ ]] || continue
-    [[ "$keep" == *" $tag "* ]] || sudo -n docker image rm "$repo:$tag"
-  done
-sudo -n docker image prune -f
+images=$(sudo -n docker images --format '{{.Repository}}:{{.Tag}}') || echo "polli container deployment: warning: could not list images" >&2
+while IFS=: read -r repo tag; do
+  [[ "$repo" =~ ^polli(-visual-studio)?$ && "$tag" =~ ^[0-9a-f]{40}$ ]] || continue
+  [[ "$keep" == *" $tag "* ]] || sudo -n docker image rm "$repo:$tag" >/dev/null ||
+    echo "polli container deployment: warning: could not remove image $repo:$tag" >&2
+done <<<"${images:-}"
 REMOTE

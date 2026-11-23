@@ -165,8 +165,11 @@ jobs:
           fi
 
           # Compare operation identities against the latest published reference,
-          # so title/section changes do not require manual review.
-          REMOVED=$(node .github/scripts/docs-removed-operations.mjs <(git show HEAD:APIDOCS.md) APIDOCS.md)
+          # so title/section changes do not require manual review. Use a temp
+          # file instead of process substitution so native Node can read it
+          # under Git Bash, where /proc/<pid>/fd is not a Windows path.
+          git show HEAD:APIDOCS.md > "$RUNNER_TEMP/APIDOCS.md.previous"
+          REMOVED=$(node .github/scripts/docs-removed-operations.mjs "$RUNNER_TEMP/APIDOCS.md.previous" APIDOCS.md)
           PR=$(gh pr list --head "$BRANCH" --base main --state open --json id,number,autoMergeRequest --jq '.[0] // {}')
           EXISTING=$(jq -r '.number // empty' <<< "$PR")
           BODY="Auto-generated from OpenAPI spec changes after a successful production deploy."

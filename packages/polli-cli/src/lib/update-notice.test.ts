@@ -50,6 +50,27 @@ beforeEach(() => {
 });
 afterAll(() => rmSync(config, { recursive: true, force: true }));
 
+// npm exports its variables in the platform's casing. Windows uses
+// NPM_CONFIG_USER_AGENT/NPM_PACKAGE_JSON, and is-npm still finds those when
+// only the lowercase names are cleared, so the child looks like an npm script
+// and update-notifier suppresses the notice. Remove both spellings so the
+// child behaves like a direct CLI run on every platform.
+const clearedEnvKeys =
+    /^(ci|no_update_notifier|node_env|npm_lifecycle_event|npm_config_user_agent|npm_package_json)$/i;
+
+function childEnv(settings: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = { ...process.env };
+    for (const key of Object.keys(env)) {
+        if (clearedEnvKeys.test(key)) delete env[key];
+    }
+    return {
+        ...env,
+        XDG_CONFIG_HOME: config,
+        NODE_ENV: "production",
+        ...settings,
+    };
+}
+
 it.each([
     [{}, true],
     [{ TEST_JSON: "1" }, false],
@@ -66,17 +87,7 @@ it.each([
             cwd: root,
             encoding: "utf8",
             timeout: 5000,
-            env: {
-                ...process.env,
-                XDG_CONFIG_HOME: config,
-                NODE_ENV: "production",
-                CI: undefined,
-                NO_UPDATE_NOTIFIER: undefined,
-                npm_lifecycle_event: undefined,
-                npm_config_user_agent: undefined,
-                npm_package_json: undefined,
-                ...settings,
-            },
+            env: childEnv(settings),
         },
     );
     expect(result.error).toBeUndefined();

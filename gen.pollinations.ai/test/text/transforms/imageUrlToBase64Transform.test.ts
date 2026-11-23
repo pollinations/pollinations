@@ -244,6 +244,7 @@ describe("imageUrlToBase64Transform", () => {
     it.each([
         "moonshotai/kimi-k2.6",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "amazon/nova-2-lite-v1",
     ] as const)(
         "converts as many image URLs as %s advertises, and no more",
         async (model) => {
@@ -281,6 +282,16 @@ describe("imageUrlToBase64Transform", () => {
             });
         },
     );
+
+    it("keeps Nova 2 Lite at the five embedded images Bedrock accepts", () => {
+        // AWS Nova 2 multimodal guide: image data embedded in the request is
+        // limited to 5 objects; S3 URIs allow 1000, but this path always
+        // downloads and embeds the bytes, so the embedded limit applies.
+        expect(
+            getRegistryModelDefinition("amazon/nova-2-lite-v1")
+                ?.maxReferenceImages,
+        ).toBe(5);
+    });
 
     it.each([401, 403, 404, 429, 500])(
         "returns 400 failed_to_download_image when the image host answers %i",

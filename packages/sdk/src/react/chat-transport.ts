@@ -8,8 +8,14 @@ import { useAuth } from "./hooks.js";
 /** A `useChat` message. Structural, so the optional `ai` peer is not imported. */
 export interface ChatMessage {
     role: string;
-    /** Text parts, and `file` parts (`url`, `mediaType`) for attached images. */
-    parts: { type: string; text?: string; url?: string; mediaType?: string }[];
+    /** Text parts, and `file` parts (`url`, `mediaType`, `filename`) for attachments. */
+    parts: {
+        type: string;
+        text?: string;
+        url?: string;
+        mediaType?: string;
+        filename?: string;
+    }[];
     metadata?: unknown;
 }
 
@@ -101,16 +107,11 @@ function toResponsesInput(messages: ChatMessage[]): unknown[] {
         const content = parts
             .map((part) => (part.type === "text" ? (part.text ?? "") : ""))
             .join("");
-        const images =
+        const files =
             role === "user"
-                ? parts.filter(
-                      (part) =>
-                          part.type === "file" &&
-                          part.url &&
-                          part.mediaType?.startsWith("image/"),
-                  )
+                ? parts.filter((part) => part.type === "file" && part.url)
                 : [];
-        if (images.length) {
+        if (files.length) {
             return [
                 {
                     role,
@@ -118,10 +119,17 @@ function toResponsesInput(messages: ChatMessage[]): unknown[] {
                         ...(content
                             ? [{ type: "input_text", text: content }]
                             : []),
-                        ...images.map((part) => ({
-                            type: "input_image",
-                            image_url: part.url,
-                        })),
+                        ...files.map((part) =>
+                            part.mediaType?.startsWith("image/")
+                                ? { type: "input_image", image_url: part.url }
+                                : {
+                                      type: "input_file",
+                                      file_url: part.url,
+                                      ...(part.filename
+                                          ? { filename: part.filename }
+                                          : {}),
+                                  },
+                        ),
                     ],
                 },
             ];

@@ -400,6 +400,51 @@ describe("responses chat transport", () => {
         ]);
     });
 
+    it("sends other attached files as input_file links", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(
+                sseResponse(
+                    sse([{ type: "response.completed", response: {} }]),
+                ),
+            );
+
+        await collect(
+            await transportWithKey().sendMessages({
+                messages: [
+                    {
+                        role: "user",
+                        parts: [
+                            { type: "text", text: "Transcribe this." },
+                            {
+                                type: "file",
+                                mediaType: "audio/mpeg",
+                                url: "https://media.example/clip",
+                                filename: "clip.mp3",
+                            },
+                            {
+                                type: "file",
+                                mediaType: "video/mp4",
+                                url: "https://media.example/film",
+                            },
+                        ],
+                    },
+                ],
+            }),
+        );
+
+        const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+        expect(body.input[0].content).toEqual([
+            { type: "input_text", text: "Transcribe this." },
+            {
+                type: "input_file",
+                file_url: "https://media.example/clip",
+                filename: "clip.mp3",
+            },
+            { type: "input_file", file_url: "https://media.example/film" },
+        ]);
+    });
+
     it("sends attached images as input_image links", async () => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")

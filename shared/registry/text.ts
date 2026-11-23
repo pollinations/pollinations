@@ -970,7 +970,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-10-19").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Inception direct launch rates (checked 2026-11-23).
+        // Inception's 50% launch rate. Recheck when the promotion ends.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),

@@ -48,6 +48,7 @@ import {
     WarningIcon,
     XIcon,
 } from "@pollinations/ui";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import {
     ModalityTab,
     modalityBgVar,
@@ -60,11 +61,9 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
-    type RefObject,
     useCallback,
     useEffect,
     useId,
-    useImperativeHandle,
     useMemo,
     useRef,
     useState,
@@ -77,6 +76,7 @@ import {
 } from "../../../../shared/model-price-display";
 import { isNewModel } from "../../../../shared/model-recency";
 import { API_BASE_URL, ENTER_URL } from "../../config";
+import { LINKS } from "../../copy/content/socialLinks";
 import {
     type AudioCatalogMetadata,
     playgroundAudioMetadata,
@@ -164,6 +164,12 @@ type PlaygroundModel = MediaModelMetadata & {
 
 const WORKSPACES = [
     {
+        label: "Agent",
+        icon: RobotIcon,
+        category: "text",
+        operations: ["agent"],
+    },
+    {
         label: "Image",
         icon: ImageIcon,
         category: "image",
@@ -186,12 +192,6 @@ const WORKSPACES = [
         icon: GitBranchIcon,
         category: "decision",
         operations: ["decide"],
-    },
-    {
-        label: "Agent",
-        icon: RobotIcon,
-        category: "text",
-        operations: ["agent"],
     },
 ] as const;
 /** Agents publish no image limit; this keeps a message to a few attachments. */
@@ -1260,13 +1260,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     );
 }
 
-export function Playground({
-    connectRef,
-    drafts,
-}: {
-    connectRef: RefObject<(() => void) | null>;
-    drafts: ConnectDrafts;
-}) {
+export function Playground({ drafts }: { drafts: ConnectDrafts }) {
     const dimensionsLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
@@ -2272,7 +2266,6 @@ export function Playground({
             });
         }
     }
-    useImperativeHandle(connectRef, () => connect);
     function sendToAgent() {
         if (agentChat.busy) return agentChat.stop();
         agentChat.send(prompt.trim(), referenceImages);
@@ -2419,36 +2412,6 @@ export function Playground({
         ));
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            <fieldset
-                aria-label="Playground task"
-                className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
-            >
-                {WORKSPACES.map((item) => (
-                    <ModalityTab
-                        key={item.label}
-                        active={item === task.workspace}
-                        size="lg"
-                        modality={
-                            item.category === "decision"
-                                ? "text"
-                                : item.category
-                        }
-                        icon={item.icon}
-                        onClick={() => {
-                            if (item === task.workspace) return;
-                            const next =
-                                lastTask.current.get(item) ??
-                                TASKS.find(
-                                    (candidate) => candidate.workspace === item,
-                                );
-                            if (next) selectTask(next);
-                        }}
-                    >
-                        {item.label}
-                    </ModalityTab>
-                ))}
-            </fieldset>
-
             <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (
                     <div className="pt-4">
@@ -2457,7 +2420,32 @@ export function Playground({
                         </Alert>
                     </div>
                 )}
-                <div className="flex flex-col gap-4 pt-6">
+                <div className="flex flex-col gap-4 pt-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <div inert={!isHydrated}>
+                            <AppUserMenu
+                                connectSize="lg"
+                                onConnect={connect}
+                                labels={{
+                                    authorize: "Connect",
+                                    logout: "Disconnect app",
+                                }}
+                            />
+                        </div>
+                        {isHydrated && (
+                            <Text
+                                size="xs"
+                                tone="muted"
+                                className="min-w-0 max-w-72 flex-1 basis-44"
+                            >
+                                Want this button in your app? Your users pay
+                                with their own balance.{" "}
+                                <InlineLink href={LINKS.byopDocs} tone="quiet">
+                                    How it works
+                                </InlineLink>
+                            </Text>
+                        )}
+                    </div>
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&
@@ -2468,10 +2456,43 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
-                    <section
+                    <Surface
+                        as="section"
+                        variant="card"
                         aria-label="Model details"
                         className="@container flex min-w-0 flex-col gap-2"
                     >
+                        <fieldset
+                            aria-label="Playground task"
+                            className="m-0 mb-2 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+                        >
+                            {WORKSPACES.map((item) => (
+                                <ModalityTab
+                                    key={item.label}
+                                    active={item === task.workspace}
+                                    size="lg"
+                                    modality={
+                                        item.category === "decision"
+                                            ? "text"
+                                            : item.category
+                                    }
+                                    icon={item.icon}
+                                    onClick={() => {
+                                        if (item === task.workspace) return;
+                                        const next =
+                                            lastTask.current.get(item) ??
+                                            TASKS.find(
+                                                (candidate) =>
+                                                    candidate.workspace ===
+                                                    item,
+                                            );
+                                        if (next) selectTask(next);
+                                    }}
+                                >
+                                    {item.label}
+                                </ModalityTab>
+                            ))}
+                        </fieldset>
                         <ModelPicker
                             key={activeCategory}
                             models={pickerModels}
@@ -2484,7 +2505,7 @@ export function Playground({
                         {currentModel && (
                             <>
                                 {currentModel.description && (
-                                    <Text tone="soft" data-theme="accent">
+                                    <Text tone="soft" data-theme="neutral">
                                         {currentModel.description}
                                     </Text>
                                 )}
@@ -2515,7 +2536,7 @@ export function Playground({
                                 </div>
                             </>
                         )}
-                    </section>
+                    </Surface>
                     <Surface
                         as="section"
                         variant="card"
@@ -3046,75 +3067,79 @@ export function Playground({
                                 </>
                             )}
                         </div>
-                    </Surface>
-
-                    {/* Not connected is not a broken state, so the button
+                        {/* Not connected is not a broken state, so the button
                             becomes the connect action. When it genuinely
                             cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <Button
-                            size="lg"
-                            intent="brand"
-                            // The page's main action: nectar whether it signs
-                            // in or generates. Busy fills with honey and shows
-                            // Polli. aria-disabled, not disabled, so focus
-                            // stays on the button; generate() ignores repeats.
-                            disabled={!!blockedReason}
-                            aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
-                            aria-describedby={
-                                clipError && blockedReason === clipError
-                                    ? clipStatusId
-                                    : statusId
-                            }
-                            icon={needsSignIn ? undefined : <GenerateIcon />}
-                            onClick={run}
-                            className={cn(
-                                needsSignIn && "h-12 gap-2 px-5 py-0",
-                            )}
-                        >
-                            {needsSignIn ? (
-                                <>
-                                    <BrandMark className="h-6 w-6" />
-                                    {connectLabel}
-                                </>
-                            ) : (
-                                generateText
-                            )}
-                        </Button>
-                        <Text
-                            id={statusId}
-                            size="xs"
-                            tone="muted"
-                            className="empty:hidden max-sm:w-full"
-                        >
-                            {blockedReason !== clipError && blockedReason}
-                        </Text>
-                    </div>
-                    {/* Said once per conversation: gone after the first message. */}
-                    {isAgent &&
-                        currentModel &&
-                        isCommunityRun(currentModel) &&
-                        agentChat.turns.length === 0 && (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <Button
+                                size="lg"
+                                intent="brand"
+                                // The page's main action: nectar whether it signs
+                                // in or generates. Busy fills with honey and shows
+                                // Polli. aria-disabled, not disabled, so focus
+                                // stays on the button; generate() ignores repeats.
+                                disabled={!!blockedReason}
+                                aria-disabled={isGenerating || undefined}
+                                aria-busy={isGenerating}
+                                aria-describedby={
+                                    clipError && blockedReason === clipError
+                                        ? clipStatusId
+                                        : statusId
+                                }
+                                icon={
+                                    needsSignIn ? undefined : <GenerateIcon />
+                                }
+                                onClick={run}
+                                className={cn(
+                                    needsSignIn && "h-12 gap-2 px-5 py-0",
+                                )}
+                            >
+                                {needsSignIn ? (
+                                    <>
+                                        <BrandMark className="h-6 w-6" />
+                                        {connectLabel}
+                                    </>
+                                ) : (
+                                    generateText
+                                )}
+                            </Button>
                             <Text
+                                id={statusId}
                                 size="xs"
                                 tone="muted"
-                                data-theme="neutral"
-                                className="-mt-2 flex items-start gap-2"
+                                className="empty:hidden max-sm:w-full"
                             >
-                                <WarningIcon
-                                    aria-hidden="true"
-                                    className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
-                                />
-                                <span>
-                                    Made by a community member, not
-                                    Pollinations. Avoid sensitive data.{" "}
-                                    <InlineLink href="/privacy" tone="quiet">
-                                        Privacy Policy
-                                    </InlineLink>
-                                </span>
+                                {blockedReason !== clipError && blockedReason}
                             </Text>
-                        )}
+                        </div>
+                        {/* Said once per conversation: gone after the first message. */}
+                        {isAgent &&
+                            currentModel &&
+                            isCommunityRun(currentModel) &&
+                            agentChat.turns.length === 0 && (
+                                <Text
+                                    size="xs"
+                                    tone="muted"
+                                    data-theme="neutral"
+                                    className="-mt-2 flex items-start gap-2"
+                                >
+                                    <WarningIcon
+                                        aria-hidden="true"
+                                        className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
+                                    />
+                                    <span>
+                                        Made by a community member, not
+                                        Pollinations. Avoid sensitive data.{" "}
+                                        <InlineLink
+                                            href="/privacy"
+                                            tone="quiet"
+                                        >
+                                            Privacy Policy
+                                        </InlineLink>
+                                    </span>
+                                </Text>
+                            )}
+                    </Surface>
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

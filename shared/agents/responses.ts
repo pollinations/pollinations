@@ -153,7 +153,9 @@ function userContent(content: unknown): UserMessage["content"] {
             "input",
         );
     }
-    return content.map((raw) => {
+    // Agents act through tools that take public URLs, so an attachment's
+    // https URL also reaches the agent as text.
+    return content.flatMap((raw) => {
         const part = objectValue(raw, "input");
         const providerOptions = promptCacheProviderOptions(part);
         if (part.type === "input_text" || part.type === "text") {
@@ -164,9 +166,38 @@ function userContent(content: unknown): UserMessage["content"] {
             };
         }
         if (part.type === "input_image") {
-            return {
+            const image = stringValue(part.image_url, "input");
+            const pixels = {
                 type: "image" as const,
-                image: stringValue(part.image_url, "input"),
+                image,
+                ...(providerOptions ? { providerOptions } : {}),
+            };
+            // The link goes first so a cache breakpoint stays on the last part.
+            return image.startsWith("https://")
+                ? [
+                      {
+                          type: "text" as const,
+                          text: `[Attached image: ${image}]`,
+                      },
+                      pixels,
+                  ]
+                : pixels;
+        }
+        if (part.type === "input_file") {
+            const url = part.file_url;
+            if (typeof url !== "string" || !url.startsWith("https://")) {
+                invalidRequest(
+                    "input_file requires an https file_url",
+                    "input",
+                );
+            }
+            const name =
+                typeof part.filename === "string" && part.filename
+                    ? ` ${part.filename}`
+                    : "";
+            return {
+                type: "text" as const,
+                text: `[Attached file${name}: ${url}]`,
                 ...(providerOptions ? { providerOptions } : {}),
             };
         }

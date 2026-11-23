@@ -140,6 +140,10 @@ describe("shared agent Responses adapter", () => {
                             content: [
                                 { type: "text", text: "What is this?" },
                                 {
+                                    type: "text",
+                                    text: "[Attached image: https://media.test/input.png]",
+                                },
+                                {
                                     type: "image",
                                     image: "https://media.test/input.png",
                                 },
@@ -354,6 +358,116 @@ describe("shared agent Responses adapter", () => {
             expect(replay.status).toBe(200);
         },
     );
+
+    describe("attachments", () => {
+        const BREAKPOINT = { prompt_cache_breakpoint: { mode: "explicit" } };
+        const CACHE_OPTIONS = {
+            providerOptions: {
+                openaiCompatible: {
+                    prompt_cache_breakpoint: { mode: "explicit" },
+                },
+            },
+        };
+
+        async function userParts(content: unknown[]) {
+            let userMessage: unknown;
+            const response = await handleAgentResponsesRequest(
+                request({ input: [{ role: "user", content }] }),
+                new AbortController().signal,
+                async ({ messages }) => {
+                    userMessage = messages.find((m) => m.role === "user");
+                    return {
+                        text: "ok",
+                        usage: { inputTokens: 1, outputTokens: 1 },
+                    } as never;
+                },
+            );
+            return {
+                response,
+                content: (userMessage as { content?: unknown } | undefined)
+                    ?.content,
+            };
+        }
+
+        it("tells the agent the URL of an attached https image", async () => {
+            const { content } = await userParts([
+                { type: "input_text", text: "Edit this." },
+                {
+                    type: "input_image",
+                    image_url: "https://media.test/a.png",
+                    ...BREAKPOINT,
+                },
+            ]);
+            expect(content).toEqual([
+                { type: "text", text: "Edit this." },
+                {
+                    type: "text",
+                    text: "[Attached image: https://media.test/a.png]",
+                },
+                {
+                    type: "image",
+                    image: "https://media.test/a.png",
+                    ...CACHE_OPTIONS,
+                },
+            ]);
+        });
+
+        it("leaves a data: image as pixels only", async () => {
+            const { content } = await userParts([
+                {
+                    type: "input_image",
+                    image_url: "data:image/png;base64,AAAA",
+                },
+            ]);
+            expect(content).toEqual([
+                { type: "image", image: "data:image/png;base64,AAAA" },
+            ]);
+        });
+
+        it("passes an https input_file to the agent as a link only", async () => {
+            const { content } = await userParts([
+                {
+                    type: "input_file",
+                    file_url: "https://media.test/a.mp3",
+                    filename: "a.mp3",
+                },
+                {
+                    type: "input_file",
+                    file_url: "https://media.test/b.mp4",
+                    filename: "",
+                    ...BREAKPOINT,
+                },
+            ]);
+            expect(content).toEqual([
+                {
+                    type: "text",
+                    text: "[Attached file a.mp3: https://media.test/a.mp3]",
+                },
+                {
+                    type: "text",
+                    text: "[Attached file: https://media.test/b.mp4]",
+                    ...CACHE_OPTIONS,
+                },
+            ]);
+        });
+
+        it.each([
+            { file_data: "data:audio/mpeg;base64,AAAA" },
+            { file_id: "file_1" },
+            { file_url: "http://media.test/a.mp3" },
+        ])("rejects an input_file without an https file_url", async (file) => {
+            const { response } = await userParts([
+                { type: "input_file", ...file },
+            ]);
+            expect(response.status).toBe(400);
+            expect(await response.json()).toMatchObject({
+                error: {
+                    type: "invalid_request_error",
+                    message: "input_file requires an https file_url",
+                },
+            });
+        });
+    });
 
     it("aborts the active run when the client cancels its response stream", async () => {
         let runSignal: AbortSignal | undefined;

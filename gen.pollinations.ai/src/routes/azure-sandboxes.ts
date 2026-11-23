@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { decodeJwt } from "jose";
 import type { Env } from "@/env.ts";
 
 // Sandboxes on Azure Container Apps, answering the E2B API calls gen's
@@ -19,7 +20,7 @@ const API_VERSION = "2026-02-01-preview";
 const ENVD_VERSION = "0.10.1";
 export const ENVD_PORT = 49983;
 // `polli sandbox ssh` reaches sshd through a WebSocket on this port.
-const SSH_PORT = 8022;
+export const SSH_PORT = 8022;
 // The image's entrypoint, in place of E2B's orchestrator: it gives envd the
 // /init body gen passes, then opens envd's port, so no one reaches envd
 // before it has its token.
@@ -78,10 +79,14 @@ export const sandboxHost = (
 export const azureDomain = (env: CloudflareBindings) =>
     `${new URL(env.AZURE_SANDBOX_GROUP_URL ?? "").hostname.split(".")[1]}.adcproxy.io`;
 
-let token: { value: string; expires: number } | undefined;
+const MANAGEMENT_SCOPE = "https://dynamicsessions.io/.default";
+const INGRESS_SCOPE = "https://auth.adcproxy.io/.default";
+const tokens = new Map<string, { value: string; expires: number }>();
 
 // Gen's Entra app may only manage the boxes in its sandbox group.
-async function azureToken(env: CloudflareBindings) {
+async function azureToken(env: CloudflareBindings, scope = MANAGEMENT_SCOPE) {
+    const key = `${env.AZURE_SANDBOX_CLIENT_ID}:${scope}`;
+    const token = tokens.get(key);
     if (token && token.expires > Date.now() + 60_000) return token.value;
     const response = await fetch(
         `https://login.microsoftonline.com/${env.AZURE_SANDBOX_TENANT_ID}/oauth2/v2.0/token`,
@@ -91,7 +96,7 @@ async function azureToken(env: CloudflareBindings) {
                 grant_type: "client_credentials",
                 client_id: env.AZURE_SANDBOX_CLIENT_ID ?? "",
                 client_secret: env.AZURE_SANDBOX_CLIENT_SECRET ?? "",
-                scope: "https://dynamicsessions.io/.default",
+                scope,
             }),
         },
     );
@@ -102,14 +107,18 @@ async function azureToken(env: CloudflareBindings) {
         access_token: string;
         expires_in: number;
     }>();
-    token = { value: access_token, expires: Date.now() + expires_in * 1000 };
-    return token.value;
+    tokens.set(key, {
+        value: access_token,
+        expires: Date.now() + expires_in * 1000,
+    });
+    return access_token;
 }
 
 async function aca(
     env: CloudflareBindings,
     path: string,
     init: RequestInit = {},
+    acceptConflict = false,
 ) {
     const url = new URL(`${env.AZURE_SANDBOX_GROUP_URL}${path}`);
     url.searchParams.set("api-version", API_VERSION);
@@ -117,7 +126,11 @@ async function aca(
     headers.set("authorization", `Bearer ${await azureToken(env)}`);
     headers.set("content-type", "application/json");
     const response = await fetch(url, { ...init, headers });
-    if (!response.ok && response.status !== 404) {
+    if (
+        !response.ok &&
+        response.status !== 404 &&
+        !(acceptConflict && response.status === 409)
+    ) {
         // A failed call of our own is never the caller's fault.
         const detail = (await response.text()).slice(0, 300);
         throw new HTTPException(502, {
@@ -125,6 +138,102 @@ async function aca(
         });
     }
     return response;
+}
+
+export const azureIngressToken = (env: CloudflareBindings) =>
+    azureToken(env, INGRESS_SCOPE);
+
+// Keep Azure's origin inaccessible to callers. Gen first verifies the
+// share's secret and buys a lease, then uses its own Entra identity here.
+export async function protectAzurePort(
+    env: CloudflareBindings,
+    id: string,
+    port: number,
+) {
+    const { oid, tid } = decodeJwt(await azureIngressToken(env));
+    if (typeof oid !== "string" || typeof tid !== "string") {
+        throw new HTTPException(502, {
+            message: "Azure ingress identity is missing.",
+        });
+    }
+    const added = await aca(
+        env,
+        `/sandboxes/${id}/ports/add`,
+        {
+            method: "POST",
+            body: JSON.stringify({
+                port,
+                activationMode: "Manual",
+                auth: {
+                    entraId: {
+                        enabled: true,
+                        tenantIds: [tid],
+                        objectIds: [oid],
+                    },
+                },
+            }),
+        },
+        true,
+    );
+    // Azure rejects an add on an existing port. Re-sharing only updates the
+    // Pollinations secret if Azure already has the required access policy.
+    const response =
+        added.status === 409 ? await aca(env, `/sandboxes/${id}/ports`) : added;
+    if (!response.ok) {
+        throw new HTTPException(404, {
+            message: "Azure sandbox no longer exists.",
+        });
+    }
+    const { ports } = await response.json<{
+        ports: {
+            port: number;
+            activationMode: string;
+            auth?: {
+                anonymous?: boolean;
+                entraId?: {
+                    enabled?: boolean;
+                    objectIds?: string[];
+                    tenantIds?: string[];
+                };
+            };
+        }[];
+    }>();
+    const configured = ports.find((config) => config.port === port);
+    const auth = configured?.auth?.entraId;
+    if (
+        configured?.activationMode !== "Manual" ||
+        configured.auth?.anonymous ||
+        !auth?.enabled ||
+        auth.objectIds?.length !== 1 ||
+        auth.objectIds[0] !== oid ||
+        auth.tenantIds?.length !== 1 ||
+        auth.tenantIds[0] !== tid
+    ) {
+        if (added.status === 409) {
+            throw new HTTPException(409, {
+                message:
+                    "The Azure sandbox must be running and the port available to start sharing it.",
+            });
+        }
+        throw new HTTPException(502, {
+            message: "Azure did not restrict the shared port to Pollinations.",
+        });
+    }
+}
+
+export async function removeAzurePort(
+    env: CloudflareBindings,
+    id: string,
+    port: number,
+) {
+    // Azure will not change ports while stopped. Gen can disable the share
+    // anyway because the Azure origin only accepts Gen's identity.
+    await aca(
+        env,
+        `/sandboxes/${id}/ports/remove`,
+        { method: "POST", body: JSON.stringify({ port }) },
+        true,
+    );
 }
 
 const e2bError = (status: number, message: string) =>
@@ -200,11 +309,33 @@ const connection = (env: CloudflareBindings, row: Row) => ({
 type NewSandbox = {
     templateID: string;
     timeout?: number;
+    idleTimeout?: number | null;
     metadata: Record<string, string>;
     envVars?: Record<string, string>;
     allow_internet_access?: boolean;
     network?: unknown;
 };
+
+function autoSuspendPolicy(idleTimeout: number | null | undefined) {
+    return idleTimeout
+        ? { enabled: true, interval: idleTimeout, mode: "Memory" }
+        : { enabled: false };
+}
+
+async function setIdleTimeout(
+    env: CloudflareBindings,
+    id: string,
+    idleTimeout: number | null,
+) {
+    const response = await aca(env, `/sandboxes/${id}/lifecycle`, {
+        method: "POST",
+        body: JSON.stringify({
+            autoSuspendPolicy: autoSuspendPolicy(idleTimeout),
+        }),
+    });
+    if (!response.ok)
+        throw new HTTPException(404, { message: "Sandbox not found" });
+}
 
 async function create(env: CloudflareBindings, body: NewSandbox) {
     if (body.allow_internet_access === false || body.network) {
@@ -245,11 +376,13 @@ async function create(env: CloudflareBindings, body: NewSandbox) {
                     envVars: body.envVars,
                 }),
             },
-            // Gen's cron stops a box when its lease ends instead.
-            lifecycle: { autoSuspendPolicy: { enabled: false } },
+            lifecycle: {
+                autoSuspendPolicy: autoSuspendPolicy(body.idleTimeout),
+            },
             ports: [ENVD_PORT, SSH_PORT].map((port) => ({
                 port,
                 auth: { anonymous: true },
+                ...(body.idleTimeout && { activationMode: "Manual" }),
             })),
             cmd: [BOOT],
         }),
@@ -431,8 +564,12 @@ export async function azureE2b(
         case "POST pause":
             return pause(env, row, found);
         case "POST timeout":
+            if (body.idleTimeout !== undefined && found.state === "Running")
+                await setIdleTimeout(env, id, body.idleTimeout);
             return timeout(env, row, found, body.timeout);
         case "POST connect":
+            if (body.idleTimeout !== undefined)
+                await setIdleTimeout(env, id, body.idleTimeout);
             return connect(env, row, found, body.timeout);
         case "GET metrics":
             return Response.json([]);

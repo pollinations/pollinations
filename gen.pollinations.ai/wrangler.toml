@@ -56,6 +56,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -71,6 +75,10 @@ new_classes = ["CommunityModelRateLimiter"]
 [[migrations]]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
+
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -228,6 +236,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.production.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -243,6 +255,10 @@ new_classes = ["CommunityModelRateLimiter"]
 [[env.production.migrations]]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
+
+[[env.production.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -382,6 +398,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.staging.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -397,6 +417,10 @@ new_classes = ["CommunityModelRateLimiter"]
 [[env.staging.migrations]]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
+
+[[env.staging.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -499,6 +523,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.test.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -514,6 +542,10 @@ new_classes = ["CommunityModelRateLimiter"]
 [[env.test.migrations]]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
+
+[[env.test.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

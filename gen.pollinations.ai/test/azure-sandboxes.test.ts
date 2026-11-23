@@ -100,6 +100,10 @@ function stubAzure() {
         if (!box) return Response.json({ error: "not found" }, { status: 404 });
         const call = `${request.method} ${action}`;
         if (call === "GET ") return Response.json(box);
+        if (call === "POST lifecycle") {
+            box.lifecycle = await request.json();
+            return Response.json(box.lifecycle);
+        }
         if (call === "DELETE ") {
             boxes.splice(boxes.indexOf(box), 1);
             return new Response(null, { status: 202 });
@@ -152,6 +156,56 @@ const rows = () => drizzle(env.DB).select().from(azureSandbox);
 
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+test("Azure Auto uses native suspend and bills only when the owner wakes it", async () => {
+    const azure = stubAzure();
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 3600,
+        idleTimeout: 600,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const [box] = azure.boxes;
+    expect(box.lifecycle).toEqual({
+        autoSuspendPolicy: { enabled: true, interval: 600, mode: "Memory" },
+    });
+
+    box.state = "Stopped";
+    const ctx = createExecutionContext();
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        azureEnv,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(box.state).toBe("Stopped");
+    expect(azure.leases()).toHaveLength(1);
+    const read = () => fetchGen(owner.key, `/sandboxes/${sandboxID}`);
+    expect(await (await read()).json()).toMatchObject({
+        state: "paused",
+        idleTimeout: 600,
+    });
+
+    const resume = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 600,
+    });
+    expect(resume.status).toBe(201);
+    expect(box.state).toBe("Running");
+    expect(azure.leases()).toHaveLength(2);
+    expect(azure.leases()[1].totalPrice).toBeGreaterThan(0);
+    expect(
+        (
+            await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+                timeout: 600,
+                idleTimeout: 0,
+            })
+        ).status,
+    ).toBe(204);
+    expect(box.lifecycle).toEqual({ autoSuspendPolicy: { enabled: false } });
+    expect(await (await read()).json()).not.toHaveProperty("idleTimeout");
 });
 
 test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's rates", async () => {

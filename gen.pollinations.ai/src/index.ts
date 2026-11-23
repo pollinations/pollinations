@@ -62,6 +62,7 @@ import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 import { serveSite } from "./sites.ts";
 
+export { AzurePortWake } from "./durable-objects/AzurePortWake.ts";
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 

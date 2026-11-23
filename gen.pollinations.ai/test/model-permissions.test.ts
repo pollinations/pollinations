@@ -64,6 +64,54 @@ for (const variant of ["flare", "sunburst"]) {
     });
 }
 
+test("retires MiMo V2.5 Pro and its aliases from chat and discovery", async ({
+    paidApiKey,
+}) => {
+    const headers = {
+        Authorization: `Bearer ${paidApiKey}`,
+        "Content-Type": "application/json",
+    };
+    const retired = [
+        "xiaomi/mimo-v2.5-pro",
+        "mimo-pro",
+        "mimo-2.5-pro",
+        "mimo-v2.5-pro",
+    ];
+    for (const model of retired) {
+        const response = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        });
+        expect(response.status, model).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining(
+                    `Invalid model or alias: "${model}"`,
+                ),
+            },
+        });
+    }
+
+    const catalog = await fetchWorker("/text/models", { headers });
+    expect(catalog.status).toBe(200);
+    const models = (await catalog.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    const identifiers = models.flatMap(({ name, aliases }) => [
+        name,
+        ...aliases,
+    ]);
+    for (const model of retired) expect(identifiers).not.toContain(model);
+    expect(
+        models.find(({ name }) => name === "xiaomi/mimo-v2.6-pro"),
+    ).toMatchObject({ aliases: [] });
+});
+
 test("HEAD and GET validate the same query model before generation", async ({
     apiKey,
     paidApiKey,

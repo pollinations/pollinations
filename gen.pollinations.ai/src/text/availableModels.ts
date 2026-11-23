@@ -1354,10 +1354,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["xiaomi/mimo-v2.5"],
     },
     {
-        name: "xiaomi/mimo-v2.5-pro",
-        config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
-    },
-    {
         name: "xiaomi/mimo-v2.6-flash",
         config: portkeyConfig["xiaomi/mimo-v2.6-flash"],
         transform: separateNovitaReasoning,

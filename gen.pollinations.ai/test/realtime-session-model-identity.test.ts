@@ -27,7 +27,8 @@ test("realtime session events report the public model, not the deployment", asyn
     let upstreamClient: WebSocket | undefined;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        if (request.url.includes("/v0/events?name=generation_event_v2")) {
+        // Tinybird: generation events and D1 call telemetry.
+        if (request.url.includes("/v0/events?name=")) {
             return new Response("", { status: 202 });
         }
         if (request.url.includes("public_model_stats.json")) {

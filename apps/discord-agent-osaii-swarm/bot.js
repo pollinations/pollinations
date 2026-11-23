@@ -107,10 +107,13 @@ export function messagesFromDiscordHistory(
         if (message.author?.id !== botUserId) continue;
         const embed = message.embeds?.[0];
         const footer = embed?.footer?.text || "";
+        // Compare the whole id: "user=123" is a prefix of "user=1234", so a
+        // substring check would leak another user's turns into the context.
+        const owner = footer.match(/(?:^|\s)user=(\S+)/)?.[1];
         if (
             !footer.startsWith(CONTEXT_MARKER) ||
             footer.includes(":continuation") ||
-            !footer.includes(`user=${discordUserId}`)
+            owner !== discordUserId
         )
             continue;
         const question = embed.fields?.find(

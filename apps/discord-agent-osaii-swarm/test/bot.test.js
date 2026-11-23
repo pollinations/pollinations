@@ -76,6 +76,31 @@ test("Discord context is isolated between connected users", () => {
     ]);
 });
 
+test("Discord context does not match a user id that is a prefix of another", () => {
+    const long = answerEmbeds("B question", "B answer", "bob", "1234");
+    const short = answerEmbeds("A question", "A answer", "alice", "123");
+    const history = [
+        {
+            createdTimestamp: 1,
+            author: { id: "bot" },
+            embeds: long.map((e) => e.data),
+        },
+        {
+            createdTimestamp: 2,
+            author: { id: "bot" },
+            embeds: short.map((e) => e.data),
+        },
+    ];
+    assert.deepEqual(messagesFromDiscordHistory(history, "bot", "123"), [
+        { role: "user", content: "A question" },
+        { role: "assistant", content: "A answer" },
+    ]);
+    assert.deepEqual(messagesFromDiscordHistory(history, "bot", "1234"), [
+        { role: "user", content: "B question" },
+        { role: "assistant", content: "B answer" },
+    ]);
+});
+
 test("connect -> ask -> disconnect keeps credentials private and per-user", async () => {
     const { createInteractionHandler } = await import("../bot.js");
     const dir = await mkdtemp(join(tmpdir(), "polli-discord-flow-"));

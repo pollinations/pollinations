@@ -17,9 +17,15 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { getLogger } from "@logtape/logtape";
+import {
+    countStaleSettlements,
+    settleFailedCharges,
+} from "@shared/billing/settlement.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -359,6 +365,8 @@ app.notFound(async (c: Context<Env>) => {
 
 app.onError(handleError);
 
+const billingLog = getLogger(["billing", "settlement"]);
+
 export default {
     fetch: (request: Request, env, ctx) =>
         withD1Calls(
@@ -418,4 +426,20 @@ async function runScheduled(
         await stopExpiredAzureSandboxes(env);
     }
     await env.KV.put("heartbeat:sandbox-keeper", Date.now().toString());
+
+    // Charges are written after the response, so a failed write has no request
+    // left to fail. This sweep retries the durable records; see
+    // shared/billing/settlement.ts for why a retry cannot double-charge.
+    const db = drizzle(env.DB);
+    const counts = await settleFailedCharges(db, {
+        limit: 20,
+        olderThanMs: 60_000,
+    });
+    const stale = await countStaleSettlements(db);
+    if (counts.settled > 0 || counts.failed > 0 || stale > 0) {
+        billingLog.warn(
+            "Settlement sweep: settled={settled} failed={failed} skipped={skipped} stale={stale}",
+            { ...counts, stale },
+        );
+    }
 }

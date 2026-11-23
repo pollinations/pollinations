@@ -3,12 +3,15 @@ import { afterEach, expect, vi } from "vitest";
 import { test } from "./fixtures.ts";
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
-test("records an Enter request's D1 calls in one batch named by route", async ({
+test("records an Enter request's D1 calls named by route", async ({
     accountToken,
 }) => {
+    // The isolate sends at most every 10 s: be past the fixtures' send.
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 60_000 });
     const batches: Record<string, unknown>[][] = [];
     const realFetch = globalThis.fetch;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
@@ -31,14 +34,18 @@ test("records an Enter request's D1 calls in one batch named by route", async ({
     expect(response.status).toBe(200);
 
     await vi.waitFor(() => expect(batches).toHaveLength(1));
-    expect(batches[0].length).toBeGreaterThan(0);
-    for (const row of batches[0]) {
+    // The isolate's one request also carries what the fixtures left behind.
+    const profile = batches[0].filter(
+        (row) => row.route_path === "/api/account/profile",
+    );
+    expect(profile.length).toBeGreaterThan(0);
+    for (const row of profile) {
         expect(row).toMatchObject({
             service: "enter",
-            route_path: "/api/account/profile",
             method: "GET",
             error_code: "",
-            sql: expect.any(String),
+            query_id: expect.any(String),
+            calls: expect.any(Number),
         });
     }
     // Placeholders only: the caller's key never reaches telemetry.

@@ -6,13 +6,15 @@ import { getTinybirdDatasourceIngestUrl } from "./events.ts";
 
 // Records every D1 call in d1_call_event so a D1 stall can be traced to what
 // was running in the seconds before it: the culprit starts before the stall,
-// the queued victims after. Only the SQL text (placeholders, never bound
-// values), timings and the route pattern are sent: no URLs, prompts or error
-// messages. A scope's calls go to Tinybird in one request when it ends.
+// the queued victims after. Calls are summed per second, route and query, and
+// each isolate sends its sums in one request at most every FLUSH_MS, so the
+// telemetry adds a few Tinybird requests per second, not one per request.
+// Only the SQL text (placeholders, never bound values), timings and the route
+// pattern are sent: no URLs, prompts or error messages.
 
-// A long scope (the leaderboard cron) sends in chunks so a killed run still
-// leaves most of its calls behind.
-const MAX_BUFFERED = 200;
+const FLUSH_MS = 10_000;
+// A long scope (the leaderboard cron) sends early instead of growing.
+const MAX_BUFFERED = 500;
 
 type D1Env = {
     DB: D1Database;
@@ -21,24 +23,27 @@ type D1Env = {
     TINYBIRD_INGEST_TOKEN: string;
 };
 
-export type D1Caller = {
-    route_path: string;
-    method: string;
-    request_id?: string;
-    edge_colo?: string;
-};
+export type D1Caller = { route_path: string; method: string };
 
-type D1CallRow = D1Caller & {
-    timestamp: string;
-    service: string;
-    environment?: string;
-    duration_ms: number;
+type D1CallMeta = {
     sql_duration_ms?: number;
     rows_read?: number;
     rows_written?: number;
-    statements: number;
+};
+
+/** One second of one query on one route, as sent to d1_call_event. */
+type D1Calls = D1Caller & {
+    timestamp: string;
+    service: string;
+    environment?: string;
+    query_id: string;
     error_code: string;
-    sql: string;
+    calls: number;
+    total_ms: number;
+    max_ms: number;
+    sql_ms: number;
+    rows_read: number;
+    rows_written: number;
 };
 
 type Scope = {
@@ -46,9 +51,6 @@ type Scope = {
     env: D1Env;
     waitUntil: (promise: Promise<unknown>) => void;
     caller: () => D1Caller;
-    rows: D1CallRow[];
-    open: boolean;
-    sending: boolean;
 };
 
 const scope = new AsyncLocalStorage<Scope>();
@@ -57,6 +59,13 @@ const statements = new WeakMap<
     D1PreparedStatement,
     { stmt: D1PreparedStatement; sql: string }
 >();
+
+// Shared by every request the isolate serves.
+const buffered = new Map<string, D1Calls>();
+const queryIds = new Map<string, string>();
+const sentQueryIds = new Set<string>();
+let newQueries: { query_id: string; service: string; sql: string }[] = [];
+let lastFlush = 0;
 
 /** Runs `run` in a scope whose D1 calls are recorded as `service`. */
 export function withD1Calls<T>(
@@ -73,13 +82,10 @@ export function withD1Calls<T>(
         env,
         waitUntil: (promise) => ctx.waitUntil(promise),
         caller,
-        rows: [],
-        open: true,
-        sending: false,
     };
+    // Calls made after this (post-response billing) go with the next flush.
     const close = () => {
-        current.open = false;
-        send(current);
+        if (Date.now() - lastFlush >= FLUSH_MS) flush(current);
     };
     let result: T;
     try {
@@ -95,18 +101,13 @@ export function withD1Calls<T>(
 
 /** Names later D1 calls after the matched route pattern, never the URL:
  * image prompts sit in the path. */
-export const nameD1Caller = createMiddleware<{
-    Variables: { requestId?: string };
-}>(async (c, next) => {
+export const nameD1Caller = createMiddleware(async (c, next) => {
     const current = scope.getStore();
     if (current) {
         current.caller = () => ({
             // The request's endpoint, also for calls its middleware makes.
             route_path: routePath(c, -1),
             method: c.req.method,
-            request_id: c.var.requestId,
-            edge_colo: (c.req.raw as Request & { cf?: { colo?: string } }).cf
-                ?.colo,
         });
     }
     await next();
@@ -126,14 +127,14 @@ function timeDatabase(db: D1Database): void {
         const entries = list.map(
             (s) => statements.get(s) ?? { stmt: s, sql: "" },
         );
+        // One query per distinct statement, however long the batch.
         return timeCall(
-            entries.map((e) => e.sql).join(";\n"),
+            [...new Set(entries.map((e) => e.sql))].join(";\n"),
             () =>
                 batch.call(
                     db,
                     entries.map((e) => e.stmt),
                 ),
-            entries.length,
         );
     }) as D1Database["batch"];
 }
@@ -158,27 +159,17 @@ function timedStatement(
     return timed;
 }
 
-async function timeCall<T>(
-    sql: string,
-    call: () => Promise<T>,
-    count = 1,
-): Promise<T> {
+async function timeCall<T>(sql: string, call: () => Promise<T>): Promise<T> {
     const startedAt = Date.now();
     try {
         const result = await call();
-        record({ sql, count, startedAt, meta: d1Meta(result) });
+        record(sql, startedAt, d1Meta(result));
         return result;
     } catch (error) {
-        record({ sql, count, startedAt, error });
+        record(sql, startedAt, undefined, error);
         throw error;
     }
 }
-
-type D1CallMeta = {
-    sql_duration_ms?: number;
-    rows_read?: number;
-    rows_written?: number;
-};
 
 // all() and run() return D1's own execution time and row counts; first() and
 // raw() return rows only.
@@ -203,72 +194,122 @@ function errorCode(error: unknown): string {
     return "D1_FAILED";
 }
 
-function record(call: {
-    sql: string;
-    count: number;
-    startedAt: number;
-    meta?: D1CallMeta;
-    error?: unknown;
-}): void {
+// A short stable id for the statement, so its text is sent once per isolate
+// (to d1_query) instead of with every call. Placeholder lists of any length
+// count as one query.
+function queryId(service: string, sql: string): string {
+    let id = queryIds.get(sql);
+    if (id) return id;
+    const shape = sql.replace(/\?(?:\s*,\s*\?)+/g, "?, ...").slice(0, 2000);
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < shape.length; i++) {
+        hash = Math.imul(hash ^ shape.charCodeAt(i), 0x01000193);
+    }
+    id = (hash >>> 0).toString(16).padStart(8, "0");
+    queryIds.set(sql, id);
+    if (!sentQueryIds.has(id)) {
+        sentQueryIds.add(id);
+        newQueries.push({ query_id: id, service, sql: shape });
+    }
+    return id;
+}
+
+function record(
+    sql: string,
+    startedAt: number,
+    meta?: D1CallMeta,
+    error?: unknown,
+): void {
     const current = scope.getStore();
     if (!current) return;
     try {
-        current.rows.push({
-            ...current.caller(),
-            timestamp: new Date(call.startedAt).toISOString(),
-            service: current.service,
-            environment: current.env.ENVIRONMENT,
-            duration_ms: Date.now() - call.startedAt,
-            ...call.meta,
-            statements: call.count,
-            error_code: call.error === undefined ? "" : errorCode(call.error),
-            sql: call.sql.slice(0, 2000),
-        });
-        send(current);
+        const caller = current.caller();
+        const query_id = queryId(current.service, sql);
+        const error_code = error === undefined ? "" : errorCode(error);
+        // The second the call started in, as Tinybird reads a DateTime.
+        const timestamp = new Date(startedAt)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ");
+        const key = [
+            timestamp,
+            current.service,
+            caller.route_path,
+            caller.method,
+            query_id,
+            error_code,
+        ].join("|");
+        let sum = buffered.get(key);
+        if (!sum) {
+            sum = {
+                timestamp,
+                service: current.service,
+                environment: current.env.ENVIRONMENT,
+                ...caller,
+                query_id,
+                error_code,
+                calls: 0,
+                total_ms: 0,
+                max_ms: 0,
+                sql_ms: 0,
+                rows_read: 0,
+                rows_written: 0,
+            };
+            buffered.set(key, sum);
+        }
+        const duration = Date.now() - startedAt;
+        sum.calls += 1;
+        sum.total_ms += duration;
+        sum.max_ms = Math.max(sum.max_ms, duration);
+        sum.sql_ms += meta?.sql_duration_ms ?? 0;
+        sum.rows_read += meta?.rows_read ?? 0;
+        sum.rows_written += meta?.rows_written ?? 0;
+        if (buffered.size >= MAX_BUFFERED) flush(current);
     } catch {
         // Telemetry must never change the call's outcome.
     }
 }
 
-// Sends once the scope has ended (calls made after that, such as
-// post-response billing, follow in their own small batch) or when the buffer
-// is full. Calls ending in the same tick share one request.
-function send(current: Scope): void {
-    if (current.sending || current.rows.length === 0) return;
-    if (current.open && current.rows.length < MAX_BUFFERED) return;
-    current.sending = true;
-    current.waitUntil(
-        Promise.resolve().then(async () => {
-            current.sending = false;
-            const rows = current.rows.splice(0);
-            const { env } = current;
-            try {
-                const response = await fetch(
-                    getTinybirdDatasourceIngestUrl(
-                        env.TINYBIRD_INGEST_URL,
-                        "d1_call_event",
-                    ),
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
-                            "Content-Type": "application/x-ndjson",
-                        },
-                        body: rows.map((row) => JSON.stringify(row)).join("\n"),
-                    },
-                );
-                if (!response.ok) {
-                    getLogger([current.service, "d1"]).error(
-                        "d1_call_event ingest failed: status={status}",
-                        { status: response.status },
-                    );
-                }
-            } catch (error) {
-                getLogger([current.service, "d1"]).error(
-                    "d1_call_event ingest failed: {error}",
-                    { error },
-                );
-            }
-        }),
-    );
+function flush(current: Scope): void {
+    lastFlush = Date.now();
+    const calls = [...buffered.values()];
+    const queries = newQueries;
+    buffered.clear();
+    newQueries = [];
+    if (calls.length > 0)
+        current.waitUntil(ingest(current, "d1_call_event", calls));
+    if (queries.length > 0)
+        current.waitUntil(ingest(current, "d1_query", queries));
+}
+
+async function ingest(
+    current: Scope,
+    datasource: string,
+    rows: object[],
+): Promise<void> {
+    const { env } = current;
+    try {
+        const response = await fetch(
+            getTinybirdDatasourceIngestUrl(env.TINYBIRD_INGEST_URL, datasource),
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
+                    "Content-Type": "application/x-ndjson",
+                },
+                body: rows.map((row) => JSON.stringify(row)).join("\n"),
+            },
+        );
+        if (!response.ok) {
+            getLogger([current.service, "d1"]).error(
+                "{datasource} ingest failed: status={status}",
+                { datasource, status: response.status },
+            );
+        }
+    } catch (error) {
+        getLogger([current.service, "d1"]).error(
+            "{datasource} ingest failed: {error}",
+            { datasource, error },
+        );
+    }
 }

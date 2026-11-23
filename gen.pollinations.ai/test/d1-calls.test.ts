@@ -4,29 +4,37 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { withD1Calls } from "@shared/d1-calls.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { detachedContext } from "../src/utils/execute-generation.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// The isolate sends at most every 10 s, so each test starts a minute after
+// the previous one's send.
+let clock = Date.now();
+beforeEach(() => {
+    clock += 60_000;
+    vi.useFakeTimers({ toFake: ["Date"], now: clock });
+});
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
-// Each D1 call ingest is one NDJSON request; returns them as row arrays.
-function captureD1Batches(delayMs = 0) {
-    const batches: Record<string, unknown>[][] = [];
+type Rows = Record<string, unknown>[];
+
+// Each ingest is one NDJSON request; returns the rows sent per datasource.
+function captureIngest() {
+    const sent = { calls: [] as Rows[], queries: [] as Rows[] };
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
-        if (url.searchParams.get("name") === "d1_call_event") {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
-            batches.push(
-                String(init?.body)
-                    .split("\n")
-                    .map((line) => JSON.parse(line)),
-            );
-        }
+        const rows = String(init?.body)
+            .split("\n")
+            .map((line) => JSON.parse(line));
+        const name = url.searchParams.get("name");
+        if (name === "d1_call_event") sent.calls.push(rows);
+        if (name === "d1_query") sent.queries.push(rows);
         return new Response("{}");
     });
-    return batches;
+    return sent;
 }
 
 async function run<T>(fn: (db: D1Database) => Promise<T>) {
@@ -44,8 +52,8 @@ async function run<T>(fn: (db: D1Database) => Promise<T>) {
 }
 
 describe("D1 call timing", () => {
-    it("passes results through and sends every call in one request", async () => {
-        const batches = captureD1Batches();
+    it("passes results through and sums a second's calls per query", async () => {
+        const sent = captureIngest();
         const [first, all, raw, batch] = await run(async (db) => {
             const stmt = db.prepare("SELECT ? AS value");
             return [
@@ -61,25 +69,42 @@ describe("D1 call timing", () => {
         expect(all).toEqual([{ value: 2 }]);
         expect(raw).toEqual([[3]]);
         expect(batch).toEqual([[{ value: 4 }], [{ value: 5 }]]);
-        expect(batches).toHaveLength(1);
-        expect(batches[0].map((row) => [row.sql, row.statements])).toEqual([
-            ["SELECT ? AS value", 1],
-            ["SELECT ? AS value", 1],
-            ["SELECT ? AS value", 1],
-            ["SELECT ? AS value;\nSELECT ? AS value", 2],
+
+        expect(sent.queries).toEqual([
+            [
+                {
+                    query_id: expect.stringMatching(/^[0-9a-f]{8}$/),
+                    service: "gen",
+                    sql: "SELECT ? AS value",
+                },
+            ],
         ]);
-        expect(batches[0][1]).toMatchObject({
-            service: "gen",
-            route_path: "/image/:prompt",
-            method: "GET",
-            error_code: "",
-            rows_read: expect.any(Number),
-            sql_duration_ms: expect.any(Number),
-        });
+        expect(sent.calls).toEqual([
+            [
+                {
+                    timestamp: new Date(clock)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace("T", " "),
+                    service: "gen",
+                    environment: env.ENVIRONMENT,
+                    route_path: "/image/:prompt",
+                    method: "GET",
+                    query_id: sent.queries[0][0].query_id,
+                    error_code: "",
+                    calls: 4,
+                    total_ms: 0,
+                    max_ms: 0,
+                    sql_ms: expect.any(Number),
+                    rows_read: expect.any(Number),
+                    rows_written: 0,
+                },
+            ],
+        ]);
     });
 
     it("records a failed call with its SQL but no bound values", async () => {
-        const batches = captureD1Batches();
+        const sent = captureIngest();
         await expect(
             run((db) =>
                 db
@@ -89,44 +114,63 @@ describe("D1 call timing", () => {
             ),
         ).rejects.toThrow("missing_table");
 
-        expect(batches).toEqual([
-            [
-                expect.objectContaining({
-                    service: "gen",
-                    route_path: "/image/:prompt",
-                    error_code: "D1_FAILED",
-                    sql: "SELECT * FROM missing_table WHERE prompt = ?",
-                }),
-            ],
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({
+                sql: "SELECT * FROM missing_table WHERE prompt = ?",
+            }),
         ]);
-        expect(JSON.stringify(batches)).not.toContain("secret");
-        expect(JSON.stringify(batches)).not.toContain("D1_ERROR");
+        expect(sent.calls[0]).toEqual([
+            expect.objectContaining({ error_code: "D1_FAILED", calls: 1 }),
+        ]);
+        expect(JSON.stringify(sent)).not.toContain("secret");
+        expect(JSON.stringify(sent)).not.toContain("D1_ERROR");
     });
 
-    it("settles a coordinator job only after telemetry from billing that fails after the response", async () => {
-        const batches = captureD1Batches(50);
-        const { ctx, settled } = detachedContext();
+    it("counts placeholder lists of any length as one query", async () => {
+        const sent = captureIngest();
+        await run(async (db) => {
+            await db.prepare("SELECT 1 WHERE 1 IN (?, ?)").bind(1, 2).all();
+            await db
+                .prepare("SELECT 1 WHERE 1 IN (?, ?, ?)")
+                .bind(1, 2, 3)
+                .all();
+        });
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({ sql: "SELECT 1 WHERE 1 IN (?, ...)" }),
+        ]);
+        expect(sent.calls[0]).toEqual([expect.objectContaining({ calls: 2 })]);
+    });
+
+    it("sends requests within 10 s of each other in one later request", async () => {
+        const sent = captureIngest();
+        const query = (db: D1Database) =>
+            db.prepare("SELECT 'batched' AS value").all();
+        await run(query);
+        expect(sent.calls).toHaveLength(1);
+
+        vi.setSystemTime(clock + 3_000);
+        await run(query);
+        // Post-response work waits for the next send too.
+        const late = createExecutionContext();
         withD1Calls(
             "gen",
             env,
-            ctx,
+            late,
             () => ({ route_path: "generation", method: "GET" }),
-            () => {
-                // Post-response billing: its failing query registers the
-                // telemetry send while settlement is already waiting.
-                ctx.waitUntil(
-                    env.DB.prepare("UPDATE missing_table SET balance = ?")
-                        .bind(1)
-                        .run()
-                        .catch(() => {}),
-                );
-            },
+            () => late.waitUntil(query(env.DB)),
         );
-        await settled();
-        expect(batches).toHaveLength(1);
-        expect(batches[0][0]).toMatchObject({
-            route_path: "generation",
-            error_code: "D1_FAILED",
-        });
+        await waitOnExecutionContext(late);
+        expect(sent.calls).toHaveLength(1);
+
+        vi.setSystemTime(clock + 13_000);
+        await run(query);
+        expect(sent.calls).toHaveLength(2);
+        expect(sent.calls[1].map((row) => [row.route_path, row.calls])).toEqual(
+            [
+                ["/image/:prompt", 1],
+                ["generation", 1],
+                ["/image/:prompt", 1],
+            ],
+        );
     });
 });

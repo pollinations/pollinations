@@ -1,9 +1,9 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-What D1 was doing around a moment: per second, per service, route and query
-shape, the calls started, their summed and longest wall time, D1's own SQL
-time, rows read and failures. Pass `at` (UTC, e.g. 2026-11-23 13:02:06) and
+What D1 was doing around a moment: per second, per service, route and query,
+the calls started, their summed and longest wall time, D1's own SQL time,
+rows read and failures. Pass `at` (UTC, e.g. 2026-11-23 13:02:06) and
 optionally `before_seconds` (default 60) and `after_seconds` (default 10).
 The culprit shows up before the stall; the stall shows as long durations and
 failures on the victims.
@@ -12,27 +12,29 @@ NODE d1_stall_context_seconds
 SQL >
     %
     SELECT
-        toStartOfSecond(timestamp) AS second,
+        timestamp AS second,
         service,
         route_path,
         method,
-        cityHash64(sql) AS sql_hash,
-        any(substring(sql, 1, 300)) AS sql_sample,
-        count() AS calls,
-        sum(duration_ms) AS total_ms,
-        max(duration_ms) AS max_ms,
-        round(sum(ifNull(sql_duration_ms, 0)), 1) AS sql_ms,
-        sum(ifNull(rows_read, 0)) AS rows_read,
-        sum(ifNull(rows_written, 0)) AS rows_written,
-        countIf(error_code != '') AS failed,
+        query_id,
+        any(substring(q.sql, 1, 300)) AS sql,
+        sum(e.calls) AS calls,
+        sum(e.total_ms) AS total_ms,
+        max(e.max_ms) AS max_ms,
+        round(sum(e.sql_ms), 1) AS sql_ms,
+        sum(e.rows_read) AS rows_read,
+        sum(e.rows_written) AS rows_written,
+        sumIf(e.calls, error_code != '') AS failed,
         groupUniqArrayIf(error_code, error_code != '') AS error_codes
-    FROM d1_call_event
+    FROM d1_call_event AS e
+    LEFT JOIN (SELECT query_id, any(sql) AS sql FROM d1_query GROUP BY query_id) AS q
+        USING (query_id)
     WHERE environment = {{ String(environment, 'production') }}
-        AND timestamp >= toDateTime64({{ String(at, '2026-11-23 13:02:06', required=True) }}, 3, 'UTC')
+        AND timestamp >= toDateTime({{ String(at, '2026-11-23 13:02:06', required=True) }}, 'UTC')
             - toIntervalSecond({{ UInt32(before_seconds, 60) }})
-        AND timestamp < toDateTime64({{ String(at, '2026-11-23 13:02:06', required=True) }}, 3, 'UTC')
+        AND timestamp < toDateTime({{ String(at, '2026-11-23 13:02:06', required=True) }}, 'UTC')
             + toIntervalSecond({{ UInt32(after_seconds, 10) }})
-    GROUP BY second, service, route_path, method, sql_hash
+    GROUP BY second, service, route_path, method, query_id
     ORDER BY second, total_ms DESC
 
 TYPE endpoint

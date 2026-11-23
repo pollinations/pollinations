@@ -20,6 +20,7 @@ import {
     ResponseFunctionCallOutputSchema,
     ResponseFunctionCallSchema,
 } from "../schemas/response-function-items.ts";
+import { validateUserMediaUrl } from "../user-media-url.ts";
 import { parseFunctionName } from "./function-items.ts";
 import { safeMcpModelOutput } from "./mcp-output.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
@@ -153,9 +154,7 @@ function userContent(content: unknown): UserMessage["content"] {
             "input",
         );
     }
-    // Agents act through tools that take public URLs, so an attachment's
-    // https URL also reaches the agent as text.
-    return content.flatMap((raw) => {
+    return content.map((raw) => {
         const part = objectValue(raw, "input");
         const providerOptions = promptCacheProviderOptions(part);
         if (part.type === "input_text" || part.type === "text") {
@@ -166,31 +165,26 @@ function userContent(content: unknown): UserMessage["content"] {
             };
         }
         if (part.type === "input_image") {
-            const image = stringValue(part.image_url, "input");
-            const pixels = {
+            return {
                 type: "image" as const,
-                image,
+                image: stringValue(part.image_url, "input"),
                 ...(providerOptions ? { providerOptions } : {}),
             };
-            // The link goes first so a cache breakpoint stays on the last part.
-            return image.startsWith("https://")
-                ? [
-                      {
-                          type: "text" as const,
-                          text: `[Attached image: ${image}]`,
-                      },
-                      pixels,
-                  ]
-                : pixels;
         }
+        // Agents act through tools that take public URLs, so a file is passed
+        // on as its link, never fetched. The model reads the complete URL.
         if (part.type === "input_file") {
-            const url = part.file_url;
-            if (typeof url !== "string" || !url.startsWith("https://")) {
+            const link =
+                typeof part.file_url === "string"
+                    ? validateUserMediaUrl(part.file_url)
+                    : undefined;
+            if (!link?.ok || link.url.protocol !== "https:") {
                 invalidRequest(
-                    "input_file requires an https file_url",
+                    "input_file requires a public https file_url",
                     "input",
                 );
             }
+            const url = link.url.href;
             const name =
                 typeof part.filename === "string" && part.filename
                     ? ` ${part.filename}`

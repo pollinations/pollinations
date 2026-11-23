@@ -140,10 +140,6 @@ describe("shared agent Responses adapter", () => {
                             content: [
                                 { type: "text", text: "What is this?" },
                                 {
-                                    type: "text",
-                                    text: "[Attached image: https://media.test/input.png]",
-                                },
-                                {
                                     type: "image",
                                     image: "https://media.test/input.png",
                                 },
@@ -370,11 +366,13 @@ describe("shared agent Responses adapter", () => {
         };
 
         async function userParts(content: unknown[]) {
-            let userMessage: unknown;
+            let userMessage: { content?: unknown } | undefined;
+            let runs = 0;
             const response = await handleAgentResponsesRequest(
                 request({ input: [{ role: "user", content }] }),
                 new AbortController().signal,
                 async ({ messages }) => {
+                    runs += 1;
                     userMessage = messages.find((m) => m.role === "user");
                     return {
                         text: "ok",
@@ -382,45 +380,23 @@ describe("shared agent Responses adapter", () => {
                     } as never;
                 },
             );
-            return {
-                response,
-                content: (userMessage as { content?: unknown } | undefined)
-                    ?.content,
-            };
+            return { response, runs, content: userMessage?.content };
         }
 
-        it("tells the agent the URL of an attached https image", async () => {
+        it("passes an attached image as pixels only, never its URL as text", async () => {
             const { content } = await userParts([
                 { type: "input_text", text: "Edit this." },
                 {
                     type: "input_image",
-                    image_url: "https://media.test/a.png",
-                    ...BREAKPOINT,
+                    image_url: "https://media.test/a.png?signature=secret",
                 },
             ]);
             expect(content).toEqual([
                 { type: "text", text: "Edit this." },
                 {
-                    type: "text",
-                    text: "[Attached image: https://media.test/a.png]",
-                },
-                {
                     type: "image",
-                    image: "https://media.test/a.png",
-                    ...CACHE_OPTIONS,
+                    image: "https://media.test/a.png?signature=secret",
                 },
-            ]);
-        });
-
-        it("leaves a data: image as pixels only", async () => {
-            const { content } = await userParts([
-                {
-                    type: "input_image",
-                    image_url: "data:image/png;base64,AAAA",
-                },
-            ]);
-            expect(content).toEqual([
-                { type: "image", image: "data:image/png;base64,AAAA" },
             ]);
         });
 
@@ -455,15 +431,19 @@ describe("shared agent Responses adapter", () => {
             { file_data: "data:audio/mpeg;base64,AAAA" },
             { file_id: "file_1" },
             { file_url: "http://media.test/a.mp3" },
-        ])("rejects an input_file without an https file_url", async (file) => {
-            const { response } = await userParts([
+            { file_url: "https://" },
+            { file_url: "https://localhost/a.mp3" },
+            { file_url: "https://user:secret@media.test/a.mp3" },
+        ])("rejects input_file %j before the agent runs", async (file) => {
+            const { response, runs } = await userParts([
                 { type: "input_file", ...file },
             ]);
             expect(response.status).toBe(400);
+            expect(runs).toBe(0);
             expect(await response.json()).toMatchObject({
                 error: {
                     type: "invalid_request_error",
-                    message: "input_file requires an https file_url",
+                    message: "input_file requires a public https file_url",
                 },
             });
         });

@@ -20,11 +20,9 @@ import {
     PlusIcon,
     Section,
     Surface,
-    Switch,
     TabButton,
     TerminalIcon,
     Text,
-    Tooltip,
     TrashIcon,
     WalletIcon,
     XIcon,
@@ -184,7 +182,7 @@ const forever = (until: string) =>
 
 function customError(seconds: number) {
     if (!(seconds > 0)) return "Enter how long, e.g. 2 hours.";
-    if (seconds < 600) return "Minimum 10 minutes";
+    if (seconds < SANDBOX_AUTO_IDLE_SECONDS) return "Minimum 10 minutes";
     if (seconds > FOREVER) return "That’s longer than Until I stop it.";
     return null;
 }
@@ -393,7 +391,7 @@ function SandboxCard({
                     {!running
                         ? "Resume"
                         : endless
-                          ? "Set time limit"
+                          ? "Run settings"
                           : "Add time"}
                 </Button>
                 {running && (
@@ -569,9 +567,12 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
               : null;
     const creating = busyId === "new";
 
-    const seconds =
-        auto || untilStopped ? FOREVER : Math.round(Number(amount) * unit);
-    const durationError = seconds === FOREVER ? null : customError(seconds);
+    const seconds = Math.round(Number(amount) * unit);
+    const durationError = untilStopped ? null : customError(seconds);
+    const { label: unitLabel } =
+        UNITS.find((option) => option.seconds === unit) ?? UNITS[0];
+    const durationLabel =
+        Number(amount) === 1 ? unitLabel.slice(0, -1) : unitLabel;
     // Create, resume and a time limit run from now; Add time adds to the time
     // a running sandbox already runs for.
     const turningAutoOff =
@@ -587,7 +588,14 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
             : null;
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.endAt) : now;
-    const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
+    const timeout =
+        auto || untilStopped
+            ? FOREVER
+            : Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
+    const editingRuntime =
+        pending?.action === "limit" ||
+        turningAutoOff ||
+        (auto && Boolean(addTo));
     const loading = !pricing && !loadError;
     const running = sandboxes.filter((s) => s.state === "running").length;
     const full = !!pricing && running >= pricing.maxRunning;
@@ -602,6 +610,17 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                         !full &&
                         !creating))));
 
+    function setRuntime(idleTimeout?: number) {
+        const savedUnit = idleTimeout
+            ? (UNITS.findLast((option) => idleTimeout % option.seconds === 0)
+                  ?.seconds ?? UNITS[0].seconds)
+            : UNITS[1].seconds;
+        setAuto(Boolean(idleTimeout));
+        setUntilStopped(false);
+        setUnit(savedUnit);
+        setAmount(idleTimeout ? String(idleTimeout / savedUnit) : "1");
+    }
+
     function confirm() {
         if (!pending || !canConfirm) return;
         if (pending.action === "create") {
@@ -612,7 +631,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                 e2b("/sandboxes", "POST", {
                     templateID: pending.template.trim(),
                     timeout,
-                    ...(auto && { idleTimeout: SANDBOX_AUTO_IDLE_SECONDS }),
+                    ...(auto && { idleTimeout: seconds }),
                     autoPause: true,
                     ...(pending.name.trim() && {
                         metadata: { name: pending.name.trim() },
@@ -644,7 +663,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                       {
                           timeout,
                           ...(auto
-                              ? { idleTimeout: SANDBOX_AUTO_IDLE_SECONDS }
+                              ? { idleTimeout: seconds }
                               : pending.sandbox.idleTimeout
                                 ? { idleTimeout: 0 }
                                 : {}),
@@ -698,15 +717,14 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                     pricing={pricing}
                                     busy={busyId === sandbox.sandboxID}
                                     onConnect={() => {
-                                        setAuto(Boolean(sandbox.idleTimeout));
+                                        setRuntime(sandbox.idleTimeout);
                                         setPending({
                                             action: "connect",
                                             sandbox,
                                         });
                                     }}
                                     onLimit={() => {
-                                        setAuto(false);
-                                        setUntilStopped(false);
+                                        setRuntime(sandbox.idleTimeout);
                                         setPending({
                                             action: "limit",
                                             sandbox,
@@ -778,7 +796,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                               : "Create",
                                           disabled: full || creating,
                                           onCreate: (template) => {
-                                              setAuto(false);
+                                              setRuntime();
                                               setPending({
                                                   action: "create",
                                                   name: generateFunName(),
@@ -878,8 +896,8 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                         ? ""
                                         : pending.action === "create"
                                           ? "Create"
-                                          : pending.action === "limit"
-                                            ? "Set time limit"
+                                          : editingRuntime
+                                            ? "Save"
                                             : addTo
                                               ? "Add time"
                                               : "Resume"}
@@ -894,8 +912,8 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                     ? ""
                                     : pending.action === "create"
                                       ? "Create sandbox"
-                                      : pending.action === "limit"
-                                        ? "Set a time limit"
+                                      : editingRuntime
+                                        ? "Run settings"
                                         : addTo
                                           ? "Add time"
                                           : "Resume sandbox"
@@ -1029,17 +1047,47 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                         </>
                                     )}
                                     <ModelFormRow
-                                        label={
-                                            addTo && !auto
-                                                ? "Add time"
-                                                : "Run it for"
+                                        label="Run mode"
+                                        helpOnTap
+                                        help="Fixed pauses when the duration ends. Auto pauses after the selected time with no activity. Frequent requests may keep it running or wake it repeatedly. The first request after a pause may take longer."
+                                        note={
+                                            auto && (
+                                                <p className="text-sm leading-snug text-theme-text-muted">
+                                                    No new charges while paused.
+                                                    Waking starts a new prepaid
+                                                    lease. Unused prepaid time
+                                                    isn’t refunded.
+                                                </p>
+                                            )
                                         }
-                                        help={
+                                    >
+                                        <ButtonGroup aria-label="Run mode">
+                                            <TabButton
+                                                size="sm"
+                                                active={!auto}
+                                                onClick={() => setAuto(false)}
+                                            >
+                                                Fixed
+                                            </TabButton>
+                                            <TabButton
+                                                size="sm"
+                                                active={auto}
+                                                onClick={() => {
+                                                    setAuto(true);
+                                                    setUntilStopped(false);
+                                                }}
+                                            >
+                                                Auto
+                                            </TabButton>
+                                        </ButtonGroup>
+                                    </ModelFormRow>
+                                    <ModelFormRow
+                                        label={
                                             auto
-                                                ? undefined
-                                                : pending.action === "limit"
-                                                  ? "At least 10 minutes. The sandbox pauses when time runs out."
-                                                  : "At least 10 minutes. Choose Until I stop it to keep running until you pause or kill it."
+                                                ? "Pause after"
+                                                : addTo
+                                                  ? "Add time"
+                                                  : "Run for"
                                         }
                                         note={
                                             <Chip
@@ -1055,97 +1103,70 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
                                                 <ClockIcon className="h-3 w-3 shrink-0" />
                                                 {durationError ||
                                                     (auto
-                                                        ? "Pauses after inactivity"
+                                                        ? `Pauses after ${Number(amount).toLocaleString()} ${durationLabel} of inactivity`
                                                         : timeout === FOREVER
                                                           ? "Will run until you pause or kill it"
                                                           : `Will run until ${new Date(now + timeout * 1000).toLocaleString()}`)}
                                             </Chip>
                                         }
                                     >
-                                        {!auto && (
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <Field.Input asChild>
-                                                    <Input
-                                                        type="number"
-                                                        min="0"
-                                                        step="any"
-                                                        inputMode="decimal"
-                                                        aria-label="How long"
-                                                        aria-describedby="sandbox-duration-status"
-                                                        value={amount}
-                                                        error={!!durationError}
-                                                        className="w-20"
-                                                        onFocus={() =>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Field.Input asChild>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="any"
+                                                    inputMode="decimal"
+                                                    aria-label="How long"
+                                                    aria-describedby="sandbox-duration-status"
+                                                    value={amount}
+                                                    error={!!durationError}
+                                                    className="w-20"
+                                                    onFocus={() =>
+                                                        setUntilStopped(false)
+                                                    }
+                                                    onChange={(event) =>
+                                                        setAmount(
+                                                            event.currentTarget
+                                                                .value,
+                                                        )
+                                                    }
+                                                />
+                                            </Field.Input>
+                                            <ButtonGroup aria-label="Duration unit">
+                                                {UNITS.map((option) => (
+                                                    <TabButton
+                                                        key={option.seconds}
+                                                        size="sm"
+                                                        active={
+                                                            !untilStopped &&
+                                                            unit ===
+                                                                option.seconds
+                                                        }
+                                                        onClick={() => {
+                                                            setUnit(
+                                                                option.seconds,
+                                                            );
                                                             setUntilStopped(
                                                                 false,
-                                                            )
-                                                        }
-                                                        onChange={(event) =>
-                                                            setAmount(
-                                                                event
-                                                                    .currentTarget
-                                                                    .value,
-                                                            )
-                                                        }
-                                                    />
-                                                </Field.Input>
-                                                <ButtonGroup aria-label="Duration unit">
-                                                    {UNITS.map((option) => (
-                                                        <TabButton
-                                                            key={option.seconds}
-                                                            size="sm"
-                                                            active={
-                                                                !untilStopped &&
-                                                                unit ===
-                                                                    option.seconds
-                                                            }
-                                                            onClick={() => {
-                                                                setUnit(
-                                                                    option.seconds,
-                                                                );
-                                                                setUntilStopped(
-                                                                    false,
-                                                                );
-                                                            }}
-                                                        >
-                                                            {option.label}
-                                                        </TabButton>
-                                                    ))}
-                                                    {pending.action !==
-                                                        "limit" && (
-                                                        <TabButton
-                                                            size="sm"
-                                                            active={
-                                                                untilStopped
-                                                            }
-                                                            onClick={() =>
-                                                                setUntilStopped(
-                                                                    true,
-                                                                )
-                                                            }
-                                                        >
-                                                            Until I stop it
-                                                        </TabButton>
-                                                    )}
-                                                </ButtonGroup>
-                                            </div>
-                                        )}
-                                        {pending.action !== "limit" && (
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    ariaLabel="Auto"
-                                                    checked={auto}
-                                                    onChange={setAuto}
-                                                />
-                                                <Tooltip
-                                                    content={`Pauses after ${SANDBOX_AUTO_IDLE_SECONDS / 60} minutes of inactivity. The first request after a pause may take longer.`}
-                                                    ariaLabel="About Auto mode"
-                                                    tapEnabled
+                                                            );
+                                                        }}
+                                                    >
+                                                        {option.label}
+                                                    </TabButton>
+                                                ))}
+                                                <TabButton
+                                                    size="sm"
+                                                    active={untilStopped}
+                                                    disabled={auto}
+                                                    onClick={() =>
+                                                        setUntilStopped(true)
+                                                    }
                                                 >
-                                                    <span>Auto</span>
-                                                </Tooltip>
-                                            </div>
-                                        )}
+                                                    Until I stop it
+                                                </TabButton>
+                                            </ButtonGroup>
+                                        </div>
                                     </ModelFormRow>
                                 </Surface>
                                 {pending.action === "create" && (

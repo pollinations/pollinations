@@ -23,43 +23,24 @@ Calls use that key's wallet, permissions, and budget.
 ### Staging pilot for external agents
 
 Connect a Streamable HTTP client to `https://staging.gen.pollinations.ai/mcp/pollinations-code`
-with a funded [staging API key](https://staging.enter.pollinations.ai/keys). The server exposes one tool, `code`. Pass an
-async JavaScript function as its `code` string. For example, this function
-looks up image models and compares up to three with the same prompt:
+with a funded [staging key](https://staging.enter.pollinations.ai/keys). Pass an async JavaScript
+function to the `code` tool. For example, look up three image models and their prices:
 
 ```js
 async () => {
-    const models = await pollinations.listModels({ type: "image" });
-    const selected = models.filter(model => {
-        const rate = Number(model.pricing?.completionImageTokens);
-        return rate > 0 && rate <= 0.01;
-    }).slice(0, 3);
-    return Promise.all(selected.map(async ({ name }) => {
-        try {
-            const image = await pollinations.generateImage({
-                model: name, prompt: "A sunflower drawn in blue ink", seed: 42,
-            });
-            return { model: name, url: image.data[0].url };
-        } catch (error) {
-            return { model: name, error: error.message };
-        }
-    }));
+    const models = await pollinations.listModels({ type: "image", limit: 3 });
+    return models.map(({ name, pricing }) => ({ name, pricing }));
 }
 ```
 
-`listModels` returns the live catalog array. The example filters on the listed
-image rate; final charges follow the selected models' billing rules.
-`generateImage` returns the image API's JSON response. A script gets four
-tool attempts, including failed or parallel calls. The sandbox has no direct
-network access. Each run allows 100 ms of sandbox CPU time and up to three
-minutes of elapsed time. The gateway allows ten executions per key per minute
-at each Cloudflare location. Pollinations covers sandbox execution during the pilot and
-charges each billable generation to the calling key.
+To generate an image, call `pollinations.generateImage({ model, prompt, seed })` and read
+`data[0].url`. Keep the model, prompt, seed and options identical when retrying to rejoin
+a generation or fetch its cached image. Completed generations are billed even if the script fails.
+The [staging replay](../../apps/mcp-code/staging-replay.js) checks three images and their wallet charges.
 
-If a client disconnects after dispatch, submit the same model, prompt, seed,
-and options to rejoin an identical image request or retrieve its cached result.
-Keep those inputs when retrying; a fresh discovery step can pick different
-models. A failed script can still have completed billable image requests.
+Each run allows four tool attempts, 100 ms of sandbox CPU and three minutes elapsed, with no direct
+network access. Each account gets ten runs per minute at each Cloudflare location.
+Pollinations covers sandbox execution during the pilot.
 
 For all Pollinations-hosted MCP servers, see the
 [MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).

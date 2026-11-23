@@ -1,6 +1,5 @@
 import { DynamicWorkerExecutor, jsonSchemaToType } from "@cloudflare/codemode";
-import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import { createMcpHandler, McpServer, z } from "../../packages/mcp/src/sdk.js";
 import { discoveryTools } from "../../packages/mcp/src/services/discoveryService.js";
 import { imageTools } from "../../packages/mcp/src/services/imageService.js";
 

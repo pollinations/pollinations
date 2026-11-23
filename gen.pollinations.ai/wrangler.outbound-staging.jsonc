@@ -1,8 +1,0 @@
-{
-    "name": "pollinations-code-agent-outbound-staging",
-    "main": "src/code-agent-outbound-worker.ts",
-    "compatibility_date": "2025-11-01",
-    "compatibility_flags": ["global_fetch_strictly_public"],
-    "workers_dev": false,
-    "preview_urls": false
-}

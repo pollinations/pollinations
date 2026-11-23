@@ -234,7 +234,7 @@ export const mcpRoutes = new Hono<Env>()
                         message: "Code execution unavailable",
                     });
                 }
-                await limit(c, c.env.MCP_CODE_RATE_LIMITER, key.id, 60);
+                await limit(c, c.env.MCP_CODE_RATE_LIMITER, user.id, 60);
             }
         }
         // The sandbox and receipt-billed tools need a spendable balance

@@ -424,19 +424,6 @@ jobs:
           echo "MCP applications: $APPS"
           echo "apps=$APPS" >> "$GITHUB_OUTPUT"
 
-      - name: Test packages/mcp
-        if: steps.mcp.outputs.core == 'true'
-        run: |
-          npm ci --prefix packages/mcp
-          npm test --prefix packages/mcp
-
-      - name: Test Code Mode with an external MCP client
-        if: steps.mcp.outputs.code == 'true'
-        run: |
-          npm ci --prefix packages/mcp --workspaces=false
-          npm ci --prefix apps/mcp-code --workspaces=false
-          npm test --prefix apps/mcp-code
-
       # Installs each server as its deploy.json `install` does.
       - name: Test changed MCP applications
         if: steps.mcp.outputs.apps != ''
@@ -448,6 +435,21 @@ jobs:
             (cd "$app" && bash -c "$(node -p 'require("./deploy.json").install')" && npm test)
             echo "::endgroup::"
           done
+
+      - name: Install shared MCP handlers
+        if: steps.mcp.outputs.code == 'true'
+        # Testing apps/mcp above also installs its shared handlers.
+        run: test -d packages/mcp/node_modules || npm ci --prefix packages/mcp --workspaces=false
+
+      - name: Test packages/mcp
+        if: steps.mcp.outputs.core == 'true'
+        run: npm test --prefix packages/mcp
+
+      - name: Test Code Mode with an external MCP client
+        if: steps.mcp.outputs.code == 'true'
+        run: |
+          npm ci --prefix apps/mcp-code --workspaces=false
+          npm test --prefix apps/mcp-code
 
   website:
     name: Build pollinations.ai

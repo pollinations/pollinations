@@ -1,5 +1,4 @@
-import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import { createMcpHandler, McpServer, z } from "./sdk.js";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { discoveryTools } from "./services/discoveryService.js";

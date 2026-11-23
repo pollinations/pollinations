@@ -9,9 +9,7 @@
     "deploy:staging": "wrangler deploy --env staging"
   },
   "dependencies": {
-    "@cloudflare/codemode": "0.5.6",
-    "@modelcontextprotocol/server": "2.4.0",
-    "zod": "4.6.7"
+    "@cloudflare/codemode": "0.5.6"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.4.0",

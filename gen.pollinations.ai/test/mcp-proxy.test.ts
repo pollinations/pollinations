@@ -68,18 +68,19 @@ test("publishes and routes the code pilot only in staging", async () => {
     expect((await fetchIn("production", path)).status).toBe(404);
 });
 
-test("requires a funded direct key and rate limits code execution per key", async () => {
+test("requires a funded direct key and shares the code execution limit across an account’s keys", async () => {
     const funded = await createTestApiKey({ user: { tierBalance: 1 } });
     const empty = await createTestApiKey({
-        userId: funded.userId,
+        user: { tierBalance: 1 },
         pollenBudget: 0,
     });
     const wallet = await createTestApiKey();
-    const other = await createTestApiKey({ userId: funded.userId });
+    const secondKey = await createTestApiKey({ userId: funded.userId });
+    const otherAccount = await createTestApiKey({ user: { tierBalance: 1 } });
     const staging = {
         ...env,
         ENVIRONMENT: "staging" as const,
-        STAGING_ALLOWED_EMAILS: [funded, wallet]
+        STAGING_ALLOWED_EMAILS: [funded, empty, wallet, otherAccount]
             .map(({ userId }) => `${userId}@test.local`)
             .join(","),
         POLLINATIONS_CODE_MCP: env.POLLINATIONS_MCP,
@@ -120,11 +121,12 @@ test("requires a funded direct key and rate limits code execution per key", asyn
     expect((await call(wallet.key)).status).toBe(402);
     expect((await call(wallet.key, "tools/list")).status).toBe(200);
     expect((await call(funded.key)).status).toBe(200);
-    expect((await call(funded.key)).status).toBe(200);
+    expect((await call(secondKey.key)).status).toBe(200);
     const limited = await call(funded.key);
     expect(limited.status).toBe(429);
     expect(limited.headers.get("Retry-After")).toBe("60");
-    expect((await call(other.key)).status).toBe(200);
+    expect((await call(secondKey.key)).status).toBe(429);
+    expect((await call(otherAccount.key)).status).toBe(200);
     expect(await getUserBalance(drizzle(env.DB), funded.userId)).toEqual({
         tierBalance: 1,
         packBalance: 0,

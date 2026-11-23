@@ -28,9 +28,9 @@ SQL >
         groupUniqArrayIf(error_code, error_code != '') AS error_codes
     FROM d1_call_event
     WHERE environment = {{ String(environment, 'production') }}
-        AND timestamp >= toDateTime64({{ String(at, required=True) }}, 3, 'UTC')
+        AND timestamp >= toDateTime64({{ String(at, '2026-11-23 13:02:06', required=True) }}, 3, 'UTC')
             - toIntervalSecond({{ UInt32(before_seconds, 60) }})
-        AND timestamp < toDateTime64({{ String(at, required=True) }}, 3, 'UTC')
+        AND timestamp < toDateTime64({{ String(at, '2026-11-23 13:02:06', required=True) }}, 3, 'UTC')
             + toIntervalSecond({{ UInt32(after_seconds, 10) }})
     GROUP BY second, service, route_path, method, sql_hash
     ORDER BY second, total_ms DESC

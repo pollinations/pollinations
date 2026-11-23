@@ -156,7 +156,7 @@ set -e
 # releases and images, and a failed image removal does not fail the deploy.
 OLDER=89abcdef0123456789abcdef0123456789abcdef
 runtime="$ROOT/runtime-cleanup"
-mkdir -p "$runtime/runtime" "$runtime/releases/$OLD" "$runtime/releases/$OLDER"
+mkdir -p "$runtime/runtime" "$runtime/releases/$OLD" "$runtime/releases/$OLDER" "$runtime/releases/app-overlay"
 touch "$runtime/runtime/.env" "$runtime/releases/$OLD/compose.yaml"
 printf 'polli-container-v1\n' >"$runtime/runtime/.container-ready"
 ln -s "$runtime/releases/$OLD" "$runtime/current"
@@ -166,6 +166,7 @@ FAIL_NEW=0 FAIL_RM="polli:$OLDER" MOCK_IMAGES="$(printf '%s\n' "polli:$SHA" "pol
   { cat "$ROOT/stderr" >&2; echo "cleanup failure failed the deployment" >&2; exit 1; }
 [[ "$(readlink "$runtime/current")" == "$runtime/releases/$SHA" ]]
 [[ -d "$runtime/releases/$OLD" && ! -e "$runtime/releases/$OLDER" ]]
+[[ -d "$runtime/releases/app-overlay" ]] || { echo "cleanup removed a folder that is not a release" >&2; exit 1; }
 grep -q "warning: could not remove image polli:$OLDER" "$ROOT/stderr"
 removed=$(grep -c '^image rm ' "$ROOT/commands")
 [[ "$removed" == 2 ]] || { cat "$ROOT/commands" >&2; echo "expected 2 image removals, got $removed" >&2; exit 1; }

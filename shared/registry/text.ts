@@ -941,16 +941,16 @@ const TEXT_BASE_SERVICES = {
     "inception/mercury-2": {
         supportedParameters: CHAT_PARAMETERS.mercury,
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25) * 1.055,
-            promptCachedTokens: perMillion(0.025) * 1.055,
-            completionTextTokens: perMillion(0.75) * 1.055,
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            completionTextTokens: perMillion(0.75),
         },
         title: "Mercury 2",
         description:
@@ -961,48 +961,20 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "inception/mercury-2.5-preview": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
-        aliases: [],
-        provider: "openrouter",
-        publisher: "Inception",
-        category: "text",
-        addedDate: new Date("2026-09-01").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's exact Inception route rates (2026-09-01).
-        cost: {
-            promptTextTokens: perMillion(0.04) * 1.055,
-            promptCachedTokens: perMillion(0.004) * 1.055,
-            completionTextTokens: perMillion(0.15) * 1.055,
-        },
-        title: "Mercury 2.5 Preview",
-        description:
-            "Generate code quickly, call tools, and return results in a structured format.",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 260000,
-        isSpecialized: false,
-    },
     "inception/mercury-3": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
+        supportedParameters: CHAT_PARAMETERS.mercury3,
         aliases: [],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-10-19").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's Inception route launch rates (50% off, checked
-        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
-        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
-        // offer ends (no end date published).
+        // Inception direct launch rates (checked 2026-11-23).
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055,
-            promptCachedTokens: perMillion(0.01) * 1.055,
-            completionTextTokens: perMillion(0.35) * 1.055,
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.35),
         },
         title: "Mercury 3",
         description:

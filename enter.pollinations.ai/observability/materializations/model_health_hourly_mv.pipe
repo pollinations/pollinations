@@ -1,9 +1,13 @@
 DESCRIPTION >
     Materializes catalog health from final requests. Fallback rescues count as
-    successes for the requested model; caller 4xx are excluded. In `recent`, a
-    text 2xx that reports prompt tokens but no output tokens is stored as 502:
-    the model read the request and answered with nothing. now() is
-    evaluated at ingest, so it only bounds the backfill to the table's TTL.
+    successes for the requested model; caller 4xx are excluded. Counts regular
+    and legacy traffic, owner requests, and the community model monitor probe
+    key; dev and operations traffic (staff keys, bots, the weekly evals) is
+    left out. traffic_group comes from generation_events_classified, so
+    changing the classification rules there also changes catalog health. In
+    `recent`, a text 2xx that reports prompt tokens but no output tokens is
+    stored as 502: the model read the request and answered with nothing. now()
+    is evaluated at ingest, so it only bounds the backfill to the table's TTL.
 
 NODE model_health_hourly_mv_node
 SQL >
@@ -25,12 +29,19 @@ SQL >
                 response_status
             )
         )) AS recent
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE is_final
         AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
         AND start_time >= now() - INTERVAL 8 DAY
         -- Feeds public catalog health; owner-only models stay out.
         AND NOT private_model
+        -- Internal traffic does not count, except the community monitor probe
+        -- key: its probes are the only fresh observations of quiet community
+        -- models. Its id is the one copy of the classified pipe's list.
+        AND (
+            traffic_group IN ('regular', 'legacy')
+            OR api_key_id = 'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS' -- quixotic-hare: community model monitor
+        )
     GROUP BY hour, model, event_type
 
 TYPE MATERIALIZED

@@ -2,7 +2,8 @@ DESCRIPTION >
     Final 2xx and 5xx outcomes per requested model and hour, for catalog
     health. `recent` keeps the hour's latest 50 such requests, newest first,
     so the community feed merges a last-50 sample without scanning events.
-    Eight days covers the seven-day community window.
+    Regular and legacy traffic, owner requests and community monitor probes
+    count; dev and operations traffic does not. Eight days covers the seven-day community window.
 
 SCHEMA >
     `hour` DateTime,

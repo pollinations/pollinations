@@ -330,6 +330,44 @@ function Transcribe() {
 }
 ```
 
+```tsx
+import { useRealtimeSession } from '@pollinations/sdk/react';
+
+function Voice() {
+  const {
+    status, isSpeaking, isListening, error,
+    connect, disconnect, startListening, stopListening, send,
+  } = useRealtimeSession({ instructions: 'Be concise.' });
+
+  if (status !== 'connected') {
+    return (
+      <>
+        <button disabled={status === 'connecting'} onClick={() => void connect()}>
+          Start talking
+        </button>
+        {error && <p>{error.message}</p>}
+      </>
+    );
+  }
+  return (
+    <>
+      <button
+        onPointerDown={() => void startListening()}
+        onPointerUp={() => {
+          stopListening();
+          send({ type: 'input_audio_buffer.commit' });
+          send({ type: 'response.create' });
+        }}
+      >
+        {isListening ? 'Listening…' : 'Hold to talk'}
+      </button>
+      <button onClick={disconnect}>Stop</button>
+      {isSpeaking && <p>Speaking…</p>}
+    </>
+  );
+}
+```
+
 ### React chat transport (`useChat`)
 
 `usePollinationsChatTransport` returns a transport for the Vercel AI SDK
@@ -686,6 +724,89 @@ const audio = new Audio(`data:audio/mpeg;base64,${speech.audio_base64}`);
 When normalized timings are absent or null, `words` is empty; the audio is still returned.
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
+
+## Realtime Voice & Transcription
+
+`openRealtimeSession()` opens the OpenAI-compatible Realtime WebSocket and passes
+its events through. `startMicrophone()` and `playRealtimeAudio()` add the browser
+audio path.
+
+```javascript
+import {
+  openRealtimeSession,
+  playRealtimeAudio,
+  startMicrophone,
+} from '@pollinations/sdk';
+
+const session = await openRealtimeSession({
+  model: 'openai/gpt-realtime-2.1', // the default
+  instructions: 'Be concise.',
+});
+const playback = playRealtimeAudio(session);
+const stopMicrophone = await startMicrophone(session);
+
+session.onEvent((event) => {
+  // The original event name, and the newer one Gemini Live emits.
+  if (event.type.endsWith('audio_transcript.done')) {
+    console.log(event.transcript);
+  }
+});
+
+// End the turn.
+stopMicrophone();
+session.send({ type: 'input_audio_buffer.commit' });
+session.send({ type: 'response.create' });
+
+// Interrupt: queued audio stops as soon as the event is sent.
+session.send({ type: 'response.cancel' });
+
+// The session is billed once, when it closes.
+session.close();
+playback.stop();
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | `'openai/gpt-realtime-2.1'` | Any realtime model, e.g. `'google/gemini-3.8-live'` |
+| `instructions` | string | - | Sent in the opening `session.update` |
+| `tools` | array | - | Function tools, sent with the instructions |
+| `session` | object | - | Extra `session.update` fields; `audio.input` is merged, the rest replaces |
+| `apiKey` | string | `POLLINATIONS_API_KEY` | Secret key, passed as the browser `?key=` parameter |
+
+The opening `session.update` asks for manual turns (`turn_detection: null`) and
+mono 24 kHz PCM input, which is what `startMicrophone` sends. It sends no
+`session.type`: the route has already created the right kind of session, and a
+transcription deployment rejects a realtime one.
+
+Audio plays through an `<audio>` element fed by a `MediaStreamDestination`,
+because browsers only use element output as the echo-cancellation reference.
+Without it the microphone re-captures the model's voice.
+
+Realtime needs a global `WebSocket`: a browser, or Node 22 and later.
+
+### Live transcription
+
+Pick a transcription model and open a transcription session. The events are
+`conversation.item.input_audio_transcription.delta` and `.completed` instead of
+speech.
+
+```javascript
+const session = await openRealtimeSession({
+  model: 'elevenlabs/scribe-v3-live',
+});
+await startMicrophone(session);
+
+session.onEvent((event) => {
+  if (event.type === 'conversation.item.input_audio_transcription.completed') {
+    console.log(event.transcript);
+  }
+});
+```
+
+`microsoft/mai-transcribe-2-streaming` needs an explicit
+`session: { type: 'transcription' }`; the other transcription models infer it.
 
 ## Vision (Image Input)
 

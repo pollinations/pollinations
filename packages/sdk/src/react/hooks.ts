@@ -12,6 +12,14 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    openRealtimeSession,
+    playRealtimeAudio,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+    startMicrophone,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +500,184 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export interface UseRealtimeSessionOptions extends RealtimeSessionOptions {
+    /** Start the microphone on connect. Default true. */
+    microphone?: boolean;
+}
+
+export type RealtimeStatus = "idle" | "connecting" | "connected" | "closed";
+
+export interface UseRealtimeSessionValue {
+    status: RealtimeStatus;
+    /** The model is producing a response. */
+    isSpeaking: boolean;
+    /** Microphone audio is being streamed. */
+    isListening: boolean;
+    error: Error | null;
+    /**
+     * Open the session, play the model's audio and start the microphone. Call
+     * it from a click: browsers need a gesture for the mic and for playback.
+     */
+    connect: () => Promise<void>;
+    /** Close the session, which settles its billing. */
+    disconnect: () => void;
+    /** Start the microphone for a new turn. */
+    startListening: () => Promise<void>;
+    /** Stop the microphone. Call it before `input_audio_buffer.commit`. */
+    stopListening: () => void;
+    /** Send one OpenAI Realtime event, for example `input_audio_buffer.commit`. */
+    send: (event: RealtimeEvent) => void;
+}
+
+const NOOP = () => {};
+
+/**
+ * A realtime voice session wired to the provider's key: connect once, then hold
+ * turns with `startListening` and `stopListening` and send Realtime events. The
+ * session closes when the component unmounts.
+ *
+ * @example
+ * ```tsx
+ * const realtime = useRealtimeSession({ instructions: "Be concise." });
+ * return <button onClick={() => realtime.connect()}>Talk</button>;
+ * ```
+ */
+export function useRealtimeSession(
+    options: UseRealtimeSessionOptions = {},
+): UseRealtimeSessionValue {
+    const { apiKey } = useRequiredAuth();
+    const [status, setStatus] = useState<RealtimeStatus>("idle");
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+    const sessionRef = useRef<RealtimeSession | null>(null);
+    const releaseRef = useRef<() => void>(NOOP);
+    const microphoneRef = useRef<() => void>(NOOP);
+    // A connect still in flight, and whether the caller gave up on it.
+    const connectingRef = useRef(false);
+    const cancelledRef = useRef(false);
+    // Options and key are read when connecting, so a fresh object each render
+    // does not close and reopen the session.
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+    const apiKeyRef = useRef(apiKey);
+    apiKeyRef.current = apiKey;
+
+    const stopListening = useCallback(() => {
+        microphoneRef.current();
+        microphoneRef.current = NOOP;
+        setIsListening(false);
+    }, []);
+
+    const disconnect = useCallback(() => {
+        // Cancels a connect that has not resolved yet, so its socket and audio
+        // context are closed instead of being orphaned.
+        cancelledRef.current = true;
+        stopListening();
+        releaseRef.current();
+        releaseRef.current = NOOP;
+        const session = sessionRef.current;
+        sessionRef.current = null;
+        session?.close();
+        setIsSpeaking(false);
+        setStatus("closed");
+    }, [stopListening]);
+
+    const startListening = useCallback(async () => {
+        const session = sessionRef.current;
+        if (!session || microphoneRef.current !== NOOP) return;
+        const stop = await startMicrophone(session);
+        // The session ended while the microphone was starting.
+        if (sessionRef.current !== session) {
+            stop();
+            return;
+        }
+        microphoneRef.current = stop;
+        setIsListening(true);
+    }, []);
+
+    const connect = useCallback(async () => {
+        if (connectingRef.current || sessionRef.current) return;
+        connectingRef.current = true;
+        cancelledRef.current = false;
+        setStatus("connecting");
+        setError(null);
+        try {
+            const { microphone = true, ...sessionOptions } = optionsRef.current;
+            const session = await openRealtimeSession({
+                ...sessionOptions,
+                apiKey: sessionOptions.apiKey ?? apiKeyRef.current ?? undefined,
+            });
+            if (cancelledRef.current) {
+                session.close();
+                return;
+            }
+            sessionRef.current = session;
+            const playback = playRealtimeAudio(session);
+            // Release what exists already, so a denied microphone cannot leave
+            // an audio context and an open socket behind.
+            const stops = [() => playback.stop()];
+            releaseRef.current = () => {
+                for (const stop of stops) stop();
+            };
+            session.onEvent((event) => {
+                if (event.type === "response.created") setIsSpeaking(true);
+                if (event.type === "response.done") setIsSpeaking(false);
+            });
+            // The server can end the session; the UI has to say so.
+            session.onClose(() => {
+                if (sessionRef.current === session) disconnect();
+            });
+            if (microphone) {
+                const stop = await startMicrophone(session);
+                if (cancelledRef.current) {
+                    stop();
+                    return;
+                }
+                stops.push(stop);
+                microphoneRef.current = stop;
+                setIsListening(true);
+            }
+            setStatus("connected");
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+            disconnect();
+        } finally {
+            connectingRef.current = false;
+        }
+    }, [disconnect]);
+
+    // Unmount leaves no open socket behind.
+    useEffect(() => () => disconnect(), [disconnect]);
+
+    const send = useCallback((event: RealtimeEvent) => {
+        sessionRef.current?.send(event);
+    }, []);
+
+    return useMemo(
+        () => ({
+            status,
+            isSpeaking,
+            isListening,
+            error,
+            connect,
+            disconnect,
+            startListening,
+            stopListening,
+            send,
+        }),
+        [
+            status,
+            isSpeaking,
+            isListening,
+            error,
+            connect,
+            disconnect,
+            startListening,
+            stopListening,
+            send,
+        ],
+    );
 }

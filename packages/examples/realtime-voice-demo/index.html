@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Pollinations realtime voice demo</title>
+        <style>
+            body {
+                font-family: system-ui, sans-serif;
+                margin: 2rem auto;
+                max-width: 40rem;
+                padding: 0 1rem;
+            }
+            #transcript {
+                white-space: pre-wrap;
+                min-height: 6rem;
+                background: #f4f4f5;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Pollinations realtime voice demo</h1>
+        <p>
+            Hold <strong>Hold to talk</strong>, speak, then release to send the
+            turn. The model answers with speech and a transcript.
+        </p>
+
+        <p>
+            <label>
+                Secret key
+                <input id="key" type="password" placeholder="sk_…" size="32" />
+            </label>
+            <button type="button" id="connect">Connect</button>
+        </p>
+
+        <p>
+            <button type="button" id="talk" disabled>Hold to talk</button>
+            <button type="button" id="cancel" disabled>Stop response</button>
+        </p>
+
+        <p id="status">Paste a secret key and connect.</p>
+        <pre id="transcript"></pre>
+
+        <script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk@5.1.0-alpha.35/dist/index.browser.min.js"></script>
+        <script>
+            const {
+                openRealtimeSession,
+                playRealtimeAudio,
+                startMicrophone,
+            } = Pollinations;
+
+            // Both spellings reach clients: the original event name and the
+            // newer one Gemini Live emits.
+            const TRANSCRIPT_DELTAS = new Set([
+                "response.audio_transcript.delta",
+                "response.output_audio_transcript.delta",
+            ]);
+            const TRANSCRIPT_DONE = new Set([
+                "response.audio_transcript.done",
+                "response.output_audio_transcript.done",
+            ]);
+
+            const keyInput = document.querySelector("#key");
+            const connectButton = document.querySelector("#connect");
+            const talkButton = document.querySelector("#talk");
+            const cancelButton = document.querySelector("#cancel");
+            const status = document.querySelector("#status");
+            const transcript = document.querySelector("#transcript");
+
+            let session = null;
+            let playback = null;
+            let micPromise = null;
+
+            function setStatus(text) {
+                status.textContent = text;
+            }
+
+            function append(text) {
+                transcript.textContent += text;
+                transcript.scrollTop = transcript.scrollHeight;
+            }
+
+            async function connect() {
+                const apiKey = keyInput.value.trim();
+                if (!apiKey) {
+                    setStatus("Paste a secret key from https://enter.pollinations.ai/keys first.");
+                    return;
+                }
+
+                connectButton.disabled = true;
+                setStatus("Connecting…");
+                session = await openRealtimeSession({
+                    apiKey,
+                    instructions:
+                        "You are a friendly voice assistant. Answer in one short sentence.",
+                });
+                playback = playRealtimeAudio(session);
+                session.onEvent((event) => {
+                    if (TRANSCRIPT_DELTAS.has(event.type)) {
+                        append(event.delta);
+                    } else if (TRANSCRIPT_DONE.has(event.type)) {
+                        append("\n");
+                    } else if (event.type === "error") {
+                        setStatus(event.error?.message || "Realtime error.");
+                    }
+                });
+                session.onClose(() => {
+                    release();
+                    connectButton.disabled = false;
+                    talkButton.disabled = true;
+                    cancelButton.disabled = true;
+                    setStatus("Session closed.");
+                });
+
+                talkButton.disabled = false;
+                cancelButton.disabled = false;
+                setStatus("Connected. Hold the button to talk.");
+            }
+
+            function startTurn() {
+                if (!session || micPromise) return;
+                setStatus("Listening…");
+                micPromise = startMicrophone(session);
+                micPromise.catch((error) => {
+                    micPromise = null;
+                    setStatus(error.message);
+                });
+            }
+
+            async function endTurn() {
+                const starting = micPromise;
+                if (!starting) return;
+                micPromise = null;
+                // Waiting for the start means a tap shorter than the permission
+                // prompt still closes the microphone.
+                const stop = await starting.catch(() => null);
+                if (!stop) return;
+                stop();
+                // Manual turn detection: commit the audio, then ask for a reply.
+                session.send({ type: "input_audio_buffer.commit" });
+                session.send({ type: "response.create" });
+                setStatus("Waiting for the answer…");
+            }
+
+            function release() {
+                // Stops the microphone whether it is still starting or already on.
+                micPromise?.then((stop) => stop()).catch(() => {});
+                micPromise = null;
+                session?.close();
+                session = null;
+                playback?.stop();
+                playback = null;
+            }
+
+            connectButton.addEventListener("click", () => {
+                connect().catch((error) => {
+                    connectButton.disabled = false;
+                    setStatus(error.message);
+                });
+            });
+
+            talkButton.addEventListener("pointerdown", (event) => {
+                // Keeping the capture means releasing outside the button still
+                // ends the turn instead of leaving the microphone open.
+                talkButton.setPointerCapture(event.pointerId);
+                startTurn().catch((error) => setStatus(error.message));
+            });
+            talkButton.addEventListener("pointerup", endTurn);
+            talkButton.addEventListener("pointercancel", endTurn);
+
+            cancelButton.addEventListener("click", () => {
+                // Drops the audio still playing, so an interruption is instant.
+                session?.send({ type: "response.cancel" });
+            });
+
+            window.addEventListener("pagehide", release);
+        </script>
+    </body>
+</html>

@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-23
+
+### Added
+
+- `openRealtimeSession()` opens an OpenAI-compatible realtime voice or live transcription session and passes its events through. `?key=` authenticates it, which is what a browser WebSocket can use.
+- `startMicrophone()` streams mono 24 kHz PCM from the browser microphone into the session; `playRealtimeAudio()` plays the model's speech.
+- `useRealtimeSession()` opens the session, audio and microphone for a React app.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

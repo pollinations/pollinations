@@ -72,6 +72,21 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
+// Realtime voice and transcription sessions
+export {
+    DEFAULT_REALTIME_MODEL,
+    decodeAudioChunk,
+    encodeAudioChunk,
+    type MicrophoneOptions,
+    openRealtimeSession,
+    playRealtimeAudio,
+    type RealtimeAudioPlayback,
+    type RealtimeEvent,
+    type RealtimeSession,
+    type RealtimeSessionOptions,
+    realtimeUrl,
+    startMicrophone,
+} from "./realtime.js";
 // Export all types
 export type {
     AccountBalance,

@@ -27,13 +27,6 @@ export const createGenerateTextWithHistory = (
 
         const requestData = { model, messages: apiMessages };
 
-        // Log equivalent curl command for debugging
-        const curlCommand = `curl -X POST ${url} \\
-  -H "Content-Type: application/json" \\
-  -d '${JSON.stringify(requestData, null, 2)}'`;
-
-        log("Equivalent curl command:\n%s", curlCommand);
-
         try {
             // Create a promise that will reject after the timeout
             const timeoutPromise = new Promise<never>((_, reject) => {
@@ -76,15 +69,8 @@ export const createGenerateTextWithHistory = (
             // Handle all other API errors - return empty string instead of throwing
             log("API request failed for model %s: %s", model, error.message);
 
-            // Log response body if available (for HTTP errors like 502)
             if (error.response) {
                 log("HTTP Error Status: %d", error.response.status);
-                log("HTTP Error Headers: %O", error.response.headers);
-                if (error.response.data) {
-                    log("HTTP Error Response Body: %O", error.response.data);
-                }
-            } else if (error.request) {
-                log("No response received. Request details: %O", error.request);
             }
 
             await new Promise((resolve) => setTimeout(resolve, 60000)); // Wait before next request

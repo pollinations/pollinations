@@ -58,16 +58,30 @@ Add a user crontab entry for each app directory using its absolute path.
 Create `.enabled` in the app directory and check `bot.log` for Discord Ready.
 The launcher holds a per-app lock and stores its PID in `.bot.pid`. To stop an
 app, remove `.enabled` first, then terminate the PID after verifying it belongs
-to that app. For an EC2 rollback, confirm the Azure process has stopped before
-re-enabling the matching unit from [`systemd/`](systemd/).
+to that app. To roll back, restore the previous Azure source and start the app
+again.
 
-The three legacy EC2 units are stopped and disabled. Discord Bot Family is a
-separate app. Its MiniMax source and dependencies were staged on Azure with
-manual start only. Its Discord login still needs a live test.
+The three legacy EC2 unit files and the dedicated bot checkout were removed.
 
-each bot runs independently via `cli.ts`:
+### Discord Bot Family on demand
+
+MiniMax is the first Family bot staged on `discord-bots-azure`. Use a separate
+private directory (mode `700`) with `src-functional/`, `package.json`,
+`tsconfig.json`, and [`run-minimax.sh`](azure/run-minimax.sh). Install the
+dependencies as above. Its `.env` (mode `600`) supplies `BOT_TOKEN_MINIMAX` and
+`TEXT_POLLINATIONS_TOKEN`.
+
+Run `/bin/sh run-minimax.sh` in the foreground. Wait for the `Bot minimax is
+online` message from Discord. If the Gateway quota is exhausted, the runtime
+reports the delay and waits for the Discord reset. Stop the process with
+Ctrl-C, then run `flock -n .bot.lock /bin/true` from the app directory to check
+that it exited. Keep this directory out of the user crontab so the bot starts
+only on demand. The shared sandbox stays online for CatGPT and Opposite Prompt.
+
+With `DISCORD_BOT_TOKEN` already set, run a single bot via `cli.ts`.
+
 ```bash
-npx ts-node src-functional/cli.ts <model> <token> --channels <ids>
+npx tsx src-functional/cli.ts minimax --channels "$DISCORD_CHANNEL_IDS"
 ```
 
 ## bot commands

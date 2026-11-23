@@ -48,7 +48,6 @@ for (const bot of bots) {
     const args = [
         CLI,
         bot.model,
-        token,
         "--channels",
         bot.channels,
         "--global-channels",
@@ -56,7 +55,7 @@ for (const bot of bots) {
     ];
     const child = spawn(TSX, args, {
         cwd: dir,
-        env: { ...process.env, DEBUG: "app:*" },
+        env: { ...process.env, DISCORD_BOT_TOKEN: token, DEBUG: "app:*" },
         stdio: ["ignore", "pipe", "pipe"],
     });
     const tag = `[${bot.model}]`;

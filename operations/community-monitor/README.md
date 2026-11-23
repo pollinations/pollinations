@@ -3,9 +3,10 @@
 Headless coding agent that watches community models (the
 `community/owner/model` endpoints registered via My Models), probes text/image models,
 reads Tinybird health for every category, and helps owners diagnose failures.
-Model lists filter reliability automatically; the monitor never changes visibility. Runs on the `monitoring-agents` EC2 box (ssh alias
-`community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
-not in this repo's CI. The Discord bots share that host.
+Model lists filter reliability automatically; the monitor never changes visibility.
+The retired `monitoring-agents` EC2 installation has a disabled systemd unit
+and an hourly health check. See the [host inventory](../infrastructure/gpu/GPU_INSTANCES.md)
+and the [Azure Discord bot deployment](../../apps/discord-bot-family/README.md).
 
 ## What's here vs what's live-only
 

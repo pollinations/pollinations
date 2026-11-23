@@ -852,8 +852,8 @@ Cloudflare Worker. The monitoring host is:
 - **Elastic IP**: `3.221.108.127`; security group `monitoring-agents` (SSH only)
 - **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@3.221.108.127` (alias `community-monitor`)
 - **Community monitor**: [retired EC2 setup](../../community-monitor/README.md)
-- **Discord bots**: CatGPT and Opposite Prompt run on Azure. The three EC2 bot
-  units are disabled and retained for rollback. See the
+- **Discord bots**: CatGPT and Opposite Prompt run on Azure. The EC2 unit files
+  and dedicated bot checkout were removed. See the
   [bot deployment guide](../../../apps/discord-bot-family/README.md).
 
 ## Heartbeat Registration

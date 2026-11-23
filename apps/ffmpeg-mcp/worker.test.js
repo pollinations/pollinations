@@ -362,6 +362,45 @@ test("accepts public HTTPS media and raw FFmpeg input arguments", async () => {
     await client.close();
 });
 
+test("caps FFmpeg at 16 sources before fetching or executing", async () => {
+    const sources = Array.from(
+        { length: 16 },
+        (_, index) => `https://media.pollinations.ai/source-${index}`,
+    );
+    const { calls, env, worker } = createHarness({ expectedSources: sources });
+    const client = await connect(worker, env, calls);
+    const args = ["-i", "input15"];
+    try {
+        const rejected = await client.callTool({
+            name: "runFfmpeg",
+            arguments: {
+                sources: [...sources, SOURCE],
+                args,
+                outputExtension: "mp4",
+            },
+        });
+        assert.equal(rejected.isError, true);
+        assert.match(rejected.content[0].text, /at most 16 sources per run/);
+        assert.equal(calls.sourceFetches.length, 0);
+        assert.equal(calls.run.length, 0);
+        assert.equal(calls.upload.length, 0);
+        assert.equal(
+            calls.responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost),
+            null,
+        );
+
+        const result = await client.callTool({
+            name: "runFfmpeg",
+            arguments: { sources, args, outputExtension: "mp4" },
+        });
+        assert.equal(result.isError, undefined);
+        assert.deepEqual(calls.sourceFetches, sources);
+        assert.equal(calls.run[0].inputs.length, 16);
+    } finally {
+        await client.close();
+    }
+});
+
 test("revalidates public HTTPS redirects", async () => {
     const redirectedSource = "https://cdn.example.com/source.mp4";
     const { calls, env, worker } = createHarness({

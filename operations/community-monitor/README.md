@@ -145,7 +145,9 @@ D1/wrangler access needed on the box):
   text and image checks have a four-hour base interval; successive failures
   double it to at most six days (`min(4 * 2^failures, 144)` hours).
   Success, including a fallback rescue, and inconclusive caller/probe errors
-  reset it to four hours. The script
+  reset it to four hours. An image model whose last probe passed is rechecked
+  after 24 hours instead: a passing image probe costs up to $0.25, and
+  four-hourly checks of healthy quiet image models were about $125 a week. The script
   stores cadence in `state.json`'s `spend.probes`, separately from health
   decisions. A server/protocol failure slows retries; it does not classify the provider.
   The agent's 30-minute wake-up/reply schedule is unchanged.

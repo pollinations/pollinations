@@ -481,6 +481,46 @@ jobs:
         if: steps.website-files.outputs.any_changed == 'true'
         run: npm test --prefix pollinations.ai
 
+  # Non-blocking while the Windows suite is brought up to parity. Making this
+  # job visible means Windows-only failures no longer stay invisible.
+  windows-smoke:
+    name: Windows smoke tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install polli-cli dependencies
+        run: npm ci --prefix packages/polli-cli
+
+      - name: Install Discord agent dependencies
+        run: npm ci --prefix apps/discord-agent-osaii-swarm
+
+      - name: Test Discord token store
+        run: node --test apps/discord-agent-osaii-swarm/test/bot.test.js
+
+      - name: Test polli CLI key management
+        working-directory: packages/polli-cli
+        run: npx vitest run src/commands/keys.test.ts
+
+      - name: Test model query
+        working-directory: enter.pollinations.ai
+        run: npx vitest run test/model-query.test.ts
+
   # Carries the status-check name required by the main branch ruleset so the
   # jobs above gate merges without a ruleset change.
   gate:

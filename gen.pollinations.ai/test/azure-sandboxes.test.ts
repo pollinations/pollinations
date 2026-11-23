@@ -266,6 +266,45 @@ test("Azure Auto uses native suspend and bills only when the owner wakes it", as
     expect(await (await read()).json()).not.toHaveProperty("idleTimeout");
 });
 
+test("resuming paused Azure Auto as Fixed for 10 minutes ends the keep", async () => {
+    const azure = stubAzure();
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 2 ** 31 - 1,
+        idleTimeout: 600,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const [box] = azure.boxes;
+    box.state = "Stopped";
+
+    const fixed = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 600,
+        idleTimeout: 0,
+    });
+    expect(fixed.status).toBe(201);
+    expect(box.state).toBe("Running");
+    expect(box.lifecycle).toEqual({ autoSuspendPolicy: { enabled: false } });
+    const db = drizzle(env.DB);
+    expect(await db.select().from(sandboxKeep)).toEqual([]);
+    expect(azure.leases()).toHaveLength(2);
+
+    await db
+        .update(azureSandbox)
+        .set({ endAt: new Date(Date.now() - 1000) })
+        .where(eq(azureSandbox.sandboxId, sandboxID));
+    const ctx = createExecutionContext();
+    await worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        azureEnv,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(box.state).toBe("Stopped");
+    expect(azure.leases()).toHaveLength(2);
+});
+
 test("Azure shared ports serve paid requests, serialize cold wakes, and refuse a revoked payer", async () => {
     const azure = stubAzure();
     const owner = await sandboxKey();

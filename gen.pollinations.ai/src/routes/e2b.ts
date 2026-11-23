@@ -802,7 +802,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
             async (c) => {
                 const sandbox = await ownedSandbox(c);
-                if (sandbox.state === "paused") await requireCapacity(c);
+                const paused = sandbox.state === "paused";
+                if (paused) await requireCapacity(c);
                 const { timeout, idleTimeout } = await readJson<{
                     timeout: number;
                     idleTimeout: number;
@@ -817,11 +818,10 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                         : (timeout ?? DEFAULT_TIMEOUT_SECONDS),
                     idle,
                 );
-                // Connect never shortens a lease, so it never ends a keep. Any
-                // other connect by the owner (polli ssh renews this way) is
-                // activity; the cron's and a wake's are not.
+                // A running connect never ends a keep. A paused sandbox
+                // explicitly resuming as Fixed starts a new, finite lease.
                 if (!response.ok) return response;
-                if (until) {
+                if (until || (paused && idle === null)) {
                     await setKeep(c, sandbox.sandboxID, until, idle);
                 } else if (idle === null) {
                     await drizzle(c.env.DB)

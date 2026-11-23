@@ -29,6 +29,9 @@ import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+// The community model monitor's probe key (an ID, not the secret). Its probes
+// of community models are health checks: not charged, and no owner reward.
+export const COMMUNITY_MONITOR_API_KEY_ID = "OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS";
 export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",

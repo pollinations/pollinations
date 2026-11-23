@@ -3,6 +3,7 @@ import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
+    COMMUNITY_MONITOR_API_KEY_ID,
     type CommunityEndpointRuntime,
 } from "../community-endpoints.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
@@ -223,7 +224,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     // endpoint. Do not charge them through Pollinations or pay them back a
     // partial reward. The reward input follows the endpoint that actually
     // served the request, so a fallback owned by somebody else is still billed.
-    if (communityModelRewardInput?.userId === userId) {
+    //
+    // A monitor health probe is not billed either: serving it is the owner's
+    // cost of being listed, so the probe must not pay them a reward.
+    if (
+        communityModelRewardInput?.userId === userId ||
+        (communityModelRewardInput && apiKeyId === COMMUNITY_MONITOR_API_KEY_ID)
+    ) {
         await reconcileApiKeyBalance(
             db,
             apiKeyId,

@@ -14,6 +14,7 @@ import {
     INTERNAL_AUTOMATION_USER_ID,
 } from "@shared/billing/internal-automation.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { COMMUNITY_MONITOR_API_KEY_ID } from "@shared/community-endpoints.ts";
 import {
     apikey as apiKeyTable,
     rewards as rewardsTable,
@@ -209,37 +210,37 @@ describe("billing deduction", () => {
         ).rejects.toMatchObject({ status: 402 });
     });
 
-    it.each([false, true])(
-        "settles a request admitted before restriction, preserving quest-only=%s",
-        async (questPollenOnly) => {
-            const userId = await createUser({
-                tierBalance: 10,
-                packBalance: 0,
-            });
-            await requireFunds({ env, var: {} }, 2, () =>
-                getUserBalance(db, userId),
-            );
-            await db
-                .update(userTable)
-                .set({ questPollenRestricted: true })
-                .where(eq(userTable.id, userId));
-            const settled = await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 2,
-                userId,
-                questPollenOnly,
-            });
-            expect(settled).toMatchObject({
-                billedPrice: 2,
-                payerBucket: questPollenOnly ? "tier" : "pack",
-            });
-            expect(await getUserBalance(db, userId)).toMatchObject({
-                tierBalance: questPollenOnly ? 8 : 10,
-                packBalance: questPollenOnly ? 0 : -2,
-            });
-        },
-    );
+    it.each([
+        false,
+        true,
+    ])("settles a request admitted before restriction, preserving quest-only=%s", async (questPollenOnly) => {
+        const userId = await createUser({
+            tierBalance: 10,
+            packBalance: 0,
+        });
+        await requireFunds({ env, var: {} }, 2, () =>
+            getUserBalance(db, userId),
+        );
+        await db
+            .update(userTable)
+            .set({ questPollenRestricted: true })
+            .where(eq(userTable.id, userId));
+        const settled = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 2,
+            userId,
+            questPollenOnly,
+        });
+        expect(settled).toMatchObject({
+            billedPrice: 2,
+            payerBucket: questPollenOnly ? "tier" : "pack",
+        });
+        expect(await getUserBalance(db, userId)).toMatchObject({
+            tierBalance: questPollenOnly ? 8 : 10,
+            packBalance: questPollenOnly ? 0 : -2,
+        });
+    });
 
     it("refills each internal balance at 10 or less without duplicate concurrent grants", async () => {
         await db.insert(userTable).values({
@@ -546,6 +547,43 @@ describe("billing deduction", () => {
         expect(result.billedPrice).toBe(0);
         expect(await getApiKeyBalance(apiKeyId)).toBe(10);
         expect((await getUserBalance(db, userId)).tierBalance).toBe(100);
+    });
+
+    it("does not charge a monitor probe of a community model or reward its owner", async () => {
+        const ownerId = await createUser({ tierBalance: 0, packBalance: 0 });
+        const monitorId = await createUser({ tierBalance: 5, packBalance: 5 });
+        const probe = {
+            db,
+            isBilledUsage: true,
+            totalPrice: 0.25,
+            userId: monitorId,
+            modelPaidOnly: true,
+        };
+
+        const result = await handleBalanceDeduction({
+            ...probe,
+            apiKeyId: COMMUNITY_MONITOR_API_KEY_ID,
+            communityModelReward: { userId: ownerId, rewardRate: 0.75 },
+        });
+
+        expect(result.billedPrice).toBe(0);
+        expect(result.communityModelReward).toBeNull();
+        expect(await getUserBalance(db, monitorId)).toEqual({
+            tierBalance: 5,
+            packBalance: 5,
+        });
+        expect(await getUserBalance(db, ownerId)).toEqual({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+
+        // The same key pays as usual for a model that has no owner reward.
+        const official = await handleBalanceDeduction({
+            ...probe,
+            apiKeyId: COMMUNITY_MONITOR_API_KEY_ID,
+        });
+        expect(official.billedPrice).toBe(0.25);
+        expect((await getUserBalance(db, monitorId)).packBalance).toBe(4.75);
     });
 
     it("refunds the reservation when the payer deduction cannot be committed", async () => {

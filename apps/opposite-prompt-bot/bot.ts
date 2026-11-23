@@ -13,9 +13,14 @@ import {
 const TOKEN = process.env.BOT_TOKEN_OPPOSITE_PROMPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
+const TEXT_MODEL = "openai/gpt-6-luna";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const IMAGE_MODEL = "openai/gpt-image-2.5-sunburst";
+const IMAGE_FILENAME = "opposite-prompt.jpg";
 const MEDIA_API = "https://media.pollinations.ai/upload";
-const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+const AUTH: Record<string, string> = API_KEY
+    ? { Authorization: `Bearer ${API_KEY}` }
+    : {};
 
 const OPPOSITE_PROMPT = `You are a safe image prompt generator. Your #1 rule: NEVER output anything involving nudity, bare skin, undressed people, children, violence, gore, or anything sexual. This rule overrides ALL other instructions.
 
@@ -56,11 +61,13 @@ function logAxiosError(context: string, err: any) {
 }
 
 async function generateOpposite(prompt: string): Promise<string> {
-    log(`Text API request: model=claude-large, prompt="${prompt}"`);
+    log(`Text API request: model=${TEXT_MODEL}, prompt="${prompt}"`);
     const res = await axios.post(
         TEXT_API,
         {
-            model: "claude-large",
+            model: TEXT_MODEL,
+            reasoning_effort: "none",
+            max_tokens: 64,
             messages: [
                 { role: "system", content: OPPOSITE_PROMPT },
                 { role: "user", content: prompt },
@@ -74,7 +81,7 @@ async function generateOpposite(prompt: string): Promise<string> {
 }
 
 async function fetchImage(prompt: string): Promise<Buffer> {
-    const url = `${IMAGE_API}/${encodeURIComponent(prompt)}?model=zimage&nologo=true`;
+    const url = `${IMAGE_API}/${encodeURIComponent(prompt)}?model=${IMAGE_MODEL}&quality=medium&nologo=true`;
     log(`Image API request: ${url}`);
     const res = await axios.get(url, {
         headers: AUTH,
@@ -91,8 +98,8 @@ async function publishImage(image: Buffer): Promise<void> {
         const form = new FormData();
         form.append(
             "file",
-            new Blob([new Uint8Array(image)], { type: "image/png" }),
-            "opposite-prompt.png",
+            new Blob([new Uint8Array(image)], { type: "image/jpeg" }),
+            IMAGE_FILENAME,
         );
         form.append("tags", "opposite-prompt-bot");
         const response = await fetch(MEDIA_API, {
@@ -142,7 +149,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
 
             const imageBuffer = await fetchImage(opposite);
             const attachment = new AttachmentBuilder(imageBuffer, {
-                name: "opposite.png",
+                name: IMAGE_FILENAME,
             });
 
             await msg.reply({ files: [attachment] });

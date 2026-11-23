@@ -27,8 +27,61 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20422": {
+      "merge_sha": "b823b9f34cf44a460cb1e3148ef5726ef2705431",
+      "merged_at": "2026-11-21T04:14:13Z",
+      "required": []
+    },
+    "20425": {
+      "merge_sha": "2b9f23045b55e43a7ba14f58a4ce464e7bf05603",
+      "merged_at": "2026-11-21T07:12:24Z",
+      "required": []
+    },
+    "20439": {
+      "merge_sha": "166ad57d79b51d0f6909bf0bdf58999b19673cb3",
+      "merged_at": "2026-11-21T15:57:03Z",
+      "required": []
+    },
+    "20440": {
+      "merge_sha": "2df8c72d86d08722563762badc6b6720100d8d63",
+      "merged_at": "2026-11-21T16:03:12Z",
+      "required": []
+    },
+    "20448": {
+      "merge_sha": "b0fa720877821b5553016ec1d28689e96f41b560",
+      "merged_at": "2026-11-22T04:14:59Z",
+      "required": []
+    },
+    "20449": {
+      "merge_sha": "69c6754da8330bc88c11800fc4e207f8b65e6a40",
+      "merged_at": "2026-11-22T07:12:15Z",
+      "required": []
+    },
+    "20472": {
+      "merge_sha": "769dd2e3b8faa3907d541161f44d89d3d4bd4c0c",
+      "merged_at": "2026-11-23T04:15:28Z",
+      "required": []
+    },
+    "20478": {
+      "merge_sha": "513484a3423200501bf1761e20b7b350a024ac11",
+      "merged_at": "2026-11-23T07:14:03Z",
+      "required": []
+    },
+    "20487": {
+      "merge_sha": "c5dad257056a187b5eda2a36f89dda974042cced",
+      "merged_at": "2026-11-23T11:43:30Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/economics",
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
+        "deploy-applications.yml:Deploy operations/dashboards/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
     }
   },
-  "production": "30ba1321061102c9a6ca0dcd69c8bd69f44d23b3",
+  "production": "38b3e2beffdf41c6179e6273d2b0c6576f02bf86",
   "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
 }

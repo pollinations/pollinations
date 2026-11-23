@@ -42,7 +42,7 @@ On models served through Chat Completions, Responses supports text and image inp
 
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
-Managed agents accept `input_text`, `input_image` and `input_file` user content. An `input_file` part needs a public `https` `file_url`. The file is not fetched: the agent receives the complete URL as text, with `filename` when given, so it can pass the link to its tools. Do not send a URL that carries a secret, such as a signed query string. An `input_image` reaches the model as an image only; send the same link as an `input_file` as well when the agent's tools need it.
+Managed agents accept `input_text`, `input_image` and `input_file` user content. An `input_file` part needs a public `https` `file_url`. The file is not fetched: the agent receives the complete URL as text, so it can pass the link to its tools. A `filename` is added as a hint of the file's type, reduced to letters, digits, dots, dashes and underscores. Do not send a URL that carries a secret, such as a signed query string. An `input_image` reaches the model as an image only; send the same link as an `input_file` as well when the agent's tools need it.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
 

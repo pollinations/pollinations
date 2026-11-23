@@ -23,6 +23,8 @@ printf '%s\n' "$*" >>"$MOCK_LOG"
 if [[ "$1" == compose ]]; then
   [[ "$*" == *"releases/$SHA "* && "$*" == *" up "* && "${FAIL_NEW:-}" == 1 ]] && exit 1
 fi
+[[ "$1" == images ]] && printf '%s\n' "${MOCK_IMAGES:-}"
+[[ "$1 ${2:-}" == "image rm" && "$3" == "${FAIL_RM:-}" ]] && exit 1
 exit 0
 MOCK
 cat >"$BIN/sudo" <<'MOCK'
@@ -53,7 +55,7 @@ chmod +x "$BIN"/*
 
 run_deploy() {
   local runtime=$1
-  PATH="$BIN:$PATH" MOCK_LOG="$ROOT/commands" SHA="$SHA" FAIL_NEW=1 HOME="$ROOT/host-home" \
+  PATH="$BIN:$PATH" MOCK_LOG="$ROOT/commands" SHA="$SHA" FAIL_NEW="${FAIL_NEW-1}" HOME="$ROOT/host-home" \
     POLLI_REPO_ROOT="$ROOT/repo" POLLI_AZURE_HOST=host POLLI_AZURE_USER=user POLLI_AZURE_SSH_KEY=test \
     POLLI_CONTAINER_ROOT="$runtime" bash "$SCRIPT" "$SHA"
 }
@@ -149,5 +151,25 @@ set -e
 [[ "$status" -ne 0 ]] || { echo "expected foreign lock refusal" >&2; exit 1; }
 [[ -d "$foreign_root/.deploy.lock" ]] || { echo "foreign deployment lock was removed" >&2; exit 1; }
 ! grep -q '^build ' "$ROOT/commands"
+
+# A successful deploy keeps the new and rollback releases, removes older Polli
+# releases and images, and a failed image removal does not fail the deploy.
+OLDER=89abcdef0123456789abcdef0123456789abcdef
+runtime="$ROOT/runtime-cleanup"
+mkdir -p "$runtime/runtime" "$runtime/releases/$OLD" "$runtime/releases/$OLDER"
+touch "$runtime/runtime/.env" "$runtime/releases/$OLD/compose.yaml"
+printf 'polli-container-v1\n' >"$runtime/runtime/.container-ready"
+ln -s "$runtime/releases/$OLD" "$runtime/current"
+: >"$ROOT/commands"
+FAIL_NEW=0 FAIL_RM="polli:$OLDER" MOCK_IMAGES="$(printf '%s\n' "polli:$SHA" "polli:$OLD" "polli:$OLDER" \
+  "polli-visual-studio:$OLDER" "polli:<none>" "polli:local" "redis:$OLDER")" run_deploy "$runtime" 2>"$ROOT/stderr" ||
+  { cat "$ROOT/stderr" >&2; echo "cleanup failure failed the deployment" >&2; exit 1; }
+[[ "$(readlink "$runtime/current")" == "$runtime/releases/$SHA" ]]
+[[ -d "$runtime/releases/$OLD" && ! -e "$runtime/releases/$OLDER" ]]
+grep -q "warning: could not remove image polli:$OLDER" "$ROOT/stderr"
+removed=$(grep -c '^image rm ' "$ROOT/commands")
+[[ "$removed" == 2 ]] || { cat "$ROOT/commands" >&2; echo "expected 2 image removals, got $removed" >&2; exit 1; }
+grep -qx "image rm polli-visual-studio:$OLDER" "$ROOT/commands"
+! grep -q 'image prune' "$ROOT/commands"
 
 echo "polli container deployment tests passed"

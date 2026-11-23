@@ -223,6 +223,11 @@ export default defineConfig(async ({ mode }) => {
                                 },
                             });
                         },
+                        POLLINATIONS_CODE_MCP: (request: Request) =>
+                            Response.json({
+                                authorization:
+                                    request.headers.get("authorization"),
+                            }),
                         ASK_JEV_MCP: async (request: Request) =>
                             Response.json({
                                 pathname: new URL(request.url).pathname,

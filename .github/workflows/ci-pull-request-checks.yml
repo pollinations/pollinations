@@ -414,17 +414,20 @@ jobs:
           if [ -z "$FILTER" ] || grep -q '^packages/mcp/' "$RUNNER_TEMP/changed.txt"; then
             echo "core=true" >> "$GITHUB_OUTPUT"
           fi
-          # The staging-only Code Mode server has no production deploy.json.
-          if [ -z "$FILTER" ] || grep -qE '^(apps/mcp-code|packages/mcp)/' "$RUNNER_TEMP/changed.txt"; then
-            echo "code=true" >> "$GITHUB_OUTPUT"
-          fi
           # apps/mcp is the hosted server built on packages/mcp.
           APPS=$(node operations/infrastructure/deployment/discover.cjs --scope=apps $FILTER)
           APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(apps.filter(({ name }) => /(^|-)mcp$/.test(name)).map(({ path }) => path).join(" "))' "$APPS")
           echo "MCP applications: $APPS"
           echo "apps=$APPS" >> "$GITHUB_OUTPUT"
 
-      # Installs each server as its deploy.json `install` does.
+      - name: Install shared MCP handlers
+        if: steps.mcp.outputs.core == 'true' || contains(format(' {0} ', steps.mcp.outputs.apps), ' apps/mcp ') || contains(format(' {0} ', steps.mcp.outputs.apps), ' apps/code-mode-mcp ')
+        run: npm ci --prefix packages/mcp --workspaces=false
+
+      - name: Test packages/mcp
+        if: steps.mcp.outputs.core == 'true'
+        run: npm test --prefix packages/mcp
+
       - name: Test changed MCP applications
         if: steps.mcp.outputs.apps != ''
         env:
@@ -432,24 +435,14 @@ jobs:
         run: |
           for app in $APPS; do
             echo "::group::$app"
-            (cd "$app" && bash -c "$(node -p 'require("./deploy.json").install')" && npm test)
+            if [[ "$app" == apps/mcp || "$app" == apps/code-mode-mcp ]]; then
+              npm ci --prefix "$app" --workspaces=false
+            else
+              (cd "$app" && bash -c "$(node -p 'require("./deploy.json").install')")
+            fi
+            npm test --prefix "$app"
             echo "::endgroup::"
           done
-
-      - name: Install shared MCP handlers
-        if: steps.mcp.outputs.code == 'true'
-        # Testing apps/mcp above also installs its shared handlers.
-        run: test -d packages/mcp/node_modules || npm ci --prefix packages/mcp --workspaces=false
-
-      - name: Test packages/mcp
-        if: steps.mcp.outputs.core == 'true'
-        run: npm test --prefix packages/mcp
-
-      - name: Test Code Mode with an external MCP client
-        if: steps.mcp.outputs.code == 'true'
-        run: |
-          npm ci --prefix apps/mcp-code --workspaces=false
-          npm test --prefix apps/mcp-code
 
   website:
     name: Build pollinations.ai

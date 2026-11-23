@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "node --test worker.test.js",
-    "check": "wrangler deploy --env staging --dry-run",
-    "deploy:staging": "wrangler deploy --env staging"
+    "check": "wrangler deploy --env production --dry-run",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy": "wrangler deploy --env production"
   },
   "dependencies": {
     "@cloudflare/codemode": "0.5.6"

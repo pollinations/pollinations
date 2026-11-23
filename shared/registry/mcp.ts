@@ -314,10 +314,7 @@ export const MCP_SERVERS = [
             rates: [],
         },
     },
-] as const satisfies readonly McpServerDefinition[];
 
-const STAGING_MCP_SERVERS = [
-    ...MCP_SERVERS,
     {
         id: "pollinations-code",
         alpha: true,
@@ -336,10 +333,6 @@ const STAGING_MCP_SERVERS = [
     },
 ] as const satisfies readonly McpServerDefinition[];
 
-export function getMcpServers(environment?: string) {
-    return environment === "staging" ? STAGING_MCP_SERVERS : MCP_SERVERS;
-}
-
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];
 
 /** The servers a hosted agent can be given. */
@@ -349,9 +342,8 @@ export const AGENT_MCP_SERVER_IDS = MCP_SERVERS.filter(
 
 export function getMcpServerDefinition(
     id: string,
-    environment?: string,
 ): McpServerDefinition | undefined {
-    return getMcpServers(environment).find((server) => server.id === id);
+    return MCP_SERVERS.find((server) => server.id === id);
 }
 
 export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {

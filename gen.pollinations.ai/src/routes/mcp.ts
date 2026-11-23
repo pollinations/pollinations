@@ -12,7 +12,7 @@ import { limit } from "@shared/rate-limit.ts";
 import {
     getMcpPricingInfo,
     getMcpServerDefinition,
-    getMcpServers,
+    MCP_SERVERS,
     MCP_USAGE_HEADERS,
     MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
@@ -177,7 +177,7 @@ export const mcpRoutes = new Hono<Env>()
     .use("/mcp/*", edgeRateLimit)
     .get("/mcp", (c) =>
         c.json({
-            data: getMcpServers(c.env.ENVIRONMENT).map((server) => ({
+            data: MCP_SERVERS.map((server) => ({
                 id: server.id,
                 name: server.name,
                 description: server.description,
@@ -189,10 +189,7 @@ export const mcpRoutes = new Hono<Env>()
     )
     .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
-        const server = getMcpServerDefinition(
-            c.req.param("serverId"),
-            c.env.ENVIRONMENT,
-        );
+        const server = getMcpServerDefinition(c.req.param("serverId"));
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
@@ -219,10 +216,10 @@ export const mcpRoutes = new Hono<Env>()
             throw new HTTPException(503, { message: "MCP server unavailable" });
         }
 
-        const codePilot = server.binding === "POLLINATIONS_CODE_MCP";
+        const codeMode = server.binding === "POLLINATIONS_CODE_MCP";
         const toolCall = message?.method === "tools/call";
         const key = c.var.auth.apiKey;
-        if (codePilot) {
+        if (codeMode) {
             if (!key?.rawKey) {
                 throw new HTTPException(401, {
                     message: "Pollinations API key required",
@@ -239,7 +236,7 @@ export const mcpRoutes = new Hono<Env>()
         }
         // The sandbox and receipt-billed tools need a spendable balance
         // before execution. MCP discovery and initialization stay free.
-        if (toolCall && (codePilot || server.billing === "usage_receipt")) {
+        if (toolCall && (codeMode || server.billing === "usage_receipt")) {
             await requireAccountFunds(c, 0);
         }
         const startedAt = new Date();
@@ -249,7 +246,7 @@ export const mcpRoutes = new Hono<Env>()
                 server,
                 user,
                 c.var.auth.agentRun,
-                codePilot ? key?.rawKey : undefined,
+                codeMode ? key?.rawKey : undefined,
             ),
         );
         if (server.billing === "usage_receipt") {

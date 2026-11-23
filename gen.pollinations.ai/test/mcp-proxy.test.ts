@@ -27,46 +27,37 @@ const MCP_REQUEST = {
     },
 };
 
-test("publishes and routes the code pilot only in staging", async () => {
-    const fetchIn = async (
-        environment: "production" | "staging",
-        path: string,
-    ) => {
-        const ctx = createExecutionContext();
-        const res = await worker.fetch(
-            new Request(`https://staging.gen.pollinations.ai${path}`),
-            {
-                ...env,
-                ENVIRONMENT: environment,
-            },
-            ctx,
+test.for(["staging", "production"] as const)(
+    "publishes Code Mode for external agents in %s",
+    async (environment) => {
+        const prefix = environment === "staging" ? "staging." : "";
+        const origin = `https://${prefix}gen.pollinations.ai`;
+        const endpoint = `${origin}/mcp/pollinations-code`;
+        const fetchPath = async (path: string) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(origin + path),
+                { ...env, ENVIRONMENT: environment },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+        for (const path of [
+            "/mcp",
+            "/.well-known/ai-catalog.json",
+            "/.well-known/ard.json",
+        ]) {
+            expect(await (await fetchPath(path)).text()).toContain(endpoint);
+        }
+        const card = await fetchPath("/mcp/pollinations-code/server-card");
+        expect(card.status).toBe(200);
+        expect(await card.text()).toContain(
+            `https://${prefix}enter.pollinations.ai/keys`,
         );
-        await waitOnExecutionContext(ctx);
-        return res;
-    };
-    for (const path of [
-        "/mcp",
-        "/.well-known/ai-catalog.json",
-        "/.well-known/ard.json",
-    ]) {
-        expect(await (await fetchIn("staging", path)).text()).toContain(
-            "/mcp/pollinations-code",
-        );
-        expect(await (await fetchIn("production", path)).text()).not.toContain(
-            "/mcp/pollinations-code",
-        );
-    }
-    const path = "/mcp/pollinations-code";
-    const card = await fetchIn("staging", `${path}/server-card`);
-    expect(card.status).toBe(200);
-    expect(await card.text()).toContain(
-        "https://staging.enter.pollinations.ai/keys",
-    );
-    expect((await fetchIn("production", `${path}/server-card`)).status).toBe(
-        404,
-    );
-    expect((await fetchIn("production", path)).status).toBe(404);
-});
+        expect((await fetchPath("/mcp/pollinations-code")).status).toBe(401);
+    },
+);
 
 test("requires a funded direct key and shares the code execution limit across an account’s keys", async () => {
     const funded = await createTestApiKey({ user: { tierBalance: 1 } });
@@ -77,29 +68,34 @@ test("requires a funded direct key and shares the code execution limit across an
     const wallet = await createTestApiKey();
     const secondKey = await createTestApiKey({ userId: funded.userId });
     const otherAccount = await createTestApiKey({ user: { tierBalance: 1 } });
-    const staging = {
+    const production = {
         ...env,
-        ENVIRONMENT: "staging" as const,
-        STAGING_ALLOWED_EMAILS: [funded, empty, wallet, otherAccount]
-            .map(({ userId }) => `${userId}@test.local`)
-            .join(","),
-        POLLINATIONS_CODE_MCP: env.POLLINATIONS_MCP,
+        ENVIRONMENT: "production" as const,
     };
     const call = async (key: string, method = "tools/call") => {
         const ctx = createExecutionContext();
         const res = await worker.fetch(
-            new Request(
-                "https://staging.gen.pollinations.ai/mcp/pollinations-code",
-                {
-                    method: "POST",
-                    headers: {
-                        authorization: `Bearer ${key}`,
-                        "content-type": "application/json",
-                    },
-                    body: JSON.stringify({ ...MCP_REQUEST, method }),
+            new Request("https://gen.pollinations.ai/mcp/pollinations-code", {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
                 },
-            ),
-            staging,
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method,
+                    ...(method === "tools/call"
+                        ? {
+                              params: {
+                                  name: "code",
+                                  arguments: { code: "async () => 1" },
+                              },
+                          }
+                        : {}),
+                }),
+            }),
+            production,
             ctx,
         );
         await waitOnExecutionContext(ctx);
@@ -120,7 +116,11 @@ test("requires a funded direct key and shares the code execution limit across an
     expect((await call(empty.key)).status).toBe(402);
     expect((await call(wallet.key)).status).toBe(402);
     expect((await call(wallet.key, "tools/list")).status).toBe(200);
-    expect((await call(funded.key)).status).toBe(200);
+    const execution = await call(funded.key);
+    expect(execution.status).toBe(200);
+    expect(await execution.json()).toEqual({
+        authorization: `Bearer ${funded.key}`,
+    });
     expect((await call(secondKey.key)).status).toBe(200);
     const limited = await call(funded.key);
     expect(limited.status).toBe(429);
@@ -331,6 +331,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                 pricing: {
                     description:
                         "Research lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
+                id: "pollinations-code",
+                alpha: true,
+                name: "Pollinations Code",
+                description:
+                    "Run JavaScript that combines Pollinations discovery and generation tools.",
+                url: "https://gen.pollinations.ai/mcp/pollinations-code",
+                pricing: {
+                    description:
+                        "Generation uses the selected model's listed rate. No additional execution fee.",
                     rates: [],
                 },
             },

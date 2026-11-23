@@ -1,6 +1,6 @@
 import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
-import { getMcpServers } from "@shared/registry/mcp.ts";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
@@ -54,8 +54,8 @@ function buildCatalogHost(origin: string) {
 // One entry per hosted MCP server's Server Card. The SEP-2127 AI Catalog and
 // the ARD manifest share this list, so the two can't drift. Both schemas
 // require a per-entry displayName (ards-project/ard-spec, ai-catalog v1.0).
-function buildCatalogEntries(origin: string, environment: string) {
-    return getMcpServers(environment).map((server) => ({
+function buildCatalogEntries(origin: string) {
+    return MCP_SERVERS.map((server) => ({
         identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
         displayName: server.name,
         type: SERVER_CARD_MEDIA_TYPE,
@@ -74,7 +74,7 @@ export const wellKnownRoutes = new Hono<Env>()
                 {
                     specVersion: "1.0",
                     host: buildCatalogHost(origin),
-                    entries: buildCatalogEntries(origin, c.env.ENVIRONMENT),
+                    entries: buildCatalogEntries(origin),
                 },
                 null,
                 2,
@@ -88,11 +88,7 @@ export const wellKnownRoutes = new Hono<Env>()
         c.header("Content-Type", "application/json; charset=utf-8");
         c.header("Cache-Control", "public, max-age=3600");
         return c.body(
-            JSON.stringify(
-                { entries: buildCatalogEntries(origin, c.env.ENVIRONMENT) },
-                null,
-                2,
-            ),
+            JSON.stringify({ entries: buildCatalogEntries(origin) }, null, 2),
         );
     })
     .get("/agent-skills/index.json", async (c) => {

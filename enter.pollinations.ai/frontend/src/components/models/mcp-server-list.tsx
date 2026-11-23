@@ -6,7 +6,7 @@ import {
     McpIcon,
     Tooltip,
 } from "@pollinations/ui";
-import { getMcpPricingInfo, getMcpServers } from "@shared/registry/mcp.ts";
+import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config } from "../../config.ts";
 import { CatalogCard } from "../catalog-card.tsx";
@@ -14,7 +14,7 @@ import { UsagePriceRows } from "./price-badge.tsx";
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
     const normalizedQuery = query.trim().toLowerCase();
-    const servers = getMcpServers(import.meta.env.MODE).filter((server) => {
+    const servers = MCP_SERVERS.filter((server) => {
         const pricing = getMcpPricingInfo(server);
         return [
             server.id,

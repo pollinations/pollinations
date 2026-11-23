@@ -21,6 +21,7 @@ services = [
     { binding = "NETWORK_MCP", service = "pollinations-network-mcp" },
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "POLLINATIONS_CODE_MCP", service = "pollinations-mcp-code-local" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
@@ -30,6 +31,11 @@ services = [
     { binding = "CALCULATORS_MCP", service = "pollinations-calculators-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
+
+[[ratelimits]]
+name = "MCP_CODE_RATE_LIMITER"
+namespace_id = "1008"
+simple = { limit = 10, period = 60 }
 
 [images]
 binding = "IMAGES"
@@ -137,6 +143,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.production.services]]
+binding = "POLLINATIONS_CODE_MCP"
+service = "pollinations-mcp-code"
+
+[[env.production.services]]
 binding = "ASK_JEV_MCP"
 service = "ask-jev-mcp"
 
@@ -206,6 +216,11 @@ entrypoint = "MediaUpload"
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+[[env.production.ratelimits]]
+name = "MCP_CODE_RATE_LIMITER"
+namespace_id = "1008"
+simple = { limit = 10, period = 60 }
 
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -439,6 +454,10 @@ service = "pollinations-enter"
 [[env.test.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
+
+[[env.test.services]]
+binding = "POLLINATIONS_CODE_MCP"
+service = "pollinations-mcp-code-local"
 
 [[env.test.services]]
 binding = "ASK_JEV_MCP"

@@ -98,7 +98,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [mcp, mcp-code, calculators-mcp, network-mcp, packages-mcp, news-mcp, research-mcp]
+        app: [mcp, code-mode-mcp, calculators-mcp, network-mcp, packages-mcp, news-mcp, research-mcp]
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -115,7 +115,7 @@ jobs:
         working-directory: ./apps/${{ matrix.app }}
         run: |
           npm ci --workspaces=false
-          if [[ "${{ matrix.app }}" = "mcp" || "${{ matrix.app }}" = "mcp-code" ]]; then
+          if [[ "${{ matrix.app }}" = "mcp" || "${{ matrix.app }}" = "code-mode-mcp" ]]; then
             npm ci --prefix ../../packages/mcp --workspaces=false
           fi
 

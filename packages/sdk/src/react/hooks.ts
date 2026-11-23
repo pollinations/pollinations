@@ -12,6 +12,12 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeEvent,
+    type RealtimeOptions,
+    type RealtimeSession,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +498,140 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export type RealtimeStatus =
+    | "idle"
+    | "connecting"
+    | "open"
+    | "closed"
+    | "error";
+
+export interface UseRealtimeOptions extends RealtimeOptions {
+    /** Overrides the key from PolliProvider. */
+    apiKey?: string;
+}
+
+export interface UseRealtimeValue {
+    status: RealtimeStatus;
+    session: RealtimeSession | null;
+    error: Error | null;
+    /** Opens one session; repeated calls while connecting/open are deduped. */
+    connect: () => Promise<RealtimeSession | null>;
+    close: () => void;
+    send: (event: RealtimeEvent) => void;
+}
+
+/**
+ * Realtime voice session tied to the signed-in user's key. The session is
+ * closed on a key change, logout or unmount; `onEvent` is always current.
+ */
+export function useRealtime(
+    options: UseRealtimeOptions = {},
+): UseRealtimeValue {
+    const auth = useRequiredAuth();
+    const apiKey = options.apiKey ?? auth.apiKey;
+    const [status, setStatus] = useState<RealtimeStatus>("idle");
+    const [session, setSession] = useState<RealtimeSession | null>(null);
+    const [error, setError] = useState<Error | null>(null);
+    const sessionRef = useRef<RealtimeSession | null>(null);
+    const pendingRef = useRef<Promise<RealtimeSession | null> | null>(null);
+    const controllerRef = useRef<AbortController | null>(null);
+    const generationRef = useRef(0);
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+
+    const stop = useCallback(() => {
+        generationRef.current++;
+        controllerRef.current?.abort();
+        controllerRef.current = null;
+        pendingRef.current = null;
+        const active = sessionRef.current;
+        sessionRef.current = null;
+        active?.close();
+        setSession(null);
+    }, []);
+
+    useEffect(
+        () => () => {
+            stop();
+            setStatus("idle");
+            setError(null);
+        },
+        [apiKey, stop],
+    );
+
+    const close = useCallback(() => {
+        stop();
+        setStatus("closed");
+        setError(null);
+    }, [stop]);
+
+    const connect = useCallback((): Promise<RealtimeSession | null> => {
+        if (sessionRef.current) return Promise.resolve(sessionRef.current);
+        if (pendingRef.current) return pendingRef.current;
+        if (!apiKey) {
+            const missing = new Error(
+                "Log in to Pollinations to start a realtime session",
+            );
+            setStatus("error");
+            setError(missing);
+            return Promise.resolve(null);
+        }
+
+        const generation = ++generationRef.current;
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        setStatus("connecting");
+        setError(null);
+
+        const pending = connectRealtime({
+            ...optionsRef.current,
+            apiKey,
+            signal: controller.signal,
+            onEvent: (event) => optionsRef.current.onEvent?.(event),
+        }).then(
+            (next) => {
+                if (generation !== generationRef.current) {
+                    next.close();
+                    return null;
+                }
+                sessionRef.current = next;
+                pendingRef.current = null;
+                setSession(next);
+                setStatus("open");
+                next.on("close", () => {
+                    if (generation !== generationRef.current) return;
+                    sessionRef.current = null;
+                    pendingRef.current = null;
+                    setSession(null);
+                    setStatus("closed");
+                });
+                return next;
+            },
+            (cause: unknown) => {
+                if (generation !== generationRef.current) return null;
+                pendingRef.current = null;
+                const failure =
+                    cause instanceof Error ? cause : new Error(String(cause));
+                setStatus("error");
+                setError(failure);
+                return null;
+            },
+        );
+        pendingRef.current = pending;
+        return pending;
+    }, [apiKey]);
+
+    const send = useCallback((event: RealtimeEvent) => {
+        const active = sessionRef.current;
+        if (!active)
+            throw new Error("No realtime session; call connect() first");
+        active.send(event);
+    }, []);
+
+    return useMemo(
+        () => ({ status, session, error, connect, close, send }),
+        [status, session, error, connect, close, send],
+    );
 }

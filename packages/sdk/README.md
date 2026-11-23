@@ -687,6 +687,69 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime Voice Sessions
+
+Open an OpenAI-compatible Realtime WebSocket on `wss://gen.pollinations.ai/v1/realtime`
+with `@pollinations/sdk`. The helper passes Realtime events through without
+reimplementing the protocol.
+
+```javascript
+import { connectRealtime, pcm16ToBase64 } from '@pollinations/sdk';
+
+const session = await connectRealtime({
+  model: 'openai/gpt-realtime-2.1',
+  session: { type: 'realtime', instructions: 'Be concise.' },
+  onEvent: (event) => {
+    if (event.type === 'response.audio.delta') {
+      // event.delta is base64-encoded 24 kHz mono PCM16.
+    }
+  },
+});
+
+session.on('response.audio_transcript.delta', (event) => console.log(event.delta));
+session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(pcm16Samples) });
+session.close();
+```
+
+`connectRealtime()` resolves when the socket opens. `session.on(type, listener)`
+accepts an event type or `"*"` and returns an unsubscribe function;
+`session.closed` resolves with `{ code, reason }` when the socket closes.
+Events arriving before `connectRealtime()` resolves are delivered to `onEvent`,
+so register it there if you need `session.created`.
+
+| Option | Description |
+|---|---|
+| `apiKey` | Secret (`sk_`) key. Defaults to `POLLINATIONS_API_KEY` in Node. |
+| `model` | Realtime model, default `openai/gpt-realtime-2.1`. |
+| `baseUrl` | Gateway URL; a path prefix such as `https://proxy/ai` is preserved. |
+| `session` | Sent as `session.update` immediately after opening. |
+| `signal` | AbortSignal; aborting rejects with `signal.reason` and closes the socket. |
+| `timeout` | Handshake timeout in ms, default `15000`. |
+| `onEvent` | Called for every Realtime event, including early ones. |
+
+In React, `useRealtime()` uses the signed-in user's key from `PolliProvider`
+and closes the session on a key change, logout or unmount:
+
+```jsx
+import { useRealtime } from '@pollinations/sdk/react';
+
+function Voice() {
+  const { status, error, session, connect, close, send } = useRealtime({
+    onEvent: handleEvent,
+  });
+  return <button onClick={() => (session ? close() : void connect())}>{status}</button>;
+}
+```
+
+`pcm16ToBase64(Int16Array)` and `base64ToPcm16(string)` convert between signed
+16-bit little-endian samples and the base64 audio used by the protocol.
+
+Browser WebSockets cannot set an `Authorization` header, so the key travels in
+the `?key=` query parameter. Only use a user-authorized `sk_` key over HTTPS,
+and avoid logging realtime URLs. Audio must be 24 kHz mono PCM16; the browser
+example resamples microphone input. Sessions settle one billing event when they
+close. See `packages/sdk/examples/realtime-voice.html` for a complete page.
+
 ## Vision (Image Input)
 
 ```javascript

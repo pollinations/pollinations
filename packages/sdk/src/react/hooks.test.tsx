@@ -1,5 +1,5 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isOutageError } from "../error-response.js";
 import type { PollinationsError } from "../types.js";
 import {
@@ -9,9 +9,11 @@ import {
 } from "./contexts.js";
 import {
     type UseAccountKeyValue,
+    type UseRealtimeValue,
     useAccountKey,
     useAccountKeyUsage,
     useAuthState,
+    useRealtime,
     useTextGeneration,
 } from "./hooks.js";
 
@@ -334,7 +336,7 @@ async function mountTextGeneration(initial: AuthContextValue) {
             }),
         unmount: () =>
             act(async () => {
-                renderer?.unmount();
+                (renderer as ReactTestRenderer | null)?.unmount();
             }),
     };
 }
@@ -511,5 +513,248 @@ describe("generation hooks", () => {
 
         expect(logout).toHaveBeenCalledTimes(1);
         expect(gen().data).toBeNull();
+    });
+});
+
+describe("useRealtime", () => {
+    type Handler = (event: unknown) => void;
+
+    class HookSocket {
+        static instances: HookSocket[] = [];
+        readyState = 0;
+        sent: string[] = [];
+        handlers = new Map<string, Set<Handler>>();
+
+        constructor(public url: string) {
+            HookSocket.instances.push(this);
+        }
+
+        addEventListener(type: string, handler: Handler) {
+            const set = this.handlers.get(type) ?? new Set<Handler>();
+            set.add(handler);
+            this.handlers.set(type, set);
+        }
+
+        removeEventListener(type: string, handler: Handler) {
+            this.handlers.get(type)?.delete(handler);
+        }
+
+        emit(type: string, event: unknown = {}) {
+            for (const handler of [...(this.handlers.get(type) ?? [])])
+                handler(event);
+        }
+
+        open() {
+            this.readyState = 1;
+            this.emit("open");
+        }
+
+        message(value: unknown) {
+            this.emit("message", { data: JSON.stringify(value) });
+        }
+
+        send(data: string) {
+            this.sent.push(data);
+        }
+
+        close() {
+            this.readyState = 3;
+            this.emit("close", { code: 1000, reason: "" });
+        }
+    }
+
+    function socket(): HookSocket {
+        const value = HookSocket.instances.at(-1);
+        if (!value) throw new Error("No socket created");
+        return value;
+    }
+
+    function Probe({
+        onEvent,
+    }: {
+        onEvent?: (event: { type: string }) => void;
+    }) {
+        latest = useRealtime({ model: "openai/gpt-realtime-2.1", onEvent });
+        return null;
+    }
+
+    let latest: UseRealtimeValue | null = null;
+
+    function renderProbe(
+        value: AuthContextValue,
+        onEvent?: (event: { type: string }) => void,
+    ) {
+        return create(
+            <AuthContext.Provider value={value}>
+                <Probe onEvent={onEvent} />
+            </AuthContext.Provider>,
+        );
+    }
+
+    async function connect() {
+        await act(async () => {
+            await read<UseRealtimeValue>(latest).connect();
+        });
+    }
+
+    beforeEach(() => {
+        HookSocket.instances = [];
+        vi.stubGlobal("WebSocket", HookSocket);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("connects with the provider key and tracks status", async () => {
+        let renderer: ReactTestRenderer | null = null;
+        await act(async () => {
+            renderer = renderProbe(authValue());
+        });
+        expect(read<UseRealtimeValue>(latest).status).toBe("idle");
+
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        expect(read<UseRealtimeValue>(latest).status).toBe("connecting");
+        expect(socket().url).toContain("key=sk_test");
+
+        await act(async () => {
+            socket().open();
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(read<UseRealtimeValue>(latest).status).toBe("open");
+        expect(read<UseRealtimeValue>(latest).session).not.toBeNull();
+        (renderer as ReactTestRenderer | null)?.unmount();
+    });
+
+    it("does not open a second socket for concurrent connect calls", async () => {
+        await act(async () => {
+            renderProbe(authValue());
+        });
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        expect(HookSocket.instances).toHaveLength(1);
+        socket().open();
+        await act(async () => {
+            await Promise.resolve();
+        });
+    });
+
+    it("uses the latest onEvent callback after a rerender", async () => {
+        const first = vi.fn();
+        const second = vi.fn();
+        let renderer: ReactTestRenderer | null = null;
+        await act(async () => {
+            renderer = renderProbe(authValue(), first);
+        });
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            socket().open();
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            renderer?.update(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe onEvent={second} />
+                </AuthContext.Provider>,
+            );
+        });
+        await act(async () => {
+            socket().message({ type: "response.done" });
+        });
+        expect(first).not.toHaveBeenCalled();
+        expect(second).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "response.done" }),
+        );
+        (renderer as ReactTestRenderer | null)?.unmount();
+    });
+
+    it("closes the session on unmount", async () => {
+        let renderer: ReactTestRenderer | null = null;
+        await act(async () => {
+            renderer = renderProbe(authValue());
+        });
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        const active = socket();
+        await act(async () => {
+            active.open();
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            (renderer as ReactTestRenderer | null)?.unmount();
+        });
+        expect(active.readyState).toBe(3);
+    });
+
+    it("closes the session when the key changes", async () => {
+        let renderer: ReactTestRenderer | null = null;
+        await act(async () => {
+            renderer = renderProbe(authValue({ apiKey: "sk_first" }));
+        });
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        const active = socket();
+        await act(async () => {
+            active.open();
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            renderer?.update(
+                <AuthContext.Provider
+                    value={authValue({ apiKey: "sk_second" })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        expect(active.readyState).toBe(3);
+    });
+
+    it("reports an error and opens nothing when there is no key", async () => {
+        await act(async () => {
+            renderProbe(authValue({ apiKey: null, isLoggedIn: false }));
+        });
+        await connect();
+        expect(read<UseRealtimeValue>(latest).status).toBe("error");
+        expect(read<UseRealtimeValue>(latest).error?.message).toMatch(/Log in/);
+        expect(HookSocket.instances).toHaveLength(0);
+    });
+
+    it("surfaces a WebSocket error as hook error state", async () => {
+        await act(async () => {
+            renderProbe(authValue());
+        });
+        await act(async () => {
+            void read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            socket().emit("error", { message: "handshake rejected" });
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(read<UseRealtimeValue>(latest).status).toBe("error");
+        expect(read<UseRealtimeValue>(latest).error?.message).toBe(
+            "handshake rejected",
+        );
     });
 });

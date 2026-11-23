@@ -2,6 +2,16 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-23
+
+### Added
+
+- `connectRealtime()` opens an OpenAI-compatible Realtime voice session and
+  passes events through, with abort, timeout and key validation.
+- `pcm16ToBase64()` / `base64ToPcm16()` convert 24 kHz mono PCM16 audio.
+- `useRealtime()` React hook with connection status and lifecycle cleanup.
+- `examples/realtime-voice.html` demonstrates microphone streaming and playback.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

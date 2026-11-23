@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Realtime voice — Pollinations SDK</title>
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin: 1rem 0 .5rem; }
+    input { width: 100%; padding: .5rem; box-sizing: border-box; }
+    button { padding: .5rem 1rem; margin-right: .5rem; }
+    #status { font-weight: 600; }
+    pre { background: #f5f5f5; padding: 1rem; overflow: auto; height: 12rem; }
+    #transcript { min-height: 3rem; }
+  </style>
+</head>
+<body>
+  <h1>Realtime voice</h1>
+  <p>
+    Paste a secret (<code>sk_</code>) key from
+    <a href="https://enter.pollinations.ai/keys">enter.pollinations.ai/keys</a>.
+    It stays in this page — never commit it. For a dev server, set
+    <code>POLLINATIONS_API_KEY</code> in Node instead.
+  </p>
+  <label for="key">API key</label>
+  <input id="key" type="password" placeholder="sk_..." autocomplete="off">
+  <p>
+    <button id="start">Start session</button>
+    <button id="stop" disabled>Stop session</button>
+  </p>
+  <p id="status">Idle</p>
+  <h2>Transcript</h2>
+  <p id="transcript"></p>
+  <h2>Events</h2>
+  <pre id="log"></pre>
+  <!-- The audio element is the browser's echo-cancellation reference: routing
+       playback through Web Audio's destination alone makes the mic hear the model. -->
+  <audio id="speaker" autoplay></audio>
+
+  <script type="module">
+    // Requires @pollinations/sdk 5.1.0-alpha.35 or newer.
+    import {
+      base64ToPcm16,
+      connectRealtime,
+      pcm16ToBase64,
+    } from "https://esm.sh/@pollinations/sdk@5.1.0-alpha.35";
+
+    const RATE = 24000;
+    const keyInput = document.getElementById("key");
+    const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const transcriptEl = document.getElementById("transcript");
+    const speaker = document.getElementById("speaker");
+
+    let session = null;
+    let starting = false;
+    let micStream = null, micContext = null, micSource = null, processor = null, silent = null;
+    let playContext = null, playDestination = null;
+    let playing = [];
+    let playAt = 0;
+
+    function setStatus(text) { statusEl.textContent = text; }
+
+    function log(line) {
+      logEl.textContent = `${line}\n${logEl.textContent}`.trim();
+    }
+
+    function toFloat32(pcm) {
+      const out = new Float32Array(pcm.length);
+      for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 32768;
+      return out;
+    }
+
+    function clearPlayback() {
+      for (const node of playing) {
+        try { node.stop(); } catch { /* already ended */ }
+      }
+      playing = [];
+      playAt = 0;
+    }
+
+    function playAudio(base64) {
+      const pcm = base64ToPcm16(base64);
+      if (!pcm.length) return;
+      const buffer = playContext.createBuffer(1, pcm.length, RATE);
+      buffer.copyToChannel(toFloat32(pcm), 0);
+      const node = playContext.createBufferSource();
+      node.buffer = buffer;
+      node.connect(playDestination);
+      // Schedule after the previously queued chunk so replies play in order.
+      const when = Math.max(playContext.currentTime, playAt);
+      node.start(when);
+      playAt = when + buffer.duration;
+      playing.push(node);
+      node.onended = () => { playing = playing.filter((item) => item !== node); };
+    }
+
+    function teardown() {
+      const active = session;
+      session = null;
+      clearPlayback();
+      if (active) active.close();
+
+      if (processor) {
+        processor.onaudioprocess = null;
+        processor.disconnect();
+      }
+      if (micSource) micSource.disconnect();
+      if (silent) silent.disconnect();
+      if (micStream) for (const track of micStream.getTracks()) track.stop();
+      if (micContext) void micContext.close();
+      if (playContext) void playContext.close();
+
+      micStream = micContext = micSource = processor = silent = null;
+      playContext = playDestination = null;
+      speaker.pause();
+      speaker.srcObject = null;
+      logEl.textContent = "";
+      transcriptEl.textContent = "";
+      stopButton.disabled = true;
+      startButton.disabled = false;
+    }
+
+    async function start() {
+      // Guard synchronously: awaiting permission or the WebSocket must not let
+      // a second click open another billable session.
+      if (starting || session) return;
+      starting = true;
+      startButton.disabled = true;
+      let failure = null;
+      try {
+        const apiKey = keyInput.value.trim();
+        if (!apiKey) throw new Error("Enter an sk_ API key first.");
+
+        setStatus("Requesting microphone…");
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        playContext = new AudioContext();
+        playDestination = playContext.createMediaStreamDestination();
+        speaker.srcObject = playDestination.stream;
+        await speaker.play().catch(() => {});
+        await playContext.resume();
+
+        micContext = new AudioContext();
+        micSource = micContext.createMediaStreamSource(micStream);
+        processor = micContext.createScriptProcessor(2048, 1, 1);
+        processor.onaudioprocess = (event) => {
+          if (!session) return;
+          const input = event.inputBuffer.getChannelData(0);
+          // ScriptProcessor runs at the device rate; the model expects 24 kHz mono.
+          const step = Math.max(1, Math.round(micContext.sampleRate / RATE));
+          const pcm = new Int16Array(Math.floor(input.length / step));
+          for (let i = 0; i < pcm.length; i++) {
+            const sample = Math.max(-1, Math.min(1, input[i * step]));
+            pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+          }
+          if (pcm.length) {
+            session.send({
+              type: "input_audio_buffer.append",
+              audio: pcm16ToBase64(pcm),
+            });
+          }
+        };
+        micSource.connect(processor);
+        silent = micContext.createGain();
+        silent.gain.value = 0; // ScriptProcessor needs an output path to run.
+        processor.connect(silent).connect(micContext.destination);
+        await micContext.resume();
+
+        setStatus("Connecting…");
+        session = await connectRealtime({
+          apiKey,
+          model: "openai/gpt-realtime-2.1",
+          session: {
+            type: "realtime",
+            instructions: "Be concise.",
+            modalities: ["text", "audio"],
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+          },
+          onEvent: (event) => {
+            log(event.type);
+            if (event.type === "response.audio.delta" && typeof event.delta === "string") {
+              playAudio(event.delta);
+            } else if (event.type === "input_audio_buffer.speech_started") {
+              clearPlayback();
+            } else if (event.type === "response.audio_transcript.delta") {
+              transcriptEl.textContent += String(event.delta ?? "");
+            } else if (event.type === "error") {
+              setStatus(`Error: ${String(event.message ?? "unknown")}`);
+            }
+          },
+        });
+        stopButton.disabled = false;
+        setStatus("Connected — speak now");
+      } catch (error) {
+        failure = error instanceof Error ? error.message : String(error);
+      } finally {
+        starting = false;
+        if (failure) {
+          teardown();
+          setStatus(`Failed: ${failure}`);
+          log(failure);
+        }
+      }
+    }
+
+    startButton.addEventListener("click", () => { void start(); });
+    stopButton.addEventListener("click", () => {
+      teardown();
+      setStatus("Stopped");
+    });
+  </script>
+</body>
+</html>

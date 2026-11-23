@@ -57,6 +57,7 @@ import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { quoteRoutes } from "./routes/quote.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
@@ -312,6 +313,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/", jobRoutes)
     .route("/", modelStatusRoutes)
     .route("/", modelStatsRoutes)
+    .route("/", quoteRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

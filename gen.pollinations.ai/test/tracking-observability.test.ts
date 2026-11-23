@@ -2821,6 +2821,9 @@ describe("tracking observability", () => {
         const caller = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
         });
+        const db = drizzle(env.DB);
+        const before = await getUserBalance(db, caller.userId);
+        const finishErrorWrite = Promise.withResolvers<void>();
         const events: Record<string, unknown>[] = [];
         const errors: Record<string, unknown>[] = [];
         const model = "deepseek/deepseek-v4.1-flash-1017";
@@ -2843,6 +2846,7 @@ describe("tracking observability", () => {
                                 headers: {
                                     ...headers,
                                     "x-portkey-trace-id": "gateway-id",
+                                    "set-cookie": "test-cookie",
                                 } as HeadersInit,
                             },
                         );
@@ -2870,8 +2874,10 @@ describe("tracking observability", () => {
                         string,
                         unknown
                     >;
-                    if (url.searchParams.get("name") === "error_event")
+                    if (url.searchParams.get("name") === "error_event") {
                         errors.push(row);
+                        await finishErrorWrite.promise;
+                    }
                     if (url.searchParams.get("name") === "generation_event_v2")
                         events.push(row);
                 }
@@ -2879,7 +2885,7 @@ describe("tracking observability", () => {
             },
         );
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const responsePromise = worker.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2899,8 +2905,27 @@ describe("tracking observability", () => {
             }),
             ctx,
         );
-        const body = await response.text();
-        await waitOnExecutionContext(ctx);
+        let response: Response;
+        let body: string;
+        try {
+            await vi.waitFor(
+                () =>
+                    expect(events).toContainEqual(
+                        expect.objectContaining({
+                            isFinal: true,
+                            isBilledUsage: true,
+                        }),
+                    ),
+                { timeout: 2500 },
+            );
+            const after = await getUserBalance(db, caller.userId);
+            expect(after.packBalance).toBeLessThan(before.packBalance);
+        } finally {
+            finishErrorWrite.resolve();
+            response = await responsePromise;
+            body = await response.text();
+            await waitOnExecutionContext(ctx);
+        }
         expect(response.status, body).toBe(200);
         expect(calls).toEqual([
             "DeepSeek-V4.1-Flash-1017",
@@ -2915,12 +2940,15 @@ describe("tracking observability", () => {
             provider: "azure",
             model_used: model,
             error_origin: origin,
-            gateway_status: 500,
-            gateway_request_id: "gateway-id",
+            upstream_status: 500,
+            upstream_host: "portkey.test",
+            message: expect.stringContaining("Something went wrong"),
         });
-        expect(errors[0].upstream_request_id).toBe(
-            origin === "provider" ? "azure-request-id" : undefined,
-        );
+        expect(JSON.parse(String(errors[0].upstream_headers))).toMatchObject({
+            ...headers,
+            "x-portkey-trace-id": "gateway-id",
+            "set-cookie": "[redacted]",
+        });
         expect(errors[0]).not.toHaveProperty("upstream_body");
         expect(events[1]).toMatchObject({
             isFinal: true,

@@ -266,6 +266,7 @@ workerTest(
             source.fallbacks = ["elevenlabs/eleven-flash-v2.5"];
             await resetGenerationModelRegistryCache(env);
             const providerModels: string[] = [];
+            const attemptErrors: unknown[] = [];
             fetchMock.mockImplementation(async (input, init) => {
                 const request = new Request(input, init);
                 if (request.url.includes("public_model_stats.json")) {
@@ -275,6 +276,10 @@ workerTest(
                     request.url.includes("/v0/events?name=generation_event_v2")
                 ) {
                     return new Response("", { status: 202 });
+                }
+                if (request.url.includes("/v0/events?name=error_event")) {
+                    attemptErrors.push(await request.json());
+                    return new Response(null, { status: 202 });
                 }
                 const body = (await request.json()) as { model_id: string };
                 providerModels.push(body.model_id);
@@ -322,7 +327,14 @@ workerTest(
             );
             expect(response.headers.get("x-tts-voice")).toBe("nova");
             await response.arrayBuffer();
+            await waitOnExecutionContext(ctx);
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
+            expect(attemptErrors).toEqual([
+                expect.objectContaining({
+                    is_final: false,
+                    upstream_status: 429,
+                }),
+            ]);
         } finally {
             try {
                 await waitOnExecutionContext(ctx);

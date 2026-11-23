@@ -396,39 +396,44 @@ export const track = (eventType: EventType) =>
                         ),
                     });
                     if (status >= 500) {
-                        await sendErrorEventToTinybird(
-                            {
-                                timestamp: attempt.endedAt.toISOString(),
-                                kind: "server_error",
-                                severity: "error",
-                                request_id: event.requestId,
-                                environment: event.environment,
-                                route_path: event.requestPath,
-                                method: c.req.method,
-                                status,
-                                duration_ms:
-                                    attempt.endedAt.getTime() -
-                                    attempt.startedAt.getTime(),
-                                is_final: false,
-                                attempt_index: index,
-                                provider: event.modelProviderUsed,
-                                model_used: model,
-                                model_requested:
-                                    event.modelRequested ?? undefined,
-                                resolved_model_requested:
-                                    event.resolvedModelRequested,
-                                error_code: event.errorResponseCode,
-                                ...attemptErrorDiagnostics(
-                                    attempt.error as ServiceError | undefined,
-                                    event.modelProviderUsed,
+                        c.executionCtx.waitUntil(
+                            sendErrorEventToTinybird(
+                                {
+                                    timestamp: attempt.endedAt.toISOString(),
+                                    kind: "server_error",
+                                    severity: "error",
+                                    request_id: event.requestId,
+                                    environment: event.environment,
+                                    route_path: event.requestPath,
+                                    method: c.req.method,
+                                    status,
+                                    duration_ms:
+                                        attempt.endedAt.getTime() -
+                                        attempt.startedAt.getTime(),
+                                    is_final: false,
+                                    attempt_index: index,
+                                    provider: event.modelProviderUsed,
+                                    model_used: model,
+                                    model_requested:
+                                        event.modelRequested ?? undefined,
+                                    resolved_model_requested:
+                                        event.resolvedModelRequested,
+                                    error_code: event.errorResponseCode,
+                                    message: event.errorMessage,
+                                    ...attemptErrorDiagnostics(
+                                        attempt.error as
+                                            | ServiceError
+                                            | undefined,
+                                        event.modelProviderUsed,
+                                    ),
+                                },
+                                getTinybirdDatasourceIngestUrl(
+                                    c.env.TINYBIRD_INGEST_URL,
+                                    "error_event",
                                 ),
-                            },
-                            getTinybirdDatasourceIngestUrl(
-                                c.env.TINYBIRD_INGEST_URL,
-                                "error_event",
+                                c.env.TINYBIRD_INGEST_TOKEN,
+                                log,
                             ),
-                            c.env.TINYBIRD_INGEST_TOKEN,
-                            log,
                         );
                     }
                 }
@@ -1909,25 +1914,17 @@ function attemptErrorDiagnostics(
     provider: string | undefined,
 ) {
     const headers = error?.upstreamHeaders;
-    const gatewayStatus = error?.upstreamStatus;
     const gatewayException =
         headers?.["x-portkey-gateway-exception"] === "true";
-    const azureRequestId =
-        provider === "azure"
-            ? correlationId(headers?.["apim-request-id"])
-            : undefined;
+    const azureRequestId = provider === "azure" && headers?.["apim-request-id"];
     return {
         error_origin: gatewayException
             ? "portkey"
             : azureRequestId
               ? "provider"
               : "unknown",
-        gateway_status: gatewayStatus,
-        gateway_request_id: correlationId(headers?.["x-portkey-trace-id"]),
-        upstream_request_id: gatewayException ? undefined : azureRequestId,
+        upstream_host: error?.requestUrl?.hostname,
+        upstream_status: error?.upstreamStatus,
+        upstream_headers: headers ? JSON.stringify(headers) : undefined,
     } as const;
-}
-
-function correlationId(value: string | undefined): string | undefined {
-    return value && /^[a-zA-Z0-9._:-]{1,128}$/.test(value) ? value : undefined;
 }

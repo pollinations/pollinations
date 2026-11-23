@@ -1,4 +1,4 @@
-import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
+import { Chip, ShieldCheckIcon, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
@@ -156,13 +156,17 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
             {verified && (
                 <Tooltip
                     triggerAs="span"
-                    content="Official Pollinations agent"
-                    ariaLabel="Official Pollinations agent"
+                    content="Published and run by Pollinations"
+                    ariaLabel="Official: published and run by Pollinations"
                     tapEnabled
                     displayContents
                 >
-                    <Chip intent="new" size="sm">
-                        Verified
+                    <Chip size="sm" data-theme="neutral">
+                        <ShieldCheckIcon
+                            aria-hidden="true"
+                            className="size-3 text-intent-success-text"
+                        />
+                        Official
                     </Chip>
                 </Tooltip>
             )}

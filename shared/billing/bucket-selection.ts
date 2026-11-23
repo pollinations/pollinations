@@ -1,6 +1,7 @@
 export type UserBalance = {
     tierBalance: number;
     packBalance: number;
+    questPollenRestricted?: boolean;
 };
 
 export type BalanceBucket = "tier" | "pack";
@@ -16,16 +17,18 @@ export type BalanceBucket = "tier" | "pack";
  * negative estimates to zero, but every request still requires a positive
  * balance in at least one bucket. The write path skips non-positive charges
  * entirely; for a positive actual charge, it uses
- * Quest Pollen when that bucket covers the charge, otherwise any positive paid
- * balance, and finally Quest Pollen debt when the paid balance is non-positive.
+ * Quest balance when that bucket covers the charge, otherwise any positive paid
+ * balance, and finally debt in the Quest balance when the paid balance is non-positive.
  */
 export function canCoverEstimatedCharge(
     balances: UserBalance,
     estimatedCost: number,
     isPaidOnly = false,
 ): boolean {
-    const hasPositiveBalance =
-        balances.tierBalance > 0 || balances.packBalance > 0;
+    const tierBalance = balances.questPollenRestricted
+        ? 0
+        : balances.tierBalance;
+    const hasPositiveBalance = tierBalance > 0 || balances.packBalance > 0;
     if (!hasPositiveBalance) return false;
 
     const threshold = Math.max(0, estimatedCost);
@@ -34,7 +37,5 @@ export function canCoverEstimatedCharge(
     // model is never free, so no zero-balance caller needs to get through.
     if (isPaidOnly) return balances.packBalance > threshold;
     // Once the wallet has a positive bucket, compare each bucket to the cost.
-    return (
-        balances.tierBalance >= threshold || balances.packBalance >= threshold
-    );
+    return tierBalance >= threshold || balances.packBalance >= threshold;
 }

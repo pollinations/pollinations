@@ -43,7 +43,7 @@ The tests use real code with GitHub and model doubles: request parsing and token
 
 ## Live runs
 
-[`demos/live-runs.md`](demos/live-runs.md) has four live runs with their cost. One is a planted bug that got reviewed, fixed and pushed for 0.0023 Pollen on GPT-6.1 Sol. Three are merged upstream PRs. Rerun one with `POLLINATIONS_API_KEY=... GITHUB_TOKEN=... node demos/run-live.mjs <pr-url> [model] [fork-url]`.
+[`demos/live-runs.md`](demos/live-runs.md) has four live runs with their cost. One is a planted bug that got reviewed, fixed and pushed for $0.0023 on GPT-6.1 Sol. Three are merged upstream PRs. Rerun one with `POLLINATIONS_API_KEY=... GITHUB_TOKEN=... node demos/run-live.mjs <pr-url> [model] [fork-url]`.
 
 ## What works, what blocks
 
@@ -52,4 +52,4 @@ The tests use real code with GitHub and model doubles: request parsing and token
 - **Running the repo's tests is missing.** Code agents run in a Worker with no shell, and `computer` has no Node or Python. The fix is proposed and diffed, not tested; the review says so instead of claiming checks.
 - **Context of large files.** Files over 30 KB start as excerpts 40 lines around each hunk, so the first call is small. When a fix needs more, the model asks for the lines it wants (step 4) and gets them before it answers; an edit still applies only if its `find` text matches the full file exactly once. The limits (2 read rounds, 6 ranges of 400 lines each) keep the cost and the run time bounded. Searching the repository is not there yet: the model has to name the file it wants.
 - **Long runs.** At most three model calls keep a review well under Worker time limits; a multi-step "fix, test, retry" loop would need a sandbox with language runtimes.
-- **Cost.** Input dominates: GPT-6.1 Sol is 2 Pollen per million input tokens and 10 per million output tokens. A small PR cost 0.0023 Pollen; a 20k-token review comes to about 0.04 plus output. The reply prints the exact figure for each run.
+- **Cost.** Input dominates: GPT-6.1 Sol is $2 per million input tokens and $10 per million output tokens. A small PR cost $0.0023; a 20k-token review comes to about $0.04 plus output. The reply prints the exact figure for each run.

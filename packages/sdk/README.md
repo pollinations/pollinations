@@ -7,7 +7,7 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 
 > [!WARNING]
 > **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
-> It ships the in-progress rebuild (model-catalog helper and provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+> It ships the in-progress rebuild (model-catalog helper and provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.x`. Opt into the alpha only deliberately, and pin an exact version.
 
 ## Installation
 
@@ -365,7 +365,7 @@ function Chat() {
 
 ### Managing API keys
 
-Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+Programmatically create, list, and revoke keys for your account. Useful for Pollinations Pay (BYOP) flows, multi-tenant apps, and automation:
 
 ```javascript
 import { listKeys, createKey, revokeKey } from '@pollinations/sdk';
@@ -592,7 +592,7 @@ include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
 `safe`, and `signal`. The result contains `buffer`, `contentType` and a URL
 without an API key. The server's MIME type is preserved for GLB and PLY files.
 3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
-Check each model's `paid_only` flag before using it with Quest Pollen.
+Check each model's `paid_only` flag before using it with the Quest balance.
 
 ## Async media jobs
 
@@ -660,7 +660,7 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs/eleven-v3'` | `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
+| `model` | string | `'openai/tts-1'` | `'openai/tts-1'`, `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 
@@ -782,7 +782,7 @@ to 10080. Both use server defaults when omitted. Pass `signal` to cancel.
 
 ## Media Upload
 
-Uploads use multipart form data, accept up to 100MB of file bytes, and return a
+Uploads use multipart form data, accept up to 400 MiB of file bytes, and return a
 public URL. Adding tags publishes the upload to those public tag galleries.
 
 ```javascript
@@ -889,10 +889,6 @@ const client = new Pollinations({
   videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
-
-### Rate Limiting
-
-Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
 
 ### Network Errors
 

@@ -207,9 +207,8 @@ async function requireValidBaseModel(
         ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
         : undefined;
     if (
-        !target ||
-        (target.type === "proxy" &&
-            parseListingPayload("proxy", target.payload)?.modality !== "text")
+        target?.type !== "proxy" ||
+        parseListingPayload("proxy", target.payload)?.modality !== "text"
     ) {
         throw invalid();
     }
@@ -591,7 +590,14 @@ export const agentsRoutes = new Hono<Env>()
             }
             const data = parsed.data;
             // Only a changed baseModel is checked, so other edits still save.
-            if ("baseModel" in data && input.baseModel !== undefined) {
+            if (
+                "baseModel" in data &&
+                input.baseModel !== undefined &&
+                !(
+                    "baseModel" in current &&
+                    current.baseModel === data.baseModel
+                )
+            ) {
                 await requireValidBaseModel(db, user.id, data.baseModel);
             }
             const update: Partial<

@@ -8,6 +8,7 @@ import type { Env } from "../src/env.ts";
 import worker from "../src/index.ts";
 import {
     AGENT_DISCOVERY_LINKS,
+    acceptsMarkdown,
     agentDiscoveryLinks,
 } from "../src/middleware/agent-discovery.ts";
 
@@ -69,5 +70,25 @@ describe("agent discovery Link headers", () => {
             expect(response.headers.get("Link")).toBeNull();
             await response.body?.cancel();
         }
+    });
+});
+
+describe("Markdown accept negotiation", () => {
+    it.each([
+        ["text/markdown", true],
+        ["Text/Markdown", true],
+        ["text/markdown;q=0.9, text/html;q=0.1", true],
+        ["text/markdown, text/html", true],
+        ["text/markdown;q=0.5, */*;q=0.4", true],
+        ["text/markdown;q=0.1, text/html;q=0.9", false],
+        ["text/markdown;q=0.5, */*", false],
+        ["text/markdown;q=0, text/html;q=1", false],
+        ["text/markdown;q=0", false],
+        ["text/html,application/xhtml+xml,*/*;q=0.8", false],
+        ["*/*", false],
+        ["text/markdown;q=abc", false],
+        ["text/markdown;q=1.5", false],
+    ])("%s -> %s", (accept, expected) => {
+        expect(acceptsMarkdown(accept)).toBe(expected);
     });
 });

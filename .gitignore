@@ -12,7 +12,7 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /_local/
 
 # Local treasury ingest source artifacts and generated data
-/operations/economics/ingest/data/
+/operations/dashboards/economics/ingest/data/
 
 # Keep private files stranded by the operations root move ignored. Git moves
 # tracked files but leaves local-only data at the legacy path.

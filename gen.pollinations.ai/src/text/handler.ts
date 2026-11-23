@@ -19,7 +19,7 @@ import {
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
@@ -44,6 +44,8 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
     getSimpleTextRequestData,
+    withoutAudioParams,
+    withoutCallerMetadata,
 } from "./requestUtils.js";
 import type {
     ChatCompletion,
@@ -74,21 +76,28 @@ async function gatewayContext(
     const candidateRequest = candidate.entry
         ? { ...requestData, model: candidate.id }
         : requestData;
+    // Agent metadata is part of the agent contract; static and proxy providers
+    // reject the field.
+    const providerRequest =
+        communityEndpoint && communityEndpoint.type !== "proxy"
+            ? candidateRequest
+            : withoutCallerMetadata(candidateRequest);
     // Paired by fallbackCandidates: a community endpoint always arrives with the
     // definition that prices it. Anything else is a static model, whose provider
     // config the gateway resolves from the model id.
     if (!communityEndpoint || !definition) {
-        return withGatewayContext(c, candidateRequest);
+        return withGatewayContext(c, providerRequest);
     }
     const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
-        requestData: candidateRequest,
+        requestData: providerRequest,
         secret: c.env.BETTER_AUTH_SECRET,
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        parentRunExpiresAt: c.var.auth?.agentRun?.expiresAt,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -118,6 +127,15 @@ async function gatewayContext(
     };
 }
 
+/**
+ * Whether the request asked the provider to stop on a sequence. A completion
+ * truncated by one of these is valid even when no text survives.
+ */
+function hasStopSequences(stop: unknown): boolean {
+    if (typeof stop === "string") return stop.length > 0;
+    return Array.isArray(stop) && stop.length > 0;
+}
+
 /** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
 export async function generateChatAttempt(
     c: TextContext,
@@ -130,9 +148,14 @@ export async function generateChatAttempt(
     const buffered =
         requestData.stream === true &&
         candidate.definition?.supportsStreaming === false;
-    const attemptData = buffered
+    let attemptData = buffered
         ? { ...requestData, stream: false }
         : requestData;
+    // models that cannot speak reject `modalities`/`audio` even when the
+    // caller only asks for the default text modality.
+    if (!candidate.definition?.outputModalities?.includes("audio")) {
+        attemptData = withoutAudioParams(attemptData);
+    }
     const result = await generateTextPortkey(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),
@@ -140,11 +163,16 @@ export async function generateChatAttempt(
     );
     if (!attemptData.stream) {
         requireChatCompletionUsage(result);
+        // A stop sequence can truncate the answer to nothing. That is the
+        // completion the caller asked for, not a provider failure, so it must
+        // not be reported as an empty response.
+        const stopsOnRequest = hasStopSequences(attemptData.stop);
         // Reasoning is not an answer. Tool calls, refusals and media can be
         // valid without text, but a blank completion must never become a cache hit.
         const emptyChoices = (result.choices ?? []).filter(
             ({ message, finish_reason }) =>
                 finish_reason !== "content_filter" &&
+                !(stopsOnRequest && message && finish_reason === "stop") &&
                 (!message ||
                     !(
                         (typeof message.content === "string"
@@ -173,13 +201,13 @@ export async function generateChatAttempt(
                       status: 400 as const,
                       message:
                           "The model exhausted its output token limit before producing an answer. Increase the token limit or reduce reasoning effort.",
-                      errorCode: "output_token_limit_exceeded",
+                      errorCode: "output_token_limit_exceeded" as const,
                   }
                 : {
                       status: 502 as const,
                       message:
                           "Chat Completions provider returned an empty response",
-                      errorCode: "empty_response",
+                      errorCode: "empty_response" as const,
                   };
             throw new UpstreamError(status, {
                 ...details,
@@ -408,7 +436,7 @@ async function generateTextResponse(
             candidates,
             (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();

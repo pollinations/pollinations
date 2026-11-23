@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -17,6 +18,16 @@ const logError = debug("pollinations:openrouter-video:error");
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const HEYGEN_VIDEO_MODEL = "heygen/heygen-video-1";
+const SEEDANCE25_FLASH_MODEL = "bytedance/seedance-2.5-flash";
+const SEEDANCE25_FLASH_POLL_TIMEOUT_MS = 14 * 60 * 1000;
+const SEEDANCE25_FLASH_ASPECT_RATIOS = [
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
+    "21:9",
+] as const;
 const GROK_VIDEO_15_LITE_MODEL = "x-ai/grok-imagine-video-1.5-lite";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
@@ -54,7 +65,7 @@ interface OpenRouterVideoResponse {
         | "expired";
     error?: string;
     unsigned_urls?: string[];
-    usage?: { cost?: number | null };
+    usage?: { cost?: number | null; completion_tokens?: number };
 }
 
 function resolveDuration(duration?: number): number {
@@ -127,8 +138,17 @@ export async function callHappyHorseAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
-            usage: { completionVideoSeconds: duration },
-            // OpenRouter bills at least 5 seconds per clip.
+            // Without OpenRouter's cost, bill its per-clip minimum.
+            usage: {
+                completionVideoSeconds:
+                    providerCost != null
+                        ? duration
+                        : Math.max(
+                              duration,
+                              IMAGE_SERVICES["alibaba/happyhorse-1.1"]
+                                  .minBilledSeconds ?? 0,
+                          ),
+            },
             ...(providerCost != null && {
                 providerBilling: { units: providerCost, unitCost: 1.055 },
             }),
@@ -141,12 +161,6 @@ export async function callHeyGenVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 5 || duration > 15) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "HeyGen Video 1 duration must be an integer from 5 to 15 seconds",
-        });
-    }
     const requestBody: Record<string, unknown> = {
         model: HEYGEN_VIDEO_MODEL,
         prompt,
@@ -199,15 +213,93 @@ export async function callHeyGenVideoAPI(
     };
 }
 
-export function resolveGrokDuration(duration?: number): number {
-    const requested = duration || 5;
-    if (!Number.isInteger(requested)) {
-        throw UpstreamError.fromProvider(400, {
+export function seedanceFlashAspectRatio(params: ImageParams) {
+    return (
+        params.aspectRatio ??
+        (params.dimensionsExplicit
+            ? closestRatioLogSpace(
+                  params.width,
+                  params.height,
+                  SEEDANCE25_FLASH_ASPECT_RATIOS,
+              )
+            : "16:9")
+    );
+}
+
+export async function callOpenRouterSeedance25FlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = safeParams.duration ?? 5;
+    const requestBody: Record<string, unknown> = {
+        model: SEEDANCE25_FLASH_MODEL,
+        prompt,
+        resolution: safeParams.resolution ?? "480p",
+        duration,
+        generate_audio: safeParams.audio ?? true,
+        provider: { only: ["seed"], allow_fallbacks: false },
+    };
+    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+        requestBody.seed = safeParams.seed;
+    }
+    requestBody.aspect_ratio = seedanceFlashAspectRatio(safeParams);
+    if (safeParams.image.length > 0) {
+        requestBody.frame_images = safeParams.image.map((url, index) => ({
+            type: "image_url",
+            image_url: { url },
+            frame_type: index === 0 ? "first_frame" : "last_frame",
+        }));
+    }
+    const references = [
+        ...(safeParams.reference_images ?? []).map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        })),
+        ...(safeParams.reference_videos ?? []).map((url) => ({
+            type: "video_url",
+            video_url: { url },
+        })),
+        ...(safeParams.reference_audios ?? []).map((url) => ({
+            type: "audio_url",
+            audio_url: { url },
+        })),
+    ];
+    if (references.length > 0) {
+        requestBody.input_references = references;
+    }
+
+    const { buffer, providerCost, completionTokens } =
+        await generateOpenRouterVideo(
+            requestBody,
+            SEEDANCE25_FLASH_POLL_TIMEOUT_MS,
+        );
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        throw UpstreamError.fromProvider(502, {
             message:
-                "Grok Video Pro duration must be an integer from 1 to 15 seconds",
+                "OpenRouter Seedance 2.5 Flash returned invalid billing cost",
         });
     }
-    return Math.min(Math.max(requested, 1), 15);
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                completionVideoSeconds: duration,
+                ...(typeof completionTokens === "number" &&
+                    completionTokens >= 0 &&
+                    Number.isSafeInteger(completionTokens) && {
+                        completionVideoTokens: completionTokens,
+                    }),
+            },
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+        },
+    };
 }
 
 export function resolveGrokAspectRatio(
@@ -227,7 +319,7 @@ export async function callOpenRouterGrokVideoAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const duration = resolveGrokDuration(safeParams.duration);
+    const duration = safeParams.duration ?? 5;
     const resolution = safeParams.resolution ?? "720p";
     const requestBody: Record<string, unknown> = {
         model: GROK_VIDEO_15_LITE_MODEL,
@@ -274,10 +366,14 @@ export async function callOpenRouterGrokVideoAPI(
     };
 }
 
-async function generateOpenRouterVideo(
+export async function generateOpenRouterVideo(
     requestBody: Record<string, unknown>,
     pollTimeoutMs: number,
-): Promise<{ buffer: Buffer; providerCost?: number | null }> {
+): Promise<{
+    buffer: Buffer;
+    providerCost?: number | null;
+    completionTokens?: number;
+}> {
     const apiKey = getImageEnv("OPENROUTER_API_KEY");
     if (!apiKey) {
         throw UpstreamError.fromProvider(500, {
@@ -330,6 +426,7 @@ async function generateOpenRouterVideo(
     return {
         buffer,
         providerCost: completed.usage?.cost,
+        completionTokens: completed.usage?.completion_tokens,
     };
 }
 

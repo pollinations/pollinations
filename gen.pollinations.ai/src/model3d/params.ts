@@ -14,7 +14,11 @@ export const Model3dParamsSchema = z.object({
         .transform((value?: string[] | string | null) => {
             if (!value) return [];
             if (Array.isArray(value)) return value;
-            return value.includes("|") ? value.split("|") : value.split(",");
+            // Keep commas inside URLs, matching the public query schema.
+            const urls = value.includes("|")
+                ? value.split("|")
+                : value.split(/,(?=\s*https?:\/\/)/);
+            return urls.map((url) => url.trim()).filter(Boolean);
         })
         .catch([]),
     // Not passed to either provider unless it natively supports seeds (see

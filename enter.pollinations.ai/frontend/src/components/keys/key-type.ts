@@ -16,16 +16,9 @@ export function readRedirectUris(
     return [];
 }
 
-export function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
+/** Every pk_ key is an App Key: it only identifies an app. */
 export function isAppKey(apiKey: ApiKey): boolean {
-    return (
-        isPublishableKey(apiKey) &&
-        (readRedirectUris(apiKey.metadata).length > 0 ||
-            apiKey.metadata?.earningsEnabled === true)
-    );
+    return apiKey.metadata?.keyType === "publishable";
 }
 
 /** Display context only; authorization remains enforced by the server. */

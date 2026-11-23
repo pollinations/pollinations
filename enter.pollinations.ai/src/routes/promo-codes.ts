@@ -160,7 +160,6 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
             const result = await claimReward(db, {
                 rewardId,
                 userId: user.id,
-                lockedQuestIds: undefined,
             });
             return c.json({
                 eventId: promo.eventId,

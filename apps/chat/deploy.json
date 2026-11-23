@@ -1,7 +1,0 @@
-{
-  "target": "pages",
-  "credentials": "apps",
-  "subdomain": "chat",
-  "output": "redirect",
-  "verify_redirect": "https://openwebui.pollinations.ai/"
-}

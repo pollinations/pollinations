@@ -17,7 +17,6 @@ const modelDef = { name: "test-model" };
 describe("processParameters", () => {
     it.each([
         "anthropic/claude-sonnet-4.6",
-        "inception/mercury-2.5-preview",
         "qwen/qwen3.8-flash",
         "openai/gpt-5.4",
         "openai/gpt-6-astra",
@@ -217,10 +216,21 @@ describe("processParameters", () => {
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
-        "removes sampling without changing reasoning or reintroducing defaults for %s",
+        "removes sampling, keeps accepted reasoning levels and adds no defaults for %s",
         async (model) => {
             const transform = findModelByName(model)?.transform;
             if (!transform) throw new Error("expected catalog transform");
+            // Only the levels the provider rejects are remapped (#19784).
+            const remapped: Record<string, string> =
+                (
+                    {
+                        "openai/gpt-5.4-nano": { max: "xhigh" },
+                        "openai/gpt-5.4-mini": { max: "xhigh" },
+                        "openai/gpt-5.5": { max: "xhigh" },
+                        "pollinations/midijourney-large": { max: "xhigh" },
+                        "openai/gpt-6-astra": { none: "low" },
+                    } as Record<string, Record<string, string>>
+                )[model] ?? {};
             for (const reasoning_effort of [
                 undefined,
                 "none",
@@ -268,7 +278,8 @@ describe("processParameters", () => {
                         expect(result.options).not.toHaveProperty(key);
                     }
                     expect(result.options.reasoning_effort).toBe(
-                        reasoning_effort,
+                        (reasoning_effort && remapped[reasoning_effort]) ??
+                            reasoning_effort,
                     );
                     expect(result.options).toMatchObject({
                         stream,
@@ -293,6 +304,8 @@ describe("processParameters", () => {
         "anthropic/claude-fable-5",
         "anthropic/claude-fable-5:openrouter:vertex-global",
         "anthropic/claude-fable-5.1",
+        "anthropic/claude-fable-5.2",
+        "anthropic/claude-fable-5.2:anthropic",
     ])(
         "removes sampling while keeping the model's existing thinking behavior for %s",
         async (model) => {

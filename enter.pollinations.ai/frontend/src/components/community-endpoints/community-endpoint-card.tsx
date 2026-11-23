@@ -3,10 +3,9 @@ import {
     BeakerIcon,
     BotIcon,
     CardIcon,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
     CopyButton,
+    CopyStateIcon,
     currentPeriod,
     ExternalLinkIcon,
     GitHubIcon,
@@ -108,21 +107,10 @@ export function CommunityEndpointCard({
                             data-tone="quiet"
                             to="/activity"
                             search={{
-                                usageGranularity: "day",
-                                usagePeriod: currentPeriod().period,
-                                usageBucket: undefined,
-                                usageAnchor: undefined,
-                                earningsGranularity: "day",
-                                earningsPeriod: currentPeriod().period,
-                                earningsBucket: undefined,
-                                earningsAnchor: undefined,
-                                earningsModels: [endpoint.modelId],
-                                usageMetric: undefined,
-                                usageGroup: undefined,
-                                usageKeys: undefined,
-                                usageModels: undefined,
-                                earningsMetric: undefined,
-                                earningsApps: undefined,
+                                granularity: "day",
+                                period: currentPeriod().period,
+                                tab: "earnings",
+                                models: [endpoint.modelId],
                             }}
                             className="polli-link"
                         >
@@ -156,8 +144,8 @@ export function CommunityEndpointCard({
 
             {endpoint.type === "proxy" && !isPublic && (
                 <p className="mt-3 px-2 text-sm text-theme-text-muted">
-                    Private calls are free. Your prices, Paid Pollen setting,
-                    and fallbacks are saved for when you publish.
+                    Private calls are free. Your prices, accepted balance, and
+                    fallbacks are saved for when you publish.
                 </p>
             )}
 
@@ -286,7 +274,7 @@ function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
                 <span>
                     Visibility: {VISIBILITY_LABELS[visibility]}
                     {pendingProxy &&
-                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                        ` · ${pendingProxy.paidOnly ? "Uses paid balance only" : "Uses Quest or paid balance"}`}
                 </span>
                 {pendingProxy && (
                     <span className="flex flex-wrap items-center gap-1.5">
@@ -343,17 +331,15 @@ function CommunityDetailRow({
                 {copyLabel && copyValue && (
                     <CopyButton
                         value={copyValue}
-                        tooltip={copyLabel}
-                        copiedTooltip="Copied"
-                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                        aria-label={copyLabel}
+                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-fill-wash hover:text-theme-text-strong"
                     >
-                        {(copied: boolean) =>
-                            copied ? (
-                                <CheckIcon className="h-3.5 w-3.5" />
-                            ) : (
-                                <ClipboardIcon className="h-3.5 w-3.5" />
-                            )
-                        }
+                        {(copied: boolean) => (
+                            <CopyStateIcon
+                                copied={copied}
+                                className="h-3.5 w-3.5"
+                            />
+                        )}
                     </CopyButton>
                 )}
             </span>

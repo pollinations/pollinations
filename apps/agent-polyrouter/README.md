@@ -3,7 +3,7 @@
 A code-only model router for [Pollinations](https://pollinations.ai). For each
 request it picks **the cheapest healthy model that fits the request's
 complexity**, then forwards the conversation unchanged - callers see only the
-chosen model's answer. Routing and model calls use the caller's Pollen.
+chosen model's answer. Routing and model calls draw from the caller’s balance.
 
 Built from the
 [pollinations-router-agent](https://github.com/pollinations/pollinations-router-agent)
@@ -43,7 +43,7 @@ deterministic), then lets live platform data make the final pick.
 Every response carries a trace on headers:
 
 ```
-x-polyrouter-model: inception/mercury-2.5-preview
+x-polyrouter-model: openai/gpt-5.4-nano
 x-polyrouter-tier: fast
 x-polyrouter-why: score 0; simple prompt; picked cheapest eligible of 87; skipped 21 unhealthy (5xx), ...
 ```
@@ -54,8 +54,8 @@ Three requests routed differently, with reasons: see [`demos/`](demos/).
 
 1. Fork the standalone [Polyrouter repository](https://github.com/afanasevmylife/polyrouter),
    which has `agent.ts` at the root and includes the deployment workflow.
-2. In [My Models](https://enter.pollinations.ai/my-models), choose
-   **Add Agent -> Code agent** and enter your fork's URL.
+2. In [My listings](https://enter.pollinations.ai/my-models), choose
+   **Create -> Code agent** and enter your fork's URL.
 3. Edit `agent.ts` in your fork, push, then **Sync** in the dashboard (or enable the
    included GitHub Action with the `POLLINATIONS_SYNC_URL` repository
    variable set to

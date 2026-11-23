@@ -1,8 +1,6 @@
 import {
-    AppIcon,
     Button,
     ChevronIcon,
-    Chip,
     ClockIcon,
     ContentHeader,
     cn,
@@ -117,7 +115,7 @@ function FilterAxis<T extends string>({
     );
 }
 
-type AppFilterKey = "platform" | "pollen-pay";
+type AppFilterKey = "platform" | "pollinations-pay";
 type AppFilterDraft = {
     key: AppFilterKey;
     value: string;
@@ -126,7 +124,7 @@ type AppFilterDraft = {
 
 const APP_FILTER_LABELS: Record<AppFilterKey, string> = {
     platform: "Platform",
-    "pollen-pay": "pollinations pay",
+    "pollinations-pay": "Pollinations Pay",
 };
 
 function AppSearchInput({
@@ -165,7 +163,9 @@ function AppSearchInput({
                   ...(platforms.length < APP_PLATFORMS.length
                       ? (["platform"] as const)
                       : []),
-                  ...(pollenPay === undefined ? (["pollen-pay"] as const) : []),
+                  ...(pollenPay === undefined
+                      ? (["pollinations-pay"] as const)
+                      : []),
               ];
               return availableKeys
                   .filter((key) => `${key}:`.startsWith(token))
@@ -216,7 +216,10 @@ function AppSearchInput({
         const token = next.slice(tokenStart);
         const separator = token.indexOf(":");
         const key = token.slice(0, separator).toLowerCase() as AppFilterKey;
-        if (separator < 0 || (key !== "platform" && key !== "pollen-pay")) {
+        if (
+            separator < 0 ||
+            (key !== "platform" && key !== "pollinations-pay")
+        ) {
             onQueryChange(next);
             return;
         }
@@ -240,12 +243,12 @@ function AppSearchInput({
 
     const editPollenPay = () => {
         setPendingRemoval(undefined);
-        setDraft({ key: "pollen-pay", value: "" });
+        setDraft({ key: "pollinations-pay", value: "" });
         setOpen(true);
     };
 
     const removeFilter = (id: string) => {
-        if (id === "pollen-pay") {
+        if (id === "pollinations-pay") {
             onPollenPayChange(undefined);
         } else {
             const value = id.slice("platform:".length) as AppPlatform;
@@ -259,11 +262,11 @@ function AppSearchInput({
         (platform) => platform !== draft?.editingPlatform,
     );
     const showPollenToken =
-        pollenPay !== undefined && draft?.key !== "pollen-pay";
+        pollenPay !== undefined && draft?.key !== "pollinations-pay";
     const pollenLabel = pollenPay ? "Yes" : "No";
     const tokenIds = [
         ...visiblePlatforms.map((platform) => `platform:${platform}`),
-        ...(showPollenToken ? ["pollen-pay"] : []),
+        ...(showPollenToken ? ["pollinations-pay"] : []),
     ];
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -330,10 +333,12 @@ function AppSearchInput({
                         ))}
                         {showPollenToken && (
                             <EditableComboboxToken
-                                label="pollinations pay"
+                                label="Pollinations Pay"
                                 value={pollenLabel}
-                                highlighted={pendingRemoval === "pollen-pay"}
-                                aria-label={`Change pollinations pay filter: ${pollenLabel}`}
+                                highlighted={
+                                    pendingRemoval === "pollinations-pay"
+                                }
+                                aria-label={`Change Pollinations Pay filter: ${pollenLabel}`}
                                 onClick={editPollenPay}
                             />
                         )}
@@ -456,9 +461,9 @@ function AppsPage() {
                 >
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
-                            eyebrow="pollinations pay"
+                            eyebrow="Pollinations Pay"
                             title="Most used this week"
-                            subtitle="Apps ranked by requests their users paid for with their own pollen."
+                            subtitle="Apps ranked by requests their users paid for from their own balance."
                         />
                     </div>
                     {spotlightLoading ? (
@@ -506,59 +511,60 @@ function AppsPage() {
                     />
 
                     <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0 max-w-md flex-1 basis-[280px]">
-                            <AppSearchInput
-                                query={q ?? ""}
-                                platforms={platform}
-                                pollenPay={pollenPay}
-                                onQueryChange={(next) =>
-                                    updateSearch({
-                                        q: next || undefined,
-                                    })
-                                }
-                                onPlatformsChange={(next) =>
-                                    updateSearch({
-                                        platform:
-                                            next.length > 0
-                                                ? next.join(",")
-                                                : undefined,
-                                    })
-                                }
-                                onPollenPayChange={(next) =>
-                                    updateSearch({ pollen: next })
-                                }
-                            />
+                        {/* The count sits right by the search, as plain text:
+                            it is what the search and filters leave. */}
+                        <div className="flex min-w-0 max-w-xl flex-1 basis-[280px] items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                                <AppSearchInput
+                                    query={q ?? ""}
+                                    platforms={platform}
+                                    pollenPay={pollenPay}
+                                    onQueryChange={(next) =>
+                                        updateSearch({
+                                            q: next || undefined,
+                                        })
+                                    }
+                                    onPlatformsChange={(next) =>
+                                        updateSearch({
+                                            platform:
+                                                next.length > 0
+                                                    ? next.join(",")
+                                                    : undefined,
+                                        })
+                                    }
+                                    onPollenPayChange={(next) =>
+                                        updateSearch({ pollen: next })
+                                    }
+                                />
+                            </div>
+                            {/* One live region, mounted from the start and
+                                sized for "0000 / 0000 apps" (tabular digits),
+                                so loading and filtering never move the search
+                                and the first count is announced. */}
+                            <span
+                                aria-live="polite"
+                                className="relative shrink-0 text-sm tabular-nums text-theme-text-muted"
+                            >
+                                <StableLabel
+                                    text={
+                                        loading
+                                            ? ""
+                                            : filtered.length === apps.length
+                                              ? `${apps.length} apps`
+                                              : `${filtered.length} / ${apps.length} apps`
+                                    }
+                                    options={["0000 / 0000 apps"]}
+                                />
+                                {loading && (
+                                    <Skeleton
+                                        shape="text"
+                                        className="absolute inset-0 h-5"
+                                    />
+                                )}
+                            </span>
                         </div>
 
                         <div className="flex min-h-11 items-center gap-3">
-                            {loading ? (
-                                <Skeleton shape="text" className="h-7 w-37" />
-                            ) : (
-                                <Chip
-                                    size="lg"
-                                    aria-live="polite"
-                                    className="bg-theme-bg-subtle px-3 text-theme-text-soft"
-                                >
-                                    {/* Sized for "N / N apps", so filtering
-                                        never moves the sort button. */}
-                                    <span className="tabular-nums">
-                                        <StableLabel
-                                            prefix={
-                                                <AppIcon className="mr-0.5 size-4" />
-                                            }
-                                            text={
-                                                filtered.length === apps.length
-                                                    ? `${apps.length} apps`
-                                                    : `${filtered.length} / ${apps.length} apps`
-                                            }
-                                            options={[
-                                                `${apps.length} apps`,
-                                                `${apps.length} / ${apps.length} apps`,
-                                            ]}
-                                        />
-                                    </span>
-                                </Chip>
-                            )}
                             <Dropdown
                                 align="end"
                                 className="min-w-40 p-1"

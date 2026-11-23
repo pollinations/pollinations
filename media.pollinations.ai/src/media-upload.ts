@@ -1,8 +1,23 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
+import {
+    DEFAULT_R2_TTL_REFRESH_AGE_MS,
+    putGenerationResult,
+    refreshR2ObjectTtl,
+} from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
+
+// R2 rejects a put with more than 8,192 bytes of object metadata, so every
+// upload path stores at most 253 characters of the filename. Counting code
+// points keeps an emoji at the cut whole; 506 UTF-16 units always hold 253
+// of them, so a huge name is never split into a huge array.
+export function storedFileName(fileName: string | undefined): string {
+    return Array.from((fileName ?? "").slice(0, 506))
+        .slice(0, 253)
+        .join("");
+}
 
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
@@ -85,7 +100,7 @@ export async function uploadUnlistedMedia(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: input.fileName?.slice(0, 253) || "",
+                    originalName: storedFileName(input.fileName),
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
                     keyId: input.keyId ?? "",
@@ -127,38 +142,51 @@ export async function readMedia(
     id: string,
     ctx: Pick<ExecutionContext, "waitUntil">,
     method = "GET",
+    rangeHeader?: string,
 ): Promise<Response | null> {
-    const object = await (method === "HEAD"
+    const isHead = method === "HEAD";
+
+    // Range requests need the full size before fetching bytes, so read the
+    // metadata first and ask R2 for only the wanted slice. Plain GETs keep
+    // their single-operation path.
+    if (method === "GET" && rangeHeader) {
+        const meta = await env.MEDIA_BUCKET.head(id);
+        if (!meta) return null;
+        const headers = await mediaHeaders(env.MEDIA_BUCKET, meta, id);
+        const range = requestedByteRange(rangeHeader, meta.size);
+        if (range === "unsatisfiable") {
+            headers.set("Content-Range", `bytes */${meta.size}`);
+            headers.set("Content-Length", "0");
+            return new Response(null, { status: 416, headers });
+        }
+        if (range) {
+            headers.set(
+                "Content-Range",
+                `bytes ${range.offset}-${range.offset + range.length - 1}/${meta.size}`,
+            );
+            headers.set("Content-Length", range.length.toString());
+            const ranged = await env.MEDIA_BUCKET.get(id, {
+                range: { offset: range.offset, length: range.length },
+            });
+            if (!ranged) return null;
+            // Refresh retention when playback starts, not on every seek.
+            if (
+                range.offset === 0 &&
+                Date.now() - meta.uploaded.getTime() >=
+                    DEFAULT_R2_TTL_REFRESH_AGE_MS
+            ) {
+                ctx.waitUntil(refreshAgedMedia(env, id));
+            }
+            return new Response(ranged.body, { status: 206, headers });
+        }
+    }
+
+    const object = await (isHead
         ? env.MEDIA_BUCKET.head(id)
         : env.MEDIA_BUCKET.get(id));
     if (!object) return null;
 
-    const contentType =
-        object.httpMetadata?.contentType || "application/octet-stream";
-    const disposition = opensInline(contentType) ? "inline" : "attachment";
-    const originalName = object.customMetadata?.originalName;
-    const headers = new Headers({
-        "Content-Type": contentType,
-        "Cache-Control":
-            object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-        "X-Content-Id": id,
-        "X-Content-Size": object.size.toString(),
-        Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
-        "Content-Disposition": originalName
-            ? `${disposition}; filename*=UTF-8''${encodeURIComponent(originalName)}`
-            : disposition,
-    });
-    // Generated files replay the headers gen chose for them. Only the trusted
-    // put() below writes header_* metadata; uploads never do.
-    for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
-        if (key.startsWith("header_")) headers.set(key.slice(7), value);
-    }
-    // Set last: no stored header may let a file run script.
-    headers.set("X-Content-Type-Options", "nosniff");
-    headers.set(
-        "Content-Security-Policy",
-        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-    );
+    const headers = await mediaHeaders(env.MEDIA_BUCKET, object, id);
     if (!("body" in object)) {
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });
@@ -173,6 +201,135 @@ export async function readMedia(
     return new Response(body, { headers });
 }
 
+/**
+ * One byte range from a Range header. "unsatisfiable" is a well-formed range
+ * that starts past the end; undefined means the header belongs to a case the
+ * RFC allows ignoring (absent, malformed, or several ranges).
+ */
+function requestedByteRange(
+    header: string | undefined,
+    size: number,
+): { offset: number; length: number } | "unsatisfiable" | undefined {
+    const match = header?.trim().match(/^bytes=(\d*)-(\d*)$/i);
+    if (!match) return undefined;
+    const [, startText, endText] = match;
+    if (startText === "" && endText === "") return undefined;
+
+    if (startText === "") {
+        const suffix = Number(endText);
+        if (!Number.isSafeInteger(suffix)) return undefined;
+        if (suffix === 0 || size === 0) return "unsatisfiable";
+        const length = Math.min(suffix, size);
+        return { offset: size - length, length };
+    }
+
+    const start = Number(startText);
+    if (!Number.isSafeInteger(start)) return undefined;
+    if (start >= size) return "unsatisfiable";
+    if (endText === "") return { offset: start, length: size - start };
+
+    const end = Number(endText);
+    if (!Number.isSafeInteger(end) || end < start) return undefined;
+    return { offset: start, length: Math.min(end, size - 1) - start + 1 };
+}
+
+export async function storedMediaContentType(
+    bucket: R2Bucket,
+    object: R2Object,
+): Promise<string> {
+    const contentType =
+        object.httpMetadata?.contentType || "application/octet-stream";
+    if (
+        contentType === "image/png" &&
+        object.customMetadata?.keyType === "generation" &&
+        object.customMetadata["header_x-model-used"] ===
+            "openai/gpt-image-2.6-sunburst:fal"
+    ) {
+        // Older Sunburst fallback entries kept the upstream PNG label after
+        // Gen converted the bytes to JPEG. Genuine cached PNGs share that label.
+        const prefix = await bucket.get(object.key, {
+            range: { offset: 0, length: 3 },
+            onlyIf: { etagMatches: object.etag },
+        });
+        if (
+            prefix &&
+            "body" in prefix &&
+            detectImageMimeType(new Uint8Array(await prefix.arrayBuffer())) ===
+                "image/jpeg"
+        ) {
+            return "image/jpeg";
+        }
+    }
+    return contentType;
+}
+
+async function mediaHeaders(
+    bucket: R2Bucket,
+    object: R2Object,
+    id: string,
+): Promise<Headers> {
+    const contentType = await storedMediaContentType(bucket, object);
+    const disposition = opensInline(contentType) ? "inline" : "attachment";
+    const originalName = object.customMetadata?.originalName;
+    const headers = new Headers({
+        "Content-Type": contentType,
+        "Cache-Control":
+            object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
+        "Accept-Ranges": "bytes",
+        "X-Content-Id": id,
+        "X-Content-Size": object.size.toString(),
+        Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        "Content-Disposition": originalName
+            ? `${disposition}; filename*=UTF-8''${encodeURIComponent(originalName)}`
+            : disposition,
+    });
+    // Generated files replay the headers gen chose for them. Only the trusted
+    // put() below writes header_* metadata; uploads never do.
+    for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
+        if (key.startsWith("header_")) headers.set(key.slice(7), value);
+    }
+    if (
+        object.httpMetadata?.contentType === "image/png" &&
+        contentType === "image/jpeg"
+    ) {
+        const filename = headers.get("Content-Disposition");
+        if (filename) {
+            headers.set(
+                "Content-Disposition",
+                filename.replace(/\.png"$/, '.jpeg"'),
+            );
+        }
+    }
+    // Set last: no stored header may let a file run script.
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    );
+    return headers;
+}
+
+/** Rewrite an aged object from a full read so its lifecycle age resets. */
+async function refreshAgedMedia(
+    env: MediaStorageEnv,
+    id: string,
+): Promise<void> {
+    const object = await env.MEDIA_BUCKET.get(id);
+    if (!object) return;
+    const upload = new FixedLengthStream(object.size);
+    await Promise.all([
+        env.MEDIA_BUCKET.put(id, upload.readable, {
+            httpMetadata: object.httpMetadata,
+            customMetadata: object.customMetadata,
+            storageClass: object.storageClass,
+            // A concurrent delete or replacement must win, or the refresh
+            // would resurrect an object no API can delete any more.
+            onlyIf: { etagMatches: object.etag },
+        }),
+        object.body.pipeTo(upload.writable),
+    ]);
+}
+
 export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
     upload(
         body: ReadableStream<Uint8Array>,
@@ -181,8 +338,12 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
         return uploadUnlistedMedia(this.env, body, input);
     }
 
-    get(id: string): Promise<Response | null> {
-        return readMedia(this.env, id, this.ctx);
+    get(
+        id: string,
+        rangeHeader?: string,
+        method = "GET",
+    ): Promise<Response | null> {
+        return readMedia(this.env, id, this.ctx, method, rangeHeader);
     }
 
     async has(id: string): Promise<boolean> {
@@ -190,7 +351,11 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
     }
 
     /** Trusted generation write; the caller selects headers safe for public replay. */
-    async put(id: string, response: Response): Promise<void> {
+    async put(
+        id: string,
+        response: Response,
+        requestId?: string,
+    ): Promise<void> {
         if (!/^[a-f0-9]{64}$/.test(id))
             throw new Error("Invalid generation ID");
         const body = await response.arrayBuffer();
@@ -205,14 +370,21 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
                 metadata[`header_${name}`] = value;
             }
         }
-        await this.env.MEDIA_BUCKET.put(id, body, {
-            httpMetadata: {
-                contentType:
-                    response.headers.get("content-type") ||
-                    "application/octet-stream",
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
+        await putGenerationResult(
+            this.env.MEDIA_BUCKET,
+            id,
+            body,
+            {
+                httpMetadata: {
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: metadata,
             },
-            customMetadata: metadata,
-        });
+            "MEDIA_BUCKET",
+            requestId,
+        );
     }
 }

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
+import { acpCommand } from "./commands/acp.js";
 import { agentsCommand } from "./commands/agents.js";
 import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
@@ -72,6 +73,9 @@ program.addCommand(myModelsCommand);
 
 // Coding harness integrations
 program.addCommand(harnessCommand);
+
+// Editors (Agent Client Protocol)
+program.addCommand(acpCommand);
 
 // E2B sandboxes
 program.addCommand(sandboxCommand);

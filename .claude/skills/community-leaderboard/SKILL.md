@@ -16,25 +16,25 @@ checked against gen's public catalog, so private models never show.
 
 | File | Role |
 |------|------|
-| `operations/infra-watch/leaderboard/text-board.js` | Text board HTML and post text |
-| `operations/infra-watch/leaderboard/image-board.js` | Image board HTML and post text |
-| `operations/infra-watch/leaderboard/post.mjs` | Reads the pipes, screenshots each board, posts both |
-| `operations/infra-watch/leaderboard/boards.test.js` | Board tests, run by `npm test` in `operations/infra-watch` |
-| `operations/infra-watch/leaderboard/fonts-embedded.css` | Embedded fonts (see Brand system) |
+| `operations/monitoring/community-leaderboards/board.js` | Text and image board HTML and post text |
+| `operations/monitoring/community-leaderboards/post.mjs` | Reads the pipes, screenshots each board, and posts it |
+| `operations/monitoring/community-leaderboards/board.test.js` | Board tests, run by `node --test board.test.js` in that directory |
+| `operations/monitoring/community-leaderboards/fonts-embedded.css` | Embedded fonts (see Brand system) |
 | `enter.pollinations.ai/observability/endpoints/infra_watch_text_leaderboard.pipe` | Text board rows (last 24h) |
 | `enter.pollinations.ai/observability/endpoints/infra_watch_image_leaderboard.pipe` | Image board rows (last 24h) |
 
 ## Previewing and rerunning
 
-Preview without posting, from `operations/infra-watch` (the SOPS file holds
-the Tinybird read token and the webhook):
+Preview from `operations/monitoring/community-leaderboards`. SOPS supplies
+the existing Tinybird read token for the preview.
 
 ```bash
+npm ci
 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  sops exec-env secrets.vars.json 'node leaderboard/post.mjs --dry-run /tmp/boards'
+  sops exec-env ../infra-watch/secrets/secrets.vars.json 'node post.mjs --dry-run /tmp/boards'
 ```
 
-It writes each board's PNG and the post text (`message.md`) to `/tmp/boards`.
+Each board writes a PNG and a Markdown file to `/tmp/boards`.
 Add `text` or `image` to build one board only.
 
 Posting for real goes through the workflow and needs a maintainer's OK, since
@@ -117,9 +117,8 @@ user-namespace sandbox; the page is our own HTML with scripts off.
 
 ## Posting
 
-One webhook message (`COMMUNITY_WEBHOOK_URL`, the "Community Model Watch"
-webhook) carries each board's post text and both PNGs as attachments, and
-pings no one. The post text is each builder's `markdown`, posted verbatim:
+The Community Model Watch webhook sends one message per board with its PNG
+and disables mentions. The post text is each builder's `markdown`, posted verbatim:
 don't re-derive or paraphrase it; the awards it calls out (workhorse by
 request count, flawless-100% count, speed crown) are deliberately chosen to
 surface stats the image itself doesn't show.
@@ -133,7 +132,7 @@ and fails the run once the others are posted; rerun it with
 A second visualization (speed × success × price, avatar markers sized
 uniformly, price tag per model) was explored alongside the main leaderboard
 and posted once as a one-off — its HTML/build script live only in session
-scratchpads, not in `operations/infra-watch/leaderboard/`. If asked to make
+scratchpads outside the leaderboard directory. If asked to make
 it a recurring post too, port `design-arena-v2.html`'s structure (GitHub
 avatar thumbnails via `https://github.com/<user>.png?size=96`, pixelated via
 nearest-neighbor resize, log-scaled x-axis, piecewise y-axis for the

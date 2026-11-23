@@ -10,6 +10,7 @@ import {
 import {
     ExitSignal,
     fail,
+    formatDollars,
     getOutputMode,
     printError,
     printInfo,
@@ -26,7 +27,14 @@ type LoginOptions = {
 
 interface ProfileResponse {
     githubUsername?: string | null;
+    // Returned only for keys with account:profile, which device login grants.
+    name?: string | null;
     image?: string | null;
+}
+
+// Accounts without a linked GitHub (e.g. Google sign-in) still have a name.
+function profileName(profile: ProfileResponse): string {
+    return profile.githubUsername ?? profile.name ?? "unknown";
 }
 
 interface BalanceResponse {
@@ -82,14 +90,15 @@ async function pollForToken(
 }
 
 function storeKey(key: string): void {
-    const keyType = key.startsWith("sk_") ? "sk" : "pk";
-    saveCredentials({ apiKey: key, keyType });
+    saveCredentials({ apiKey: key });
 }
 
 function assertApiKey(key: string): string {
     const trimmed = key.trim();
-    if (!trimmed.startsWith("pk_") && !trimmed.startsWith("sk_")) {
-        printError("Invalid key format. Must start with pk_ or sk_");
+    if (!trimmed.startsWith("sk_")) {
+        printError(
+            "Invalid key format. Must start with sk_; pk_ App Keys only identify an app",
+        );
         throw new ExitSignal(1);
     }
     return trimmed;
@@ -146,7 +155,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    return `Logged in as ${profileName(profile)}`;
 }
 
 /** Run the browser device flow, store the resulting key, and return it. */
@@ -236,7 +245,7 @@ const login = new Command("login")
     .addOption(
         new Option(
             "--token <key>",
-            "API key (pk_ or sk_) for direct auth",
+            "Secret API key (sk_) for direct auth",
         ).hideHelp(),
     )
     .option("--with-token", "Read an existing API key from stdin")
@@ -270,19 +279,30 @@ export async function showAuthStatus(): Promise<void> {
             authenticated: false,
             message: "Not logged in. Run: polli auth login",
         });
-        return;
+        throw new ExitSignal(1);
     }
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
+    const rejectedKey = (error: unknown) =>
+        error instanceof ApiError && error.status === 401 ? error : null;
     const [profile, balance] = await Promise.all([
         gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
-            () => null,
+            rejectedKey,
         ),
     ]);
+
+    if (profile instanceof ApiError || balance instanceof ApiError) {
+        printResult({
+            authenticated: false,
+            key: masked,
+            status: "API key rejected. Run: polli auth login",
+        });
+        throw new ExitSignal(1);
+    }
 
     if (!profile) {
         printResult({
@@ -297,12 +317,24 @@ export async function showAuthStatus(): Promise<void> {
     // wallet is in `accountBalance` (needs account:usage). Unbudgeted keys
     // see the wallet total in `balance`, so only list it when it differs.
     const wallet = balance?.accountBalance?.total;
+    const keyBudget =
+        balance?.balance !== wallet ? balance?.balance : undefined;
+    // Scripts keep the `pollen` field; people read dollars.
+    const human = getOutputMode() === "human";
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
-        pollen: wallet ?? "unknown",
-        key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
+        name: profileName(profile),
+        ...(human
+            ? {
+                  balance:
+                      wallet === undefined ? "unknown" : formatDollars(wallet),
+                  key_budget:
+                      keyBudget === undefined
+                          ? undefined
+                          : formatDollars(keyBudget),
+              }
+            : { pollen: wallet ?? "unknown", key_budget: keyBudget }),
     });
 }
 

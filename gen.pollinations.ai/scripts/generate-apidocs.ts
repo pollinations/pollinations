@@ -809,7 +809,7 @@ function renderGettingStarted(): string {
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
 - \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
-- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; do not use raw publishable keys for new browser generation integrations.
+- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; a \`pk_*\` sent as a key gets \`401\`.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 
@@ -955,7 +955,7 @@ All endpoints return errors in this envelope:
 | \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
 | \`400\` | \`content_blocked\` | The input safety check blocked the request before generation — enabled via \`safe\` / the \`Pollinations-Safe\` header, or required by the model (\`required_safety\`). \`message\` names the triggered categories, e.g. \`Request blocked by safety filter: sexual\`. Change the input rather than retrying it. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
-| \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
+| \`402\` | \`PAYMENT_REQUIRED\` | Balance too low or API key budget exhausted. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |

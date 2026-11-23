@@ -1,0 +1,80 @@
+name: Deploy / Azure sandbox image
+
+# Rebuilds the Azure sandbox image (operations/infrastructure/azure-sandboxes,
+# on top of ../e2b) whenever either changes on main, and opens a PR with the
+# new image ids in gen's wrangler.toml. Gen starts boxes from the new image
+# once that PR is merged and deployed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "operations/infrastructure/e2b/**"
+      - "operations/infrastructure/azure-sandboxes/**"
+      - ".github/workflows/deploy-azure-sandbox-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# One build at a time: a newer push waits instead of cancelling one halfway.
+concurrency:
+  group: deploy-azure-sandbox-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The Azure login trusts only jobs in this environment, which only main
+    # may use.
+    if: github.ref == 'refs/heads/main'
+    environment: azure-sandbox-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Generate GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      # The pollinations-ci-sandbox-image app: Data Owner on both sandbox
+      # groups, logged into with GitHub's OIDC token, so no secret is stored.
+      - uses: azure/login@v2
+        with:
+          client-id: 2fd73ead-56be-440e-bf1e-ef7b792c16fc
+          tenant-id: f542dd61-ecf3-4524-8905-30f2e2a2e967
+          allow-no-subscriptions: true
+
+      # exec, so a cancel's signal reaches node, which deletes its boxes.
+      - name: Build and import the image
+        run: exec node operations/infrastructure/azure-sandboxes/build.mjs
+
+      - name: Open a PR with the new image ids
+        run: |
+          BRANCH=chore/azure-sandbox-image
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add gen.pollinations.ai/wrangler.toml
+          git commit -m "chore: Azure sandbox image from ${GITHUB_SHA::10}"
+          git push -f -u origin "$BRANCH"
+          printf 'Built from %s and smoke-tested in both sandbox groups by [this run](%s).\n' \
+            "$GITHUB_SHA" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$RUNNER_TEMP/body.md"
+          PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
+          if [ -z "$PR" ]; then
+            gh pr create --title "chore: new Azure sandbox image" --body-file "$RUNNER_TEMP/body.md" --base main --head "$BRANCH"
+          else
+            # gh pr edit fails here on GitHub's retired Projects (classic) API.
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/$PR" -F body=@"$RUNNER_TEMP/body.md" >/dev/null
+          fi
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}

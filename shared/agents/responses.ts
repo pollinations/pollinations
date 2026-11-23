@@ -1,5 +1,6 @@
 import {
     APICallError,
+    jsonSchema,
     type ModelMessage,
     type ToolCallPart,
     type ToolResultPart,
@@ -619,6 +620,7 @@ function streamResponse(
     messages: ModelMessage[],
     settings: AgentGenerationSettings,
     signal: AbortSignal,
+    tools: ToolSet,
     callerTools: ReadonlySet<string>,
 ): Response {
     const encoder = new TextEncoder();
@@ -667,6 +669,7 @@ function streamResponse(
                         signal: runSignal,
                         stream: true,
                         onPart: collected.onPart,
+                        tools,
                     });
                     if (cancelled) return;
                     runSignal.throwIfAborted();
@@ -719,19 +722,47 @@ function streamResponse(
     });
 }
 
+/** The request's function tools. Without execute, the SDK returns their calls
+ * for the caller to answer. */
+function requestTools(request: CreateResponseRequest): ToolSet {
+    const tools: ToolSet = Object.create(null);
+    for (const definition of request.tools ?? []) {
+        if (
+            !/^[a-zA-Z0-9_-]{1,64}$/.test(definition.name) ||
+            definition.name.startsWith("mcp__") ||
+            Object.hasOwn(tools, definition.name)
+        ) {
+            invalidRequest(
+                "Caller tool names must be unique, use 1–64 letters, digits, underscores or hyphens, and not start with mcp__",
+                "tools",
+            );
+        }
+        tools[definition.name] = {
+            description: definition.description ?? undefined,
+            inputSchema: jsonSchema(
+                definition.parameters ?? { type: "object", properties: {} },
+            ),
+            ...(definition.strict == null ? {} : { strict: definition.strict }),
+        };
+    }
+    return tools;
+}
+
 export async function handleAgentResponsesRequest(
     request: CreateResponseRequest,
     signal: AbortSignal,
     runner: AgentRunner,
-    tools?: ToolSet,
+    agentTools: ToolSet = {},
 ): Promise<Response> {
     try {
         signal.throwIfAborted();
+        // The agent's own tools win a name clash.
+        const tools = { ...requestTools(request), ...agentTools };
         const messages = await inputMessages(request, tools);
         signal.throwIfAborted();
         const settings = requestSettings(request);
         const callerTools = new Set(
-            Object.entries(tools ?? {})
+            Object.entries(tools)
                 .filter(([, tool]) => !tool.execute)
                 .map(([name]) => name),
         );
@@ -742,6 +773,7 @@ export async function handleAgentResponsesRequest(
                 messages,
                 settings,
                 signal,
+                tools,
                 callerTools,
             );
         }
@@ -752,6 +784,7 @@ export async function handleAgentResponsesRequest(
             signal,
             stream: false,
             onPart: collected.onPart,
+            tools,
         });
         signal.throwIfAborted();
         return Response.json(

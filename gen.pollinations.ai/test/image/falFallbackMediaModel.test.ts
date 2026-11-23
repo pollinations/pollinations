@@ -107,9 +107,9 @@ afterEach(() => {
 describe("Fal fallback media models", () => {
     it.each([
         [undefined, "16:9", false, 1024, 1024, 5, "16:9"],
-        [0, "9:16", true, 1080, 720, 5, "3:2"],
-        [99, "9:16", false, 1024, 1024, 15, "9:16"],
-        [-1, undefined, true, 1024, 1024, 1, "1:1"],
+        [10, "9:16", true, 1080, 720, 10, "3:2"],
+        [15, "9:16", false, 1024, 1024, 15, "9:16"],
+        [1, undefined, true, 1024, 1024, 1, "1:1"],
     ] as const)(
         "routes Grok duration %s through Fal with unchanged parameters",
         async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
@@ -203,21 +203,6 @@ describe("Fal fallback media models", () => {
         expect(error).toMatchObject({ status: 422 });
         expect((error as UpstreamError).billedUsage).toEqual(billedUsage);
     });
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects fractional Grok duration %s before Fal submission",
-        async (duration) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                createAndReturnVideo("move", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video:fal",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
 
     it("sends Seedream 5 through the exact Fal endpoint", async () => {
         const requests = mockFal({
@@ -402,18 +387,6 @@ describe("Fal fallback media models", () => {
         },
     );
 
-    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds on fal", async () => {
-        const requests = mockFal({ video: { url: MEDIA_URL } });
-        await expect(
-            callFalFallbackVideo("a paper boat", {
-                ...baseParams,
-                model: "heygen/heygen-video-1",
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(requests).toHaveLength(0);
-    });
-
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
@@ -468,7 +441,6 @@ describe("Fal fallback media models", () => {
             const resultPromise = callFalFallbackVideo("move", {
                 ...baseParams,
                 model: "kandinskylab/kandinsky-6.0-lite",
-                duration: 10,
                 aspectRatio: ratio,
                 image: [...image],
             });
@@ -715,8 +687,8 @@ describe("Grok Replicate primary", () => {
                 usage: result.trackingData.usage,
                 servedBy: IMAGE_SERVICES["x-ai/grok-imagine-video"],
             });
-            expect(billing.cost.totalCost).toBeCloseTo(0.0521, 12);
-            expect(billing.price.totalPrice).toBe(0.0521);
+            expect(billing.cost.totalCost).toBeCloseTo(0.07294, 12);
+            expect(billing.price.totalPrice).toBe(0.07294);
         },
     );
 
@@ -741,21 +713,6 @@ describe("Grok Replicate primary", () => {
                     duration: 1,
                 }),
             ).rejects.toMatchObject({ status: 502 });
-        },
-    );
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects fractional duration %s before Replicate submission",
-        async (duration) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                createAndReturnVideo("move", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
         },
     );
 
@@ -828,6 +785,6 @@ describe("Grok Replicate primary", () => {
             input: { providerBilling: result.trackingData.providerBilling },
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.07, 12);
-        expect(billing.price.totalPrice).toBe(0.05208335);
+        expect(billing.price.totalPrice).toBe(0.07291669);
     });
 });

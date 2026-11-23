@@ -9,6 +9,7 @@ import { pi } from "./pi.js";
 import { prime } from "./prime.js";
 import { tgpt } from "./tgpt.js";
 import type { HarnessAdapter } from "./types.js";
+import { vibe } from "./vibe.js";
 
 export const HARNESSES: HarnessAdapter[] = [
     bloom,
@@ -21,4 +22,5 @@ export const HARNESSES: HarnessAdapter[] = [
     pi,
     prime,
     tgpt,
+    vibe,
 ];

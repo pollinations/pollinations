@@ -59,11 +59,6 @@ const OPENROUTER_ROUTES = [
         "streamlake",
     ],
     [
-        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        "nvidia/nemotron-3.5-lightning",
-        "coreweave/bf16",
-    ],
-    [
         "nvidia/nemotron-3.5-super-vl:openrouter:together",
         "nvidia/nemotron-3.5-super-vl",
         "together",
@@ -81,6 +76,16 @@ const OPENROUTER_ROUTES = [
     [
         "google/gemini-3.8-flash:openrouter:vertex-global",
         "google/gemini-3.8-flash",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-neon:openrouter:vertex-global",
+        "google/gemini-4-neon",
         "google-vertex/global",
     ],
     [
@@ -348,7 +353,7 @@ describe("static provider fallbacks", () => {
         );
     });
 
-    it("records MiMo V2.6 Flash's discounted backup cost and keeps the Novita quote", () => {
+    it("records MiMo V2.6 Flash's standard backup cost and keeps the Novita quote", () => {
         const model = "xiaomi/mimo-v2.6-flash";
         const billed = calculateUsageBilling({
             model,
@@ -360,7 +365,7 @@ describe("static provider fallbacks", () => {
             servedBy: TEXT_SERVICES[`${model}:deepinfra`],
             quotedBy: TEXT_SERVICES[model],
         });
-        expect(billed.cost.totalCost).toBeCloseTo(0.000109564, 12);
+        expect(billed.cost.totalCost).toBeCloseTo(0.00016856, 12);
         expect(billed.price.totalPrice).toBe(0.00016856);
     });
 
@@ -453,33 +458,35 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.0002277);
     });
 
-    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+    it("keeps Mistral Large on Azure and bills its Bedrock fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        const fallback = TEXT_SERVICES[`${model}:aws`];
         expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
-        expect(fallback.provider).toBe("mistral");
+        expect(primary.fallbacks).toEqual([`${model}:aws`]);
+        expect(fallback.provider).toBe("aws");
         expect(fallback.paidOnly).not.toBe(true);
         expect(findModelByName(model)?.config()).toMatchObject({
             "azure-resource-name": "myceli-prod-eastus",
             "azure-deployment-id": "Mistral-Large-3",
         });
-        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
-            "custom-host": "https://api.mistral.ai/v1",
-            model: "mistral-large-2512",
+        expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+            provider: "bedrock",
+            model: "mistral.mistral-large-3-675b-instruct",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         const billed = calculateUsageBilling({
             model,
             usage: {
                 promptTextTokens: 1_000,
-                promptCachedTokens: 200,
                 completionTextTokens: 100,
             },
             servedBy: fallback,
             quotedBy: primary,
         });
-        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        const cost = 0.001 * 0.5 + 0.0001 * 1.5;
         expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
     });
@@ -505,11 +512,11 @@ describe("static provider fallbacks", () => {
         expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
-    it("preserves seeded requests on the direct Mistral fallback", async () => {
-        const route = findModelByName("mistralai/mistral-large-3:mistral");
+    it("preserves seeded requests on the Bedrock Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:aws");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
         const result = await route?.transform?.([], options);
-        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(result?.options).toEqual({ seed: 0, temperature: 0.2 });
         expect(options.seed).toBe(0);
         const unseeded = await route?.transform?.([], { temperature: 0.2 });
         expect(unseeded?.options).toEqual({ temperature: 0.2 });
@@ -768,7 +775,7 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("uses cheaper Replicate for Grok Video Pro with independent Fal backup", () => {
+    it("uses Replicate's 720p rate for Grok Video Pro with independent Fal backup", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
         const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:fal"];
         expect(primary).toMatchObject({
@@ -777,7 +784,7 @@ describe("static provider fallbacks", () => {
             priceMultiplier: 1,
             aliases: ["grok-imagine-video", "grok-video-pro"],
             fallbacks: ["x-ai/grok-imagine-video:fal"],
-            cost: { promptImageTokens: 0, completionVideoSeconds: 0.05 },
+            cost: { promptImageTokens: 0, completionVideoSeconds: 0.07 },
         });
         expect(fallback.provider).toBe("fal");
         expect(fallback.cost).toEqual({
@@ -1158,7 +1165,7 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
-        const model = "typesafe/jev-1.13";
+        const model = "typesafe/jev-1.14";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
             `${model}:openrouter:typesafe`,
         ]);
@@ -1423,11 +1430,28 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("records DeepSeek Flash 1017's discounted fallback cost at the unchanged primary quote", () => {
+    it("bills Azure DeepSeek Flash 1017 image tokens at its input rate", () => {
         const model = "deepseek/deepseek-v4.1-flash-1017";
         const billing = calculateUsageBilling({
             model,
-            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+            usage: {
+                promptTextTokens: 63,
+                promptImageTokens: 184,
+                completionTextTokens: 2,
+                completionReasoningTokens: 79,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0001713, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00008565, 12);
+    });
+
+    it("records DeepSeek Flash 1017's Fireworks fallback at its Fireworks cost and the unchanged primary quote", () => {
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const billing = calculateUsageBilling({
+            model,
+            servedBy: TEXT_SERVICES[`${model}:fireworks`],
             quotedBy: TEXT_SERVICES[model],
             usage: {
                 promptTextTokens: 1000,
@@ -1436,7 +1460,7 @@ describe("static provider fallbacks", () => {
                 completionReasoningTokens: 100,
             },
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00015974, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.000546, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
     });
 
@@ -1762,14 +1786,17 @@ describe("static provider fallbacks", () => {
         expect(TEXT_SERVICES).not.toHaveProperty(
             "qwen/qwen3.8-27b:openrouter:reka-fp8",
         );
+        expect(TEXT_SERVICES["meta/muse-spark-open"].cost).toMatchObject({
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
+        });
         expect(
-            TEXT_SERVICES[
-                "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
-            ].cost,
+            TEXT_SERVICES["meta/muse-spark-open:vercel:baseten"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.07 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.04 / 1_000_000) * 1.055,
-            completionTextTokens: (0.2 / 1_000_000) * 1.055,
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["nvidia/nemotron-3.5-super-vl"].cost,
@@ -1815,6 +1842,104 @@ describe("static provider fallbacks", () => {
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
         });
+    });
+
+    it("keeps the Carbon quote and records the OpenRouter receipt including Exa", () => {
+        const model = "google/gemini-4-carbon";
+        const route = "google/gemini-4-carbon:openrouter:ai-studio";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: [],
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            fallbackOnly: true,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: {
+                usage: {
+                    cost: 0.019,
+                    server_tool_use_details: { web_search_requests: 1 },
+                },
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.019 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
+    });
+
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
+    });
+
+    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-neon";
+        const route = "google/gemini-4-neon:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (3 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
+            completionTextTokens: (15 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.018 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.018 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.018, 12);
     });
 
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
@@ -2069,6 +2194,24 @@ describe("static provider fallbacks", () => {
         ]) {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
+    });
+
+    it("rejects audio output on text-only models but allows audio models", () => {
+        const text = TEXT_SERVICES["openai/gpt-5.4-nano"];
+        expect(
+            textCapabilityError(text, { modalities: ["text"] }),
+        ).toBeUndefined();
+        expect(
+            textCapabilityError(text, { modalities: ["text", "audio"] }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(text, { audio: { voice: "alloy" } }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-audio-mini"], {
+                modalities: ["text", "audio"],
+            }),
+        ).toBeUndefined();
     });
 
     it.each([

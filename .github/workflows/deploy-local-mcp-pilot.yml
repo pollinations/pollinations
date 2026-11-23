@@ -1,0 +1,86 @@
+name: Deploy / Local MCP pilot
+
+# Unpublished local-computer MCP relay on community-monitor; see
+# operations/infrastructure/local-mcp/runbook.txt. Pull requests build and
+# check the arm64 controller. Host operations run only on manual dispatch
+# from production, through the protected local-mcp-pilot-production
+# environment that holds the deployment-only SSH key. The host wrapper runs
+# the loopback and public checks and restores or stops on failure.
+on:
+  pull_request:
+    paths:
+      - "operations/infrastructure/local-mcp/**"
+      - ".github/workflows/deploy-local-mcp-pilot.yml"
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Operation on community-monitor"
+        type: choice
+        options:
+          - status
+          - deploy
+          - stop
+          - rollback
+        default: status
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request' || inputs.operation == 'deploy'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          check-latest: true
+
+      - name: Test command restrictions and switch logic
+        run: node --test operations/infrastructure/local-mcp/local-mcp.test.cjs
+
+      # The same standalone binary the host wrapper pins.
+      - name: Fetch pinned Docker Compose
+        run: |
+          sha=$(sed -n 's/^COMPOSE_SHA256=//p' operations/infrastructure/local-mcp/local-mcp-pilot)
+          curl --fail --silent --show-error --location --proto '=https' \
+            --output "$RUNNER_TEMP/docker-compose" \
+            https://github.com/docker/compose/releases/download/v5.6.1/docker-compose-linux-aarch64
+          echo "$sha  $RUNNER_TEMP/docker-compose" | sha256sum --check --strict
+          chmod +x "$RUNNER_TEMP/docker-compose"
+
+      - name: Build controller from pinned sources
+        run: docker build --tag pollinations-local-mcp-pilot:ci operations/infrastructure/local-mcp
+
+      - name: Check controller with public fixtures
+        run: bash operations/infrastructure/local-mcp/verify.sh pollinations-local-mcp-pilot:ci "$PWD/operations/infrastructure/local-mcp" "$RUNNER_TEMP/docker-compose"
+
+      # Creates and removes the deploy account on this throwaway runner.
+      - name: Test bootstrap install, update and refusals
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT bash operations/infrastructure/local-mcp/test-bootstrap.sh "$RUNNER_TEMP/docker-compose"
+
+  operate:
+    needs: verify
+    # Stop, status and rollback must not wait for a build. The ref check
+    # comes before the environment releases its secret; the environment's
+    # branch policy and ci-remote.sh check it again.
+    if: >-
+      !cancelled() && github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/production' &&
+      (needs.verify.result == 'success' ||
+      (needs.verify.result == 'skipped' && inputs.operation != 'deploy'))
+    runs-on: ubuntu-latest
+    environment: local-mcp-pilot-production
+    concurrency:
+      group: local-mcp-pilot-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run operation on community-monitor
+        env:
+          OPERATION: ${{ inputs.operation }}
+          LOCAL_MCP_PILOT_DEPLOY_SSH_KEY: ${{ secrets.LOCAL_MCP_PILOT_DEPLOY_SSH_KEY }}
+        run: bash operations/infrastructure/local-mcp/ci-remote.sh "$OPERATION"

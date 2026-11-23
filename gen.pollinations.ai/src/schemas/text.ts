@@ -29,7 +29,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     }),
     seed: z.coerce.number().int().min(-1).optional().meta({
         description:
-            "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
+            "Optional seed for reproducible results on models that support it. Omitted by default. -1 requests a fresh random seed and generation for each request.",
     }),
     system: z.string().optional().meta({
         description:

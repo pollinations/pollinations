@@ -24,6 +24,22 @@ export const setOutputMode = (mode: OutputMode) => {
 
 export const getOutputMode = (): OutputMode => currentMode;
 
+/**
+ * A balance or budget for people to read: "$2.50", "-$0.30". Amounts under
+ * a cent keep two significant digits ("$0.004"), so a usable balance never
+ * shows as "$0.00".
+ */
+export const formatDollars = (amount: number) => {
+    const abs = Math.abs(amount);
+    const decimals =
+        abs === 0 || abs >= 0.01
+            ? 2
+            : Math.min(10, 1 - Math.floor(Math.log10(abs)));
+    const digits = abs.toFixed(decimals);
+    const text = decimals > 2 ? digits.replace(/0+$/, "") : digits;
+    return `${amount < 0 ? "-" : ""}$${text}`;
+};
+
 /** Print structured data — adapts to current output mode */
 export const printResult = (data: object) => {
     if (currentMode === "json") {

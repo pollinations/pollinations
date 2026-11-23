@@ -8,6 +8,7 @@ import {
     Drawer,
     DropdownItem,
     ExternalLinkButton,
+    formatCount,
     GitHubIcon,
     IconButton,
     LiveDot,
@@ -16,12 +17,12 @@ import {
     SocialCount,
     StarIcon,
     TabButton,
-    XIcon,
 } from "@pollinations/ui";
+import polliLockupBlack from "@pollinations/ui/brand/polli/polli-lockup-horizontal-black.png";
+import polliLockupWhite from "@pollinations/ui/brand/polli/polli-lockup-horizontal-white.png";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
-import { compact } from "../../data/publicStats";
 import { DOCS_URL, SOCIAL } from "./links";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
@@ -35,7 +36,6 @@ const NAV = [
 const LEGAL = [
     { to: "/terms", label: "Terms" },
     { to: "/privacy", label: "Privacy" },
-    { to: "/refunds", label: "Refunds" },
 ] as const;
 
 const [GITHUB, DISCORD, ...OTHER_SOCIAL] = SOCIAL;
@@ -101,7 +101,7 @@ function MenuUtilities({
                 </span>
                 {discordOnline !== null && (
                     <SocialCount as="span" network="discord" showIcon={false}>
-                        {compact(discordOnline)} online
+                        {formatCount(discordOnline)} online
                         <LiveDot />
                     </SocialCount>
                 )}
@@ -129,7 +129,7 @@ function MenuUtilities({
 function GitHubStarsButton({ stars }: { stars: number | null }) {
     if (stars === null) return null;
 
-    const displayedStars = compact(stars);
+    const displayedStars = formatCount(stars);
     const label = `Star us on GitHub (${stars.toLocaleString()} stars)`;
 
     return (
@@ -161,7 +161,7 @@ function DiscordLiveButton({ online }: { online: number | null }) {
             aria-label={label}
             title={label}
         >
-            {compact(online)} online
+            {formatCount(online)} online
             <LiveDot />
         </SocialCount>
     );
@@ -170,7 +170,8 @@ function DiscordLiveButton({ online }: { online: number | null }) {
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
-    const displayedRepoStars = repoStars === null ? null : compact(repoStars);
+    const displayedRepoStars =
+        repoStars === null ? null : formatCount(repoStars);
     const { data: discordOnline } = useDiscordPresence({
         refreshMs: 300_000,
     });
@@ -266,20 +267,27 @@ export function SiteHeader() {
                             side="right"
                             contentClassName="w-[min(18.75rem,78vw)]"
                         >
-                            <div className="flex min-h-0 flex-1 flex-col gap-3 p-3.5 pt-5">
-                                <div className="flex shrink-0 justify-end">
-                                    <Button
-                                        aria-label="Close menu"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className="h-11 w-full justify-between gap-2 px-3 [&>svg]:size-6 [&>svg]:shrink-0"
-                                    >
-                                        <BrandMark
-                                            variant="lockup"
-                                            className="h-5.5 w-43.5 min-w-0 shrink"
-                                        />
-                                        <XIcon />
-                                    </Button>
-                                </div>
+                            <div className="flex min-h-0 flex-1 flex-col gap-3 p-3.5">
+                                {/* Polli and the name, as on Enter. No close
+                                    button: tapping outside or Escape closes
+                                    the drawer. */}
+                                <Link
+                                    to="/"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    aria-label="pollinations.ai home"
+                                    className="flex shrink-0 px-2"
+                                >
+                                    <img
+                                        src={polliLockupBlack}
+                                        alt=""
+                                        className="h-auto w-full max-w-60 [.dark_&]:hidden"
+                                    />
+                                    <img
+                                        src={polliLockupWhite}
+                                        alt=""
+                                        className="hidden h-auto w-full max-w-60 [.dark_&]:block"
+                                    />
+                                </Link>
                                 <nav
                                     id="mobile-site-menu"
                                     className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto"
@@ -315,8 +323,10 @@ export function SiteHeader() {
                                             );
                                         })}
                                     </div>
+                                    {/* The same white pills as the desktop
+                                        header, on the drawer background. */}
                                     <div
-                                        className={`site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-card bg-surface-opaque p-2.5 ${
+                                        className={`site-drawer-card-delay-1 grid grid-cols-2 gap-2 px-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""
@@ -333,6 +343,7 @@ export function SiteHeader() {
                                                     key={href}
                                                     href={href}
                                                     external={external}
+                                                    intent="surface"
                                                     icon={
                                                         <Icon className="h-4 w-4 shrink-0" />
                                                     }
@@ -363,19 +374,34 @@ export function SiteHeader() {
                                             discordOnline={discordOnline}
                                         />
                                     </div>
-                                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-1.5 pt-0.5 text-xs text-theme-text-muted [&>button]:ml-auto">
-                                        <div className="flex items-center gap-2">
-                                            {LEGAL.map((item) => (
-                                                <Link
+                                    {/* One line signs off the drawer, as on
+                                        Enter: the logo, the small print, the
+                                        colour toggle. */}
+                                    <div className="flex shrink-0 items-center gap-3 px-1.5 pt-0.5 text-xs text-theme-text-muted">
+                                        <BrandMark className="size-6 shrink-0 text-theme-text-strong" />
+                                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                            {LEGAL.map((item, index) => (
+                                                <span
                                                     key={item.to}
-                                                    to={item.to}
-                                                    onClick={() =>
-                                                        setMobileMenuOpen(false)
-                                                    }
-                                                    className="transition-colors hover:text-theme-text-strong"
+                                                    className="flex items-center gap-1.5"
                                                 >
-                                                    {item.label}
-                                                </Link>
+                                                    {index > 0 && (
+                                                        <span aria-hidden="true">
+                                                            ·
+                                                        </span>
+                                                    )}
+                                                    <Link
+                                                        to={item.to}
+                                                        onClick={() =>
+                                                            setMobileMenuOpen(
+                                                                false,
+                                                            )
+                                                        }
+                                                        className="transition-colors hover:text-theme-text-strong"
+                                                    >
+                                                        {item.label}
+                                                    </Link>
+                                                </span>
                                             ))}
                                         </div>
                                         <ColorModeToggle />

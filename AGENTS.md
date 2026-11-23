@@ -115,6 +115,13 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
 
+## Production D1 Query Safety (CRITICAL)
+
+- Every Gen and Enter request waits on the one production D1 database. A query that scans a large table blocks all of them while it runs, and the queue then overflows into `D1_OVERLOADED` errors. On 2026-11-23, agent `wrangler` scans of `apikey` caused four 2–3 s stalls.
+- Query production D1 directly (`wrangler d1 execute --env production --remote` or the D1 REST API) only for lookups by an indexed column, such as a primary key, `user.email` or `apikey.user_id`. Run `EXPLAIN QUERY PLAN` on staging first; a `SCAN` without `USING INDEX` is not allowed on production.
+- Run counts, joins, `json_extract` filters and exploration on staging D1 or on the Tinybird copies (`d1_user`, `d1_apikey`, `d1_account`, `d1_session`).
+- D1 analytics do not record `wrangler` or REST queries; find them in the Cloudflare account audit log.
+
 ## Tinybird Deployment Safety (CRITICAL)
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.

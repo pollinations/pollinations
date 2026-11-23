@@ -187,10 +187,18 @@ export function createInteractionHandler({
                 ephemeral: true,
             });
 
-            const pending = (async () => {
+            // Mark the attempt so /disconnect can cancel it. A completed poll
+            // must not restore a token after the user has disconnected, and a
+            // later /connect attempt must not be removed by this attempt's
+            // cleanup.
+            const authState = { cancelled: false };
+            activeAuthorizations.set(userId, authState);
+            (async () => {
                 try {
                     const token = await auth.poll();
+                    if (authState.cancelled) return;
                     const user = await userInfo(token);
+                    if (authState.cancelled) return;
                     await store.set(userId, {
                         token,
                         username: displayName(user),
@@ -202,20 +210,27 @@ export function createInteractionHandler({
                         )
                         .catch(() => {});
                 } catch (error) {
+                    if (authState.cancelled) return;
                     await interaction
                         .editReply(
                             `Connection did not complete (${safeErrorLabel(error)}). Run \`/connect\` to try again.`,
                         )
                         .catch(() => {});
                 } finally {
-                    activeAuthorizations.delete(userId);
+                    if (activeAuthorizations.get(userId) === authState) {
+                        activeAuthorizations.delete(userId);
+                    }
                 }
             })();
-            activeAuthorizations.set(userId, pending);
             return;
         }
 
         if (interaction.commandName === "disconnect") {
+            const pending = activeAuthorizations.get(userId);
+            if (pending) {
+                pending.cancelled = true;
+                activeAuthorizations.delete(userId);
+            }
             await store.delete(userId);
             await interaction.reply({
                 content:

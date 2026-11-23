@@ -76,6 +76,24 @@ test("Discord context is isolated between connected users", () => {
     ]);
 });
 
+function interaction(commandName) {
+    const replies = [];
+    const edits = [];
+    return {
+        commandName,
+        user: { id: "user-a", username: "alice" },
+        client: { user: { id: "bot" } },
+        channel: { messages: { fetch: async () => new Map() } },
+        options: { getString: () => "How should these promises run?" },
+        isChatInputCommand: () => true,
+        reply: async (value) => replies.push(value),
+        editReply: async (value) => edits.push(value),
+        deferReply: async () => {},
+        replies,
+        edits,
+    };
+}
+
 test("connect -> ask -> disconnect keeps credentials private and per-user", async () => {
     const { createInteractionHandler } = await import("../bot.js");
     const dir = await mkdtemp(join(tmpdir(), "polli-discord-flow-"));
@@ -97,25 +115,7 @@ test("connect -> ask -> disconnect keeps credentials private and per-user", asyn
         },
     });
 
-    const base = (commandName) => {
-        const replies = [];
-        const edits = [];
-        return {
-            commandName,
-            user: { id: "user-a", username: "alice" },
-            client: { user: { id: "bot" } },
-            channel: { messages: { fetch: async () => new Map() } },
-            options: { getString: () => "How should these promises run?" },
-            isChatInputCommand: () => true,
-            reply: async (value) => replies.push(value),
-            editReply: async (value) => edits.push(value),
-            deferReply: async () => {},
-            replies,
-            edits,
-        };
-    };
-
-    const connect = base("connect");
+    const connect = interaction("connect");
     await handler(connect);
     assert.match(connect.replies[0].content, /ABCD/);
     let connected = null;
@@ -129,7 +129,7 @@ test("connect -> ask -> disconnect keeps credentials private and per-user", asyn
         /sk_private_user_token/,
     );
 
-    const ask = base("ask");
+    const ask = interaction("ask");
     await handler(ask);
     assert.equal(agentCalls[0].token, "sk_private_user_token");
     assert.deepEqual(agentCalls[0].messages, [
@@ -140,8 +140,41 @@ test("connect -> ask -> disconnect keeps credentials private and per-user", asyn
         false,
     );
 
-    const disconnect = base("disconnect");
+    const disconnect = interaction("disconnect");
     await handler(disconnect);
+    assert.equal(await store.get("user-a"), null);
+});
+
+test("disconnect cancels a pending device authorization", async () => {
+    const { createInteractionHandler } = await import("../bot.js");
+    const dir = await mkdtemp(join(tmpdir(), "polli-discord-cancel-"));
+    const store = new TokenStore(join(dir, "tokens.json"));
+    let releasePoll;
+    const poll = new Promise((resolve) => {
+        releasePoll = resolve;
+    });
+    const handler = createInteractionHandler({
+        store,
+        appKey: "pk_test",
+        authorize: async () => ({
+            verificationUri:
+                "https://enter.pollinations.ai/device?user_code=ABCD",
+            userCode: "ABCD",
+            poll: () => poll,
+        }),
+        userInfo: async () => ({ preferred_username: "alice" }),
+        agent: async () => "",
+    });
+
+    const connect = interaction("connect");
+    await handler(connect);
+    assert.match(connect.replies[0].content, /ABCD/);
+
+    const disconnect = interaction("disconnect");
+    await handler(disconnect);
+    releasePoll("sk_cancelled_token");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     assert.equal(await store.get("user-a"), null);
 });
 

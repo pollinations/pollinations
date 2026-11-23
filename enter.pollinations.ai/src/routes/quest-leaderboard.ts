@@ -216,6 +216,24 @@ export type QuestStandingsResponse = z.infer<
     typeof questStandingsResponseSchema
 >;
 
+// Every viewer sees the same race, so they share one copy instead of each
+// scanning the month's rewards: about 135 views an hour took a quarter of D1's
+// time on 2026-11-23. The key holds the UTC day, so movement restarts at
+// midnight.
+const STANDINGS_CACHE_TTL = 5 * 60;
+
+type QuestStandingsRace = {
+    month: string;
+    endsAt: string;
+    // Every ranked login, best first.
+    ranking: {
+        githubLogin: string;
+        totalPollen: number;
+        supporter: boolean;
+        yesterdayRank: number | null;
+    }[];
+};
+
 /**
  * This calendar month's (UTC) Quest balance race, cut down to what one viewer
  * needs: the podium plus the rows just above and below them. Every quest
@@ -228,6 +246,33 @@ export async function buildQuestStandings(
     viewerGithubLogin: string | null,
     now = new Date(),
 ): Promise<QuestStandingsResponse> {
+    return sliceQuestStandings(
+        await buildQuestStandingsRace(env, now),
+        viewerGithubLogin,
+    );
+}
+
+/** {@link buildQuestStandings} from a race shared for five minutes. */
+export async function getQuestStandings(
+    env: CloudflareBindings,
+    viewerGithubLogin: string | null,
+    now = new Date(),
+): Promise<QuestStandingsResponse> {
+    const key = `quests:standings:v1:${now.toISOString().slice(0, 10)}`;
+    let race = await env.KV.get<QuestStandingsRace>(key, "json");
+    if (!race) {
+        race = await buildQuestStandingsRace(env, now);
+        await env.KV.put(key, JSON.stringify(race), {
+            expirationTtl: STANDINGS_CACHE_TTL,
+        });
+    }
+    return sliceQuestStandings(race, viewerGithubLogin);
+}
+
+async function buildQuestStandingsRace(
+    env: CloudflareBindings,
+    now: Date,
+): Promise<QuestStandingsRace> {
     const monthStart = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
     );
@@ -281,20 +326,8 @@ export async function buildQuestStandings(
         ]),
     );
 
-    const viewer = viewerGithubLogin?.toLowerCase() ?? null;
-    const viewerIndex = ranking.findIndex((row) => row.githubLogin === viewer);
-    const shown = ranking
-        .map((row, index) => ({ ...row, rank: index + 1 }))
-        .filter(
-            ({ rank }) =>
-                rank <= STANDINGS_PODIUM ||
-                (viewerIndex >= 0 &&
-                    rank >= viewerIndex + 1 - STANDINGS_ABOVE &&
-                    rank <= viewerIndex + 1 + STANDINGS_BELOW),
-        );
-
     const supporters = new Set(
-        shown.length === 0
+        ranking.length === 0
             ? []
             : (
                   await db
@@ -304,30 +337,46 @@ export async function buildQuestStandings(
                           schema.user,
                           eq(rewardsTable.userId, schema.user.id),
                       )
-                      .where(
-                          and(
-                              inArray(rewardsTable.questId, TOP_UP_QUEST_IDS),
-                              inArray(
-                                  githubLogin,
-                                  shown.map((row) => row.githubLogin),
-                              ),
-                          ),
-                      )
+                      .where(inArray(rewardsTable.questId, TOP_UP_QUEST_IDS))
               ).map((row) => row.githubLogin),
     );
 
     return {
         month: monthStart.toISOString().slice(0, 7),
         endsAt: monthEnd.toISOString(),
+        ranking: ranking.map((row) => ({
+            ...row,
+            supporter: supporters.has(row.githubLogin),
+            yesterdayRank: yesterdayRank.get(row.githubLogin) ?? null,
+        })),
+    };
+}
+
+function sliceQuestStandings(
+    { month, endsAt, ranking }: QuestStandingsRace,
+    viewerGithubLogin: string | null,
+): QuestStandingsResponse {
+    const viewer = viewerGithubLogin?.toLowerCase() ?? null;
+    const viewerIndex = ranking.findIndex((row) => row.githubLogin === viewer);
+    const rows = ranking
+        .map(({ yesterdayRank, ...row }, index) => ({
+            ...row,
+            rank: index + 1,
+            movement: yesterdayRank === null ? null : yesterdayRank - index - 1,
+        }))
+        .filter(
+            ({ rank }) =>
+                rank <= STANDINGS_PODIUM ||
+                (viewerIndex >= 0 &&
+                    rank >= viewerIndex + 1 - STANDINGS_ABOVE &&
+                    rank <= viewerIndex + 1 + STANDINGS_BELOW),
+        );
+
+    return {
+        month,
+        endsAt,
         participants: ranking.length,
-        rows: shown.map((row) => {
-            const before = yesterdayRank.get(row.githubLogin);
-            return {
-                ...row,
-                supporter: supporters.has(row.githubLogin),
-                movement: before === undefined ? null : before - row.rank,
-            };
-        }),
+        rows,
         you: viewer
             ? {
                   githubLogin: viewer,

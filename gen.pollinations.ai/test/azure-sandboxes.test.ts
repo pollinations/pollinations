@@ -74,9 +74,11 @@ function stubAzure() {
             );
             return Response.json({ access_token: "azure", expires_in: 3600 });
         }
-        if (url.hostname.endsWith("--8080.eastus.adcproxy.io")) {
-            const id = url.hostname.split("--")[0];
-            expect(boxes.find((box) => box.id === id)?.state).toBe("Running");
+        const appBox = boxes.find(
+            ({ id }) => url.hostname === `${id}--8080.eastus.adcproxy.io`,
+        );
+        if (appBox) {
+            expect(appBox.state).toBe("Running");
             expect(request.headers.get("authorization")).toBe(
                 `Bearer ${INGRESS_TOKEN}`,
             );

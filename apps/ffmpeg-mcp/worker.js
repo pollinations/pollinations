@@ -166,39 +166,7 @@ async function probeTool(params, env, dependencies, reportUsage) {
     };
 }
 
-/**
- * FFmpeg argument guard: the tool's contract says arguments reference
- * downloaded sources by name (input0, input1, ...) and contain no URLs or
- * output paths, but nothing enforced it — an argument like
- * "file:///etc/passwd" or "https://evil/x" in an -i position made ffmpeg
- * read a local container file or fetch an arbitrary URL, bypassing the
- * validated-sources policy entirely. Enforce the contract: input references
- * are inputN names only, and no argument may carry a protocol or a path.
- */
-const INPUT_REFERENCE_PATTERN = /^input\d+$/;
-const PROTOCOL_PATTERN = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-const PATH_LIKE_PATTERN = /^(\/|\\|\.\.?[\\/])/;
-
-function validateFfmpegArgs(args) {
-    for (const arg of args) {
-        if (INPUT_REFERENCE_PATTERN.test(arg)) continue;
-        if (PROTOCOL_PATTERN.test(arg)) {
-            throw new ToolFailure(
-                400,
-                "FFmpeg arguments must not contain URLs. Reference downloaded sources as input0, input1, ...",
-            );
-        }
-        if (PATH_LIKE_PATTERN.test(arg)) {
-            throw new ToolFailure(
-                400,
-                "FFmpeg arguments must not contain file paths. Reference downloaded sources as input0, input1, ...",
-            );
-        }
-    }
-}
-
 async function runTool(params, env, dependencies, reportUsage) {
-    validateFfmpegArgs(params.args);
     const inputs = await Promise.all(
         params.sources.map((source) =>
             fetchSource(

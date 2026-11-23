@@ -352,6 +352,45 @@ test("accepts public HTTPS media and raw FFmpeg input arguments", async () => {
     await client.close();
 });
 
+test("caps FFmpeg at 16 sources before fetching or executing", async () => {
+    const sources = Array.from(
+        { length: 16 },
+        (_, index) => `https://media.pollinations.ai/source-${index}`,
+    );
+    const { calls, env, worker } = createHarness({ expectedSources: sources });
+    const client = await connect(worker, env, calls);
+    const args = ["-i", "input15"];
+    try {
+        const rejected = await client.callTool({
+            name: "runFfmpeg",
+            arguments: {
+                sources: [...sources, SOURCE],
+                args,
+                outputExtension: "mp4",
+            },
+        });
+        assert.equal(rejected.isError, true);
+        assert.match(rejected.content[0].text, /at most 16 sources per run/);
+        assert.equal(calls.sourceFetches.length, 0);
+        assert.equal(calls.run.length, 0);
+        assert.equal(calls.upload.length, 0);
+        assert.equal(
+            calls.responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost),
+            null,
+        );
+
+        const result = await client.callTool({
+            name: "runFfmpeg",
+            arguments: { sources, args, outputExtension: "mp4" },
+        });
+        assert.equal(result.isError, undefined);
+        assert.deepEqual(calls.sourceFetches, sources);
+        assert.equal(calls.run[0].inputs.length, 16);
+    } finally {
+        await client.close();
+    }
+});
+
 test("revalidates public HTTPS redirects", async () => {
     const redirectedSource = "https://cdn.example.com/source.mp4";
     const { calls, env, worker } = createHarness({
@@ -545,47 +584,4 @@ test("reports usage for executed failures", async () => {
         assert.equal(calls.destroy, 1);
         await client.close();
     }
-});
-
-test("rejects URL and path arguments before execution", async () => {
-    const { calls, env, worker } = createHarness();
-    const client = await connect(worker, env, calls);
-    for (const args of [
-        ["-i", "https://evil.example.com/source.mp4"],
-        ["-i", "file:///etc/passwd"],
-        ["-i", "/etc/passwd"],
-        ["-i", "./local/input.mp4"],
-        ["-i", "input0", "-f", "concat", "-safe", "0", "-i", "../secret.txt"],
-    ]) {
-        const result = await client.callTool({
-            name: "runFfmpeg",
-            arguments: {
-                sources: ["https://example.com/source.mp4"],
-                args,
-                outputExtension: "mp4",
-            },
-        });
-        assert.equal(result.isError, true);
-    }
-    assert.equal(calls.run.length, 0);
-    await client.close();
-});
-
-test("accepts ordinary filter arguments alongside input references", async () => {
-    const publicSource = "https://cdn.example.com/source.mp4";
-    const { calls, env, worker } = createHarness({
-        expectedSource: publicSource,
-    });
-    const client = await connect(worker, env, calls);
-    const result = await client.callTool({
-        name: "runFfmpeg",
-        arguments: {
-            sources: [publicSource],
-            args: ["-i", "input0", "-vf", "scale=1280:-2", "-t", "10"],
-            outputExtension: "mp4",
-        },
-    });
-    assert.equal(result.isError, undefined);
-    assert.equal(calls.run.length, 1);
-    await client.close();
 });

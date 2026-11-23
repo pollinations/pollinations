@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGeminiLiveEvents } from "../src/routes/geminiLiveEvents.ts";
-
 import { createGeminiTranscribeEvents } from "../src/routes/geminiTranscribeEvents.ts";
 
 function session() {
@@ -404,9 +403,10 @@ describe("Gemini Live realtime events", () => {
 });
 
 describe("Gemini streaming transcription", () => {
-    it("recovers from silence and requires a provider receipt for final text", () => {
+    function transcriptionSession() {
         const sendClient = vi.fn(),
-            onUsage = vi.fn();
+            onUsage = vi.fn(),
+            onCommit = vi.fn();
         const s = createGeminiTranscribeEvents({
             model: "google/gemini-3.5-transcribe-live",
             sendClient,
@@ -414,7 +414,13 @@ describe("Gemini streaming transcription", () => {
             sendGoogle: vi.fn(),
             requestSetup: vi.fn(),
             cancelUnsentTurn: () => false,
+            onCommit,
         });
+        return { s, sendClient, onUsage, onCommit };
+    }
+
+    it("recovers from silence and requires a provider receipt for final text", () => {
+        const { s, sendClient, onUsage } = transcriptionSession();
         expect(s.setup("vertex-model").setup.inputAudioTranscription).toEqual({
             mode: "VERBATIM",
             languageCodes: ["en-US"],
@@ -462,4 +468,36 @@ describe("Gemini streaming transcription", () => {
         );
         expect(s.pendingTurn()).toBe(false);
     });
+
+    it.each([undefined, { inputTranscription: { text: " " } }])(
+        "settles a usage-only committed turn and keeps the session open (%j)",
+        (serverContent) => {
+            const { s, sendClient, onUsage, onCommit } = transcriptionSession();
+            s.client({ type: "input_audio_buffer.append", audio: "AAA=" });
+            s.client({ type: "input_audio_buffer.commit" });
+            expect(onCommit).toHaveBeenCalledOnce();
+            s.google({
+                serverContent,
+                usageMetadata: {
+                    promptTokenCount: 25,
+                    totalTokenCount: 25,
+                    promptTokensDetails: [
+                        { modality: "AUDIO", tokenCount: 25 },
+                    ],
+                },
+            });
+            expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+                promptAudioTokens: 25,
+            });
+            expect(sendClient).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    type: "conversation.item.input_audio_transcription.failed",
+                    error: expect.objectContaining({ code: "no_transcript" }),
+                }),
+            );
+            expect(s.pendingTurn()).toBe(false);
+            s.client({ type: "input_audio_buffer.append", audio: "AAA=" });
+            expect(s.pendingTurn()).toBe(true);
+        },
+    );
 });

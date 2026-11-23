@@ -62,7 +62,8 @@ export function createGeminiTranscribeEvents({
     sendGoogle,
     requestSetup,
     onUsage,
-}: Parameters<typeof createGeminiLiveEvents>[0]) {
+    onCommit,
+}: Parameters<typeof createGeminiLiveEvents>[0] & { onCommit: () => void }) {
     const sessionId = `sess_${crypto.randomUUID()}`;
     let rate = 24000;
     // Vertex can answer spoken questions when the language list is empty, even in VERBATIM mode.
@@ -116,11 +117,25 @@ export function createGeminiTranscribeEvents({
         emitted = "";
         committed = false;
     };
+    const noTranscript = () => {
+        emit("conversation.item.input_audio_transcription.failed", {
+            item_id: item,
+            content_index: 0,
+            error: {
+                type: "transcription_error",
+                code: "no_transcript",
+                message:
+                    "Vertex ended the utterance without a final transcript.",
+            },
+        });
+        endItem();
+    };
     const commit = () => {
         if (!item || committed)
             return error("Append audio before committing an utterance.");
         committed = true;
         sendGoogle({ realtimeInput: { activityEnd: {} } });
+        onCommit();
         emit("input_audio_buffer.committed", {
             item_id: item,
             previous_item_id: previous,
@@ -202,19 +217,8 @@ export function createGeminiTranscribeEvents({
                 committed &&
                 !serverContent?.inputTranscription &&
                 !usageMetadata
-            ) {
-                emit("conversation.item.input_audio_transcription.failed", {
-                    item_id: item,
-                    content_index: 0,
-                    error: {
-                        type: "transcription_error",
-                        code: "no_transcript",
-                        message:
-                            "Vertex ended the utterance without a final transcript.",
-                    },
-                });
-                endItem();
-            }
+            )
+                return noTranscript();
             if (serverContent?.interimInputTranscription && item)
                 delta(serverContent.interimInputTranscription.text);
             const final = serverContent?.inputTranscription;
@@ -223,7 +227,6 @@ export function createGeminiTranscribeEvents({
             if (
                 !item ||
                 !committed ||
-                !final ||
                 !usage ||
                 Object.keys(usage).some(
                     (key) =>
@@ -233,6 +236,7 @@ export function createGeminiTranscribeEvents({
             )
                 throw Error("Missing transcription receipt");
             onUsage(usage);
+            if (!final?.text.trim()) return noTranscript();
             delta(final.text);
             emit("conversation.item.input_audio_transcription.completed", {
                 item_id: item,

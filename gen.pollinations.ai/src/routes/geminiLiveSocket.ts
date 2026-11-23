@@ -13,6 +13,7 @@ import { createGeminiTranscribeEvents } from "./geminiTranscribeEvents.ts";
 
 export const GEMINI_LIVE = "google/gemini-3.8-live";
 export const GEMINI_TRANSCRIBE = "google/gemini-3.5-transcribe-live";
+const TRANSCRIPTION_RECEIPT_TIMEOUT_MS = 45_000;
 
 async function route(c: Context<Env>, id: string) {
     const us = id.endsWith(":google:us");
@@ -54,6 +55,7 @@ export function proxyGeminiLive(
     let started = false;
     let disconnected = false;
     let drainTimer: ReturnType<typeof setTimeout> | undefined;
+    let turnTimer: ReturnType<typeof setTimeout> | undefined;
     // Only one bounded turn can await setup. Session configuration is sent in setup itself.
     const queue: string[] = [];
     const sendClient = (event: object) => {
@@ -63,6 +65,7 @@ export function proxyGeminiLive(
     const finish = (message?: string) => {
         if (lifetime.signal.aborted) return;
         clearTimeout(drainTimer);
+        clearTimeout(turnTimer);
         lifetime.abort();
         queue.length = 0;
         if (message) {
@@ -95,6 +98,18 @@ export function proxyGeminiLive(
         model,
         sendClient,
         onUsage: billing.usage,
+        onCommit() {
+            if (lifetime.signal.aborted) return;
+            // Start at commit so this also bounds a turn queued during setup.
+            // Close on timeout because late provider frames have no turn ID.
+            turnTimer = setTimeout(
+                () =>
+                    finish(
+                        "Gemini transcription timed out waiting for terminal usage",
+                    ),
+                TRANSCRIPTION_RECEIPT_TIMEOUT_MS,
+            );
+        },
         cancelUnsentTurn() {
             if (selected) return false;
             queue.length = 0;
@@ -110,7 +125,7 @@ export function proxyGeminiLive(
                     (queue.length >= 1024 ||
                         queuedBytes + frame.length > 8 * 1024 * 1024)
                 )
-                    throw Error("Gemini transcription setup buffer exceeded");
+                    return finish("Gemini transcription setup buffer exceeded");
                 queue.push(frame);
                 if (transcribing) queuedBytes += frame.length;
             }
@@ -215,7 +230,10 @@ export function proxyGeminiLive(
                         queue.length = 0;
                     } else {
                         events.google(frame);
-                        if (disconnected && !events.pendingTurn()) finish();
+                        if (!events.pendingTurn()) {
+                            clearTimeout(turnTimer);
+                            if (disconnected) finish();
+                        }
                     }
                 } catch {
                     if (!ready) return failSetup();

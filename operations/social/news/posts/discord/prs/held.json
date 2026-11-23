@@ -27,8 +27,25 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20489": {
+      "merge_sha": "9a8ef0b6d8d2b28401670c943f6453ca23b17e69",
+      "merged_at": "2026-11-23T12:17:24Z",
+      "required": []
+    },
+    "20494": {
+      "merge_sha": "b1dd722d8ca35032326170f0f697418c7d78099c",
+      "merged_at": "2026-11-23T12:56:59Z",
+      "required": []
+    },
+    "20497": {
+      "merge_sha": "0c0d53f984615aeabcad747fb401c6da3c69cebc",
+      "merged_at": "2026-11-23T13:51:29Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
     }
   },
-  "production": "38b3e2beffdf41c6179e6273d2b0c6576f02bf86",
+  "production": "be17bf47a671833b132ffdf704a75890850d79ce",
   "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
 }

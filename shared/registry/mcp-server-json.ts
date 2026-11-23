@@ -1,10 +1,8 @@
 // Builds an MCP server.json entry (https://modelcontextprotocol.io/registry)
 // from shared/registry/mcp.ts. The registry publisher and gen's SEP-2127
 // Server Cards both use it, so the card and the registry entry can't drift.
+import { PUBLIC_URLS } from "../public-urls.ts";
 import type { McpServerDefinition } from "./mcp.ts";
-
-const GEN_ORIGIN = "https://gen.pollinations.ai";
-const KEYS_URL = "https://enter.pollinations.ai/keys";
 
 // The registry caps `description` at 100 characters; composio's product
 // description runs longer, so it gets a shorter registry-only one.
@@ -18,7 +16,8 @@ const DESCRIPTION_OVERRIDES: Partial<
 export function buildServerEntry(
     server: McpServerDefinition,
     version: string,
-    origin = GEN_ORIGIN,
+    origin: string = PUBLIC_URLS.gen.production,
+    keysUrl = `${PUBLIC_URLS.enter.production}/keys`,
 ) {
     return {
         $schema:
@@ -39,7 +38,7 @@ export function buildServerEntry(
                 headers: [
                     {
                         name: "Authorization",
-                        description: `Pollinations API key. Get one at ${KEYS_URL}.`,
+                        description: `Pollinations API key. Get one at ${keysUrl}.`,
                         isRequired: true,
                         isSecret: true,
                         // The gateway requires the literal "Bearer " prefix; bake

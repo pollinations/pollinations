@@ -91,13 +91,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run push-secrets:staging --workspace pollinations-enter
 
-      - name: Verify the staging account API
-        run: |
-          curl --fail --silent --show-error --retry 4 --max-time 10 \
-            https://staging.enter.pollinations.ai/api/auth/ok | jq -e '.ok == true'
-          curl --fail --silent --show-error --retry 4 --max-time 10 \
-            https://staging.enter.pollinations.ai/api/auth/get-session | jq -e -s '. == [null]'
-
   # Stage the MCP Workers before deploying their service bindings in Gen.
   deploy-mcp:
     if: inputs.service == 'all' || inputs.service == 'gen'
@@ -166,3 +159,19 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run push-secrets:staging --workspace pollinations-gen
+
+  verify-account-api:
+    needs: [deploy-enter, deploy-gen]
+    if: ${{ !cancelled() && contains(needs.*.result, 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify staging account access directly and through Gen
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --retry 4 --max-time 10 \
+            https://staging.enter.pollinations.ai/api/auth/ok | jq -e '.ok == true'
+          curl --fail --silent --show-error --retry 4 --max-time 10 \
+            https://staging.enter.pollinations.ai/api/auth/get-session | jq -e -s '. == [null]'
+          status=$(curl --silent --show-error --retry 4 --max-time 10 --output /dev/null \
+            --write-out '%{http_code}' https://staging.gen.pollinations.ai/account/balance)
+          test "$status" = 401

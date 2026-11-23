@@ -57,7 +57,11 @@ test("publishes and routes the code pilot only in staging", async () => {
         );
     }
     const path = "/mcp/pollinations-code";
-    expect((await fetchIn("staging", `${path}/server-card`)).status).toBe(200);
+    const card = await fetchIn("staging", `${path}/server-card`);
+    expect(card.status).toBe(200);
+    expect(await card.text()).toContain(
+        "https://staging.enter.pollinations.ai/keys",
+    );
     expect((await fetchIn("production", `${path}/server-card`)).status).toBe(
         404,
     );

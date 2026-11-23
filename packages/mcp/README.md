@@ -23,7 +23,7 @@ Calls use that key's wallet, permissions, and budget.
 ### Staging pilot for external agents
 
 Connect a Streamable HTTP client to `https://staging.gen.pollinations.ai/mcp/pollinations-code`
-with a funded staging API key. The server exposes one tool, `code`. Pass an
+with a funded [staging API key](https://staging.enter.pollinations.ai/keys). The server exposes one tool, `code`. Pass an
 async JavaScript function as its `code` string. For example, this function
 looks up image models and compares up to three with the same prompt:
 

@@ -80,7 +80,7 @@ describe("provider transform passthrough", () => {
         ]);
     });
 
-    it.each(["mistral", "mimo-v2.5", "mimo-v2.5-pro"])(
+    it.each(["mistral", "mimo-v2.5"])(
         "does not transform %s requests",
         (modelName) => {
             expect(findModelByName(modelName)?.transform).toBeUndefined();

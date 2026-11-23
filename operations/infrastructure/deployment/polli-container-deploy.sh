@@ -132,4 +132,18 @@ if ! compose "$release" "$SHA" up -d --no-build --remove-orphans --wait --wait-t
   exit 1
 fi
 ln -sfn "$release" "$ROOT/current"
+
+# Every deploy loads two new images; keep only the current and rollback releases
+# so the disk does not fill up.
+keep=" $SHA $previous_tag "
+for dir in "$ROOT"/releases/*/; do
+  tag=$(basename "$dir")
+  [[ "$keep" == *" $tag "* ]] || rm -rf "$dir"
+done
+sudo -n docker images --format '{{.Repository}}:{{.Tag}}' |
+  while IFS=: read -r repo tag; do
+    [[ "$repo" =~ ^polli(-visual-studio)?$ && "$tag" =~ ^[0-9a-f]{40}$ ]] || continue
+    [[ "$keep" == *" $tag "* ]] || sudo -n docker image rm "$repo:$tag"
+  done
+sudo -n docker image prune -f
 REMOTE

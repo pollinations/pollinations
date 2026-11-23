@@ -109,6 +109,11 @@ import {
     mediaModelSettings,
 } from "./media-model-settings";
 import {
+    agentAttachments,
+    modelAbilities,
+    takesFileLinks,
+} from "./model-abilities";
+import {
     audioConstraintError,
     audioInputError,
     audioTaskForModel,
@@ -142,6 +147,9 @@ type PlaygroundModel = MediaModelMetadata & {
     description: string;
     category: ModelCategory;
     inputModalities: string[];
+    /** Catalog capabilities such as web_search, for the ability chips. */
+    capabilities: string[];
+    mcpServers?: string[];
     outputFormats?: ImageFormats;
     supportedEndpoints: string[];
     voices: string[];
@@ -228,6 +236,12 @@ function playgroundModel(
         outputFormats: previewImageFormats(model, override?.imageFormats),
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
+        capabilities: model.capabilities ?? [],
+        mcpServers: Array.isArray(model.mcp_servers)
+            ? model.mcp_servers.filter(
+                  (id): id is string => typeof id === "string",
+              )
+            : undefined,
         resolutions: model.resolutions ?? [],
         minDuration: model.min_duration,
         maxDuration: model.max_duration,
@@ -1673,6 +1687,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
             if (!session) throw new Error("Connect to attach images.");
             return uploadReference(session.client, file, session.referenceUrls);
         },
+        isAgent && !!currentModel && takesFileLinks(currentModel),
     );
     const promptLabel = isAgent
         ? "Message"
@@ -1693,6 +1708,14 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                   ),
               )
             : [];
+    // An agent takes audio and video links like the Video tab's references.
+    const agentKinds =
+        isAgent && currentModel ? agentAttachments(currentModel) : [];
+    const queueMedia = isAgent
+        ? UPLOAD_MEDIA_ORDER.filter(
+              (media) => media !== "image" && agentKinds.includes(media),
+          )
+        : videoReferenceMedia;
     const hasReferenceMedia = videoReferenceMedia.some(
         (media) => videoReferences[media].length > 0,
     );
@@ -2205,7 +2228,10 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
     const needsSignIn = isHydrated && !apiKey;
     const needsEditImage = requiresImage && referenceImages.length === 0;
     const missingInput = isAgent
-        ? !agentChat.busy && !prompt.trim() && referenceImages.length === 0
+        ? !agentChat.busy &&
+          !prompt.trim() &&
+          referenceImages.length === 0 &&
+          referenceQueue.length === 0
         : requiresMediaUpload
           ? audioFiles.length === 0
           : !prompt.trim();
@@ -2268,9 +2294,13 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
     }
     function sendToAgent() {
         if (agentChat.busy) return agentChat.stop();
-        agentChat.send(prompt.trim(), referenceImages);
+        agentChat.send(prompt.trim(), [
+            ...(agentKinds.includes("image") ? referenceImages : []),
+            ...referenceQueue.map(({ file }) => file),
+        ]);
         setParam("prompt", "");
         setReferenceImages([]);
+        setReferenceQueue([]);
     }
     const run = needsSignIn ? connect : isAgent ? sendToAgent : generate;
     const modelStats = stats?.find((stat) => stat.model === currentModel?.id);
@@ -2286,7 +2316,12 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
             maxBytes={maxBytes}
             onRecord={onRecord}
             onBusyChange={setRecordingVideo}
-            disabled={recordingAudio || isGenerating || mediaDisabled}
+            disabled={
+                recordingAudio ||
+                isGenerating ||
+                mediaDisabled ||
+                agentChat.busy
+            }
         />
     );
     const audioUploadProps = acceptsMediaUpload
@@ -2350,13 +2385,14 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
         ) : null;
     const queuedTiles = referenceQueue.map(
         (item) =>
-            videoReferenceMedia.includes(item.media) && (
+            queueMedia.includes(item.media) && (
                 <UploadedFileTile
                     key={item.id}
                     drop={videoUploadProps(item.media)}
                     file={item.file}
                     modality={item.media}
                     disabled={
+                        agentChat.busy ||
                         (item.media === "audio" &&
                             (recording || isGenerating)) ||
                         (item.media === "video" && recordingVideo)
@@ -2372,9 +2408,47 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                 />
             ),
     );
-    const videoPicker = videoReferenceMedia.includes("video")
+    const videoPicker = queueMedia.includes("video")
         ? videoUploadProps("video")
         : undefined;
+    const mediaTiles = (
+        <>
+            {queueMedia.map((media) => {
+                const props = videoUploadProps(media);
+                return media === "audio" ? (
+                    <AudioInput
+                        key={`${currentModel?.id}-audio`}
+                        actionsOnly
+                        {...props}
+                        onBusyChange={setRecordingAudio}
+                        disabled={
+                            isGenerating ||
+                            recordingVideo ||
+                            mediaDisabled ||
+                            agentChat.busy
+                        }
+                    />
+                ) : (
+                    <FileUpload
+                        key={media}
+                        actionsOnly
+                        {...props}
+                        disabled={
+                            mediaDisabled ||
+                            agentChat.busy ||
+                            (media === "video" && recordingVideo)
+                        }
+                        label={capitalize(media)}
+                    />
+                );
+            })}
+            {videoPicker &&
+                videoPicker.value.length < videoPicker.maxFiles &&
+                cameraTile(videoPicker.maxSizeBytes, (file) =>
+                    videoPicker.onChange([...videoPicker.value, file]),
+                )}
+        </>
+    );
     const frameTiles =
         supportsFrames &&
         (supportsLastFrame
@@ -2446,6 +2520,36 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                             </Text>
                         )}
                     </div>
+                    <fieldset
+                        aria-label="Playground task"
+                        className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+                    >
+                        {WORKSPACES.map((item) => (
+                            <ModalityTab
+                                key={item.label}
+                                active={item === task.workspace}
+                                size="lg"
+                                modality={
+                                    item.category === "decision"
+                                        ? "text"
+                                        : item.category
+                                }
+                                icon={item.icon}
+                                onClick={() => {
+                                    if (item === task.workspace) return;
+                                    const next =
+                                        lastTask.current.get(item) ??
+                                        TASKS.find(
+                                            (candidate) =>
+                                                candidate.workspace === item,
+                                        );
+                                    if (next) selectTask(next);
+                                }}
+                            >
+                                {item.label}
+                            </ModalityTab>
+                        ))}
+                    </fieldset>
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&
@@ -2462,37 +2566,6 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                         aria-label="Model details"
                         className="@container flex min-w-0 flex-col gap-2"
                     >
-                        <fieldset
-                            aria-label="Playground task"
-                            className="m-0 mb-2 flex min-w-0 flex-wrap gap-2 border-0 p-0"
-                        >
-                            {WORKSPACES.map((item) => (
-                                <ModalityTab
-                                    key={item.label}
-                                    active={item === task.workspace}
-                                    size="lg"
-                                    modality={
-                                        item.category === "decision"
-                                            ? "text"
-                                            : item.category
-                                    }
-                                    icon={item.icon}
-                                    onClick={() => {
-                                        if (item === task.workspace) return;
-                                        const next =
-                                            lastTask.current.get(item) ??
-                                            TASKS.find(
-                                                (candidate) =>
-                                                    candidate.workspace ===
-                                                    item,
-                                            );
-                                        if (next) selectTask(next);
-                                    }}
-                                >
-                                    {item.label}
-                                </ModalityTab>
-                            ))}
-                        </fieldset>
                         <ModelPicker
                             key={activeCategory}
                             models={pickerModels}
@@ -2533,6 +2606,21 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                         href="https://model-monitor.pollinations.ai"
                                         linkLabel="Model Monitor"
                                     />
+                                    {modelAbilities(currentModel).map(
+                                        ({ label, Icon }) => (
+                                            <Chip
+                                                key={label}
+                                                size="md"
+                                                data-theme="neutral"
+                                            >
+                                                <Icon
+                                                    aria-hidden="true"
+                                                    className="size-3.5 text-theme-text-muted"
+                                                />
+                                                {label}
+                                            </Chip>
+                                        ),
+                                    )}
                                 </div>
                             </>
                         )}
@@ -2566,23 +2654,38 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                         <AgentMedia url={url} />
                                     )}
                                     attachments={
-                                        supportsReferenceImages && (
+                                        agentKinds.length > 0 && (
                                             <div className="flex flex-col gap-2">
-                                                <FileUpload
-                                                    value={referenceImages}
-                                                    onChange={
-                                                        setReferenceImages
-                                                    }
-                                                    maxFiles={
-                                                        maxReferenceImages
-                                                    }
-                                                    {...uploadProps(
-                                                        ["image"],
-                                                        `Use up to ${maxReferenceImages} images.`,
+                                                <div className="flex flex-wrap items-start gap-3">
+                                                    {agentKinds.includes(
+                                                        "image",
+                                                    ) && (
+                                                        <FileUpload
+                                                            value={
+                                                                referenceImages
+                                                            }
+                                                            onChange={
+                                                                setReferenceImages
+                                                            }
+                                                            maxFiles={
+                                                                maxReferenceImages
+                                                            }
+                                                            disabled={
+                                                                agentChat.busy
+                                                            }
+                                                            {...uploadProps(
+                                                                ["image"],
+                                                                `Use up to ${maxReferenceImages} images.`,
+                                                            )}
+                                                            label="Image"
+                                                        />
                                                     )}
-                                                    label="Image"
-                                                />
-                                                {referenceImages.length > 0 && (
+                                                    {queuedTiles}
+                                                    {mediaTiles}
+                                                </div>
+                                                {(referenceImages.length > 0 ||
+                                                    referenceQueue.length >
+                                                        0) && (
                                                     <UploadPrivacyNote />
                                                 )}
                                             </div>
@@ -2740,48 +2843,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                     >
                                         {queuedTiles}
                                         {frameTiles}
-                                        {videoReferenceMedia.map((media) => {
-                                            const props =
-                                                videoUploadProps(media);
-                                            return media === "audio" ? (
-                                                <AudioInput
-                                                    key={`${currentModel?.id}-audio`}
-                                                    actionsOnly
-                                                    {...props}
-                                                    onBusyChange={
-                                                        setRecordingAudio
-                                                    }
-                                                    disabled={
-                                                        isGenerating ||
-                                                        recordingVideo ||
-                                                        mediaDisabled
-                                                    }
-                                                />
-                                            ) : (
-                                                <FileUpload
-                                                    key={media}
-                                                    actionsOnly
-                                                    {...props}
-                                                    disabled={
-                                                        mediaDisabled ||
-                                                        (media === "video" &&
-                                                            recordingVideo)
-                                                    }
-                                                    label={capitalize(media)}
-                                                />
-                                            );
-                                        })}
-                                        {videoPicker &&
-                                            videoPicker.value.length <
-                                                videoPicker.maxFiles &&
-                                            cameraTile(
-                                                videoPicker.maxSizeBytes,
-                                                (file) =>
-                                                    videoPicker.onChange([
-                                                        ...videoPicker.value,
-                                                        file,
-                                                    ]),
-                                            )}
+                                        {mediaTiles}
                                     </div>
                                     {clipStatus && (
                                         <Text size="xs" tone="muted">
@@ -3067,79 +3129,75 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 </>
                             )}
                         </div>
-                        {/* Not connected is not a broken state, so the button
-                            becomes the connect action. When it genuinely
-                            cannot fire, the line beside it says why. */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <Button
-                                size="lg"
-                                intent="brand"
-                                // The page's main action: nectar whether it signs
-                                // in or generates. Busy fills with honey and shows
-                                // Polli. aria-disabled, not disabled, so focus
-                                // stays on the button; generate() ignores repeats.
-                                disabled={!!blockedReason}
-                                aria-disabled={isGenerating || undefined}
-                                aria-busy={isGenerating}
-                                aria-describedby={
-                                    clipError && blockedReason === clipError
-                                        ? clipStatusId
-                                        : statusId
-                                }
-                                icon={
-                                    needsSignIn ? undefined : <GenerateIcon />
-                                }
-                                onClick={run}
-                                className={cn(
-                                    needsSignIn && "h-12 gap-2 px-5 py-0",
-                                )}
-                            >
-                                {needsSignIn ? (
-                                    <>
-                                        <BrandMark className="h-6 w-6" />
-                                        {connectLabel}
-                                    </>
-                                ) : (
-                                    generateText
-                                )}
-                            </Button>
+                    </Surface>
+
+                    {/* Not connected is not a broken state, so the button
+                        becomes the connect action. When it genuinely
+                        cannot fire, the line beside it says why. */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <Button
+                            size="lg"
+                            intent="brand"
+                            // The page's main action: nectar whether it signs
+                            // in or generates. Busy fills with honey and shows
+                            // Polli. aria-disabled, not disabled, so focus
+                            // stays on the button; generate() ignores repeats.
+                            disabled={!!blockedReason}
+                            aria-disabled={isGenerating || undefined}
+                            aria-busy={isGenerating}
+                            aria-describedby={
+                                clipError && blockedReason === clipError
+                                    ? clipStatusId
+                                    : statusId
+                            }
+                            icon={needsSignIn ? undefined : <GenerateIcon />}
+                            onClick={run}
+                            className={cn(
+                                needsSignIn && "h-12 gap-2 px-5 py-0",
+                            )}
+                        >
+                            {needsSignIn ? (
+                                <>
+                                    <BrandMark className="h-6 w-6" />
+                                    {connectLabel}
+                                </>
+                            ) : (
+                                generateText
+                            )}
+                        </Button>
+                        <Text
+                            id={statusId}
+                            size="xs"
+                            tone="muted"
+                            className="empty:hidden max-sm:w-full"
+                        >
+                            {blockedReason !== clipError && blockedReason}
+                        </Text>
+                    </div>
+                    {/* Said once per conversation: gone after the first message. */}
+                    {isAgent &&
+                        currentModel &&
+                        isCommunityRun(currentModel) &&
+                        agentChat.turns.length === 0 && (
                             <Text
-                                id={statusId}
                                 size="xs"
                                 tone="muted"
-                                className="empty:hidden max-sm:w-full"
+                                data-theme="neutral"
+                                className="-mt-2 flex items-start gap-2"
                             >
-                                {blockedReason !== clipError && blockedReason}
+                                <WarningIcon
+                                    aria-hidden="true"
+                                    className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
+                                />
+                                <span>
+                                    Made by a community member, not
+                                    Pollinations. Avoid sensitive data.{" "}
+                                    <InlineLink href="/privacy" tone="quiet">
+                                        Privacy Policy
+                                    </InlineLink>
+                                </span>
                             </Text>
-                        </div>
-                        {/* Said once per conversation: gone after the first message. */}
-                        {isAgent &&
-                            currentModel &&
-                            isCommunityRun(currentModel) &&
-                            agentChat.turns.length === 0 && (
-                                <Text
-                                    size="xs"
-                                    tone="muted"
-                                    data-theme="neutral"
-                                    className="-mt-2 flex items-start gap-2"
-                                >
-                                    <WarningIcon
-                                        aria-hidden="true"
-                                        className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
-                                    />
-                                    <span>
-                                        Made by a community member, not
-                                        Pollinations. Avoid sensitive data.{" "}
-                                        <InlineLink
-                                            href="/privacy"
-                                            tone="quiet"
-                                        >
-                                            Privacy Policy
-                                        </InlineLink>
-                                    </span>
-                                </Text>
-                            )}
-                    </Surface>
+                        )}
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

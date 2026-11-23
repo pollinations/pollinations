@@ -39,6 +39,7 @@ import {
     replyMedia,
     replyText,
     toolLabel,
+    userParts,
     withoutMedia,
 } from "./agent-turn";
 
@@ -53,18 +54,9 @@ const Markdown = lazy(() =>
 type RenderMedia = (url: string) => ReactNode;
 
 /** The conversation so far as chat messages; the last turn is the one to answer. */
-function chatMessages(turns: AgentTurn[]) {
+function chatMessages(turns: AgentTurn[], linkImages: boolean) {
     return turns.flatMap((turn, index) => {
-        const user = {
-            role: "user",
-            parts: [
-                { type: "text", text: turn.prompt },
-                ...(turn.images ?? []).map((image) => ({
-                    type: "file",
-                    ...image,
-                })),
-            ],
-        };
+        const user = { role: "user", parts: userParts(turn, linkImages) };
         if (index === turns.length - 1) return [user];
         return [
             user,
@@ -79,11 +71,13 @@ function chatMessages(turns: AgentTurn[]) {
 
 /**
  * One in-memory conversation per agent, answered by a /v1/responses stream.
- * `upload` turns an attached image into the link the agent receives.
+ * `upload` turns an attached file into the link the agent receives. With
+ * `linkImages` the agent also gets each image's link, for its tools.
  */
 export function useAgentChat(
     agent: string | undefined,
     upload: (file: File) => Promise<string>,
+    linkImages = false,
 ) {
     const transport = usePollinationsChatTransport({ model: agent });
     const [threads, setThreads] = useState<Record<string, AgentTurn[]>>({});
@@ -140,20 +134,21 @@ export function useAgentChat(
         };
         show({ status: "running", error: undefined, output: undefined });
         try {
-            const images =
-                turn.images ??
+            const attachments =
+                turn.attachments ??
                 (await Promise.all(
                     (turn.files ?? []).map(async (file) => ({
                         url: await upload(file),
                         mediaType: file.type,
+                        filename: file.name,
                     })),
                 ));
-            show({ images });
+            show({ attachments });
             const stream = await transport.sendMessages({
-                messages: chatMessages([
-                    ...turns.slice(0, -1),
-                    { ...turn, images },
-                ]),
+                messages: chatMessages(
+                    [...turns.slice(0, -1), { ...turn, attachments }],
+                    linkImages,
+                ),
                 abortSignal: request.signal,
                 body: { model: agent },
             });
@@ -375,7 +370,7 @@ export function AgentChat({
     onSubmit: () => void;
     onRetry: () => void;
     onClear: () => void;
-    /** The upload tile, when the agent accepts images. */
+    /** The upload tiles for the files the agent accepts. */
     attachments?: ReactNode;
 }) {
     const [confirming, setConfirming] = useState(false);
@@ -405,7 +400,7 @@ export function AgentChat({
                                         from="user"
                                         className="max-w-[88%] whitespace-pre-wrap"
                                     >
-                                        {turn.images?.map(({ url }) => (
+                                        {turn.attachments?.map(({ url }) => (
                                             <Fragment key={url}>
                                                 {renderMedia(url)}
                                             </Fragment>

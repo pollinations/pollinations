@@ -8,14 +8,21 @@ export type AgentToolCall = {
     result?: { output: unknown; isError?: boolean };
 };
 
+/** A file attached to a prompt, once uploaded: images, audio and video. */
+export type AgentAttachment = {
+    url: string;
+    mediaType: string;
+    filename: string;
+};
+
 export type AgentItem = AgentToolCall | { type: "text"; text: string };
 
 export type AgentTurn = {
     id: string;
     prompt: string;
-    /** Images attached to the prompt, and their links once uploaded. */
+    /** Files attached to the prompt, and their links once uploaded. */
     files?: File[];
-    images?: { url: string; mediaType: string }[];
+    attachments?: AgentAttachment[];
     /** Tool calls and text, in the order the agent sent them. */
     items: AgentItem[];
     status: "running" | "done" | "stopped" | "interrupted";
@@ -24,6 +31,23 @@ export type AgentTurn = {
     /** A finished reply's own items, sent back unchanged on later turns. */
     output?: unknown[];
 };
+
+/**
+ * A user turn as chat parts: the text first, then each attachment. An agent
+ * sees an image but not its link, so with `linkImages` the image is followed
+ * by a plain file part that gives its tools the link.
+ */
+export function userParts(turn: AgentTurn, linkImages = false) {
+    return [
+        { type: "text", text: turn.prompt },
+        ...(turn.attachments ?? []).flatMap(({ url, mediaType, filename }) => [
+            { type: "file", url, mediaType, filename },
+            ...(linkImages && mediaType.startsWith("image/")
+                ? [{ type: "file", url, filename }]
+                : []),
+        ]),
+    ];
+}
 
 export function replyText(turn: AgentTurn): string {
     return turn.items

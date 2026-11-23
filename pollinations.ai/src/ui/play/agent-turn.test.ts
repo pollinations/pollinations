@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { type AgentItem, replyMedia, withoutMedia } from "./agent-turn";
+import {
+    type AgentItem,
+    replyMedia,
+    userParts,
+    withoutMedia,
+} from "./agent-turn";
 
 it("treats only files on the media host as reply media", () => {
     const text = [
@@ -77,5 +82,49 @@ it("reads links from text only once the text is complete", () => {
     ];
     expect(replyMedia(items, false)).toEqual([
         "https://media.pollinations.ai/abc",
+    ]);
+});
+
+it("sends the text first, then each attachment with its file name", () => {
+    const attachments = [
+        {
+            url: "https://media.pollinations.ai/a",
+            mediaType: "image/png",
+            filename: "cat.png",
+        },
+        {
+            url: "https://media.pollinations.ai/b",
+            mediaType: "audio/mpeg",
+            filename: "clip.mp3",
+        },
+        {
+            url: "https://media.pollinations.ai/c",
+            mediaType: "video/mp4",
+            filename: "take.mp4",
+        },
+    ];
+    const turn = {
+        id: "1",
+        prompt: "What is this?",
+        items: [],
+        status: "running" as const,
+        attachments,
+    };
+    expect(userParts(turn)).toEqual([
+        { type: "text", text: "What is this?" },
+        ...attachments.map((attachment) => ({ type: "file", ...attachment })),
+    ]);
+    // An agent with tools also gets each image's link, as a plain file part.
+    const [image] = attachments.filter(({ mediaType }) =>
+        mediaType.startsWith("image/"),
+    );
+    expect(userParts({ ...turn, attachments: [image] }, true).slice(1)).toEqual(
+        [
+            { type: "file", ...image },
+            { type: "file", url: image.url, filename: image.filename },
+        ],
+    );
+    expect(userParts({ ...turn, attachments: undefined })).toEqual([
+        { type: "text", text: "What is this?" },
     ]);
 });

@@ -266,10 +266,15 @@ function record(
         else if (Date.now() >= flushBy) {
             // The first sum since the last flush: send them all in FLUSH_MS,
             // whether or not another request comes.
-            flushBy = Date.now() + FLUSH_MS;
+            const deadline = Date.now() + FLUSH_MS;
+            flushBy = deadline;
             current.waitUntil(
                 new Promise((resolve) => setTimeout(resolve, FLUSH_MS)).then(
-                    () => flush(current),
+                    () => {
+                        // A full buffer went early: the batch started since
+                        // then has a timer of its own.
+                        if (flushBy === deadline) flush(current);
+                    },
                 ),
             );
         }

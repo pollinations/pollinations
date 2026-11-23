@@ -214,6 +214,30 @@ describe("D1 call timing", () => {
         expect(sent.calls).toHaveLength(0);
     });
 
+    it("keeps one send per 10 s after a full buffer went early", async () => {
+        const sent = captureIngest();
+        const first = await request(async (db) => {
+            for (let i = 0; i < 500; i++) {
+                await db.prepare(`SELECT ${i} AS filler`).all();
+            }
+        });
+        expect(sent.calls).toHaveLength(1);
+
+        await vi.advanceTimersByTimeAsync(3_000);
+        const later = await request((db) =>
+            db.prepare("SELECT 'after the burst' AS value").all(),
+        );
+        // The first timer is due: the newer batch is not its to send.
+        await vi.advanceTimersByTimeAsync(7_000);
+        await waitOnExecutionContext(first.ctx);
+        expect(sent.calls).toHaveLength(1);
+
+        await vi.advanceTimersByTimeAsync(3_000);
+        await waitOnExecutionContext(later.ctx);
+        expect(sent.calls).toHaveLength(2);
+        expect(sent.calls[1]).toHaveLength(1);
+    });
+
     it("sends a statement again when Tinybird did not take it", async () => {
         const sent = captureIngest(503);
         const query = (db: D1Database) =>

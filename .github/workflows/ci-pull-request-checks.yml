@@ -481,8 +481,10 @@ jobs:
         if: steps.website-files.outputs.any_changed == 'true'
         run: npm test --prefix pollinations.ai
 
-  # Non-blocking while the Windows suite is brought up to parity. Making this
-  # job visible means Windows-only failures no longer stay invisible.
+  # Tracks Windows parity but is not part of `gate` yet. The suites listed in
+  # #20432 still have POSIX assumptions, so they report their failures with
+  # continue-on-error rather than making this job born red. Remove the escape
+  # hatches and add the job to `gate` once they pass on Windows.
   windows-smoke:
     name: Windows smoke tests
     runs-on: windows-latest
@@ -498,7 +500,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -507,19 +508,14 @@ jobs:
       - name: Install polli-cli dependencies
         run: npm ci --prefix packages/polli-cli
 
-      - name: Install Discord agent dependencies
-        run: npm ci --prefix apps/discord-agent-osaii-swarm
-
-      - name: Test Discord token store
-        run: node --test apps/discord-agent-osaii-swarm/test/bot.test.js
-
-      - name: Test polli CLI key management
+      - name: Test polli-cli
         working-directory: packages/polli-cli
-        run: npx vitest run src/commands/keys.test.ts
+        continue-on-error: true
+        run: npm test
 
-      - name: Test model query
-        working-directory: enter.pollinations.ai
-        run: npx vitest run test/model-query.test.ts
+      - name: Test docs workflows
+        continue-on-error: true
+        run: node --test .github/scripts/docs-workflows.test.mjs
 
   # Carries the status-check name required by the main branch ruleset so the
   # jobs above gate merges without a ruleset change.

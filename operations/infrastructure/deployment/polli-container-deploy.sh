@@ -139,6 +139,7 @@ ln -sfn "$release" "$ROOT/current"
 keep=" $SHA $previous_tag "
 for dir in "$ROOT"/releases/*/; do
   tag=$(basename "$dir")
+  [[ "$tag" =~ ^[0-9a-f]{40}$ ]] || continue
   [[ "$keep" == *" $tag "* ]] || rm -rf "$dir" || echo "polli container deployment: warning: could not remove $dir" >&2
 done
 images=$(sudo -n docker images --format '{{.Repository}}:{{.Tag}}') || echo "polli container deployment: warning: could not list images" >&2

@@ -23,7 +23,6 @@ describe("provider transform passthrough", () => {
         "kimi",
         "kimi-code",
         "glm",
-        "inception/mercury-2.5-preview",
         "deepseek/deepseek-v4.1-flash",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
@@ -80,7 +79,7 @@ describe("provider transform passthrough", () => {
         ]);
     });
 
-    it.each(["mistral", "mimo-v2.5", "mimo-v2.5-pro"])(
+    it.each(["mistral", "mimo-v2.5"])(
         "does not transform %s requests",
         (modelName) => {
             expect(findModelByName(modelName)?.transform).toBeUndefined();

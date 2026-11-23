@@ -151,8 +151,8 @@ export const CHAT_PARAMETERS = {
     vertexGemini35: [...TOOL_CHAT, "seed", "reasoning_effort", "stop"],
     vertexGeminiSearch: [...SAMPLED_CHAT, "seed", "reasoning_effort"],
     nova: [...CHAT, ...SAMPLING, ...TOOLS, "stop"],
-    mercury: [...TOOL_CHAT, ...OPENROUTER_REASONING, "temperature", "stop"],
-    mercury25: [
+    mercury: [...TOOL_CHAT, ...OPENROUTER_REASONING, "temperature"],
+    mercury3: [
         ...TOOL_CHAT,
         ...OPENROUTER_REASONING,
         "temperature",

@@ -2255,38 +2255,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "inception/mercury-2": {
     "cost": {
-      "completionTextTokens": 0.00000079125,
-      "promptCachedTokens": 0.000000026375,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.00000079125,
-      "promptCachedTokens": 0.000000026375,
-      "promptTextTokens": 0.00000026375,
-    },
-  },
-  "inception/mercury-2.5-preview": {
-    "cost": {
-      "completionTextTokens": 0.00000015825,
-      "promptCachedTokens": 0.00000000422,
-      "promptTextTokens": 0.0000000422,
-    },
-    "price": {
-      "completionTextTokens": 0.00000015825,
-      "promptCachedTokens": 0.00000000422,
-      "promptTextTokens": 0.0000000422,
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
     },
   },
   "inception/mercury-3": {
     "cost": {
-      "completionTextTokens": 0.00000036925,
-      "promptCachedTokens": 0.00000001055,
-      "promptTextTokens": 0.0000001055,
+      "completionTextTokens": 0.00000035,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
     },
     "price": {
-      "completionTextTokens": 0.00000036925,
-      "promptCachedTokens": 0.00000001055,
-      "promptTextTokens": 0.0000001055,
+      "completionTextTokens": 0.00000035,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
     },
   },
   "inclusionai/ling-3.0-flash-vl": {
@@ -5665,16 +5653,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01055,
     },
   },
-  "x-ai/grok-imagine-image-quality": {
-    "cost": {
-      "completionImageTokens": 0.05275,
-      "promptImageTokens": 0.01055,
-    },
-    "price": {
-      "completionImageTokens": 0.05275,
-      "promptImageTokens": 0.01055,
-    },
-  },
   "x-ai/grok-imagine-video": {
     "cost": {
       "completionVideoSeconds": 0.07,
@@ -5793,18 +5771,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000002954,
       "promptCachedTokens": 0.000000002954,
       "promptTextTokens": 0.0000001477,
-    },
-  },
-  "xiaomi/mimo-v2.5-pro": {
-    "cost": {
-      "completionTextTokens": 0.00000091785,
-      "promptCachedTokens": 0.000000003798,
-      "promptTextTokens": 0.000000458925,
-    },
-    "price": {
-      "completionTextTokens": 0.00000091785,
-      "promptCachedTokens": 0.000000003798,
-      "promptTextTokens": 0.000000458925,
     },
   },
   "xiaomi/mimo-v2.6-flash": {

@@ -152,6 +152,16 @@ export function createDeepInfraModelConfig(
     );
 }
 
+export function createInceptionModelConfig(model: string): ProviderConfig {
+    return {
+        provider: "openai",
+        model,
+        directEndpoint: "https://api.inceptionlabs.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("INCEPTION_API_KEY"),
+        supportsMaxCompletionTokens: true,
+    };
+}
+
 export function createInferencePortModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

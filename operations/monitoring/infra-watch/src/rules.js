@@ -210,6 +210,16 @@ export function paymentsFailing(rows) {
 // minute opens the card, and the 30-minute window keeps that one card open
 // across bursts. `minutes` are the infra_watch_early_errors rows.
 const EARLY_MIN_FAILURES = 25;
+// The card is red and pings once the bursts are sustained (this many bad
+// minutes in the window) or the worst minute lost this share of its
+// requests; a lone small burst is orange and pings nobody. Of the last
+// week's two episodes, 23 Nov 00:48 was one minute at 5% and 13:02 to 13:20
+// nine minutes peaking at 41%.
+const SEVERE_BURSTS = 3;
+const SEVERE_SHARE = 0.1;
+// Failed requests as a share of failed plus served ones; all of them while
+// the served count is missing.
+const share = (failures, ok) => failures / (failures + (ok ?? 0));
 const minuteMs = (minute) => Date.parse(`${minute.replace(" ", "T")}Z`);
 const total = (rows, field) =>
     rows.reduce((sum, m) => sum + (m[field] ?? 0), 0);
@@ -220,10 +230,17 @@ export function earlyErrors(minutes) {
     return {
         early: {
             kind: "EARLY_ERRORS",
+            severe:
+                bursts.length >= SEVERE_BURSTS ||
+                share(worst.failures, worst.ok) >= SEVERE_SHARE,
             worst: worst.failures,
+            worstOk: worst.ok ?? null,
+            worstSeconds: worst.error_seconds ?? null,
             route: worst.top_route,
             bursts: bursts.length,
+            minutes: bursts.map((m) => m.minute.slice(13, 16)),
             failures: total(minutes, "failures"),
+            ok: minutes[0].window_ok ?? 0,
             d1: total(minutes, "d1_failures"),
             r2: total(minutes, "r2_failures"),
             firstAt: minuteMs(bursts[0].minute),
@@ -427,6 +444,7 @@ export function snapshot(incident) {
         success: info.success ?? null,
         failingCallers: info.callers?.failing_callers ?? null,
         worst: info.worst ?? null,
+        severe: info.severe ?? null,
     };
 }
 
@@ -453,20 +471,26 @@ export function noteworthy(before, now) {
         now.worst >= 2 * before.worst
     )
         return `worst minute went from ${before.worst} to ${now.worst} failed requests`;
+    if (before.severe === false && now.severe)
+        return "error bursts became sustained or hit a large share of requests";
     return null;
 }
 
 // Worse in a way that needs a person again: callers now affected, the
-// affected callers went from one to several, or an early-errors burst at
-// least twice the worst one already pinged.
+// affected callers went from one to several, or early errors that turned
+// severe or burst at least twice as hard as the worst one already pinged.
 export const escalates = (before, now) =>
     (now.kind === "EARLY_ERRORS" &&
-        now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY)) ||
+        now.severe !== false &&
+        (before.severe === false ||
+            now.worst >= 2 * (before.worst ?? Number.POSITIVE_INFINITY))) ||
     (now.kind === "DEGRADED" &&
         (now.failingCallers ?? 2) > 1 &&
         (before.kind !== "DEGRADED" || (before.failingCallers ?? 2) <= 1));
 
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
+// As many ":MM" as fit a card row.
+const MAX_BURST_MINUTES = 9;
 const fit = (s) => (s.length > 38 ? `${s.slice(0, 37)}…` : s);
 const unix = (ms) => Math.round(ms / 1000);
 
@@ -632,17 +656,22 @@ export const COLOR = {
 };
 const GREEN = 0x639922;
 const GREY = 0x888780;
+// Early errors that are neither sustained nor a large share of requests.
+const calm = (incident) =>
+    incident.kind === "EARLY_ERRORS" && incident.info.severe === false;
+const statusColor = (incident) =>
+    calm(incident) ? COLOR.DEGRADED : COLOR[incident.kind];
 
 // An AI line's colour: its card's status while open, green for the closing
 // line, so the last circle marks the end.
 export const lineColor = (incident) =>
-    incident.closedAt != null ? GREEN : COLOR[incident.kind];
+    incident.closedAt != null ? GREEN : statusColor(incident);
 
 // What a closed outage cost callers: green when no request failed, orange
 // under half, red from half, grey when Tinybird couldn't say. An outage with
 // no request counts (not a model) keeps its status colour.
 function impactColor(key, incident) {
-    if (!key.startsWith("model:")) return COLOR[incident.kind];
+    if (!key.startsWith("model:")) return statusColor(incident);
     const { lost } = incident;
     if (!lost) return GREY;
     if (!lost.failures) return GREEN;
@@ -652,7 +681,7 @@ function impactColor(key, incident) {
 // A card's colour: its status while open; once closed, an outage's impact,
 // and green for a domain card.
 function cardColor(key, incident) {
-    if (incident.closedAt == null) return COLOR[incident.kind];
+    if (incident.closedAt == null) return statusColor(incident);
     return DOMAIN_KEY.test(key) ? GREEN : impactColor(key, incident);
 }
 
@@ -679,12 +708,13 @@ export const waiting = (record, now) =>
 
 // Who an opening card pings: a weak primary never (the fallback keeps
 // callers whole), a model failing for a single caller neither, a Myceli-only
-// hostname neither (users are fine), a stale job as STALE_JOBS says; every
-// other alert does.
+// hostname neither (users are fine), a lone small error burst neither, a
+// stale job as STALE_JOBS says; every other alert does.
 export function pings(incident) {
     const { kind, info } = incident;
     if (["PRIMARY_WEAK", "UPSTREAM_DOWN", "SIGNUP_BURST"].includes(kind))
         return false;
+    if (calm(incident)) return false;
     if (kind === "JOB_STALE") return STALE_JOBS[info.job].ping;
     if (kind === "DEGRADED" && info.model)
         return info.callers?.failing_callers !== 1;
@@ -772,6 +802,15 @@ function openRows(incident, now) {
     if (kind === "EARLY_ERRORS")
         return [
             ["WORST", `${info.worst} reqs failed in 1 min`],
+            // How much of that minute's traffic, and for how much of it.
+            ...(info.worstOk
+                ? [
+                      [
+                          "",
+                          `${percent(share(info.worst, info.worstOk))} of requests, in ${info.worstSeconds} s`,
+                      ],
+                  ]
+                : []),
             [
                 "CAUSE",
                 [
@@ -780,7 +819,14 @@ function openRows(incident, now) {
                     `${info.failures - info.d1 - (info.r2 ?? 0)} other`,
                 ].join(", "),
             ],
-            ["BURSTS", `${info.bursts} min of 30, ${info.failures} failed`],
+            [
+                "BURSTS",
+                `${info.bursts} min of 30, ${info.failures} failed${info.ok ? ` (${percent(share(info.failures, info.ok))})` : ""}`,
+            ],
+            // The bad minutes, newest last: a steady rhythm points at a job.
+            ...(info.minutes?.length > 1
+                ? [["AT", info.minutes.slice(-MAX_BURST_MINUTES).join(" ")]]
+                : []),
             ["LAST", utc(info.lastAt)],
             ["ROUTE", info.route],
         ];

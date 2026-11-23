@@ -10583,7 +10583,11 @@ fixtureTest(
                 });
             }
             if (isBillingFetch(request)) {
-                if (new URL(request.url).pathname === "/v0/events") {
+                const url = new URL(request.url);
+                if (
+                    url.pathname === "/v0/events" &&
+                    url.searchParams.get("name") === "generation_event_v2"
+                ) {
                     ingestedEvents.push(
                         ...parseIngestedEvents(await request.text()),
                     );
@@ -10711,7 +10715,11 @@ fixtureTest(
                     });
                 }
                 if (isBillingFetch(request)) {
-                    if (new URL(request.url).pathname === "/v0/events") {
+                    const url = new URL(request.url);
+                    if (
+                        url.pathname === "/v0/events" &&
+                        url.searchParams.get("name") === "generation_event_v2"
+                    ) {
                         ingestedEvents.push(
                             ...parseIngestedEvents(await request.text()),
                         );

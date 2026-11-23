@@ -50,6 +50,41 @@ test("failures back off across restarts, cap below seven days, and fallback succ
     }
 });
 
+test("a passing image probe waits a day, and a failing or text probe keeps the four-hour base", () => {
+    const timestamp = "2026-11-23T00:00:00Z";
+    const now = Date.parse(timestamp);
+    const image = recordProbe(undefined, {
+        timestamp,
+        ok: true,
+        category: "image",
+        operation: "generate",
+    });
+    assert.equal(
+        nextProbeAt(JSON.parse(JSON.stringify(image))),
+        now + 24 * HOUR,
+    );
+    const text = recordProbe(undefined, {
+        timestamp,
+        ok: true,
+        category: "text",
+    });
+    assert.equal(nextProbeAt(text), now + 4 * HOUR);
+    const failed = recordProbe(image, {
+        timestamp,
+        ok: false,
+        status: 502,
+        category: "image",
+    });
+    assert.equal(nextProbeAt(failed), now + 8 * HOUR);
+    const invalid = recordProbe(image, {
+        timestamp,
+        ok: false,
+        status: "INVALID",
+        category: "image",
+    });
+    assert.equal(nextProbeAt(invalid), now + 4 * HOUR);
+});
+
 test("CLI probes only selected due IDs, persists backoff, and allows a one-off recovery check", async (t) => {
     const dir = await fs.mkdtemp(
         path.join(os.tmpdir(), "community-probe-test-"),
@@ -181,7 +216,10 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
     const diagnostic = await run(["--model", "tester/text"]);
     assert.equal(JSON.parse(diagnostic.stdout).results[0].fallbackUsed, true);
     assert.equal("billingFlagsByModel" in JSON.parse(diagnostic.stdout), false);
-    assert.equal("billingFlags" in JSON.parse(diagnostic.stdout).results[0], false);
+    assert.equal(
+        "billingFlags" in JSON.parse(diagnostic.stdout).results[0],
+        false,
+    );
     state = await readJson(statePath);
     assert.equal(state.spend.probes["tester/text"].failures, 0);
     assert.equal(state.spend.lastActualPollen, routineSpend.lastActualPollen);

@@ -15,7 +15,7 @@ import {
 
 const HOUR = 3_600_000;
 
-// Ported from operations/community-monitor/probe-schedule.test.mjs.
+// Ported from the former EC2 monitor's probe-schedule.test.mjs.
 test("failures back off across restarts, cap below seven days, and fallback success resets the budget", () => {
     let now = Date.parse("2026-09-21T00:00:00Z");
     let previous;
@@ -163,7 +163,7 @@ test("a probe keeps the one before it, to tell two in a row", () => {
     );
 });
 
-// Ported from operations/community-monitor/chat-stream.test.mjs.
+// Ported from the former EC2 monitor's chat-stream.test.mjs.
 const content = 'data: {"choices":[{"delta":{"content":"ok-marker"}}]}\n\n';
 const usage = { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 };
 const counts = `data: ${JSON.stringify({ choices: [], usage })}\n\n`;
@@ -299,7 +299,7 @@ test("a text probe passes only with the marker in a valid stream", () => {
     assert.equal(refused.protocolError, undefined);
 });
 
-// Ported from operations/community-monitor/image-probe.test.mjs.
+// Ported from the former EC2 monitor's image-probe.test.mjs.
 const model = { name: "owner/image", input_modalities: ["text", "image"] };
 
 test("alternates advertised edits with generation without adding requests", () => {

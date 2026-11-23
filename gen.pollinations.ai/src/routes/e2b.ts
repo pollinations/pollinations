@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
+import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
 import {
     BannedAccountError,
     extractApiKey,
@@ -818,8 +821,13 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 // other connect by the owner (polli ssh renews this way) is
                 // activity; the cron's and a wake's are not.
                 if (!response.ok) return response;
-                if (until || idle === null) {
+                if (until) {
                     await setKeep(c, sandbox.sandboxID, until, idle);
+                } else if (idle === null) {
+                    await drizzle(c.env.DB)
+                        .update(sandboxKeep)
+                        .set({ idleTimeout: null })
+                        .where(eq(sandboxKeep.sandboxId, sandbox.sandboxID));
                 } else if (!keeper) {
                     noteRequestActivity(
                         c.env,
@@ -1132,6 +1140,7 @@ export async function wakePort(
     env: CloudflareBindings,
     ctx: Pick<ExecutionContext, "waitUntil">,
     { sandboxId: sandboxID, port, apiKeyId }: SharedPort,
+    coordinateWake?: () => PromiseLike<WokenPort | Response>,
 ): Promise<WokenPort | Response> {
     // A port of a sandbox that is gone, or whose payer is, stops being shared.
     const sandbox = await getSandbox(env, sandboxID);
@@ -1140,16 +1149,23 @@ export async function wakePort(
         sandbox?.state === "running" ? Date.parse(sandbox.endAt) : 0;
     const origin = providerOrigin(env, sandboxID, port);
     const azure = isAzureSandbox(sandboxID);
-    if (azure && paidUntil - now >= WAKE_MARGIN_MS) {
-        return { origin, until: paidUntil };
-    }
     const payer = sandbox
         ? await loadPayer(env, apiKeyId, sandbox.metadata?.[OWNER_KEY])
         : null;
-    if (!sandbox || !payer) {
+    if (
+        !sandbox ||
+        !payer ||
+        (azure && !hasAccountPermission(payer.apiKey, "machines"))
+    ) {
         await unsharePort(env, sandboxID, port);
         return notShared();
     }
+    if (azure && paidUntil - now >= WAKE_MARGIN_MS) {
+        return { origin, until: paidUntil };
+    }
+    // Only the operation that can renew or resume a lease needs coordination.
+    // The Durable Object rechecks state and payer under its wake lock.
+    if (coordinateWake) return coordinateWake();
     // Connect cannot shorten a running lease. Its minimum timeout gets a
     // traffic token without buying more time, with the renewal margin left
     // for the provider calls rather than copying a stale remaining duration.

@@ -178,26 +178,30 @@ export async function protectAzurePort(
     // Azure rejects an add on an existing port. Re-sharing only updates the
     // Pollinations secret if Azure already has the required access policy.
     const response =
-        added.status === 409 ? await aca(env, `/sandboxes/${id}/ports`) : added;
-    if (!response.ok) {
+        added.status === 409
+            ? await aca(env, `/sandboxes/${id}/ports`, {}, true)
+            : added;
+    if (response.status === 404) {
         throw new HTTPException(404, {
             message: "Azure sandbox no longer exists.",
         });
     }
-    const { ports } = await response.json<{
-        ports: {
-            port: number;
-            activationMode: string;
-            auth?: {
-                anonymous?: boolean;
-                entraId?: {
-                    enabled?: boolean;
-                    objectIds?: string[];
-                    tenantIds?: string[];
-                };
-            };
-        }[];
-    }>();
+    const { ports } = response.ok
+        ? await response.json<{
+              ports: {
+                  port: number;
+                  activationMode: string;
+                  auth?: {
+                      anonymous?: boolean;
+                      entraId?: {
+                          enabled?: boolean;
+                          objectIds?: string[];
+                          tenantIds?: string[];
+                      };
+                  };
+              }[];
+          }>()
+        : { ports: [] };
     const configured = ports.find((config) => config.port === port);
     const auth = configured?.auth?.entraId;
     if (
@@ -382,7 +386,7 @@ async function create(env: CloudflareBindings, body: NewSandbox) {
             ports: [ENVD_PORT, SSH_PORT].map((port) => ({
                 port,
                 auth: { anonymous: true },
-                ...(body.idleTimeout && { activationMode: "Manual" }),
+                activationMode: "Manual",
             })),
             cmd: [BOOT],
         }),

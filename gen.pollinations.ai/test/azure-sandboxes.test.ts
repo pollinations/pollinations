@@ -2,10 +2,12 @@ import {
     createExecutionContext,
     createScheduledController,
     env,
+    runInDurableObject,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { azureSandbox, sandboxKeep } from "@shared/db/sandbox.ts";
+import { apikey } from "@shared/db/better-auth.ts";
+import { azureSandbox, sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -27,6 +29,7 @@ const azureEnv = {
 // of it the caller pays.
 const COST_SECOND = 2 * 0.000024 + 2 * 0.000003;
 const PRICE_SECOND = COST_SECOND * 0.25;
+const INGRESS_TOKEN = `e30.${btoa(JSON.stringify({ oid: "gen", tid: "tenant" }))}.test`;
 
 type Box = {
     id: string;
@@ -36,7 +39,7 @@ type Box = {
     resources?: unknown;
     environment?: Record<string, string>;
     lifecycle?: unknown;
-    ports?: unknown;
+    ports?: { port: number }[];
     cmd?: string[];
     sourcesRef?: unknown;
 };
@@ -47,6 +50,8 @@ function stubAzure() {
     const boxes: Box[] = [];
     const events: Record<string, unknown>[] = [];
     const envd: { url: string; headers: Headers }[] = [];
+    const appRequests: Request[] = [];
+    let resumes = 0;
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
         const request = new Request(input, init);
@@ -58,10 +63,25 @@ function stubAzure() {
         if (url.hostname === "login.microsoftonline.com") {
             const form = new URLSearchParams(await request.text());
             expect(url.pathname).toBe("/tenant/oauth2/v2.0/token");
+            if (form.get("scope") === "https://auth.adcproxy.io/.default") {
+                return Response.json({
+                    access_token: INGRESS_TOKEN,
+                    expires_in: 3600,
+                });
+            }
             expect(form.get("scope")).toBe(
                 "https://dynamicsessions.io/.default",
             );
             return Response.json({ access_token: "azure", expires_in: 3600 });
+        }
+        if (url.hostname.endsWith("--8080.eastus.adcproxy.io")) {
+            const id = url.hostname.split("--")[0];
+            expect(boxes.find((box) => box.id === id)?.state).toBe("Running");
+            expect(request.headers.get("authorization")).toBe(
+                `Bearer ${INGRESS_TOKEN}`,
+            );
+            appRequests.push(request);
+            return new Response("sandbox app");
         }
         if (
             url.hostname.endsWith(".eastus.adcproxy.io") ||
@@ -95,11 +115,20 @@ function stubAzure() {
             );
         }
         const [, id, action = ""] =
-            path.match(/^\/sandboxes\/([^/]+)(?:\/(\w+))?$/) ?? [];
+            path.match(/^\/sandboxes\/([^/]+)(?:\/(.+))?$/) ?? [];
         const box = boxes.find((found) => found.id === id);
         if (!box) return Response.json({ error: "not found" }, { status: 404 });
         const call = `${request.method} ${action}`;
         if (call === "GET ") return Response.json(box);
+        if (call === "GET ports" || call === "POST ports/add") {
+            if (box.state !== "Running")
+                return new Response(null, { status: 409 });
+            if (call === "GET ports")
+                return Response.json({ ports: box.ports });
+            const port = await request.json<{ port: number }>();
+            box.ports = [...(box.ports ?? []), port];
+            return Response.json({ ports: box.ports });
+        }
         if (call === "POST lifecycle") {
             box.lifecycle = await request.json();
             return Response.json(box.lifecycle);
@@ -109,13 +138,17 @@ function stubAzure() {
             return new Response(null, { status: 202 });
         }
         if (call === "POST stop") box.state = "Stopped";
-        else if (call === "POST resume") box.state = "Running";
-        else return new Response("unexpected", { status: 500 });
+        else if (call === "POST resume") {
+            resumes++;
+            box.state = "Running";
+        } else return new Response("unexpected", { status: 500 });
         return new Response(null, { status: 202 });
     });
     return {
         boxes,
         envd,
+        appRequests,
+        resumes: () => resumes,
         leases: () => events.filter((e) => e.eventType === "sandbox.lease"),
     };
 }
@@ -164,11 +197,23 @@ test("Azure Auto uses native suspend and bills only when the owner wakes it", as
     const created = await post(owner.key, "/v2/sandboxes", {
         templateID: "pollinations-azure",
         timeout: 3600,
-        idleTimeout: 600,
     });
     expect(created.status).toBe(201);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
     const [box] = azure.boxes;
+    expect(box.lifecycle).toEqual({ autoSuspendPolicy: { enabled: false } });
+    expect(box.ports).toMatchObject([
+        { port: 49983, activationMode: "Manual" },
+        { port: 8022, activationMode: "Manual" },
+    ]);
+    expect(
+        (
+            await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+                timeout: 3600,
+                idleTimeout: 600,
+            })
+        ).status,
+    ).toBe(200);
     expect(box.lifecycle).toEqual({
         autoSuspendPolicy: { enabled: true, interval: 600, mode: "Memory" },
     });
@@ -196,6 +241,17 @@ test("Azure Auto uses native suspend and bills only when the owner wakes it", as
     expect(box.state).toBe("Running");
     expect(azure.leases()).toHaveLength(2);
     expect(azure.leases()[1].totalPrice).toBeGreaterThan(0);
+    const db = drizzle(env.DB);
+    const [keep] = await db.select().from(sandboxKeep);
+    const disabled = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 600,
+        idleTimeout: 0,
+    });
+    expect(disabled.status).toBe(200);
+    expect(box.lifecycle).toEqual({ autoSuspendPolicy: { enabled: false } });
+    expect(await db.select().from(sandboxKeep)).toEqual([
+        { ...keep, idleTimeout: null },
+    ]);
     expect(
         (
             await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
@@ -206,6 +262,92 @@ test("Azure Auto uses native suspend and bills only when the owner wakes it", as
     ).toBe(204);
     expect(box.lifecycle).toEqual({ autoSuspendPolicy: { enabled: false } });
     expect(await (await read()).json()).not.toHaveProperty("idleTimeout");
+});
+
+test("Azure shared ports serve paid requests, serialize cold wakes, and refuse a revoked payer", async () => {
+    const azure = stubAzure();
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 3600,
+        idleTimeout: 600,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const secret = "azure-test-port-secret";
+    const shared = await fetchGen(
+        owner.key,
+        `/sandboxes/${sandboxID}/ports/8080`,
+        {
+            method: "PUT",
+            body: JSON.stringify({ secret }),
+        },
+    );
+    expect(shared.status).toBe(200);
+    expect(azure.boxes[0].ports).toContainEqual({
+        port: 8080,
+        activationMode: "Manual",
+        auth: {
+            entraId: {
+                enabled: true,
+                tenantIds: ["tenant"],
+                objectIds: ["gen"],
+            },
+        },
+    });
+    const { url } = await shared.json<{ url: string }>();
+    const call = async (authorized = true) => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, {
+                headers: {
+                    authorization: "Bearer caller",
+                    ...(authorized && { "x-pollinations-secret": secret }),
+                },
+            }),
+            azureEnv,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+
+    const wake = env.AZURE_PORT_WAKE.getByName(sandboxID);
+    await runInDurableObject(wake, (instance) => {
+        Object.assign(instance, { env: azureEnv });
+    });
+    expect((await call()).status).toBe(200);
+    expect(azure.leases()).toHaveLength(1);
+
+    // The running sandbox suspended before the current paid lease expired.
+    azure.boxes[0].state = "Stopped";
+    expect((await call(false)).status).toBe(403);
+    const shareWhileStopped = await fetchGen(
+        owner.key,
+        `/sandboxes/${sandboxID}/ports/8081`,
+        {
+            method: "PUT",
+            body: JSON.stringify({ secret }),
+        },
+    );
+    expect(shareWhileStopped.status).toBe(409);
+    expect(azure.resumes()).toBe(0);
+    const responses = await Promise.all([call(), call()]);
+    expect(
+        await Promise.all(responses.map((response) => response.text())),
+    ).toEqual(["sandbox app", "sandbox app"]);
+    expect(azure.resumes()).toBe(1);
+    expect(azure.leases()).toHaveLength(2);
+
+    const db = drizzle(env.DB);
+    await db
+        .update(apikey)
+        .set({ enabled: false })
+        .where(eq(apikey.id, owner.id));
+    expect((await call()).status).toBe(404);
+    expect(azure.appRequests).toHaveLength(3);
+    expect(await db.select().from(sandboxPort)).toEqual([]);
+    expect(azure.leases()).toHaveLength(2);
 });
 
 test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's rates", async () => {

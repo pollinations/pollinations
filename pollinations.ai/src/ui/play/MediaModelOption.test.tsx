@@ -73,4 +73,12 @@ describe("model dropdown option", () => {
             ),
         ).not.toContain("evil.example");
     });
+    it("marks an official agent", () => {
+        const html = renderToStaticMarkup(
+            <MediaModelOption
+                model={{ title: "Floret", paidOnly: false, verified: true }}
+            />,
+        );
+        expect(html).toContain("Official");
+    });
 });

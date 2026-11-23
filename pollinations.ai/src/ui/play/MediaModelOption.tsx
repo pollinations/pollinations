@@ -1,4 +1,4 @@
-import { Chip } from "@pollinations/ui";
+import { Chip, ShieldCheckIcon } from "@pollinations/ui";
 import { ModelBrandIcon } from "@pollinations/ui/gen";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { isNewModel } from "../../../../shared/model-recency";
@@ -18,6 +18,7 @@ export function MediaModelOption({
         category?: string;
         community?: boolean;
         agent?: boolean;
+        verified?: boolean;
         brandIconUrl?: string;
     };
 }) {
@@ -29,6 +30,19 @@ export function MediaModelOption({
             />
             <span className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="truncate">{model.title}</span>
+                {model.verified && (
+                    <Chip
+                        size="sm"
+                        data-theme="neutral"
+                        title="Published and run by Pollinations"
+                    >
+                        <ShieldCheckIcon
+                            aria-hidden="true"
+                            className="size-3 text-intent-success-text"
+                        />
+                        Official
+                    </Chip>
+                )}
                 {isNewModel(model.addedDate) && (
                     <Chip intent="success" size="sm" className="play-model-new">
                         New

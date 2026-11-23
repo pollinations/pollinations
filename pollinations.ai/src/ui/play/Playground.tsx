@@ -45,6 +45,7 @@ import {
     UploadedFileTile,
     VideoIcon,
     VideoRecorder,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import {
@@ -149,6 +150,8 @@ type PlaygroundModel = MediaModelMetadata & {
     publisher?: string;
     /** Community listings show their owner's uploaded logo, else their type. */
     community: boolean;
+    /** Published by an official Pollinations account. */
+    verified: boolean;
     brandIconUrl?: string;
     /** Listed on the Agent tab; reached through /v1/responses. */
     agent: boolean;
@@ -203,6 +206,11 @@ const TASKS = WORKSPACES.flatMap((workspace) =>
 );
 type Task = (typeof TASKS)[number];
 
+/** Run by its owner rather than Pollinations; listed after official models. */
+function isCommunityRun(model: { community: boolean; verified: boolean }) {
+    return model.community && !model.verified;
+}
+
 function playgroundModel(
     model: ModelInfo & AudioCatalogMetadata & { added_date?: number },
 ): PlaygroundModel | null {
@@ -237,6 +245,7 @@ function playgroundModel(
         addedDate: model.added_date,
         publisher: model.publisher,
         community: !!model.community,
+        verified: model.verified === true,
         brandIconUrl:
             typeof model.brand_icon_url === "string"
                 ? model.brand_icon_url
@@ -882,35 +891,50 @@ function ModelPicker({
                                 </fieldset>
                             )}
                             <div className="flex flex-col gap-1">
-                                {visible.map((model) => (
-                                    <TabButton
-                                        key={model.id}
-                                        active={model.id === selectedModel}
-                                        size="sm"
-                                        variant="ghost"
-                                        aria-description={model.publisher}
-                                        className="play-model-option w-full justify-start pr-0 text-left"
-                                        onClick={() => {
-                                            onSelectModel(
-                                                model,
-                                                activeFilter !== "All" &&
-                                                    activeFilter !== "Fast" &&
-                                                    (imageModels ||
-                                                        category === "video")
-                                                    ? activeFilter
-                                                    : undefined,
-                                            );
-                                            close();
-                                        }}
-                                    >
-                                        <MediaModelOption
-                                            model={model}
-                                            perDollar={estimatePerDollar(
-                                                model,
-                                                costByModel.get(model.id),
+                                {visible.map((model, index) => (
+                                    <Fragment key={model.id}>
+                                        {isCommunityRun(model) &&
+                                            !(
+                                                index > 0 &&
+                                                isCommunityRun(
+                                                    visible[index - 1],
+                                                )
+                                            ) && (
+                                                <p className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-theme-text-muted before:h-px before:w-3 before:bg-theme-text-muted/30 after:h-px after:flex-1 after:bg-theme-text-muted/30">
+                                                    Community · run by their
+                                                    owners
+                                                </p>
                                             )}
-                                        />
-                                    </TabButton>
+                                        <TabButton
+                                            active={model.id === selectedModel}
+                                            size="sm"
+                                            variant="ghost"
+                                            aria-description={model.publisher}
+                                            className="play-model-option w-full justify-start pr-0 text-left"
+                                            onClick={() => {
+                                                onSelectModel(
+                                                    model,
+                                                    activeFilter !== "All" &&
+                                                        activeFilter !==
+                                                            "Fast" &&
+                                                        (imageModels ||
+                                                            category ===
+                                                                "video")
+                                                        ? activeFilter
+                                                        : undefined,
+                                                );
+                                                close();
+                                            }}
+                                        >
+                                            <MediaModelOption
+                                                model={model}
+                                                perDollar={estimatePerDollar(
+                                                    model,
+                                                    costByModel.get(model.id),
+                                                )}
+                                            />
+                                        </TabButton>
+                                    </Fragment>
                                 ))}
                             </div>
                         </ScrollArea>
@@ -1452,6 +1476,9 @@ export function Playground({
         return visibleModels
             .filter((model) => tasks.some((item) => supportsTask(model, item)))
             .sort((a, b) => {
+                const community =
+                    Number(isCommunityRun(a)) - Number(isCommunityRun(b));
+                if (community) return community;
                 const aNew = isNewModel(a.addedDate);
                 const bNew = isNewModel(b.addedDate);
                 if (aNew !== bNew) return aNew ? -1 : 1;
@@ -3064,6 +3091,30 @@ export function Playground({
                             {blockedReason !== clipError && blockedReason}
                         </Text>
                     </div>
+                    {/* Said once per conversation: gone after the first message. */}
+                    {isAgent &&
+                        currentModel &&
+                        isCommunityRun(currentModel) &&
+                        agentChat.turns.length === 0 && (
+                            <Text
+                                size="xs"
+                                tone="muted"
+                                data-theme="neutral"
+                                className="-mt-2 flex items-start gap-2"
+                            >
+                                <WarningIcon
+                                    aria-hidden="true"
+                                    className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
+                                />
+                                <span>
+                                    Made by a community member, not
+                                    Pollinations. Avoid sensitive data.{" "}
+                                    <InlineLink href="/privacy" tone="quiet">
+                                        Privacy Policy
+                                    </InlineLink>
+                                </span>
+                            </Text>
+                        )}
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

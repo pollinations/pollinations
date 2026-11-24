@@ -2,7 +2,33 @@ import { stripVTControlCharacters } from "node:util";
 import chalk from "chalk";
 import { Command } from "commander";
 import { afterEach, describe, expect, it } from "vitest";
-import { configureHelp } from "./output.js";
+import { configureHelp, formatDollars } from "./output.js";
+
+describe("formatDollars", () => {
+    it.each([
+        [0, "$0.00"],
+        [5, "$5.00"],
+        [-0.3, "-$0.30"],
+        [0.019, "$0.02"],
+        [0.004, "$0.004"],
+        [0.0000000001, "$0.0000000001"],
+        [-0.0004, "-$0.0004"],
+    ])("formats %d as %s", (amount, expected) => {
+        expect(formatDollars(amount)).toBe(expected);
+    });
+
+    // A nonzero amount smaller than the display can round to must not lose
+    // every digit: stripping trailing zeros returned a dangling "$0.".
+    it.each([
+        [1e-11, "<$0.0000000001"],
+        [-1e-11, "-<$0.0000000001"],
+        [4.9e-11, "<$0.0000000001"],
+        // Float residue from an arithmetic balance can land here too.
+        [0.1 + 0.2 - 0.3, "<$0.0000000001"],
+    ])("bounds sub-resolution %d as %s", (amount, expected) => {
+        expect(formatDollars(amount)).toBe(expected);
+    });
+});
 
 const originalLevel = chalk.level;
 afterEach(() => {

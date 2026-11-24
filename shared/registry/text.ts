@@ -2138,6 +2138,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 32768,
         isSpecialized: true,
     },
+    "heygen/heygen-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "HeyGen",
+        category: "decision",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Fee-inclusive list rate. The receipt captures the actual route cost.
+            promptTextTokens: perMillion(0.14) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "HeyGen Decision 1",
+        description:
+            "Typed yes/no, choice and score decisions over text, images, audio and video.",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 131072,
+        isSpecialized: true,
+    },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],

@@ -198,6 +198,11 @@
         "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
         "decisionQuestionTypes": ["noul", "choice", "score"]
     },
+    "heygen/heygen-decision-1": {
+        "reason": "Question types verified with text and media on OpenRouter.",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
     "kandinskylab/kandinsky-6.0-lite": {
         "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack.",
         "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",

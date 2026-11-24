@@ -25,6 +25,29 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("HeyGen Decision 1 routes", () => {
+    it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
+        const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
+        expect(primary).toMatchObject({
+            category: "decision",
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image", "audio", "video"],
+        });
+        expect(primary).not.toHaveProperty("fallbacks");
+        expect(primary.supportedEndpoints).toContain("/alpha/decisions");
+        const route = findModelByName("heygen/heygen-decision-1");
+        expect(route?.useSystemOneApi).toBe(true);
+        expect(route?.config()).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
 describe("Inkling 2 Mini OpenRouter route", () => {
     it("registers image inputs, tools and reasoning with canonical no-alias routing", () => {
         const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];

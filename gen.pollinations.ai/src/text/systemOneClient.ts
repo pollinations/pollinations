@@ -15,6 +15,7 @@ import type {
 import { isPlainObject } from "./utils/objectCleaners.js";
 
 const DOCS_URL = "https://docs.typesafe.ai/api";
+const HEYGEN_DECISION_MODEL = "heygen/heygen-decision-1";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
@@ -22,6 +23,7 @@ type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
     usage: {
+        cost?: unknown;
         input_tokens: number;
         output_tokens: number;
         input_tokens_details?: {
@@ -401,7 +403,11 @@ function parseNativeRequest(
 export async function requestDecision(
     request: SystemOneRequest,
     options: TransformOptions,
-): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
+): Promise<{
+    result: SystemOneResponse;
+    requestUrl: URL;
+    reportedCost?: number;
+}> {
     const { state, questions } = request;
     if (
         options.requestedModel?.split(":")[0] ===
@@ -501,6 +507,10 @@ export async function requestDecision(
                 }
             }
         }
+        const cost = result.usage.cost;
+        if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) {
+            return { result, requestUrl, reportedCost: cost };
+        }
         return { result, requestUrl };
     } catch (thrown) {
         const error =
@@ -522,7 +532,7 @@ export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    const { result, requestUrl } = await requestDecision(
+    const { result, requestUrl, reportedCost } = await requestDecision(
         parseNativeRequest(messages, options.modelConfig?.model),
         options,
     );
@@ -530,7 +540,10 @@ export async function callSystemOne(
         id: `systemone-${crypto.randomUUID()}`,
         object: "chat.completion",
         created: Math.floor(Date.now() / 1000),
-        model: result.model,
+        model:
+            options.modelConfig?.model === HEYGEN_DECISION_MODEL
+                ? HEYGEN_DECISION_MODEL
+                : result.model,
         choices: [
             {
                 index: 0,
@@ -541,7 +554,10 @@ export async function callSystemOne(
                 finish_reason: "stop",
             },
         ],
-        usage: decisionCompletionUsage(result.usage),
+        usage: {
+            ...decisionCompletionUsage(result.usage),
+            ...(reportedCost !== undefined && { cost: reportedCost }),
+        },
     };
     return withUpstreamRequestUrl(
         // TypeSafe answers arrive in one piece.

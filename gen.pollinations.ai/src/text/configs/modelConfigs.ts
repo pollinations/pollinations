@@ -267,6 +267,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
+    "heygen/heygen-decision-1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "heygen/heygen-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["heygen"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:

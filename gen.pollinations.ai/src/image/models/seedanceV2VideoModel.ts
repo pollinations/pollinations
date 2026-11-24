@@ -47,6 +47,9 @@ export async function callSeedanceV2API(
         definition.resolutions?.[0] ??
         "720p") as SeedanceV2Input["resolution"];
 
+    const canChooseDuration =
+        safeParams.duration === undefined &&
+        !!safeParams.reference_videos?.length;
     const aspectRatio =
         safeParams.aspectRatio ??
         (safeParams.dimensionsExplicit
@@ -58,12 +61,11 @@ export async function callSeedanceV2API(
                   "9:16",
                   "21:9",
               ])
-            : safeParams.reference_videos?.length
+            : canChooseDuration
               ? "adaptive"
               : "16:9");
-    // Replicate's Seedance edit/extension mode needs duration -1.
-    const autoDuration =
-        aspectRatio === "adaptive" && !!safeParams.reference_videos?.length;
+    // Replicate uses -1 to choose the output duration.
+    const autoDuration = aspectRatio === "adaptive" && canChooseDuration;
     const duration = autoDuration ? -1 : (safeParams.duration ?? 5);
 
     const images = safeParams.image ?? [];

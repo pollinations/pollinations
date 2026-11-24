@@ -163,6 +163,7 @@ describe("Seedance 2.0 family via Replicate", () => {
             model: "bytedance/seedance-2.0",
             image: [],
             aspectRatio: undefined,
+            duration: undefined,
             ...REFERENCE_MEDIA,
         });
 
@@ -219,6 +220,18 @@ describe("Seedance 2.0 family via Replicate", () => {
         await callSeedanceV2API("a skyscraper", params);
         await callSeedanceV2API("a skyscraper", {
             ...params,
+            duration: undefined,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            duration: 7,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            aspectRatio: "adaptive",
+            duration: 7,
             reference_videos: REFERENCE_MEDIA.reference_videos,
         });
         await callSeedanceV2API("a skyscraper", {
@@ -238,9 +251,13 @@ describe("Seedance 2.0 family via Replicate", () => {
             "9:16",
             "16:9",
             "adaptive",
+            "16:9",
+            "adaptive",
             "9:16",
             "4:3",
         ]);
-        expect(inputs.map((input) => input.duration)).toEqual([4, 4, -1, 7, 4]);
+        expect(inputs.map((input) => input.duration)).toEqual([
+            4, 4, -1, 7, 7, 7, 4,
+        ]);
     });
 });

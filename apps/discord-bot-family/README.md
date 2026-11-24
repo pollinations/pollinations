@@ -53,6 +53,26 @@ The launcher holds a per-app lock and stores its PID in `.bot.pid`. To stop an
 app, remove `.enabled` first, then terminate the PID after verifying it belongs
 to that app. For rollback, restore the previous Azure source and restart the app.
 
+### Slash commands on Auto
+
+Copy `azure/interactions.ts` to the same relative path in the sandbox alongside
+the two app directories. Set `DISCORD_INTERACTION_PORT` to a different port for
+each app to start its HTTP handler. Keep the generation API key in the app's
+private environment. For staging, set `POLLINATIONS_BASE_URL` to
+`https://staging.gen.pollinations.ai`.
+
+On a running Azure sandbox, share each app's port using
+`PUT /alpha/e2b/sandboxes/{id}/ports/{port}` with
+`{"discordPublicKey":"<Discord application's public key>"}` from the sandbox's
+normal payer. Set that app's Discord Interactions Endpoint URL to the returned
+URL. Register `/catgpt` and `/opposite` with a required string option named
+`prompt` limited to 1,000 characters.
+
+First test in a Discord test server with Auto set to 10 minutes. Confirm the
+sandbox is paused, then send both commands together. Verify each command returns
+its image and that the sandbox usage ledger records one wake charge. Discord's
+endpoint verification ping does not wake the sandbox.
+
 Discord Bot Family is off. Its source and bot configuration are retained for
 a future Azure deployment after a live Discord login test.
 

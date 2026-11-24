@@ -9,12 +9,16 @@ import {
     type Message,
     Partials,
 } from "discord.js";
+import { serveInteractions } from "../discord-bot-family/azure/interactions.ts";
 
 const CHANNEL_ID = process.env.CATGPT_CHANNEL_ID || "1488297205671661640";
 const TOKEN = process.env.BOT_TOKEN_CATGPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
-const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
-const IMAGE_API = "https://gen.pollinations.ai/image";
+const GEN_URL =
+    process.env.POLLINATIONS_BASE_URL || "https://gen.pollinations.ai";
+const TEXT_API = `${GEN_URL}/v1/chat/completions`;
+const IMAGE_API = `${GEN_URL}/image`;
+const INTERACTION_PORT = Number(process.env.DISCORD_INTERACTION_PORT);
 const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH: Record<string, string> = API_KEY
     ? { Authorization: `Bearer ${API_KEY}` }
@@ -111,7 +115,7 @@ async function fetchImage(url: string): Promise<Buffer> {
 }
 
 async function publishImage(image: Buffer): Promise<void> {
-    if (!API_KEY) return;
+    if (!API_KEY || GEN_URL === "https://staging.gen.pollinations.ai") return;
     try {
         const form = new FormData();
         form.append(
@@ -244,7 +248,7 @@ async function cliAsk(
     log(`CLI comic posted for "${question}" → "${catReply}"`);
 }
 
-if (!TOKEN || !CHANNEL_ID) {
+if (!INTERACTION_PORT && (!TOKEN || !CHANNEL_ID)) {
     console.error("Missing BOT_TOKEN_CATGPT or CATGPT_CHANNEL_ID");
     process.exit(1);
 }
@@ -304,7 +308,25 @@ client.on(Events.MessageCreate, (msg) => {
     );
 });
 
-client.login(TOKEN).catch((err) => {
-    logError("Login failed:", err.message);
-    process.exit(1);
-});
+if (INTERACTION_PORT) {
+    serveInteractions(
+        INTERACTION_PORT,
+        "catgpt",
+        IMAGE_FILENAME,
+        async (prompt, avatarUrl) => {
+            const reply = await generateCatReply(prompt, avatarUrl);
+            return fetchImage(
+                buildImageUrl(
+                    createPrompt(prompt, reply, Boolean(avatarUrl)),
+                    avatarUrl,
+                ),
+            );
+        },
+        publishImage,
+    );
+} else {
+    client.login(TOKEN).catch((err) => {
+        logError("Login failed:", err.message);
+        process.exit(1);
+    });
+}

@@ -67,6 +67,7 @@ import {
     sandboxHost,
 } from "./azure-sandboxes.ts";
 import { sandboxDocs } from "./e2b-docs.ts";
+import { receiveDiscordInteraction } from "./sandbox-discord.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -866,11 +867,28 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     message: `envd's port ${ENVD_PORT} checks its own token and can't be shared.`,
                 });
             }
-            const { secret, header = PORT_SECRET_HEADER } = await readJson<{
+            const {
+                secret,
+                header = PORT_SECRET_HEADER,
+                discordPublicKey,
+            } = await readJson<{
                 secret: string;
                 header: string;
+                discordPublicKey: string;
             }>(c);
-            if (
+            if (discordPublicKey !== undefined) {
+                if (
+                    !azure ||
+                    typeof discordPublicKey !== "string" ||
+                    !/^[a-f0-9]{64}$/i.test(discordPublicKey) ||
+                    secret !== undefined
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Discord webhooks need an Azure sandbox and the Discord application's 64-character public key.",
+                    });
+                }
+            } else if (
                 typeof secret !== "string" ||
                 !/^[\x21-\x7e]{16,256}$/.test(secret) ||
                 typeof header !== "string" ||
@@ -882,8 +900,12 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             const share = {
                 apiKeyId: c.var.auth.apiKey?.id ?? null,
-                header: header.toLowerCase(),
-                secretHash: await sha256(secret),
+                header:
+                    typeof header === "string"
+                        ? header.toLowerCase()
+                        : PORT_SECRET_HEADER,
+                secretHash: secret === undefined ? "" : await sha256(secret),
+                discordPublicKey: discordPublicKey?.toLowerCase() ?? null,
             };
             if (azure) await protectAzurePort(c.env, sandboxID, port);
             wokenPorts.delete(`${port}-${sandboxID}`);
@@ -1052,7 +1074,7 @@ type WokenPort = { origin: string; token?: string; until: number };
 // matters.
 const wokenPorts = new Map<string, WokenPort>();
 
-function findSharedPort(
+export function findSharedPort(
     env: CloudflareBindings,
     sandboxID: string,
     port: number,
@@ -1306,6 +1328,17 @@ async function forwardPort(
         return (await madeByGen(env, sandboxID))
             ? send(request, providerOrigin(env, sandboxID, port))
             : notGens();
+    }
+    if (shared.discordPublicKey) {
+        return receiveDiscordInteraction(
+            request,
+            shared.discordPublicKey,
+            (job) =>
+                env.AZURE_PORT_WAKE.getByName(sandboxID).enqueueDiscord(
+                    shared,
+                    job,
+                ),
+        );
     }
     const secret = await sha256(request.headers.get(shared.header) ?? "");
     if (secret !== shared.secretHash) {

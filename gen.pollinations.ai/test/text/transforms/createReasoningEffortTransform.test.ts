@@ -4,6 +4,7 @@ import {
     createReasoningEffortTransform,
     remapReasoningEffort,
 } from "../../../src/text/transforms/createReasoningEffortTransform.js";
+import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 describe("createReasoningEffortTransform — toggle", () => {
     const toggle = createReasoningEffortTransform("toggle");
@@ -52,6 +53,11 @@ describe("createReasoningEffortTransform — mandatory", () => {
 
     it("normalizes xhigh to high", async () => {
         const { options } = await mandatory([], { reasoning_effort: "xhigh" });
+        expect(options.reasoning_effort).toBe("high");
+    });
+
+    it("normalizes max to high (mandatory models top out at high)", async () => {
+        const { options } = await mandatory([], { reasoning_effort: "max" });
         expect(options.reasoning_effort).toBe("high");
     });
 });
@@ -132,6 +138,22 @@ describe("reasoning_effort model wiring", () => {
             reasoning_effort: "none",
         });
         expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it.each([
+        ["openai/gpt-5.4", "max", "xhigh"],
+        ["openai/gpt-5-nano", "max", "high"],
+        ["openai/gpt-5-nano:openai", "max", "high"],
+        ["pollinations/midijourney", "max", "xhigh"],
+        ["openai/gpt-6-sol", "none", "none"],
+        ["openai/gpt-6.2-astra", "none", "low"],
+        ["openai/gpt-6.2-sol", "none", "low"],
+    ])("resolves effort on %s from %s to %s", (model, supplied, expected) => {
+        const { options } = resolveModelConfig([], {
+            model,
+            reasoning_effort: supplied,
+        });
+        expect(options.reasoning_effort).toBe(expected);
     });
 
     it.each(["mistral-large", "llama", "qwen-coder"])(
@@ -229,9 +251,14 @@ describe("reasoning_effort levels providers reject (#19784)", () => {
     ])("%s sends %s as %s", async (modelName, sent, expected) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
+        const transformed = await transform([{ role: "user", content: "hi" }], {
+            model: modelName,
             reasoning_effort: sent,
         });
+        const { options } = resolveModelConfig(
+            transformed.messages,
+            transformed.options,
+        );
         expect(options.reasoning_effort).toBe(expected);
     });
 });

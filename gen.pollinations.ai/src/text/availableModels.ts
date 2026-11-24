@@ -30,8 +30,10 @@ import type { TransformFn, TransformOptions } from "./types.js";
 const fireworksThinking = createReasoningEffortTransform("toggle");
 // reasoning_effort values these providers 400 on, mapped to the nearest level
 // they accept (probed 2026-11-15, #19784).
-const effortMaxToXhigh = remapReasoningEffort({ max: "xhigh" });
-const effortNoneToLow = remapReasoningEffort({ none: "low" });
+const maxToXhigh = { max: "xhigh" };
+const maxToHigh = { max: "high" };
+const noneToLow = { none: "low" };
+const effortMaxToXhigh = remapReasoningEffort(maxToXhigh);
 const gptOssEffort = remapReasoningEffort({
     none: "low",
     xhigh: "high",
@@ -108,6 +110,12 @@ const developerToSystem: TransformFn = (messages, options) => ({
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
+// Sonnet 4.6 on Bedrock accepts effort "max" (probed live 2026-11-24).
+const claudeSonnet46BedrockThinking = createClaudeThinkingTransform(
+    "adaptive",
+    false,
+    { max: "max" },
+);
 
 const omitOpenAISampling = omitParameters(
     "temperature",
@@ -144,6 +152,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Effort substitutions shared by Chat and native Responses. */
+    reasoningEffortMap?: Readonly<Record<string, string>>;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
@@ -282,17 +292,20 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToHigh,
     },
     {
         name: "openai/gpt-5-nano:openai",
         config: portkeyConfig["gpt-5-nano-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToHigh,
     },
     {
         name: "openai/gpt-4o-mini",
@@ -305,7 +318,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
         useResponsesApi: true,
     },
     {
@@ -332,6 +346,7 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5.4-mini:openai",
@@ -412,7 +427,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
-        transform: pipe(omitOpenAISampling, effortNoneToLow),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -430,7 +446,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
-        transform: pipe(omitOpenAISampling, effortNoneToLow),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -443,6 +460,7 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-6.2-astra",
         config: portkeyConfig["gpt-6.2-astra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -455,6 +473,7 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-6.2-sol",
         config: portkeyConfig["gpt-6.2-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -800,7 +819,7 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+        transform: pipe(claudeSonnet46BedrockThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-sonnet-4.6:anthropic",
@@ -1246,6 +1265,7 @@ const models: ModelDefinition[] = [
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
         ),
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "pollinations/midijourney-large",

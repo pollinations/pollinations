@@ -6,6 +6,9 @@ DESCRIPTION >
     failed R2 writes on the generation handoff. d1_failures covers every D1 error, whether it
     surfaced in the message or as the stack's cause, and the balance check
     that answers 503 when its read fails, model known or not.
+    error_seconds is how many seconds of the minute had such an error, and
+    ok the generation requests served in it and window_ok those served in
+    the whole window, to size a burst against traffic.
 
 NODE infra_watch_early_errors_node
 SQL >
@@ -14,7 +17,15 @@ SQL >
         count() AS failures,
         countIf(d1) AS d1_failures,
         countIf(NOT d1 AND r2_write) AS r2_failures,
-        topK(1)(route_path)[1] AS top_route
+        topK(1)(route_path)[1] AS top_route,
+        uniq(timestamp) AS error_seconds,
+        any(served.ok) AS ok,
+        (
+            SELECT countIf(is_final AND response_status < 400)
+            FROM generation_event_v2
+            WHERE environment = 'production'
+                AND start_time >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
+        ) AS window_ok
     FROM (
         SELECT
             timestamp,
@@ -31,6 +42,16 @@ SQL >
         WHERE environment = 'production'
             AND timestamp >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
     )
+    AS errors
+    LEFT JOIN (
+        SELECT
+            toStartOfMinute(start_time) AS served_minute,
+            countIf(is_final AND response_status < 400) AS ok
+        FROM generation_event_v2
+        WHERE environment = 'production'
+            AND start_time >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
+        GROUP BY served_minute
+    ) AS served ON served.served_minute = toStartOfMinute(errors.timestamp)
     WHERE d1 OR (server_error AND no_model)
     GROUP BY minute
     ORDER BY minute

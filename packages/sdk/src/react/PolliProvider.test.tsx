@@ -1,7 +1,12 @@
 import { StrictMode } from "react";
 import { act, create } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useAuth, useAuthActions } from "./hooks.js";
+import {
+    useAccountKey,
+    useAccountProfile,
+    useAuth,
+    useAuthActions,
+} from "./hooks.js";
 import { PolliProvider } from "./PolliProvider.js";
 import type { StorageAdapter } from "./storage.js";
 
@@ -485,6 +490,147 @@ describe("PolliProvider", () => {
             expect(fetchMock).not.toHaveBeenCalled();
         },
     );
+
+    describe("when the API rejects the key", () => {
+        function unauthorized() {
+            return new Response(
+                JSON.stringify({
+                    error: { code: "UNAUTHORIZED", message: "Invalid API key" },
+                }),
+                { status: 401 },
+            );
+        }
+
+        async function mountWithKey(storage: StorageAdapter) {
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
+            function Probe() {
+                auth.current = useAuth();
+                useAccountKey();
+                return null;
+            }
+            await act(async () => {
+                create(
+                    <PolliProvider appKey="pk_test" storage={storage}>
+                        <Probe />
+                    </PolliProvider>,
+                );
+            });
+            return auth;
+        }
+
+        it("signs out and says why", async () => {
+            stubWindow("https://app.example/");
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(unauthorized());
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+
+            const auth = await mountWithKey(storage);
+
+            expect(auth.current?.isLoggedIn).toBe(false);
+            expect(auth.current?.error?.message).toBe(
+                "Your Pollinations connection expired or was revoked. Connect again.",
+            );
+            expect(storage.getItem("polli:pk_test:token")).toBeNull();
+        });
+
+        it("keeps a key another tab saved since", async () => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_url, init) => {
+                    const auth = new Headers(init?.headers).get(
+                        "Authorization",
+                    );
+                    if (auth === "Bearer sk_new") {
+                        return new Response(JSON.stringify({ id: "key" }));
+                    }
+                    // Another tab connects while this tab's old key is rejected.
+                    storage.setItem("polli:pk_test:token", "sk_new");
+                    return unauthorized();
+                },
+            );
+
+            const auth = await mountWithKey(storage);
+
+            expect(auth.current?.apiKey).toBe("sk_new");
+            expect(auth.current?.error).toBeNull();
+            expect(storage.getItem("polli:pk_test:token")).toBe("sk_new");
+        });
+
+        it("keeps the recovered key when two requests reject the old one", async () => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+            // Another tab saves sk_new before either 401 arrives.
+            storage.setItem("polli:pk_test:token", "sk_new");
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_url, init) =>
+                    new Headers(init?.headers).get("Authorization") ===
+                    "Bearer sk_new"
+                        ? new Response(JSON.stringify({ id: "key" }))
+                        : unauthorized(),
+            );
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
+            function Probe() {
+                auth.current = useAuth();
+                useAccountKey();
+                useAccountProfile();
+                return null;
+            }
+            const stale = {
+                ...storage,
+                // This tab hydrated before the other tab saved sk_new.
+                getItem: vi.fn(storage.getItem).mockReturnValueOnce("sk_old"),
+            };
+
+            await act(async () => {
+                create(
+                    <PolliProvider appKey="pk_test" storage={stale}>
+                        <Probe />
+                    </PolliProvider>,
+                );
+            });
+
+            expect(auth.current?.apiKey).toBe("sk_new");
+            expect(auth.current?.error).toBeNull();
+            expect(storage.getItem("polli:pk_test:token")).toBe("sk_new");
+        });
+
+        it("does not fall back to a key this tab failed to replace", async () => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_old",
+            });
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_url, init) =>
+                    new Headers(init?.headers).get("Authorization") ===
+                    "Bearer sk_old"
+                        ? new Response(JSON.stringify({ id: "key" }))
+                        : unauthorized(),
+            );
+            const auth = await mountWithKey(storage);
+            vi.spyOn(storage, "setItem").mockImplementation(() => {
+                throw new Error("Storage full");
+            });
+
+            await act(async () => {
+                auth.current?.setApiKey("sk_new");
+            });
+
+            expect(auth.current?.isLoggedIn).toBe(false);
+            expect(auth.current?.error?.message).toBe(
+                "Your Pollinations connection expired or was revoked. Connect again.",
+            );
+        });
+    });
 
     it("persists keys set by the host app", async () => {
         stubWindow("https://app.example/");

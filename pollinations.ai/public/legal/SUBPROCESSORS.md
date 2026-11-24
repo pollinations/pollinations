@@ -1,6 +1,6 @@
 # Service Providers
 
-**Last updated: 2026-11-23**
+**Last updated: 2026-11-24**
 
 These providers process personal data for us. Some process it outside the EEA, including in the United States; see the [Privacy Policy](/privacy) for transfer safeguards.
 
@@ -9,6 +9,7 @@ These providers process personal data for us. Some process it outside the EEA, i
 | Provider | Purpose |
 | --- | --- |
 | Cloudflare | Hosting, storage, caching, tool containers, and account email delivery |
+| Microsoft Azure | Managed PostgreSQL in Sweden for Open WebUI accounts, chats, and document search data |
 | Tinybird | Usage and billing analytics |
 | Amazon Bedrock | Prompt safety checks |
 | Stripe | Payments and invoices |

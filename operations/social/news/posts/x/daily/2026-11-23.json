@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-23",
+  "period_start": "2026-11-23",
+  "period_end": "2026-11-23",
+  "generated_at": "2026-11-24T06:06:22.188333+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/f13364132782e269f976a3a36a776b85dc4046f4d4e68a881ff1ba9081f9741e"
+    }
+  ],
+  "text": "Merged: hosted prompt and code agents accept public HTTPS `input_file` links on `/v1/responses`. The URL reaches the agent as text for its tools; the file isn't fetched. ffmpeg-mcp runs are capped at 16 source URLs. Even ffmpeg gets boundaries."
+}

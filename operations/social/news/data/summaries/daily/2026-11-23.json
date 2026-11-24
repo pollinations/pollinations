@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-23",
+  "period_start": "2026-11-23",
+  "period_end": "2026-11-23",
+  "title": "New options for video and live transcription",
+  "summary": "New video and live transcription models landed alongside file links for hosted agents, refreshed Discord bots, and a round of model-catalog repairs.\n\nAdded paid-only Kling 4.0 Flash for 720p video with native audio, from text or a start image. Paid-only Gemini 3.5 Transcribe Live accepts streamed audio and returns interim text and a final transcript after each manually committed utterance.\n\nHosted prompt and code agents now accept public HTTPS file links as `input_file` parts on `/v1/responses`. The link reaches the agent as text for its tools; the file is not fetched. A community fix also caps ffmpeg-mcp runs at 16 source URLs.\n\nCatGPT switched to GPT-6.1 Terra, and Opposite Prompt switched to GPT-6 Luna. Both now generate images with GPT Image 2.5 Sunburst and attach them as JPEGs.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 19962,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20379,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20435,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20487,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20497,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20505,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20519,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20520,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20522,
+      "date": "2026-11-23"
+    },
+    {
+      "number": 20527,
+      "date": "2026-11-23"
+    }
+  ],
+  "generated_at": "2026-11-24T06:06:22.188333+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Kling 4.0 Flash video",
+      "text": "Generate paid-only 720p videos with native audio from text or a start image using `kwaivgi/kling-v4.0-flash`, with durations from 3 to 20 seconds. [Browse the model](https://enter.pollinations.ai/models?q=kwaivgi/kling-v4.0-flash).",
+      "prs": [
+        20435
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Gemini live transcription",
+      "text": "Stream mono PCM16 audio to paid-only `google/gemini-3.5-transcribe-live` and manually commit each utterance to get interim text and a final verbatim transcript. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-3.5-transcribe-live).",
+      "prs": [
+        20379
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "File links for hosted agents",
+      "text": "Send a public HTTPS `file_url` as an `input_file` part on `/v1/responses` so hosted agents can pass the link to their tools; the file is not fetched, and the full URL reaches the model. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        20505
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Fresh models for Discord bots",
+      "text": "CatGPT now uses GPT-6.1 Terra, while Opposite Prompt uses GPT-6 Luna. Both generate images with GPT Image 2.5 Sunburst and attach them as JPEGs.",
+      "prs": [
+        20527
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

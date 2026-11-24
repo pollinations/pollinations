@@ -224,15 +224,23 @@ describe("Seedance 2.0 family via Replicate", () => {
         await callSeedanceV2API("a skyscraper", {
             ...params,
             dimensionsExplicit: true,
+            duration: 7,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            dimensionsExplicit: true,
             aspectRatio: "4:3",
+            reference_videos: REFERENCE_MEDIA.reference_videos,
         });
 
         expect(inputs.map((input) => input.aspect_ratio)).toEqual([
             "9:16",
             "16:9",
             "adaptive",
+            "9:16",
             "4:3",
         ]);
-        expect(inputs.map((input) => input.duration)).toEqual([4, 4, -1, 4]);
+        expect(inputs.map((input) => input.duration)).toEqual([4, 4, -1, 7, 4]);
     });
 });

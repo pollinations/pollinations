@@ -56,6 +56,7 @@
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
+        "autoDurationWithReferenceVideo": true,
         "exclusiveReferences": true,
         "audioCatalog": {
             "max_reference_audios": 3,
@@ -70,13 +71,15 @@
         "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
-        "soundToggleDefault": true
+        "soundToggleDefault": true,
+        "autoDurationWithReferenceVideo": true
     },
     "bytedance/seedance-2.0-mini": {
         "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack.",
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
-        "soundToggleDefault": true
+        "soundToggleDefault": true,
+        "autoDurationWithReferenceVideo": true
     },
     "bytedance/seedance-2.5": {
         "reason": "Match the video adapter’s aspect ratios. Expose the optional soundtrack. Production returned provider error E006 for a first frame plus a reference image on 2026-11-19. The provider disallows mixing reference media with first or last frames.",

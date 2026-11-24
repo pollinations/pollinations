@@ -49,17 +49,17 @@ export async function callSeedanceV2API(
 
     const aspectRatio =
         safeParams.aspectRatio ??
-        (safeParams.reference_videos?.length
-            ? "adaptive"
-            : safeParams.dimensionsExplicit
-              ? closestRatioLogSpace(safeParams.width, safeParams.height, [
-                    "16:9",
-                    "4:3",
-                    "1:1",
-                    "3:4",
-                    "9:16",
-                    "21:9",
-                ])
+        (safeParams.dimensionsExplicit
+            ? closestRatioLogSpace(safeParams.width, safeParams.height, [
+                  "16:9",
+                  "4:3",
+                  "1:1",
+                  "3:4",
+                  "9:16",
+                  "21:9",
+              ])
+            : safeParams.reference_videos?.length
+              ? "adaptive"
               : "16:9");
     // Replicate's Seedance edit/extension mode needs duration -1.
     const autoDuration =

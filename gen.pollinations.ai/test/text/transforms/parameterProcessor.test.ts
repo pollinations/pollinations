@@ -213,6 +213,8 @@ describe("processParameters", () => {
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
         "openai/gpt-6-astra:aws",
+        "openai/gpt-5.3-codex",
+        "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
         "openai/gpt-6.2-astra",
         "openai/gpt-6.2-sol",
@@ -235,6 +237,8 @@ describe("processParameters", () => {
                         "pollinations/midijourney-large": { max: "xhigh" },
                         "pollinations/midijourney": { max: "xhigh" },
                         "openai/gpt-6-astra": { none: "low" },
+                        "openai/gpt-5.3-codex": { max: "xhigh" },
+                        "openai/gpt-6.1-sol": { none: "low" },
                         "openai/gpt-6.2-astra": { none: "low" },
                         "openai/gpt-6.2-sol": { none: "low" },
                     } as Record<string, Record<string, string>>

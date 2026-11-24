@@ -34,7 +34,6 @@ const maxToXhigh = { max: "xhigh" };
 const maxToHigh = { max: "high" };
 const noneToLow = { none: "low" };
 const effortMaxToXhigh = remapReasoningEffort(maxToXhigh);
-const effortNoneToLow = remapReasoningEffort(noneToLow);
 const gptOssEffort = remapReasoningEffort({
     none: "low",
     xhigh: "high",
@@ -111,6 +110,12 @@ const developerToSystem: TransformFn = (messages, options) => ({
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
+// Sonnet 4.6 on Bedrock accepts effort "max" (probed live 2026-11-24).
+const claudeSonnet46BedrockThinking = createClaudeThinkingTransform(
+    "adaptive",
+    false,
+    { max: "max" },
+);
 
 const omitOpenAISampling = omitParameters(
     "temperature",
@@ -287,7 +292,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5-nano",
@@ -312,7 +318,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
         useResponsesApi: true,
     },
     {
@@ -420,7 +427,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
-        transform: pipe(omitOpenAISampling, effortNoneToLow),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -438,7 +446,8 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
-        transform: pipe(omitOpenAISampling, effortNoneToLow),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
         useResponsesApi: true,
     },
     {
@@ -810,7 +819,7 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+        transform: pipe(claudeSonnet46BedrockThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-sonnet-4.6:anthropic",

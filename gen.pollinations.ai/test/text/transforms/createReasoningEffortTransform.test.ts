@@ -251,9 +251,14 @@ describe("reasoning_effort levels providers reject (#19784)", () => {
     ])("%s sends %s as %s", async (modelName, sent, expected) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
+        const transformed = await transform([{ role: "user", content: "hi" }], {
+            model: modelName,
             reasoning_effort: sent,
         });
+        const { options } = resolveModelConfig(
+            transformed.messages,
+            transformed.options,
+        );
         expect(options.reasoning_effort).toBe(expected);
     });
 });

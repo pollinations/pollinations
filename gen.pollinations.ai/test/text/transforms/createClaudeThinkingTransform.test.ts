@@ -169,6 +169,18 @@ describe("Claude thinking model wiring", () => {
         expect(options.output_config).toEqual({ effort: "high" });
     });
 
+    it.each([
+        ["anthropic/claude-sonnet-4.6", "max"],
+        ["anthropic/claude-sonnet-4.6:anthropic", "high"],
+    ])("sends reasoning_effort=max on %s as %s", async (modelName, effort) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: "max",
+        });
+        expect(options.output_config).toEqual({ effort });
+    });
+
     it("keeps claude-large reasoning opt-in", async () => {
         const transform = findModelByName("anthropic/claude-opus-5")?.transform;
         if (!transform) throw new Error("claude-large transform missing");

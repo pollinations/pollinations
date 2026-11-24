@@ -71,6 +71,10 @@ export function serveInteractions(
         try {
             const image = await generate(prompt.trim(), avatarUrl);
             const form = new FormData();
+            form.set(
+                "payload_json",
+                JSON.stringify({ attachments: [{ id: 0, filename }] }),
+            );
             form.append(
                 "files[0]",
                 new Blob([new Uint8Array(image)], { type: "image/jpeg" }),

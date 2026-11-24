@@ -26,28 +26,26 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 describe("HeyGen Decision 1 routes", () => {
-    it("keeps the Vercel decision route primary with a paid OpenRouter fallback", () => {
+    it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
         const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
-        const fallback = TEXT_SERVICES["heygen/heygen-decision-1:openrouter"];
         expect(primary).toMatchObject({
             category: "decision",
-            provider: "vercel",
-            paidOnly: true,
-            fallbacks: ["heygen/heygen-decision-1:openrouter"],
-        });
-        expect(fallback).toMatchObject({
             provider: "openrouter",
-            hidden: true,
-            fallbackOnly: true,
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image", "audio", "video"],
         });
+        expect(primary).not.toHaveProperty("fallbacks");
         expect(primary.supportedEndpoints).toContain("/alpha/decisions");
-        expect(
-            findModelByName("heygen/heygen-decision-1")?.useSystemOneApi,
-        ).toBe(true);
-        expect(
-            findModelByName("heygen/heygen-decision-1:openrouter")
-                ?.useSystemOneApi,
-        ).toBe(true);
+        const route = findModelByName("heygen/heygen-decision-1");
+        expect(route?.useSystemOneApi).toBe(true);
+        expect(route?.config()).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            requiresDecisionCostReceipt: true,
+            defaultOptions: {
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
     });
 });
 

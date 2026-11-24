@@ -22,6 +22,7 @@ type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
     usage: {
+        cost?: unknown;
         input_tokens: number;
         output_tokens: number;
         input_tokens_details?: {
@@ -401,7 +402,11 @@ function parseNativeRequest(
 export async function requestDecision(
     request: SystemOneRequest,
     options: TransformOptions,
-): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
+): Promise<{
+    result: SystemOneResponse;
+    requestUrl: URL;
+    reportedCost?: number;
+}> {
     const { state, questions } = request;
     if (
         options.requestedModel?.split(":")[0] ===
@@ -501,6 +506,15 @@ export async function requestDecision(
                 }
             }
         }
+        if (options.modelConfig?.requiresDecisionCostReceipt) {
+            const cost = result.usage.cost;
+            if (typeof cost !== "number" || !Number.isFinite(cost) || cost < 0)
+                throw serviceError(
+                    `${model} returned a response without a valid cost receipt.`,
+                    502,
+                );
+            return { result, requestUrl, reportedCost: cost };
+        }
         return { result, requestUrl };
     } catch (thrown) {
         const error =
@@ -522,7 +536,7 @@ export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    const { result, requestUrl } = await requestDecision(
+    const { result, requestUrl, reportedCost } = await requestDecision(
         parseNativeRequest(messages, options.modelConfig?.model),
         options,
     );
@@ -530,7 +544,10 @@ export async function callSystemOne(
         id: `systemone-${crypto.randomUUID()}`,
         object: "chat.completion",
         created: Math.floor(Date.now() / 1000),
-        model: result.model,
+        model:
+            reportedCost === undefined
+                ? result.model
+                : String(options.modelConfig?.model),
         choices: [
             {
                 index: 0,
@@ -541,7 +558,10 @@ export async function callSystemOne(
                 finish_reason: "stop",
             },
         ],
-        usage: decisionCompletionUsage(result.usage),
+        usage: {
+            ...decisionCompletionUsage(result.usage),
+            ...(reportedCost !== undefined && { cost: reportedCost }),
+        },
     };
     return withUpstreamRequestUrl(
         // TypeSafe answers arrive in one piece.

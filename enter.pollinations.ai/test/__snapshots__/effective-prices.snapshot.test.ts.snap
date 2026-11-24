@@ -2204,21 +2204,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "heygen/heygen-decision-1": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000014,
+      "promptTextTokens": 0.0000001477,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000014,
-    },
-  },
-  "heygen/heygen-decision-1:openrouter": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.00000007385,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptTextTokens": 0.00000007385,
+      "promptTextTokens": 0.0000001477,
     },
   },
   "heygen/heygen-video-1": {

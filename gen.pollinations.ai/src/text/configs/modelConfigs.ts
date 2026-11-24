@@ -267,20 +267,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
-    "heygen/heygen-decision-1": () =>
-        createVercelAIGatewayModelConfig({
-            directEndpoint:
-                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "heygen/heygen-decision-1",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["heygen"] } },
-            },
-        }),
-    "heygen/heygen-decision-1:openrouter": () => ({
+    "heygen/heygen-decision-1": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "heygen/heygen-decision-1",
+        requiresDecisionCostReceipt: true,
         defaultOptions: {
             provider: {
                 only: ["heygen"],

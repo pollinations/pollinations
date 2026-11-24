@@ -99,16 +99,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "heygen/heygen-decision-1": {
-        "heygen/heygen-decision-1:openrouter": {
-            provider: "openrouter",
-            priceMultiplier: 1,
-            cost: {
-                promptTextTokens: perMillion(0.07) * 1.055,
-                completionTextTokens: perMillion(0),
-            },
-        },
-    },
     "microsoft/microsoft-decision-1": {
         // Same Azure backend; covers gateway failures, not Microsoft outages.
         "microsoft/microsoft-decision-1:vercel": {

@@ -2141,16 +2141,17 @@ const TEXT_BASE_SERVICES = {
     "heygen/heygen-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "vercel",
+        provider: "openrouter",
         publisher: "HeyGen",
         category: "decision",
         addedDate: new Date("2026-11-20").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.14),
+            promptTextTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0),
         },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
         title: "HeyGen Decision 1",
         description:
             "Typed yes/no, choice and score decisions over text, images, audio and video.",

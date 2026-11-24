@@ -5,13 +5,17 @@ function parseRetryAfter(response: Response): number | undefined {
     const retryAfter = response.headers.get("Retry-After");
     if (!retryAfter) return undefined;
 
-    // Try parsing as number of seconds.
-    // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
-    // are rejected instead of being silently truncated into an aggressive
-    // retry delay.
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return seconds;
+    // Try parsing as number of seconds. Only accept a plain non-negative
+    // integer (delay-seconds per RFC 7231): reject scientific notation
+    // ("5e2" -> 500) and decimals so a tiny/malformed header cannot turn
+    // into a huge (or fractional) retry delay.
+    if (!/^\s*\d+\s*$/.test(retryAfter)) {
+        // fall through to HTTP-date handling below
+    } else {
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds) && seconds >= 0) {
+            return seconds;
+        }
     }
 
     // Try parsing as HTTP date

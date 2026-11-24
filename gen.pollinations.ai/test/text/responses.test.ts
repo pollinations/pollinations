@@ -122,6 +122,11 @@ describe("direct Responses transport", () => {
         ["openai/gpt-5-nano", "max", "high"],
         ["openai/gpt-5-nano:openai", "max", "high"],
         ["openai/gpt-6-sol", "none", "none"],
+        ["openai/gpt-6-sol", "minimal", "low"],
+        ["openai/gpt-6-astra:aws", "none", "none"],
+        ["openai/gpt-6-astra:aws", "minimal", "low"],
+        ["openai/gpt-5.3-codex:openai", "minimal", "low"],
+        ["openai/gpt-oss-20b", "minimal", "minimal"],
         ["openai/gpt-6.2-astra", "none", "low"],
         ["openai/gpt-6.2-sol", "none", "low"],
     ])(

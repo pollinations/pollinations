@@ -42,6 +42,9 @@ interface CloudflareBindings {
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
+    AZURE_PORT_WAKE: DurableObjectNamespace<
+        import("./src/durable-objects/AzurePortWake.ts").AzurePortWake
+    >;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;

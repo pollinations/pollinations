@@ -27,7 +27,7 @@ The original artwork remains at its old monorepo path because the already-regist
 | --- | --- | --- |
 | `baseModel` | `openai/gpt-6-luna` | Served from Azure and not paid only, so Quest balance can pay; supports tool calling. |
 | `mcpServers` | `["pollinations"]` | Enables the built-in `generateImage` tool. |
-| image model | `microsoft/mai-image-2.7-flash` | Accepts a reference image, so the original CatGPT artwork drives the style; not paid only. |
+| image model | `google/gemini-3.1-flash-lite-image` | Nano Banana 2 Lite, the model the CatGPT site uses. It keeps the artist's style closest; it is paid only, so comics need paid balance. |
 
 The system prompt tells the agent to write only its short spoken line, then call `generateImage` once with the filled-in comic prompt (1024×1024). The platform attaches the tool result to the reply, so nothing else is needed to return the comic inline.
 
@@ -54,7 +54,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-One request takes roughly 20 seconds because the comic is generated inside the same call.
+One request takes roughly 10–20 seconds because the comic is generated inside the same call.
 
 ## Verified examples
 

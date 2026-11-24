@@ -33,6 +33,8 @@ const fireworksThinking = createReasoningEffortTransform("toggle");
 const maxToXhigh = { max: "xhigh" };
 const maxToHigh = { max: "high" };
 const noneToLow = { none: "low" };
+const minimalToLow = { minimal: "low" };
+const noneAndMinimalToLow = { ...noneToLow, ...minimalToLow };
 const effortMaxToXhigh = remapReasoningEffort(maxToXhigh);
 const gptOssEffort = remapReasoningEffort({
     none: "low",
@@ -319,13 +321,14 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
-        reasoningEffortMap: maxToXhigh,
+        reasoningEffortMap: { ...maxToXhigh, ...minimalToLow },
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.3-codex:openai",
         config: portkeyConfig["gpt-5.3-codex-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
@@ -363,97 +366,111 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
         transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        reasoningEffortMap: minimalToLow,
     },
     {
         name: "openai/gpt-5.5:aws",
         config: portkeyConfig["gpt-5.5-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-sol:aws",
         config: portkeyConfig["gpt-5.6-sol-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra:aws",
         config: portkeyConfig["gpt-5.6-terra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-terra",
         config: portkeyConfig["gpt-6.1-terra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-terra:aws",
         config: portkeyConfig["gpt-6.1-terra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna:aws",
         config: portkeyConfig["gpt-5.6-luna-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-astra:aws",
         config: portkeyConfig["gpt-6-astra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
         transform: omitOpenAISampling,
-        reasoningEffortMap: noneToLow,
+        reasoningEffortMap: noneAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-sol",
         config: portkeyConfig["gpt-6-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-sol:aws",
         config: portkeyConfig["gpt-6-sol-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
         transform: omitOpenAISampling,
-        reasoningEffortMap: noneToLow,
+        reasoningEffortMap: noneAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-sol:aws",
         config: portkeyConfig["gpt-6.1-sol-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
@@ -486,12 +503,14 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-luna:aws",
         config: portkeyConfig["gpt-6-luna-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
@@ -1275,6 +1294,7 @@ const models: ModelDefinition[] = [
             omitOpenAISampling,
             effortMaxToXhigh,
         ),
+        reasoningEffortMap: minimalToLow,
     },
     {
         name: "perplexity/sonar",

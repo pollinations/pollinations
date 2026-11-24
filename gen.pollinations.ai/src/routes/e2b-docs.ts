@@ -198,18 +198,10 @@ export const sandboxDocs = {
         requestBody: {
             content: {
                 "application/json": {
-                    examples: {
-                        secret: {
-                            value: {
-                                secret: "a-long-random-string",
-                                header: "X-Telegram-Bot-Api-Secret-Token",
-                            },
-                        },
-                        discord: {
-                            value: {
-                                discordPublicKey:
-                                    "a 64-character hex public key",
-                            },
+                    schema: {
+                        example: {
+                            secret: "a-long-random-string",
+                            header: "X-Telegram-Bot-Api-Secret-Token",
                         },
                     },
                 },

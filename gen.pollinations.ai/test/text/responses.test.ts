@@ -113,6 +113,31 @@ describe("direct Responses transport", () => {
         expect(fetcher).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ["openai/gpt-5.4", "max", "xhigh"],
+        ["openai/gpt-5-nano", "max", "high"],
+        ["openai/gpt-5-nano:openai", "max", "high"],
+        ["openai/gpt-6-sol", "none", "none"],
+        ["openai/gpt-6.2-astra", "none", "low"],
+        ["openai/gpt-6.2-sol", "none", "low"],
+    ])(
+        "forwards native Responses effort for %s from %s to %s",
+        (model, supplied, expected) => {
+            const input = request({
+                model,
+                reasoning: { effort: supplied, summary: "auto" },
+            });
+            const target = resolveDirectResponsesTarget(model, input);
+            if (!target) throw new Error("expected direct target");
+            expect(
+                buildDirectResponsesRequestBody(input, target),
+            ).toMatchObject({
+                reasoning: { effort: expected, summary: "auto" },
+            });
+            expect(input.reasoning?.effort).toBe(supplied);
+        },
+    );
+
     it("keeps the GPT-5 Nano backup on Standard for native Responses", () => {
         const input = request({
             model: "openai/gpt-5-nano:openai",

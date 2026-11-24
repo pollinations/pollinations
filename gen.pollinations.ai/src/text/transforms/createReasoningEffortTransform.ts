@@ -73,15 +73,20 @@ export function createReasoningEffortTransform(
  */
 export function remapReasoningEffort(map: Record<string, string>): TransformFn {
     return (messages, options) => {
-        const effort =
-            typeof options.reasoning_effort === "string"
-                ? options.reasoning_effort.toLowerCase()
-                : undefined;
-        if (!effort || !Object.hasOwn(map, effort))
-            return { messages, options };
+        const effort = mappedReasoningEffort(options.reasoning_effort, map);
+        if (effort === options.reasoning_effort) return { messages, options };
         return {
             messages,
-            options: { ...options, reasoning_effort: map[effort] },
+            options: { ...options, reasoning_effort: effort },
         };
     };
+}
+
+export function mappedReasoningEffort(
+    effort: string | undefined,
+    map: Readonly<Record<string, string>> | undefined,
+): string | undefined {
+    if (typeof effort !== "string" || !map) return effort;
+    const level = effort.toLowerCase();
+    return Object.hasOwn(map, level) ? map[level] : effort;
 }

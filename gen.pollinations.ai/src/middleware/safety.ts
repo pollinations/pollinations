@@ -13,6 +13,7 @@ import {
 } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { routePath } from "hono/route";
 import type { Env } from "@/env.ts";
 import {
     applyGuardrail,
@@ -71,10 +72,9 @@ async function checkSafetyTexts(
     bodySafe?: SafeValue,
 ): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
-    const features = getRequestFeatures(safeValue);
-    for (const feature of getRequiredSafetyFeatures(c.var.model)) {
-        features.add(feature);
-    }
+    const requestedFeatures = getRequestFeatures(safeValue);
+    const requiredFeatures = getRequiredSafetyFeatures(c.var.model);
+    const features = new Set([...requestedFeatures, ...requiredFeatures]);
     if (features.size === 0) return texts;
 
     const guardrailInputs = selectGuardrailInputs(texts);
@@ -107,12 +107,34 @@ async function checkSafetyTexts(
         });
     }
 
-    if (response.action !== "GUARDRAIL_INTERVENED") return texts;
-
     const { blockedFeatures, redactedIds } = classifyTriggers(
         response,
         features,
     );
+
+    // The request logger's context can contain prompts from the request URL.
+    console.info({
+        message: "Bedrock guardrail usage",
+        environment: c.env.ENVIRONMENT,
+        route: routePath(c),
+        model: c.var.model?.resolved,
+        requestId: c.var.requestId,
+        requestedFeatures: [...requestedFeatures],
+        requiredFeatures,
+        scannedCharacters: guardrailInputs.reduce(
+            (length, input) => length + input.text.length,
+            0,
+        ),
+        scannedParts: guardrailInputs.length,
+        guardrailAction: response.action,
+        blockedFeatures: [...blockedFeatures],
+        contentPolicyUnits: response.usage?.contentPolicyUnits,
+        sensitiveInformationPolicyUnits:
+            response.usage?.sensitiveInformationPolicyUnits,
+    });
+
+    if (response.action !== "GUARDRAIL_INTERVENED") return texts;
+
     if (blockedFeatures.size > 0) {
         throw new UpstreamError(400, {
             message: `Request blocked by safety filter: ${[...blockedFeatures].join(", ")}`,

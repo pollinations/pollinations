@@ -2598,26 +2598,11 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                     </Text>
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                                    <RunStatBadge
-                                        cost={cost}
-                                        time={time}
-                                        walletKind={
-                                            currentModel.paidOnly
-                                                ? "paid"
-                                                : "tier"
-                                        }
-                                        costDetail={
-                                            cost === "Free"
-                                                ? "This model is free to use."
-                                                : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                        }
-                                        pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                    />
                                     {modelAbilities(currentModel).length >
                                         0 && (
                                         <ul
                                             aria-label="Abilities"
-                                            className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pl-1 text-theme-text-muted"
+                                            className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pr-1 text-theme-text-muted"
                                         >
                                             {modelAbilities(currentModel).map(
                                                 ({ label, Icon }) => (
@@ -2635,6 +2620,21 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                             )}
                                         </ul>
                                     )}
+                                    <RunStatBadge
+                                        cost={cost}
+                                        time={time}
+                                        walletKind={
+                                            currentModel.paidOnly
+                                                ? "paid"
+                                                : "tier"
+                                        }
+                                        costDetail={
+                                            cost === "Free"
+                                                ? "This model is free to use."
+                                                : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                        }
+                                        pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                    />
                                 </div>
                             </>
                         )}

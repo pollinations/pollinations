@@ -33,3 +33,22 @@ it("yields refusal deltas as text", async () => {
     for await (const chunk of streamSSE(response)) chunks.push(chunk);
     expect(chunks).toEqual(["I cannot help with that."]);
 });
+
+it("completes when [DONE] is the last line and has no trailing newline", async () => {
+    const response = new Response(
+        'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\ndata: [DONE]',
+    );
+    const chunks: string[] = [];
+    for await (const chunk of streamSSE(response)) chunks.push(chunk);
+    expect(chunks).toEqual(["Hello"]);
+});
+
+it("yields the last event but still rejects when [DONE] never arrives", async () => {
+    const stream = streamSSE(
+        new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}'),
+    );
+    expect(await stream.next()).toEqual({ value: "Hi", done: false });
+    await expect(stream.next()).rejects.toThrow(
+        "Stream interrupted before [DONE]",
+    );
+});

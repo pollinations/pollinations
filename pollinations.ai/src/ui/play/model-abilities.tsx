@@ -38,16 +38,10 @@ const video = (model: AbilityModel, capability: string) =>
 
 /**
  * What a model or agent can do beyond the basics of its tab, read from the
- * catalog. Signals almost every model has (tool calling, reasoning) stay out.
+ * catalog. Signals almost every model has (tool calling, reasoning) stay out,
+ * and so do inputs, which the upload tiles already show.
  */
 const ABILITIES: Ability[] = [
-    {
-        label: "Takes images",
-        Icon: ImageIcon,
-        applies: (model) =>
-            (model.agent || model.category === "image") &&
-            model.inputModalities.includes("image"),
-    },
     {
         label: "Makes images, audio and video",
         Icon: SparklesIcon,
@@ -135,18 +129,26 @@ export function modelAbilities(model: AbilityModel) {
     );
 }
 
-/** Agent picker filters, each a short name for the ability chips it covers. */
+/** Agent picker filters, each a short name for the ability labels it covers.
+ * "Takes images" reads the inputs instead, which the row leaves out. */
 const AGENT_FILTERS: Record<string, string[]> = {
     "Makes media": ["Makes images, audio and video"],
-    "Takes images": ["Takes images"],
     "Web search": ["Web search"],
     "Edits video": ["Edits audio and video"],
     "Runs code": ["Runs code", "Runs code in sandboxes", "Own computer"],
 };
 
-export const agentFilters = Object.keys(AGENT_FILTERS);
+export const agentFilters = [
+    "Makes media",
+    "Takes images",
+    "Web search",
+    "Edits video",
+    "Runs code",
+];
 
 export function matchesAgentFilter(model: AbilityModel, filter: string) {
+    if (filter === "Takes images")
+        return model.inputModalities.includes("image");
     const labels = AGENT_FILTERS[filter] ?? [];
     return modelAbilities(model).some((ability) =>
         labels.includes(ability.label),

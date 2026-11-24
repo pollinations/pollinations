@@ -30,7 +30,7 @@ it("shows an agent's image input and tools, not the common signals", () => {
                 "web_search",
             ],
         }),
-    ).toEqual(["Takes images", "Makes images, audio and video", "Web search"]);
+    ).toEqual(["Makes images, audio and video", "Web search"]);
     expect(labels({ ...base, category: "text", agent: true })).toEqual([]);
 });
 
@@ -75,12 +75,7 @@ it("shows what an external agent declares for itself", () => {
                 "code_execution",
             ],
         }),
-    ).toEqual([
-        "Takes images",
-        "Makes images, audio and video",
-        "Web search",
-        "Runs code",
-    ]);
+    ).toEqual(["Makes images, audio and video", "Web search", "Runs code"]);
 });
 
 it("offers an official agent the files it declares or its tools take", () => {

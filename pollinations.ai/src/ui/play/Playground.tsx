@@ -965,23 +965,22 @@ function ModelPicker({
 }
 
 function RunStatBadge({
-    label,
-    value,
+    cost,
+    time,
     walletKind,
-    detail,
-    href,
-    linkLabel,
+    costDetail,
+    pricingHref,
 }: {
-    label: string;
-    value?: string;
-    walletKind?: WalletKindIconProps["kind"];
-    detail: string;
-    href: string;
-    linkLabel: string;
+    cost?: string;
+    time?: string;
+    walletKind: WalletKindIconProps["kind"];
+    costDetail: string;
+    pricingHref: string;
 }) {
     const id = useId();
     const panel = useRef<HTMLDivElement>(null);
     const anchor = `--stat-${id}`;
+    const hidePanel = () => panel.current?.hidePopover();
 
     return (
         <div
@@ -993,7 +992,7 @@ function RunStatBadge({
                     event.pointerType === "mouse" &&
                     !panel.current?.contains(document.activeElement)
                 ) {
-                    panel.current?.hidePopover();
+                    hidePanel();
                 }
             }}
         >
@@ -1002,27 +1001,25 @@ function RunStatBadge({
                 popoverTarget={id}
                 popoverTargetAction="show"
                 style={{ anchorName: anchor }}
-                aria-label={`${label} ${value ?? "unavailable"}`}
+                aria-label={`Typical cost ${cost ?? "unavailable"}, typical time ${time ?? "unavailable"}`}
                 className="flex cursor-help rounded-lg"
             >
                 <Chip size="md" data-theme="neutral" className="tabular-nums">
-                    <span className="text-theme-text-muted">{label}</span>{" "}
-                    {walletKind ? (
-                        <>
-                            <span
-                                className={
-                                    walletKind === "paid"
-                                        ? "polli-wallet-text-paid"
-                                        : "polli-wallet-text-tier"
-                                }
-                            >
-                                {value ?? "—"}
-                            </span>
-                            <WalletKindIcon kind={walletKind} />
-                        </>
-                    ) : (
-                        (value ?? "—")
-                    )}
+                    <span className="text-theme-text-muted">Typical</span>{" "}
+                    <span
+                        className={
+                            walletKind === "paid"
+                                ? "polli-wallet-text-paid"
+                                : "polli-wallet-text-tier"
+                        }
+                    >
+                        {cost ?? "—"}
+                    </span>
+                    <WalletKindIcon kind={walletKind} />
+                    <span aria-hidden="true" className="text-theme-text-muted">
+                        ·
+                    </span>
+                    {time ?? "—"}
                 </Chip>
             </button>
             <div
@@ -1030,20 +1027,33 @@ function RunStatBadge({
                 id={id}
                 popover="auto"
                 style={{ positionAnchor: anchor }}
-                className="play-stat-popover w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
+                className="play-stat-popover flex w-64 max-w-[calc(100vw-1.5rem)] flex-col gap-2 rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
             >
                 <p>
-                    {value ? detail : "No estimate available for this model."}
+                    <strong>Cost.</strong>{" "}
+                    {cost ? costDetail : "No estimate available yet."}{" "}
+                    <InlineLink
+                        href={pricingHref}
+                        tone="quiet"
+                        style={{ fontWeight: "inherit" }}
+                    >
+                        Pricing
+                    </InlineLink>
                 </p>
-                <InlineLink
-                    href={href}
-                    onBlur={() => panel.current?.hidePopover()}
-                    tone="quiet"
-                    className="mt-1 inline-block"
-                    style={{ fontWeight: "inherit" }}
-                >
-                    {linkLabel}
-                </InlineLink>
+                <p>
+                    <strong>Time.</strong>{" "}
+                    {time
+                        ? "Average time to complete a successful request over the last 7 days."
+                        : "No estimate available yet."}{" "}
+                    <InlineLink
+                        href="https://model-monitor.pollinations.ai"
+                        onBlur={hidePanel}
+                        tone="quiet"
+                        style={{ fontWeight: "inherit" }}
+                    >
+                        Model Monitor
+                    </InlineLink>
+                </p>
             </div>
         </div>
     );
@@ -2589,42 +2599,41 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 )}
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <RunStatBadge
-                                        label="Typical cost"
-                                        value={cost}
+                                        cost={cost}
+                                        time={time}
                                         walletKind={
                                             currentModel.paidOnly
                                                 ? "paid"
                                                 : "tier"
                                         }
-                                        detail={
+                                        costDetail={
                                             cost === "Free"
                                                 ? "This model is free to use."
                                                 : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
                                         }
-                                        href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                        linkLabel="Pricing"
+                                        pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
                                     />
-                                    <RunStatBadge
-                                        label="Average time"
-                                        value={time}
-                                        detail="Average time to complete a successful request over the last 7 days."
-                                        href="https://model-monitor.pollinations.ai"
-                                        linkLabel="Model Monitor"
-                                    />
-                                    {modelAbilities(currentModel).map(
-                                        ({ label, Icon }) => (
-                                            <Chip
-                                                key={label}
-                                                size="md"
-                                                data-theme="neutral"
-                                            >
-                                                <Icon
-                                                    aria-hidden="true"
-                                                    className="size-3.5 text-theme-text-muted"
-                                                />
-                                                {label}
-                                            </Chip>
-                                        ),
+                                    {modelAbilities(currentModel).length >
+                                        0 && (
+                                        <ul
+                                            aria-label="Abilities"
+                                            className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pl-1 text-theme-text-muted"
+                                        >
+                                            {modelAbilities(currentModel).map(
+                                                ({ label, Icon }) => (
+                                                    <li
+                                                        key={label}
+                                                        className="inline-flex items-center gap-1"
+                                                    >
+                                                        <Icon
+                                                            aria-hidden="true"
+                                                            className="size-3.5"
+                                                        />
+                                                        {label}
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
                                     )}
                                 </div>
                             </>

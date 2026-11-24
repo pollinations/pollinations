@@ -223,6 +223,40 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         );
     });
 
+    it("logs Guardrails units with a route template and no prompt text", async () => {
+        guardrailResponse.usage = {
+            contentPolicyUnits: 7,
+            sensitiveInformationPolicyUnits: 6,
+        };
+        const info = vi.spyOn(console, "info");
+        try {
+            const response = await safetyApp().request(
+                "/scan/private-prompt?safe=privacy",
+                undefined,
+                { ...configuredEnv, ENVIRONMENT: "test" },
+            );
+
+            expect(response.status).toBe(200);
+            expect(info).toHaveBeenCalledWith({
+                message: "Bedrock guardrail usage",
+                environment: "test",
+                route: "/scan/:text",
+                model: "test-model",
+                requestId: "test-request",
+                requestedFeatures: ["privacy"],
+                requiredFeatures: [],
+                scannedCharacters: 14,
+                scannedParts: 1,
+                guardrailAction: "NONE",
+                blockedFeatures: [],
+                contentPolicyUnits: 7,
+                sensitiveInformationPolicyUnits: 6,
+            });
+        } finally {
+            info.mockRestore();
+        }
+    });
+
     it("redacts privacy matches", async () => {
         guardrailResponse = intervened(
             {

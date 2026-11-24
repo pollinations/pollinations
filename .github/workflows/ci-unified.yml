@@ -1,0 +1,14 @@
+name: CI Unified
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+concurrency:
+  group: ci-unified-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ucqcs:
+    uses: g33ky00/.github/.github/workflows/ucqcs.yml@main
+    secrets: inherit

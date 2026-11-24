@@ -845,19 +845,12 @@ The legacy `enter-services` box (`image-pollinations.service` port 16384 /
 decommissioned — image and text generation run inside the `gen.pollinations.ai`
 Cloudflare Worker.
 
-### monitoring-agents (legacy EC2 host)
-
-- **AWS account**: `myceli-prod` (514585225061), `us-east-1`
-- **Instance**: `i-083d9a4f2a60247ac`, `t4g.medium` (arm64, 4 GB RAM, 30 GB swap), 200 GB gp3
-- **Elastic IP**: `3.221.108.127`; security group `monitoring-agents` (SSH only)
-- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@3.221.108.127` (alias `community-monitor`)
-- **Runs**: Open WebUI PostgreSQL on port 5432, with data in
-  `/srv/openwebui-postgres/data`.
-- **Community monitoring**: The retired EC2 deployment was removed.
-  [Infra Watch](../../monitoring/infra-watch/) handles alerts and the
-  [leaderboard workflow](../../../.github/workflows/monitor-community-leaderboards.yml) posts the daily boards.
-- **Discord bots**: CatGPT and Opposite Prompt run on Azure. The EC2 bot units
-  and checkout were removed. See the [deployment guide](../../../apps/discord-bot-family/README.md).
+The community monitoring and Discord bot host was decommissioned. Open WebUI
+uses Azure PostgreSQL. CatGPT and Opposite Prompt run on the
+[Azure bot sandbox](../../../apps/discord-bot-family/README.md).
+[Infra Watch](../../monitoring/infra-watch/) handles community alerts and the
+[leaderboard workflow](../../../.github/workflows/monitor-community-leaderboards.yml)
+posts the daily boards.
 
 ## Heartbeat Registration
 
@@ -886,4 +879,3 @@ Non-SOPS keys:
 | Key | Provider | Location |
 |-----|----------|----------|
 | `~/.ssh/id_ed25519` | Vast.ai | All five active Vast workers; query the current proxy host/port with `vastai show instance` |
-| `~/.ssh/thomashkey` | EC2 (myceli-prod) | `monitoring-agents` |

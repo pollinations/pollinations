@@ -81,6 +81,7 @@ export const SandboxTemplateList: FC<{
         {SANDBOX_TEMPLATES.filter(({ id }) => id in prices).map((template) => (
             <CatalogCard
                 key={template.id}
+                fullWidthActions
                 logo={<ProviderLogo provider={template.provider} />}
                 price={
                     <div className="grid grid-cols-[4.5rem_3.5rem_3.5rem] gap-x-1">
@@ -114,7 +115,6 @@ export const SandboxTemplateList: FC<{
                         <Button
                             type="button"
                             intent="commit"
-                            size="sm"
                             icon={<TerminalIcon />}
                             aria-haspopup={
                                 create.disabled ? undefined : "dialog"

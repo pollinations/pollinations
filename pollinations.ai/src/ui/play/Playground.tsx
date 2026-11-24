@@ -1027,7 +1027,7 @@ function RunStatBadge({
                 id={id}
                 popover="auto"
                 style={{ positionAnchor: anchor }}
-                className="play-stat-popover flex w-64 max-w-[calc(100vw-1.5rem)] flex-col gap-2 rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
+                className="play-stat-popover w-64 max-w-[calc(100vw-1.5rem)] space-y-2 rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
             >
                 <p>
                     <strong>Cost.</strong>{" "}

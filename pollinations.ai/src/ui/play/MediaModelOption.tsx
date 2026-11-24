@@ -31,25 +31,19 @@ export function MediaModelOption({
             <span className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="truncate">{model.title}</span>
                 {model.verified && (
-                    <Chip
-                        size="sm"
-                        data-theme="neutral"
-                        className="play-model-chip"
+                    <span
+                        className="inline-flex items-center gap-1 text-xs text-theme-text-muted"
                         title="Published and run by Pollinations"
                     >
                         <ShieldCheckIcon
                             aria-hidden="true"
-                            className="size-3 text-intent-success-text"
+                            className="size-3"
                         />
                         Official
-                    </Chip>
+                    </span>
                 )}
                 {isNewModel(model.addedDate) && (
-                    <Chip
-                        intent="success"
-                        size="sm"
-                        className="play-model-chip"
-                    >
+                    <Chip intent="info" size="sm" className="play-model-chip">
                         New
                     </Chip>
                 )}

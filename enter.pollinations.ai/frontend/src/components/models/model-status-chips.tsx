@@ -161,17 +161,17 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                     tapEnabled
                     displayContents
                 >
-                    <Chip size="sm" data-theme="neutral">
+                    <span className="inline-flex items-center gap-1 text-xs text-theme-text-muted">
                         <ShieldCheckIcon
                             aria-hidden="true"
-                            className="size-3 text-intent-success-text"
+                            className="size-3"
                         />
                         Official
-                    </Chip>
+                    </span>
                 </Tooltip>
             )}
             {showNew && (
-                <Chip intent="new" size="sm">
+                <Chip intent="info" size="sm">
                     New
                 </Chip>
             )}

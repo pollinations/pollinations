@@ -342,6 +342,76 @@ test("World Bank uses arbitrary official codes, source metadata, descending year
     assert.equal(value(result).countries[0].iso3, "JPN");
 });
 
+test("ClinicalTrials.gov search maps study fields and does not forward caller credentials", async (t) => {
+    let url;
+    mock.method(globalThis, "fetch", async (input, init) => {
+        const request = new Request(input, init);
+        url = new URL(request.url);
+        assert.equal(url.hostname, "clinicaltrials.gov");
+        assert.equal(request.headers.get("authorization"), null);
+        assert.equal(request.headers.get("cookie"), null);
+        return Response.json({
+            totalCount: 1,
+            studies: [
+                {
+                    protocolSection: {
+                        identificationModule: {
+                            nctId: "NCT00000001",
+                            briefTitle: "Asthma study",
+                        },
+                        statusModule: {
+                            overallStatus: "RECRUITING",
+                            startDateStruct: { date: "2026-01" },
+                        },
+                        designModule: {
+                            studyType: "INTERVENTIONAL",
+                            phases: ["PHASE2"],
+                            enrollmentInfo: { count: 120 },
+                        },
+                        conditionsModule: { conditions: ["Asthma"] },
+                        sponsorCollaboratorsModule: {
+                            leadSponsor: { name: "Example University" },
+                        },
+                    },
+                },
+            ],
+            nextPageToken: "next-page",
+        });
+    });
+    const c = await client(t);
+    const result = await call(c, "clinicaltrials_search", {
+        query: "asthma",
+        status: "RECRUITING",
+        limit: 2,
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(url.pathname, "/api/v2/studies");
+    assert.equal(url.searchParams.get("query.term"), "asthma");
+    assert.equal(url.searchParams.get("filter.overallStatus"), "RECRUITING");
+    assert.equal(url.searchParams.get("pageSize"), "2");
+    assert.equal(url.searchParams.get("countTotal"), "true");
+    assert.deepEqual(value(result), {
+        totalCount: 1,
+        query: "asthma",
+        studies: [
+            {
+                nctId: "NCT00000001",
+                title: "Asthma study",
+                status: "RECRUITING",
+                studyType: "INTERVENTIONAL",
+                phases: ["PHASE2"],
+                conditions: ["Asthma"],
+                sponsor: "Example University",
+                enrollment: 120,
+                startDate: "2026-01",
+                completionDate: null,
+                url: "https://clinicaltrials.gov/study/NCT00000001",
+            },
+        ],
+        nextPageToken: "next-page",
+    });
+});
+
 for (const modern of [false, true]) {
     test(`stateless ${modern ? "modern" : "legacy"} discovery`, async (t) => {
         const c = await client(t, modern);
@@ -364,6 +434,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "clinicaltrials_search",
             ].sort(),
         );
     });

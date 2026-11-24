@@ -110,6 +110,8 @@ import {
 } from "./media-model-settings";
 import {
     agentAttachments,
+    agentFilters,
+    matchesAgentFilter,
     modelAbilities,
     takesFileLinks,
 } from "./model-abilities";
@@ -628,6 +630,7 @@ function acceptsFramePair(model: PlaygroundModel) {
 
 function matchesModelFilter(model: PlaygroundModel, filter: string) {
     if (filter === "All") return true;
+    if (model.agent) return matchesAgentFilter(model, filter);
     if (model.category === "audio") return audioGroupForModel(model) === filter;
     if (model.category === "video") {
         if (filter === videoFilters.end_frame) return acceptsFramePair(model);
@@ -696,14 +699,15 @@ function ModelPicker({
         if (value === "Fast") return fastModels.has(model.id);
         return matchesModelFilter(model, value);
     }
-    const filterOptions =
-        category === "video"
-            ? ["All", ...Object.values(videoFilters)]
-            : imageModels
-              ? imageFilterOptions
-              : category === "audio"
-                ? audioFilters
-                : [];
+    const filterOptions = models[0]?.agent
+        ? agentFilters
+        : category === "video"
+          ? ["All", ...Object.values(videoFilters)]
+          : imageModels
+            ? imageFilterOptions
+            : category === "audio"
+              ? audioFilters
+              : [];
     const [questOnly, setQuestOnly] = useState(false);
     const eligibleModels = questOnly
         ? models.filter((model) => !model.paidOnly)

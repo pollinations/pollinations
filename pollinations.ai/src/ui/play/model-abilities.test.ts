@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
     agentAttachments,
+    matchesAgentFilter,
     modelAbilities,
     takesFileLinks,
 } from "./model-abilities";
@@ -126,4 +127,35 @@ it("sends file links only to official agents whose tools take them", () => {
         takesFileLinks({ ...official, mcpServers: ["exa", "research"] }),
     ).toBe(false);
     expect(takesFileLinks(official)).toBe(false);
+});
+
+it("filters agents by what their tools and inputs let them do", () => {
+    const floret = {
+        ...base,
+        category: "text",
+        agent: true,
+        inputModalities: ["text", "image"],
+        mcpServers: ["pollinations", "exa", "ffmpeg"],
+    };
+    const coder = {
+        ...base,
+        category: "text",
+        agent: true,
+        mcpServers: ["machines"],
+    };
+    const matching = (model: typeof floret | typeof coder) =>
+        [
+            "Makes media",
+            "Takes images",
+            "Web search",
+            "Edits video",
+            "Runs code",
+        ].filter((filter) => matchesAgentFilter(model, filter));
+    expect(matching(floret)).toEqual([
+        "Makes media",
+        "Takes images",
+        "Web search",
+        "Edits video",
+    ]);
+    expect(matching(coder)).toEqual(["Runs code"]);
 });

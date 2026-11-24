@@ -135,6 +135,24 @@ export function modelAbilities(model: AbilityModel) {
     );
 }
 
+/** Agent picker filters, each a short name for the ability chips it covers. */
+const AGENT_FILTERS: Record<string, string[]> = {
+    "Makes media": ["Makes images, audio and video"],
+    "Takes images": ["Takes images"],
+    "Web search": ["Web search"],
+    "Edits video": ["Edits audio and video"],
+    "Runs code": ["Runs code", "Runs code in sandboxes", "Own computer"],
+};
+
+export const agentFilters = Object.keys(AGENT_FILTERS);
+
+export function matchesAgentFilter(model: AbilityModel, filter: string) {
+    const labels = AGENT_FILTERS[filter] ?? [];
+    return modelAbilities(model).some((ability) =>
+        labels.includes(ability.label),
+    );
+}
+
 type Attachment = "image" | "audio" | "video";
 
 // The tool servers that take links to audio or video, and which kinds they take.

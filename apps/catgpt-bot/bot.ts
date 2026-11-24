@@ -115,7 +115,7 @@ async function fetchImage(url: string): Promise<Buffer> {
 }
 
 async function publishImage(image: Buffer): Promise<void> {
-    if (!API_KEY) return;
+    if (!API_KEY || GEN_URL === "https://staging.gen.pollinations.ai") return;
     try {
         const form = new FormData();
         form.append(

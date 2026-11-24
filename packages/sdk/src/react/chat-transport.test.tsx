@@ -75,7 +75,6 @@ function authValue(
         error: null,
         login: vi.fn(),
         logout: vi.fn(),
-        rejectApiKey: vi.fn(),
         setApiKey: vi.fn(),
         enterUrl: "https://enter.example",
         apiBaseUrl: "https://enter.example/api",

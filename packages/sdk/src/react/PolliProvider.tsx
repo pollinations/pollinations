@@ -23,8 +23,6 @@ export type { AuthorizeRequest } from "./contexts.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = "https://enter.pollinations.ai";
-const KEY_REJECTED_MESSAGE =
-    "Your Pollinations connection expired or was revoked. Connect again.";
 const BYOP_DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
@@ -232,12 +230,6 @@ export function PolliProvider({
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [error, setError] = useState<Error | null>(null);
-    // The saved key as this tab last read or wrote it. A different saved key
-    // later means another tab connected since.
-    const syncedKey = useRef<string | null>(null);
-    // The key in use right now, ahead of the next render: a second 401 for a
-    // key this tab already replaced or dropped must change nothing.
-    const activeKey = useRef<string | null>(null);
 
     useEffect(() => {
         warnAuthSetup(appKey, currentRedirectUrl());
@@ -252,7 +244,6 @@ export function PolliProvider({
                 } else {
                     storage.removeItem(storageKey);
                 }
-                syncedKey.current = nextApiKey;
             } catch (cause) {
                 storageError =
                     cause instanceof Error
@@ -263,7 +254,6 @@ export function PolliProvider({
                                   : "Could not clear app connection",
                           );
             }
-            activeKey.current = nextApiKey;
             setApiKey(nextApiKey);
             setError(storageError);
         },
@@ -275,9 +265,7 @@ export function PolliProvider({
         hydrationStarted.current = true;
 
         void (async () => {
-            syncedKey.current = storage.getItem(storageKey);
-            activeKey.current = syncedKey.current;
-            setApiKey(syncedKey.current);
+            setApiKey(storage.getItem(storageKey));
             const result = consumeOAuthCallback(
                 window.location,
                 storage,
@@ -418,29 +406,6 @@ export function PolliProvider({
         updateApiKey(null);
     }, [updateApiKey]);
 
-    // Tabs share the saved key. A tab still holding an older key must not
-    // delete the one another tab saved after connecting again.
-    const rejectApiKey = useCallback(
-        (rejected: string) => {
-            if (rejected !== activeKey.current) return;
-            let saved: string | null = null;
-            try {
-                saved = storage.getItem(storageKey);
-            } catch {
-                // Unreadable storage: treat the key as gone.
-            }
-            if (saved && saved !== rejected && saved !== syncedKey.current) {
-                syncedKey.current = saved;
-                activeKey.current = saved;
-                setApiKey(saved);
-                return;
-            }
-            updateApiKey(null);
-            setError(new Error(KEY_REJECTED_MESSAGE));
-        },
-        [storage, storageKey, updateApiKey],
-    );
-
     const authValue = useMemo<AuthContextValue>(
         () => ({
             apiKey,
@@ -449,7 +414,6 @@ export function PolliProvider({
             error,
             login,
             logout,
-            rejectApiKey,
             setApiKey: updateApiKey,
             enterUrl,
             apiBaseUrl: resolvedApiBaseUrl,
@@ -460,7 +424,6 @@ export function PolliProvider({
             error,
             login,
             logout,
-            rejectApiKey,
             updateApiKey,
             enterUrl,
             resolvedApiBaseUrl,

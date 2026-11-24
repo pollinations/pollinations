@@ -130,13 +130,8 @@ function useAccountResource<T>(
     fetcher: AccountFetcher<T>,
     enabled = true,
 ): AccountResourceValue<T> {
-    const { apiKey, apiBaseUrl, rejectApiKey } = useRequiredAuth();
-    // Data belongs to the key that fetched it, so a new key never shows the
-    // previous account's data while its own request is pending.
-    const [loaded, setLoaded] = useState<{ apiKey: string; data: T } | null>(
-        null,
-    );
-    const data = loaded?.apiKey === apiKey ? loaded.data : null;
+    const { apiKey, apiBaseUrl, logout } = useRequiredAuth();
+    const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const reqIdRef = useRef(0);
@@ -144,7 +139,7 @@ function useAccountResource<T>(
     const refresh = useCallback(async () => {
         const reqId = ++reqIdRef.current;
         if (!enabled || !apiKey) {
-            setLoaded(null);
+            setData(null);
             setIsLoading(false);
             setError(null);
             return;
@@ -155,19 +150,19 @@ function useAccountResource<T>(
         try {
             const result = await fetcher(apiBaseUrl, apiKey);
             if (reqId !== reqIdRef.current) return;
-            setLoaded({ apiKey, data: result });
+            setData(result);
         } catch (err) {
             if (reqId !== reqIdRef.current) return;
             if (err instanceof PollinationsError && err.status === 401) {
-                rejectApiKey(apiKey);
+                logout();
                 return;
             }
-            setLoaded(null);
+            setData(null);
             setError(err instanceof Error ? err : new Error(String(err)));
         } finally {
             if (reqId === reqIdRef.current) setIsLoading(false);
         }
-    }, [apiKey, apiBaseUrl, enabled, fetcher, rejectApiKey]);
+    }, [apiKey, apiBaseUrl, enabled, fetcher, logout]);
 
     useEffect(() => {
         void refresh();
@@ -354,7 +349,7 @@ export interface GenerationValue<A extends unknown[], T> {
 function useGeneration<A extends unknown[], T>(
     request: GenerationRequest<A, T>,
 ): GenerationValue<A, T> {
-    const { apiKey, rejectApiKey } = useRequiredAuth();
+    const { apiKey, logout } = useRequiredAuth();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -395,12 +390,8 @@ function useGeneration<A extends unknown[], T>(
                 if (!controller.signal.aborted) setData(result);
             } catch (err) {
                 if (controller.signal.aborted) return;
-                if (
-                    apiKey &&
-                    err instanceof PollinationsError &&
-                    err.status === 401
-                ) {
-                    rejectApiKey(apiKey);
+                if (err instanceof PollinationsError && err.status === 401) {
+                    logout();
                 }
                 setData(null);
                 setError(err instanceof Error ? err : new Error(String(err)));
@@ -411,7 +402,7 @@ function useGeneration<A extends unknown[], T>(
                 }
             }
         },
-        [apiKey, rejectApiKey, request],
+        [apiKey, logout, request],
     );
 
     const rerun = useCallback(

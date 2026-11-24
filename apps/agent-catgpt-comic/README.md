@@ -25,7 +25,7 @@ The original artwork remains at its old monorepo path because the already-regist
 
 | Field | Value | Why |
 | --- | --- | --- |
-| `baseModel` | `openai/gpt-6-luna` | Served from Azure and not paid only, so Quest balance can pay; supports tool calling. |
+| `baseModel` | `openai/gpt-6.2-sol` | Served from Azure; paid only, like the comic model, so the catalog shows the agent as paid; supports tool calling. |
 | `mcpServers` | `["pollinations"]` | Enables the built-in `generateImage` tool. |
 | image model | `google/gemini-3.1-flash-lite-image` | Nano Banana 2 Lite, the model the CatGPT site uses. It keeps the artist's style closest; it is paid only, so comics need paid balance. |
 

@@ -2,7 +2,7 @@
   "name": "catgpt",
   "title": "CatGPT",
   "description": "CatGPT answers any question with a short, sarcastic feline reply drawn as a single-panel comic. Based on CatGPT by Tanika Godbole (@missfitcomics).",
-  "baseModel": "openai/gpt-6-luna",
+  "baseModel": "openai/gpt-6.2-sol",
   "mcpServers": [
     "pollinations"
   ],

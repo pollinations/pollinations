@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-23
+
+### Fixed
+
+- `authorizeDevice()` rejects device-code responses with a missing or
+  invalid `expires_in` or `interval` instead of polling the token endpoint
+  with no delay or expiring immediately.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

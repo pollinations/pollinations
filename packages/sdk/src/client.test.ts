@@ -1941,6 +1941,21 @@ describe("Pollinations.authorizeDevice", () => {
             ),
         ).resolves.toBe("sk_device");
     });
+
+    it.each([
+        ["without interval", { ...deviceCode, interval: undefined }],
+        ["without expires_in", { ...deviceCode, expires_in: undefined }],
+    ])(
+        "rejects with INVALID_RESPONSE when the code response is %s",
+        async (_label, code) => {
+            fetchMock.mockResolvedValueOnce(Response.json(code));
+            await expect(Pollinations.authorizeDevice()).rejects.toMatchObject({
+                code: "INVALID_RESPONSE",
+                status: 502,
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
 });
 
 describe("Pollinations.accountQuests", () => {

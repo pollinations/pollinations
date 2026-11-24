@@ -67,11 +67,17 @@ const configuredEnv = {
 
 function safetyApp(
     requiredSafetyFeatures: ModelVariables["model"]["definition"]["requiredSafetyFeatures"] = [],
+    userId?: string,
 ) {
     return new Hono<Env>()
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            if (userId) {
+                c.set("auth", {
+                    user: { id: userId },
+                } as Env["Variables"]["auth"]);
+            }
             c.set("model", {
                 requested: "test-model",
                 resolved: "test-model",
@@ -221,6 +227,97 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(response.headers.get("X-Safety-Applied")).toBe(
             "privacy,sexual,violence",
         );
+    });
+
+    it("logs Guardrails units with a route template and no prompt text", async () => {
+        guardrailResponse.usage = {
+            contentPolicyUnits: 7,
+            sensitiveInformationPolicyUnits: 6,
+        };
+        const info = vi.spyOn(console, "info");
+        try {
+            const response = await safetyApp().request(
+                "/scan/private-prompt?safe=privacy",
+                undefined,
+                { ...configuredEnv, ENVIRONMENT: "test" },
+            );
+
+            expect(response.status).toBe(200);
+            expect(info).toHaveBeenCalledWith({
+                message: "Bedrock guardrail usage",
+                environment: "test",
+                route: "/scan/:text",
+                model: "test-model",
+                requestId: "test-request",
+                inputFingerprint: undefined,
+                scanStartedAt: expect.any(Number),
+                requestedFeatures: ["privacy"],
+                requiredFeatures: [],
+                scannedCharacters: 14,
+                scannedParts: 1,
+                guardrailAction: "NONE",
+                blockedFeatures: [],
+                contentPolicyUnits: 7,
+                sensitiveInformationPolicyUnits: 6,
+            });
+        } finally {
+            info.mockRestore();
+        }
+    });
+
+    it("fingerprints exact Guardrails inputs within one user and policy", async () => {
+        const info = vi.spyOn(console, "info").mockImplementation(() => {});
+        const fingerprint = async (
+            user: string,
+            text: string,
+            safe: string,
+            version = "1",
+        ) => {
+            await safetyApp([], user).request(
+                "/texts",
+                {
+                    method: "POST",
+                    body: JSON.stringify({ texts: [text], safe }),
+                },
+                {
+                    ...configuredEnv,
+                    BETTER_AUTH_SECRET: "synthetic-test-salt",
+                    BEDROCK_GUARDRAIL_VERSION: version,
+                },
+            );
+            return info.mock.lastCall?.[0].inputFingerprint;
+        };
+        try {
+            const original = await fingerprint(
+                "user-a",
+                "some text",
+                "privacy,secrets",
+            );
+            expect(original).toMatch(/^[a-f0-9]{64}$/);
+            expect(
+                await fingerprint("user-a", "some text", "secrets,privacy"),
+            ).toBe(original);
+            expect(
+                await fingerprint("user-b", "some text", "privacy,secrets"),
+            ).not.toBe(original);
+            expect(
+                await fingerprint("user-a", "new text", "privacy,secrets"),
+            ).not.toBe(original);
+            expect(
+                await fingerprint("user-a", "some text", "privacy"),
+            ).not.toBe(original);
+            expect(
+                await fingerprint(
+                    "user-a",
+                    "some text",
+                    "privacy,secrets",
+                    "2",
+                ),
+            ).not.toBe(original);
+            expect(fetchMock).toHaveBeenCalledTimes(6);
+        } finally {
+            info.mockRestore();
+        }
     });
 
     it("redacts privacy matches", async () => {

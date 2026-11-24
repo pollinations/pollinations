@@ -40,6 +40,8 @@ const useCommunityModelQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 0.25,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const createUsedCommunityModelQuest: QuestDefinition = {
@@ -69,7 +71,6 @@ export const BYOM_QUEST_IDS = [
 // Each live quest completes when its flag from quest_agent_usage is 1.
 const QUEST_FLAGS = [
     ["usedAgent", useAgentQuest],
-    ["usedCommunityModel", useCommunityModelQuest],
     ["createdUsedCommunityModel", createUsedCommunityModelQuest],
 ] as const;
 

@@ -19,7 +19,7 @@ export function appOrigin(
     }
 }
 
-/** A Pollen amount in dollars (1 Pollen is worth $1), never below zero. */
+/** A USD amount, never below zero. */
 const usd = (pollen: number) => `$${Math.max(0, pollen).toFixed(4)}`;
 
 /**
@@ -34,8 +34,10 @@ export async function requireFunds(
     free = false,
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
-    // A cost that would print as $0.0000 says nothing: name the bound instead.
-    const charge = `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
+    const charge =
+        cost === 0 && !free
+            ? "The final price depends on usage"
+            : `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
     // A cost of 0 can mean "not known until billed" (no price history, or a
     // receipt), so a key with nothing left only makes calls known to be free.
@@ -49,7 +51,7 @@ export async function requireFunds(
         );
     }
     const balance = await loadBalance();
-    // A Quest Pollen only key can never draw on the paid balance.
+    // A Quest-balance-only key can never draw on the paid balance.
     const questPollenOnly = apiKey?.questPollenOnly ?? false;
     const spendable = questPollenOnly
         ? { ...balance, packBalance: 0 }

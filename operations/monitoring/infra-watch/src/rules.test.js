@@ -344,11 +344,17 @@ test("early errors fail on any minute of 25+ failed requests in the window", () 
     );
     assert.deepEqual(earlyErrors(bursts).early, {
         kind: "EARLY_ERRORS",
+        severe: true,
         worst: 232,
+        worstOk: null,
+        worstSeconds: null,
         route: "/*",
         bursts: 2,
+        minutes: [":21", ":32"],
         failures: 318,
+        ok: 0,
         d1: 314,
+        r2: 0,
         firstAt: Date.UTC(2026, 10, 8, 15, 21),
         lastAt: Date.UTC(2026, 10, 8, 15, 32),
     });
@@ -378,6 +384,50 @@ test("early errors open on their first check, ping, and close once clean", () =>
     assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 12 min");
 });
 
+// 23 Nov 2026: a 6-second blip at 00:48, then at 13:02 the first of nine bad
+// minutes, each with the requests served in it.
+const sized = (time, failures, ok, error_seconds) => ({
+    ...minute(time, failures),
+    ok,
+    error_seconds,
+    window_ok: 18_000,
+});
+test("a lone small burst is orange and pings nobody; a large or sustained one is red and pings", () => {
+    const blip = step({}, earlyErrors([sized("00:48", 29, 592, 6)]), 1);
+    const card = renderCard("early", blip.state.open.early, { now: 1 });
+    assert.equal(card.ping, false);
+    assert.equal(card.color, 0xd85a30);
+    const text = plain(card.text);
+    assert.ok(text.includes("29 reqs failed in 1 min"));
+    assert.ok(text.includes("5% of requests, in 6 s"));
+    assert.ok(text.includes("1 min of 30, 29 failed (<1%)"));
+    assert.doesNotMatch(text, /AT /);
+
+    // One minute losing a fifth of its requests is severe at once.
+    const large = earlyErrors([sized("13:02", 145, 600, 9)]).early;
+    assert.equal(large.severe, true);
+    // So are three small ones in the window, shown with their rhythm.
+    const sustained = earlyErrors([
+        sized("13:02", 30, 600, 5),
+        sized("13:04", 30, 600, 5),
+        sized("13:06", 30, 600, 5),
+    ]).early;
+    assert.equal(sustained.severe, true);
+    const r = step({}, { early: sustained }, 1);
+    const red = renderCard("early", r.state.open.early, { now: 1 });
+    assert.ok(red.ping);
+    assert.equal(red.color, 0xe24b4a);
+    assert.ok(plain(red.text).includes(":02 :04 :06"));
+});
+
+test("a small burst that turns severe pings, and one that only doubles while small does not", () => {
+    const at = (worst, severe) =>
+        snapshot({ kind: "EARLY_ERRORS", info: { worst, severe } });
+    assert.equal(escalates(at(29, false), at(60, false)), false);
+    assert.equal(escalates(at(29, false), at(40, true)), true);
+    assert.match(noteworthy(at(29, false), at(40, true)), /sustained/);
+});
+
 test("a payments card lists at most three payments", () => {
     const rows = ["01", "02", "03", "04", "05"].map((m) =>
         unpaid(`pi_${m}`, `2026-11-08 10:${m}:00`),
@@ -391,13 +441,35 @@ test("a payments card lists at most three payments", () => {
     assert.ok(text.includes("+2 more payments"));
 });
 
-test("early errors not mostly from the database are named as such", () => {
-    const r = step({}, earlyErrors([minute("15:21", 40, 10, "/api/x")]), 1);
+test("the generation route alone does not establish why a request failed", () => {
+    const r = step(
+        {},
+        earlyErrors([minute("15:21", 40, 10, "/internal/generation/:id")]),
+        1,
+    );
     const text = plain(
         renderCard("early", r.state.open.early, { now: 1 }).text,
     );
-    assert.ok(text.includes("FAILING: requests before any model"));
+    assert.ok(text.includes("FAILING: requests without a model label"));
     assert.ok(text.includes("10 database, 30 other"));
+    assert.doesNotMatch(text, /R2|sign-in|billing/);
+});
+
+test("confirmed R2 writes name the generation result failure and preserve mixed counts", () => {
+    const rows = [
+        { ...minute("11:26", 66, 3), r2_failures: 60 },
+        {
+            ...minute("11:27", 147, 0, "/internal/generation/:id"),
+            r2_failures: 147,
+        },
+    ];
+    const r = step({}, earlyErrors(rows), 1);
+    const text = plain(
+        renderCard("early", r.state.open.early, { now: 1 }).text,
+    );
+    assert.ok(text.includes("FAILING: R2 failed to save generation results"));
+    assert.ok(text.includes("207 R2, 3 database, 3 other"));
+    assert.doesNotMatch(text, /API keys|sign-in|billing/);
 });
 
 test("an early-errors burst pings again only once it doubles the worst one pinged", () => {
@@ -796,7 +868,7 @@ test("a sign-up burst opens a quiet card while the domain is over the limit, and
     const open = renderCard("signup:farm.com", incident, { now: 2 * MIN });
     assert.equal(open.ping, false);
     assert.equal(open.color, 0xe24b4a);
-    assert.match(open.text, /QUEST POLLEN RESTRICTED: domain farm\.com/);
+    assert.match(open.text, /QUEST BALANCE RESTRICTED: domain farm\.com/);
     assert.match(open.text, /31 in 24h/);
     assert.match(open.text, /2026-10-31 00:00 UTC/);
     assert.match(open.text, /spending frozen; Paid usable/);
@@ -823,7 +895,7 @@ test("a burst card says the domain is held and shows how to release it", () => {
             },
             { now: 0 },
         ).text;
-    assert.match(card("held"), /QUEST POLLEN RESTRICTED: domain farm\.com/);
+    assert.match(card("held"), /QUEST BALANCE RESTRICTED: domain farm\.com/);
     assert.match(card("held"), /spending frozen; Paid usable/);
     assert.match(
         card("held"),

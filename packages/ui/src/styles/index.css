@@ -20,6 +20,32 @@
     display: none !important;
 }
 
+.polli-mic-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.polli-mic-meter > i {
+    width: 3px;
+    height: 18px;
+    border-radius: 999px;
+    background: currentColor;
+    transform: scaleY(calc(0.16 + 0.84 * var(--mic-level, 0)));
+    transition: transform 100ms ease-out;
+}
+
+.polli-mic-meter > i:first-child,
+.polli-mic-meter > i:last-child {
+    height: 11px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .polli-mic-meter > i {
+        display: none;
+    }
+}
+
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
@@ -423,6 +449,12 @@
             height: max(100%, 44px);
             translate: -50% -50%;
         }
+
+        /* Grow the corner target outward so a tap on the tile center plays the clip. */
+        .polli-upload-remove::after {
+            inset: auto auto 0 0;
+            translate: none;
+        }
     }
 }
 
@@ -553,5 +585,18 @@
         /* A delay would still hold a change back after the instant snap. */
         transition-delay: 0s !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Keep the corner control visible on touch and reveal it on hover or keyboard focus. */
+@media (hover: hover) and (pointer: fine) and (not (any-pointer: coarse)) {
+    .polli-upload-remove {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .polli-upload-tile:hover .polli-upload-remove,
+    .polli-upload-tile:focus-within .polli-upload-remove {
+        opacity: 1;
+        pointer-events: auto;
     }
 }

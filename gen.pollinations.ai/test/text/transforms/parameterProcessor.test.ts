@@ -17,7 +17,6 @@ const modelDef = { name: "test-model" };
 describe("processParameters", () => {
     it.each([
         "anthropic/claude-sonnet-4.6",
-        "inception/mercury-2.5-preview",
         "qwen/qwen3.8-flash",
         "openai/gpt-5.4",
         "openai/gpt-6-astra",
@@ -214,6 +213,11 @@ describe("processParameters", () => {
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
         "openai/gpt-6-astra:aws",
+        "openai/gpt-5.3-codex",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-sol",
+        "openai/gpt-6.2-astra",
+        "openai/gpt-6.2-sol",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
@@ -221,19 +225,33 @@ describe("processParameters", () => {
         async (model) => {
             const transform = findModelByName(model)?.transform;
             if (!transform) throw new Error("expected catalog transform");
-            // Only the levels the provider rejects are remapped.
+            // Only the levels the provider rejects are remapped (#19784).
             const remapped: Record<string, string> =
                 (
                     {
-                        "openai/gpt-5-nano": { max: "xhigh" },
+                        "openai/gpt-5.4-nano": { max: "xhigh" },
                         "openai/gpt-5.4": { max: "xhigh" },
-                        "openai/gpt-5.5": { minimal: "low" },
+                        "openai/gpt-5-nano": { max: "high" },
+                        "openai/gpt-5.4-mini": { max: "xhigh" },
+                        "openai/gpt-5.5": { max: "xhigh", minimal: "low" },
                         "openai/gpt-5.6-sol": { minimal: "low" },
                         "openai/gpt-5.6-terra": { minimal: "low" },
                         "openai/gpt-5.6-luna": { minimal: "low" },
-                        "openai/gpt-6-astra": { minimal: "low" },
+                        "pollinations/midijourney-large": {
+                            max: "xhigh",
+                            minimal: "low",
+                        },
                         "pollinations/midijourney": { max: "xhigh" },
-                        "pollinations/midijourney-large": { minimal: "low" },
+                        "openai/gpt-6-astra": { none: "low", minimal: "low" },
+                        "openai/gpt-6-astra:aws": { minimal: "low" },
+                        "openai/gpt-5.3-codex": {
+                            max: "xhigh",
+                            minimal: "low",
+                        },
+                        "openai/gpt-6.1-sol": { none: "low", minimal: "low" },
+                        "openai/gpt-6-sol": { minimal: "low" },
+                        "openai/gpt-6.2-astra": { none: "low" },
+                        "openai/gpt-6.2-sol": { none: "low" },
                     } as Record<string, Record<string, string>>
                 )[model] ?? {};
             for (const reasoning_effort of [

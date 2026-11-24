@@ -163,7 +163,7 @@ function isBillingPortalConfigurationCurrent(
     return (currentPmc ?? undefined) === paymentMethodConfiguration;
 }
 
-/** Where the portal sends the user back: the standalone page, else Pollen. */
+/** Where the portal sends the user back: the standalone page, else the Credits page. */
 /** The pack keeps the buyer's selection across the round trip. */
 type BillingReturn = {
     topUp?: boolean;

@@ -52,6 +52,7 @@ import type {
     SiteFile,
     SitesResponse,
     SpeechWordTiming,
+    StemSeparationOptions,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -403,6 +404,9 @@ export class Pollinations {
             image: options.referenceImage,
             transparent: options.transparent,
             guidance_scale: options.guidanceScale,
+            output_format: options.outputFormat,
+            frame_count: options.frameCount,
+            frame_duration_ms: options.frameDurationMs,
             reasoning: options.reasoning,
         };
 
@@ -1444,6 +1448,28 @@ export class Pollinations {
                     contentType:
                         response.headers.get("content-type") || "audio/mpeg",
                 };
+            },
+        );
+    }
+
+    /** Separate an audio clip into MP3 stems and return the ZIP archive. */
+    async separateStems(
+        file: Blob,
+        options: StemSeparationOptions = {},
+    ): Promise<Blob> {
+        const body = new FormData();
+        body.set("file", file);
+        if (options.model) body.set("model", options.model);
+        if (options.stemVariationId)
+            body.set("stem_variation_id", options.stemVariationId);
+        return fetchWithTimeout(
+            `${this.baseUrl}/alpha/audio/stem-separation`,
+            { method: "POST", headers: this.getHeaders(), body },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return response.blob();
             },
         );
     }

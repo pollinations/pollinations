@@ -588,7 +588,7 @@ def build_rows_for_file(repo_root: Path, rel_path: str, git_sha: str) -> list[di
 # spends almost all its time waiting on I/O rather than doing local work.
 #
 # POLLI_VECTOR_DB is an sk_ (secret) key, so there's no
-# platform-side concurrency wall here — the only real ceiling is pollen balance (402 on
+# platform-side concurrency wall here — the only real ceiling is balance (402 on
 # empty). Still bounded rather than unbounded to stay a reasonable client of Vectorize's
 # own API and the GitHub Actions runner's resources, not because of a Pollinations limit.
 EMBED_CONCURRENCY = 16

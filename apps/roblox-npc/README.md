@@ -44,7 +44,7 @@ spawn. HTTP requests are already allowed.
 5. Add your key to the game's secrets store (Creator Dashboard > your
    experience > Secrets) as `POLLINATIONS_API_KEY` with the domain
    `gen.pollinations.ai`, and to Local Secrets for Studio playtests. Players
-   spend this key's Pollen, so give it a budget on
+   draw from the key owner’s balance, so give it a budget on
    [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys).
 
 With [Rojo](https://rojo.space) 7, `rojo build -o GrixForge.rbxlx` rebuilds the

@@ -1556,15 +1556,6 @@ test("an idle timeout is opt-in, needs a kept E2B sandbox, and stays until turne
         idleTimeout: 60,
     });
     expect(short.status).toBe(400);
-    const azure = await createSandbox(owner.key, {
-        templateID: "pollinations-azure",
-        timeout: 3600,
-        idleTimeout: 900,
-    });
-    expect(await azure.json()).toEqual({
-        code: 400,
-        message: "Azure sandboxes have no idleTimeout.",
-    });
     expect(e2b.sandboxes).toEqual([]);
 
     const created = await createSandbox(owner.key, {

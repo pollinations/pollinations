@@ -2095,6 +2095,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
+  "google/gemma-4-31b-it:turbo": {
+    "cost": {
+      "completionTextTokens": 0.00000034,
+      "promptCachedTokens": 0.00000005,
+      "promptImageTokens": 0.00000009,
+      "promptTextTokens": 0.00000009,
+    },
+    "price": {
+      "completionTextTokens": 0.00000034,
+      "promptCachedTokens": 0.00000005,
+      "promptImageTokens": 0.00000009,
+      "promptTextTokens": 0.00000009,
+    },
+  },
   "google/lyria-3-clip-preview": {
     "cost": {
       "completionAudioTokens": 0.04,

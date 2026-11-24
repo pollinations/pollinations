@@ -707,6 +707,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {
+        name: "google/gemma-4-31b-it:turbo",
+        config: portkeyConfig["google/gemma-4-31B-it-turbo"],
+    },
+    {
         name: "deepseek/deepseek-v4-pro",
         config: portkeyConfig["deepseek-v4-pro-openrouter-alibaba"],
         transform: fireworksThinking,

@@ -1643,6 +1643,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "google/gemma-4-31b-it:turbo": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+        aliases: [],
+        provider: "deepinfra",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // DeepInfra fp4 turbo list rates (2026-11-24), no gateway fee. The
+        // route bills cached input at 55.6% of the input rate.
+        cost: {
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.05),
+            promptImageTokens: perMillion(0.09),
+            completionTextTokens: perMillion(0.34),
+        },
+        title: "Gemma 4 31B Turbo",
+        description:
+            "Get lower per-token pricing and discounted cached input for long, repetitive prompts about text and images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "deepseek/deepseek-v4-pro": {
         supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV4Pro,
         aliases: ["deepseek-v4-pro", "deepseek-pro"],

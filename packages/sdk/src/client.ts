@@ -1498,6 +1498,23 @@ export class Pollinations {
         }
 
         const code = (await response.json()) as DeviceCodeResponse;
+        if (
+            !Number.isFinite(code.expires_in) ||
+            code.expires_in <= 0
+        ) {
+            throw new PollinationsError(
+                "Device code response missing or invalid expires_in",
+                "DEVICE_FLOW_INVALID_RESPONSE",
+                502,
+            );
+        }
+        if (
+            !Number.isFinite(code.interval) ||
+            code.interval <= 0
+        ) {
+            // RFC 8628 default polling interval is 5 seconds
+            code.interval = 5;
+        }
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
         let pollMs = Math.max(code.interval, 5) * 1000;
 

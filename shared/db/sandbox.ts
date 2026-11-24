@@ -64,6 +64,7 @@ export const sandboxPort = sqliteTable(
         // keeps only its SHA-256.
         header: text("header").notNull(),
         secretHash: text("secret_hash").notNull(),
+        discordPublicKey: text("discord_public_key"),
     },
     (table) => [primaryKey({ columns: [table.sandboxId, table.port] })],
 );

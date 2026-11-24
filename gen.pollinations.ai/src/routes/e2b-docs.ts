@@ -192,16 +192,24 @@ export const sandboxDocs = {
         tags: ["Sandboxes API"],
         summary: "Share sandbox port",
         description:
-            "Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. Port 49983 and Azure SSH port 8022 cannot be shared. Azure reserves the Authorization header for ingress authentication.",
+            "Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. Port 49983 and Azure SSH port 8022 cannot be shared. Azure reserves the Authorization header for ingress authentication. On Azure, pass `discordPublicKey` instead of a secret to accept signed Discord interactions. Verification pings are answered without a wake. Slash commands are acknowledged immediately and the original JSON is delivered by POST to the root of your sandbox port after the normal paid wake. The sandbox edits the deferred Discord response.",
         security: [{ bearerAuth: [] }],
         parameters: [id, port],
         requestBody: {
             content: {
                 "application/json": {
-                    schema: {
-                        example: {
-                            secret: "a-long-random-string",
-                            header: "X-Telegram-Bot-Api-Secret-Token",
+                    examples: {
+                        secret: {
+                            value: {
+                                secret: "a-long-random-string",
+                                header: "X-Telegram-Bot-Api-Secret-Token",
+                            },
+                        },
+                        discord: {
+                            value: {
+                                discordPublicKey:
+                                    "a 64-character hex public key",
+                            },
                         },
                     },
                 },

@@ -9,12 +9,16 @@ import {
     type Message,
     Partials,
 } from "discord.js";
+import { serveInteractions } from "../discord-bot-family/azure/interactions.ts";
 
 const TOKEN = process.env.BOT_TOKEN_OPPOSITE_PROMPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
-const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
+const GEN_URL =
+    process.env.POLLINATIONS_BASE_URL || "https://gen.pollinations.ai";
+const TEXT_API = `${GEN_URL}/v1/chat/completions`;
 const TEXT_MODEL = "openai/gpt-6-luna";
-const IMAGE_API = "https://gen.pollinations.ai/image";
+const IMAGE_API = `${GEN_URL}/image`;
+const INTERACTION_PORT = Number(process.env.DISCORD_INTERACTION_PORT);
 const IMAGE_MODEL = "openai/gpt-image-2.5-sunburst";
 const IMAGE_FILENAME = "opposite-prompt.jpg";
 const MEDIA_API = "https://media.pollinations.ai/upload";
@@ -174,7 +178,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     }
 }
 
-if (!TOKEN) {
+if (!INTERACTION_PORT && !TOKEN) {
     console.error("Missing BOT_TOKEN_OPPOSITE_PROMPT");
     process.exit(1);
 }
@@ -215,7 +219,17 @@ client.on(Events.MessageCreate, (msg) => {
     handleMessage(msg, client).catch((err) => logAxiosError("Unhandled", err));
 });
 
-client.login(TOKEN).catch((err) => {
-    logError("Login failed:", err.message);
-    process.exit(1);
-});
+if (INTERACTION_PORT) {
+    serveInteractions(
+        INTERACTION_PORT,
+        "opposite",
+        IMAGE_FILENAME,
+        async (prompt) => fetchImage(await generateOpposite(prompt)),
+        publishImage,
+    );
+} else {
+    client.login(TOKEN).catch((err) => {
+        logError("Login failed:", err.message);
+        process.exit(1);
+    });
+}

@@ -214,7 +214,7 @@ test("aspect ratio simplifies, scales, and sizes a target ratio", async (t) => {
     assert.equal(square.orientation, "square");
     assert.deepEqual(square.scaled, { width: 1024, height: 1024 });
 
-    for (const target_ratio of ["0:9", "16:0", "16x9", "16:9:1"]) {
+    for (const target_ratio of ["0:9", "16:0", "16x9", "16:9:1", "1:99999"]) {
         assert.equal(
             (
                 await client.callTool({

@@ -12,11 +12,24 @@ function simplify(width, height) {
     return { width: width / divisor, height: height / divisor };
 }
 
-function dimensionsFor(width, height, maxSide) {
+function scaledDimensions(width, height, maxSide) {
     const scale = maxSide / Math.max(width, height);
     return {
         width: Math.max(1, Math.round(width * scale)),
         height: Math.max(1, Math.round(height * scale)),
+    };
+}
+
+function targetDimensions(width, height, maxSide) {
+    const scale = maxSide / Math.max(width, height);
+    const rawWidth = width * scale;
+    const rawHeight = height * scale;
+    if (rawWidth < 0.5 || rawHeight < 0.5) {
+        throw new Error("target_ratio is too extreme for max_side");
+    }
+    return {
+        width: Math.round(rawWidth),
+        height: Math.round(rawHeight),
     };
 }
 
@@ -61,7 +74,7 @@ export const aspectTools = [
                         : width > height
                           ? "landscape"
                           : "portrait",
-                scaled: dimensionsFor(width, height, max_side),
+                scaled: scaledDimensions(width, height, max_side),
             };
             if (target_ratio !== undefined) {
                 const match = RATIO.exec(target_ratio);
@@ -78,7 +91,7 @@ export const aspectTools = [
                 const target = simplify(ratioWidth, ratioHeight);
                 result.target = {
                     ratio: `${target.width}:${target.height}`,
-                    ...dimensionsFor(ratioWidth, ratioHeight, max_side),
+                    ...targetDimensions(ratioWidth, ratioHeight, max_side),
                 };
             }
             return result;

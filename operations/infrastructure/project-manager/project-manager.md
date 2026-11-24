@@ -29,7 +29,7 @@ What community members publish (models, agents, MCP servers) and keeping it heal
 Not here: payouts to publishers → Billing & payments.
 
 ### Agents & agent tools
-Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
+Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/agent-floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
 Not here: the `@pollinations/mcp` package → Developer tools; bots that run our own work → Internal automation.
 
 ### Developer tools

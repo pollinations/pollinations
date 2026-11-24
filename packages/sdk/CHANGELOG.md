@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.38] - 2026-11-27
+
+### Fixed
+
+- `Retry-After` is read as delay-seconds (digits only) or an HTTP date. Values that only look numeric to `Number()` — `5e2`, `0x10`, `30.5`, `+5` — no longer set `retryAfter`, which previously could turn a bogus header into an arbitrarily long wait.
+
 ## [5.1.0-alpha.37] - 2026-11-26
 
 ### Added

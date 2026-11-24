@@ -41,16 +41,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
-    },
-    "20521": {
-      "merge_sha": "9a380b981198897e496920c9b95836b9378cc8b3",
-      "merged_at": "2026-11-24T14:04:07Z",
-      "required": []
-    },
-    "20569": {
-      "merge_sha": "deefd4fa8c9fd44fb185b28fde7a8f0147e6641a",
-      "merged_at": "2026-11-24T14:13:25Z",
-      "required": []
     }
   },
   "production": "6b7c7755ed8341b26e6331873e21319cea1d7448",

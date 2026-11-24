@@ -34,6 +34,7 @@ export function MediaModelOption({
                     <Chip
                         size="sm"
                         data-theme="neutral"
+                        className="play-model-chip"
                         title="Published and run by Pollinations"
                     >
                         <ShieldCheckIcon
@@ -44,7 +45,11 @@ export function MediaModelOption({
                     </Chip>
                 )}
                 {isNewModel(model.addedDate) && (
-                    <Chip intent="success" size="sm" className="play-model-new">
+                    <Chip
+                        intent="success"
+                        size="sm"
+                        className="play-model-chip"
+                    >
                         New
                     </Chip>
                 )}

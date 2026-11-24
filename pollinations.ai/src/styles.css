@@ -303,8 +303,18 @@ main > * {
     background: var(--polli-color-surface-opaque);
 }
 
-.play-model-option[aria-pressed="true"] :is(span, svg):not(.play-model-new) {
+/* Chips keep their own colours on the selected row, over a solid surface so a
+   translucent chip does not mix with the highlight. */
+.play-model-option[aria-pressed="true"]
+    :is(span, svg):not(.play-model-chip, .play-model-chip *) {
     color: inherit;
+}
+
+.play-model-option[aria-pressed="true"] .play-model-chip {
+    background-image: linear-gradient(
+        var(--polli-color-surface-opaque),
+        var(--polli-color-surface-opaque)
+    );
 }
 
 @supports (position-area: top span-right) {

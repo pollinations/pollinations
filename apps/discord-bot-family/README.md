@@ -22,13 +22,6 @@ sops secrets/env.json
 
 each bot gets the shared channels plus any bot-specific ones.
 
-## run
-
-```bash
-./start-all.sh         # local/launchd: spawns one process per bot
-node start-all.js      # launcher for the legacy Family systemd unit
-```
-
 ## deployment (production)
 
 CatGPT and Opposite Prompt run on the production Pollinations Azure sandbox
@@ -60,12 +53,12 @@ The launcher holds a per-app lock and stores its PID in `.bot.pid`. To stop an
 app, remove `.enabled` first, then terminate the PID after verifying it belongs
 to that app. For rollback, restore the previous Azure source and restart the app.
 
-The EC2 bot deployment was removed. Discord Bot Family is off. Its next
-deployment belongs on Azure after a live Discord login test.
+Discord Bot Family is off. Its source and bot configuration are retained for
+a future Azure deployment after a live Discord login test.
 
-each bot runs independently via `cli.ts`:
+For local development, start one Family bot at a time:
 ```bash
-npx ts-node src-functional/cli.ts <model> <token> --channels <ids>
+npm run start-bot -- <model> <token> --channels <ids>
 ```
 
 ## bot commands

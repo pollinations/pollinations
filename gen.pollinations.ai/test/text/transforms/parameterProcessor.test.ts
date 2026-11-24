@@ -17,7 +17,6 @@ const modelDef = { name: "test-model" };
 describe("processParameters", () => {
     it.each([
         "anthropic/claude-sonnet-4.6",
-        "inception/mercury-2.5-preview",
         "qwen/qwen3.8-flash",
         "openai/gpt-5.4",
         "openai/gpt-6-astra",

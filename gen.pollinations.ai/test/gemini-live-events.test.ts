@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGeminiLiveEvents } from "../src/routes/geminiLiveEvents.ts";
+import { createGeminiTranscribeEvents } from "../src/routes/geminiTranscribeEvents.ts";
 
 function session() {
     const sendClient = vi.fn();
@@ -399,4 +400,104 @@ describe("Gemini Live realtime events", () => {
             response: { status: "cancelled" },
         });
     });
+});
+
+describe("Gemini streaming transcription", () => {
+    function transcriptionSession() {
+        const sendClient = vi.fn(),
+            onUsage = vi.fn(),
+            onCommit = vi.fn();
+        const s = createGeminiTranscribeEvents({
+            model: "google/gemini-3.5-transcribe-live",
+            sendClient,
+            onUsage,
+            sendGoogle: vi.fn(),
+            requestSetup: vi.fn(),
+            cancelUnsentTurn: () => false,
+            onCommit,
+        });
+        return { s, sendClient, onUsage, onCommit };
+    }
+
+    it("recovers from silence and requires a provider receipt for final text", () => {
+        const { s, sendClient, onUsage } = transcriptionSession();
+        expect(s.setup("vertex-model").setup.inputAudioTranscription).toEqual({
+            mode: "VERBATIM",
+            languageCodes: ["en-US"],
+        });
+        const append = { type: "input_audio_buffer.append", audio: "AAA=" };
+        const end = { voiceActivity: { type: "ACTIVITY_END" } };
+        s.client(append);
+        s.google({ voiceActivity: { type: "ACTIVITY_START" } });
+        s.client({ type: "input_audio_buffer.commit" });
+        s.google(end);
+        expect(sendClient).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                type: "conversation.item.input_audio_transcription.failed",
+            }),
+        );
+        expect(s.pendingTurn()).toBe(false);
+        s.client(append);
+        s.client({ type: "input_audio_buffer.commit" });
+        s.google(end);
+        expect(s.pendingTurn()).toBe(true);
+        const final = {
+            serverContent: { inputTranscription: { text: "Hello" } },
+        };
+        expect(() => s.google(final)).toThrow();
+        expect(onUsage).not.toHaveBeenCalled();
+        s.google({
+            ...final,
+            usageMetadata: {
+                promptTokenCount: 77,
+                candidatesTokenCount: 1,
+                totalTokenCount: 78,
+                promptTokensDetails: [{ modality: "AUDIO", tokenCount: 77 }],
+                candidatesTokensDetails: [{ modality: "TEXT", tokenCount: 1 }],
+            },
+        });
+        expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+            promptAudioTokens: 77,
+            completionTextTokens: 1,
+        });
+        expect(sendClient).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                type: "conversation.item.input_audio_transcription.completed",
+                transcript: "Hello",
+            }),
+        );
+        expect(s.pendingTurn()).toBe(false);
+    });
+
+    it.each([undefined, { inputTranscription: { text: " " } }])(
+        "settles a usage-only committed turn and keeps the session open (%j)",
+        (serverContent) => {
+            const { s, sendClient, onUsage, onCommit } = transcriptionSession();
+            s.client({ type: "input_audio_buffer.append", audio: "AAA=" });
+            s.client({ type: "input_audio_buffer.commit" });
+            expect(onCommit).toHaveBeenCalledOnce();
+            s.google({
+                serverContent,
+                usageMetadata: {
+                    promptTokenCount: 25,
+                    totalTokenCount: 25,
+                    promptTokensDetails: [
+                        { modality: "AUDIO", tokenCount: 25 },
+                    ],
+                },
+            });
+            expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+                promptAudioTokens: 25,
+            });
+            expect(sendClient).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    type: "conversation.item.input_audio_transcription.failed",
+                    error: expect.objectContaining({ code: "no_transcript" }),
+                }),
+            );
+            expect(s.pendingTurn()).toBe(false);
+            s.client({ type: "input_audio_buffer.append", audio: "AAA=" });
+            expect(s.pendingTurn()).toBe(true);
+        },
+    );
 });

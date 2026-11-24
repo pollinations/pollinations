@@ -20,6 +20,7 @@ import {
     ResponseFunctionCallOutputSchema,
     ResponseFunctionCallSchema,
 } from "../schemas/response-function-items.ts";
+import { validateUserMediaUrl } from "../user-media-url.ts";
 import { parseFunctionName } from "./function-items.ts";
 import { safeMcpModelOutput } from "./mcp-output.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
@@ -167,6 +168,38 @@ function userContent(content: unknown): UserMessage["content"] {
             return {
                 type: "image" as const,
                 image: stringValue(part.image_url, "input"),
+                ...(providerOptions ? { providerOptions } : {}),
+            };
+        }
+        // Agents act through tools that take public URLs, so a file is passed
+        // on as its link, never fetched. The model reads the complete URL.
+        if (part.type === "input_file") {
+            const link =
+                typeof part.file_url === "string"
+                    ? validateUserMediaUrl(part.file_url)
+                    : undefined;
+            if (!link?.ok || link.url.protocol !== "https:") {
+                invalidRequest(
+                    "input_file requires a public https file_url",
+                    "input",
+                );
+            }
+            const url = link.url.href;
+            // The name is the caller's text inside our line, kept only as a
+            // hint of the file's type. Letters, digits, dots, dashes and
+            // underscores survive, so it cannot form a URL or another
+            // attachment line.
+            const filename =
+                typeof part.filename === "string"
+                    ? part.filename
+                          .replace(/[^\p{L}\p{N}._-]+/gu, " ")
+                          .trim()
+                          .slice(0, 200)
+                    : "";
+            const name = filename ? ` ${filename}` : "";
+            return {
+                type: "text" as const,
+                text: `[Attached file${name}: ${url}]`,
                 ...(providerOptions ? { providerOptions } : {}),
             };
         }

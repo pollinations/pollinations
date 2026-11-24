@@ -334,7 +334,8 @@ binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
 
 [env.staging.dispatch_namespaces.outbound]
-service = "pollinations-enter-staging"
+# Keep deploying Gen's outbound bindings independent of the public staging account API.
+service = "pollinations-code-agent-outbound-staging"
 parameters = ["CODE_AGENT_CONTEXT"]
 
 # User sites (src/sites.ts): enter uploads them, gen serves their hosts.

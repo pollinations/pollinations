@@ -25,6 +25,61 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("HeyGen Decision 1 routes", () => {
+    it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
+        const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
+        expect(primary).toMatchObject({
+            category: "decision",
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image", "audio", "video"],
+        });
+        expect(primary).not.toHaveProperty("fallbacks");
+        expect(primary.supportedEndpoints).toContain("/alpha/decisions");
+        const route = findModelByName("heygen/heygen-decision-1");
+        expect(route?.useSystemOneApi).toBe(true);
+        expect(route?.config()).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
+describe("Inkling 2 Mini OpenRouter route", () => {
+    it("registers image inputs, tools and reasoning with canonical no-alias routing", () => {
+        const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];
+        expect(model).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            category: "text",
+            inputModalities: ["text", "image"],
+            contextLength: 1048576,
+            tools: true,
+            reasoning: true,
+        });
+        expect(model.supportedParameters).toEqual(
+            expect.arrayContaining([
+                "tools",
+                "response_format",
+                "reasoning",
+                "include_reasoning",
+            ]),
+        );
+        expect(typeof model.billing?.resolveTotalCost).toBe("function");
+        expect(
+            findModelByName("thinkingmachines/inkling-2-mini")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: { provider: { sort: "price" } },
+        });
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
@@ -76,6 +131,16 @@ const OPENROUTER_ROUTES = [
     [
         "google/gemini-3.8-flash:openrouter:vertex-global",
         "google/gemini-3.8-flash",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-neon:openrouter:vertex-global",
+        "google/gemini-4-neon",
         "google-vertex/global",
     ],
     [
@@ -1864,6 +1929,72 @@ describe("static provider fallbacks", () => {
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.019 * 1.055, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
+    });
+
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
+    });
+
+    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-neon";
+        const route = "google/gemini-4-neon:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (3 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
+            completionTextTokens: (15 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.018 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.018 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.018, 12);
     });
 
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {

@@ -396,15 +396,6 @@ operations/finance/config.local.json
 # Playwright MCP scratch output (snapshots, screenshots, console logs)
 .playwright-mcp/
 
-# Community monitor — live-only artifacts, never committed (see operations/community-monitor/README.md)
-operations/community-monitor/.env
-operations/community-monitor/state.json
-operations/community-monitor/people_mapping.json
-operations/community-monitor/probe-results.json
-operations/community-monitor/*.log
-operations/community-monitor/monitor.log
-operations/community-monitor/results.json
-
 # Open WebUI session-signing secret, written into the working directory of
 # whichever folder it is started from. Local to one instance, never ours.
 .webui_secret_key

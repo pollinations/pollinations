@@ -941,16 +941,16 @@ const TEXT_BASE_SERVICES = {
     "inception/mercury-2": {
         supportedParameters: CHAT_PARAMETERS.mercury,
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25) * 1.055,
-            promptCachedTokens: perMillion(0.025) * 1.055,
-            completionTextTokens: perMillion(0.75) * 1.055,
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            completionTextTokens: perMillion(0.75),
         },
         title: "Mercury 2",
         description:
@@ -961,48 +961,20 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "inception/mercury-2.5-preview": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
-        aliases: [],
-        provider: "openrouter",
-        publisher: "Inception",
-        category: "text",
-        addedDate: new Date("2026-09-01").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's exact Inception route rates (2026-09-01).
-        cost: {
-            promptTextTokens: perMillion(0.04) * 1.055,
-            promptCachedTokens: perMillion(0.004) * 1.055,
-            completionTextTokens: perMillion(0.15) * 1.055,
-        },
-        title: "Mercury 2.5 Preview",
-        description:
-            "Generate code quickly, call tools, and return results in a structured format.",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 260000,
-        isSpecialized: false,
-    },
     "inception/mercury-3": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
+        supportedParameters: CHAT_PARAMETERS.mercury3,
         aliases: [],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-10-19").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's Inception route launch rates (50% off, checked
-        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
-        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
-        // offer ends (no end date published).
+        // Inception's 50% launch rate. Recheck when the promotion ends.
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055,
-            promptCachedTokens: perMillion(0.01) * 1.055,
-            completionTextTokens: perMillion(0.35) * 1.055,
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.35),
         },
         title: "Mercury 3",
         description:
@@ -1291,6 +1263,38 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-hydrogen": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(1.5),
+            promptAudioTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Hydrogen",
+        description:
+            "High-throughput agentic model for long-horizon coding, tool use and multimodal analysis with a 1M-token context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3000,
+        maxReferenceVideos: 10,
+        tools: true,
+        search: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-4-carbon": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],
@@ -1321,6 +1325,39 @@ const TEXT_BASE_SERVICES = {
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemini-4-neon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Vertex global pricing announced on 2026-11-18; use list rates.
+        cost: {
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.15),
+            promptCacheWriteTokens: perMillion(3),
+            promptAudioTokens: perMillion(3),
+            promptImageTokens: perMillion(3),
+            promptVideoTokens: perMillion(3),
+            completionTextTokens: perMillion(15),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Neon",
+        description:
+            "Multimodal reasoning for coding and tool use, with native web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3000,
+        maxReferenceVideos: 10,
+        tools: true,
+        search: true,
+        reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1853,7 +1890,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "D3",
         description:
-            "Route or classify text using choices, scores, or yes/no probabilities. Inputs may be logged and used for training.",
+            "Classify or route text by picking an option, assigning a score, or estimating the chance of a yes answer. Inputs may be logged and used for training.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -1878,7 +1915,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Span-01 Lite",
         description:
-            "Score conversation behavior with plain-text yes/no (noul) questions via /alpha/decisions or the same JSON in the last user message on /v1/chat/completions. Respan retains prompts and excludes them from training.",
+            "Estimate whether a conversation shows the behavior described in a plain-text yes/no question. Respan retains prompts and excludes them from training.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1903,7 +1940,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Jev",
         description:
-            "Get calibrated confidence for a choice, score, or yes/no answer. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Get calibrated confidence for choices, scores, and yes/no answers.",
         // Its own request shape, so it is offered on the decisions route and
         // the chat adapter only — /text returns plain content and has nothing
         // to return here.
@@ -1934,7 +1971,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kev 4B",
         description:
-            "Get choices, scores, or probabilities from a small open-weight model with zero prompt retention. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Get choices, scores, or probabilities from a small open-weight model with zero prompt retention.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1961,7 +1998,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Decider V1.2 27B",
         description:
-            "Score or classify text-only state in a 262K-token context window. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Score or classify long passages of text with a 262K-token context window.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1989,7 +2026,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "d1",
         description:
-            "Choose a category, assign a score, or estimate a yes/no probability. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Choose a category, assign a score, or estimate the chance of a yes answer.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2014,7 +2051,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "d1.2",
         description:
-            "Get choices, scores, or probabilities for questions about text or JSON state. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Get choices, scores, or probabilities for questions about text or JSON data.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -2091,7 +2128,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Microsoft-Decision-1.1",
         description:
-            "Route requests quickly by assigning a calibrated probability to each allowed option. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Route requests quickly by estimating how likely each option is to be the right choice.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2099,6 +2136,32 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         contextLength: 32768,
+        isSpecialized: true,
+    },
+    "heygen/heygen-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "HeyGen",
+        category: "decision",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Fee-inclusive list rate. The receipt captures the actual route cost.
+            promptTextTokens: perMillion(0.14) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "HeyGen Decision 1",
+        description:
+            "Typed yes/no, choice and score decisions over text, images, audio and video.",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 131072,
         isSpecialized: true,
     },
     "microsoft/microsoft-decision-1": {
@@ -2117,8 +2180,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Microsoft-Decision-1",
-        description:
-            "Get a calibrated probability for each option in a fixed list. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+        description: "Estimate the probability of each option in a fixed list.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2174,7 +2236,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Luna Decisions",
         description:
-            "Get probabilities and confidence scores from text-only state, billed only for input tokens. Post state and questions to /alpha/decisions or put the same JSON in the last user message on /v1/chat/completions.",
+            "Get probabilities and confidence scores for decisions about text.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2182,6 +2244,37 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         contextLength: 1050000,
+        isSpecialized: true,
+    },
+    "google/gemini-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "decision",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // All input modalities share the same rate.
+            promptAudioTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Gemini Decision 1",
+        description:
+            "Score yes/no, multiple-choice, and ordered-scale questions about text, images, audio, and video in one request.",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        maxReferenceImages: 3600,
+        maxReferenceVideos: 10,
         isSpecialized: true,
     },
     "pollinations/midijourney": {
@@ -3096,6 +3189,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "thinkingmachines/inkling-2-mini": {
+        supportedParameters: CHAT_PARAMETERS.inkling2Mini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter PrimeIntellect FP4 standard rates plus 5.5% credit fee.
+        // Use the upstream cost receipt for the actual serving route.
+        cost: {
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.3) * 1.055,
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "Inkling 2 Mini",
+        description:
+            "A compact 26.4B-parameter multimodal mixture-of-experts model with 3.4B active parameters and repeated transformer layers. Supports code generation, tool calling, RAG and image-grounded dialogue across a one-million-token context.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "thinkingmachines/inkling-small": {
         supportedParameters: CHAT_PARAMETERS.inklingSmall,
         aliases: ["inkling-small", "inkling-small-20260730", "inkling"],
@@ -3255,31 +3375,6 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
-        tools: true,
-        reasoning: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "xiaomi/mimo-v2.5-pro": {
-        supportedParameters: CHAT_PARAMETERS.mimo,
-        aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
-        provider: "openrouter",
-        publisher: "Xiaomi",
-        category: "text",
-        addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {
-            // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.435) * 1.055,
-            promptCachedTokens: perMillion(0.0036) * 1.055,
-            completionTextTokens: perMillion(0.87) * 1.055,
-        },
-        title: "MiMo V2.5 Pro",
-        description:
-            "Reason through a complex programming task with large amounts of code and documentation.",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -3732,6 +3827,32 @@ const TEXT_BASE_SERVICES = {
         title: "MiniMax M3.1 Flash",
         description:
             "Combine images, tools, and large amounts of code in a single programming task.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-ember": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-11-09").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // The Vercel quote has no separate charge for fallback cache writes.
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.004),
+            promptCacheWriteTokens: 0,
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "Muse Ember",
+        description:
+            "Multimodal agent model with a 1M-token context, implicit prompt caching and tool use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

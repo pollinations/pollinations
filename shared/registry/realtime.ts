@@ -1,3 +1,5 @@
+import { mergeFallbacks } from "./merge-fallbacks";
+import { perMillion } from "./price-helpers";
 import {
     OPENAI_REALTIME_2_1_MINI_CACHE_BILLING,
     OPENAI_REALTIME_CACHE_BILLING,
@@ -28,7 +30,51 @@ const OPENAI_REALTIME_COST = {
     completionAudioTokens: 0.000064,
 } satisfies ModelDefinition["cost"];
 
-export const REALTIME_SERVICES = {
+const REALTIME_BASE_SERVICES = {
+    "google/gemini-3.8-live": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "realtime",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(3),
+            promptImageTokens: perMillion(1),
+            promptVideoTokens: perMillion(1),
+            completionTextTokens: perMillion(4.5),
+            completionAudioTokens: perMillion(12),
+        },
+        title: "Gemini 3.8 Live",
+        description:
+            "Talk in real time, share camera frames, and call tools during the conversation.",
+        inputModalities: ["text", "audio", "image"],
+        outputModalities: ["audio"],
+        tools: true,
+        contextLength: 131072,
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
+    "google/gemini-3.5-transcribe-live": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "realtime",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptAudioTokens: perMillion(3.5),
+            completionTextTokens: perMillion(21),
+        },
+        title: "Gemini 3.5 Transcribe Live",
+        description:
+            "Stream speech to receive interim captions and a verbatim transcript for each committed utterance.",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
     "microsoft/mai-transcribe-2-streaming": {
         aliases: [],
         provider: "azure",
@@ -152,6 +198,15 @@ export const REALTIME_SERVICES = {
     },
 } satisfies Record<string, ModelDefinition>;
 
+export const REALTIME_SERVICES = mergeFallbacks(REALTIME_BASE_SERVICES, {
+    "google/gemini-3.5-transcribe-live": {
+        "google/gemini-3.5-transcribe-live:google:us": { provider: "google" },
+    },
+    "google/gemini-3.8-live": {
+        "google/gemini-3.8-live:google:us": { provider: "google" },
+    },
+});
+
 export const REALTIME_MODEL_NAMES = Object.keys(
-    REALTIME_SERVICES,
+    REALTIME_BASE_SERVICES,
 ) as RealtimeModelName[];

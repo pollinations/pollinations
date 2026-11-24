@@ -23,6 +23,7 @@ import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
+    mediaRequestPrice,
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
@@ -169,7 +170,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` or \`elevenlabs/scribe-v3-live\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\`, \`elevenlabs/scribe-v3-live\`, or \`google/gemini-3.5-transcribe-live\` opens a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
@@ -210,7 +211,7 @@ const imageResponseHeaders = {
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageCache,
-    generationAccess,
+    every(mediaRequestPrice, generationAccess),
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateImageVideo,
@@ -411,6 +412,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.alpha && { alpha: entry.info.alpha }),
         ...(entry.info.supports_streaming === false && {
             supports_streaming: false,
         }),
@@ -1301,7 +1303,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        generationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         every(apiKeyBudgetReservation, handleImageGeneration),
     )
@@ -1360,7 +1362,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
-        generationAccess,
+        every(mediaRequestPrice, generationAccess),
         deduplicateGeneration,
         apiKeyBudgetReservation,
         handleImageGeneration,

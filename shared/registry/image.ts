@@ -34,6 +34,87 @@ const GPT_IMAGE_26_BILLING: BillingRules = {
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
+const MINIMAX_H3_IMAGE = {
+    provider: "fal",
+    publisher: "MiniMax",
+    category: "image",
+    addedDate: new Date("2026-11-18").getTime(),
+    priceMultiplier: 1,
+    paidOnly: true,
+    // Resolution changes the token count. Each route keeps its own base rates.
+    ...defineCostVariants(
+        { "2k": {}, "4k": {} },
+        matchResolution("2k", "4k"),
+        {
+            "2k": {
+                label: "2K",
+                description: "2K output at the base token rates.",
+            },
+            "4k": {
+                label: "4K",
+                description: "4K output at the base token rates.",
+            },
+        },
+        "1K",
+        [
+            {
+                key: "resolution",
+                label: "Resolution",
+                values: { "": "1K", "2k": "2K", "4k": "4K" },
+            },
+        ],
+    ),
+    // Both adapters report the base USD charge before gateway fees.
+    billing: {
+        resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+    },
+    resolutions: ["1k", "2k", "4k"],
+    inputModalities: ["text", "image"],
+    outputModalities: ["image"],
+    maxReferenceImages: 16,
+} as const satisfies Partial<ModelDefinition>;
+
+function heygenAvatar6(title: string, baseRate: number, rate2k: number) {
+    return {
+        aliases: [],
+        provider: "fal",
+        publisher: "HeyGen",
+        category: "video",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionVideoSeconds: baseRate },
+        ...defineCostVariants(
+            { "2k": { completionVideoSeconds: rate2k } },
+            matchResolution("2k"),
+            { "2k": { label: "2K", description: "Applies at 2K resolution." } },
+            "1080p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1080p", "2k": "2K" },
+                },
+            ],
+        ),
+        resolutions: ["1080p", "2k"],
+        title,
+        description:
+            "Animate a photo or an illustrated character reference video with a speech audio track.",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: [
+            "start_frame",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+            "audio_output",
+        ],
+        maxReferenceImages: 1,
+        maxReferenceVideos: 1,
+    } as const satisfies ModelDefinition;
+}
+
 const IMAGE_BASE_SERVICES = {
     [HOTSHOT_XL_MODEL]: {
         aliases: [],
@@ -593,6 +674,52 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "bytedance-seed/seedream-5-5": {
+        aliases: ["seedream-5.5", "bytedance/seedream-5.5"],
+        provider: "vercel",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        cost: {
+            promptImageTokens: 0.008,
+            completionImageTokens: 0.02,
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    promptImageTokens: 0.008,
+                    completionImageTokens: 0.035,
+                },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description: "High-resolution output.",
+                },
+            },
+            "1K",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "1K", "2k": "2K" },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.5",
+        description:
+            "ByteDance image generation and editing with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "bytedance/seedream-5.0-flash": {
         aliases: [],
         provider: "openrouter",
@@ -714,6 +841,22 @@ const IMAGE_BASE_SERVICES = {
             "Quickly turn a headline or slogan into an image with crisp lettering.",
         inputModalities: ["text"],
         outputModalities: ["image"],
+    },
+    "ideogram-ai/ideogram-vector-1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Ideogram",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionImageTokens: 0.01 }, // fal reports integer cents as billable units.
+        title: "Ideogram Vector 1",
+        description:
+            "Create editable SVG artwork from a prompt and up to five reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 5,
     },
     "ideogram-ai/ideogram-v4-balanced": {
         aliases: ["ideogram-v4-balanced"],
@@ -1740,33 +1883,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
-    "x-ai/grok-imagine-image-quality": {
-        aliases: [
-            "grok-aurora",
-            "aurora",
-            "grok-imagine-image-quality",
-            "grok-imagine-image-pro",
-            "grok-imagine-pro",
-        ],
-        provider: "openrouter",
-        publisher: "xAI",
-        category: "image",
-        addedDate: new Date("2026-03-23").getTime(),
-        // xAI retires the slug and redirects it to grok-imagine-image-2.0.
-        // Provider retires this route on 2026-11-02.
-        priceMultiplier: 1,
-        paidOnly: true,
-        cost: {
-            promptImageTokens: 0.01 * 1.055, // per input image on edits
-            completionImageTokens: 0.05 * 1.055, // per 1K image
-        },
-        title: "Grok Imagine Pro",
-        description:
-            "Create detailed, lifelike images from a description or up to three reference pictures.",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 3, // OpenRouter input_references limit.
-    },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
         provider: "xai",
@@ -1869,6 +1985,25 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
+    },
+    "quiverai/arrow-2": {
+        aliases: [],
+        provider: "quiverai",
+        publisher: "QuiverAI",
+        category: "image",
+        addedDate: Date.parse("2026-11-19"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Arrow 2",
+        description:
+            "Generate editable SVG illustrations, icons, and diagrams from text and reference images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14,
     },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
@@ -2033,6 +2168,98 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "bytedance/seedance-2.5-flash": {
+        aliases: ["seedance-2.5-flash"],
+        provider: "vercel",
+        publisher: "ByteDance",
+        category: "video",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        billing: {
+            resolveTotalCost: (_output, input) => input?.providerBilling?.units,
+        },
+        cost: { completionVideoTokens: perMillion(7) },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoTokens: perMillion(7),
+                },
+                video_in_480p: {
+                    completionVideoTokens: perMillion(4.3),
+                },
+                video_in_720p: {
+                    completionVideoTokens: perMillion(4.3),
+                },
+            },
+            ({ input }) => {
+                if (!input?.hasReferenceVideo) {
+                    return input?.resolution === "720p" ? "720p" : undefined;
+                }
+                return input.resolution === "720p"
+                    ? "video_in_720p"
+                    : "video_in_480p";
+            },
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+                video_in_480p: {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 480p.",
+                },
+                video_in_720p: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 720p.",
+                },
+            },
+            "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "video_in_480p": "480p",
+                        "video_in_720p": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "720p": "No",
+                        "video_in_480p": "Yes",
+                        "video_in_720p": "Yes",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["480p", "720p"],
+        title: "Seedance 2.5 Flash",
+        description:
+            "Fast video generation from text, keyframes, and multimodal references with optional audio",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+            "audio_output",
+        ],
+        maxReferenceImages: 2,
+        minDuration: 4,
+        maxDuration: 30,
+        defaultDuration: 5,
+    },
     "bytedance/seedance-2.5": {
         aliases: ["seedance-2.5"],
         provider: "replicate",
@@ -2123,6 +2350,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,
+        billedSecondsFollowReference: true,
     },
     "alibaba/happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
@@ -2146,6 +2374,8 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+        // OpenRouter bills at least 5 seconds per clip.
+        minBilledSeconds: 5,
     },
     "kwaivgi/kling-v3.0-std": {
         aliases: [],
@@ -2175,6 +2405,90 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,
+    },
+    "kwaivgi/kling-v3.0-pro": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-11-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.112,
+            completionAudioSeconds: 0.056,
+        },
+        resolutions: ["1080p"],
+        title: "Kling 3.0 Pro",
+        description:
+            "1080p video from text or start and end frames with optional synchronized audio",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "kwaivgi/kling-v4.0-flash": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-11-21").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai kling-video/v4/flash published rate (2026-11-21).
+        // Flat $0.094/s at 720p; native audio is included in base rate.
+        cost: {
+            completionVideoSeconds: 0.094,
+        },
+        resolutions: ["720p"],
+        title: "Kling 4.0 Flash",
+        description:
+            "Fast 720p video from text or a starting image with synchronized native audio.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 3,
+        maxDuration: 20,
+        defaultDuration: 5,
+    },
+    "lightricks/ltx-2.5-pro": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Lightricks",
+        category: "video",
+        addedDate: new Date("2026-11-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionVideoSeconds: 0.12 },
+        ...defineCostVariants(
+            { "1080p": { completionVideoSeconds: 0.17 } },
+            matchResolution("1080p"),
+            { "1080p": { label: "1080p", description: "Output at 1080p." } },
+            "720p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "720p", "1080p": "1080p" },
+                },
+            ],
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "LTX 2.5 Pro",
+        description:
+            "High-fidelity video at 720p or 1080p with synchronized audio and optional start and end frames",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 6,
+        maxDuration: 10,
+        defaultDuration: 6,
+        allowedDurations: [6, 8, 10],
     },
     "black-forest-labs/flux-3-max": {
         aliases: [],
@@ -2221,6 +2535,12 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 20,
         defaultDuration: 5,
     },
+    "heygen/heygen-avatar-6": heygenAvatar6("HeyGen Avatar 6", 0.1, 0.145),
+    "heygen/heygen-avatar-6-turbo": heygenAvatar6(
+        "HeyGen Avatar 6 Turbo",
+        0.05,
+        0.0875,
+    ),
     "heygen/heygen-video-1": {
         aliases: [],
         provider: "fal",
@@ -2271,6 +2591,30 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 5,
         maxDuration: 15,
         defaultDuration: 5,
+    },
+    "minimax/minimax-h3-image": {
+        ...MINIMAX_H3_IMAGE,
+        aliases: ["minimax-h3-image"],
+        title: "MiniMax H3 Image",
+        description:
+            "Generate images up to 4K and combine up to 16 references in a single edit",
+        cost: {
+            promptTextTokens: perMillion(2.3),
+            promptImageTokens: perMillion(1.5),
+            completionImageTokens: perMillion(3.8),
+        },
+    },
+    "minimax/minimax-h3-image-highspeed": {
+        ...MINIMAX_H3_IMAGE,
+        aliases: ["minimax-h3-image-highspeed"],
+        title: "MiniMax H3 Image Highspeed",
+        description:
+            "Generate images quickly at up to 4K and combine up to 16 references in a single edit",
+        cost: {
+            promptTextTokens: perMillion(2.3),
+            promptImageTokens: perMillion(3),
+            completionImageTokens: perMillion(7.6),
+        },
     },
     "minimax/minimax-h3": {
         aliases: ["minimax-h3"],
@@ -2683,6 +3027,7 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 120,
         defaultDuration: 120,
+        billedSecondsFollowReference: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

@@ -155,6 +155,11 @@ describe("getGenerationModelRegistry", () => {
             // DeepInfra and OVH do honor n.
             ["deepseek/deepseek-v4.1-flash", "n", true],
             ["openai/gpt-oss-20b", "n", true],
+            // OVH answers stop and parallel_tool_calls: false with a 400.
+            ["openai/gpt-oss-20b", "stop", false],
+            ["openai/gpt-oss-20b", "parallel_tool_calls", false],
+            ["openai/gpt-oss-20b", "temperature", true],
+            ["openai/gpt-oss-20b", "logprobs", true],
             // Azure's Fireworks deployments and GLM-5.3-Flash reject prediction;
             // GLM-5.3 and MiniMax M3.1 Flash on Fireworks honor it.
             ["nvidia/nemotron-3-ultra", "prediction", false],

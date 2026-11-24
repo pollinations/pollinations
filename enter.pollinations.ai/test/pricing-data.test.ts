@@ -1,4 +1,8 @@
 import { BotIcon, ChatIcon, ImageIcon } from "@pollinations/ui";
+import {
+    getCommunityModelIcon,
+    getModelBrandLogoPath,
+} from "@pollinations/ui/gen";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -33,10 +37,8 @@ import {
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
-import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import {
     getFixedResolution,
-    getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
     hasPollinationsTools,
@@ -427,14 +429,9 @@ test("NVIDIA Asset Harvester flat rate pricing", () => {
 });
 
 test("catalog models resolve brand logo SVG assets", () => {
-    const logoAssets = new Set(
-        Object.keys(
-            import.meta.glob("../frontend/public/brand-logos/*.svg"),
-        ).map((file) => file.replace("../frontend/public", "")),
-    );
     const missingLogos = getCatalogModelPrices().flatMap((model) => {
         const logoPath = getModelBrandLogoPath(model);
-        return logoPath && logoAssets.has(logoPath)
+        return logoPath?.startsWith("data:image/svg+xml")
             ? []
             : [{ name: model.name, publisher: model.publisher, logoPath }];
     });
@@ -869,12 +866,6 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.022, 8);
-    expect(
-        calculateCost("x-ai/grok-imagine-image-quality", {
-            promptImageTokens: 1,
-            completionImageTokens: 1,
-        }).totalCost,
-    ).toBeCloseTo(0.06 * 1.055, 8);
     for (const [quality, resolution, expected] of [
         ["low", "1k", 0.05],
         ["low", "2k", 0.07],

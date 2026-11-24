@@ -17,6 +17,7 @@ import {
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFalMiniMaxH3Image } from "./models/falMiniMaxH3Image.ts";
 import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callHotshotXL } from "./models/hotshotXLModel.ts";
@@ -25,6 +26,7 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callIdeogramVectorAPI } from "./models/ideogramVectorModel.ts";
 import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
 import {
@@ -32,12 +34,13 @@ import {
     callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
-    callOpenRouterGrokImagineProAPI,
     callOpenRouterMaiImageAPI,
+    callOpenRouterMiniMaxH3ImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedream55API,
     callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
@@ -46,6 +49,7 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callArrowSVGAPI } from "./models/quiverSvgModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
@@ -54,7 +58,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
-import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callSeedreamVercelAPI } from "./models/seedreamVercelModel.ts";
 import { callStabilityImage } from "./models/stabilityImageModel.ts";
 import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
@@ -80,6 +84,7 @@ import {
 } from "./utils/imageDownload.ts";
 import {
     resizeForGptImage,
+    transformImage,
     convertToJpeg as transformToJpeg,
 } from "./utils/imageTransform.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
@@ -1137,11 +1142,15 @@ const generateImage = async (
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
 
+        case "bytedance-seed/seedream-5-5:openrouter":
+            return await callOpenRouterSeedream55API(prompt, safeParams);
+
         case "bytedance/seedream-5.0-flash":
             return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
+        case "bytedance-seed/seedream-5-5":
         case "bytedance/seedream-5.0-pro":
-            return await callSeedream5ProVercelAPI(prompt, safeParams);
+            return await callSeedreamVercelAPI(prompt, safeParams);
         case "bytedance/seedream-5.0-pro:replicate":
             return await callSeedream5ProAPI(prompt, safeParams);
 
@@ -1150,6 +1159,9 @@ const generateImage = async (
 
         case "bytedance/seedream-4.5":
             return await callOpenRouterSeedreamProAPI(prompt, safeParams);
+
+        case "ideogram-ai/ideogram-vector-1":
+            return await callIdeogramVectorAPI(prompt, safeParams);
 
         case "ideogram-ai/ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);
@@ -1176,8 +1188,13 @@ const generateImage = async (
                 "grok-imagine-image",
             );
 
-        case "x-ai/grok-imagine-image-quality":
-            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+        case "minimax/minimax-h3-image":
+        case "minimax/minimax-h3-image-highspeed":
+            return await callFalMiniMaxH3Image(prompt, safeParams);
+
+        case "minimax/minimax-h3-image:openrouter":
+        case "minimax/minimax-h3-image-highspeed:openrouter":
+            return await callOpenRouterMiniMaxH3ImageAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
             return await callXaiImageAPI(
@@ -1191,6 +1208,9 @@ const generateImage = async (
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
+        case "quiverai/arrow-2":
+            return await callArrowSVGAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-flash":
             return await callRecraftFlashFalAPI(prompt, safeParams);
@@ -1318,10 +1338,33 @@ export async function createAndReturnImageCached(
     safeParams: ImageParams,
     originalPrompt: string,
     userInfo: AuthResult,
+    images: ImagesBinding | undefined,
 ): Promise<ImageGenerationResult> {
     try {
         // Generate the image using the appropriate model
         const result = await generateImage(prompt, safeParams, userInfo);
+
+        if (
+            safeParams.output_format === "png" &&
+            (safeParams.model === "black-forest-labs/flux.1-schnell" ||
+                safeParams.model ===
+                    "black-forest-labs/flux.1-schnell:deepinfra")
+        ) {
+            const buffer =
+                detectImageMimeType(result.buffer) === "image/png"
+                    ? result.buffer
+                    : await transformImage(
+                          result.buffer,
+                          { format: "image/png" },
+                          images,
+                      );
+            if (detectImageMimeType(buffer) !== "image/png") {
+                throw new UpstreamError(502, {
+                    message: "FLUX PNG encoding failed",
+                });
+            }
+            return { ...result, buffer, mimeType: "image/png" };
+        }
 
         // Prepare metadata
         const { buffer: _buffer, ...resultMetadata } = result;

@@ -27,6 +27,7 @@ interface CloudflareBindings {
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
+    QUIVER_API_KEY?: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;
@@ -97,6 +98,7 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    INCEPTION_API_KEY?: string;
     NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;

@@ -822,6 +822,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "thinkingmachines/inkling-2-mini": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: {
+                provider: { sort: "price" },
+            },
+        }),
     // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({

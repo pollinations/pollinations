@@ -253,6 +253,7 @@ export const CHAT_PARAMETERS = {
         "stop",
         "logit_bias",
     ],
+    inkling2Mini: [...TOOL_CHAT, ...SAMPLING, ...OPENROUTER_REASONING],
     inklingSmall: [
         ...CHAT,
         ...SAMPLING,

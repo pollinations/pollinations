@@ -27,7 +27,7 @@
 ## Apps & Community
 - **Community App Showcase:** https://pollinations.ai
 - **Model Monitor:** https://model-monitor.pollinations.ai
-- **Open WebUI Chat:** https://openwebui.pollinations.ai
+- **Open WebUI Chat:** https://openwebui.pollinations.app
 
 ## GitHub
 - **Main Repository:** https://github.com/pollinations/pollinations

@@ -3950,7 +3950,7 @@
   {
     "emoji": "💬",
     "name": "Open WebUI for Pollinations",
-    "url": "https://openwebui.pollinations.ai",
+    "url": "https://openwebui.pollinations.app",
     "description": "Open WebUI integration by Thomas Haferlach (@voodoohop), with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio.",
     "language": "en",
     "category": "chat",

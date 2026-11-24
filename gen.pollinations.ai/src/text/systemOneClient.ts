@@ -508,12 +508,7 @@ export async function requestDecision(
             }
         }
         const cost = result.usage.cost;
-        if (
-            model === HEYGEN_DECISION_MODEL &&
-            typeof cost === "number" &&
-            Number.isFinite(cost) &&
-            cost >= 0
-        ) {
+        if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) {
             return { result, requestUrl, reportedCost: cost };
         }
         return { result, requestUrl };

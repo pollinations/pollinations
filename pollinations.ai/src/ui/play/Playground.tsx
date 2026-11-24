@@ -2495,7 +2495,8 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                     </div>
                 )}
                 <div className="flex flex-col gap-4 pt-1">
-                    <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {/* Connect sits midway between the page intro and the tabs. */}
+                    <div className="mb-7 flex flex-wrap items-center gap-x-4 gap-y-2">
                         <div inert={!isHydrated}>
                             <AppUserMenu
                                 connectSize="lg"

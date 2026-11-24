@@ -45,7 +45,7 @@ export function HeroScene({
             <div
                 className={cn(
                     "relative flex w-full max-w-none min-w-0 flex-col gap-6 px-5 sm:max-w-[70%] sm:gap-8 sm:px-8 sm:pt-16 md:px-18 lg:max-w-[58%]",
-                    compactBottom ? "pb-8" : "pb-14 sm:pb-16",
+                    compactBottom ? "pb-0" : "pb-14 sm:pb-16",
                     wide && "sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]",
                 )}
             >

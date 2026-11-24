@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.35] - 2026-11-24
+
+### Added
+
+- `connectRealtime()` opens a Pollinations Realtime WebSocket and passes events
+  through, with a configurable model, session update, abort signal, and timeout.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

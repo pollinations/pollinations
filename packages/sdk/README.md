@@ -687,6 +687,38 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime voice and transcription
+
+`connectRealtime()` opens the Pollinations Realtime WebSocket and passes parsed
+OpenAI Realtime events to `onEvent`. It works with voice models such as
+`openai/gpt-realtime-2.1` and live-transcription models such as
+`elevenlabs/scribe-v3-live`.
+
+```javascript
+import { connectRealtime } from '@pollinations/sdk';
+
+const session = await connectRealtime({
+  apiKey: 'sk_your_secret_key',
+  model: 'openai/gpt-realtime-2.1',
+  session: { type: 'realtime', instructions: 'Be concise.' },
+  onEvent: (event) => console.log(event.type, event),
+});
+
+session.send({ type: 'input_audio_buffer.append', audio: pcm16AudioBase64 });
+session.close();
+```
+
+Use the same helper for live transcription by selecting a transcription model;
+for example, Pollinations starts a transcription session automatically for
+`elevenlabs/scribe-v3-live`. Send its required audio events and handle the
+transcription events through `onEvent`. The helper leaves microphone capture,
+PCM conversion, and audio playback to the application.
+
+Browser WebSockets cannot set an Authorization header, so the secret `sk_` key
+is sent in the `?key=` query parameter. Use HTTPS and avoid logging the URL.
+Pass an `AbortSignal` to close the session or cancel a pending connection.
+`closed` resolves with the WebSocket close code and reason.
+
 ## Vision (Image Input)
 
 ```javascript

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Creator Studio for TikTok",
+    "url": "https://www.mrpaloma.com/en/creator-studio-tiktok",
+    "description": "Edit subtitles and export videos for TikTok in your browser. Sign in with Pollinations to generate vertical covers, titles, and descriptions using your own balance.",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "rapidbuildlabai",
+    "githubUserId": "320916248",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "rapidbuildlabai",
+    "other": null,
+    "submittedDate": "2026-11-23",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/20502",
+    "approvedDate": "2026-11-24",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/62abc873-002f-41ca-a7b0-d2f354604d6c"
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations Image Studio",
     "url": "https://palmunix.github.io/pollinations-image-studio",

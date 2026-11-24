@@ -2,6 +2,7 @@ import {
     createExecutionContext,
     createScheduledController,
     env,
+    runDurableObjectAlarm,
     runInDurableObject,
     waitOnExecutionContext,
 } from "cloudflare:test";
@@ -51,6 +52,7 @@ function stubAzure() {
     const events: Record<string, unknown>[] = [];
     const envd: { url: string; headers: Headers }[] = [];
     const appRequests: Request[] = [];
+    const discordPayloads: unknown[] = [];
     let resumes = 0;
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
@@ -75,7 +77,9 @@ function stubAzure() {
             return Response.json({ access_token: "azure", expires_in: 3600 });
         }
         const appBox = boxes.find(
-            ({ id }) => url.hostname === `${id}--8080.eastus.adcproxy.io`,
+            ({ id }) =>
+                url.hostname === `${id}--8080.eastus.adcproxy.io` ||
+                url.hostname === `${id}--8081.eastus.adcproxy.io`,
         );
         if (appBox) {
             expect(appBox.state).toBe("Running");
@@ -83,6 +87,9 @@ function stubAzure() {
                 `Bearer ${INGRESS_TOKEN}`,
             );
             appRequests.push(request);
+            if (request.method === "POST") {
+                discordPayloads.push(await request.json());
+            }
             return new Response("sandbox app");
         }
         if (
@@ -150,6 +157,7 @@ function stubAzure() {
         boxes,
         envd,
         appRequests,
+        discordPayloads,
         resumes: () => resumes,
         leases: () => events.filter((e) => e.eventType === "sandbox.lease"),
     };
@@ -389,6 +397,99 @@ test("Azure shared ports serve paid requests, serialize cold wakes, and refuse a
     expect(azure.appRequests).toHaveLength(3);
     expect(await db.select().from(sandboxPort)).toEqual([]);
     expect(azure.leases()).toHaveLength(2);
+});
+
+test("signed Discord slash commands acknowledge while stopped and buy one Azure wake", async () => {
+    const azure = stubAzure();
+    const owner = await sandboxKey();
+    const created = await post(owner.key, "/v2/sandboxes", {
+        templateID: "pollinations-azure",
+        timeout: 3600,
+        idleTimeout: 600,
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const keys = await crypto.subtle.generateKey("Ed25519", true, [
+        "sign",
+        "verify",
+    ]);
+    const hex = (bytes: ArrayBuffer) =>
+        Array.from(new Uint8Array(bytes), (value) =>
+            value.toString(16).padStart(2, "0"),
+        ).join("");
+    const discordPublicKey = hex(
+        await crypto.subtle.exportKey("raw", keys.publicKey),
+    );
+    const urls = await Promise.all(
+        [8080, 8081].map(async (port) => {
+            const shared = await fetchGen(
+                owner.key,
+                `/sandboxes/${sandboxID}/ports/${port}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({ discordPublicKey }),
+                },
+            );
+            expect(shared.status).toBe(200);
+            return (await shared.json<{ url: string }>()).url;
+        }),
+    );
+    const wake = env.AZURE_PORT_WAKE.getByName(sandboxID);
+    await runInDurableObject(wake, (instance) => {
+        Object.assign(instance, { env: azureEnv });
+    });
+    const call = async (url: string, payload: unknown, forged = false) => {
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        const body = JSON.stringify(payload);
+        const signature = await crypto.subtle.sign(
+            "Ed25519",
+            keys.privateKey,
+            new TextEncoder().encode(timestamp + body),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, {
+                method: "POST",
+                body: forged ? `${body} ` : body,
+                headers: {
+                    "x-signature-timestamp": timestamp,
+                    "x-signature-ed25519": hex(signature),
+                },
+            }),
+            azureEnv,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response;
+    };
+
+    azure.boxes[0].state = "Stopped";
+    expect((await call(urls[0], { type: 1 }, true)).status).toBe(401);
+    expect(await (await call(urls[0], { type: 1 })).json()).toEqual({
+        type: 1,
+    });
+    expect(azure.boxes[0].state).toBe("Stopped");
+    expect(azure.resumes()).toBe(0);
+    expect(azure.leases()).toHaveLength(1);
+    const commands = ["catgpt", "opposite"].map((name, index) => ({
+        type: 2,
+        id: `98765432100000000${index}`,
+        application_id: "123456789000000000",
+        token: "synthetic-test-interaction",
+        data: { name, options: [{ name: "prompt", value: "hello" }] },
+    }));
+    expect(
+        await Promise.all(
+            commands.map(async (command, index) =>
+                (await call(urls[index], command)).json(),
+            ),
+        ),
+    ).toEqual([{ type: 5 }, { type: 5 }]);
+    expect(await runDurableObjectAlarm(wake)).toBe(true);
+    expect(azure.resumes()).toBe(1);
+    expect(azure.leases()).toHaveLength(2);
+    expect(azure.discordPayloads).toHaveLength(2);
+    expect(azure.discordPayloads).toEqual(expect.arrayContaining(commands));
 });
 
 test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's rates", async () => {

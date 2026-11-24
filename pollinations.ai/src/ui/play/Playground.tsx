@@ -920,7 +920,7 @@ function ModelPicker({
                                             ) && (
                                                 <p className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-theme-text-muted before:h-px before:w-3 before:bg-theme-text-muted/30 after:h-px after:flex-1 after:bg-theme-text-muted/30">
                                                     Community · run by their
-                                                    owners
+                                                    publishers
                                                 </p>
                                             )}
                                         <TabButton

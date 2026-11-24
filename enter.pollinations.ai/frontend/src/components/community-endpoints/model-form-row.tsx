@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 export function ModelFormRow({
     label,
     help,
+    helpOnTap,
     optional = false,
     action,
     note,
@@ -11,6 +12,7 @@ export function ModelFormRow({
 }: {
     label: string;
     help?: ReactNode;
+    helpOnTap?: boolean;
     optional?: boolean;
     action?: ReactNode;
     /** Shown under the control so the label stays centred on the control alone. */
@@ -24,7 +26,11 @@ export function ModelFormRow({
                     {label}
                 </Field.Label>
                 {help && (
-                    <InfoTip content={help} label={`${label} information`} />
+                    <InfoTip
+                        content={help}
+                        label={`${label} information`}
+                        tapEnabled={helpOnTap}
+                    />
                 )}
                 {optional && (
                     <span className="ml-2 text-xs text-theme-text-muted">

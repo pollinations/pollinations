@@ -26,7 +26,7 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 describe("Inkling 2 Mini OpenRouter route", () => {
-    it("registers tool-use and image inputs with canonical no-alias routing", () => {
+    it("registers image inputs, tools and reasoning with canonical no-alias routing", () => {
         const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];
         expect(model).toMatchObject({
             provider: "openrouter",
@@ -36,9 +36,16 @@ describe("Inkling 2 Mini OpenRouter route", () => {
             inputModalities: ["text", "image"],
             contextLength: 1048576,
             tools: true,
+            reasoning: true,
         });
-        expect(model.supportedParameters).toContain("tools");
-        expect(model.supportedParameters).toContain("response_format");
+        expect(model.supportedParameters).toEqual(
+            expect.arrayContaining([
+                "tools",
+                "response_format",
+                "reasoning",
+                "include_reasoning",
+            ]),
+        );
         expect(typeof model.billing?.resolveTotalCost).toBe("function");
         expect(
             findModelByName("thinkingmachines/inkling-2-mini")?.config(),

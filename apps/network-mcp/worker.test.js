@@ -8,6 +8,11 @@ import {
 import { inspect } from "./tools/cidr.js";
 import { lookup, readText } from "./tools/dns.js";
 import { probe, publicUrl } from "./tools/http.js";
+import {
+    checkRobotsRules,
+    evaluateRobots,
+    parseRobots,
+} from "./tools/robots.js";
 import worker from "./worker.js";
 
 async function clientFor(t, modern = false) {
@@ -57,6 +62,7 @@ for (const modern of [false, true])
         const { tools } = await client.listTools();
         assert.deepEqual(tools.map((x) => x.name).sort(), [
             "asn_whois",
+            "check_robots_rules",
             "dns_lookup",
             "domain_whois",
             "http_probe",
@@ -72,6 +78,7 @@ for (const modern of [false, true])
                 .sort(),
             [
                 "asn_whois",
+                "check_robots_rules",
                 "dns_lookup",
                 "domain_whois",
                 "http_probe",
@@ -437,4 +444,214 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("robots combines case-insensitive substring user-agent groups ahead of wildcard", () => {
+    const groups = parseRobots(`User-agent: *
+Disallow: /
+
+User-agent: Example
+Disallow: /one
+
+User-agent: bot
+Disallow: /two
+
+User-agent: BOT
+Disallow: /three`);
+    for (const path of ["/one", "/two", "/three"])
+        assert.equal(
+            evaluateRobots(
+                groups,
+                "EXAMPLEBot",
+                new URL(`https://example.com${path}`),
+            ).allowed,
+            false,
+        );
+    assert.equal(
+        evaluateRobots(
+            groups,
+            "EXAMPLEBot",
+            new URL("https://example.com/other"),
+        ).allowed,
+        true,
+    );
+});
+
+test("robots uses wildcard groups only without an exact group and handles no group", () => {
+    const groups = parseRobots(`User-agent: *
+Disallow: /private/*
+Allow: /private/open$`);
+    assert.equal(
+        evaluateRobots(
+            groups,
+            "OtherBot",
+            new URL("https://example.com/private/closed"),
+        ).allowed,
+        false,
+    );
+    assert.equal(
+        evaluateRobots(
+            groups,
+            "OtherBot",
+            new URL("https://example.com/private/open"),
+        ).allowed,
+        true,
+    );
+    const none = evaluateRobots(
+        [],
+        "OtherBot",
+        new URL("https://example.com/page"),
+    );
+    assert.equal(none.status, "no_applicable_group");
+    assert.equal(none.allowed, true);
+});
+
+test("robots chooses the longest matching rule and Allow on equal-length ties", () => {
+    const groups = parseRobots(`User-agent: Bot
+Disallow: /docs
+Allow: /docs/public
+Disallow: /docs/public
+Disallow: /private/*`);
+    const longest = evaluateRobots(
+        groups,
+        "Bot",
+        new URL("https://example.com/docs/public"),
+    );
+    assert.equal(longest.allowed, true);
+    assert.deepEqual(longest.applicable_rule, {
+        directive: "allow",
+        pattern: "/docs/public",
+    });
+    assert.equal(
+        evaluateRobots(
+            groups,
+            "Bot",
+            new URL("https://example.com/docs/secret"),
+        ).allowed,
+        false,
+    );
+});
+
+test("robots distinguishes unavailable 4xx from unreachable 5xx and network errors", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("missing", { status: 404 }),
+    );
+    const args = ["https://example.com/private", "Bot"];
+    const missing = await checkRobotsRules(...args);
+    assert.equal(missing.status, "unavailable");
+    assert.equal(missing.allowed, true);
+    stub.mock.mockImplementation(
+        async () => new Response("down", { status: 503 }),
+    );
+    const serverError = await checkRobotsRules(...args);
+    assert.equal(serverError.status, "unreachable");
+    assert.equal(serverError.allowed, false);
+    stub.mock.mockImplementation(async () => {
+        throw new TypeError("network failure");
+    });
+    const networkError = await checkRobotsRules(...args);
+    assert.equal(networkError.status, "unreachable");
+    assert.equal(networkError.allowed, false);
+});
+
+test("robots follows safe redirects, sets the product token, and reports the final URL", async (t) => {
+    const calls = [];
+    t.mock.method(globalThis, "fetch", async (url, init) => {
+        calls.push([url.href, init]);
+        assert.equal(init.redirect, "manual");
+        assert.equal(init.headers["User-Agent"], "ExampleBot");
+        assert.equal(init.headers.Cookie, undefined);
+        if (calls.length === 1)
+            return new Response(null, {
+                status: 302,
+                headers: { location: "https://cdn.example.org/robots.txt" },
+            });
+        return new Response("User-agent: ExampleBot\nDisallow: /private");
+    });
+    const result = await checkRobotsRules(
+        "https://example.com/private",
+        "ExampleBot",
+    );
+    assert.equal(new URL(calls[0][0]).pathname, "/robots.txt");
+    assert.equal(result.allowed, false);
+    assert.equal(result.redirects.length, 1);
+    assert.equal(result.final_robots_url, "https://cdn.example.org/robots.txt");
+    assert.match(result.note, /not access authorization/);
+    assert.equal(calls.length, 2);
+});
+
+test("robots stops after five redirects and returns an uncertain result", async (t) => {
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async () => {
+        requests++;
+        return new Response(null, {
+            status: 301,
+            headers: { location: `/robots.txt?hop=${requests}` },
+        });
+    });
+    const result = await checkRobotsRules("https://example.com/page", "Bot");
+    assert.equal(result.status, "uncertain");
+    assert.equal(result.allowed, null);
+    assert.equal(result.redirects.length, 5);
+    assert.equal(requests, 6);
+});
+
+test("robots reports uncertainty for oversized files and unsafe redirect targets", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("x".repeat(512_001)),
+    );
+    const args = ["https://example.com/page", "Bot"];
+    const oversized = await checkRobotsRules(...args);
+    assert.equal(oversized.status, "uncertain");
+    assert.equal(oversized.allowed, null);
+
+    stub.mock.mockImplementation(
+        async () =>
+            new Response(null, {
+                status: 302,
+                headers: { location: "http://127.0.0.1/robots.txt" },
+            }),
+    );
+    const redirected = await checkRobotsRules(...args);
+    assert.equal(redirected.status, "uncertain");
+    assert.equal(redirected.allowed, null);
+    assert.equal(stub.mock.callCount(), 2);
+});
+
+test("robots rejects unsafe input URLs before making a request", async (t) => {
+    const stub = t.mock.method(globalThis, "fetch", async () => {
+        throw new Error("must not fetch");
+    });
+    for (const url of [
+        "http://localhost/",
+        "http://127.0.0.1/",
+        "http://169.254.169.254/",
+        "https://user:password@example.com/",
+        "https://example.com:8080/",
+        "file:///etc/passwd",
+    ])
+        await assert.rejects(checkRobotsRules(url, "Bot"), /public HTTP/);
+    await assert.rejects(checkRobotsRules("https://example.com/", "Bot 2"));
+    assert.equal(stub.mock.callCount(), 0);
+});
+
+test("robots tool is callable through the stateless MCP protocol", async (t) => {
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("User-agent: Bot\nDisallow: /private"),
+    );
+    const client = await clientFor(t);
+    const response = await client.callTool({
+        name: "check_robots_rules",
+        arguments: { url: "https://example.com/private", product_token: "Bot" },
+    });
+    assert.notEqual(response.isError, true, JSON.stringify(response));
+    const result = JSON.parse(response.content[0].text);
+    assert.equal(result.allowed, false);
+    assert.match(result.note, /not access authorization/);
 });

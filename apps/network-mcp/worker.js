@@ -5,6 +5,7 @@ import { dnsTools } from "./tools/dns.js";
 import { httpTools } from "./tools/http.js";
 import { macTools } from "./tools/mac.js";
 import { rdapTools } from "./tools/rdap.js";
+import { robotsTools } from "./tools/robots.js";
 
 const handler = createMcpHandler(
     () => {
@@ -15,6 +16,7 @@ const handler = createMcpHandler(
         for (const [name, description, shape, run] of [
             ...dnsTools,
             ...httpTools,
+            ...robotsTools,
             ...cidrTools,
             ...rdapTools,
             ...macTools,

@@ -55,15 +55,25 @@ type ModelMatch = Pick<ModelDefinition, "category" | "aliases">;
  * Normalizes requested key model permissions. Category names stay as they are
  * and model IDs or aliases become canonical model IDs.
  */
-export async function toModelPermissions(
+async function modelPermissions(
     dbBinding: D1Database,
     values: readonly string[],
+    strict: boolean,
 ): Promise<string[]> {
-    const permissions = await resolveModelPermissions(dbBinding, values);
+    const permissions = await resolveModelPermissions(dbBinding, values, {
+        strict,
+    });
     return [
         ...MODEL_CATEGORIES.filter((category) => permissions.has(category)),
         ...[...permissions.keys()].filter((value) => !isModelCategory(value)),
     ];
+}
+
+export async function toModelPermissions(
+    dbBinding: D1Database,
+    values: readonly string[],
+): Promise<string[]> {
+    return modelPermissions(dbBinding, values, true);
 }
 
 /**
@@ -74,11 +84,26 @@ export async function keyAllowsModelPermissions(
     dbBinding: D1Database,
     models: readonly string[],
     values: readonly string[],
+    { strict = true }: { strict?: boolean } = {},
 ): Promise<boolean> {
-    const permissions = await resolveModelPermissions(dbBinding, values);
+    const permissions = await resolveModelPermissions(dbBinding, values, {
+        strict,
+    });
     return [...permissions].every(([value, model]) =>
         model ? keyAllowsModel(models, value, model) : models.includes(value),
     );
+}
+
+/**
+ * The canonical permissions a key would keep after dropping model IDs that no
+ * longer resolve. Used when inheriting an existing key's models: a removed
+ * model is not callable, so it must not make a child key impossible to create.
+ */
+export async function filterKnownModelPermissions(
+    dbBinding: D1Database,
+    values: readonly string[],
+): Promise<string[]> {
+    return modelPermissions(dbBinding, values, false);
 }
 
 export function isModelCategory(value: string): value is Category {
@@ -106,6 +131,7 @@ function registryPermission(value: string): string | undefined {
 async function resolveModelPermissions(
     dbBinding: D1Database,
     values: readonly string[],
+    { strict = true }: { strict?: boolean } = {},
 ): Promise<Map<string, ModelMatch | null>> {
     const permissions = new Map<string, ModelMatch | null>();
     const communityIds: string[] = [];
@@ -123,7 +149,7 @@ async function resolveModelPermissions(
     }
     const community = await communityModels(dbBinding, communityIds);
     const unknown = communityIds.find((id) => !community.has(id));
-    if (unknown !== undefined) {
+    if (unknown !== undefined && strict) {
         throw new HTTPException(400, {
             message: `Model permission '${unknown}' is not a model category (${MODEL_CATEGORIES.join(", ")}) or a model ID from /models.`,
         });

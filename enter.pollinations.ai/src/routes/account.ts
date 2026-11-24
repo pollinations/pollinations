@@ -37,6 +37,7 @@ import {
 } from "@shared/http/permission-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    filterKnownModelPermissions,
     keyAllowsModelPermissions,
     toModelPermissions,
 } from "@shared/registry/model-permissions.ts";
@@ -238,6 +239,7 @@ async function grantFromCallerKey(
         pollenBudget: number | null;
     },
     budgetToReserve = grant.pollenBudget ?? 0,
+    { strictModels = true }: { strictModels?: boolean } = {},
 ): Promise<number> {
     if (!callerKey) return 0;
     const deny = (message: string): never => {
@@ -258,7 +260,9 @@ async function grantFromCallerKey(
         models &&
         !(
             grant.allowedModels &&
-            (await keyAllowsModelPermissions(db, models, grant.allowedModels))
+            (await keyAllowsModelPermissions(db, models, grant.allowedModels, {
+                strict: strictModels,
+            }))
         )
     ) {
         deny("An API key can only grant models it can use");
@@ -326,6 +330,9 @@ async function requireKeyWithinCallerKey(
                 pollenBudget: key.prefix === "pk" ? 0 : key.pollenBalance,
             },
             0,
+            // A model removed from the catalog cannot be called, so it must
+            // not stop another key from editing or revoking this key.
+            { strictModels: false },
         ).then(
             () => true,
             (error) => {
@@ -2015,10 +2022,22 @@ export const accountRoutes = new Hono<Env>()
             // The calling key's model and expiry limits carry over unless the
             // request sets narrower ones.
             const callerKey = c.var.auth.apiKey;
-            const keyModels =
+            const inheritedModels =
                 allowedModels === undefined
                     ? callerKey?.permissions?.models
-                    : allowedModels;
+                    : undefined;
+            // A caller may still carry a model ID that has since left the
+            // catalog. It cannot be called, so do not copy it into the child
+            // (which would also make the child impossible to create).
+            const keyModels =
+                inheritedModels === undefined
+                    ? allowedModels
+                    : inheritedModels === null
+                      ? null
+                      : await filterKnownModelPermissions(
+                            c.env.DB,
+                            inheritedModels,
+                        );
             const keyExpiresIn =
                 expiresIn ??
                 (callerKey?.expiresAt

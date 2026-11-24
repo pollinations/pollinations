@@ -1005,21 +1005,37 @@ function RunStatBadge({
                 className="flex cursor-help rounded-lg"
             >
                 <Chip size="md" data-theme="neutral" className="tabular-nums">
-                    <span className="text-theme-text-muted">Typical</span>{" "}
-                    <span
-                        className={
-                            walletKind === "paid"
-                                ? "polli-wallet-text-paid"
-                                : "polli-wallet-text-tier"
-                        }
-                    >
-                        {cost ?? "—"}
-                    </span>
-                    <WalletKindIcon kind={walletKind} />
-                    <span aria-hidden="true" className="text-theme-text-muted">
-                        ·
-                    </span>
-                    {time ?? "—"}
+                    {cost || time ? (
+                        <>
+                            <span className="text-theme-text-muted">
+                                Typical
+                            </span>{" "}
+                            <span
+                                className={
+                                    walletKind === "paid"
+                                        ? "polli-wallet-text-paid"
+                                        : "polli-wallet-text-tier"
+                                }
+                            >
+                                {cost ?? "—"}
+                            </span>
+                            <WalletKindIcon kind={walletKind} />
+                            <span
+                                aria-hidden="true"
+                                className="text-theme-text-muted"
+                            >
+                                ·
+                            </span>
+                            {time ?? "—"}
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-theme-text-muted">
+                                Measuring…
+                            </span>
+                            <WalletKindIcon kind={walletKind} />
+                        </>
+                    )}
                 </Chip>
             </button>
             <div

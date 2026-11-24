@@ -41,7 +41,6 @@ describe("HeyGen Decision 1 routes", () => {
         expect(route?.useSystemOneApi).toBe(true);
         expect(route?.config()).toMatchObject({
             directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-            requiresDecisionCostReceipt: true,
             defaultOptions: {
                 provider: { only: ["heygen"], allow_fallbacks: false },
             },

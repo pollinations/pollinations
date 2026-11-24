@@ -15,6 +15,7 @@ import type {
 import { isPlainObject } from "./utils/objectCleaners.js";
 
 const DOCS_URL = "https://docs.typesafe.ai/api";
+const HEYGEN_DECISION_MODEL = "heygen/heygen-decision-1";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
@@ -506,13 +507,13 @@ export async function requestDecision(
                 }
             }
         }
-        if (options.modelConfig?.requiresDecisionCostReceipt) {
-            const cost = result.usage.cost;
-            if (typeof cost !== "number" || !Number.isFinite(cost) || cost < 0)
-                throw serviceError(
-                    `${model} returned a response without a valid cost receipt.`,
-                    502,
-                );
+        const cost = result.usage.cost;
+        if (
+            model === HEYGEN_DECISION_MODEL &&
+            typeof cost === "number" &&
+            Number.isFinite(cost) &&
+            cost >= 0
+        ) {
             return { result, requestUrl, reportedCost: cost };
         }
         return { result, requestUrl };
@@ -545,9 +546,9 @@ export async function callSystemOne(
         object: "chat.completion",
         created: Math.floor(Date.now() / 1000),
         model:
-            reportedCost === undefined
-                ? result.model
-                : String(options.modelConfig?.model),
+            options.modelConfig?.model === HEYGEN_DECISION_MODEL
+                ? HEYGEN_DECISION_MODEL
+                : result.model,
         choices: [
             {
                 index: 0,

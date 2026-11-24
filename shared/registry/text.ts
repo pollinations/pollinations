@@ -2148,6 +2148,7 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
+            // Fee-inclusive list rate. The receipt captures the actual route cost.
             promptTextTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0),
         },

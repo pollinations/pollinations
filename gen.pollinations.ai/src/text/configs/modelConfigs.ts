@@ -272,7 +272,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "heygen/heygen-decision-1",
-        requiresDecisionCostReceipt: true,
         defaultOptions: {
             provider: {
                 only: ["heygen"],

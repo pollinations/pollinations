@@ -206,23 +206,34 @@ function post(path: string, key: string, body: unknown) {
     });
 }
 
-test.for([
-    { path: "/alpha/decisions", stream: false },
-    { path: "/v1/systemone", stream: false },
-    { path: "/v1/chat/completions", stream: false },
-    { path: "/v1/chat/completions", stream: true },
-])(
-    "bills the HeyGen receipt on $path (stream: $stream)",
-    async ({ path, stream }, { mocks }) => {
+const heyGenListCost = (480 * 0.1477) / 1_000_000;
+
+test.for(
+    [
+        { path: "/alpha/decisions", stream: false },
+        { path: "/v1/systemone", stream: false },
+        { path: "/v1/chat/completions", stream: false },
+        { path: "/v1/chat/completions", stream: true },
+    ].flatMap((route) => [
+        { ...route, cost: 0.0000336, expectedCost: 0.0000336 * 1.055 },
+        { ...route, cost: undefined, expectedCost: heyGenListCost },
+        { ...route, cost: "0.0000336", expectedCost: heyGenListCost },
+        { ...route, cost: -0.0000336, expectedCost: heyGenListCost },
+    ]),
+)(
+    "bills HeyGen on $path (stream: $stream, receipt: $cost)",
+    async ({ path, stream, cost, expectedCost }, { mocks }) => {
         const model = "heygen/heygen-decision-1";
+        const upstreamModel = "heygen/heygen-decision-1-20261112";
+        const expectedCharge = Number(expectedCost.toFixed(8));
         const { key, userId } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
         });
         const payload = { state: "The invoice needs a reminder.", questions };
         mocks.decisions.state.response = Response.json({
-            model: "heygen/heygen-decision-1-20261112",
+            model: upstreamModel,
             answers,
-            usage: { input_tokens: 480, output_tokens: 0, cost: 0.0000336 },
+            usage: { input_tokens: 480, output_tokens: 0, cost },
         });
         const { response, wait } = await post(
             path,
@@ -240,6 +251,7 @@ test.for([
         expect(response.status).toBe(200);
         const body = await response.text();
         expect(body).toContain(`"model":"${model}"`);
+        expect(body).not.toContain(upstreamModel);
         expect(body).not.toContain('"cost":');
         expect(mocks.decisions.state.requests).toHaveLength(1);
         expect(mocks.decisions.state.requests[0]).toMatchObject({
@@ -255,37 +267,15 @@ test.for([
             modelUsed: model,
             modelProviderUsed: "openrouter",
             tokenCountPromptText: 480,
-            totalPrice: 0.00003545,
+            totalPrice: expectedCharge,
             isBilledUsage: true,
         });
         expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(
-            0.0000336 * 1.055,
+            expectedCost,
             12,
         );
         const balance = await getUserBalance(drizzle(env.DB), userId);
-        expect(10 - balance.packBalance).toBeCloseTo(0.00003545, 10);
-    },
-);
-
-test.for([undefined, "0.0000336", -0.0000336])(
-    "rejects a missing or invalid HeyGen cost receipt (%s)",
-    async (cost, { paidApiKey, mocks }) => {
-        mocks.decisions.state.response = Response.json({
-            model: "heygen/heygen-decision-1",
-            answers,
-            usage: { input_tokens: 480, output_tokens: 0, cost },
-        });
-        const { response, wait } = await post("/alpha/decisions", paidApiKey, {
-            model: "heygen/heygen-decision-1",
-            state: "The invoice needs a reminder.",
-            questions,
-        });
-        expect(response.status).toBe(502);
-        await response.text();
-        await wait();
-        expect(
-            mocks.tinybird.state.events.some((event) => event.isBilledUsage),
-        ).toBe(false);
+        expect(10 - balance.packBalance).toBeCloseTo(expectedCharge, 10);
     },
 );
 

@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.36] - 2026-11-24
+
+### Changed
+
+- Reverts alpha.35's cross-tab key handling. The provider reads the saved key once on page load again; after a 401 it signs out as in alpha.34.
+
 ## [5.1.0-alpha.34] - 2026-11-19
 
 ### Added

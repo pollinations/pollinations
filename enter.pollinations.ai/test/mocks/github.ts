@@ -44,6 +44,13 @@ export type MockGithubState = {
                 databaseId?: number | null;
             } | null;
         }>;
+        timelineItems?: Array<{
+            willCloseTarget: boolean;
+            source?: {
+                mergedAt?: string | null;
+                repository?: string;
+            };
+        }>;
     }>;
     mergedPullRequests: Array<{
         number: number;
@@ -253,6 +260,20 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                             },
                         }),
                     ),
+                },
+                timelineItems: {
+                    nodes: (issue.timelineItems ?? []).map((event) => ({
+                        willCloseTarget: event.willCloseTarget,
+                        source: event.source
+                            ? {
+                                  mergedAt: event.source.mergedAt ?? null,
+                                  repository: {
+                                      nameWithOwner:
+                                          event.source.repository ?? REPO,
+                                  },
+                              }
+                            : null,
+                    })),
                 },
             }));
             const next = start + nodes.length;

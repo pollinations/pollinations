@@ -239,6 +239,15 @@ type ReportedIssueNode = {
             repository: { nameWithOwner: string };
         }[];
     };
+    timelineItems: {
+        nodes: {
+            willCloseTarget?: boolean;
+            source?: {
+                mergedAt?: string | null;
+                repository?: { nameWithOwner: string };
+            } | null;
+        }[];
+    };
 };
 
 type SurveyIssueNode = {
@@ -330,6 +339,19 @@ query($query:String!,$after:String){
         labels(first:20){ nodes{ name } }
         closedByPullRequestsReferences(first:10){
           nodes{ mergedAt repository{ nameWithOwner } }
+        }
+        timelineItems(first:100,itemTypes:[CROSS_REFERENCED_EVENT]){
+          nodes{
+            ... on CrossReferencedEvent{
+              willCloseTarget
+              source{
+                ... on PullRequest{
+                  mergedAt
+                  repository{ nameWithOwner }
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -605,13 +627,29 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
             continue;
         }
         // Only a merge into this repository after the issue opened fixed it.
-        const fixed = issue.closedByPullRequestsReferences.nodes.some(
-            (pr) =>
-                pr.mergedAt !== null &&
-                pr.repository.nameWithOwner === REPO &&
-                Date.parse(pr.mergedAt) >= Date.parse(issue.createdAt) &&
-                Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
-        );
+        const mergedAfterIssue = (
+            mergedAt: string | null | undefined,
+            repository: string | undefined,
+        ) =>
+            mergedAt != null &&
+            repository === REPO &&
+            Date.parse(mergedAt) >= Date.parse(issue.createdAt) &&
+            Date.parse(mergedAt) >= ISSUE_REPORT_START;
+        // A maintainer can close the issue right after the closing PR merges.
+        // GitHub then leaves closedByPullRequestsReferences empty, so also
+        // read the timeline's closing cross-reference.
+        const fixed =
+            issue.closedByPullRequestsReferences.nodes.some((pr) =>
+                mergedAfterIssue(pr.mergedAt, pr.repository.nameWithOwner),
+            ) ||
+            issue.timelineItems.nodes.some(
+                (event) =>
+                    event.willCloseTarget === true &&
+                    mergedAfterIssue(
+                        event.source?.mergedAt,
+                        event.source?.repository?.nameWithOwner,
+                    ),
+            );
         if (!fixed) continue;
         proposals.push({
             quest: {

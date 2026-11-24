@@ -2540,6 +2540,47 @@ test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or be
             number: 9207,
             closer: { ...closers.other, repository: "someone/fork" },
         },
+        // Closed manually right after the merged PR: the reverse reference is
+        // empty, but the timeline still marks the PR as closing the issue.
+        {
+            number: 9208,
+            timeline: [
+                {
+                    willCloseTarget: true,
+                    source: { mergedAt: "2026-09-24T12:00:00Z" },
+                },
+            ],
+        },
+        {
+            number: 9209,
+            timeline: [
+                {
+                    willCloseTarget: false,
+                    source: { mergedAt: "2026-09-24T12:00:00Z" },
+                },
+            ],
+        },
+        {
+            number: 9210,
+            timeline: [
+                {
+                    willCloseTarget: true,
+                    source: { mergedAt: "2026-09-20T00:00:00Z" },
+                },
+            ],
+        },
+        {
+            number: 9211,
+            timeline: [
+                {
+                    willCloseTarget: true,
+                    source: {
+                        mergedAt: "2026-09-24T12:00:00Z",
+                        repository: "someone/fork",
+                    },
+                },
+            ],
+        },
     ];
     for (const issue of issues) {
         mocks.github.state.questIssues.push({
@@ -2556,9 +2597,11 @@ test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or be
                 databaseId: user.githubId,
             },
             labels: [],
-            closedByPullRequestsReferences: [
-                { mergedAt: "2026-09-24T12:00:00Z", ...issue.closer },
-            ],
+            closedByPullRequestsReferences:
+                "closer" in issue
+                    ? [{ mergedAt: "2026-09-24T12:00:00Z", ...issue.closer }]
+                    : [],
+            timelineItems: "timeline" in issue ? issue.timeline : [],
         });
     }
 
@@ -2580,6 +2623,7 @@ test("every issue a merged PR closes pays, self-fixes too; fixes elsewhere or be
         "github:reported_issue:9203",
         "github:reported_issue:9204",
         "github:reported_issue:9205",
+        "github:reported_issue:9208",
     ]);
 });
 

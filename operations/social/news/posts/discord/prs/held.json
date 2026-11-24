@@ -48,11 +48,6 @@
       "required": [
         "deploy-website-cloudflare.yml:deploy"
       ]
-    },
-    "20540": {
-      "merge_sha": "ad8cb9d2ea03f0969ad707dc34649ee1e5281b9e",
-      "merged_at": "2026-11-24T03:29:42Z",
-      "required": []
     }
   },
   "production": "ebae98e068f9f2f871fe9d05cde0aaaf7e90c2db",

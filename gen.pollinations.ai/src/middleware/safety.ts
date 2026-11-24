@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { UpstreamError } from "@shared/error.ts";
 import type {
     CreateChatCompletionRequest,
@@ -79,23 +80,21 @@ async function checkSafetyTexts(
 
     const guardrailInputs = selectGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
+    const scannedTexts = guardrailInputs.map((input) => input.text);
+    const guardrailEnv = resolveBedrockGuardrailEnv(c.env);
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
 
     let response: BedrockResponse;
+    const scanStartedAt = Date.now();
     try {
-        const guardrailEnv = resolveBedrockGuardrailEnv(c.env);
         if (!guardrailEnv) {
             setSafetyHeader(c, "X-Safety-Status", "misconfigured");
             throw new HTTPException(503, {
                 message: "Safety service not configured",
             });
         }
-        response = await applyGuardrail(
-            guardrailInputs.map((input) => input.text),
-            "INPUT",
-            guardrailEnv,
-        );
+        response = await applyGuardrail(scannedTexts, "INPUT", guardrailEnv);
     } catch (error) {
         if (error instanceof HTTPException) throw error;
         c.get("log").error("Bedrock guardrail failed: {error}", {
@@ -111,6 +110,24 @@ async function checkSafetyTexts(
         response,
         features,
     );
+    const userId = c.var.auth?.user?.id;
+    const inputFingerprint =
+        userId && c.env.BETTER_AUTH_SECRET
+            ? createHmac("sha256", c.env.BETTER_AUTH_SECRET)
+                  .update("guardrail-input:v1\0")
+                  .update(
+                      JSON.stringify([
+                          c.env.ENVIRONMENT,
+                          userId,
+                          guardrailEnv.region,
+                          guardrailEnv.guardrailIdentifier,
+                          guardrailEnv.guardrailVersion,
+                          [...features].sort(),
+                          scannedTexts,
+                      ]),
+                  )
+                  .digest("hex")
+            : undefined;
 
     // The request logger's context can contain prompts from the request URL.
     console.info({
@@ -119,6 +136,8 @@ async function checkSafetyTexts(
         route: routePath(c),
         model: c.var.model?.resolved,
         requestId: c.var.requestId,
+        inputFingerprint,
+        scanStartedAt,
         requestedFeatures: [...requestedFeatures],
         requiredFeatures,
         scannedCharacters: guardrailInputs.reduce(

@@ -4938,7 +4938,11 @@
     },
     {
       "id": "inception",
-      "aliases": []
+      "aliases": [],
+      "modelLabels": {
+        "mercury-2": "inception/mercury-2",
+        "mercury-3": "inception/mercury-3"
+      }
     },
     {
       "id": "inferenceport",

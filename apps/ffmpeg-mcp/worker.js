@@ -250,6 +250,7 @@ function buildServer(env, dependencies, reportUsage) {
                 sources: z
                     .array(sourceUrl)
                     .min(1)
+                    .max(16, "at most 16 sources per run")
                     .describe(
                         "Ordered source URLs, saved as input0, input1, and so on.",
                     ),

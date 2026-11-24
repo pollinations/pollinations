@@ -39,6 +39,23 @@ const gptOssEffort = remapReasoningEffort({
 });
 const grok46Effort = remapReasoningEffort({ none: "low", max: "xhigh" });
 const kimiK26Effort = remapReasoningEffort({ xhigh: "max" });
+const inceptionEffort = remapReasoningEffort({
+    none: "instant",
+    minimal: "instant",
+    xhigh: "high",
+    max: "high",
+});
+const inceptionReasoning: TransformFn = (messages, options) => {
+    const reasoning = options.reasoning as
+        | { enabled?: boolean; effort?: string }
+        | undefined;
+    return inceptionEffort(messages, {
+        ...options,
+        reasoning_effort:
+            options.reasoning_effort ??
+            (reasoning?.enabled === false ? "instant" : reasoning?.effort),
+    });
+};
 // Azure DeepSeek V4 accepts only none, high and max.
 const azureDeepSeekEffort = remapReasoningEffort({
     none: "none", // Preserve case-insensitive requests to disable reasoning.
@@ -460,18 +477,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "inception/mercury-2",
-        config: portkeyConfig["mercury-2"],
-        transform: stripReasoning,
-    },
-    {
-        name: "inception/mercury-2.5-preview",
-        config: portkeyConfig["inception/mercury-2.5-preview"],
-        transform: createReasoningEffortTransform("toggle"),
+        config: portkeyConfig["inception/mercury-2"],
+        transform: pipe(omitParameters("stop"), inceptionReasoning),
     },
     {
         name: "inception/mercury-3",
         config: portkeyConfig["inception/mercury-3"],
-        transform: createReasoningEffortTransform("toggle"),
+        transform: inceptionReasoning,
     },
     {
         name: "cohere/command-a-plus",
@@ -1198,6 +1210,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "heygen/heygen-decision-1",
+        config: portkeyConfig["heygen/heygen-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
         name: "microsoft/microsoft-decision-1",
         config: portkeyConfig["microsoft-decision-1-azure"],
         useSystemOneApi: true,
@@ -1308,6 +1325,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy4-preview"],
     },
     {
+        name: "thinkingmachines/inkling-2-mini",
+        config: portkeyConfig["thinkingmachines/inkling-2-mini"],
+    },
+    {
         name: "thinkingmachines/inkling-small",
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },
@@ -1353,10 +1374,6 @@ const models: ModelDefinition[] = [
     {
         name: "xiaomi/mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
-    },
-    {
-        name: "xiaomi/mimo-v2.5-pro",
-        config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
     },
     {
         name: "xiaomi/mimo-v2.6-flash",

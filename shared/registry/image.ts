@@ -1883,33 +1883,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
-    "x-ai/grok-imagine-image-quality": {
-        aliases: [
-            "grok-aurora",
-            "aurora",
-            "grok-imagine-image-quality",
-            "grok-imagine-image-pro",
-            "grok-imagine-pro",
-        ],
-        provider: "openrouter",
-        publisher: "xAI",
-        category: "image",
-        addedDate: new Date("2026-03-23").getTime(),
-        // xAI retires the slug and redirects it to grok-imagine-image-2.0.
-        // Provider retires this route on 2026-11-02.
-        priceMultiplier: 1,
-        paidOnly: true,
-        cost: {
-            promptImageTokens: 0.01 * 1.055, // per input image on edits
-            completionImageTokens: 0.05 * 1.055, // per 1K image
-        },
-        title: "Grok Imagine Pro",
-        description:
-            "Create detailed, lifelike images from a description or up to three reference pictures.",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 3, // OpenRouter input_references limit.
-    },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
         provider: "xai",
@@ -2455,6 +2428,31 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2,
         minDuration: 3,
         maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "kwaivgi/kling-v4.0-flash": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-11-21").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai kling-video/v4/flash published rate (2026-11-21).
+        // Flat $0.094/s at 720p; native audio is included in base rate.
+        cost: {
+            completionVideoSeconds: 0.094,
+        },
+        resolutions: ["720p"],
+        title: "Kling 4.0 Flash",
+        description:
+            "Fast 720p video from text or a starting image with synchronized native audio.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 3,
+        maxDuration: 20,
         defaultDuration: 5,
     },
     "lightricks/ltx-2.5-pro": {

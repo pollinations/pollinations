@@ -207,9 +207,10 @@ type AudioContext = Context<Env>;
 async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
+    model = c.var.model,
 ): Promise<Response> {
     return withModelFallbackResponse(
-        c.var.model,
+        model,
         attempt,
         c.var.track?.attempts,
         (candidate) => requireModelAttemptAccess(c, candidate),
@@ -1901,6 +1902,7 @@ export async function generateMusic(
  */
 type SoundEffectModel =
     | "elevenlabs/eleven-text-to-sound-v2"
+    | "elevenlabs/eleven-text-to-sound-v2:fal"
     | "elevenlabs/eleven-text-to-sound-v3"
     | "elevenlabs/eleven-text-to-sound-v3:fal";
 
@@ -1965,7 +1967,13 @@ export async function generateSoundEffect(opts: {
     if (isFal) {
         const { model_id: _modelId, ...input } = body;
         const result = await runFalJobResponse(
-            { endpoint: "elevenlabs/sound-effects/v3", input },
+            {
+                endpoint:
+                    modelName === "elevenlabs/eleven-text-to-sound-v2:fal"
+                        ? "fal-ai/elevenlabs/sound-effects/v2"
+                        : "elevenlabs/sound-effects/v3",
+                input,
+            },
             falKey,
         ).catch((error) => {
             throw toUpstreamError(error);
@@ -3719,6 +3727,7 @@ async function dispatchAudioGeneration(
 
     if (
         model === "elevenlabs/eleven-text-to-sound-v2" ||
+        model === "elevenlabs/eleven-text-to-sound-v2:fal" ||
         model === "elevenlabs/eleven-text-to-sound-v3" ||
         model === "elevenlabs/eleven-text-to-sound-v3:fal"
     ) {
@@ -3939,7 +3948,22 @@ async function generateAudioFromSpeechRequest(
         | undefined;
     let referenceAudio: Promise<File> | undefined;
 
-    return withAudioFallback(c, async (candidate) => {
+    const requestedDuration = request.duration ?? request.seconds;
+    const requestedModel = c.var.model;
+    // fal v2 accepts a narrower range than the direct ElevenLabs route.
+    const eligibleModel =
+        requestedDuration !== undefined &&
+        (requestedDuration < 0.5 || requestedDuration > 22)
+            ? {
+                  ...requestedModel,
+                  fallbackEntries: requestedModel.fallbackEntries?.filter(
+                      (entry) =>
+                          entry.id !== "elevenlabs/eleven-text-to-sound-v2:fal",
+                  ),
+              }
+            : requestedModel;
+
+    const attempt = async (candidate: FallbackCandidate) => {
         // Declared provider routes retain their public model's options; caller
         // alternatives use their own model's defaults and validation.
         const model = candidate.definition?.fallbackOnly
@@ -3950,7 +3974,7 @@ async function generateAudioFromSpeechRequest(
         const duration = resolveAudioDuration(
             model,
             candidate.definition ?? c.var.model.definition,
-            request.duration ?? request.seconds,
+            requestedDuration,
         );
 
         // Speed 1 is every model's normal output, so clients that always send
@@ -4041,7 +4065,8 @@ async function generateAudioFromSpeechRequest(
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
         });
-    });
+    };
+    return withAudioFallback(c, attempt, eligibleModel);
 }
 
 export const speechAudioCache = every(

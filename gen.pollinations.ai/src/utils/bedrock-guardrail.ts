@@ -28,6 +28,10 @@ interface ContentFilter {
 
 export interface BedrockResponse {
     action?: "NONE" | "GUARDRAIL_INTERVENED";
+    usage?: {
+        contentPolicyUnits?: number;
+        sensitiveInformationPolicyUnits?: number;
+    };
     outputs?: GuardrailOutput[];
     assessments?: {
         contentPolicy?: { filters?: ContentFilter[] };

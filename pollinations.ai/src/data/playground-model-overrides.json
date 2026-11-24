@@ -56,6 +56,7 @@
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
+        "autoDurationWithReferenceVideo": true,
         "exclusiveReferences": true,
         "audioCatalog": {
             "max_reference_audios": 3,

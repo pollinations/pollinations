@@ -1597,8 +1597,6 @@ export function Playground({
             ? modelOverride?.maxDurationWithReference
             : undefined,
     });
-    const videoDuration =
-        currentModel?.category === "video" ? mediaSettings.duration : undefined;
     const selectedAudioClips =
         currentModel?.category === "video" ? videoReferences.audio : audioFiles;
     const [clipDurations, setClipDurations] = useState(
@@ -1660,6 +1658,15 @@ export function Playground({
             ? aspectRatio && videoConfig.ratios.includes(pickedRatio)
                 ? pickedRatio
                 : defaultVideoRatio
+            : undefined;
+    const autoVideoDuration =
+        modelOverride?.autoDurationWithReferenceVideo &&
+        videoReferenceMedia.includes("video") &&
+        videoReferences.video.length > 0 &&
+        (!videoAspectRatio || videoAspectRatio === "adaptive");
+    const videoDuration =
+        currentModel?.category === "video" && !autoVideoDuration
+            ? mediaSettings.duration
             : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
@@ -2747,6 +2754,18 @@ export function Playground({
                                                 setParam("duration", seconds)
                                             }
                                         />
+                                    )}
+                                    {autoVideoDuration && (
+                                        <FieldStack
+                                            label="Duration"
+                                            orientation="inline"
+                                            className="min-w-0"
+                                        >
+                                            <Text size="sm" tone="muted">
+                                                Replicate chooses the duration.
+                                                Billing uses the output seconds.
+                                            </Text>
+                                        </FieldStack>
                                     )}
 
                                     {customSize && (

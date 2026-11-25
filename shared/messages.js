@@ -23,12 +23,12 @@ const genError = (status, code, message) =>
     });
 
 const limitError = (item, every, wait) =>
-    `Free limit reached: 1 ${item} every ${every} seconds per IP. Retry after ${wait}s, or get unlimited ${item === "image" ? "images" : "replies"} with a pollen key at ${ENTER}`;
+    `Free limit reached: 1 ${item} every ${every} seconds per IP. Retry after ${wait}s, or get unlimited ${item === "image" ? "images" : "replies"} with a Pollinations API key at ${ENTER}`;
 
 // Apps print a plain text answer as it is, so it names the fix as gen's notice does
 const limitNotice = (every, wait) =>
     `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER}), then try again.\n\n` +
-    "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
+    "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.";
 
 const hoursUntil = (seconds) => {
     const hours = Math.ceil(seconds / 3600);
@@ -37,10 +37,10 @@ const hoursUntil = (seconds) => {
 
 // The daily quota's answer, for scripts and as a notice apps show as is
 const dailyError = (perDay, wait) =>
-    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}. Get unlimited replies with a pollen key at ${ENTER}`;
+    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}. Get unlimited replies with a Pollinations API key at ${ENTER}`;
 const dailyNotice = (perDay, wait) =>
     `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}, or [get unlimited replies](${ENTER}) now.\n\n` +
-    "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
+    "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.";
 
 // What a browser reads on each screen, the page built by screens/render.js;
 // {{item}}, {{items}} and the answer's values are filled in per answer
@@ -265,14 +265,14 @@ export function promptTooLong(maxChars, json) {
     if (json)
         return genAnswer(
             413,
-            `Prompt too long for the free Classic API: ${chars} characters max (about ${tokens} tokens), counting messages and tools. Shorten it, or use long prompts and every model with a pollen key at ${ENTER}`,
+            `Prompt too long for the free Classic API: ${chars} characters max (about ${tokens} tokens), counting messages and tools. Shorten it, or use long prompts and every model with a Pollinations API key at ${ENTER}`,
         );
     return {
         status: 413,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
         body:
             `This message is too long for the free Classic API. It runs GPT-OSS 20B, a small model, with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER}).\n\n` +
-            "If you're using someone else's app, ask whoever runs it to switch to a pollen key.",
+            "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.",
     };
 }
 
@@ -293,25 +293,25 @@ export function failure(genStatus) {
     return genStatus === 429 || genStatus >= 500
         ? genAnswer(
               503,
-              `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a pollen key at ${ENTER}`,
+              `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a Pollinations API key at ${ENTER}`,
               { "Retry-After": String(RETRY_SECONDS) },
           )
         : genAnswer(
               500,
-              `Something went wrong on our side. Please try again, or use every model with a pollen key at ${ENTER}`,
+              `Something went wrong on our side. Please try again, or use every model with a Pollinations API key at ${ENTER}`,
           );
 }
 
 /** The Workers' refusals of a request the caller can fix */
 export const REFUSED = {
-    replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at ${ENTER}`,
-    imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at ${ENTER}`,
+    replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a Pollinations API key at ${ENTER}`,
+    imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a Pollinations API key at ${ENTER}`,
     badMessages:
         "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
     jsonTooLong: (maxTokens) =>
-        `The JSON reply hit the free Classic API's ${maxTokens}-token limit before it was complete. Ask for shorter output, or use longer replies with a pollen key at ${ENTER}`,
+        `The JSON reply hit the free Classic API's ${maxTokens}-token limit before it was complete. Ask for shorter output, or use longer replies with a Pollinations API key at ${ENTER}`,
     unknownModel: (model) =>
         `Model "${model}" isn't on the Classic API. Free models: https://text.pollinations.ai/models. Every model we offer is on ${ENTER}`,
     enterOnly: (model) =>
-        `${model} isn't part of the Classic API. Use it with a pollen key at ${ENTER}`,
+        `${model} isn't part of the Classic API. Use it with a Pollinations API key at ${ENTER}`,
 };

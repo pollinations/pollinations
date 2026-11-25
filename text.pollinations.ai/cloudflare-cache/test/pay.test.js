@@ -203,7 +203,7 @@ test("a JSON-mode request past the free limit gets gen's error body and the VM's
         success: false,
         error: {
             code: "FREE_LIMIT",
-            message: `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+            message: `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a Pollinations API key at ${ENTER}`,
             timestamp: body.error.timestamp,
             fixUrl: ENTER,
         },
@@ -248,7 +248,7 @@ test("POST /openai past the free limit gets gen's error body and the challenge",
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toBe(
-        `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+        `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a Pollinations API key at ${ENTER}`,
     );
     expect(response.headers.get("payment-required")).not.toBeNull();
 });
@@ -354,7 +354,7 @@ test("a JSON request past the daily quota gets gen's error body", async () => {
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toMatch(
-        /^Free limit reached: 50 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a pollen key at /,
+        /^Free limit reached: 50 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a Pollinations API key at /,
     );
 });
 

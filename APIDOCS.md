@@ -82,4 +82,4 @@ You can:
 
 ## Want more? Use enter
 
-[enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-more) gives you your own API key, every image, text, audio and video model, images without a logo and no per-IP limit. Start with free pollen from quests and buy more when you need it. The full API reference is at [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
+[enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-more) gives you your own API key, every image, text, audio and video model, images without a logo and no per-IP limit. Start with free credits from quests and top up when you need it. The full API reference is at [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).

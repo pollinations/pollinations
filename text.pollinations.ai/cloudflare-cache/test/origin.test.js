@@ -326,9 +326,9 @@ test("a prompt over 16,000 characters is refused before gen and the IP's slot", 
 });
 
 const AT_CAPACITY =
-    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a Pollinations API key at https://enter.pollinations.ai/?ref=classic";
 const OUR_FAULT =
-    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "Something went wrong on our side. Please try again, or use every model with a Pollinations API key at https://enter.pollinations.ai/?ref=classic";
 
 /** gen's error body, as shared/messages.js sends it */
 function expectGenError(text, status, code, message) {
@@ -991,7 +991,7 @@ test("while a free generation runs, a stream from the same IP gets a 429", async
         stream.text,
         429,
         "RATE_LIMITED",
-        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a Pollinations API key at https://enter.pollinations.ai/?ref=classic",
     );
     expect((await running).text).toBe("ok");
 });

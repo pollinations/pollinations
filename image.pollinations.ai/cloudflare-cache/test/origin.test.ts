@@ -223,7 +223,7 @@ test("a model that only runs on enter gets gen's 403 before the free limit, with
         const body = JSON.parse(text);
         expect(body.error.code, model).toBe("FORBIDDEN");
         expect(body.error.message, model).toBe(
-            `${model} isn't part of the Classic API. Use it with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+            `${model} isn't part of the Classic API. Use it with a Pollinations API key at https://enter.pollinations.ai/?ref=classic`,
         );
     }
     expect(gen.requests).toHaveLength(0);
@@ -249,9 +249,9 @@ test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", asy
 });
 
 const AT_CAPACITY =
-    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a Pollinations API key at https://enter.pollinations.ai/?ref=classic";
 const OUR_FAULT =
-    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "Something went wrong on our side. Please try again, or use every model with a Pollinations API key at https://enter.pollinations.ai/?ref=classic";
 
 test("gen's failures get gen's error body and are not stored: 503 when gen is busy, 500 when the fault is ours", async () => {
     for (const [prompt, status, code, message] of [
@@ -530,7 +530,7 @@ test("without every WEFT_* value the paywall is off: a running generation gives 
     const body = JSON.parse(held.text);
     expect(body.error.code).toBe("RATE_LIMITED");
     expect(body.error.message).toBe(
-        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a Pollinations API key at https://enter.pollinations.ai/?ref=classic",
     );
 
     // The last free generation started 44.8 s ago and has ended

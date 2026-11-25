@@ -58,6 +58,21 @@ def collect_evidence(session, issue, terms):
     if not isinstance(literals, list) or not literals:
         raise ValueError("Missing code search terms")
     file_lines = {}
+    # A reporter may already have located the bug. Include that source so the model
+    # can inspect call order or error handling even when search terms miss it.
+    reported = re.findall(r"[\w./-]+/src/[\w./-]+\.(?:tsx?|jsx?)\b", issue.get("body") or "")
+    for path in list(dict.fromkeys(reported))[:2]:
+        if path.startswith(("/", ".")) or ".." in path.split("/"):
+            continue
+        result = subprocess.run(["git", "show", f"{revision}:{path}"], capture_output=True, text=True, errors="replace")
+        if result.returncode:
+            continue
+        lines = result.stdout.splitlines()
+        file_lines[path] = lines
+        for i in range(0, min(300, len(lines)), 40):
+            key = f"{path}#L{i + 1}"
+            excerpt = "\n".join(f"{n}: {line[:250]}" for n, line in enumerate(lines[i:i + 40], i + 1))
+            evidence[key] = {"url": f"https://github.com/{REPO}/blob/{revision}/{key}", "text": excerpt}
     for term in literals[:3]:
         if not isinstance(term, str) or not 2 <= len(term.strip()) <= 100 or not term.isprintable():
             raise ValueError("Invalid code search term")

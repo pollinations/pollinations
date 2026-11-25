@@ -65,6 +65,7 @@ for (const modern of [false, true])
                 "currency_list",
                 "currency_rates",
                 "check_contrast",
+                "convert_color",
                 "compare_versions",
                 "to_fraction",
                 "convert_number_base",
@@ -284,6 +285,76 @@ test("contrast uses real ratios, with shorthand and sorted palette", async (t) =
         ["#000000", "#aaaaaa", "#ffffff"],
     );
 });
+test("color conversion round-trips hex, RGB and HSL with luminance", async (t) => {
+    const client = await clientFor(t);
+    const red = await call(client, "convert_color", { color: "#f00" });
+    assert.equal(red.hex, "#ff0000");
+    assert.deepEqual(red.rgb, { r: 255, g: 0, b: 0 });
+    assert.deepEqual(red.hsl, { h: 0, s: 100, l: 50 });
+    assert.equal(red.luminance, 0.2126);
+
+    const green = await call(client, "convert_color", { color: "#00ff00" });
+    assert.deepEqual(green.hsl, { h: 120, s: 100, l: 50 });
+    assert.equal(green.luminance, 0.7152);
+
+    const blue = await call(client, "convert_color", {
+        color: "rgb(0, 128, 255)",
+    });
+    assert.equal(blue.hex, "#0080ff");
+    assert.deepEqual(blue.hsl, { h: 210, s: 100, l: 50 });
+
+    const darkGreen = await call(client, "convert_color", {
+        color: "hsl(120, 100%, 25%)",
+    });
+    assert.equal(darkGreen.hex, "#008000");
+    assert.deepEqual(darkGreen.rgb, { r: 0, g: 128, b: 0 });
+    assert.deepEqual(darkGreen.hsl, { h: 120, s: 100, l: 25 });
+
+    assert.equal(
+        (await call(client, "convert_color", { color: "hsl(360, 100%, 50%)" }))
+            .hex,
+        "#ff0000",
+    );
+    assert.equal(
+        (await call(client, "convert_color", { color: "  #AbCdEf " })).hex,
+        "#abcdef",
+    );
+    assert.equal(
+        (await call(client, "convert_color", { color: "hsl(-120, 100%, 50%)" }))
+            .hex,
+        "#0000ff",
+    );
+    assert.equal(
+        (await call(client, "convert_color", { color: "#fff" })).luminance,
+        1,
+    );
+    assert.equal(
+        (await call(client, "convert_color", { color: "#000" })).luminance,
+        0,
+    );
+
+    for (const color of [
+        "#12",
+        "#fffff",
+        "rgb(256, 0, 0)",
+        "rgb(0, 0)",
+        "hsl(0, 101%, 50%)",
+        "hsl(0, 50%, 101%)",
+        "blue",
+    ]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "convert_color",
+                    arguments: { color },
+                })
+            ).isError,
+            true,
+            color,
+        );
+    }
+});
+
 test("Unicode flags lookalikes and invisible characters without calling the network", async (t) => {
     const client = await clientFor(t);
     const result = await call(client, "inspect_unicode", {

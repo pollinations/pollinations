@@ -4,8 +4,8 @@ import * as appGrowth from "./groups/app-growth.ts";
 import * as discordCommunity from "./groups/discord-community.ts";
 import * as githubContributions from "./groups/github-contributions.ts";
 import * as githubProfile from "./groups/github-profile.ts";
-import * as identity from "./groups/identity.ts";
 import * as modelUsage from "./groups/model-usage.ts";
+import * as referrals from "./groups/referrals.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
 export const ACCOUNT_SETUP_QUEST_GROUP: QuestGroup = {
@@ -21,7 +21,7 @@ export const QUEST_GROUPS: QuestGroup[] = [
     { id: "model-usage", ...modelUsage },
     { id: "github-profile", ...githubProfile },
     { id: "github-contributions", ...githubContributions },
-    { id: "identity", ...identity },
+    { id: "referrals", ...referrals },
 ];
 
 export async function listQuestCards(
@@ -31,26 +31,6 @@ export async function listQuestCards(
         QUEST_GROUPS.map((group) => group.listQuestCards(ctx)),
     );
     return lists.flat();
-}
-
-/**
- * Onboarding (setup) quest ids. GitHub issue quests are never onboarding
- * quests; skipping them keeps this off the GitHub API.
- */
-export async function listSetupQuestIds(
-    ctx: QuestEvaluationContext,
-): Promise<Set<string>> {
-    const lists = await Promise.all(
-        QUEST_GROUPS.filter((group) => group.id !== "github-contributions").map(
-            (group) => group.listQuestCards(ctx),
-        ),
-    );
-    return new Set(
-        lists
-            .flat()
-            .filter((card) => card.category === "setup")
-            .map(({ id }) => id),
-    );
 }
 
 export type { QuestCard };

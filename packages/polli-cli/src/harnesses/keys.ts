@@ -45,9 +45,7 @@ export const resolveHarnessKey = async (
         return accountKey;
     }
     if (login.pollenBudget != null) {
-        printInfo(
-            `${harness.label} uses the polli login and its pollen budget.`,
-        );
+        printInfo(`${harness.label} uses the polli login and its budget.`);
         return accountKey;
     }
     const name = `polli-harness-${harness.id}`;

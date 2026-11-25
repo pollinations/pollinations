@@ -1,121 +1,14 @@
-import {
-    type ChangeEvent,
-    type ReactNode,
-    useEffect,
-    useId,
-    useRef,
-    useState,
-} from "react";
+import { type ChangeEvent, type ReactNode, useEffect, useId } from "react";
 import { cn } from "../lib/cn.ts";
 import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
+import {
+    mediaActionTileClass,
+    mediaTileTint,
+    type TileModality,
+} from "../lib/media-action-tile.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
-import { IconButton } from "../primitives/IconButton.tsx";
-import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
-
-const PREVIEWABLE_IMAGE_TYPES = new Set([
-    "image/gif",
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-]);
-const PREVIEW_SIZE = 80;
-
-function isPreviewableImage(file: File): boolean {
-    return PREVIEWABLE_IMAGE_TYPES.has(file.type);
-}
-
-function PreviewPlaceholder({ icon }: { icon: ReactNode }) {
-    return (
-        <div
-            className={cn(
-                "polli:flex polli:items-center polli:justify-center polli:rounded-xl polli:bg-theme-bg-active polli:text-theme-text-soft",
-                "polli:h-20 polli:w-20",
-            )}
-        >
-            {icon}
-        </div>
-    );
-}
-
-function FilePreview({
-    file,
-    placeholderIcon,
-}: {
-    file: File;
-    placeholderIcon: ReactNode;
-}) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [canPreview, setCanPreview] = useState(() =>
-        isPreviewableImage(file),
-    );
-
-    useEffect(() => {
-        if (!isPreviewableImage(file)) {
-            setCanPreview(false);
-            return;
-        }
-
-        let cancelled = false;
-        setCanPreview(true);
-
-        async function drawPreview() {
-            try {
-                const bitmap = await createImageBitmap(file);
-                if (cancelled) {
-                    bitmap.close();
-                    return;
-                }
-
-                const canvas = canvasRef.current;
-                const context = canvas?.getContext("2d");
-                if (!canvas || !context) {
-                    bitmap.close();
-                    setCanPreview(false);
-                    return;
-                }
-
-                canvas.width = PREVIEW_SIZE;
-                canvas.height = PREVIEW_SIZE;
-
-                const scale = Math.max(
-                    PREVIEW_SIZE / bitmap.width,
-                    PREVIEW_SIZE / bitmap.height,
-                );
-                const width = bitmap.width * scale;
-                const height = bitmap.height * scale;
-                const x = (PREVIEW_SIZE - width) / 2;
-                const y = (PREVIEW_SIZE - height) / 2;
-
-                context.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
-                context.drawImage(bitmap, x, y, width, height);
-                bitmap.close();
-            } catch {
-                if (!cancelled) setCanPreview(false);
-            }
-        }
-
-        void drawPreview();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [file]);
-
-    if (!canPreview) {
-        return <PreviewPlaceholder icon={placeholderIcon} />;
-    }
-
-    return (
-        <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={file.name}
-            className="polli:h-20 polli:w-20 polli:rounded-xl"
-            width={PREVIEW_SIZE}
-            height={PREVIEW_SIZE}
-        />
-    );
-}
+import { ImageIcon, MediaFileIcon } from "../primitives/icons/index.tsx";
+import { UploadedFileTile } from "./UploadedMedia.tsx";
 
 export type FileUploadProps = {
     value: File[];
@@ -126,10 +19,14 @@ export type FileUploadProps = {
     accept?: string;
     icon?: ReactNode;
     label?: ReactNode;
+    inputLabel?: string;
     previewIcon?: ReactNode;
+    tileModality?: TileModality;
     /** Fully locks the field: no add, no remove, drops ignored. */
     disabled?: boolean;
     className?: string;
+    /** Render the add control when the caller owns the preview queue. */
+    actionsOnly?: boolean;
 };
 
 export function FileUpload({
@@ -139,15 +36,18 @@ export function FileUpload({
     maxFiles = 4,
     maxSizeBytes = 10 * 1024 * 1024,
     accept = "image/*",
-    icon = <ImageIcon className="polli:h-6 polli:w-6" />,
+    tileModality,
+    icon,
+    inputLabel,
     label = (
         <>
-            Drag images here or <span className="polli:underline">browse</span>
+            Drag here or <span className="polli:underline">browse</span>
         </>
     ),
-    previewIcon = <ImageIcon className="polli:h-5 polli:w-5" />,
+    previewIcon,
     disabled = false,
     className,
+    actionsOnly = false,
 }: FileUploadProps) {
     // A near-miss file drop should not navigate the browser away from the app.
     // Mounted upload controls share one document-level guard.
@@ -175,6 +75,7 @@ export function FileUpload({
         event.target.value = "";
     }
 
+    if (actionsOnly && !canAdd && value.length) return null;
     return (
         <fieldset
             disabled={disabled}
@@ -190,53 +91,42 @@ export function FileUpload({
             }}
         >
             <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
-                {value.map((file, index) => (
-                    <li
-                        key={`${file.name}-${index}`}
-                        title={file.name}
-                        className="polli:relative polli:list-none"
-                    >
-                        <FilePreview
-                            file={file}
-                            placeholderIcon={previewIcon}
-                        />
-                        <span className="polli:sr-only">{file.name}</span>
-                        {!disabled && (
-                            <div className="polli:absolute polli:-top-2 polli:right-1">
-                                <IconButton
-                                    intent="danger"
-                                    title={`Remove ${file.name}`}
-                                    onClick={() =>
-                                        onChange(
-                                            value.filter((_, i) => i !== index),
-                                        )
-                                    }
-                                >
-                                    <XIcon className="polli:h-3 polli:w-3" />
-                                </IconButton>
-                            </div>
-                        )}
-                    </li>
-                ))}
+                {!actionsOnly &&
+                    value.map((file, index) => (
+                        <li
+                            key={`${file.name}-${index}`}
+                            className="polli:list-none"
+                        >
+                            <UploadedFileTile
+                                file={file}
+                                modality={tileModality}
+                                previewIcon={previewIcon}
+                                disabled={disabled}
+                                onRemove={() =>
+                                    onChange(
+                                        value.filter((_, n) => n !== index),
+                                    )
+                                }
+                            />
+                        </li>
+                    ))}
                 {(canAdd || value.length === 0) && (
                     <li className="polli:list-none">
                         <label
                             htmlFor={inputId}
-                            className={cn(
-                                "polli-control polli:flex polli:h-20 polli:w-20 polli:flex-col polli:items-center polli:justify-center polli:gap-2 polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border polli:bg-theme-bg-pale polli:p-2 polli:text-center polli:text-xs polli:text-theme-text-soft polli:transition-colors",
-                                canAdd
-                                    ? "polli:cursor-pointer polli:hover:bg-theme-bg-hover"
-                                    : "polli:cursor-not-allowed",
-                            )}
+                            className={mediaActionTileClass(!canAdd)}
+                            {...mediaTileTint(tileModality)}
                         >
-                            {value.length ? (
-                                <PlusIcon className="polli:h-6 polli:w-6" />
-                            ) : (
-                                icon
-                            )}
-                            <span>{value.length ? "Add files" : label}</span>
+                            {icon ??
+                                (tileModality ? (
+                                    <MediaFileIcon modality={tileModality} />
+                                ) : (
+                                    <ImageIcon />
+                                ))}
+                            <span>{label}</span>
                             <input
                                 id={inputId}
+                                aria-label={inputLabel}
                                 type="file"
                                 accept={accept}
                                 multiple={maxFiles > 1}

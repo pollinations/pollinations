@@ -111,9 +111,33 @@ class KleinInputTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         pipeline.assert_not_called()
 
+    def test_truncated_references_return_400_before_inference(self):
+        for format in ["PNG", "JPEG"]:
+            with self.subTest(format=format):
+                buffer = BytesIO()
+                Image.new("RGB", (128, 128), "blue").save(buffer, format=format)
+                data = buffer.getvalue()
+                truncated = base64.b64encode(data[: len(data) * 3 // 4]).decode()
+                response = self.generate([reference(128, 128), truncated])
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("Invalid reference image", response.json()["detail"])
+        pipeline.assert_not_called()
+        self.generator.assert_not_called()
+
+    def test_decompression_bomb_reference_returns_400_before_inference(self):
+        # A ~24 KB PNG over Pillow's 2x MAX_IMAGE_PIXELS limit fits Gen's byte cap.
+        buffer = BytesIO()
+        Image.new("1", (20000, 10000)).save(buffer, format="PNG")
+        response = self.generate([base64.b64encode(buffer.getvalue()).decode()])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("decompression bomb", response.json()["detail"])
+        pipeline.assert_not_called()
+
     def test_real_inference_failures_are_not_reclassified_as_bad_input(self):
-        pipeline.side_effect = ValueError("Unexpected inference failure")
-        self.assertEqual(self.generate([reference(64, 64)]).status_code, 500)
+        for error in [ValueError, OSError]:
+            with self.subTest(error=error):
+                pipeline.side_effect = error("Unexpected inference failure")
+                self.assertEqual(self.generate([reference(64, 64)]).status_code, 500)
         pipeline.side_effect = handler.torch.OutOfMemoryError("GPU memory exhausted")
         self.assertEqual(self.generate([reference(64, 64)]).status_code, 503)
 

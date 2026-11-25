@@ -1,11 +1,11 @@
 import {
     Button,
     Chip,
+    formatCount,
     GitHubIcon,
     ImageIcon,
     InlineLink,
     PulseIcon,
-    Section,
     Surface,
     Text,
 } from "@pollinations/ui";
@@ -16,7 +16,10 @@ import {
     PLATFORM_LABELS,
 } from "../../../../shared/app-catalog.ts";
 import type { ListedApp } from "../backend-types.ts";
-import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
+import { CardLoading, LoadError } from "./layout/dashboard-loading.tsx";
+
+/** The public catalog every listing here appears in. */
+const APP_CATALOG_URL = "https://pollinations.ai/apps";
 
 /** The submission form every listed app started as (issue template). */
 const SUBMIT_APP_URL =
@@ -115,8 +118,7 @@ function AppCard({ app }: { app: ListedApp }) {
                             className="ml-auto shrink-0 tabular-nums"
                         >
                             <PulseIcon className="h-3 w-3" />
-                            {app.requests24h.toLocaleString("en-US")} requests ·
-                            24h
+                            {formatCount(app.requests24h)} req /24h
                         </Chip>
                     )}
                 </div>
@@ -150,11 +152,7 @@ function AppCard({ app }: { app: ListedApp }) {
                     ))}
                     {/* Same look as the keys page's "Earnings on" chip. */}
                     {app.byop && (
-                        <Chip
-                            intent="neutral"
-                            size="sm"
-                            className="text-intent-success-text"
-                        >
+                        <Chip intent="success" size="sm">
                             Pollinations Pay
                         </Chip>
                     )}
@@ -200,16 +198,9 @@ function AppCard({ app }: { app: ListedApp }) {
     );
 }
 
-export function MyApps({
-    apps,
-    githubConnected,
-    onRetry,
-}: {
-    apps: ListedApp[] | null | undefined;
-    githubConnected: boolean;
-    onRetry: () => Promise<void>;
-}) {
-    const submitAction = (
+/** Opens the app submission form; the Apps tab shows it once you have apps. */
+export function SubmitAppButton() {
+    return (
         <Button
             intent="commit"
             as="a"
@@ -221,60 +212,64 @@ export function MyApps({
             Submit
         </Button>
     );
+}
 
-    return (
-        <Section
-            title="My Apps"
-            action={apps && apps.length > 0 ? submitAction : undefined}
-        >
-            {apps === undefined ? (
-                <PageStatus />
-            ) : apps === null ? (
-                <LoadError onRetry={onRetry} paths={["/account/apps"]}>
-                    Couldn’t load your apps. Please try again.
-                </LoadError>
-            ) : (
-                <>
-                    {apps.length === 0 ? (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{submitAction}</div>
-                            <p className="text-sm text-theme-text-muted">
-                                Apps you submit to the community catalog show up
-                                here once a maintainer approves them.
-                            </p>
-                        </Surface>
-                    ) : (
-                        <div className="@container">
-                            <div className="grid auto-rows-fr grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
-                                {apps.map((app) => (
-                                    <AppCard
-                                        key={`${app.name}|${app.webUrl}`}
-                                        app={app}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        {githubConnected ? (
-                            <span>
-                                A listing is matched to your connected GitHub
-                                account, so submit from that account.
-                            </span>
-                        ) : (
-                            <span>
-                                Listings are matched to a GitHub account.{" "}
-                                <InlineLink href="/account">
-                                    Connect GitHub
-                                </InlineLink>{" "}
-                                on your account page, then submit from that
-                                account.
-                            </span>
-                        )}
+/** Your apps in the community catalog: the My listings card's Apps tab. */
+export function MyApps({
+    apps,
+    githubConnected,
+    onRetry,
+}: {
+    apps: ListedApp[] | null | undefined;
+    githubConnected: boolean;
+    onRetry: () => Promise<void>;
+}) {
+    return apps === undefined ? (
+        <CardLoading />
+    ) : apps === null ? (
+        <LoadError onRetry={onRetry} paths={["/account/apps"]}>
+            Couldn’t load your apps. Please try again.
+        </LoadError>
+    ) : (
+        <>
+            {apps.length === 0 ? (
+                <Surface className="p-6 text-center">
+                    <div className="mb-2">
+                        <SubmitAppButton />
+                    </div>
+                    <p className="text-sm text-theme-text-muted">
+                        Submit your app for a maintainer to review.
                     </p>
-                </>
+                </Surface>
+            ) : (
+                <div className="@container">
+                    <div className="grid auto-rows-fr grid-cols-1 gap-3 @min-[40rem]:grid-cols-2">
+                        {apps.map((app) => (
+                            <AppCard
+                                key={`${app.name}|${app.webUrl}`}
+                                app={app}
+                            />
+                        ))}
+                    </div>
+                </div>
             )}
-        </Section>
+            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <GitHubIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                    Approved apps join the{" "}
+                    <InlineLink href={APP_CATALOG_URL}>app catalog</InlineLink>{" "}
+                    and show here for the GitHub account that submitted them.
+                    {!githubConnected && (
+                        <>
+                            {" "}
+                            <InlineLink href="/account">
+                                Connect GitHub
+                            </InlineLink>{" "}
+                            to see yours.
+                        </>
+                    )}
+                </span>
+            </p>
+        </>
     );
 }

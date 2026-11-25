@@ -15,7 +15,7 @@ service = "pollinations-composio-mcp"
 [dev]
 port = 3000
 
-# Never add a `binding` here. Enter is gen's dispatch-namespace outbound Worker:
+# Never add a `binding` here. Production Gen uses Enter as its outbound Worker:
 # with an assets binding Cloudflare rejects POST /deployments (10013) and live
 # /api/* returns 503 (1105). See #18189 and #18552; checked by
 # scripts/assets-binding.test.mjs.
@@ -118,11 +118,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUG
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
-# Explicitly detach cron schedules. Deleting the [triggers] block leaves
-# previously-deployed crons attached (crons undefined = unchanged); only
-# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
+# Rebuilds the quest leaderboard before its 20-minute copy expires.
 [env.production.triggers]
-crons = []
+crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -153,8 +151,7 @@ binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
 [[env.production.kv_namespaces]]
-# production-pollinations-setup-holds: Setup reward holds, shared with
-# infra-watch, which writes domain holds and reads review requests
+# Domain detection input shared with infra-watch; D1 owns account restrictions.
 binding = "SETUP_HOLDS"
 id = "957b3d13dc2c4142ab22fdf889f27bec"
 
@@ -167,6 +164,7 @@ simple = { limit = 600, period = 10 }
 
 [env.production.vars]
 ENVIRONMENT = "production"
+D1_CALL_TELEMETRY = "on"
 X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
 WEFT_FACILITATOR_URL = "https://x402.weft.network"
 WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
@@ -196,9 +194,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS7
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
-# See production note above: explicit empty crons detaches the schedule.
+# Rebuilds the quest leaderboard before its 20-minute copy expires.
 [env.staging.triggers]
-crons = []
+crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
@@ -238,6 +236,7 @@ simple = { limit = 600, period = 10 }
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+D1_CALL_TELEMETRY = "on"
 X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
 WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
 WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"

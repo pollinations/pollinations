@@ -17,7 +17,6 @@ const modelDef = { name: "test-model" };
 describe("processParameters", () => {
     it.each([
         "anthropic/claude-sonnet-4.6",
-        "inception/mercury-2.5-preview",
         "qwen/qwen3.8-flash",
         "openai/gpt-5.4",
         "openai/gpt-6-astra",
@@ -208,19 +207,57 @@ describe("processParameters", () => {
         "openai/gpt-5-nano",
         "openai/gpt-5.4",
         "openai/gpt-5.4-mini",
+        "openai/gpt-5.4-mini:openai",
         "openai/gpt-5.5",
+        "openai/gpt-5.5:aws",
         "openai/gpt-5.6-sol",
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
         "openai/gpt-6-astra:aws",
+        "openai/gpt-5.3-codex",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-sol",
+        "openai/gpt-6.2-astra",
+        "openai/gpt-6.2-sol",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])(
-        "removes sampling without changing reasoning or reintroducing defaults for %s",
+        "removes sampling, keeps accepted reasoning levels and adds no defaults for %s",
         async (model) => {
             const transform = findModelByName(model)?.transform;
             if (!transform) throw new Error("expected catalog transform");
+            // Only the levels the provider rejects are remapped (#19784).
+            const remapped: Record<string, string> =
+                (
+                    {
+                        "openai/gpt-5.4-nano": { max: "xhigh" },
+                        "openai/gpt-5.4": { max: "xhigh" },
+                        "openai/gpt-5-nano": { max: "high" },
+                        "openai/gpt-5.4-mini": { max: "xhigh" },
+                        "openai/gpt-5.4-mini:openai": { max: "xhigh" },
+                        "openai/gpt-5.5": { max: "xhigh", minimal: "low" },
+                        "openai/gpt-5.5:aws": { max: "xhigh", minimal: "low" },
+                        "openai/gpt-5.6-sol": { minimal: "low" },
+                        "openai/gpt-5.6-terra": { minimal: "low" },
+                        "openai/gpt-5.6-luna": { minimal: "low" },
+                        "pollinations/midijourney-large": {
+                            max: "xhigh",
+                            minimal: "low",
+                        },
+                        "pollinations/midijourney": { max: "xhigh" },
+                        "openai/gpt-6-astra": { none: "low", minimal: "low" },
+                        "openai/gpt-6-astra:aws": { minimal: "low" },
+                        "openai/gpt-5.3-codex": {
+                            max: "xhigh",
+                            minimal: "low",
+                        },
+                        "openai/gpt-6.1-sol": { none: "low", minimal: "low" },
+                        "openai/gpt-6-sol": { minimal: "low" },
+                        "openai/gpt-6.2-astra": { none: "low" },
+                        "openai/gpt-6.2-sol": { none: "low" },
+                    } as Record<string, Record<string, string>>
+                )[model] ?? {};
             for (const reasoning_effort of [
                 undefined,
                 "none",
@@ -268,7 +305,8 @@ describe("processParameters", () => {
                         expect(result.options).not.toHaveProperty(key);
                     }
                     expect(result.options.reasoning_effort).toBe(
-                        reasoning_effort,
+                        (reasoning_effort && remapped[reasoning_effort]) ??
+                            reasoning_effort,
                     );
                     expect(result.options).toMatchObject({
                         stream,
@@ -293,6 +331,8 @@ describe("processParameters", () => {
         "anthropic/claude-fable-5",
         "anthropic/claude-fable-5:openrouter:vertex-global",
         "anthropic/claude-fable-5.1",
+        "anthropic/claude-fable-5.2",
+        "anthropic/claude-fable-5.2:anthropic",
     ])(
         "removes sampling while keeping the model's existing thinking behavior for %s",
         async (model) => {

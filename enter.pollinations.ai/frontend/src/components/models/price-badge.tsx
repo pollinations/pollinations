@@ -11,12 +11,14 @@ import {
     Dropdown,
     DropdownItem,
     ExpandIcon,
+    formatCount,
     ImageIcon,
     McpIcon,
     MicIcon,
     SearchIcon,
     SparklesIcon,
     TokensIcon,
+    ToolIcon,
     Tooltip,
     VideoIcon,
     WalletIcon,
@@ -45,18 +47,6 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     audioOut: "audio",
 };
 
-const PRICE_UNIT_SUFFIX: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-    megapixel: "/MP",
-    character: "/K chars",
-    byte: "/K bytes",
-    image: "/image",
-};
-
 const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     text: { input: "Text in", output: "Text out" },
     image: { input: "Image in", output: "Image out" },
@@ -76,25 +66,23 @@ export const formatPriceLine = ({
     price,
     unit,
 }: ModelPriceLine): { label: string; value: string } => {
-    const { value, tokenScale } = formatDisplayPrice(price, unit === "token");
-    const suffix =
-        unit === "token" ? `/${tokenScale}` : PRICE_UNIT_SUFFIX[unit];
+    const { value, suffix } = formatDisplayPrice(
+        price,
+        unit,
+        kind === "audioIn" || kind === "audioOut",
+    );
     return {
         label: PRICE_LINE_LABELS[kind][direction],
         value: `$${value}${suffix}`,
     };
 };
 
-const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
-
 const formatAdjustmentUnit = ({
     kind,
     quantity,
     unit,
 }: Pick<ModelPriceAdjustment, "kind" | "quantity" | "unit">): string => {
-    const quantityLabel = compactNumber
-        .format(quantity)
-        .replace(/^1(?=[A-Z])/, "");
+    const quantityLabel = formatCount(quantity).replace(/^1(?=[A-Z])/, "");
     if (kind === "search_request") {
         return quantity === 1 ? "req" : `${quantityLabel} req`;
     }
@@ -107,6 +95,7 @@ const formatAdjustmentUnit = ({
         if (unit === "second") return "sec";
         if (unit === "page") return "page";
         if (unit === "generation") return "gen";
+        if (unit === "call") return "call";
     }
     return `${quantityLabel} ${unit}`;
 };
@@ -116,7 +105,11 @@ export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
 };
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
-    const displayedPrice = formatDisplayPrice(price, unit === "token");
+    const displayedPrice = formatDisplayPrice(
+        price,
+        unit,
+        subKinds.every((kind) => kind === "audioIn" || kind === "audioOut"),
+    );
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
@@ -139,9 +132,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
             </span>
             <span>
                 ${displayedPrice.value}
-                {unit === "token"
-                    ? `/${displayedPrice.tokenScale}`
-                    : PRICE_UNIT_SUFFIX[unit]}
+                {displayedPrice.suffix}
             </span>
         </Chip>
     );
@@ -462,12 +453,20 @@ export const UsagePriceRows: FC<{
               ? ClockIcon
               : adjustment.kind === "page"
                 ? BookIcon
-                : adjustment.kind === "cache_storage"
-                  ? PRICE_ICON.cached
-                  : adjustment.kind in PRICE_ICON
-                    ? PRICE_ICON[adjustment.kind as PriceKind]
-                    : undefined;
-        const unit = `/${formatAdjustmentUnit(adjustment)}`;
+                : adjustment.kind === "tool_call"
+                  ? ToolIcon
+                  : adjustment.kind === "cache_storage"
+                    ? PRICE_ICON.cached
+                    : adjustment.kind in PRICE_ICON
+                      ? PRICE_ICON[adjustment.kind as PriceKind]
+                      : undefined;
+        // A sub-cent rate per second reads better per hour, as on the
+        // Models list's audio rates.
+        const perHour =
+            adjustment.unit === "second" &&
+            adjustment.quantity === 1 &&
+            Number(adjustment.price) < 0.01;
+        const unit = perHour ? "/hr" : `/${formatAdjustmentUnit(adjustment)}`;
         const unitLabel = adjustment.suffix
             ? `${unit} · ${adjustment.suffix}`
             : unit;
@@ -494,7 +493,13 @@ export const UsagePriceRows: FC<{
                     }
                 />
                 <LedgerPriceValue
-                    value={`$${formatDisplayPrice(adjustment.price).value}`}
+                    value={`$${
+                        formatDisplayPrice(
+                            adjustment.price,
+                            perHour ? "second" : undefined,
+                            perHour,
+                        ).value
+                    }`}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -667,7 +672,8 @@ export const ModelPricingLedger: FC<{
             price === cacheWritePrice && combinedCacheWriteValue
                 ? combinedCacheWriteValue
                 : price.price,
-            price.unit === "token",
+            price.unit,
+            price.kind === "audioIn" || price.kind === "audioOut",
         );
         const rows = [
             {
@@ -676,8 +682,8 @@ export const ModelPricingLedger: FC<{
                 value: displayedPrice.value,
                 unit:
                     price.unit === "token"
-                        ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_UNIT_SUFFIX[price.unit],
+                        ? `${displayedPrice.suffix} tokens`
+                        : displayedPrice.suffix,
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:
@@ -748,7 +754,7 @@ export const ModelPricingLedger: FC<{
             {requestBadge && (
                 <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
                     {align === "right" && <span aria-hidden="true" />}
-                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <LedgerLabel Icon={WalletIcon} label="Balance" />
                     <div className="flex justify-end pr-2">{requestBadge}</div>
                     <span aria-hidden="true" />
                 </div>

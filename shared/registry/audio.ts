@@ -308,7 +308,7 @@ export const AUDIO_VOICES = [
     ...QWEN_AUDIO_TTS_VOICES,
 ];
 
-// Requests without a model must work on Quest Pollen, so the default stays
+// Requests without a model must work on Quest balance, so the default stays
 // on a model that is not paid-only.
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
@@ -325,7 +325,7 @@ const AUDIO_BASE_SERVICES = {
         cost: { promptAudioSeconds: 0.1 / 3600 },
         title: "MAI Transcribe 2",
         description:
-            "Multilingual file transcription with automatic language detection and timed segments",
+            "Transcribe a recording with timestamps for each passage. The model detects the language.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -344,7 +344,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven v4",
         description:
-            "Expressive speech in 90+ languages with audio tags and character timestamps",
+            "Read a script in over 90 languages, using cues in the text to shape the performance.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -368,7 +368,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven v4 Turbo",
         description:
-            "Low-latency expressive speech in 90+ languages with audio tags and character timestamps",
+            "Generate speech quickly in over 90 languages, with cues in the script to guide delivery.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -392,8 +392,7 @@ const AUDIO_BASE_SERVICES = {
             completionAudioTokens: 0.08 / 1000,
         },
         title: "Eleven v3",
-        description:
-            "Expressive speech with emotion controls, audio tags, and character timestamps",
+        description: "Read a script aloud with cues for pauses and emotion.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -419,7 +418,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven Flash v2.5",
         description:
-            "Low-latency speech in 32 languages with character timestamps",
+            "Read text aloud with little delay in any of 32 languages.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -449,7 +448,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven Multilingual v2",
         description:
-            "Emotionally rich speech in 29 languages with character timestamps",
+            "Narrate text in 29 languages, with timestamps for highlighting the words as you listen.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -474,7 +473,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Text to Dialogue",
         description:
-            "Multi-speaker conversations with expressive voices and audio cues",
+            "Turn a script into a conversation with a different voice for each speaker.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -493,7 +492,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Voice Changer",
         description:
-            "Preserves delivery and emotion while transforming speaker identity",
+            "Change the voice in a recording while keeping the speaker's timing and emotion.",
         inputModalities: ["audio"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
@@ -513,7 +512,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Voice Isolator",
         description:
-            "Removes background noise while preserving clear spoken audio",
+            "Remove background noise from audio or video so the speaker is easier to hear.",
         inputModalities: ["audio", "video"],
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
@@ -552,7 +551,7 @@ const AUDIO_BASE_SERVICES = {
         ),
         title: "Stem Separation",
         description:
-            "Separate vocals and instruments into two or six downloadable audio tracks",
+            "Separate vocals from the accompaniment, or split a recording into six tracks for mixing.",
         inputModalities: ["audio"],
         outputModalities: ["audio"],
         supportedEndpoints: ["/alpha/audio/stem-separation"],
@@ -574,7 +573,8 @@ const AUDIO_BASE_SERVICES = {
             completionAudioSeconds: 0.0025,
         },
         title: "Eleven Music",
-        description: "Studio-grade music from a text prompt or reference track",
+        description:
+            "Compose music from a description, optionally using a reference track to guide the sound.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 3,
@@ -596,7 +596,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Eleven Music v2.5",
         description:
-            "Richer, better prompt-following music from text or a reference track",
+            "Compose music from a detailed prompt or guide the result with a reference track.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 3,
@@ -617,7 +617,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Lyria 3.5",
         description:
-            "Full songs with vocals or instrumental arrangements; describe structure and approximate duration in the prompt",
+            "Compose a full song with vocals or instruments and describe how each section should sound.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -636,10 +636,26 @@ const AUDIO_BASE_SERVICES = {
         flatRate: true,
         title: "Lyria 3 Clip Preview",
         description:
-            "30-second music with vocals, lyrics, or instrumental arrangements",
+            "Turn an idea into a 30-second music clip, with vocals or instruments alone.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         allowedDurations: [30],
+    },
+    "elevenlabs/eleven-text-to-sound-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-11-10").getTime(),
+        priceMultiplier: 1,
+        // Workspace analytics: $0.002/submitted second; auto-duration costs $0.01.
+        cost: { completionAudioSeconds: 0.002 },
+        title: "Eleven Text to Sound v3",
+        description:
+            "Describe a sound effect or vocal sound and turn it into a clip or repeating loop.",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
@@ -656,7 +672,8 @@ const AUDIO_BASE_SERVICES = {
             completionAudioSeconds: 0.002,
         },
         title: "Eleven Text to Sound v2",
-        description: "Sound effects from a text description",
+        description:
+            "Turn a short description, such as footsteps on gravel, into a sound effect.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -675,7 +692,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Sonilo 1.1 SFX",
         description:
-            "Sound effects timed to a video, as a separate audio track",
+            "Add sound effects that follow the action in a video and download them as a separate track.",
         inputModalities: ["text", "video"],
         outputModalities: ["audio"],
     },
@@ -692,7 +709,8 @@ const AUDIO_BASE_SERVICES = {
             promptAudioSeconds: 0.163 / 3600,
         },
         title: "Whisper Large V3",
-        description: "Accurate, affordable speech-to-text transcription",
+        description:
+            "Turn recorded speech into a transcript or a timed subtitle file.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -714,7 +732,24 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "GPT Transcribe",
         description:
-            "Fast multilingual speech recognition with optional language and prompt context",
+            "Transcribe speech in multiple languages and supply context for names or specialized terms.",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "elevenlabs/scribe-v3": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-11-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // https://elevenlabs.io/pricing/api — base transcription, no paid extras.
+        cost: { promptAudioSeconds: 0.2 / 3600 },
+        title: "Scribe v3",
+        description:
+            "Transcribe a conversation with speaker labels and a timestamp for each word.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -728,11 +763,12 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scale plan: Scribe batch $0.22/hour
-            promptAudioSeconds: 0.22 / 3600,
+            // ElevenLabs Scale API plan: Scribe batch $0.20/hour (2026-11-10)
+            promptAudioSeconds: 0.2 / 3600,
         },
         title: "Scribe v2",
-        description: "Transcription in 90+ languages with speaker labels",
+        description:
+            "Transcribe interviews in over 90 languages and label who said what.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -751,7 +787,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Grok Transcribe",
         description:
-            "Fast multilingual speech recognition with word timestamps, speaker labels, and text formatting",
+            "Turn speech into formatted text with speaker labels and word timestamps.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -774,7 +810,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Gemini 3.5 Transcribe",
         description:
-            "Speech recognition with word timestamps and speaker labels for up to eight speakers",
+            "Transcribe a discussion and label the voices of up to eight speakers.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -793,7 +829,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Grok TTS",
         description:
-            "Expressive multilingual speech across 28 built-in voices with inline style controls",
+            "Read text in one of 28 voices, with cues in the script for how each line should sound.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
@@ -810,8 +846,7 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: { completionAudioTokens: 15 / 1_000_000 },
         title: "TTS-1",
-        description:
-            "Low-latency speech synthesis with six voices and six output formats",
+        description: "Turn text into speech quickly using one of six voices.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
@@ -825,10 +860,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-09-29").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        cost: { completionAudioTokens: 30 / 1_000_000 },
+        cost: { completionAudioTokens: 36.3 / 1_000_000 },
         title: "TTS-1 HD",
-        description:
-            "Higher-quality speech synthesis with six voices and six output formats",
+        description: "Generate high-quality narration in one of six voices.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
@@ -851,7 +885,7 @@ const AUDIO_BASE_SERVICES = {
         priceUnits: { completionAudioTokens: { unit: "token" } },
         title: "Gemini 3.8 Flash TTS",
         description:
-            "Expressive, style-steerable speech across 30 voices for creative narration",
+            "Narrate a passage in one of 30 voices and describe the delivery you want.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...GEMINI_TTS_VOICES],
@@ -872,7 +906,7 @@ const AUDIO_BASE_SERVICES = {
         },
         priceUnits: { completionAudioTokens: { unit: "token" } },
         title: "Gemini 3.8 Flash Lite TTS",
-        description: "Fast, high-throughput speech across 30 voices",
+        description: "Generate spoken clips quickly in a choice of 30 voices.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...GEMINI_TTS_VOICES],
@@ -916,7 +950,8 @@ const AUDIO_BASE_SERVICES = {
             ],
         ),
         title: "Universal-2",
-        description: "Fast transcription with support for 99 languages",
+        description:
+            "Turn speech in 99 languages into transcripts or timed subtitles.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -1005,7 +1040,7 @@ const AUDIO_BASE_SERVICES = {
         ),
         title: "Universal-3.5 Pro",
         description:
-            "High-accuracy transcription with multilingual code switching and prompts",
+            "Transcribe conversations even when speakers switch languages. Supply context for unfamiliar words.",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
@@ -1035,7 +1070,8 @@ const AUDIO_BASE_SERVICES = {
             completionAudioTokens: 0.0376,
         },
         title: "Stable Audio 3 Medium",
-        description: "Long-form stereo music and soundscapes in studio quality",
+        description:
+            "Create stereo music or soundscapes that run for over six minutes.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 1,
@@ -1068,11 +1104,30 @@ const AUDIO_BASE_SERVICES = {
         cacheVersion: "2026-10-21-a2a-duration",
         title: "Stable Audio 3 Large",
         description:
-            "Highest-quality long-form stereo music generation; priced per generation",
+            "Create long stereo music tracks or restyle a recording for a fixed price per generation.",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         minDuration: 1,
         maxDuration: 380,
+    },
+    "zyphra/zonos3-mini": {
+        aliases: [],
+        provider: "vast",
+        publisher: "Zyphra",
+        category: "audio",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 31.25,
+        // Loaded cost measured on a Vast RTX 3060.
+        cost: { completionAudioTokens: 0.16 / 1_000_000 },
+        priceUnits: { completionAudioTokens: { unit: "byte" } },
+        title: "ZONOS3-Mini",
+        description:
+            "Read text aloud in the Alloy voice or clone a voice from a reference recording.",
+        inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+        voices: ["alloy"],
+        supportedEndpoints: ["/v1/audio/speech"],
     },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],
@@ -1089,7 +1144,7 @@ const AUDIO_BASE_SERVICES = {
         priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "Fish Audio S2.1 Pro",
         description:
-            "Multilingual expressive speech with natural-language emotion and delivery control",
+            "Read a passage aloud in multiple languages and describe the emotion you want the voice to convey.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -1105,7 +1160,7 @@ const AUDIO_BASE_SERVICES = {
         cost: { completionAudioTokens: 22 / 1_000_000 },
         title: "MAI-Voice-2.1",
         description:
-            "Expressive speech across 23 languages with consistent voices for long-form narration; mp3 or 24 kHz pcm",
+            "Narrate long passages in a consistent voice across 23 languages.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...MAI_VOICE_21_VOICES],
@@ -1122,7 +1177,7 @@ const AUDIO_BASE_SERVICES = {
         cost: { completionAudioTokens: 15 / 1_000_000 },
         title: "MAI-Voice-2.1 Flash",
         description:
-            "Low-latency expressive speech across 23 languages for voice agents; mp3 or 24 kHz pcm",
+            "Turn written replies into speech with little delay in any of 23 languages.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...MAI_VOICE_21_VOICES],
@@ -1141,7 +1196,7 @@ const AUDIO_BASE_SERVICES = {
             completionAudioTokens: 0.01 / 1000,
         },
         title: "Qwen3-TTS Flash",
-        description: "Fast multilingual text-to-speech at low cost",
+        description: "Read text aloud quickly in multiple languages.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -1165,7 +1220,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Qwen-Audio 3.0 TTS Flash",
         description:
-            "Low-latency speech you can direct with emotion, tone and dialect instructions",
+            "Turn text into speech and describe the tone, emotion or dialect you want.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...QWEN_AUDIO_TTS_VOICES],
@@ -1184,7 +1239,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "CSM 1B",
         description:
-            "English conversational speech with six reading and dialogue voices",
+            "Read English dialogue or narration in one of six conversational voices.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...CSM_VOICES],
@@ -1203,7 +1258,7 @@ const AUDIO_BASE_SERVICES = {
         },
         title: "Kokoro 82M",
         description:
-            "Lightweight multilingual speech across 54 voices and eight languages",
+            "Read text aloud with a choice of 54 voices across eight languages.",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...KOKORO_VOICES],

@@ -60,15 +60,15 @@ type TopUpPanelProps = {
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `${formatPollenPackValue(amountUsd)} pollen`
-        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} pollen`;
+        ? `$${formatPollenPackValue(amountUsd)}`
+        : `From $${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)}`;
 // Every text each label can show, so it keeps the widest one's size.
 const REFILL_LABELS = [
     null,
     ...POLLEN_PACKS.filter(isAutoTopUpPack).map((pack) => pack.amountUsd),
 ].map(refillLabel);
 const buyLabel = (amountUsd: number | undefined) =>
-    amountUsd ? `Buy ${formatPollenPackValue(amountUsd)} pollen` : "Buy pollen";
+    amountUsd ? `Top up $${formatPollenPackValue(amountUsd)}` : "Top up";
 const BUY_LABELS = [
     undefined,
     ...POLLEN_PACKS.map((pack) => pack.amountUsd),
@@ -232,7 +232,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         <Switch
             ariaLabel={
                 billing?.autoTopUp.enabled
-                    ? `Auto top-up, ${status?.tab.label} Pollen`
+                    ? `Auto top-up, $${status?.tab.label}`
                     : "Auto top-up"
             }
             size="md"
@@ -306,7 +306,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     <div className="inline-flex flex-row-reverse items-center gap-2 text-sm font-semibold text-theme-text-strong sm:flex-row">
                         <span className="flex flex-col items-start leading-tight sm:items-end">
                             <span>Auto top-up</span>
-                            {/* It buys paid Pollen: the Paid card's icon and
+                            {/* It buys paid balance: the Paid card's icon and
                                 colour while on, greyed while off. Same weight
                                 and icon both ways, so nothing moves. */}
                             <span className="text-xs font-semibold tabular-nums">
@@ -438,7 +438,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 // No inline wrapper: the switch stays put.
                                 displayContents
                                 ariaLabel="Why auto top-up is unavailable"
-                                content="Choose 5 Pollen or more to enable auto top-up."
+                                content="Choose $5 or more to enable auto top-up."
                             >
                                 {autoTopUpSwitch}
                             </Tooltip>

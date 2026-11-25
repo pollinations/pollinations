@@ -79,7 +79,7 @@ API contract: https://platform.claude.com/docs/en/api/http/admin/cost_report/ret
 ## Console, Team and personal subscriptions
 
 - API balances: https://platform.claude.com/settings/billing. Verify Myceli.AI
-  and the registry login. Read purchased credits separately from promotional
+  and the journal login. Read purchased credits separately from promotional
   lots. Record each lot's scope, granted date and UTC expiry. Use the detailed
   billing balance; preserve any discrepancy with the rounded sidebar badge.
 - Team plan: https://claude.ai/admin-settings/billing. Select Pollinations in

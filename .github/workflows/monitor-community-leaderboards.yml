@@ -30,13 +30,16 @@ jobs:
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: operations/infra-watch
+        working-directory: operations/monitoring/community-leaderboards
     steps:
-      # The script and secrets that match the deployed Worker.
+      # The production script, and infra-watch's secrets (its Tinybird read
+      # token and the Community Watch webhook).
       - uses: actions/checkout@v5
         with:
           ref: production
-          sparse-checkout: operations/infra-watch
+          sparse-checkout: |
+            operations/monitoring/community-leaderboards
+            operations/monitoring/infra-watch
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
@@ -47,4 +50,4 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           BOARDS: ${{ inputs.boards || 'text image' }}
-        run: sops exec-env secrets.vars.json "node leaderboard/post.mjs $BOARDS"
+        run: sops exec-env ../infra-watch/secrets/secrets.vars.json "node post.mjs $BOARDS"

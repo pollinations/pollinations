@@ -12,6 +12,7 @@ import {
 } from "@/utils/text-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
+    callerCacheScope,
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
@@ -41,21 +42,50 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Agents carry a scope; everything else stays shared. An agent run gets
-        // its own entry, so a repeat runs its tools again; the coordinator still
-        // hands a non-streaming result to its caller through that entry.
+        // seed -1 asks for a fresh generation, so each request gets its own entry.
+        const seed =
+            c.req.method === "GET" || c.req.method === "HEAD"
+                ? Number(c.req.query("seed"))
+                : (
+                      c.req.valid("json" as never) as
+                          | { seed?: number }
+                          | undefined
+                  )?.seed;
+        if (variables.model?.requested?.includes(",") || seed === -1) {
+            c.set("generationCachePrivate", true);
+        }
+        // Agent runs are unique; caller lists are stable per key because their
+        // choices depend on that key's permissions and available budget.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : undefined;
+            : seed === -1
+              ? `random-seed:${crypto.randomUUID()}`
+              : variables.model?.requested?.includes(",")
+                ? `caller-list:${callerCacheScope(variables.auth)}`
+                : undefined;
+        const cacheVersions = [
+            variables.model?.definition.cacheVersion,
+            ...(variables.model?.fallbackEntries?.map(
+                ({ definition }) => definition.cacheVersion,
+            ) ?? []),
+        ].filter((version): version is string => version !== undefined);
         return generateCacheKey(
             c.req.raw,
             bodyText,
-            partition,
+            cacheVersions.length
+                ? JSON.stringify([partition, ...new Set(cacheVersions)])
+                : partition,
             getRequiredSafetyFeatures(variables.model),
         );
     },
-    get: getCachedResponse,
+    async get(c, cacheKey) {
+        const response = await getCachedResponse(c, cacheKey);
+        if (response && c.var.generationCachePrivate) {
+            response.headers.set("Cache-Control", "private, no-store");
+        }
+        return response;
+    },
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
@@ -68,7 +98,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
         });
         captured.headers.set("X-Cache", "MISS");
         captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
-        captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+        captured.headers.set(
+            "Cache-Control",
+            c.var.generationCachePrivate
+                ? "private, no-store"
+                : IMMUTABLE_CACHE_CONTROL,
+        );
         return { response: captured, write: capture.write };
     },
 };

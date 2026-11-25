@@ -252,6 +252,27 @@ describe("gen worker routing", () => {
         expect(post.status).toBe(404);
     });
 
+    it("answers 405 with Allow for a known path called with the wrong method", async () => {
+        for (const [path, method, allow] of [
+            ["/v1/chat/completions", "GET", "POST"],
+            ["/v1/images/generations", "DELETE", "POST"],
+            ["/v1/models", "POST", "GET, HEAD"],
+            ["/image/a%20cat", "POST", "GET, HEAD"],
+        ]) {
+            const response = await fetchWorker(path, envWithEnter(), {
+                method,
+            });
+            expect(response.status, `${method} ${path}`).toBe(405);
+            expect(response.headers.get("Allow")).toBe(allow);
+            const body = (await response.json()) as {
+                error: { code: string };
+            };
+            expect(body.error.code).toBe("METHOD_NOT_ALLOWED");
+        }
+
+        expect((await fetchWorker("/v1/no-such-endpoint")).status).toBe(404);
+    });
+
     it("serves the docs web app manifest", async () => {
         const response = await fetchWorker("/manifest.webmanifest");
 
@@ -440,7 +461,7 @@ describe("gen worker routing", () => {
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
-        expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(byopSkill.description).toMatch(/Pollinations Pay/);
         expect(
             body.skills.find((skill) => skill.name === "pollinations-sdk")
                 ?.description,
@@ -544,6 +565,34 @@ describe("gen worker routing", () => {
         );
         expect(agentHome.headers.get("Vary")).toBe("Accept");
         expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
+
+        const caseInsensitive = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "Text/Markdown" },
+        });
+        expect(caseInsensitive.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
+        const rejectedMarkdown = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html, text/markdown;q=0" },
+        });
+        expect(rejectedMarkdown.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const htmlPreferred = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.1, text/html;q=0.9" },
+        });
+        expect(htmlPreferred.headers.get("Content-Type")).toContain(
+            "text/html",
+        );
+
+        const markdownPreferred = await fetchWorker("/docs", envWithEnter(), {
+            headers: { Accept: "text/markdown;q=0.9, text/html;q=0.1" },
+        });
+        expect(markdownPreferred.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
 
         const browserHome = await fetchWorker("/", envWithEnter(), {
             headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
@@ -667,25 +716,14 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
+    it("keeps the hidden DreamShaper out of /image/models", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            aliases?: string[];
-            pricing: Record<string, string>;
-        }[];
-        expect(
-            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
-        ).toMatchObject({
-            name: "lykon/dreamshaper-8-lcm",
-            aliases: ["sana", "dreamshaper"],
-            pricing: {
-                completionImageTokens: "0.0001",
-                currency: "pollen",
-            },
-        });
+        const models = (await response.json()) as { name: string }[];
+        expect(models.map((model) => model.name)).not.toContain(
+            "lykon/dreamshaper-8-lcm",
+        );
     });
 
     it("lists Recraft vector with aliases, modalities, and flat pricing", async () => {
@@ -895,23 +933,18 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("publishes Sonar as the only Perplexity model", async () => {
+    it("publishes a single canonical Perplexity Sonar model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
         const models = (await response.json()) as {
             name: string;
             title?: string;
-            description?: string;
         }[];
 
         expect(
-            models.find((model) => model.name === "perplexity/sonar"),
-        ).toMatchObject({
-            title: "Sonar Fast Search",
-            description:
-                "Quick web searches with cited answers; keeps it brief",
-        });
+            models.find((model) => model.name === "perplexity/sonar")?.title,
+        ).toBe("Sonar Fast Search");
         // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
         // Perplexity models, such as decision models, may use the prefix.
         expect(

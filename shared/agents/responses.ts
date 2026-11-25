@@ -1,5 +1,6 @@
 import {
     APICallError,
+    jsonSchema,
     type ModelMessage,
     type ToolCallPart,
     type ToolResultPart,
@@ -19,6 +20,7 @@ import {
     ResponseFunctionCallOutputSchema,
     ResponseFunctionCallSchema,
 } from "../schemas/response-function-items.ts";
+import { validateUserMediaUrl } from "../user-media-url.ts";
 import { parseFunctionName } from "./function-items.ts";
 import { safeMcpModelOutput } from "./mcp-output.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
@@ -166,6 +168,38 @@ function userContent(content: unknown): UserMessage["content"] {
             return {
                 type: "image" as const,
                 image: stringValue(part.image_url, "input"),
+                ...(providerOptions ? { providerOptions } : {}),
+            };
+        }
+        // Agents act through tools that take public URLs, so a file is passed
+        // on as its link, never fetched. The model reads the complete URL.
+        if (part.type === "input_file") {
+            const link =
+                typeof part.file_url === "string"
+                    ? validateUserMediaUrl(part.file_url)
+                    : undefined;
+            if (!link?.ok || link.url.protocol !== "https:") {
+                invalidRequest(
+                    "input_file requires a public https file_url",
+                    "input",
+                );
+            }
+            const url = link.url.href;
+            // The name is the caller's text inside our line, kept only as a
+            // hint of the file's type. Letters, digits, dots, dashes and
+            // underscores survive, so it cannot form a URL or another
+            // attachment line.
+            const filename =
+                typeof part.filename === "string"
+                    ? part.filename
+                          .replace(/[^\p{L}\p{N}._-]+/gu, " ")
+                          .trim()
+                          .slice(0, 200)
+                    : "";
+            const name = filename ? ` ${filename}` : "";
+            return {
+                type: "text" as const,
+                text: `[Attached file${name}: ${url}]`,
                 ...(providerOptions ? { providerOptions } : {}),
             };
         }
@@ -619,6 +653,7 @@ function streamResponse(
     messages: ModelMessage[],
     settings: AgentGenerationSettings,
     signal: AbortSignal,
+    tools: ToolSet,
     callerTools: ReadonlySet<string>,
 ): Response {
     const encoder = new TextEncoder();
@@ -667,6 +702,7 @@ function streamResponse(
                         signal: runSignal,
                         stream: true,
                         onPart: collected.onPart,
+                        tools,
                     });
                     if (cancelled) return;
                     runSignal.throwIfAborted();
@@ -719,19 +755,47 @@ function streamResponse(
     });
 }
 
+/** The request's function tools. Without execute, the SDK returns their calls
+ * for the caller to answer. */
+function requestTools(request: CreateResponseRequest): ToolSet {
+    const tools: ToolSet = Object.create(null);
+    for (const definition of request.tools ?? []) {
+        if (
+            !/^[a-zA-Z0-9_-]{1,64}$/.test(definition.name) ||
+            definition.name.startsWith("mcp__") ||
+            Object.hasOwn(tools, definition.name)
+        ) {
+            invalidRequest(
+                "Caller tool names must be unique, use 1–64 letters, digits, underscores or hyphens, and not start with mcp__",
+                "tools",
+            );
+        }
+        tools[definition.name] = {
+            description: definition.description ?? undefined,
+            inputSchema: jsonSchema(
+                definition.parameters ?? { type: "object", properties: {} },
+            ),
+            ...(definition.strict == null ? {} : { strict: definition.strict }),
+        };
+    }
+    return tools;
+}
+
 export async function handleAgentResponsesRequest(
     request: CreateResponseRequest,
     signal: AbortSignal,
     runner: AgentRunner,
-    tools?: ToolSet,
+    agentTools: ToolSet = {},
 ): Promise<Response> {
     try {
         signal.throwIfAborted();
+        // The agent's own tools win a name clash.
+        const tools = { ...requestTools(request), ...agentTools };
         const messages = await inputMessages(request, tools);
         signal.throwIfAborted();
         const settings = requestSettings(request);
         const callerTools = new Set(
-            Object.entries(tools ?? {})
+            Object.entries(tools)
                 .filter(([, tool]) => !tool.execute)
                 .map(([name]) => name),
         );
@@ -742,6 +806,7 @@ export async function handleAgentResponsesRequest(
                 messages,
                 settings,
                 signal,
+                tools,
                 callerTools,
             );
         }
@@ -752,6 +817,7 @@ export async function handleAgentResponsesRequest(
             signal,
             stream: false,
             onPart: collected.onPart,
+            tools,
         });
         signal.throwIfAborted();
         return Response.json(

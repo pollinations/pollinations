@@ -17,6 +17,28 @@ export const AGENT_DISCOVERY_LINKS = [
     '</.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
+export function acceptsMarkdown(accept: string): boolean {
+    // RFC 9110 §12.5.1: q is a 0..1 weight; a malformed q drops the range.
+    const weights = new Map<string, number>();
+    for (const range of accept.toLowerCase().split(",")) {
+        const [type, ...params] = range.split(";").map((part) => part.trim());
+        const q = params.find((param) => param.startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.slice(2));
+        if (quality >= 0 && quality <= 1) {
+            weights.set(type, Math.max(weights.get(type) ?? 0, quality));
+        }
+    }
+    // Markdown must be listed explicitly. The most specific range sets HTML's
+    // weight, so a bare `*/*` or a heavier HTML range keeps the HTML page.
+    const markdown = weights.get("text/markdown") ?? 0;
+    const html =
+        weights.get("text/html") ??
+        weights.get("text/*") ??
+        weights.get("*/*") ??
+        0;
+    return markdown > 0 && markdown >= html;
+}
+
 /**
  * Advertise the machine entry points on the landing and API reference pages.
  * Appends to an existing Link header, and only touches successful GET/HEAD

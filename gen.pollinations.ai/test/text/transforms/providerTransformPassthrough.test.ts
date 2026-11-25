@@ -18,10 +18,11 @@ describe("provider transform passthrough", () => {
     it.each([
         "mistral-small-3.2",
         "grok",
+        "grok-large",
+        "grok-4.6",
         "kimi",
         "kimi-code",
         "glm",
-        "inception/mercury-2.5-preview",
         "deepseek/deepseek-v4.1-flash",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
@@ -44,6 +45,7 @@ describe("provider transform passthrough", () => {
         "z-ai/glm-5.3",
         "z-ai/glm-5.3-flash",
         "minimax/minimax-m3",
+        "meta/muse-spark-open",
     ])("strips unsupported cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -77,13 +79,10 @@ describe("provider transform passthrough", () => {
         ]);
     });
 
-    it.each([
-        "mistral",
-        "grok-large",
-        "grok-4.6",
-        "mimo-v2.5",
-        "mimo-v2.5-pro",
-    ])("does not transform %s requests", (modelName) => {
-        expect(findModelByName(modelName)?.transform).toBeUndefined();
-    });
+    it.each(["mistral", "mimo-v2.5"])(
+        "does not transform %s requests",
+        (modelName) => {
+            expect(findModelByName(modelName)?.transform).toBeUndefined();
+        },
+    );
 });

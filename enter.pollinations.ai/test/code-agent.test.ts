@@ -279,6 +279,113 @@ describe("code agent AI SDK", () => {
         },
     );
 
+    it("hands caller function calls back and resumes with their output", async () => {
+        const bodies: {
+            tools?: unknown[];
+            messages: Record<string, unknown>[];
+        }[] = [];
+        vi.stubGlobal("fetch", async (_url, init) => {
+            bodies.push(JSON.parse(init.body));
+            const first = bodies.length === 1;
+            const message = first
+                ? {
+                      role: "assistant",
+                      content: null,
+                      tool_calls: [
+                          {
+                              id: "note-call",
+                              type: "function",
+                              function: {
+                                  name: "read_note",
+                                  arguments: '{"title":"groceries"}',
+                              },
+                          },
+                      ],
+                  }
+                : { role: "assistant", content: "Done." };
+            return Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message,
+                        finish_reason: first ? "tool_calls" : "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 4,
+                    completion_tokens: 2,
+                    total_tokens: 6,
+                },
+            });
+        });
+        const worker = createCodeAgentWorker(({ model, respond }) =>
+            respond({ model: model("test-model") }),
+        );
+        const tools = [
+            {
+                type: "function",
+                name: "read_note",
+                parameters: {
+                    type: "object",
+                    properties: { title: { type: "string" } },
+                },
+            },
+        ];
+        const first = await worker.fetch(
+            request({ model: "example/agent", input: "Read my note", tools }),
+            runtimeEnv,
+        );
+        expect(first.status).toBe(200);
+        const { output } = await first.json();
+        expect(bodies[0].tools).toEqual([
+            expect.objectContaining({
+                type: "function",
+                function: expect.objectContaining({ name: "read_note" }),
+            }),
+        ]);
+        // Only the call: no step-limit notice, and nothing ran it.
+        expect(output).toEqual([
+            expect.objectContaining({
+                type: "function_call",
+                call_id: "note-call",
+                name: "read_note",
+                arguments: '{"title":"groceries"}',
+            }),
+        ]);
+
+        const second = await worker.fetch(
+            request({
+                model: "example/agent",
+                input: [
+                    ...output,
+                    {
+                        type: "function_call_output",
+                        call_id: "note-call",
+                        output: "buy apples",
+                    },
+                ],
+                tools,
+            }),
+            runtimeEnv,
+        );
+        expect(await second.json()).toMatchObject({
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Done." }],
+                },
+            ],
+        });
+        expect(bodies[1].messages.at(-1)).toMatchObject({
+            role: "tool",
+            tool_call_id: "note-call",
+        });
+        expect(JSON.stringify(bodies[1].messages.at(-1))).toContain(
+            "buy apples",
+        );
+    });
+
     it.each([
         undefined,
         { prompt_tokens: 1, completion_tokens: -1, total_tokens: 0 },

@@ -4,6 +4,9 @@ Use Pollinations-hosted MCP servers from any
 [Model Context Protocol](https://modelcontextprotocol.io) client that supports
 Streamable HTTP.
 
+Hosted MCP servers are **alpha**: experimental and may be unstable.
+The `/mcp` catalog marks experimental servers with `alpha: true`.
+
 ### Quick start
 
 Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys),
@@ -18,6 +21,38 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Calculators | `https://gen.pollinations.ai/mcp/calculators` | Time, cron previews, Unicode, contrast checks, SVG QR codes, SHA text hashes, and ECB currency rates | [Source](https://github.com/pollinations/pollinations/tree/main/apps/calculators-mcp) |
+| Network | `https://gen.pollinations.ai/mcp/network` | Look up DNS records and RDAP registrations, inspect HTTP responses and redirects, and calculate IPv4/IPv6 subnets | [Source](https://github.com/pollinations/pollinations/tree/main/apps/network-mcp) |
+| Packages | `https://gen.pollinations.ai/mcp/packages` | npm/PyPI/Crates/RubyGems versions and npm download counts, OSV vulnerabilities and public Hugging Face metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/packages-mcp) |
+| News & Feeds | `https://gen.pollinations.ai/mcp/news` | Hacker News, RSS/Atom feeds, archived snapshots and USGS earthquakes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
+| Research | `https://gen.pollinations.ai/mcp/research` | Wikipedia, Wiktionary, Wikidata, RFCs, biomedical literature, arXiv, Crossref and World Bank indicators. Thank you to arXiv for use of its open access interoperability. | [Source](https://github.com/pollinations/pollinations/tree/main/apps/research-mcp) |
+
+Calculators is free but still requires a key. Time conversion rejects ambiguous or
+skipped local times: include an explicit
+offset to select an instant. Cron previews do not schedule jobs.
+Currency tools return ECB reference rates and their publication date; weekends
+and holidays resolve to the previous working day.
+
+Network (`https://gen.pollinations.ai/mcp/network`) provides free `dns_lookup`,
+`http_probe`, `inspect_cidr`, `inspect_mac`, `domain_whois` and `ip_whois` tools. A key is still required. HTTP probes accept
+public hostnames on standard HTTP(S) ports, follow at most five redirects, and
+return at most 4 KiB of text. DNS results are one resolver's cached view, not a
+propagation or safety check. CIDR and MAC inspection are local and do not scan hosts.
+RDAP uses authoritative registries; cached results last ten minutes and missing
+country or ownership fields remain null.
+
+Packages lookups are free but require a key. Queries go to the named public
+registry; caller credentials are not forwarded. OSV preserves pagination and
+advisories: no findings is not proof of safety. Rust uses the crates.io sparse
+index (versions, dependencies and runtime requirements); follow `registryUrl`
+for license and homepage details. Tools do not install packages or run models.
+Upstream responses over 8 MiB and tool results over 512 KiB fail explicitly;
+OSV records are never silently cut off.
+
+Research lookups are free and require a key. Public sources receive no caller
+credentials. Wikidata supports up to five selected claim properties per call;
+World Bank data requires an official indicator code. Large responses fail
+explicitly; narrow the query when asked.
 
 Send the key with every request:
 
@@ -60,7 +95,7 @@ are left untouched.
 ### Use with hosted agents
 
 Add MCP servers to an agent in
-[My Models](https://enter.pollinations.ai/my-models).
+[My listings](https://enter.pollinations.ai/my-models).
 
 ### Connect a client
 
@@ -120,13 +155,16 @@ model health, usage, earnings, quests, and API keys.
 | `transcribeAudio` | Transcribe audio from a public HTTPS URL |
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
-| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getBalance` | Check the remaining balance; requires `account:usage` permission |
 | `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
 | `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
-| `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
+| `listQuests` | List quests with their amount and claim state; requires `account:usage` permission |
 | `listKeys` | List API keys; requires `account:keys` permission |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
+| `listSites` | List the account's static sites and their limits; requires `account:machines` permission |
+| `deploySite` | Publish a static site at `https://<name>.pollinations.app` from inline files; requires `account:machines` permission |
+| `deleteSite` | Take a static site offline and free its name; requires `account:machines` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.
@@ -150,6 +188,11 @@ supports multiple inputs and returns the output as a hosted MCP resource link.
 Pollinations saves sources as `input0`, `input1`, and so on. Reference those
 exact names in arguments, such as `["-i", "input0", "-vf", "scale=1280:-2"]`.
 Omit the `ffmpeg` executable, source URLs, and output path.
+
+`probeMedia` accepts one public HTTPS media URL and returns its `ffprobe`
+format and stream metadata (duration, codec, resolution, bitrate, frame rate)
+as JSON. Use it before `runFfmpeg` to confirm duration or dimensions instead
+of guessing them.
 
 ### Exa Search MCP
 
@@ -208,10 +251,10 @@ Before a long command, extend the paid lease with `connect_sandbox`; a command's
 
 ### Billing and permissions
 
-Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
+Calls use the same wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
 selected model's listed rate. A `tools/call` on a server with its own rate
-needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+needs a positive balance and returns 402 otherwise; `initialize` and
 `tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's

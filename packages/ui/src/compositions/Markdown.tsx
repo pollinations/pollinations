@@ -8,6 +8,8 @@ import { CodeBlock } from "./CodeBlock.tsx";
 export type MarkdownProps = {
     children: string;
     className?: string;
+    /** Quiet links stay grey, so they don't compete with a title beside them. */
+    linkTone?: "accent" | "quiet";
 };
 
 function textContent(value: ReactNode): string {
@@ -80,6 +82,15 @@ function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
     return <CodeBlock code={code} language={language} className="polli:my-3" />;
 }
 
+/** A markdown link: an inline link, or the media it points to. */
+const link =
+    (tone: "accent" | "quiet"): Components["a"] =>
+    ({ node, href, ...props }) => {
+        const media = inlineMedia(href, textContent(props.children));
+        if (media) return media;
+        return <InlineLink href={href} tone={tone} {...props} />;
+    };
+
 const components: Components = {
     ul: ({ node, ...props }) => (
         <ul
@@ -125,15 +136,16 @@ const components: Components = {
             />
         );
     },
-    a: ({ node, href, ...props }) => {
-        const media = inlineMedia(href, textContent(props.children));
-        if (media) return media;
-        return <InlineLink href={href} {...props} />;
-    },
+    a: link("accent"),
 };
+const quietComponents: Components = { ...components, a: link("quiet") };
 
 /** Compact markdown for cards and snippets. Use Prose for document-style content. */
-export function Markdown({ children, className }: MarkdownProps) {
+export function Markdown({
+    children,
+    className,
+    linkTone = "accent",
+}: MarkdownProps) {
     return (
         <div
             className={cn(
@@ -141,7 +153,10 @@ export function Markdown({ children, className }: MarkdownProps) {
                 className,
             )}
         >
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={linkTone === "quiet" ? quietComponents : components}
+            >
                 {children}
             </ReactMarkdown>
         </div>

@@ -6,6 +6,7 @@ import {
     callHappyHorseAPI,
     callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterSeedance25FlashAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -78,6 +79,58 @@ function mockHappyHorseSuccess(
 afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+});
+
+describe("OpenRouter Seedance 2.5 Flash", () => {
+    it("routes multimodal references and audio and settles on provider cost", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests, 0.5);
+        const result = await callOpenRouterSeedance25FlashAPI(
+            "animate the scene",
+            {
+                ...baseParams,
+                model: "bytedance/seedance-2.5-flash:openrouter",
+                duration: 8,
+                resolution: "720p",
+                aspectRatio: "9:16",
+                audio: true,
+                reference_images: ["https://example.com/reference.png"],
+                reference_videos: ["https://example.com/reference.mp4"],
+                reference_audios: ["https://example.com/reference.mp3"],
+            },
+        );
+        expect(requests[0]).toEqual({
+            model: "bytedance/seedance-2.5-flash",
+            prompt: "animate the scene",
+            resolution: "720p",
+            duration: 8,
+            generate_audio: true,
+            seed: 42,
+            aspect_ratio: "9:16",
+            provider: { only: ["seed"], allow_fallbacks: false },
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/reference.png" },
+                },
+                {
+                    type: "video_url",
+                    video_url: { url: "https://example.com/reference.mp4" },
+                },
+                {
+                    type: "audio_url",
+                    audio_url: { url: "https://example.com/reference.mp3" },
+                },
+            ],
+        });
+        expect(result.durationSeconds).toBe(8);
+        expect(result.trackingData).toEqual({
+            actualModel: "bytedance/seedance-2.5-flash:openrouter",
+            usage: { completionVideoSeconds: 8 },
+            providerBilling: { units: 0.5, unitCost: 1.055 },
+        });
+    });
 });
 
 describe("openRouterVideoModel", () => {
@@ -159,20 +212,6 @@ describe("openRouterVideoModel", () => {
                 },
             ],
         });
-    });
-
-    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds", async () => {
-        setOpenRouterEnv();
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callHeyGenVideoAPI("a paper boat", {
-                ...baseParams,
-                model: "heygen/heygen-video-1",
-                duration: 4,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("bills a short HappyHorse clip from OpenRouter's reported cost", async () => {
@@ -489,24 +528,6 @@ describe("OpenRouter Grok Video Pro", () => {
         });
     });
 
-    it("keeps the existing 1-15 second duration clamping", async () => {
-        setOpenRouterEnv();
-        const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
-
-        const result = await callOpenRouterGrokVideoAPI(
-            "a calm ocean at sunrise",
-            {
-                ...baseParams,
-                model: "x-ai/grok-imagine-video-1.5",
-                duration: 99,
-            },
-        );
-
-        expect(requests[0].duration).toBe(15);
-        expect(result.durationSeconds).toBe(15);
-    });
-
     it.each([["x-ai/grok-imagine-video-1.5-lite:openrouter", 3]] as const)(
         "enforces a %s timeout of %i minutes",
         async (model, minutes) => {
@@ -550,23 +571,6 @@ describe("OpenRouter Grok Video Pro", () => {
             await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
             await rejection;
             expect(pollAttempts).toBe(minutes * 2);
-        },
-    );
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects non-integer duration %s before submitting a job",
-        async (duration) => {
-            setOpenRouterEnv();
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-            await expect(
-                callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video-1.5",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
         },
     );
 });

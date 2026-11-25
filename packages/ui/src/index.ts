@@ -11,6 +11,11 @@ export {
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
+export {
+    AudioInput,
+    type AudioInputProps,
+} from "./compositions/AudioInput.tsx";
+export { AudioRecorder, VideoRecorder } from "./compositions/AudioRecorder.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
     ChatConversation,
@@ -52,6 +57,7 @@ export {
 export {
     CopyButton,
     type CopyButtonProps,
+    CopyStateIcon,
 } from "./compositions/CopyButton.tsx";
 export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
@@ -110,7 +116,9 @@ export {
     type ToolCallDetailsProps,
     type ToolCallStatus,
 } from "./compositions/ToolCallDetails.tsx";
+export { UploadedFileTile } from "./compositions/UploadedMedia.tsx";
 export { cn } from "./lib/cn-app.ts";
+export { formatCount } from "./lib/format-count.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,

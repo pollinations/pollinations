@@ -55,4 +55,6 @@ export type AgentRunner = (options: {
     signal: AbortSignal;
     stream: boolean;
     onPart: (part: AgentPart) => void;
+    /** The agent's tools plus the caller's function tools (no execute). */
+    tools: ToolSet;
 }) => Promise<AgentOutput>;

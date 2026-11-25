@@ -56,7 +56,7 @@ Every answer carries headers, so one call shows both the answer and the reasonin
 | `x-router-model` | model that produced the answer |
 | `x-router-tier` | `fast` / `balanced` / `deep` |
 | `x-router-why` | one-sentence reason, including skipped candidates |
-| `x-router-pool` | every candidate with its score in 1e-9 pollen/token and its health note |
+| `x-router-pool` | every candidate with its score in billionths of a US dollar per token and its health note |
 | `x-router-degraded` | candidates excluded for poor health |
 | `x-router-escalated-to` | set when a failed tier was escalated |
 
@@ -116,7 +116,7 @@ one-line change.
 ## Deploy
 
 1. Fork the standalone [Triage Router repository](https://github.com/xiaotian1171/triage-router), which has `agent.ts` at its root.
-2. In [My Models](https://enter.pollinations.ai/my-models), choose **Add Agent → Code agent** and enter your fork's URL.
+2. In [My listings](https://enter.pollinations.ai/my-models), choose **Create → Code agent** and enter your fork's URL.
 3. Edit `agent.ts`, push, then use **Sync** in the dashboard (or the workflow below).
 
 `npx @pollinations/cli agents sync <agent-id>` deploys the newest default-branch revision.

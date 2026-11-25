@@ -1,0 +1,33 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Production D1 calls from Gen and Enter, summed per second, route and query,
+kept 3 days, to attribute D1 stalls to what ran in the seconds before them.
+Each Worker isolate sends its own sums, so one second can have several rows
+for the same route and query: always aggregate. `timestamp` is the second the
+calls started in, `query_id` names the statement in `d1_query`, and
+`error_code` is empty for successful calls. `measured` counts the calls D1
+reported its own figures for: `sql_ms`, `rows_read` and `rows_written` cover
+only those, and mean "not measured" when it is 0 (Drizzle's selects).
+
+SCHEMA >
+`timestamp`    DateTime               `json:$.timestamp`,
+`service`      LowCardinality(String) `json:$.service`,
+`environment`  LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+`route_path`   LowCardinality(String) `json:$.route_path` DEFAULT '',
+`method`       LowCardinality(String) `json:$.method` DEFAULT '',
+`query_id`     LowCardinality(String) `json:$.query_id`,
+`error_code`   LowCardinality(String) `json:$.error_code` DEFAULT '',
+`calls`        UInt32                 `json:$.calls`,
+`measured`     UInt32                 `json:$.measured` DEFAULT 0,
+`total_ms`     UInt32                 `json:$.total_ms`,
+`max_ms`       UInt32                 `json:$.max_ms`,
+`sql_ms`       Float32                `json:$.sql_ms`,
+`rows_read`    UInt64                 `json:$.rows_read`,
+`rows_written` UInt64                 `json:$.rows_written`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toDate(timestamp)"
+ENGINE_SORTING_KEY "environment, timestamp"
+ENGINE_TTL "timestamp + toIntervalDay(3)"

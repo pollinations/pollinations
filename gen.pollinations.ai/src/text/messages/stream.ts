@@ -7,7 +7,7 @@ import {
     GEMINI_SIGNATURE_PREFIX,
     messagesUsage,
     stopReason,
-    toolUseInput,
+    toolUseBlocks,
 } from "./translate.ts";
 
 // Claude Code aborts a stream after 300 seconds without bytes.
@@ -128,7 +128,11 @@ export function chatToMessagesStream(
                     });
                     closeBlock();
                 }
-                for (const call of toolCalls.values()) {
+                const toolUses = toolUseBlocks(
+                    [...toolCalls.values()],
+                    finishReason === "length",
+                );
+                for (const call of toolUses) {
                     startBlock({
                         type: "tool_use",
                         id: call.id,
@@ -139,9 +143,7 @@ export function chatToMessagesStream(
                         index: blockIndex,
                         delta: {
                             type: "input_json_delta",
-                            partial_json: JSON.stringify(
-                                toolUseInput(call.arguments),
-                            ),
+                            partial_json: JSON.stringify(call.input),
                         },
                     });
                     send("content_block_stop", { index: blockIndex });
@@ -150,7 +152,7 @@ export function chatToMessagesStream(
                     delta: {
                         stop_reason: stopReason(
                             finishReason,
-                            toolCalls.size > 0,
+                            toolUses.length > 0,
                         ),
                         stop_sequence: null,
                     },

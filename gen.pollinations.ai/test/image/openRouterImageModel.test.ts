@@ -1,15 +1,20 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callOpenRouterFlux2MaxAPI,
     callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
-    callOpenRouterGrokImagineProAPI,
+    callOpenRouterMaiImageAPI,
+    callOpenRouterMiniMaxH3ImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedream55API,
     callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
     mapOpenRouterGeminiImageUsage,
@@ -31,7 +36,7 @@ WIDE_PNG.writeUInt32BE(1440, 20);
 const WIDE_PNG_DATA_URI = `data:image/png;base64,${WIDE_PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
-    model: "x-ai/grok-imagine-image-quality",
+    model: "x-ai/grok-imagine-image-2.0",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -71,100 +76,232 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("OpenRouter Grok Imagine Pro", () => {
-    it("generates at the existing 1K tier and tracks one output image", async () => {
+describe("OpenRouter MiniMax H3 Image", () => {
+    it.each([
+        "minimax/minimax-h3-image",
+        "minimax/minimax-h3-image-highspeed",
+    ] as const)(
+        "routes %s editing with token usage and receipt billing",
+        async (model) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            const requests: Record<string, unknown>[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (url, init) => {
+                    const href = url.toString();
+                    if (href === REFERENCE_IMAGE_URL) {
+                        return new Response(PNG, {
+                            headers: { "Content-Type": "image/png" },
+                        });
+                    }
+                    expect(href).toBe(OPENROUTER_IMAGE_URL);
+                    expect(
+                        new Headers(init?.headers).get("authorization"),
+                    ).toBe("Bearer openrouter-test-key");
+                    requests.push(JSON.parse(String(init?.body)));
+                    return Response.json({
+                        data: [{ b64_json: PNG.toString("base64") }],
+                        usage: {
+                            cost: 0.07,
+                            prompt_tokens: 120,
+                            prompt_tokens_details: { image_tokens: 80 },
+                            completion_tokens: 500,
+                            completion_tokens_details: { image_tokens: 500 },
+                        },
+                    });
+                },
+            );
+            const result = await callOpenRouterMiniMaxH3ImageAPI(
+                "edit this image",
+                {
+                    ...baseParams,
+                    model: `${model}:openrouter`,
+                    resolution: "2k",
+                    aspectRatio: "9:16",
+                    image: [REFERENCE_IMAGE_URL],
+                },
+            );
+            expect(requests[0]).toEqual({
+                model,
+                prompt: "edit this image",
+                n: 1,
+                seed: 42,
+                resolution: "2K",
+                aspect_ratio: "9:16",
+                provider: { only: ["minimax"], allow_fallbacks: false },
+                input_references: [
+                    { type: "image_url", image_url: { url: PNG_DATA_URI } },
+                ],
+            });
+            expect(result.trackingData).toEqual({
+                actualModel: `${model}:openrouter`,
+                usage: {
+                    promptTextTokens: 40,
+                    promptImageTokens: 80,
+                    completionImageTokens: 500,
+                },
+                providerBilling: { units: 0.07, unitCost: 1.055 },
+            });
+        },
+    );
+    it("keeps the provider fee off the wallet even when no token breakdown is returned", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
         );
-        const requests: Record<string, unknown>[] = [];
-        const fetchSpy = mockOpenRouterFetch(requests);
-
-        const result = await callOpenRouterGrokImagineProAPI(
-            "test prompt",
-            baseParams,
+        mockOpenRouterFetch([]);
+        const model = "minimax/minimax-h3-image";
+        const fallback = "minimax/minimax-h3-image:openrouter";
+        const { trackingData } = await callOpenRouterMiniMaxH3ImageAPI(
+            "a woven basket",
+            { ...baseParams, model: fallback },
         );
-
-        expect(fetchSpy).toHaveBeenCalledWith(
-            OPENROUTER_IMAGE_URL,
-            expect.objectContaining({
-                method: "POST",
-                headers: {
-                    Authorization: "Bearer openrouter-test-key",
-                    "Content-Type": "application/json",
-                },
-            }),
-        );
-        expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-image-quality",
-            prompt: "test prompt",
-            n: 1,
-            resolution: "1K",
-            aspect_ratio: "1:1",
+        expect(trackingData?.usage).toEqual({});
+        const billing = calculateUsageBilling({
+            model,
+            usage: trackingData?.usage ?? {},
+            input: { providerBilling: trackingData?.providerBilling },
+            servedBy: IMAGE_SERVICES[fallback],
+            quotedBy: IMAGE_SERVICES[model],
         });
-        expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
-        expect(result.trackingData).toEqual({
-            actualModel: "x-ai/grok-imagine-image-quality",
-            usage: { completionImageTokens: 1 },
-        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.05275, 8);
+        expect(billing.price.totalPrice).toBe(0.05);
     });
 
-    it("forwards every edit image and tracks their input fees", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockOpenRouterFetch(requests);
-
-        const result = await callOpenRouterGrokImagineProAPI("edit prompt", {
-            ...baseParams,
-            width: 1280,
-            height: 720,
-            image: [
-                "https://example.com/input.png",
-                "https://example.com/b.png",
-            ],
-        });
-
-        expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-image-quality",
-            prompt: "edit prompt",
-            n: 1,
-            resolution: "1K",
-            aspect_ratio: "16:9",
-            input_references: [
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/input.png" },
-                },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/b.png" },
-                },
-            ],
-        });
-        expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 2,
-            completionImageTokens: 1,
-        });
-    });
-
-    it("rejects a successful response without image data", async () => {
+    it("keeps an unsplit reference edit prompt out of text-only usage", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
         );
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ data: [] }), { status: 200 }),
+            Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: {
+                    cost: 0.024,
+                    prompt_tokens: 4387,
+                    completion_tokens: 4096,
+                },
+            }),
+        );
+        const { trackingData } = await callOpenRouterMiniMaxH3ImageAPI(
+            "edit the reference",
+            {
+                ...baseParams,
+                model: "minimax/minimax-h3-image:openrouter",
+                image: [PNG_DATA_URI],
+            },
+        );
+        expect(trackingData?.usage).toEqual({ completionImageTokens: 4096 });
+    });
+
+    it("rejects an image whose provider receipt is missing", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: { completion_tokens: 10 },
+            }),
+        );
+        await expect(
+            callOpenRouterMiniMaxH3ImageAPI("a woven basket", {
+                ...baseParams,
+                model: "minimax/minimax-h3-image:openrouter",
+            }),
+        ).rejects.toThrow("OpenRouter returned invalid image billing usage");
+    });
+});
+
+describe("OpenRouter MAI Image", () => {
+    const userInfo = { userId: "user-1" } as AuthResult;
+    const maiParams: ImageParams = {
+        ...baseParams,
+        model: "microsoft/mai-image-2.6-flash:openrouter",
+        width: 1344,
+        height: 768,
+    };
+
+    function mockMaiFetch(
+        requests: Record<string, unknown>[],
+        usage: Record<string, unknown>,
+    ) {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            // Azure Content Safety checks the prompt and references first.
+            if (String(url) !== OPENROUTER_IMAGE_URL) {
+                return Response.json({ categoriesAnalysis: [] });
+            }
+            requests.push(JSON.parse(init?.body as string));
+            return Response.json({ data: [{ b64_json: "AQID" }], usage });
+        });
+    }
+
+    it("pins Azure, sends the exact size and bills the reported tokens", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockMaiFetch(requests, {
+            prompt_tokens: 5,
+            completion_tokens: 1008,
+            completion_tokens_details: { image_tokens: 1008 },
+        });
+
+        const result = await callOpenRouterMaiImageAPI(
+            "a lighthouse",
+            maiParams,
+            userInfo,
         );
 
-        await expect(
-            callOpenRouterGrokImagineProAPI("test prompt", baseParams),
-        ).rejects.toMatchObject({
-            status: 502,
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        expect(requests[0]).toEqual({
+            model: "microsoft/mai-image-2.6-flash",
+            prompt: "a lighthouse",
+            n: 1,
+            size: "1344x768",
+            provider: { only: ["azure"], allow_fallbacks: false },
         });
+        expect(result.trackingData).toEqual({
+            actualModel: "microsoft/mai-image-2.6-flash:openrouter",
+            usage: { promptTextTokens: 5, completionImageTokens: 1008 },
+        });
+    });
+
+    it("sends edits without a size and bills the prompt as image input", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockMaiFetch(requests, {
+            prompt_tokens: 329,
+            completion_tokens: 1020,
+            completion_tokens_details: { image_tokens: 1020 },
+        });
+
+        const result = await callOpenRouterMaiImageAPI(
+            "make it pink",
+            { ...maiParams, image: [PNG_DATA_URI] },
+            userInfo,
+        );
+
+        expect(requests[0]).not.toHaveProperty("size");
+        expect(requests[0].input_references).toEqual([
+            { type: "image_url", image_url: { url: PNG_DATA_URI } },
+        ]);
+        expect(result.trackingData?.usage).toEqual({
+            promptImageTokens: 329,
+            completionImageTokens: 1020,
+        });
+    });
+
+    it("rejects an image without output token usage", async () => {
+        mockMaiFetch([], { prompt_tokens: 5, completion_tokens: 0 });
+
+        await expect(
+            callOpenRouterMaiImageAPI("a lighthouse", maiParams, userInfo),
+        ).rejects.toMatchObject({ status: 502 });
     });
 });
 
@@ -385,6 +522,73 @@ describe("OpenRouter FLUX.2 Max", () => {
                 message: "OpenRouter returned invalid image billing usage",
             });
         }
+    });
+});
+
+describe("OpenRouter Seedream 5.5", () => {
+    it("routes generation and editing through Seed and bills its receipt", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url.toString() === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            expect(url.toString()).toBe(OPENROUTER_IMAGE_URL);
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                "Bearer openrouter-test-key",
+            );
+            requests.push(JSON.parse(String(init?.body)));
+            return Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: { cost: 0.115 },
+            });
+        });
+        const result = await callOpenRouterSeedream55API("edit prompt", {
+            ...baseParams,
+            model: "bytedance-seed/seedream-5-5",
+            resolution: "2k",
+            width: 1280,
+            height: 720,
+            dimensionsExplicit: true,
+            seed: 42,
+            image: Array(10).fill(REFERENCE_IMAGE_URL),
+        });
+        expect(requests[0]).toMatchObject({
+            model: "bytedance-seed/seedream-5-5",
+            prompt: "edit prompt",
+            seed: 42,
+            n: 1,
+            resolution: "2K",
+            aspect_ratio: "16:9",
+            provider: { only: ["seed"], allow_fallbacks: false },
+            input_references: Array(10).fill({
+                type: "image_url",
+                image_url: { url: PNG_DATA_URI },
+            }),
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "bytedance-seed/seedream-5-5:openrouter",
+            providerBilling: { units: 0.115, unitCost: 1.055 },
+            usage: { promptImageTokens: 10, completionImageTokens: 1 },
+        });
+        const model = "bytedance-seed/seedream-5-5";
+        const billing = calculateUsageBilling({
+            model,
+            usage: result.trackingData.usage,
+            input: {
+                resolution: "2k",
+                providerBilling: result.trackingData.providerBilling,
+            },
+            servedBy: IMAGE_SERVICES["bytedance-seed/seedream-5-5:openrouter"],
+            quotedBy: IMAGE_SERVICES[model],
+        });
+        expect(billing.price.totalPrice).toBe(0.115);
+        expect(billing.cost.totalCost).toBeCloseTo(0.121325, 10);
     });
 });
 

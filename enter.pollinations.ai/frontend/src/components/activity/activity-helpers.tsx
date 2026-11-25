@@ -2,75 +2,19 @@ import {
     Button,
     CardIcon,
     DownloadIcon,
-    MultiSelect,
+    formatCount,
     SproutIcon,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
-import { useDeferredValue } from "react";
-import { PageStatus } from "../layout/dashboard-loading.tsx";
 import { saveBlob } from "./activity-csv";
-import { formatActivityPollen } from "./format-activity-pollen";
+import {
+    formatActivityPollenThreshold,
+    spokenDollars,
+    withDollar,
+} from "./format-activity-pollen";
 import type { Metric } from "./types";
-
-type ActivityFilterProps = {
-    label: string;
-    options: Array<{ value: string; label: string }>;
-    selected: string[];
-    onChange: (selected: string[]) => void;
-    emptyMessage: string;
-    missingLabel?: string;
-};
-
-export const ActivityFilter: FC<ActivityFilterProps> = ({
-    label,
-    options,
-    selected,
-    onChange,
-    emptyMessage,
-    missingLabel,
-}) => (
-    <div className="flex min-w-0 flex-col gap-1.5">
-        <span className="px-1 text-xs font-medium text-theme-text-muted">
-            {label}
-        </span>
-        <div
-            data-theme={selected.length ? undefined : "neutral"}
-            className="min-w-0"
-        >
-            {options.length === 0 && selected.length === 0 ? (
-                <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                    {emptyMessage}
-                </span>
-            ) : (
-                <MultiSelect
-                    ariaLabel={label}
-                    fullWidth
-                    options={[
-                        ...options,
-                        ...selected
-                            .filter(
-                                (id) =>
-                                    !options.some(
-                                        (option) => option.value === id,
-                                    ),
-                            )
-                            .map((id) => ({
-                                value: id,
-                                label: missingLabel ?? id,
-                            })),
-                    ]}
-                    selected={selected}
-                    onChange={onChange}
-                    placeholder="All"
-                    align="start"
-                />
-            )}
-        </div>
-    </div>
-);
 
 export function clearActivitySelectionOnEscape(
     event: KeyboardEvent<HTMLElement>,
@@ -190,68 +134,44 @@ export function PollenUsageBadges(usage: {
 }) {
     const isPollen = usage.metric === "pollen";
     const paid = isPollen
-        ? formatActivityPollen(usage.paidPollen)
-        : usage.paidRequests.toLocaleString();
+        ? formatActivityPollenThreshold(usage.paidPollen)
+        : formatCount(usage.paidRequests);
     const quest = isPollen
-        ? formatActivityPollen(usage.tierPollen)
-        : usage.tierRequests.toLocaleString();
-    const unit = isPollen ? "Pollen" : "requests";
+        ? formatActivityPollenThreshold(usage.tierPollen)
+        : formatCount(usage.tierRequests);
     return (
-        <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">
+        // Same-width chips with left-aligned digits, so rows line up; the pair
+        // sits at the right edge. 6rem fits threshold amounts such as "<$0.0001".
+        <div className="ml-auto grid w-max grid-cols-1 items-center gap-1 @[32rem]:grid-cols-2">
             <PaidChip
                 size="sm"
-                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
-                title={`Paid ${unit}`}
-                aria-label={`${paid} Paid ${unit}`}
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                title={isPollen ? "Paid balance" : "Paid requests"}
+                aria-label={
+                    isPollen
+                        ? `Paid balance, ${spokenDollars(paid)}`
+                        : `${paid} paid requests`
+                }
             >
                 <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {paid}
+                {isPollen ? withDollar(paid) : paid}
             </PaidChip>
             <TierChip
                 size="sm"
-                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
-                title={`Quest ${unit}`}
-                aria-label={`${quest} Quest ${unit}`}
+                className="w-24 cursor-help justify-start gap-2 whitespace-nowrap tabular-nums"
+                title={isPollen ? "Quest balance" : "Quest requests"}
+                aria-label={
+                    isPollen
+                        ? `Quest balance, ${spokenDollars(quest)}`
+                        : `${quest} Quest requests`
+                }
             >
                 <SproutIcon
                     className="h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
                 />
-                {quest}
+                {isPollen ? withDollar(quest) : quest}
             </TierChip>
         </div>
-    );
-}
-
-export function ActivityKeyFilter({
-    unnamedLabel = "Unnamed key",
-    ...props
-}: ActivityFilterProps & { unnamedLabel?: string }) {
-    const { apiKeys } = useDeferredValue(
-        useLoaderData({ from: "/_dashboard" }),
-    );
-    return (
-        <Await
-            promise={apiKeys}
-            fallback={
-                <>
-                    <ActivityFilter {...props} />
-                    <PageStatus />
-                </>
-            }
-        >
-            {(keys) => {
-                const options = [...props.options];
-                for (const id of props.selected) {
-                    const key = keys?.find((key) => key.id === id);
-                    if (key && !options.some((option) => option.value === id))
-                        options.push({
-                            value: id,
-                            label: key.name || unnamedLabel,
-                        });
-                }
-                return <ActivityFilter {...props} options={options} />;
-            }}
-        </Await>
     );
 }

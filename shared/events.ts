@@ -5,7 +5,7 @@ import { removeUnset } from "./util.ts";
 export type TinybirdErrorEvent = {
     timestamp: string;
     kind: "server_error";
-    severity: "error";
+    severity: "error" | "warning";
     request_id?: string;
     environment?: string;
     route_path?: string;

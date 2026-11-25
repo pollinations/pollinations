@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/k9F7SyTgqn)
 
-[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [Guides](#guides) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [Guides](#guides) · [API Docs](APIDOCS.md) · [For AI Agents](https://gen.pollinations.ai/llms.txt) · [Discord](https://discord.gg/k9F7SyTgqn)
 
 </div>
 
@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ Chatbot v2](https://pollinations-chatbot-2.vercel.app) | This app only ai assistant | [@amancrypto12-pixel](https://github.com/amancrypto12-pixel) |
-| [🖼️ Polli Snap - Text to Image Meme Maker](https://mhmdrizzzki.github.io/polli-snap) | A fast text-to-image meme generator. Type a prompt and instantly get a generated image with quick meme presets. Built directly on the Pollinations image API (flux). Live public app, no login required. | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [🛠️ Websim](https://websim.pollinations.app) | Generate, preview, and download single-file HTML pages using Pollinations models and your own Pollen. | [@pollinations-ai](https://github.com/pollinations-ai) |
-| [🖼️ Image Remix](https://image-remix.pollinations.app) | Upload a photo (PNG, JPEG or WebP) and describe the change, or pick an idea such as "Winter night" or "Watercolor painting". A Pollinations image-editing model returns the edited image at the source's | [@danhquach](https://github.com/danhquach) |
-| [🛠️ Screenshot to Bug Report](https://screenshot-to-bug-report.pollinations.app) | Paste, drop or upload a screenshot and add rough notes. The community prompt agent community/danhquach/bug-report-writer reads the screenshot and writes a clean Markdown bug report: title, what happen | [@danhquach](https://github.com/danhquach) |
-| [🖼️ Prompt to Image](https://prompt-to-image.pollinations.app) | Type a rough image idea and pick a style. The community prompt agent community/danhquach/prompt-enhancer expands it into a detailed prompt, which you can edit, and a Pollinations image model renders i | [@danhquach](https://github.com/danhquach) |
-| [🎬 Reel Hook Generator](https://anojan-va.github.io/reel-hook-generator) | Type a reel topic and get five scroll-stopping hooks in different styles (curiosity gap, shock fact, direct question, bold claim, mini story), each read aloud with Pollinations text-to-speech so you c | [@anojan-va](https://github.com/anojan-va) |
-| [🎮 Tiny Fighter Arena](https://kreggscode.github.io/tiny-fighter-arena) | Describe a fighter in one line, the AI designs the whole thing from it, then sends it into a short commentated battle up a five-rung ladder. One line in ( a shy storm cloud that apologises before it s | [@kreggscode](https://github.com/kreggscode) |
-| [💬 Radio Bloom](https://mrunknowne09-radio-bloom.static.hf.space) | Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [🎮 One Line Arena](https://drjacky.github.io/one-line-arena) | Describe a fighter in one line. Pollinations designs the whole fighter from it: name, title, portrait, stats, three moves, a quirk, a weakness and a catchphrase. Then it sends the fighter into a short | [@Drjacky](https://github.com/Drjacky) |
+| [🎬 Creator Studio for TikTok](https://www.mrpaloma.com/en/creator-studio-tiktok) | Edit subtitles and export videos for TikTok in your browser. Sign in with Pollinations to generate vertical covers, titles, and descriptions using your own balance. | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
+| [🖼️ Pollinations Image Studio](https://palmunix.github.io/pollinations-image-studio) | Gere imagens com IA direto no navegador usando o seu próprio saldo Pollinations. Escolha modelo e proporção, conecte sua conta e crie imagens sem precisar colar chaves. | [@palmunix](https://github.com/palmunix) |
+| [🛠️ polli-bridge](https://aibridge.bot.nu) | One OpenAI-compatible /v1 endpoint in front of Pollinations: text, images, speech, transcription, video. Self-hosted or try the live demo, one key per caller, MIT. | [@BalTac](https://github.com/BalTac) |
+| [🎮 Decision Arena — Grid Rush](https://decisionarena.edgeone.cool) | A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race. | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Herd Check](https://patbing.github.io/herd-check) | Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Schelling Table](https://tomdacatto.github.io/pollinations-schelling-table) | A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or use your balance to seat Pollinations models. | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Where It Slips](https://tomdacatto.github.io/pollinations-where-it-slips) | A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Idle Hands](https://tomdacatto.github.io/pollinations-idle-hands) | Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Read On](https://patbing.github.io/read-on) | Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Under Oath](https://patbing.github.io/under-oath) | One AI keeps a sealed word, another gets 20 yes/no questions. Code judges the guess, a referee model re-checks every answer, a hash seals the word. Race the Asker. BYOP. | [@patbing](https://github.com/patbing) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -42,10 +42,11 @@
 ### What's Included
 
 - **Unified endpoint**: single API at `gen.pollinations.ai` for all generation
-- **Pollen credits**: simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **Prepaid credit**: simple pay-as-you-go, priced in dollars
 - **All models, one place**: Flux, GPT, Claude, Gemini, Seedream, and more
 - **API keys**: secret keys for model usage, app keys for tracking BYOP apps.
 - **CLI**: `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
+- **Agent discovery**: [gen.pollinations.ai/llms.txt](https://gen.pollinations.ai/llms.txt) indexes the CLI skill, MCP server catalog, OpenAPI schema, and Agent Skills in one request
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
@@ -53,16 +54,16 @@
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
-- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **A clearer My Apps view** <sub>Oct 31</sub><br>Browse your apps in a card grid with 24-hour request counts beside their titles. The grid uses two columns on wider screens and one on phones.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Community model leaderboards**](https://discord.gg/k9F7SyTgqn) <sub>Oct 31</sub><br>Daily text and image boards show usage, speed, and success rates for public community models over the previous 24 hours. Text rankings require at least 50 requests per model; image rankings require at least 10.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Community model status notices**](https://discord.gg/k9F7SyTgqn) <sub>Oct 31</sub><br>Community Watch posts when a listed community model relies substantially on fallbacks or moves in or out of model listings. A filtered model remains callable by its exact ID.
-- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Request a Setup reward review** <sub>Oct 31</sub><br>If your Setup Quest rewards are on hold, you can request an account review from the dashboard and see whether it is pending or declined. Other Quest rewards remain claimable.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Verify a published Site**](https://www.npmjs.com/package/@pollinations/cli) <sub>Oct 30</sub><br>Run `polli sites deploy --verify` to publish a Site, then check that every public file matches your local build. A failed check exits nonzero, but the Site remains published.
-- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Read model billing units**](https://enter.pollinations.ai/models) <sub>Oct 30</sub><br>`/v1/models` and `/v1/models/:model` can now return `pricing_units` when a model defines them. For some image and video models, this identifies `completionImageTokens` as priced per megapixel.
-- <img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Grant missing key permissions** <sub>Oct 28</sub><br>Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Compare community model trust**](https://model-monitor.pollinations.ai) <sub>Oct 26</sub><br>Model Monitor’s Community → Trust view compares each community model with the official model it is named after. Sort the latest weekly scores and see which differences clear the confidence threshold.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Find models and voices**](https://www.npmjs.com/package/@pollinations/cli) <sub>Oct 26</sub><br>Use `polli models` to search models or filter by source and reliability. Add `--voices` to list voices by audio model.
-- <img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Spot Pollen-related refusals** <sub>Oct 26</sub><br>The `/models/status` response now includes `errors_402` in model and route health data. It separates balance or key-budget refusals from other 4xx responses.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **HeyGen Decision 1**](https://enter.pollinations.ai/models?q=heygen/heygen-decision-1) <sub>Nov 24</sub><br>Use paid-only `heygen/heygen-decision-1` to get typed Yes/No, Choice, or Score decisions from text, image, audio, or video input through `/alpha/decisions` or chat completions.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Inkling 2 Mini**](https://enter.pollinations.ai/models?q=thinkingmachines/inkling-2-mini) <sub>Nov 24</sub><br>Use paid-only `thinkingmachines/inkling-2-mini` with text or image input, tools, JSON responses, reasoning parameters, and a 1,048,576-token context window.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Auto mode for sandboxes**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Choose opt-in Auto mode to let an Azure sandbox suspend when idle and resume on a request to a shared port. Leases are prepaid, and the UI has a 10-minute minimum duration.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Opposite Prompt agent** <sub>Nov 24</sub><br>Give Opposite Prompt text or an image and ask for a visual opposite. It can make an image, video, GIF, or vector graphic.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Discord commands for sandbox ports**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Share an Azure sandbox port with a Discord application's `discordPublicKey` to accept signed interactions. Verification pings leave the sandbox asleep; slash commands are acknowledged before it wakes and receives the request.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Kling 4.0 Flash video**](https://enter.pollinations.ai/models?q=kwaivgi/kling-v4.0-flash) <sub>Nov 23</sub><br>Generate paid-only 720p videos with native audio from text or a start image using `kwaivgi/kling-v4.0-flash`, with durations from 3 to 20 seconds.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Gemini live transcription**](https://enter.pollinations.ai/models?q=google/gemini-3.5-transcribe-live) <sub>Nov 23</sub><br>Stream mono PCM16 audio to paid-only `google/gemini-3.5-transcribe-live` and manually commit each utterance to get interim text and a final verbatim transcript.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **File links for hosted agents**](https://gen.pollinations.ai/docs) <sub>Nov 23</sub><br>Send a public HTTPS `file_url` as an `input_file` part on `/v1/responses` so hosted agents can pass the link to their tools; the file is not fetched, and the full URL reaches the model.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Fresh models for Discord bots** <sub>Nov 23</sub><br>CatGPT now uses GPT-6.1 Terra, while Opposite Prompt uses GPT-6 Luna. Both generate images with GPT Image 2.5 Sunburst and attach them as JPEGs.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Record and create in Play**](https://pollinations.ai/play) <sub>Nov 20</sub><br>Record, import, and preview media in Play. Image, Video, and Audio keep their drafts when you switch tabs, and model-specific controls cover options such as GIF frames, video sound, and audio stem separation.
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
@@ -88,7 +89,7 @@
 
 - 🔓 **100% Open Source**: code, decisions, roadmap all public
 - 🤝 **Community-Built**: 500+ projects already using our APIs
-- 🌱 **Pollen Quests**: earn Pollen by completing Quests
+- 🌱 **Quests**: complete Quests to add to your balance
 - 🖼️ **Image Generation**: Text-to-image and image editing
 - 📝 **Text Generation**: Chat, reasoning, vision, function calling, structured outputs
 - 🎬 **Video Generation**: Text-to-video and image-to-video
@@ -105,7 +106,7 @@
 
 | Guide | Purpose |
 | --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Pollinations Pay (BYOP)](https://gen.pollinations.ai/docs#tag/pollinations-pay) | Let users pay from their own balance |
 | [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
 | [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
 | [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
@@ -120,13 +121,13 @@ Build a reusable text agent without hosting an agent server. Choose a system pro
 
 - **Private or public**: keep an agent owner-only or publish it after receiving community publisher access.
 - **Normal model API**: call a registered agent by its `owner/agent-name` model ID.
-- **Dashboard, CLI, or API**: manage agents in [My Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
+- **Dashboard, CLI, or API**: manage agents in [My listings](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
 
 See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior.
 
 ## 🛠️ Coding Harnesses
 
-Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, Mistral Vibe, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
@@ -142,7 +143,7 @@ Community members connect their own OpenAI-compatible text, image, image-editing
 - **Automatic fallback routing**: nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor**: browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -257,7 +258,7 @@ Stream AI responses over an OpenAI-compatible WebSocket:
 wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=sk_YOUR_API_KEY
 ```
 
-Browser clients pass a user-authorized key from [Connect User Wallets](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Browser clients pass a user-authorized key from [Pollinations Pay](BRING_YOUR_OWN_POLLEN.md) as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
 
 ### MCP Servers
 
@@ -279,12 +280,12 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 | Key             | Prefix | Use Case                       | Rate Limits              | Status  |
 | --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Identifies your app in Connect User Wallets sign-in | Can't authenticate requests | Stable |
+| **App Key** | `pk_`  | Identifies your app in Pollinations Pay | Can't authenticate requests | Stable |
 | **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Pollinations Pay](./BRING_YOUR_OWN_POLLEN.md): users pay for their own usage, you pay $0
 
 ### Model Restrictions
 
@@ -437,7 +438,7 @@ We're exploring:
 
 We want AI tools to be:
 
-- **Open & Accessible**: Earn Pollen by contributing, without a credit card
+- **Open & Accessible**: Add to your balance by contributing, without a credit card
 
 - **Transparent & Ethical**: Inspect our code and discuss how the platform works
 
@@ -473,7 +474,7 @@ The main folders are:
 
 - [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
-- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, Pollen credits, and pack checkout.
+- [`enter.pollinations.ai/`](./enter.pollinations.ai/): Auth gateway and billing: API keys, balances, and top-up checkout.
 
 - [`shared/`](./shared/): Auth, model registries, IP queue, and utilities shared across the services.
 
@@ -485,7 +486,7 @@ The main folders are:
 
 - [`media.pollinations.ai/`](./media.pollinations.ai/): Media upload service: upload files and get a URL to use with Pollinations models, with public tag galleries.
 
-- [`operations/social/`](./operations/social/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
+- [`operations/news/`](./operations/news/): Automated social media pipeline (X, LinkedIn, Instagram, Reddit, Discord).
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI for people and AI agents.
 

@@ -11,6 +11,7 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    formatCount,
     GlobeIcon,
     Heading,
     type IconProps,
@@ -79,7 +80,7 @@ const BUILD_FEATURES: Feature[] = [
         links: [
             {
                 label: "Explore agents",
-                href: "https://enter.pollinations.ai/models?category=agent",
+                href: "https://enter.pollinations.ai/agents",
             },
         ],
         icon: RobotIcon,
@@ -118,7 +119,7 @@ const BUILD_FEATURES: Feature[] = [
         links: [
             {
                 label: "Explore MCP servers",
-                href: "https://enter.pollinations.ai/models?category=mcp",
+                href: "https://enter.pollinations.ai/agents?view=mcp",
             },
         ],
         icon: McpIcon,
@@ -178,14 +179,14 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users sign in with Pollinations and set a spending limit.{" "}
-                <Em>They pay for their own usage.</Em>
+                With Pollinations Pay, users connect their accounts and set a
+                spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [
             {
                 label: "Integration guide",
-                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+                href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
             },
         ],
         icon: WalletIcon,
@@ -262,13 +263,13 @@ const PUBLISH_FEATURES: Feature[] = [
         body: (
             <>
                 Connect your endpoint and <Em>set your price</Em>. Each call
-                adds pollen to your balance.
+                adds to your balance.
             </>
         ),
         links: [
             {
                 label: "Add a model",
-                href: "https://enter.pollinations.ai/my-models",
+                href: "https://enter.pollinations.ai/my-models?tab=models",
             },
         ],
         icon: BeakerIcon,
@@ -528,7 +529,8 @@ function PublishCard({ feature }: { feature: Feature }) {
                     className="size-10 shrink-0"
                     style={{ color: feature.color }}
                 />
-                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
+                {/* Ink like a link, amber when the card is hovered. */}
+                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-strong transition-colors [a:hover_&]:text-theme-text-soft">
                     {link.label}
                     <ExternalLinkIcon
                         aria-hidden="true"
@@ -583,7 +585,7 @@ export function DevKit({ className }: { className?: string }) {
                             feature={feature}
                             countLabel={
                                 data && feature.catalogCount === "agents"
-                                    ? data.agents.toLocaleString()
+                                    ? formatCount(data.agents)
                                     : undefined
                             }
                         />

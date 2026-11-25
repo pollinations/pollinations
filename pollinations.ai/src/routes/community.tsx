@@ -8,6 +8,7 @@ import {
     cn,
     EmptyState,
     ExternalLinkButton,
+    formatCount,
     Heading,
     InlineLink,
     LinkCard,
@@ -18,6 +19,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { OrganizationIcon } from "@pollinations/ui/gen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
 import { LINKS, SOCIAL_LINKS } from "../copy/content/socialLinks";
@@ -28,11 +30,7 @@ import {
     usePullRequestCount,
     useVotingIssues,
 } from "../data/community";
-import {
-    compact,
-    useAppDirectory,
-    usePlatformStats,
-} from "../data/publicStats";
+import { useAppDirectory, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import { BottomScene } from "../ui/site/BottomScene";
@@ -72,7 +70,7 @@ const WAYS_IN = [
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
             label: "Find a GitHub Quest",
-            href: `${SOCIAL_LINKS.github.url}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+            href: "https://enter.pollinations.ai/quests",
         },
     },
     {
@@ -131,12 +129,12 @@ function CommunityParticipation() {
     const ways = [
         liveMetric("listed apps", { ...apps, data: apps.data.length }, String),
         liveMetric("community models and agents", platform, (stats) =>
-            compact(stats.community + stats.agents),
+            formatCount(stats.community + stats.agents),
         ),
-        liveMetric("PRs merged", pullRequests, compact),
+        liveMetric("PRs merged", pullRequests, formatCount),
         // The widget only exposes who is online now; a member total needs
         // a bot token, so this is the one live number the card can show.
-        liveMetric(LIVE_METRIC, online, compact),
+        liveMetric(LIVE_METRIC, online, formatCount),
     ].map((metric, index) => ({ ...WAYS_IN[index], metric }));
 
     return (
@@ -354,7 +352,7 @@ function Contributors() {
                                 )}
                             </span>
                             <span className="text-xs text-theme-text-muted tabular-nums">
-                                {person.prs.toLocaleString()} merged PRs
+                                {formatCount(person.prs)} merged PRs
                             </span>
                         </span>
                     </LinkCard>
@@ -388,13 +386,9 @@ function CommunityPage() {
                             showIcon={false}
                             surfaceClassName="flex-row items-center gap-2.5 px-3.5 py-2.5"
                         >
-                            <span
-                                aria-hidden="true"
-                                className="size-5 shrink-0 bg-theme-text-strong"
-                                style={{
-                                    WebkitMask: `url(${supporter.logo}) center / contain no-repeat`,
-                                    mask: `url(${supporter.logo}) center / contain no-repeat`,
-                                }}
+                            <OrganizationIcon
+                                name={supporter.name}
+                                className="size-5 shrink-0 text-theme-text-strong"
                             />
                             <span className="truncate font-body text-sm font-semibold text-theme-text-strong">
                                 {supporter.name}

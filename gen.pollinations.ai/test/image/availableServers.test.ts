@@ -120,7 +120,7 @@ describe("fetchFromWeightedServer", () => {
             body: "request-body",
         });
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
         expect(errorLog).not.toHaveBeenCalled();
         expect(warnLog).toHaveBeenCalledOnce();
@@ -141,7 +141,7 @@ describe("fetchFromWeightedServer", () => {
 
         const response = await fetchFromWeightedServer("sana", options);
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(fetchMock.mock.calls).toEqual([
             ["https://w1/generate", options],
             ["https://w2/generate", options],
@@ -216,7 +216,10 @@ describe("fetchFromWeightedServer", () => {
         expect(warnLog).toHaveBeenCalledOnce();
     });
 
-    it("retries a distinct worker after a known network failure", async () => {
+    it.each([
+        new TypeError("fetch failed: connection refused"),
+        new Error("Network connection lost."),
+    ])("retries a distinct worker after %s", async (failure) => {
         await registerServer("https://w1", "flux");
         await registerServer("https://w2", "flux");
         vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -225,7 +228,7 @@ describe("fetchFromWeightedServer", () => {
             const url = input.toString();
             calls.push(url);
             if (url.startsWith("https://w1/")) {
-                throw new TypeError("fetch failed: connection refused");
+                throw failure;
             }
             return new Response("image", { status: 200 });
         });
@@ -235,7 +238,7 @@ describe("fetchFromWeightedServer", () => {
             body: "request-body",
         });
 
-        expect(response.status).toBe(200);
+        expect(response.response.status).toBe(200);
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
     });
 
@@ -252,6 +255,23 @@ describe("fetchFromWeightedServer", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("retains the last backend after exhausting network retries", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const cause = new TypeError("fetch failed: connection refused");
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(cause);
+        await expect(
+            fetchFromWeightedServer("flux", { method: "POST" }),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL("https://w2/generate"),
+            cause,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
     it("does not retry failures other than queue-full 503", async () => {
         await registerServer("https://w1", "flux");
         await registerServer("https://w2", "flux");
@@ -263,6 +283,35 @@ describe("fetchFromWeightedServer", () => {
             fetchFromWeightedServer("flux", { method: "POST" }),
         ).rejects.toMatchObject({ status: 500 });
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("getRegisteredServers", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("uses the production pool and excludes heartbeats at the 180-second cutoff", async () => {
+        const kv = makeKv();
+        const now = Date.now();
+        vi.spyOn(Date, "now").mockReturnValue(now);
+        setServerRegistryBinding(kv, "production");
+        for (const [environment, pool, id, age] of [
+            ["production", "sana", "live", 179_999],
+            ["production", "sana", "expired", 180_000],
+            ["staging", "sana", "staging", 0],
+            ["production", "flux", "flux", 0],
+        ] as const) {
+            await kv.put(
+                `image:server:${environment}:${pool}:${id}`,
+                JSON.stringify({
+                    url: `https://${id}`,
+                    lastHeartbeat: now - age,
+                }),
+            );
+        }
+        await kv.put("image:latency:production:sana:live", "2500");
+        expect(await getRegisteredServers("sana")).toEqual([
+            { url: "https://live", lastHeartbeat: now - 179_999, lastMs: 2500 },
+        ]);
     });
 });
 

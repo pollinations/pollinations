@@ -1,5 +1,14 @@
-import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    HOTSHOT_XL_MODEL,
+    HOTSHOT_XL_SIDE_LENGTH,
+    IMAGE_SERVICES,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
+import {
+    durationError,
+    type ModelDefinition,
+    type PricingInput,
+} from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
@@ -9,7 +18,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
     ...ImageModelName[],
 ];
-const validQualities = ["low", "medium", "high", "hd"] as const;
+const validQualities = ["low", "medium", "high", "hd", "auto"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
@@ -93,6 +102,11 @@ export const ImageParamsSchema = z
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
         quality: z.string().catch("medium"),
+        // GPT Image 2.6 output controls.
+        output_format: z.enum(["png", "webp", "gif"]).optional(),
+        frame_count: z.coerce.number().int().min(2).max(16).optional(),
+        frame_duration_ms: z.coerce.number().int().min(20).max(2000).optional(),
+        background: z.enum(["auto", "opaque", "transparent"]).optional(),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -100,9 +114,10 @@ export const ImageParamsSchema = z
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
                 // Keep commas inside URLs, matching the public query schema.
-                return value.includes("|")
+                const urls = value.includes("|")
                     ? value.split("|")
-                    : value.split(/,(?=https?:\/\/)/);
+                    : value.split(/,(?=\s*https?:\/\/)/);
+                return urls.map((url) => url.trim()).filter(Boolean);
             })
             .catch([]),
         reference_images: referenceUrls.optional(),
@@ -142,6 +157,94 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
+        if (data.model === HOTSHOT_XL_MODEL) {
+            if (data.output_format !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "Hotshot-XL always returns a GIF. Omit output_format.",
+                });
+            }
+            if (
+                (data.width !== undefined &&
+                    data.width !== HOTSHOT_XL_SIDE_LENGTH) ||
+                (data.height !== undefined &&
+                    data.height !== HOTSHOT_XL_SIDE_LENGTH)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Hotshot-XL only supports 512x512 output.",
+                });
+            }
+        }
+        const isFlare =
+            data.model === "openai/gpt-image-2.6-flare" ||
+            data.model === "openai/gpt-image-2.6-flare:fal";
+        const isSunburst =
+            data.model === "openai/gpt-image-2.6-sunburst" ||
+            data.model === "openai/gpt-image-2.6-sunburst:fal";
+        if (data.output_format === "webp" && !isFlare) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message:
+                    "WebP output is supported only by GPT Image 2.6 Flare.",
+            });
+        }
+        if (data.output_format === "gif") {
+            if (!isFlare && !isSunburst) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["output_format"],
+                    message:
+                        "GIF output is supported only by GPT Image 2.6 Flare and Sunburst.",
+                });
+            }
+            if (
+                data.frame_count === undefined ||
+                data.frame_duration_ms === undefined
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_count"],
+                    message:
+                        "GIF output requires frame_count and frame_duration_ms.",
+                });
+            } else if (data.frame_count * data.frame_duration_ms > 10000) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["frame_duration_ms"],
+                    message: "GIF total duration must not exceed 10000 ms.",
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["image"],
+                    message:
+                        "GIF output is currently supported for image generation only.",
+                });
+            }
+            if (data.transparent || data.background === "transparent") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["background"],
+                    message:
+                        "GIF output does not support transparent backgrounds.",
+                });
+            }
+        } else if (
+            data.frame_count !== undefined ||
+            data.frame_duration_ms !== undefined
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["output_format"],
+                message:
+                    "frame_count and frame_duration_ms require output_format=gif.",
+            });
+        }
         if (data.resolution) {
             const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
                 .resolutions;
@@ -208,6 +311,18 @@ export const ImageParamsSchema = z
                 capability: "reference_audios" as const,
             },
         ];
+        if (
+            data.model === "bytedance/seedance-2.5-flash" &&
+            data.image?.length &&
+            references.some(({ values }) => values.length > 0)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message:
+                    "Seedance Flash keyframes cannot be combined with reference images, videos or audio.",
+            });
+        }
         for (const { field, values, capability } of references) {
             if (values.length === 0) continue;
             if (!definition.videoCapabilities?.includes(capability)) {
@@ -218,14 +333,48 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "minimax/minimax-h3") {
-            if (data.duration !== undefined && data.duration !== 5) {
+        if (
+            data.model === "heygen/heygen-avatar-6" ||
+            data.model === "heygen/heygen-avatar-6:openrouter" ||
+            data.model === "heygen/heygen-avatar-6-turbo" ||
+            data.model === "heygen/heygen-avatar-6-turbo:openrouter"
+        ) {
+            const photos =
+                data.image.length + (data.reference_images?.length ?? 0);
+            const videos = data.reference_videos?.length ?? 0;
+            if (
+                photos > 1 ||
+                videos > 1 ||
+                photos + videos === 0 ||
+                (data.reference_audios?.length ?? 0) !== 1
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "Avatar 6 requires exactly one speech audio reference and a photo or reference video (at most one of each).",
+                });
+            }
+            if (data.duration !== undefined) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["duration"],
-                    message: "minimax-h3 supports exactly 5 seconds.",
+                    message:
+                        "Avatar 6 duration is determined by the supplied audio.",
                 });
             }
+        }
+        const durationIssue =
+            data.duration === undefined
+                ? undefined
+                : durationError(data.model, definition, data.duration);
+        if (durationIssue) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["duration"],
+                message: durationIssue,
+            });
+        }
+        if (data.model === "minimax/minimax-h3") {
             if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -246,16 +395,6 @@ export const ImageParamsSchema = z
             data.model === "minimax/minimax-h3-max-turbo"
         ) {
             if (
-                data.duration !== undefined &&
-                ![5, 10, 15].includes(data.duration)
-            ) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["duration"],
-                    message: `${data.model} supports 5, 10, or 15 seconds.`,
-                });
-            }
-            if (
                 data.aspectRatio !== undefined &&
                 !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
                     data.aspectRatio,
@@ -275,7 +414,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "google/gemini-omni-1.1-flash") {
+        if (data.model.startsWith("google/gemini-omni-")) {
             if (
                 data.aspectRatio !== undefined &&
                 !["16:9", "9:16"].includes(data.aspectRatio)
@@ -283,16 +422,14 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["aspectRatio"],
-                    message:
-                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                    message: `${data.model} supports 16:9 or 9:16.`,
                 });
             }
             if (data.fps !== undefined && data.fps !== 24) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
-                    message:
-                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }
@@ -326,7 +463,33 @@ export const ImageParamsSchema = z
             ? (data.quality as (typeof validQualities)[number])
             : "medium";
 
-        return { ...data, quality, width, height, dimensionsExplicit };
+        // OpenAI clients ask for transparency with `background`; the
+        // support check and PNG preservation read `transparent`.
+        const transparent =
+            data.transparent || data.background === "transparent";
+
+        return {
+            ...data,
+            quality,
+            width,
+            height,
+            dimensionsExplicit,
+            transparent,
+        };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
+
+/** Request facts that select a model's rate sheet. Billing and price quotes share them. */
+export function pricingInputFromParams(
+    params: Omit<ImageParams, "model">,
+): PricingInput {
+    return {
+        resolution: params.resolution,
+        quality: params.quality,
+        hasImage: (params.image?.length ?? 0) > 0,
+        hasReferenceVideo: (params.reference_videos?.length ?? 0) > 0,
+        maxImageDimension: Math.max(params.width, params.height),
+        megapixels: (params.width * params.height) / 1_000_000,
+    };
+}

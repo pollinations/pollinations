@@ -12,12 +12,12 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import {
-    buildQuestStandings,
+    getQuestStandings,
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
-// Bumped to v30: the app-spend quest is worth 10 Pollen.
-const CACHE_KEY = "quests:catalog:v30";
+// Bumped to v32: quest bounties come from reward-N labels.
+const CACHE_KEY = "quests:catalog:v32";
 const CACHE_TTL = 60;
 
 export type QuestCatalogResponse = {
@@ -38,6 +38,7 @@ const questCatalogItemSchema = z.object({
             unit: z.enum(["pollen", "users", "days"]),
         })
         .optional(),
+    repeatable: z.boolean().optional(),
     url: z.string().nullable(),
 });
 
@@ -82,7 +83,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Monthly Quest Standings",
             description:
-                "Returns this calendar month's (UTC) Quest Pollen ranking: the top three plus, for a signed-in user, the rows around them.",
+                "Returns this calendar month's (UTC) Quest reward ranking: the top three plus, for a signed-in user, the rows around them.",
             responses: {
                 200: {
                     description: "Monthly quest standings",
@@ -97,7 +98,7 @@ export const questsRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
             const githubLogin = c.var.auth.user?.githubUsername ?? null;
-            return c.json(await buildQuestStandings(c.env, githubLogin));
+            return c.json(await getQuestStandings(c.env, githubLogin));
         },
     );
 
@@ -118,9 +119,9 @@ async function buildQuestCatalog(
 
     // Preserve definition order from listQuestCards (group + within-group), so
     // each lane reads in its intended sequence, e.g. Setup: API key -> text ->
-    // image -> audio. The frontend still sorts every lane by lifecycle + reward;
-    // this order is only the stable tiebreak for equal-reward quests. (Was
-    // sorted alphabetically by title, which placed "audio" before "image".)
+    // image -> audio. The frontend groups every lane by lifecycle and keeps
+    // this order within each group. (Was sorted alphabetically by title, which
+    // placed "audio" before "image".)
     return {
         quests: cards,
     };

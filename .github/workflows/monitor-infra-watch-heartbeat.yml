@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: production
-          sparse-checkout: operations/infra-watch
+          sparse-checkout: operations/monitoring/infra-watch
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
@@ -41,10 +41,10 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
-          DISCORD_WEBHOOK_URL="$(sops decrypt --extract '["DISCORD_WEBHOOK_URL"]' operations/infra-watch/secrets.vars.json)"
+          DISCORD_WEBHOOK_URL="$(sops decrypt --extract '["DISCORD_WEBHOOK_URL"]' operations/monitoring/infra-watch/secrets/secrets.vars.json)"
           echo "::add-mask::$DISCORD_WEBHOOK_URL"
           export DISCORD_WEBHOOK_URL
-          node operations/infra-watch/heartbeat.mjs
+          node operations/monitoring/infra-watch/heartbeat.mjs
       - if: steps.check.outputs.changed == 'true'
         uses: actions/cache/save@v4
         with:

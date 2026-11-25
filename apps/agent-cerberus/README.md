@@ -10,7 +10,7 @@ Jev makes one bounded `choice` decision per run through
 contain/investigate/maintain playbook, then `openai/gpt-5.4-nano` explains the
 selected action and its probabilities. The agent forwards the downstream
 Responses JSON or SSE, including its real usage. Both calls use the caller's
-Pollen and permissions. No external credentials, package installation, file
+balance and permissions. No external credentials, package installation, file
 execution, or repository mutations are needed.
 
 Input is a security finding or scan summary. Reports are untrusted data;
@@ -21,7 +21,7 @@ Invalid or failed decisions stop the run before an explanation is requested.
 
 ## Try it
 
-Register the public source repository in My Models → Agents → Create → Code agent.
+Register the public source repository in My listings → Agents → Create → Code agent.
 The owner can use the private deployment immediately. Public use needs publisher
 approval. Callers need generation access; no account-administration scopes.
 

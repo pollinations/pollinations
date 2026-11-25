@@ -1,14 +1,14 @@
+import {
+    getCommunityModelIcon,
+    getModelBrandLogoPath,
+    ModelBrandIcon,
+} from "@pollinations/ui/gen";
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
-import {
-    getCommunityModelIcon,
-    ModelBrandIcon,
-} from "../frontend/src/components/models/model-icons.tsx";
-import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
 const VALID_ICON_URL =
@@ -81,6 +81,24 @@ test("catalog uses the direct media URL and falls back for unsafe icon metadata"
     ).toBeUndefined();
 });
 
+test("the shared icon accepts public catalog fields and rejects an external icon", () => {
+    const model = {
+        community: true,
+        category: "audio",
+        brand_icon_url: VALID_ICON_URL,
+    };
+    expect(getModelBrandLogoPath(model)).toBe(VALID_ICON_URL);
+    const external = {
+        ...model,
+        brand_icon_url: "https://tracker.test/icon.svg",
+    };
+    const html = renderToStaticMarkup(
+        createElement(ModelBrandIcon, { model: external }),
+    );
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("tracker.test");
+});
+
 test("community models keep a generic icon when no custom URL is set", () => {
     expect(
         getCommunityModelIcon({ community: true, type: "text" } as ModelPrice),
@@ -106,7 +124,7 @@ test("custom brand icons render only the mask, without a generic icon underneath
             } as ModelPrice,
         }),
     );
-    expect(html).toContain(`mask-image:url(${VALID_ICON_URL})`);
+    expect(html).toContain(`mask:url(&quot;${VALID_ICON_URL}&quot;)`);
     expect(html).toContain("bg-current");
     expect(html).not.toContain("<svg");
 });

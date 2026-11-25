@@ -170,9 +170,9 @@ test("a script past the free limit gets gen's error body, a Retry-After and the 
             success: false,
             error: {
                 code: "FREE_LIMIT",
-                message: `Free limit reached: 1 image every 45 seconds per IP. Retry after ${wait}s, or get unlimited images with a Pollinations API key at https://enter.pollinations.ai/?ref=classic`,
+                message: `Free limit reached: 1 image every 45 seconds per IP. Retry after ${wait}s, or get unlimited images with a Pollinations API key at https://enter.pollinations.ai/?ref=image`,
                 timestamp: body.error.timestamp,
-                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+                fixUrl: "https://enter.pollinations.ai/?ref=image",
             },
         });
         expect(without(response.headers)).toEqual(vm);

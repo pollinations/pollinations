@@ -1,16 +1,20 @@
 // What the Classic API tells a caller it did not answer, in enter's formats:
 // gen's error body for scripts and, for plain text, a notice worded as gen's
-// text-balance-notice. ?ref=classic lets enter count the visits.
+// text-balance-notice. ?ref=text and ?ref=image let enter count the visits.
 import { AGENT_PAYS, PAGE, SCENES } from "./free-limit-page.js";
 
-const ENTER = "https://enter.pollinations.ai/?ref=classic";
+// enter's landing page, with the only Classic refs enter records
+const ENTER = {
+    text: "https://enter.pollinations.ai/?ref=text",
+    image: "https://enter.pollinations.ai/?ref=image",
+};
 const JSON_TYPE = "application/json; charset=utf-8";
 // One request past the free limit over x402: the price the paywalls of
 // pay.js and pay.ts charge, and the price the free limit's page names
 export const PRICE_USD = "0.01";
 
 /** gen's error body (shared/error.ts on main) */
-const genError = (status, code, message) =>
+const genError = (status, code, message, kind = "text") =>
     JSON.stringify({
         status,
         success: false,
@@ -18,16 +22,16 @@ const genError = (status, code, message) =>
             code,
             message,
             timestamp: new Date().toISOString(),
-            fixUrl: ENTER,
+            fixUrl: ENTER[kind],
         },
     });
 
 const limitError = (item, every, wait) =>
-    `Free limit reached: 1 ${item} every ${every} seconds per IP. Retry after ${wait}s, or get unlimited ${item === "image" ? "images" : "replies"} with a Pollinations API key at ${ENTER}`;
+    `Free limit reached: 1 ${item} every ${every} seconds per IP. Retry after ${wait}s, or get unlimited ${item === "image" ? "images" : "replies"} with a Pollinations API key at ${ENTER[item === "image" ? "image" : "text"]}`;
 
 // Apps print a plain text answer as it is, so it names the fix as gen's notice does
 const limitNotice = (every, wait) =>
-    `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER}), then try again.\n\n` +
+    `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER.text}), then try again.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.";
 
 const hoursUntil = (seconds) => {
@@ -37,9 +41,9 @@ const hoursUntil = (seconds) => {
 
 // The daily quota's answer, for scripts and as a notice apps show as is
 const dailyError = (perDay, wait) =>
-    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}. Get unlimited replies with a Pollinations API key at ${ENTER}`;
+    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}. Get unlimited replies with a Pollinations API key at ${ENTER.text}`;
 const dailyNotice = (perDay, wait) =>
-    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}, or [get unlimited replies](${ENTER}) now.\n\n` +
+    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}, or [get unlimited replies](${ENTER.text}) now.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.";
 
 // What a browser reads on each screen, the page built by screens/render.js;
@@ -240,6 +244,7 @@ export function explainFreeLimit(
             402,
             "FREE_LIMIT",
             limitError(kind === "image" ? "image" : "reply", every, wait),
+            kind === "image" ? "image" : "text",
         ),
     );
 }
@@ -256,11 +261,14 @@ const CODES = {
     503: "SERVICE_UNAVAILABLE",
 };
 
-/** An answer in gen's error body, with gen's code for its status */
-export const genAnswer = (status, message, headers = {}) => ({
+/**
+ * An answer in gen's error body, with gen's code for its status
+ * @param {"text" | "image"} [kind] the Worker, for the fixUrl's ref
+ */
+export const genAnswer = (status, message, headers = {}, kind = "text") => ({
     status,
     headers: { "Content-Type": JSON_TYPE, ...headers },
-    body: genError(status, CODES[status] ?? "BAD_REQUEST", message),
+    body: genError(status, CODES[status] ?? "BAD_REQUEST", message, kind),
 });
 
 /**
@@ -273,13 +281,13 @@ export function promptTooLong(maxChars, json) {
     if (json)
         return genAnswer(
             413,
-            `Prompt too long for the free Classic API: ${chars} characters max (about ${tokens} tokens), counting messages and tools. Shorten it, or use long prompts and every model with a Pollinations API key at ${ENTER}`,
+            `Prompt too long for the free Classic API: ${chars} characters max (about ${tokens} tokens), counting messages and tools. Shorten it, or use long prompts and every model with a Pollinations API key at ${ENTER.text}`,
         );
     return {
         status: 413,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
         body:
-            `This message is too long for the free Classic API. It runs GPT-OSS 20B, a small model, with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER}).\n\n` +
+            `This message is too long for the free Classic API. It runs GPT-OSS 20B, a small model, with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER.text}).\n\n` +
             "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.",
     };
 }
@@ -290,8 +298,9 @@ export function promptTooLong(maxChars, json) {
  * other failure is ours, a 500. A request the caller can fix (gen's other
  * 4xx) gets undefined: the Worker passes gen's own refusal on.
  * @param {number} [genStatus] gen's status; none when the Worker itself failed
+ * @param {"text" | "image"} [kind] the Worker, for the links' ref
  */
-export function failure(genStatus) {
+export function failure(genStatus, kind = "text") {
     if (
         genStatus >= 400 &&
         genStatus < 500 &&
@@ -301,25 +310,28 @@ export function failure(genStatus) {
     return genStatus === 429 || genStatus >= 500
         ? genAnswer(
               503,
-              `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a Pollinations API key at ${ENTER}`,
+              `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a Pollinations API key at ${ENTER[kind]}`,
               { "Retry-After": String(RETRY_SECONDS) },
+              kind,
           )
         : genAnswer(
               500,
-              `Something went wrong on our side. Please try again, or use every model with a Pollinations API key at ${ENTER}`,
+              `Something went wrong on our side. Please try again, or use every model with a Pollinations API key at ${ENTER[kind]}`,
+              {},
+              kind,
           );
 }
 
 /** The Workers' refusals of a request the caller can fix */
 export const REFUSED = {
-    replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a Pollinations API key at ${ENTER}`,
-    imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a Pollinations API key at ${ENTER}`,
+    replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a Pollinations API key at ${ENTER.text}`,
+    imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a Pollinations API key at ${ENTER.image}`,
     badMessages:
         "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
     jsonTooLong: (maxTokens) =>
-        `The JSON reply hit the free Classic API's ${maxTokens}-token limit before it was complete. Ask for shorter output, or use longer replies with a Pollinations API key at ${ENTER}`,
+        `The JSON reply hit the free Classic API's ${maxTokens}-token limit before it was complete. Ask for shorter output, or use longer replies with a Pollinations API key at ${ENTER.text}`,
     unknownModel: (model) =>
-        `Model "${model}" isn't on the Classic API. Free models: https://text.pollinations.ai/models. Every model we offer is on ${ENTER}`,
+        `Model "${model}" isn't on the Classic API. Free models: https://text.pollinations.ai/models. Every model we offer is on ${ENTER.text}`,
     enterOnly: (model) =>
-        `${model} isn't part of the Classic API. Use it with a Pollinations API key at ${ENTER}`,
+        `${model} isn't part of the Classic API. Use it with a Pollinations API key at ${ENTER.image}`,
 };

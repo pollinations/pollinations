@@ -304,6 +304,8 @@ export async function generate(c: Context, url: URL, route: string) {
         const { status, body, headers } = genAnswer(
             403,
             REFUSED.enterOnly(model),
+            {},
+            "image",
         );
         return withCard(vmResponse(body, status, headers), "enter", job);
     }
@@ -326,12 +328,17 @@ export async function generate(c: Context, url: URL, route: string) {
         );
     } catch (error) {
         logFailure(route, { error: "ip_slot", type: error.name });
-        const { status, body, headers } = failure(503);
+        const { status, body, headers } = failure(503, "image");
         return withCard(vmResponse(body, status, headers), "busy", job);
     }
 
     if (slot.action === "full") {
-        const { status, body, headers } = genAnswer(429, REFUSED.imageBusy);
+        const { status, body, headers } = genAnswer(
+            429,
+            REFUSED.imageBusy,
+            {},
+            "image",
+        );
         return withCard(vmResponse(body, status, headers), "running", job);
     }
     if (slot.action === "pay") {
@@ -497,7 +504,7 @@ async function generateImage(job: Job, ended: () => void) {
         );
         // Answered as gen answers its own failures, or with gen's own
         // refusal of a request the caller can fix
-        const { status, body, headers } = failure(error.genStatus) ?? {
+        const { status, body, headers } = failure(error.genStatus, "image") ?? {
             status: error.genStatus,
             body: error.genBody,
             headers: { "Content-Type": "application/json; charset=utf-8" },

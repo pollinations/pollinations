@@ -156,9 +156,9 @@ async function payFor(path, options) {
     });
 }
 
-const ENTER = "https://enter.pollinations.ai/?ref=classic";
+const ENTER = "https://enter.pollinations.ai/?ref=text";
 const NOTICE =
-    /^Free limit reached: 1 reply every 45 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\), then try again\./;
+    /^Free limit reached: 1 reply every 45 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=text\), then try again\./;
 
 test("a script or app past the free limit gets the notice in the 402, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
     for (const host of ["text.pollinations.ai", "text.myceli.ai"]) {
@@ -268,7 +268,7 @@ async function quotaOf(ip, used) {
 }
 
 const DAILY_NOTICE =
-    /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\) now\./;
+    /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=text\) now\./;
 
 test("the 100th free reply of the day is served and counted, the 101st goes to the paywall until midnight", async () => {
     const ip = nextIp();

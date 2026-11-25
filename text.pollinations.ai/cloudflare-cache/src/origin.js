@@ -25,9 +25,9 @@ import { prepareForwardedHeaders } from "./index.js";
 
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
 const FREE_INTERVAL_MS = 45_000;
-// Free replies per IP and UTC day. IPs with 50+ replies in 6 hours were a
-// third of the gpt-oss cost, and almost all are scripts (Tinybird, Nov 2026)
-const FREE_PER_DAY = 50;
+// Free replies per IP and UTC day. Replies past the 100th were ~31% of the
+// gpt-oss cost, from ~300 IPs a day, almost all scripts (Tinybird, Nov 2026)
+const FREE_PER_DAY = 100;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 // Free gpt-oss costs: half of all replies are under 150 tokens, and prompts
 // over ~4k tokens were 13% of requests but 60% of the cost (Tinybird, Nov 2026)

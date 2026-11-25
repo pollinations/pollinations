@@ -73,6 +73,30 @@ export class IpSlot extends DurableObject {
     }
 }
 
+/**
+ * The free limit's caller for a cf-connecting-ip: an IPv4 address as is, an
+ * IPv6 address as its /64. One customer gets a whole /64, so keying the full
+ * address let a caller rotate addresses for a fresh slot per request.
+ */
+export function slotKey(ip) {
+    if (!ip.includes(":")) return ip;
+    const [head, tail] = ip.split("::");
+    const left = head ? head.split(":") : [];
+    const right = tail ? tail.split(":") : [];
+    const groups =
+        tail === undefined
+            ? left
+            : [
+                  ...left,
+                  ...Array(8 - left.length - right.length).fill("0"),
+                  ...right,
+              ];
+    const prefix = groups
+        .slice(0, 4)
+        .map((group) => (Number.parseInt(group, 16) || 0).toString(16));
+    return `${prefix.join(":")}::/64`;
+}
+
 const MAX_REMEMBERED_IPS = 10_000;
 // Per isolate: IP -> the `until` of its latest go or wait. No release() brings
 // that forward, so a non-stream request before it gets "pay" without an RPC.

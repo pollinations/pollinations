@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { callerHeaders } from "../../../shared/gen-caller.js";
-import { takeSlot } from "../../../shared/ip-slot.js";
+import { slotKey, takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
@@ -314,7 +314,7 @@ export async function generate(c: Context, url: URL, route: string) {
         ctx.waitUntil(response);
         return response;
     };
-    const ip = request.headers.get("cf-connecting-ip") || "unknown";
+    const ip = slotKey(request.headers.get("cf-connecting-ip") || "unknown");
     let slot: Awaited<ReturnType<typeof takeSlot>>;
     try {
         // Without the paywall a request waits for the next slot, as on the VM

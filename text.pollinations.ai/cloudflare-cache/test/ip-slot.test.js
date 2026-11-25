@@ -1,6 +1,15 @@
 import { env, runInDurableObject } from "cloudflare:test";
 import { expect, test } from "vitest";
-import { MAX_HOLD_MS, takeSlot } from "../../../shared/ip-slot.js";
+import { MAX_HOLD_MS, slotKey, takeSlot } from "../../../shared/ip-slot.js";
+
+test("an IPv6 caller is its /64, an IPv4 caller its address", () => {
+    expect(slotKey("2001:db8:a:b:1:2:3:4")).toBe("2001:db8:a:b::/64");
+    expect(slotKey("2001:DB8:000a:b::99")).toBe("2001:db8:a:b::/64");
+    expect(slotKey("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(slotKey("::1")).toBe("0:0:0:0::/64");
+    expect(slotKey("198.51.100.7")).toBe("198.51.100.7");
+    expect(slotKey("unknown")).toBe("unknown");
+});
 
 const INTERVAL = 30_000;
 

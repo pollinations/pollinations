@@ -79,7 +79,7 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
     );
 });
 
-test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 1500 tokens, clamped parameters", async () => {
+test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 800 tokens, clamped parameters", async () => {
     const get = await call(
         "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&frequency_penalty=-9&seed=4.7&json=true&model=openai&voice=nova",
     );
@@ -105,7 +105,7 @@ test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 1500 tok
         reasoning_effort: "low",
         response_format: { type: "json_object" },
         stream: false,
-        max_tokens: 1500,
+        max_tokens: 800,
     });
 
     // A given system prompt replaces the default; empty user messages get a placeholder
@@ -128,11 +128,12 @@ test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 1500 tok
         { role: "user", content: "Please provide a response." },
         { role: "user", content: "gen:echo" },
     ]);
-    expect(body.max_tokens).toBe(1500);
-    expect(body.reasoning_effort).toBe("high");
+    // Callers can raise neither the reply length nor the reasoning effort
+    expect(body.max_tokens).toBe(800);
+    expect(body.reasoning_effort).toBe("low");
 
     const override = await call("/gen:echo?reasoning_effort=medium");
-    expect(JSON.parse(override.text).body.reasoning_effort).toBe("medium");
+    expect(JSON.parse(override.text).body.reasoning_effort).toBe("low");
 
     // "/openai*" without messages: the rest of the path is the user message
     const openai = await call("/openaigen:echo", { method: "POST" });
@@ -237,6 +238,91 @@ test("a stream ends after data: [DONE] and is stored once complete", async () =>
     const hit = await call("/stream?stream=true");
     expect(hit.response.headers.get("x-cache")).toBe("HIT");
     expect(hit.text).toBe(SSE_UNTIL_DONE);
+});
+
+test("IPv6 addresses in one /64 share the free slot", async () => {
+    const { response } = await call("/ipv6%20slot", {
+        ip: "2001:db8:6:4:aaaa::1",
+    });
+    expect(response.status).toBe(200);
+
+    expect(await alarmOf("2001:db8:6:4::/64")).not.toBeNull();
+    expect(await alarmOf("2001:db8:6:4:aaaa::1")).toBeNull();
+});
+
+test("JSON cut off at the token limit is an error, not a stored answer", async () => {
+    const cut = await call("/gen:length?json=true");
+    expect(cut.response.status).toBe(422);
+    expect(cut.response.headers.get("cache-control")).toBe("private, no-store");
+    expect(JSON.parse(cut.text).error.code).toBe("OUTPUT_TOO_LONG");
+    expect(await storedAt("/gen:length?json=true")).toBeNull();
+
+    // Plain text keeps the partial reply, as before
+    const text = await call("/gen:length");
+    expect(text.response.status).toBe(200);
+    expect(text.text).toBe('{"a": [1, 2');
+});
+
+test("the prompt cap counts the messages gen gets, without the default system prompt", async () => {
+    const { bodies, testEnv } = recordingGen();
+    // Fields genMessages drops do not count
+    const response = await call("/openai", {
+        testEnv,
+        method: "POST",
+        headers: JSON_BODY,
+        body: JSON.stringify({
+            messages: [
+                {
+                    role: "assistant",
+                    content: "hi",
+                    reasoning_content: "x".repeat(20_000),
+                },
+                { role: "user", content: "gen:echo" },
+            ],
+        }),
+    });
+    expect(response.response.status).toBe(200);
+    expect(bodies[0].messages[1]).toEqual({ role: "assistant", content: "hi" });
+});
+
+test("a prompt over 16,000 characters is refused before gen and the IP's slot", async () => {
+    const { bodies, testEnv } = recordingGen();
+    const ip = nextIp();
+    const long = "x".repeat(16_001);
+
+    // OpenAI callers get gen's error body
+    const openai = await call("/openai", {
+        ip,
+        testEnv,
+        method: "POST",
+        headers: JSON_BODY,
+        body: JSON.stringify({ messages: [{ role: "user", content: long }] }),
+    });
+    expect(openai.response.status).toBe(413);
+    expect(openai.response.headers.get("cache-control")).toBe(
+        "private, no-store",
+    );
+    expect(JSON.parse(openai.text).error.code).toBe("PAYLOAD_TOO_LARGE");
+
+    // Plain text callers get a notice their app can show as the reply
+    const text = await call("/", {
+        ip,
+        testEnv,
+        method: "POST",
+        headers: JSON_BODY,
+        body: JSON.stringify({ messages: [{ role: "user", content: long }] }),
+    });
+    expect(text.response.status).toBe(413);
+    expect(text.response.headers.get("content-type")).toBe(
+        "text/plain; charset=utf-8",
+    );
+    expect(text.text).toMatch(/^This message is too long/);
+    expect(bodies).toHaveLength(0);
+
+    // The refusals took no slot: the same IP still generates right away
+    const short = await call("/gen:echo", { ip, testEnv });
+    expect(short.response.status).toBe(200);
+    expect(bodies).toHaveLength(1);
 });
 
 const AT_CAPACITY =

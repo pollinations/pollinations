@@ -36,6 +36,7 @@ const send = (res, status, body) => {
 /**
  * Fixed gen responses for POST /v1/chat/completions, picked by the last
  * message: "gen:<status>" answers that error, "gen:empty" an empty content,
+ * "gen:length" a reply cut off at max_tokens,
  * "gen:echo" the request it got, "gen:slow" waits 300 ms. Streams get SSE,
  * one chunk a second for "gen:long".
  */
@@ -77,6 +78,14 @@ async function gen(req, res) {
     }
     if (prompt === "gen:200-error-text")
         return send(res, 200, { error: "oops" });
+    // A reply cut off at max_tokens
+    if (prompt === "gen:length") {
+        const message = { role: "assistant", content: '{"a": [1, 2' };
+        return send(res, 200, {
+            ...COMPLETION,
+            choices: [{ message, finish_reason: "length" }],
+        });
+    }
     if (prompt === "gen:empty") {
         const message = { role: "assistant", content: "", reasoning: "hm" };
         return send(res, 200, { ...COMPLETION, choices: [{ message }] });

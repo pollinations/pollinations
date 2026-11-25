@@ -3,7 +3,7 @@
 Review the [Express support queue](https://github.com/orgs/pollinations/projects/20/views/50?filterQuery=is%3Aopen%20source%3ACommunity%20is%3Aissue%20priority%3AExpress)
 for `pollinations/pollinations`. Keep GitHub read-only and report only in the
 active chat. For reply drafting or case work requested in that chat, follow the
-[GitHub support skill](../SKILL.md).
+[GitHub support skill](../../.claude/skills/pollinations-support-profile/SKILL.md).
 
 ## Collect and rank the queue
 

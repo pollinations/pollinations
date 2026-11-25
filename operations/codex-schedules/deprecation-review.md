@@ -1,7 +1,7 @@
 # Model deprecation review
 
-Run this review read-only. Follow the [model-management skill](../SKILL.md) and
-its [catalog lifecycle policy](operating-policy.md). Use current `origin/production`
+Run this review read-only. Follow the [model-management skill](../../.claude/skills/model-management/SKILL.md) and
+its [catalog lifecycle policy](../../.claude/skills/model-management/references/operating-policy.md). Use current `origin/production`
 for configured routes and `origin/main` for upcoming changes. Fetch refs if
 needed and read them with Git without switching the user's checkout.
 

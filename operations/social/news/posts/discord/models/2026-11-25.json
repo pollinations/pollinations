@@ -1,0 +1,45 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-11-25",
+  "previous_date": "2026-11-18",
+  "generated_at": "2026-11-25T14:03:53.161014+00:00",
+  "messages": [
+    {
+      "content": "## Official model updates\n### ✨ New",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Google - Gemini 4 Hydrogen** · text, image, audio, video → text · reasoning, tool calling, web search · 💳 Paid\n- **Google - Gemini 4 Neon** · text, image, audio, video → text · reasoning, tool calling, web search · 💳 Paid\n- **Meta - Muse Ember** · text, image → text · reasoning, tool calling · 💳 Paid\n- **Thinking Machines - Inkling 2 Mini** · text, image → text · reasoning, tool calling · 💳 Paid\n\n**🧭 Decision**\n- **Google - Gemini Decision 1** · text, image, audio, video → text · 💳 Paid\n- **HeyGen - HeyGen Decision 1** · text, image, audio, video → text · 💳 Paid\n\n**🎨 Image**\n- **ByteDance - Seedream 5.5** · text, image → image · 💳 Paid\n- **Hotshot - Hotshot-XL** · text → image · 💳 Paid\n- **Ideogram - Ideogram Vector 1** · text, image → image · 💳 Paid\n- **MiniMax - MiniMax H3 Image** · text, image → image · 💳 Paid\n- **MiniMax - MiniMax H3 Image Highspeed** · text, image → image · 💳 Paid\n- **QuiverAI - Arrow 2** · text, image → image · 💳 Paid\n- **Stability AI - Stable Diffusion 3.5 Large** · text, image → image · 💳 Paid\n- **Stability AI - Stable Image Core** · text → image · 💳 Paid\n\n**🎬 Video**\n- **ByteDance - Seedance 2.5 Flash** · text, image, video, audio → video, audio · 💳 Paid\n- **HeyGen - HeyGen Avatar 6** · text, image, video, audio → video, audio · 💳 Paid\n- **HeyGen - HeyGen Avatar 6 Turbo** · text, image, video, audio → video, audio · 💳 Paid\n- **Kuaishou - Kling 3.0 Pro** · text, image → video, audio · 💳 Paid\n- **Kuaishou - Kling 4.0 Flash** · text, image → video, audio · 💳 Paid\n- **Lightricks - LTX 2.5 Pro** · text, image → video, audio · 💳 Paid\n\n**🎙️ Realtime**\n- **Google - Gemini 3.5 Transcribe Live** · audio → text · 💳 Paid\n- **Google - Gemini 3.8 Live** · text, audio, image → audio · tool calling · 💳 Paid",
+          "color": 11104483
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🔄 Updated",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Inception - Mercury 2** 🟢 5.2% cheaper · 🔵 Parameters removed: stop\n- **Inception - Mercury 3** 🟢 5.2% cheaper\n- **NVIDIA - Nemotron 3 Ultra** 🔵 Parameters removed: prediction\n- **NVIDIA - Nemotron 3.5 Lightning** 🔵 Parameters removed: prediction\n- **OpenAI - GPT-OSS 20B** 🔵 Parameters removed: parallel\\_tool\\_calls, stop\n- **Z.ai - GLM-5.3-Flash** 🔵 Parameters removed: prediction\n\n**🔊 Audio**\n- **OpenAI - TTS-1 HD** 🔴 21% more expensive\n- **Zyphra - ZONOS3-Mini** 🔵 Input added: audio",
+          "color": 5793266
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    },
+    {
+      "content": "### 🗑️ Removed",
+      "embeds": [
+        {
+          "description": "**🧠 Text**\n- **Inception - Mercury 2.5 Preview**\n- **Xiaomi - MiMo V2.5 Pro**\n\n**🎨 Image**\n- **xAI - Grok Imagine Pro**\n\n[Browse models](https://enter.pollinations.ai/models) · [API docs](https://gen.pollinations.ai/docs)",
+          "color": 14981968
+        }
+      ],
+      "allowed_mentions": {
+        "parse": []
+      }
+    }
+  ]
+}

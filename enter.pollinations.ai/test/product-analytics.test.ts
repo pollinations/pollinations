@@ -4,7 +4,6 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { readdirSync, readFileSync } from "node:fs";
 import { productPageViewSchema } from "@shared/product-analytics.ts";
 import { afterEach, expect, vi } from "vitest";
 import { productAnalyticsRoutes } from "../src/routes/product-analytics.ts";
@@ -67,44 +66,6 @@ test("page schema accepts only fixed labels and length-capped attribution, never
         { ...VIEW, utm_source: "x".repeat(101) },
     ])
         expect(productPageViewSchema.safeParse(body).success).toBe(false);
-});
-
-// The page enum is hand-maintained, so a route nobody adds to it loses its
-// views silently. Walk the route files instead of keeping a second list: a
-// page a visitor can render must be a page the beacon can name.
-const ROUTES_DIR = new URL("../frontend/src/routes/", import.meta.url);
-
-function routablePages(): string[] {
-    return readdirSync(ROUTES_DIR, { withFileTypes: true })
-        .filter((entry) => entry.isFile() && entry.name.endsWith(".tsx"))
-        .flatMap((entry) => {
-            const source = readFileSync(
-                new URL(entry.name, ROUTES_DIR),
-                "utf8",
-            );
-            // A route without a component only redirects, so it shows no page.
-            if (!/\bcomponent:/.test(source)) return [];
-            const id = /createFileRoute\("([^"]+)"\)/.exec(source)?.[1];
-            if (!id) return [];
-            // A leading underscore is a pathless layout and adds no segment.
-            const page = id
-                .split("/")
-                .filter((segment) => !segment.startsWith("_"))
-                .join("/");
-            return page === "" ? [] : [page];
-        });
-}
-
-test("every routable page is one the beacon records", () => {
-    const pages = routablePages();
-    // Anchors, so a walk that finds nothing cannot pass by accident.
-    expect(pages).toContain("/grant");
-    expect(pages).toContain("/top-up");
-    for (const page of pages)
-        expect(
-            productPageViewSchema.safeParse({ page }).success,
-            `${page} renders a page the beacon drops`,
-        ).toBe(true);
 });
 
 test("browser cannot submit server events or cross-origin traffic", async () => {

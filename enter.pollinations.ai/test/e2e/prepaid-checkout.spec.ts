@@ -355,7 +355,8 @@ test("after the approval expires, every unresolved outcome goes to billing", asy
         });
     // None of these proves whether the transfer settled: a refused network
     // request, errors before the purchase record check, a bare 402, the
-    // facilitator's early expiry refusal, and a failed settlement.
+    // facilitator's early expiry refusal, a failed settlement, and a success
+    // whose key can't be read.
     const unresolved: ((url: string) => Parameters<Route["fulfill"]>[0])[] = [
         () => ({ status: 503 }),
         () => ({ status: 500 }),
@@ -373,12 +374,16 @@ test("after the approval expires, every unresolved outcome goes to billing", asy
                 "PAYMENT-RESPONSE": "e30=",
             },
         }),
+        () => ({ status: 200, body: "not json" }),
     ];
     const submissions: string[] = [];
-    await page.route("**/api/x402/keys/*", (route) => {
+    await page.route("**/api/x402/keys/*", async (route) => {
         const signature = route.request().headers()["payment-signature"];
         if (!signature) return route.fallback();
         submissions.push(signature);
+        // The second request crosses the approval deadline in flight.
+        if (submissions.length === 2)
+            await page.clock.setFixedTime(now + 61_000);
         const reply = unresolved[submissions.length - 3];
         return submissions.length <= 2 || !reply
             ? route.abort()
@@ -389,7 +394,6 @@ test("after the approval expires, every unresolved outcome goes to billing", asy
     await expect(
         page.getByText("Payment is not confirmed.", { exact: false }),
     ).toBeVisible();
-    await page.clock.setFixedTime(now + 61_000);
     for (let sent = 2; sent <= unresolved.length + 2; sent++) {
         await page
             .getByRole("button", { name: "Retry this payment", exact: true })

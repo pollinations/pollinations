@@ -169,13 +169,12 @@ export async function submitPrepaidPayment(
     // Checkout can't tell whether an unresolved submission moved money, so
     // it never offers a fresh approval after one. Once this approval has
     // expired, retrying can only report 409, so send the buyer to billing.
-    const expired = approvalExpired(
-        decodePaymentSignatureHeader(headers["PAYMENT-SIGNATURE"]),
-    );
+    // Checked when the error is handled: a request can cross the deadline.
+    const payload = decodePaymentSignatureHeader(headers["PAYMENT-SIGNATURE"]);
     const unresolved = () =>
         Object.assign(
             new Error("Payment status unknown"),
-            expired ? { code: "approval_expired" } : {},
+            approvalExpired(payload) ? { code: "approval_expired" } : {},
         );
     const response = await fetch(url, {
         method: "POST",
@@ -197,7 +196,7 @@ export async function submitPrepaidPayment(
             return { status: "settled" } as const;
     }
     if (!response.ok) throw unresolved();
-    const result: unknown = await response.json();
+    const result: unknown = await response.json().catch(() => null);
     if (
         !result ||
         typeof result !== "object" ||
@@ -207,7 +206,7 @@ export async function submitPrepaidPayment(
         !("pollen" in result) ||
         typeof result.pollen !== "number"
     )
-        throw new Error("Couldn’t read the prepaid key.");
+        throw unresolved();
     return { status: "ready", key: result.key, pollen: result.pollen } as const;
 }
 

@@ -259,18 +259,16 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     const [, price] = text.match(/([\d.]+) USD per image with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "1 free image every 45 seconds. Please wait: this page reloads by itself when your next image is ready.",
+        "1 free image every 45 seconds. This page reloads by itself when your next image is ready.",
     );
-    expect(text).toContain("Skip the wait");
+    expect(text).toContain("Get unlimited images, free to start");
     expect(text).not.toContain("undefined");
     // Straight to GitHub's sign-in, tagged as a Classic visit
     expect(text).toContain(
         'href="https://enter.pollinations.ai/sign-in?ref=legacy-image"',
     );
     // No clock to watch: the page reloads by itself when the wait is over
-    expect(text).toContain(
-        `setTimeout(() => location.reload(), ${wait} * 1000);`,
-    );
+    expect(text).toContain(`const reload = ${wait};`);
     expect(text).not.toContain("{{");
     // The live page's headers, plus the Retry-After and the page's length
     const headers = Object.fromEntries(response.headers);

@@ -1,6 +1,6 @@
 // Builds, from @pollinations/ui components, the screens the Classic API shows
 // instead of an image or a reply:
-// - ../free-limit-page.js: the page a browser gets past the free limit, as a
+// - ../free-limit-page.js: the page a browser gets for any answer but a reply or an image, as a
 //   module both Workers and their tests can import; the Workers fill in its
 //   {{placeholders}}
 // - the image cards a page's <img> gets instead of a broken image, PNGs in
@@ -17,7 +17,6 @@ import {
     CodeBlock,
     DiscordIcon,
     ExternalLinkButton,
-    Eyebrow,
     GitHubIcon,
     Heading,
     InlineLink,
@@ -25,7 +24,6 @@ import {
     SproutIcon,
     Surface,
     Text,
-    WalletIcon,
 } from "@pollinations/ui";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -60,27 +58,54 @@ const footnote = (Icon, ...children) =>
         h("span", null, ...children),
     );
 
-// One way past the limit: a title with its label if any, what it takes, and
-// its button at the foot
-const path = (title, label, body, button) =>
+const scene = (name) =>
+    `data:image/jpeg;base64,${base64(`../assets/scenes/${name}.jpg`)}`;
+
+// The way past every screen, first and full width: enter's sign-in, which
+// goes on to GitHub at once
+const signIn = h(
+    "div",
+    { className: "polli:flex polli:flex-col polli:gap-2" },
     h(
-        Surface,
-        { className: "polli:flex polli:flex-col polli:gap-4" },
-        h(
-            "div",
-            { className: "polli:flex polli:flex-1 polli:flex-col polli:gap-3" },
-            h(
-                "div",
-                {
-                    className: "polli:flex polli:items-center polli:gap-2",
-                },
-                h(Heading, { as: "h2", size: "card" }, title),
-                label && h(Chip, { intent: "info", size: "md" }, label),
-            ),
-            ...body,
-        ),
-        button,
-    );
+        ExternalLinkButton,
+        {
+            href: "https://enter.pollinations.ai/sign-in?ref={{ref}}",
+            external: false,
+            size: "lg",
+            intent: "commit",
+            appearance: "raised",
+            className: "polli:w-full polli:justify-center",
+            icon: h(GitHubIcon, { className: "polli:size-4 polli:shrink-0" }),
+        },
+        "Get unlimited {{items}}, free to start",
+    ),
+    footnote(
+        SproutIcon,
+        "Sign in with GitHub: every model, no waiting, free credits to start.",
+    ),
+);
+
+// The free limit's second way, for agents: one paid request over x402
+const agentPays = h(
+    Surface,
+    { className: "polli:flex polli:flex-col polli:gap-3" },
+    h(
+        "div",
+        { className: "polli:flex polli:items-center polli:gap-2" },
+        h(Heading, { as: "h2", size: "card" }, "Or let your AI agent pay"),
+        h(Chip, { intent: "info", size: "md" }, "x402"),
+    ),
+    h(
+        Text,
+        { size: "sm", tone: "soft" },
+        "{{price}} USD per {{item}} with Weft. Paste this into your agent, then ask: “Pay for this {{item}} with Weft.”",
+    ),
+    h(CodeBlock, { code: "set up https://weft.network/setup.md" }),
+    footnote(
+        SparklesIcon,
+        "New Weft accounts get $3 in free credit once the email is verified.",
+    ),
+);
 
 const page = h(
     "main",
@@ -112,88 +137,19 @@ const page = h(
         // Runs to the panel's edges, as images in the website's cards do
         h("img", {
             className: "bleed",
-            src: `data:image/webp;base64,${base64("../assets/weft-paywall.webp")}`,
+            src: "{{scene}}",
             width: 960,
             height: 540,
-            alt: "The Pollinations bee and the Weft mascot exchange a flower coin and a picture.",
+            alt: "{{alt}}",
         }),
         h(
             "div",
             { className: "polli:flex polli:flex-col polli:gap-2" },
-            h(Heading, { as: "h1", size: "title" }, "Free limit reached"),
-            h(
-                Text,
-                { tone: "soft" },
-                "1 free {{item}} every {{every}} seconds. Please wait: this page reloads by itself when your next {{item}} is ready.",
-            ),
+            h(Heading, { as: "h1", size: "title" }, "{{title}}"),
+            h(Text, { tone: "soft" }, "{{text}}"),
         ),
-        // The two ways past the limit, side by side and equally weighted
-        h(
-            "div",
-            { className: "polli:flex polli:flex-col polli:gap-3" },
-            h(Eyebrow, null, "Skip the wait"),
-            h(
-                "div",
-                { className: "paths" },
-                path(
-                    "Sign in to Pollinations",
-                    null,
-                    [
-                        h(
-                            Text,
-                            { size: "sm", tone: "soft" },
-                            "Unlimited {{items}}, every model, no waiting.",
-                        ),
-                        footnote(SproutIcon, "Start with free credits."),
-                    ],
-                    // enter's sign-in, which goes on to GitHub at once
-                    h(
-                        ExternalLinkButton,
-                        {
-                            href: "https://enter.pollinations.ai/sign-in?ref={{ref}}",
-                            external: false,
-                            size: "lg",
-                            // Bordered, as enter's own sign-in buttons are
-                            intent: "brand",
-                            icon: h(GitHubIcon, {
-                                className: "polli:size-4 polli:shrink-0",
-                            }),
-                        },
-                        "Continue with GitHub",
-                    ),
-                ),
-                path(
-                    "Let your AI agent pay",
-                    "x402",
-                    [
-                        h(
-                            Text,
-                            { size: "sm", tone: "soft" },
-                            "{{price}} USD per {{item}} with Weft. Paste this into your agent, then ask: “Pay for this {{item}} with Weft.”",
-                        ),
-                        h(CodeBlock, {
-                            code: "set up https://weft.network/setup.md",
-                        }),
-                        footnote(
-                            SparklesIcon,
-                            "New Weft accounts get $3 in free credit once the email is verified.",
-                        ),
-                    ],
-                    h(
-                        ExternalLinkButton,
-                        {
-                            href: "https://weft.network/setup.md",
-                            size: "lg",
-                            showIcon: false,
-                            icon: h(WalletIcon, {
-                                className: "polli:size-4 polli:shrink-0",
-                            }),
-                        },
-                        "Give my agent a wallet",
-                    ),
-                ),
-            ),
-        ),
+        signIn,
+        "{{agentPays}}",
     ),
     h(
         "div",
@@ -215,9 +171,10 @@ const page = h(
     ),
 );
 
-// The reload when the wait is over, and CodeBlock's copy button
+// The reload once the wait is over (none for 0), and CodeBlock's copy button
 const script = `
-setTimeout(() => location.reload(), {{wait}} * 1000);
+const reload = {{reload}};
+if (reload) setTimeout(() => location.reload(), reload * 1000);
 for (const button of document.querySelectorAll("button[aria-label='Copy code']")) {
     button.onclick = () =>
         navigator.clipboard?.writeText(button.parentElement.nextElementSibling.textContent);
@@ -228,47 +185,72 @@ const html = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free limit reached - Pollinations</title>
+<title>{{title}} - Pollinations</title>
 <style>${css}</style>
-<style>body{margin:0;background:var(--polli-color-app-bg);font-family:var(--polli-font-body)}.paths{display:grid;gap:1rem}@media (min-width:40rem){.paths{grid-template-columns:1fr 1fr}}.bleed{display:block;width:calc(100% + 2rem);max-width:none;height:auto;margin:-1rem -1rem 0}@media (min-width:40rem){.bleed{width:calc(100% + 3.5rem);margin:-1.75rem -1.75rem 0}}</style>
+<style>body{margin:0;background:var(--polli-color-app-bg);font-family:var(--polli-font-body)}.bleed{display:block;width:calc(100% + 2rem);max-width:none;height:auto;margin:-1rem -1rem 0;image-rendering:pixelated}@media (min-width:40rem){.bleed{width:calc(100% + 3.5rem);margin:-1.75rem -1.75rem 0}}</style>
 </head>
 <body>${renderToStaticMarkup(page)}<script>${script}</script></body>
 </html>
 `;
 
-writeFileSync(
-    new URL("../free-limit-page.js", import.meta.url),
-    `// Built by screens/render.js: do not edit\nexport const PAGE = ${JSON.stringify(html)};\n`,
+// The scenes, one per screen in shared/messages.js
+const SCENES = Object.fromEntries(
+    [
+        "wait",
+        "daily",
+        "running",
+        "busy",
+        "error",
+        "refused",
+        "enter",
+        "toolong",
+        "unknown",
+    ].map((name) => [name, scene(name)]),
 );
 
-// The image cards, one per answer an <img> can get, in the tones of Alert
+writeFileSync(
+    new URL("../free-limit-page.js", import.meta.url),
+    "// Built by screens/render.js: do not edit\n" +
+        `export const PAGE = ${JSON.stringify(html)};\n` +
+        `export const AGENT_PAYS = ${JSON.stringify(renderToStaticMarkup(agentPays))};\n` +
+        `export const SCENES = ${JSON.stringify(SCENES)};\n`,
+);
+
+// The image cards, one per answer an <img> can get: the screen's scene with
+// its words on a strip below
 const CARDS = {
     limit: {
-        tone: "polli:bg-theme-bg-active",
+        scene: "wait",
         title: "Free limit reached",
         body: "1 free image every 45 seconds.",
         cta: "Unlimited images: enter.pollinations.ai",
     },
+    running: {
+        scene: "running",
+        title: "Still making your last image",
+        body: "1 free image at a time. Reload when it's done.",
+        cta: "Parallel images: enter.pollinations.ai",
+    },
     busy: {
-        tone: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
-        title: "At its limit right now",
+        scene: "busy",
+        title: "Busy right now",
         body: "The free service is full. Reload in a few seconds.",
         cta: "Full access: enter.pollinations.ai",
     },
     error: {
-        tone: "polli:bg-theme-bg-pale",
+        scene: "error",
         title: "Something went wrong",
         body: "Reload in a few seconds to try again.",
         cta: "Full access: enter.pollinations.ai",
     },
     enter: {
-        tone: "polli:bg-theme-bg-active",
+        scene: "enter",
         title: "This model runs on enter",
-        body: "Sign in to use it.",
+        body: "Sign in to use it, with free credits to start.",
         cta: "enter.pollinations.ai",
     },
     refused: {
-        tone: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+        scene: "refused",
         title: "Image refused",
         body: "This prompt or its settings can’t be used. Try a different prompt.",
     },
@@ -280,34 +262,49 @@ const SHAPES = {
     tall: [540, 960, 4 / 3],
 };
 
-const cardPage = ({ tone, title, body, cta }) => `<!DOCTYPE html>
+const cardPage = ({ scene: name, title, body, cta }) => `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><style>${css}</style>
-<style>html,body{margin:0;height:100%;font-family:var(--polli-font-body)}</style></head>
+<style>html,body{margin:0;height:100%;font-family:var(--polli-font-body)}.art{flex:1;min-height:0;background:url(${scene(name)}) center/cover;image-rendering:pixelated}@media (max-aspect-ratio:5/4){.art{flex:none;aspect-ratio:16/9}.card{justify-content:center}}</style></head>
 <body>${renderToStaticMarkup(
     h(
         "div",
         {
-            className: `${tone} polli:flex polli:h-full polli:flex-col polli:justify-between polli:text-theme-text-strong`,
-            style: { padding: "8%" },
+            className:
+                "card polli:flex polli:h-full polli:flex-col polli:bg-theme-bg-pale polli:text-theme-text-strong",
         },
-        h(
-            "span",
-            { className: "polli:block polli:h-6", style: { width: 195 } },
-            h(BrandMark, {
-                variant: "lockup",
-                className: "polli:h-full polli:w-full",
-            }),
-        ),
+        h("div", { className: "art" }),
         h(
             "div",
-            { className: "polli:flex polli:flex-col polli:gap-3" },
-            h(Heading, { as: "h1", size: "display" }, title),
-            h(Text, { size: "lg", tone: "strong" }, body),
-        ),
-        h(
-            "div",
-            { className: "polli:flex" },
-            cta && h(Chip, { intent: "neutral", size: "lg" }, cta),
+            {
+                className: "polli:flex polli:flex-col polli:gap-2",
+                style: { padding: "4% 6% 5%" },
+            },
+            h(
+                "div",
+                {
+                    className:
+                        "polli:flex polli:items-center polli:justify-between polli:gap-3",
+                },
+                h(Heading, { as: "h1", size: "card" }, title),
+                h(
+                    "span",
+                    {
+                        className: "polli:block polli:h-4 polli:shrink-0",
+                        style: { width: 130 },
+                    },
+                    h(BrandMark, {
+                        variant: "lockup",
+                        className: "polli:h-full polli:w-full",
+                    }),
+                ),
+            ),
+            h(Text, { size: "sm", tone: "strong" }, body),
+            cta &&
+                h(
+                    "div",
+                    { className: "polli:flex" },
+                    h(Chip, { intent: "neutral", size: "md" }, cta),
+                ),
         ),
     ),
 )}</body></html>`;
@@ -320,10 +317,7 @@ for (const [kind, card] of Object.entries(CARDS)) {
     const file = join(work, `${kind}.html`);
     writeFileSync(file, cardPage(card));
     for (const [shape, [width, height, ratio]] of Object.entries(SHAPES)) {
-        const png = new URL(
-            `../../image.pollinations.ai/cloudflare-cache/assets/cards/${kind}-${shape}.png`,
-            import.meta.url,
-        );
+        const png = join(work, `${kind}-${shape}.png`);
         execFileSync(
             chrome,
             [
@@ -333,8 +327,28 @@ for (const [kind, card] of Object.entries(CARDS)) {
                 `--user-data-dir=${join(work, "profile")}`,
                 `--force-device-scale-factor=${ratio}`,
                 `--window-size=${width},${height}`,
-                `--screenshot=${png.pathname}`,
+                `--screenshot=${png}`,
                 `file://${file}`,
+            ],
+            { stdio: "ignore" },
+        );
+        // JPEG: the scenes made PNG cards ten times larger in the Worker
+        const jpg = new URL(
+            `../../image.pollinations.ai/cloudflare-cache/assets/cards/${kind}-${shape}.jpg`,
+            import.meta.url,
+        );
+        execFileSync(
+            "sips",
+            [
+                "-s",
+                "format",
+                "jpeg",
+                "-s",
+                "formatOptions",
+                "80",
+                png,
+                "--out",
+                jpg.pathname,
             ],
             { stdio: "ignore" },
         );

@@ -1138,3 +1138,42 @@ test("a reply stored for /favicon.ico is no longer served", async () => {
 
     expect(response.status).toBe(404);
 });
+
+const BROWSER_ACCEPT =
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+test("a browser gets each error's page with its status and Retry-After; scripts keep the JSON", async () => {
+    const long = JSON.stringify({
+        messages: [{ role: "user", content: "a".repeat(16_100) }],
+    });
+    for (const [path, status, title, post] of [
+        ["/gen:503", 503, "Busy right now"],
+        ["/gen:500", 503, "Busy right now"],
+        ["/gen:401", 500, "Something went wrong on our side"],
+        ["/hi?model=gpt-5", 404, "We don&#x27;t know that model"],
+        ["/", 413, "That message is too long", long],
+    ]) {
+        const { response, text } = await call(path, {
+            headers: {
+                accept: BROWSER_ACCEPT,
+                ...(post && { "content-type": "application/json" }),
+            },
+            ...(post && { method: "POST", body: post }),
+        });
+        expect(response.status, path).toBe(status);
+        expect(response.headers.get("content-type"), path).toBe(
+            "text/html; charset=utf-8",
+        );
+        expect(text.replaceAll("'", "&#x27;"), path).toContain(title);
+        expect(text, path).toContain("Get unlimited replies, free to start");
+        expect(text, path).not.toContain("Or let your AI agent pay");
+        expect(text, path).not.toContain("{{");
+        if (status === 503) {
+            expect(response.headers.get("retry-after")).toBe("10");
+        }
+    }
+    const script = await call("/gen:503");
+    expect(script.response.headers.get("content-type")).toBe(
+        "application/json; charset=utf-8",
+    );
+});

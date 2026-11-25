@@ -515,6 +515,15 @@ test("without every WEFT_* value the paywall is off: a running generation gives 
     const off = { ...env, WEFT_SELLER_API_KEY: undefined };
     const ip = await limitedIp();
 
+    // An <img> gets the card of a running image
+    const img = await call("/prompt/weft%20off%20img", {
+        ip,
+        testEnv: off,
+        headers: { accept: "image/avif,image/webp,image/*,*/*;q=0.8" },
+    });
+    expect(img.response.status).toBe(429);
+    expect(img.response.headers.get("content-type")).toBe("image/jpeg");
+
     const held = await call("/prompt/weft%20off", { ip, testEnv: off });
 
     expect(held.response.status).toBe(429);
@@ -541,40 +550,43 @@ test.each([
     ["GET", "application/json"],
     ["GET", "image/*"],
     ["HEAD", "application/json"],
-])("a limiter failure returns 503 without calling gen or releasing a slot (%s, %s)", async (method, accept) => {
-    const gen = recordingGen();
-    const calls: string[] = [];
-    const failing = {
-        getByName: () => ({
-            take: async () => {
-                calls.push("take");
-                throw new Error("IpSlot RPC failed");
-            },
-            release: async () => calls.push("release"),
-        }),
-    };
-    const path = `/prompt/limiter%20down%20${method}%20${encodeURIComponent(accept)}`;
-    const { response, text } = await call(path, {
-        method,
-        headers: { accept },
-        testEnv: { ...gen.testEnv, IP_SLOT: failing },
-    });
-
-    expect(response.status).toBe(503);
-    expect(response.headers.get("retry-after")).toBe("10");
-    expect(gen.requests).toHaveLength(0);
-    expect(calls).toEqual(["take"]);
-    expect(await storedAt(path)).toBeNull();
-    if (accept === "image/*") {
-        expect(response.headers.get("content-type")).toBe("image/jpeg");
-        expect(response.headers.get("cache-control")).toBe("no-store");
-    } else if (method === "GET") {
-        expect(JSON.parse(text)).toMatchObject({
-            status: 503,
-            error: { code: "SERVICE_UNAVAILABLE", message: AT_CAPACITY },
+])(
+    "a limiter failure returns 503 without calling gen or releasing a slot (%s, %s)",
+    async (method, accept) => {
+        const gen = recordingGen();
+        const calls: string[] = [];
+        const failing = {
+            getByName: () => ({
+                take: async () => {
+                    calls.push("take");
+                    throw new Error("IpSlot RPC failed");
+                },
+                release: async () => calls.push("release"),
+            }),
+        };
+        const path = `/prompt/limiter%20down%20${method}%20${encodeURIComponent(accept)}`;
+        const { response, text } = await call(path, {
+            method,
+            headers: { accept },
+            testEnv: { ...gen.testEnv, IP_SLOT: failing },
         });
-    }
-});
+
+        expect(response.status).toBe(503);
+        expect(response.headers.get("retry-after")).toBe("10");
+        expect(gen.requests).toHaveLength(0);
+        expect(calls).toEqual(["take"]);
+        expect(await storedAt(path)).toBeNull();
+        if (accept === "image/*") {
+            expect(response.headers.get("content-type")).toBe("image/jpeg");
+            expect(response.headers.get("cache-control")).toBe("no-store");
+        } else if (method === "GET") {
+            expect(JSON.parse(text)).toMatchObject({
+                status: 503,
+                error: { code: "SERVICE_UNAVAILABLE", message: AT_CAPACITY },
+            });
+        }
+    },
+);
 
 test("an exception on a miss path is Hono's 500", async () => {
     // A side past 2^53 threw outside the VM's try (and crashed it)
@@ -594,4 +606,20 @@ test("a browser's /favicon.ico calls no gen and leaves the free image", async ()
     expect(response.status).toBe(404);
     expect(gen.requests).toHaveLength(0);
     expect(await alarmOf(ip)).toBeNull();
+});
+
+test("a browser gets the page of gen's failure in place of its JSON", async () => {
+    const { response, text } = await call("/prompt/gen:503?seed=2", {
+        headers: {
+            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+    });
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("10");
+    expect(response.headers.get("content-type")).toBe(
+        "text/html; charset=utf-8",
+    );
+    expect(text).toContain("Busy right now");
+    expect(text).toContain("Get unlimited images, free to start");
+    expect(text).not.toContain("{{");
 });

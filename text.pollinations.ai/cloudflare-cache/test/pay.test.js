@@ -290,7 +290,6 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
         // A stream first: takeSlot's memo answers other requests in the interval
         ["/quota%2050?stream=true", CURL],
         ["/quota%2050", CURL],
-        ["/quota%2050", BROWSER],
     ]) {
         const { response, text } = await call(path, { ip, headers });
         expect(response.status, path).toBe(402);
@@ -304,6 +303,18 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
         );
         expect(response.headers.get("payment-required")).not.toBeNull();
     }
+    // A browser gets the daily page, which does not reload until midnight
+    const page = await call("/quota%2050", { ip, headers: BROWSER });
+    expect(page.response.status).toBe(402);
+    expect(page.response.headers.get("content-type")).toBe(
+        "text/html; charset=utf-8",
+    );
+    expect(page.text).toContain("That's today's 50 free replies");
+    expect(page.text).toMatch(
+        /Free replies are back at 00:00 UTC, in \d+ hours?\./,
+    );
+    expect(page.text).toContain("Or let your AI agent pay");
+    expect(page.text).toContain("const reload = 0;");
     expect(events).not.toContain("gen");
     // No reply ran, so the refusal left the slot as it found it: free
     expect(await alarmOf(ip)).toBeNull();
@@ -381,14 +392,14 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     const [, price] = text.match(/([\d.]+) USD per reply with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "1 free reply every 45 seconds. Please wait: this page reloads by itself when your next reply is ready.",
+        "1 free reply every 45 seconds. This page reloads by itself when your next reply is ready.",
     );
-    expect(text).toContain("Skip the wait");
+    expect(text).toContain("Get unlimited replies, free to start");
+    expect(text).toContain("Or let your AI agent pay");
     expect(text).not.toContain("undefined");
+    expect(text).not.toContain("{{");
     // No clock to watch: the page reloads by itself when the wait is over
-    expect(text).toContain(
-        `setTimeout(() => location.reload(), ${wait} * 1000);`,
-    );
+    expect(text).toContain(`const reload = ${wait};`);
     // Straight to GitHub's sign-in, tagged as a Classic visit
     expect(text).toContain(
         'href="https://enter.pollinations.ai/sign-in?ref=legacy-text"',

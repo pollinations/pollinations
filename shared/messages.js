@@ -1,7 +1,7 @@
 // What the Classic API tells a caller it did not answer, in enter's formats:
 // gen's error body for scripts and, for plain text, a notice worded as gen's
 // text-balance-notice. ?ref=classic lets enter count the visits.
-import { PAGE } from "./free-limit-page.js";
+import { AGENT_PAYS, PAGE, SCENES } from "./free-limit-page.js";
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
 const JSON_TYPE = "application/json; charset=utf-8";
@@ -42,14 +42,129 @@ const dailyNotice = (perDay, wait) =>
     `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}, or [get unlimited replies](${ENTER}) now.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
 
-/** The free limit's page for a browser, built by screens/render.js */
-function page(kind, every, wait) {
+// What a browser reads on each screen, the page built by screens/render.js;
+// {{item}}, {{items}} and the answer's values are filled in per answer
+const SCREENS = {
+    wait: {
+        title: "Free limit reached",
+        text: "1 free {{item}} every {{every}} seconds. This page reloads by itself when your next {{item}} is ready.",
+        alt: "Polli the bee waits on a flower with an hourglass while the robot counts down 45.",
+        pay: true,
+    },
+    daily: {
+        title: "That's today's {{perDay}} free {{items}}",
+        text: "Free {{items}} are back at 00:00 UTC, in {{hours}}. Or keep going right now:",
+        alt: "Polli the bee sleeps in a flower bud under the moon while the robot shows 00:00.",
+        pay: true,
+    },
+    running: {
+        title: "Still making your last {{item}}",
+        text: "The free API makes 1 {{item}} at a time. This page reloads in a few seconds.",
+        alt: "The robot paints a picture while Polli the bee waits with a cup of tea.",
+        reload: 10,
+    },
+    busy: {
+        title: "Busy right now",
+        text: "Lots of people are using the free API. This page tries again in a few seconds.",
+        alt: "Polli the bee rushes parcels around a busy flower shop while the robot holds a BUSY sign.",
+        reload: 10,
+    },
+    error: {
+        title: "Something went wrong on our side",
+        text: "It's not you. This page tries again in a few seconds.",
+        alt: "Polli the bee fixes the robot with a tiny wrench.",
+        reload: 10,
+    },
+    refused: {
+        title: "This prompt can't be used",
+        text: "It didn't pass our filters, or its settings aren't supported. Try a different prompt.",
+        alt: "Polli the bee holds up a paw with a sorry smile next to a crumpled note.",
+    },
+    enter: {
+        title: "This model runs on Pollinations",
+        text: "It isn't part of the free API. Sign in to use it and every other model.",
+        alt: "Polli the bee waves you through a glowing door into a big garden.",
+    },
+    toolong: {
+        title: "That message is too long",
+        text: "The free API runs GPT-OSS 20B, a small model, with prompts up to 16,000 characters. Shorten it and try again, or use long prompts and stronger models with your own account.",
+        alt: "Nomnom faces an endless scroll while Polli the bee holds tiny scissors.",
+    },
+    unknown: {
+        title: "We don't know that model",
+        text: "The free API runs only GPT-OSS 20B. Every other model is on Pollinations.",
+        alt: "Polli the bee reads a map with a question mark next to the puzzled robot.",
+    },
+};
+
+/**
+ * A screen's page for a browser
+ * @param {keyof SCREENS} name
+ * @param {"image" | "text"} kind
+ * @param {{every?: number, wait?: number, perDay?: number}} [values]
+ */
+function screenPage(name, kind, values = {}) {
+    const screen = SCREENS[name];
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];
-    // ref tells enter's analytics which page a visitor came from
-    const ref = kind === "image" ? "legacy-image" : "legacy-text";
-    const values = { item, items, every, wait, ref, price: PRICE_USD };
-    return PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]);
+    const fill = (text, fields) =>
+        text.replace(/\{\{(\w+)\}\}/g, (_, key) => fields[key] ?? "");
+    const fields = {
+        item,
+        items,
+        // ref tells enter's analytics which page a visitor came from
+        ref: `legacy-${kind}`,
+        price: PRICE_USD,
+        hours: values.wait && hoursUntil(values.wait),
+        ...values,
+    };
+    return fill(PAGE, {
+        ...fields,
+        title: fill(screen.title, fields),
+        text: fill(screen.text, fields),
+        alt: screen.alt,
+        scene: SCENES[name],
+        agentPays: screen.pay ? fill(AGENT_PAYS, fields) : "",
+        // The free limit's page reloads when the wait is over
+        reload: name === "wait" ? values.wait : (screen.reload ?? 0),
+    });
+}
+
+// The screen of each error a Worker answers in JSON or plain text
+const SCREEN_OF_STATUS = {
+    400: "refused",
+    403: "enter",
+    404: "unknown",
+    413: "toolong",
+    429: "running",
+    500: "error",
+    503: "busy",
+};
+
+/**
+ * A browser's page in place of an error's JSON or plain text: the request
+ * accepts HTML, which neither scripts nor <img> tags do. Status and headers
+ * (Retry-After) stay.
+ * @param {"image" | "text"} kind
+ */
+export function withScreen(request, response, kind) {
+    const name = SCREEN_OF_STATUS[response.status];
+    const type = response.headers.get("content-type") ?? "";
+    if (
+        !name ||
+        request.method === "HEAD" ||
+        !(request.headers.get("accept") ?? "").includes("text/html") ||
+        !(type.startsWith("application/json") || type.startsWith("text/plain"))
+    )
+        return response;
+    const headers = new Headers(response.headers);
+    headers.delete("ETag");
+    headers.delete("Content-Length");
+    headers.set("Content-Type", "text/html; charset=utf-8");
+    return new Response(screenPage(name, kind), {
+        status: response.status,
+        headers,
+    });
 }
 
 /**
@@ -59,8 +174,7 @@ function page(kind, every, wait) {
  * and PAYMENT-REQUIRED stay: x402 clients pay from that header.
  * @param {"image" | "text" | "json"} kind
  * @param {number} until when the IP's next free request may start
- * @param {number} [perDay] the daily quota the IP used up; the notice, not
- *   the page, answers a browser, as the page names only the interval
+ * @param {number} [perDay] the daily quota the IP used up
  */
 export function explainFreeLimit(
     request,
@@ -95,6 +209,14 @@ export function explainFreeLimit(
         return new Response(body, { status: 402, headers });
     };
 
+    if (browser) {
+        const page = screenPage(
+            perDay ? "daily" : "wait",
+            kind === "image" ? "image" : "text",
+            { every, wait, perDay },
+        );
+        return answer("text/html; charset=utf-8", page);
+    }
     if (perDay)
         return kind === "json"
             ? answer(
@@ -102,8 +224,6 @@ export function explainFreeLimit(
                   genError(402, "FREE_LIMIT", dailyError(perDay, wait)),
               )
             : answer("text/plain; charset=utf-8", dailyNotice(perDay, wait));
-    if (browser)
-        return answer("text/html; charset=utf-8", page(kind, every, wait));
     if (kind === "text")
         return answer("text/plain; charset=utf-8", limitNotice(every, wait));
     return answer(

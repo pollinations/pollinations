@@ -332,7 +332,7 @@ export async function generate(c: Context, url: URL, route: string) {
 
     if (slot.action === "full") {
         const { status, body, headers } = genAnswer(429, REFUSED.imageBusy);
-        return vmResponse(body, status, headers);
+        return withCard(vmResponse(body, status, headers), "running", job);
     }
     if (slot.action === "pay") {
         // The paywall covers GET only.

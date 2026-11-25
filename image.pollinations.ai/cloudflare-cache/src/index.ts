@@ -1,5 +1,6 @@
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
+import { withScreen } from "../../../shared/messages.js";
 import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import type { Env } from "./env";
 import { exactCache } from "./middleware/exact-cache";
@@ -73,12 +74,15 @@ app.all("*", async (c) => {
  * would. `url` is the request URL after the /prompt rewrite.
  */
 async function generateOr500(c: Context<Env>, url: URL, route: string) {
+    let response: Response;
     try {
-        return await generate(c, url, route);
+        response = await generate(c, url, route);
     } catch (error) {
         logFailure(route, { error: "exception", type: error.name });
-        return c.text("Internal Server Error", 500);
+        response = c.text("Internal Server Error", 500);
     }
+    // A browser gets the page of an error in place of its JSON
+    return withScreen(c.req.raw, response, "image");
 }
 
 // Durable Object classes must be exported by the Worker's main module

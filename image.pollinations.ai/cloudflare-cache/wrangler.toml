@@ -49,10 +49,11 @@ new_sqlite_classes = ["IpSlot", "FeedHub"]
 tag = "v2"
 deleted_classes = ["FeedHub"]
 
-# The logo lockups (assets/*.png) are imported as bytes
+# The logo lockups (assets/*.png) and the cards (assets/cards/*.jpg) are
+# imported as bytes
 [[rules]]
 type = "Data"
-globs = ["**/*.png"]
+globs = ["**/*.png", "**/*.jpg"]
 fallthrough = true
 
 # Environment variables

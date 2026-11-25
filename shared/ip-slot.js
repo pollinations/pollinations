@@ -103,6 +103,9 @@ const MAX_REMEMBERED_IPS = 10_000;
 // A pay answer's until is not kept: it can be a hold's end, which release() can.
 const busyUntilByIp = new Map();
 
+/** Drops the isolate's memo of a booking that ended without a generation */
+export const forgetSlot = (ip) => busyUntilByIp.delete(ip);
+
 /**
  * Takes the free slot for `ip` from the IP_SLOT namespace. RPC errors propagate.
  */

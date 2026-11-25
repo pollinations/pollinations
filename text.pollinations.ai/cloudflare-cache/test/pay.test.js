@@ -305,8 +305,12 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
         expect(response.headers.get("payment-required")).not.toBeNull();
     }
     expect(events).not.toContain("gen");
-    // The refused stream ended its booking but kept the interval
-    expect(await alarmOf(ip)).toBeGreaterThan(Date.now());
+    // No reply ran, so the refusal left the slot as it found it: free
+    expect(await alarmOf(ip)).toBeNull();
+
+    // A model we don't serve gets its 404, not the daily paywall
+    const unknown = await call("/quota?model=gpt-5", { ip, headers: CURL });
+    expect(unknown.response.status).toBe(404);
 });
 
 test("a model we don't serve uses no quota", async () => {

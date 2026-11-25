@@ -4,7 +4,7 @@ import contentType from "content-type";
 import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
-import { slotKey, takeSlot } from "../../../shared/ip-slot.js";
+import { forgetSlot, slotKey, takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
@@ -644,21 +644,20 @@ async function generation(
         until: nextMidnight(at),
         daily: true,
     });
+    // A model we don't serve still books the slot, as on the VM, but its 404
+    // never meets the quota
+    const served = MODELS.has(job.model);
     let slot;
     try {
-        slot = usedUp(ip)
-            ? dailyLimit(Date.now())
-            : await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
+        slot =
+            served && usedUp(ip)
+                ? dailyLimit(Date.now())
+                : await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
         logFailure(route, { error: "ip_slot", type: error.name });
         return sendGenAnswer(failure(503));
     }
-    // A model we don't serve still books the slot, as on the VM, but its 404
-    // uses no quota
-    if (
-        (slot.action === "go" || slot.action === "wait") &&
-        MODELS.has(job.model)
-    ) {
+    if (served && (slot.action === "go" || slot.action === "wait")) {
         // Counted on the day the booked reply starts
         const start = Date.now() + slot.waitMs;
         let free = true;
@@ -669,8 +668,13 @@ async function generation(
             logFailure(route, { error: "daily_quota", type: error.name });
         }
         if (!free) {
-            // Ends the booking as a finished reply would: the interval stays
-            const release = env.IP_SLOT.getByName(ip).release(slot);
+            // Ends the booking with the cooldown it found: no reply ran, so
+            // none starts a new one
+            forgetSlot(ip);
+            const release = env.IP_SLOT.getByName(ip).release({
+                ...slot,
+                until: start,
+            });
             ctx.waitUntil(
                 release.catch((error) =>
                     logFailure(route, {

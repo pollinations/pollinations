@@ -352,8 +352,11 @@ test("an expired approval the API never recorded is released for a fresh payment
         if (!signature) return route.fallback();
         submissions.push(signature);
         if (submissions.length === 1) return route.abort();
-        // An expired approval fails verification before the API records it.
-        if (submissions.length === 2)
+        // These errors can come before the API checks its purchase record.
+        if (submissions.length === 2) return route.fulfill({ status: 503 });
+        if (submissions.length === 3) return route.fulfill({ status: 500 });
+        // Only the payment check answers 402, after finding no record.
+        if (submissions.length === 4)
             return route.fulfill({ status: 402, json: {} });
         return route.fulfill({
             json: { key: "sk_browser_fixture", pollen: 2 },
@@ -365,6 +368,20 @@ test("an expired approval the API never recorded is released for a fresh payment
         page.getByText("Payment is not confirmed.", { exact: false }),
     ).toBeVisible();
     await page.clock.setFixedTime(now + 61_000);
+    for (const status of [503, 500]) {
+        await page
+            .getByRole("button", { name: "Retry this payment", exact: true })
+            .click();
+        await expect
+            .poll(() => submissions.length)
+            .toBe(status === 503 ? 2 : 3);
+        await expect(
+            page.getByText("Payment is not confirmed.", { exact: false }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: "Connect wallet", exact: true }),
+        ).toHaveCount(0);
+    }
     await page
         .getByRole("button", { name: "Retry this payment", exact: true })
         .click();
@@ -379,9 +396,9 @@ test("an expired approval the API never recorded is released for a fresh payment
         page.getByText("Your key is ready with 2 Pollinations credits."),
     ).toBeVisible();
     expect(signatures).toBe(2);
-    expect(submissions).toHaveLength(3);
-    expect(submissions[1]).toBe(submissions[0]);
-    expect(submissions[2]).not.toBe(submissions[0]);
+    expect(submissions).toHaveLength(5);
+    expect(new Set(submissions.slice(0, 4)).size).toBe(1);
+    expect(submissions[4]).not.toBe(submissions[0]);
 });
 
 test("an approval that expires in the wallet can be retried without submitting the old proof", async ({

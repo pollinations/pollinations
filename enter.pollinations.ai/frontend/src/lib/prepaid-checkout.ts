@@ -186,9 +186,11 @@ export async function submitPrepaidPayment(
         )
             return { status: "settled" } as const;
     }
-    // The API answers 409 for any recorded attempt, and an expired approval
-    // can no longer be recorded or settled, so this one was never charged.
-    if (!response.ok && expired)
+    // Only the payment check answers 402, after the API found no record of
+    // this approval (a recorded one gets 409). Expired, it can no longer
+    // settle, so it was never charged. Other errors can precede the record
+    // check and prove nothing.
+    if (response.status === 402 && expired)
         throw Object.assign(new Error("Payment approval unused"), {
             code: "approval_unused",
         });

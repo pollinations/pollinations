@@ -91,7 +91,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
                 unused
                     ? "Your approval expired and was never charged. Connect your wallet to approve a fresh payment."
                     : sending
-                      ? "Payment is not confirmed. Check your wallet before doing anything else. If you see a transfer, don’t pay again. Email billing@pollinations.ai with the transaction hash. Otherwise, you can retry here using the same approval."
+                      ? "Payment is not confirmed. Check your wallet before doing anything else. If you see a transfer, don’t pay again. Email billing@pollinations.ai with the transaction hash, or your wallet address, the amount and the approximate time. Otherwise, you can retry here using the same approval."
                       : !quote
                         ? "Couldn’t get a payment quote. Choose an amount from $0.01 to $10,000 in cents and try again later if checkout is unavailable."
                         : (api?.prepaidWalletError(error) ??
@@ -147,8 +147,9 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
                         <InlineLink href="mailto:billing@pollinations.ai">
                             billing@pollinations.ai
                         </InlineLink>{" "}
-                        with the transaction hash from your wallet, if
-                        available, so we can check your purchase.
+                        with the transaction hash from your wallet. If you can’t
+                        find it, send your wallet address, the amount and the
+                        approximate time instead.
                     </Alert>
                 ) : result?.status === "ready" ? (
                     <div className="space-y-4" aria-live="polite">

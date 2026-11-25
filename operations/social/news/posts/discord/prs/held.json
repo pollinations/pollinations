@@ -41,8 +41,63 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-infra_watch"
       ]
+    },
+    "20036": {
+      "merge_sha": "b6e68b2b78eb307714fe34fc6b071054402c717c",
+      "merged_at": "2026-11-24T22:19:13Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "20483": {
+      "merge_sha": "a91b6fe66d5dd5853ee0887d9b4587e65f23d266",
+      "merged_at": "2026-11-24T21:51:22Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "20525": {
+      "merge_sha": "eba37c394cfcc6d842aa1aa65493dca80f3af29e",
+      "merged_at": "2026-11-25T16:59:01Z",
+      "required": []
+    },
+    "20582": {
+      "merge_sha": "27333637b592aeec661dea2715a80bfde3f336bc",
+      "merged_at": "2026-11-24T21:44:23Z",
+      "required": []
+    },
+    "20584": {
+      "merge_sha": "31e360ed98bb1c317fdb37ea7273fb5be5b20732",
+      "merged_at": "2026-11-25T11:47:21Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "20586": {
+      "merge_sha": "eeb1db776f3bb8ea68774e4aa31736baaf381961",
+      "merged_at": "2026-11-25T04:15:00Z",
+      "required": []
+    },
+    "20587": {
+      "merge_sha": "2d1ccd52abbe96111e9c05f1696ff2389d942568",
+      "merged_at": "2026-11-25T07:13:49Z",
+      "required": []
+    },
+    "20596": {
+      "merge_sha": "6d838d304ff49451fcad9fda9eac979e5209ced6",
+      "merged_at": "2026-11-25T13:22:53Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "20600": {
+      "merge_sha": "409723febedc5084622001b560f9a45b67da95d3",
+      "merged_at": "2026-11-25T17:37:30Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
     }
   },
-  "production": "f6404703d63fdf2f2ded5db4d448444000a6e381",
-  "master": "bf4c219e3581821df582930b925533d4fcd9bec5"
+  "production": "98d1d0d0206b37f1b4bbc16692b7bbde91f065b5",
+  "master": "eb717ad8dfad6a8726b12cd8d9b8c0dcdcd91265"
 }

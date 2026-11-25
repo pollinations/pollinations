@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 spec = importlib.util.spec_from_file_location("project_manager", Path(__file__).with_name("project_manager.py"))
 manager = importlib.util.module_from_spec(spec)
@@ -85,8 +85,53 @@ class ClassificationTest(unittest.TestCase):
             result = json.loads((Path(directory) / "classification.json").read_text())
             self.assertEqual(result, {"area": None, "type": None, "source": "Community"})
         write.assert_any_call("item", fields["Work type"], None)
-        write.assert_any_call("item", fields["Model work"], None)
+        self.assertNotIn(fields["Model work"], [entry.args[1] for entry in write.call_args_list])
         native_type.assert_not_called()
+
+    def test_model_work_fills_only_empty_cells(self):
+        fields = {name: {"id": name} for name in ("Area", "Source", "Priority", "Work type", "Model work")}
+        for is_pr in (False, True):
+            for existing_queue, proposed_queue, expect_write in (
+                (None, "Repair", True),
+                ("Update", "Repair", False),
+                ("Update", None, False),
+            ):
+                with self.subTest(is_pr=is_pr, existing=existing_queue, proposed=proposed_queue), \
+                     patch.multiple(manager, IS_PULL_REQUEST=is_pr, ISSUE_NUMBER=42, ISSUE_NODE_ID="node",
+                                    GITHUB_TOKEN="test", POLLINATIONS_TOKEN="test", GITHUB_EVENT={}, ITEM_DATA={}), \
+                     patch.object(manager, "dev_fields", return_value=fields), \
+                     patch.object(manager, "classify", return_value={
+                         "area": "Models", "type": "Bug", "priority": None if is_pr else "High",
+                         "model_work": proposed_queue,
+                     }), \
+                     patch.object(manager, "closing_issues", return_value=[]), \
+                     patch.object(manager, "current_dev_fields", return_value={
+                         "modelWork": {"name": existing_queue} if existing_queue else None,
+                         "priority": {"name": "Express"},
+                     }), \
+                     patch.object(manager, "add_to_dev", return_value="item"), \
+                     patch.object(manager, "set_issue_type"), patch.object(manager, "set_field") as write:
+                    manager.main()
+                writes = [entry for entry in write.call_args_list if entry.args[1] == fields["Model work"]]
+                self.assertEqual(writes, [call("item", fields["Model work"], "Repair")] if expect_write else [])
+                self.assertNotIn(fields["Priority"], [entry.args[1] for entry in write.call_args_list])
+
+    def test_automation_labels_update_only_source(self):
+        for label, source in (("APP-SUBMISSION", "Apps"), ("QUEST", "Quests")):
+            with self.subTest(label=label), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="issue",
+                                GITHUB_TOKEN="test", POLLINATIONS_TOKEN="test", GITHUB_EVENT={"action": "labeled"},
+                                ITEM_DATA={"labels": [{"name": label}]}), \
+                 patch.object(manager, "dev_fields", return_value={"Source": {"id": "source"}}), \
+                 patch.object(manager, "classify") as classify, \
+                 patch.object(manager, "add_to_dev", return_value="item"), patch.object(manager, "set_field") as write:
+                manager.main()
+            classify.assert_not_called()
+            write.assert_called_once_with("item", {"id": "source"}, source)
+
+    def test_missing_project_lookup_cannot_be_treated_as_empty(self):
+        with patch.object(manager, "graphql_request", return_value={}), self.assertRaises(SystemExit):
+            manager.current_dev_fields()
 
     def test_unavailable_classifier_skips_without_failing(self):
         context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 3, "ISSUE_NODE_ID": "pr-node",

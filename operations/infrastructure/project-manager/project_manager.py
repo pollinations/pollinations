@@ -230,18 +230,36 @@ def item_source(labels: set) -> str:
     return author_source()
 
 
-def current_priority() -> Optional[str]:
-    """The issue's Priority on Dev, if someone or an earlier run already set it."""
-    data = graphql_request(
-        """query($id: ID!) { node(id: $id) { ... on Issue { projectItems(first: 10) { nodes {
+def current_dev_fields() -> dict:
+    """Read existing Priority and Model work without confusing read failure with empty fields."""
+    query = """
+    query($id: ID!, $after: String) {
+        node(id: $id) {
+            ... on Issue { projectItems(first: 50, after: $after) { ... ProjectItems } }
+            ... on PullRequest { projectItems(first: 50, after: $after) { ... ProjectItems } }
+        }
+    }
+    fragment ProjectItems on ProjectV2ItemConnection {
+        pageInfo { hasNextPage endCursor }
+        nodes {
             project { id }
-            fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
-        } } } } }""",
-        {"id": ISSUE_NODE_ID},
-    )
-    items = data.get("node", {}).get("projectItems", {}).get("nodes", [])
-    item = next((i for i in items if i["project"]["id"] == DEV_PROJECT_ID), {})
-    return (item.get("fieldValueByName") or {}).get("name")
+            priority: fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+            modelWork: fieldValueByName(name: "Model work") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+        }
+    }
+    """
+    after = None
+    while True:
+        data = graphql_request(query, {"id": ISSUE_NODE_ID, "after": after})
+        page = (data.get("node") or {}).get("projectItems")
+        if page is None:
+            fail(f"Failed to read existing Dev fields for #{ISSUE_NUMBER}")
+        for item in page["nodes"]:
+            if item and item["project"]["id"] == DEV_PROJECT_ID:
+                return item
+        if not page["pageInfo"]["hasNextPage"]:
+            return {}
+        after = page["pageInfo"]["endCursor"]
 
 
 def add_to_dev() -> str:
@@ -426,16 +444,24 @@ def main():
             return
 
     source = item_source(labels)
-    # A priority that is already set (by a person, an earlier run or the Express job) is kept.
-    existing = current_priority() if answer["priority"] else None
-    priority = existing or answer["priority"]
-    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{answer.get('model_work')}\t{priority}{' (kept)' if existing else ''}\t{ISSUE_TITLE}")
+    proposed_queue = answer.get("model_work")
+    # Preserve choices made by maintainers, the Express job or an earlier run.
+    existing = current_dev_fields() if answer["priority"] or proposed_queue else {}
+    existing_priority = (existing.get("priority") or {}).get("name")
+    existing_queue = (existing.get("modelWork") or {}).get("name")
+    priority = existing_priority or answer["priority"]
+    queue = existing_queue or proposed_queue
+    print(
+        f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}"
+        f"\t{queue}{' (kept)' if existing_queue else ''}\t{priority}{' (kept)' if existing_priority else ''}\t{ISSUE_TITLE}"
+    )
 
     item_id = add_to_dev()
     set_field(item_id, fields["Area"], answer["area"])
-    set_field(item_id, fields["Model work"], answer.get("model_work"))
+    if proposed_queue and not existing_queue:
+        set_field(item_id, fields["Model work"], proposed_queue)
     set_field(item_id, fields["Source"], source)
-    if answer["priority"] and not existing:
+    if answer["priority"] and not existing_priority:
         set_field(item_id, fields["Priority"], answer["priority"])
     if IS_PULL_REQUEST:
         set_field(item_id, fields["Work type"], answer["type"])

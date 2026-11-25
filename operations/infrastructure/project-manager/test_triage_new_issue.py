@@ -1,6 +1,11 @@
+import os
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from triage_new_issue import decision, eligible
+from triage_new_issue import API, collect_evidence, decision, eligible, main
 
 
 class TriageTest(unittest.TestCase):
@@ -32,3 +37,83 @@ class TriageTest(unittest.TestCase):
             self.assertFalse(eligible({**issue, "labels": [{"name": label}]}))
         self.assertFalse(eligible({**issue, "user": {"login": "release[bot]", "type": "Bot"}}))
         self.assertFalse(eligible({**issue, "pull_request": {}}))
+
+
+    def test_empty_code_terms_keep_issue_evidence_without_git(self):
+        session = Mock()
+        session.get.return_value.json.return_value = {"incomplete_results": False, "items": [
+            {"number": 41, "state": "open"},
+            {"number": 42, "state": "open", "title": "Related question", "body": "",
+             "html_url": self.evidence["issue-42"]["url"]},
+        ]}
+        with patch("triage_new_issue.subprocess.check_output") as git:
+            evidence = collect_evidence(session, {"number": 41}, {"issue_terms": "rate limit", "code_terms": []})
+        git.assert_not_called()
+        self.assertEqual(set(evidence), {"issue-42"})
+
+    def test_search_parses_a_real_production_match_with_colons(self):
+        session = Mock()
+        session.get.return_value.json.return_value = {"incomplete_results": False, "items": []}
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            path = repo / "gen" / "src" / "route.ts"
+            path.parent.mkdir(parents=True)
+            path.write_text('const response = { error: "example: timeout" };\n')
+            cwd = Path.cwd()
+            try:
+                os.chdir(repo)
+                for args in (["init", "-q"], ["add", "."],
+                             ["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-qm", "fixture"],
+                             ["update-ref", "refs/remotes/origin/production", "HEAD"]):
+                    subprocess.run(["git", *args], check=True, capture_output=True)
+                revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+                evidence = collect_evidence(
+                    session, {"number": 41}, {"issue_terms": "timeout", "code_terms": ["example: timeout"]}
+                )
+            finally:
+                os.chdir(cwd)
+        self.assertEqual(evidence["gen/src/route.ts#L1"], {
+            "url": f"https://github.com/pollinations/pollinations/blob/{revision}/gen/src/route.ts#L1",
+            "text": '1: const response = { error: "example: timeout" };',
+        })
+
+    def test_duplicate_comments_then_closes_and_retry_reuses_reply(self):
+        issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",
+                 "labels": [], "user": {"login": "reporter", "type": "User"}}
+        search = {"incomplete_results": False, "items": [{**issue, "number": 42,
+                  "html_url": self.evidence["issue-42"]["url"]}]}
+        terms = {"issue_terms": "timeout", "code_terms": []}
+        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details"}
+        for prior in (False, True):
+            comments = [{"user": {"login": "github-actions[bot]"},
+                         "body": "Details\n\n<!-- new-issue-triage:41:not_planned -->"}] if prior else []
+            session = MagicMock()
+            session.get.side_effect = [Mock(json=Mock(return_value=value), links={})
+                                       for value in (issue, search, issue, comments)]
+            with self.subTest(prior=prior), patch.dict(os.environ, {"ISSUE_NUMBER": "41", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+                 patch("triage_new_issue.requests.Session", return_value=session), \
+                 patch("triage_new_issue.ask_ai", side_effect=[terms, verdict]):
+                main()
+            writes = [entry for entry in session.mock_calls if entry[0] in ("post", "patch")]
+            self.assertEqual([entry[0] for entry in writes], ["patch"] if prior else ["post", "patch"])
+            if not prior:
+                self.assertIn("<!-- new-issue-triage:41:not_planned -->", writes[0].kwargs["json"]["body"])
+            session.patch.assert_called_once_with(f"{API}/issues/41", json={"state": "closed", "state_reason": "not_planned"}, timeout=30)
+
+    def test_malformed_verdict_logs_and_exits_without_writes(self):
+        issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",
+                 "labels": [], "user": {"login": "reporter", "type": "User"}}
+        session = Mock(headers={})
+        session.get.side_effect = [Mock(json=Mock(return_value=value)) for value in (
+            issue, {"incomplete_results": False, "items": []},
+        )]
+        with patch.dict(os.environ, {"ISSUE_NUMBER": "41", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+             patch("triage_new_issue.requests.Session", return_value=session), \
+             patch("triage_new_issue.ask_ai", side_effect=[
+                 {"issue_terms": "timeout", "code_terms": []},
+                 {"action": "duplicate", "source": "issue-42", "confidence": 0.9},
+             ]), patch("builtins.print") as log:
+            main()
+        log.assert_called_once_with("Skipping #41: Unknown evidence reference")
+        session.post.assert_not_called()
+        session.patch.assert_not_called()

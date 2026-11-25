@@ -17,7 +17,6 @@ import {
     CodeBlock,
     DiscordIcon,
     ExternalLinkButton,
-    GitHubIcon,
     Heading,
     InlineLink,
     SparklesIcon,
@@ -61,28 +60,24 @@ const footnote = (Icon, ...children) =>
 const scene = (name) =>
     `data:image/jpeg;base64,${base64(`../assets/scenes/${name}.jpg`)}`;
 
-// The way past every screen, first and full width: enter's sign-in, which
-// goes on to GitHub at once
+// The way past every screen, first and full width
 const signIn = h(
     "div",
     { className: "polli:flex polli:flex-col polli:gap-2" },
     h(
         ExternalLinkButton,
         {
-            href: "https://enter.pollinations.ai/sign-in?ref={{ref}}",
+            // enter's landing page, whose ?ref= enter records (text or image)
+            href: "https://enter.pollinations.ai/?ref={{ref}}",
             external: false,
             size: "lg",
             intent: "commit",
             appearance: "raised",
             className: "polli:w-full polli:justify-center",
-            icon: h(GitHubIcon, { className: "polli:size-4 polli:shrink-0" }),
         },
         "Get unlimited {{items}}, free to start",
     ),
-    footnote(
-        SproutIcon,
-        "Sign in with GitHub: every model, no waiting, free credits to start.",
-    ),
+    footnote(SproutIcon, "Every model, no waiting, free credits to start."),
 );
 
 // The free limit's second way, for agents: one paid request over x402

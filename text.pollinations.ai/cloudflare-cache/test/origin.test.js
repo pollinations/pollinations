@@ -1152,6 +1152,7 @@ test("a browser gets each error's page with its status and Retry-After; scripts 
         ["/gen:401", 500, "Something went wrong on our side"],
         ["/hi?model=gpt-5", 404, "We don&#x27;t know that model"],
         ["/", 413, "That message is too long", long],
+        ["/gen:length?json=true", 422, "The reply got too long"],
     ]) {
         const { response, text } = await call(path, {
             headers: {

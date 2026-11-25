@@ -90,6 +90,13 @@ const SCREENS = {
         text: "The free API runs GPT-OSS 20B, a small model, with prompts up to 16,000 characters. Shorten it and try again, or use long prompts and stronger models with your own account.",
         alt: "Nomnom faces an endless scroll while Polli the bee holds tiny scissors.",
     },
+    // gen's JSON reply cut off at the output limit
+    cutoff: {
+        scene: "toolong",
+        title: "The reply got too long",
+        text: "Free replies stop at 800 tokens, and this JSON reply reached that before it was complete. Ask for shorter output and try again, or use longer replies with your own account.",
+        alt: "Nomnom faces an endless scroll while Polli the bee holds tiny scissors.",
+    },
     unknown: {
         title: "We don't know that model",
         text: "The free API runs only GPT-OSS 20B. Every other model is on Pollinations.",
@@ -112,8 +119,8 @@ function screenPage(name, kind, values = {}) {
     const fields = {
         item,
         items,
-        // ref tells enter's analytics which page a visitor came from
-        ref: `legacy-${kind}`,
+        // enter records ?ref=text and ?ref=image
+        ref: kind,
         price: PRICE_USD,
         hours: values.wait && hoursUntil(values.wait),
         ...values,
@@ -123,7 +130,7 @@ function screenPage(name, kind, values = {}) {
         title: fill(screen.title, fields),
         text: fill(screen.text, fields),
         alt: screen.alt,
-        scene: SCENES[name],
+        scene: SCENES[screen.scene ?? name],
         agentPays: screen.pay ? fill(AGENT_PAYS, fields) : "",
         // The free limit's page reloads when the wait is over
         reload: name === "wait" ? values.wait : (screen.reload ?? 0),
@@ -136,6 +143,7 @@ const SCREEN_OF_STATUS = {
     403: "enter",
     404: "unknown",
     413: "toolong",
+    422: "cutoff",
     429: "running",
     500: "error",
     503: "busy",

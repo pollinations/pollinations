@@ -425,9 +425,9 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     expect(text).not.toContain("{{");
     // No clock to watch: the page reloads by itself when the wait is over
     expect(text).toContain(`const reload = ${wait};`);
-    // Straight to GitHub's sign-in, tagged as a Classic visit
+    // Enter's landing page, with the ref enter records
     expect(text).toContain(
-        'href="https://enter.pollinations.ai/sign-in?ref=legacy-text"',
+        'href="https://enter.pollinations.ai/?ref=text"',
     );
     expect(text).not.toContain("{{");
     const vm = capturedHeaders(browserHeaders);

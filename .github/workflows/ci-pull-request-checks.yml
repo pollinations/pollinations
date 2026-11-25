@@ -175,6 +175,7 @@ jobs:
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
           operations/app-management/performance/*.test.js
+          operations/infrastructure/azure-sandboxes/*.test.mjs
           operations/infrastructure/deployment/*.test.cjs
           operations/monitoring/community-leaderboards/*.test.js
           operations/monitoring/model-evals/*.test.js

@@ -14,8 +14,12 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { pinImage } from "./wrangler-images.mjs";
 
-const here = new URL(".", import.meta.url).pathname;
+// .pathname keeps the drive letter on Windows ("/C:/..."), so the file it
+// points at is never found there.
+const here = fileURLToPath(new URL(".", import.meta.url));
 const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
 // Staging first: the builder box runs there, and a broken image fails there
 // before production imports it.
@@ -33,15 +37,10 @@ const groups = [
 
 // The image line follows its group's line in each block that uses it.
 function pin(group, image) {
-    const lines = readFileSync(wrangler, "utf8").split("\n");
-    lines.forEach((line, i) => {
-        if (line !== `AZURE_SANDBOX_GROUP_URL = "${group}"`) return;
-        if (!lines[i + 1]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
-            throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
-        }
-        lines[i + 1] = `AZURE_SANDBOX_IMAGE = "${image}"`;
-    });
-    writeFileSync(wrangler, lines.join("\n"));
+    writeFileSync(
+        wrangler,
+        pinImage(readFileSync(wrangler, "utf8"), group, image),
+    );
 }
 const commit = execFileSync(
     "git",

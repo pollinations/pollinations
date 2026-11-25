@@ -1,5 +1,8 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import { decodePaymentSignatureHeader } from "@x402/core/http";
+import {
+    decodePaymentRequiredHeader,
+    decodePaymentSignatureHeader,
+} from "@x402/core/http";
 import type { PaymentPayload, PaymentRequired } from "@x402/core/types";
 import {
     type ClientEvmSigner,
@@ -186,15 +189,30 @@ export async function submitPrepaidPayment(
         )
             return { status: "settled" } as const;
     }
-    // Only the payment check answers 402, after the API found no record of
-    // this approval (a recorded one gets 409). Expired, it can no longer
-    // settle, so it was never charged. Other errors can precede the record
-    // check and prove nothing.
-    if (response.status === 402 && expired)
+    // A recorded approval gets 409 first. Otherwise, the facilitator refusing
+    // it as expired at verification means the API never ran the purchase and
+    // the transfer can never settle. A failed settlement also answers 402,
+    // after recording, but adds PAYMENT-RESPONSE. Nothing else proves the
+    // approval went unused.
+    const refusal =
+        response.status === 402 && !response.headers.has("PAYMENT-RESPONSE")
+            ? response.headers.get("PAYMENT-REQUIRED")
+            : null;
+    let reason: string | undefined;
+    try {
+        reason = refusal
+            ? decodePaymentRequiredHeader(refusal).error
+            : undefined;
+    } catch {}
+    if (reason === "invalid_exact_evm_payload_authorization_valid_before")
         throw Object.assign(new Error("Payment approval unused"), {
             code: "approval_unused",
         });
-    if (!response.ok) throw new Error("Payment status unknown");
+    if (!response.ok)
+        throw Object.assign(
+            new Error("Payment status unknown"),
+            expired ? { code: "approval_expired" } : {},
+        );
     const result: unknown = await response.json();
     if (
         !result ||

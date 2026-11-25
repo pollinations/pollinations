@@ -341,26 +341,53 @@ for (const [status, body, notice] of [
     });
 }
 
-test("an expired approval the API never recorded is released for a fresh payment", async ({
+test("only the facilitator's expiry refusal releases an expired approval", async ({
     page,
 }) => {
     const now = Date.now();
     await page.clock.setFixedTime(now);
+    const expiredRefusal = (url: string) =>
+        encodePaymentRequiredHeader({
+            x402Version: 2,
+            error: "invalid_exact_evm_payload_authorization_valid_before",
+            resource: { url, description: "", mimeType: "application/json" },
+            accepts: [],
+        });
+    // After the lost first request: errors that can precede the purchase
+    // record check, a bare 402, and a failed settlement (recorded, with
+    // PAYMENT-RESPONSE) prove nothing. Then the verification refusal.
+    const replies = [
+        { status: 503 },
+        { status: 500 },
+        { status: 402, json: {} },
+        (url: string) => ({
+            status: 402,
+            json: {},
+            headers: {
+                "PAYMENT-REQUIRED": expiredRefusal(url),
+                "PAYMENT-RESPONSE": "e30=",
+            },
+        }),
+        (url: string) => ({
+            status: 402,
+            json: {},
+            headers: { "PAYMENT-REQUIRED": expiredRefusal(url) },
+        }),
+    ];
     const submissions: string[] = [];
     await page.route("**/api/x402/keys/*", (route) => {
         const signature = route.request().headers()["payment-signature"];
         if (!signature) return route.fallback();
         submissions.push(signature);
         if (submissions.length === 1) return route.abort();
-        // These errors can come before the API checks its purchase record.
-        if (submissions.length === 2) return route.fulfill({ status: 503 });
-        if (submissions.length === 3) return route.fulfill({ status: 500 });
-        // Only the payment check answers 402, after finding no record.
-        if (submissions.length === 4)
-            return route.fulfill({ status: 402, json: {} });
-        return route.fulfill({
-            json: { key: "sk_browser_fixture", pollen: 2 },
-        });
+        const reply = replies[submissions.length - 2];
+        if (!reply)
+            return route.fulfill({
+                json: { key: "sk_browser_fixture", pollen: 2 },
+            });
+        return route.fulfill(
+            typeof reply === "function" ? reply(route.request().url()) : reply,
+        );
     });
     for (const name of ["Review payment", "Connect wallet", "Pay 2.00 USDC"])
         await page.getByRole("button", { name, exact: true }).click();
@@ -368,15 +395,15 @@ test("an expired approval the API never recorded is released for a fresh payment
         page.getByText("Payment is not confirmed.", { exact: false }),
     ).toBeVisible();
     await page.clock.setFixedTime(now + 61_000);
-    for (const status of [503, 500]) {
+    for (let attempt = 2; attempt <= 5; attempt++) {
         await page
             .getByRole("button", { name: "Retry this payment", exact: true })
             .click();
-        await expect
-            .poll(() => submissions.length)
-            .toBe(status === 503 ? 2 : 3);
+        await expect.poll(() => submissions.length).toBe(attempt);
         await expect(
-            page.getByText("Payment is not confirmed.", { exact: false }),
+            page.getByText("we couldn’t confirm whether it was charged", {
+                exact: false,
+            }),
         ).toBeVisible();
         await expect(
             page.getByRole("button", { name: "Connect wallet", exact: true }),
@@ -396,9 +423,9 @@ test("an expired approval the API never recorded is released for a fresh payment
         page.getByText("Your key is ready with 2 Pollinations credits."),
     ).toBeVisible();
     expect(signatures).toBe(2);
-    expect(submissions).toHaveLength(5);
-    expect(new Set(submissions.slice(0, 4)).size).toBe(1);
-    expect(submissions[4]).not.toBe(submissions[0]);
+    expect(submissions).toHaveLength(7);
+    expect(new Set(submissions.slice(0, 6)).size).toBe(1);
+    expect(submissions[6]).not.toBe(submissions[0]);
 });
 
 test("an approval that expires in the wallet can be retried without submitting the old proof", async ({

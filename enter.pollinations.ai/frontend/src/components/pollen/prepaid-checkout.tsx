@@ -83,19 +83,21 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
             );
             setPending(null);
         } catch (error) {
-            const unused =
-                (error as { code?: string } | null)?.code === "approval_unused";
+            const code = (error as { code?: string } | null)?.code;
+            const unused = code === "approval_unused";
             if (unused) setPending(null);
             if (!sending || unused) setWallet(null);
             setError(
                 unused
                     ? "Your approval expired and was never charged. Connect your wallet to approve a fresh payment."
-                    : sending
-                      ? "Payment is not confirmed. Check your wallet before doing anything else. If you see a transfer, don’t pay again. Email billing@pollinations.ai with the transaction hash, or your wallet address, the amount and the approximate time. Otherwise, you can retry here using the same approval."
-                      : !quote
-                        ? "Couldn’t get a payment quote. Choose an amount from $0.01 to $10,000 in cents and try again later if checkout is unavailable."
-                        : (api?.prepaidWalletError(error) ??
-                          "Wallet approval could not complete. Try again."),
+                    : code === "approval_expired"
+                      ? "Your approval has expired and we couldn’t confirm whether it was charged. Don’t pay again. Email billing@pollinations.ai with the transaction hash, or your wallet address, the amount and the approximate time."
+                      : sending
+                        ? "Payment is not confirmed. Check your wallet before doing anything else. If you see a transfer, don’t pay again. Email billing@pollinations.ai with the transaction hash, or your wallet address, the amount and the approximate time. Otherwise, you can retry here using the same approval."
+                        : !quote
+                          ? "Couldn’t get a payment quote. Choose an amount from $0.01 to $10,000 in cents and try again later if checkout is unavailable."
+                          : (api?.prepaidWalletError(error) ??
+                            "Wallet approval could not complete. Try again."),
             );
         } finally {
             inFlight.current = false;

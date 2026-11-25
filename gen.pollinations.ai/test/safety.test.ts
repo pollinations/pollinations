@@ -63,7 +63,18 @@ const configuredEnv = {
     AWS_REGION: "us-east-1",
     BEDROCK_GUARDRAIL_ID: "test-guardrail",
     BEDROCK_GUARDRAIL_VERSION: "1",
+    BEDROCK_SENSITIVE_GUARDRAIL_ID: "test-sensitive-guardrail",
+    BEDROCK_SENSITIVE_GUARDRAIL_VERSION: "1",
 } as CloudflareBindings;
+
+function calledGuardrail() {
+    const url = String(
+        fetchMock.mock.lastCall?.[0] instanceof Request
+            ? fetchMock.mock.lastCall[0].url
+            : fetchMock.mock.lastCall?.[0],
+    );
+    return url.match(/\/guardrail\/([^/]+)\//)?.[1];
+}
 
 function safetyApp(
     requiredSafetyFeatures: ModelVariables["model"]["definition"]["requiredSafetyFeatures"] = [],
@@ -282,7 +293,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                 {
                     ...configuredEnv,
                     BETTER_AUTH_SECRET: "synthetic-test-salt",
-                    BEDROCK_GUARDRAIL_VERSION: version,
+                    BEDROCK_SENSITIVE_GUARDRAIL_VERSION: version,
                 },
             );
             return info.mock.lastCall?.[0].inputFingerprint;
@@ -644,6 +655,22 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(await response.text()).toBe(
             `${input.slice(0, input.length - 50_000)}safe tail {EMAIL}`,
         );
+    });
+
+    it("routes privacy and secrets checks to the guardrail without content filters", async () => {
+        await safetyApp().request(
+            "/scan/hello?safe=privacy,secrets",
+            undefined,
+            configuredEnv,
+        );
+        expect(calledGuardrail()).toBe("test-sensitive-guardrail");
+
+        await safetyApp(["privacy"]).request(
+            "/scan/hello?safe=sexual",
+            undefined,
+            configuredEnv,
+        );
+        expect(calledGuardrail()).toBe("test-guardrail");
     });
 
     it("fails closed when safe is requested but guardrails are not configured", async () => {

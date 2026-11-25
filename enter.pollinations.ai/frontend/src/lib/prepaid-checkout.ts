@@ -1,8 +1,5 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import {
-    decodePaymentRequiredHeader,
-    decodePaymentSignatureHeader,
-} from "@x402/core/http";
+import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { PaymentPayload, PaymentRequired } from "@x402/core/types";
 import {
     type ClientEvmSigner,
@@ -169,14 +166,24 @@ export async function submitPrepaidPayment(
     url: string,
     headers: Record<string, string>,
 ) {
+    // Checkout can't tell whether an unresolved submission moved money, so
+    // it never offers a fresh approval after one. Once this approval has
+    // expired, retrying can only report 409, so send the buyer to billing.
     const expired = approvalExpired(
         decodePaymentSignatureHeader(headers["PAYMENT-SIGNATURE"]),
     );
+    const unresolved = () =>
+        Object.assign(
+            new Error("Payment status unknown"),
+            expired ? { code: "approval_expired" } : {},
+        );
     const response = await fetch(url, {
         method: "POST",
         credentials: "omit",
         cache: "no-store",
         headers: { ...headers, Accept: "application/json" },
+    }).catch(() => {
+        throw unresolved();
     });
     if (response.status === 409) return { status: "recorded" } as const;
     if (response.status === 503) {
@@ -189,30 +196,7 @@ export async function submitPrepaidPayment(
         )
             return { status: "settled" } as const;
     }
-    // A recorded approval gets 409 first. Otherwise, the facilitator refusing
-    // it as expired at verification means the API never ran the purchase and
-    // the transfer can never settle. A failed settlement also answers 402,
-    // after recording, but adds PAYMENT-RESPONSE. Nothing else proves the
-    // approval went unused.
-    const refusal =
-        response.status === 402 && !response.headers.has("PAYMENT-RESPONSE")
-            ? response.headers.get("PAYMENT-REQUIRED")
-            : null;
-    let reason: string | undefined;
-    try {
-        reason = refusal
-            ? decodePaymentRequiredHeader(refusal).error
-            : undefined;
-    } catch {}
-    if (reason === "invalid_exact_evm_payload_authorization_valid_before")
-        throw Object.assign(new Error("Payment approval unused"), {
-            code: "approval_unused",
-        });
-    if (!response.ok)
-        throw Object.assign(
-            new Error("Payment status unknown"),
-            expired ? { code: "approval_expired" } : {},
-        );
+    if (!response.ok) throw unresolved();
     const result: unknown = await response.json();
     if (
         !result ||

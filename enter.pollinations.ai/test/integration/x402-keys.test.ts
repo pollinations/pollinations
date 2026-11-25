@@ -467,7 +467,9 @@ describe("x402 prepaid API keys", () => {
                 expect(response.status).toBe(409);
                 const body = await response.text();
                 expect(body).not.toContain("sk_");
-                expect(body).toContain("hello@pollinations.ai");
+                expect(body).toContain(
+                    "billing@pollinations.ai with the transaction hash",
+                );
             }
             expect(calls).not.toContain("/verify");
             expect(calls).not.toContain("/settle");
@@ -641,7 +643,11 @@ describe("x402 prepaid API keys", () => {
                 const first = await send(owner, "p2", headers);
                 expect(failed).toBe(true);
                 expect(first.status).toBe(503);
-                expect(await first.text()).not.toContain("sk_");
+                const body = await first.text();
+                expect(body).not.toContain("sk_");
+                expect(body).toContain(
+                    "billing@pollinations.ai with the transaction hash",
+                );
                 expect(
                     (await getPurchase(env.DB, buyer.id))?.credited_at,
                 ).toBeNull();

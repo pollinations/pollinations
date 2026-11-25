@@ -313,6 +313,14 @@ test("the 100th free reply of the day is served and counted, the 101st goes to t
     expect(unknown.response.status).toBe(404);
 });
 
+test("a reply gen fails to make gives its count back", async () => {
+    const ip = nextIp();
+    await quotaOf(ip, 5);
+    const { response } = await call("/gen:503", { ip, headers: CURL });
+    expect(response.status).toBe(503);
+    expect(await quotaOf(ip)).toBe(5);
+});
+
 test("a model we don't serve uses no quota", async () => {
     const ip = nextIp();
     await quotaOf(ip, 99);
@@ -322,6 +330,23 @@ test("a model we don't serve uses no quota", async () => {
     });
     expect(response.status).toBe(404);
     expect(await quotaOf(ip)).toBe(99);
+});
+
+test("a reply booked on either side of midnight counts on its own UTC day", async () => {
+    const ip = nextIp();
+    const midnight = nextMidnight() - 86_400_000;
+    const used = (at) =>
+        runInDurableObject(
+            env.DAILY_QUOTA.getByName(
+                `${new Date(at).toISOString().slice(0, 10)} ${ip}`,
+            ),
+            (_quota, state) => state.storage.get("used"),
+        );
+    await takeQuota(env.DAILY_QUOTA, ip, 100, midnight - 1);
+    await takeQuota(env.DAILY_QUOTA, ip, 100, midnight);
+    await takeQuota(env.DAILY_QUOTA, ip, 100, midnight + 1);
+    expect(await used(midnight - 1)).toBe(1);
+    expect(await used(midnight)).toBe(2);
 });
 
 test("a quota used up just before midnight is not remembered into the new day", async () => {

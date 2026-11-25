@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 // Route templates only: never accept a URL, arbitrary properties or a user ID
-// from the browser. This list is not derived from routeTree.gen.ts: a new
-// route drops its page views silently until it is added here.
+// from the browser. This list is not derived from routeTree.gen.ts, so a page
+// missing from it drops its views silently; product-analytics.test.ts walks the
+// route files and fails when a routable page is not named here.
 //
 // No browser identifier is sent: there is no cookie and no random id. The
 // referrer hostname (never a path) and the utm_* / ref values of the landing
@@ -20,6 +21,7 @@ export const productPageViewSchema = z.strictObject({
         "/authorize",
         "/device",
         "/edit-key",
+        "/grant",
         "/error",
         "/privacy",
         "/terms",
@@ -33,6 +35,7 @@ export const productPageViewSchema = z.strictObject({
         "/quests",
         "/activity",
         "/account",
+        "/sandboxes",
     ]),
     client_id: z.string().max(100).optional(),
     referrer_host: z.string().max(253).optional(),

@@ -5383,26 +5383,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "tencent/hy4-flash": {
     "cost": {
-      "completionTextTokens": 0.0000001405,
-      "promptCachedTokens": 0.0000000015,
-      "promptTextTokens": 0.000000035,
+      "completionTextTokens": 0.000000281,
+      "promptCachedTokens": 0.000000003,
+      "promptTextTokens": 0.00000007,
     },
     "price": {
-      "completionTextTokens": 0.0000001405,
-      "promptCachedTokens": 0.0000000015,
-      "promptTextTokens": 0.000000035,
-    },
-  },
-  "tencent/hy4-flash:openrouter": {
-    "cost": {
-      "completionTextTokens": 0.0000001482275,
-      "promptCachedTokens": 0.0000000015825,
-      "promptTextTokens": 0.000000036925,
-    },
-    "price": {
-      "completionTextTokens": 0.0000001482275,
-      "promptCachedTokens": 0.0000000015825,
-      "promptTextTokens": 0.000000036925,
+      "completionTextTokens": 0.000000281,
+      "promptCachedTokens": 0.000000003,
+      "promptTextTokens": 0.00000007,
     },
   },
   "tencent/hy4-preview": {

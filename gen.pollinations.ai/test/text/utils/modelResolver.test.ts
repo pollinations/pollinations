@@ -61,22 +61,18 @@ describe("resolveModelConfig", () => {
         }
     });
 
-    it("routes Hy4 Flash through Vercel with an OpenRouter fallback", () => {
-        const primary = resolveModelConfig(messages, {
+    it("routes Hy4 Flash directly to Fireworks with no fallback", () => {
+        const result = resolveModelConfig(messages, {
             model: "tencent/hy4-flash",
         });
-        expect(primary.options.modelConfig).toMatchObject({
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/hy4-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-
-        const fallback = resolveModelConfig(messages, {
-            model: "tencent/hy4-flash:openrouter",
-        });
-        expect(fallback.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            model: "tencent/hy4-flash",
-        });
+        expect(findModelByName("tencent/hy4-flash:openrouter")).toBeNull();
     });
 
     it("routes Qwen 4 Max to Alibaba with a Vercel fallback", () => {

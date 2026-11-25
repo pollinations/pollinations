@@ -1355,11 +1355,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "tencent/hy4-flash",
-        config: portkeyConfig["tencent/hy4-flash"],
-    },
-    {
-        name: "tencent/hy4-flash:openrouter",
-        config: portkeyConfig["tencent/hy4-flash:openrouter"],
+        config: portkeyConfig["accounts/fireworks/models/hy4-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "tencent/hy4-preview",
